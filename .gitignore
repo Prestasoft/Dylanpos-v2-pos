@@ -1,0 +1,22 @@
+# Flutter & Dart related
+.dart_tool/
+.packages
+.pub-cache/
+build/
+.idea/
+.vscode/
+android/.gradle/
+android/app/build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner/GeneratedPluginRegistrant.*
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Other
+*.iml
+*.lock
+*.log
+*.tmp

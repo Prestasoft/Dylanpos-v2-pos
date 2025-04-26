@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/shakil/fvm/versions/stable/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/usr/bin/ninja",
+      "-C",
+      "/home/shakil/StudioProjects/pos-saas-update-gst7/android/app/.cxx/RelWithDebInfo/7055d6l1/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/usr/bin/ninja",
+    "-C",
+    "/home/shakil/StudioProjects/pos-saas-update-gst7/android/app/.cxx/RelWithDebInfo/7055d6l1/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
