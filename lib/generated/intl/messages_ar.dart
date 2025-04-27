@@ -28,7 +28,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
         "CATEGORY": MessageLookupByLibrary.simpleMessage("الفئة"),
         "INVOICE": MessageLookupByLibrary.simpleMessage("فاتورة"),
-        "MOBIPOS": MessageLookupByLibrary.simpleMessage("Pos Saas"),
+        "MOBIPOS": MessageLookupByLibrary.simpleMessage("DylanPOS"),
         "OF": MessageLookupByLibrary.simpleMessage("من"),
         "Of": MessageLookupByLibrary.simpleMessage("من"),
         "Ok": MessageLookupByLibrary.simpleMessage("حسنًا"),
@@ -36,7 +36,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "PRICE": MessageLookupByLibrary.simpleMessage("السعر"),
         "PRODUCTNAME": MessageLookupByLibrary.simpleMessage("اسم المنتج"),
         "PosSaasLoginPanel": MessageLookupByLibrary.simpleMessage(
-          "لوحة تسجيل الدخول لنظام Pos Saas",
+          "لوحة تسجيل الدخول لنظام DylanPOS",
         ),
         "QTY": MessageLookupByLibrary.simpleMessage("الكمية"),
         "Quantity": MessageLookupByLibrary.simpleMessage("الكمية*"),
@@ -659,10 +659,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "margin": MessageLookupByLibrary.simpleMessage("الهامش"),
         "may": MessageLookupByLibrary.simpleMessage("مايو"),
         "mobiPosLoginPanel": MessageLookupByLibrary.simpleMessage(
-          "لوحة تسجيل دخول Pos Saas",
+          "لوحة تسجيل دخول DylanPOS",
         ),
         "mobiPosSignUpPane": MessageLookupByLibrary.simpleMessage(
-          "لوحة تسجيل Pos Saas",
+          "لوحة تسجيل DylanPOS",
         ),
         "mobilePay": MessageLookupByLibrary.simpleMessage("دفع عبر الهاتف"),
         "mobilePayment": MessageLookupByLibrary.simpleMessage("دفع عبر الهاتف"),
@@ -924,7 +924,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "الرجاء إدخال بيانات صالحة",
         ),
         "posSaasSingUpPanel": MessageLookupByLibrary.simpleMessage(
-          "لوحة التسجيل لنظام Pos Saas",
+          "لوحة التسجيل لنظام DylanPOS",
         ),
         "practies": MessageLookupByLibrary.simpleMessage("تمارين"),
         "premiumCustomerSupport": MessageLookupByLibrary.simpleMessage(
@@ -1041,7 +1041,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "right": MessageLookupByLibrary.simpleMessage("يمين"),
         "sAmount": MessageLookupByLibrary.simpleMessage("مبلغ المبيعات"),
         "safegurardYourBusinessDate": MessageLookupByLibrary.simpleMessage(
-          "حماية بيانات عملك بسهولة. تتضمن ترقية Pos Saas POS Unlimited لدينا نسخة احتياطية مجانية للبيانات، مما يضمن حماية معلوماتك القيمة من أي أحداث غير متوقعة. ركز على ما يهم حقًا - نمو عملك.",
+          "حماية بيانات عملك بسهولة. تتضمن ترقية DylanPOS POS Unlimited لدينا نسخة احتياطية مجانية للبيانات، مما يضمن حماية معلوماتك القيمة من أي أحداث غير متوقعة. ركز على ما يهم حقًا - نمو عملك.",
         ),
         "sale": MessageLookupByLibrary.simpleMessage("البيع"),
         "saleAmount": MessageLookupByLibrary.simpleMessage("مبلغ المبيعات"),
@@ -1155,7 +1155,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "statistic": MessageLookupByLibrary.simpleMessage("إحصائيات"),
         "status": MessageLookupByLibrary.simpleMessage("الحالة"),
         "stayAtTheForFront": MessageLookupByLibrary.simpleMessage(
-          "ابق على طليعة التطورات التكنولوجية دون تكاليف إضافية. تأكد من أن لديك دائمًا أحدث الأدوات والميزات بين يديك من خلال ترقية Pos Saas POS Unlimited الخاصة بنا، مما يضمن أن تبقى عملك حديثًا.",
+          "ابق على طليعة التطورات التكنولوجية دون تكاليف إضافية. تأكد من أن لديك دائمًا أحدث الأدوات والميزات بين يديك من خلال ترقية DylanPOS POS Unlimited الخاصة بنا، مما يضمن أن تبقى عملك حديثًا.",
         ),
         "stayAtTheForeFrontOfTechnological": MessageLookupByLibrary.simpleMessage(
           "ابق على طليعة التقنيات دون أي تكاليف إضافية. تأكد من أن لديك دائمًا أحدث الأدوات والميزات بين يديك من خلال ترقية Pos Sass POS Unlimited الخاصة بنا، مما يضمن أن تبقى عملك حديثًا.",
@@ -1204,7 +1204,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "الحساب موجود بالفعل لهذا البريد الإلكتروني",
         ),
         "theNameSysIt": MessageLookupByLibrary.simpleMessage(
-          "الاسم يقول كل شيء. مع Pos Saas POS Unlimited، لا يوجد قيود على استخدامك. سواء كنت تعالج عددًا قليلًا من المعاملات أو تواجه اندفاعًا من العملاء، يمكنك التشغيل بثقة، علمًا بأنك لا تقتصر عن حدود.",
+          "الاسم يقول كل شيء. مع DylanPOS POS Unlimited، لا يوجد قيود على استخدامك. سواء كنت تعالج عددًا قليلًا من المعاملات أو تواجه اندفاعًا من العملاء، يمكنك التشغيل بثقة، علمًا بأنك لا تقتصر عن حدود.",
         ),
         "thePasswordProvidedIsTooWeak": MessageLookupByLibrary.simpleMessage(
           "كلمة المرور المقدمة ضعيفة جدًا",
@@ -1290,7 +1290,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
         "unlimitedUsage": MessageLookupByLibrary.simpleMessage("استخدام غير محدود"),
         "unlockTheFull": MessageLookupByLibrary.simpleMessage(
-          "استفد من الإمكانيات الكاملة لـ Pos Saas POS من خلال جلسات تدريب شخصية يقودها فريق الخبراء لدينا. من الأساسيات إلى التقنيات المتقدمة، نحن نضمن أنك ملم بشكل جيد في استخدام كل جانب من جوانب النظام لتحسين عمليات عملك.",
+          "استفد من الإمكانيات الكاملة لـ DylanPOS POS من خلال جلسات تدريب شخصية يقودها فريق الخبراء لدينا. من الأساسيات إلى التقنيات المتقدمة، نحن نضمن أنك ملم بشكل جيد في استخدام كل جانب من جوانب النظام لتحسين عمليات عملك.",
         ),
         "unpaid": MessageLookupByLibrary.simpleMessage("غير مدفوع"),
         "update": MessageLookupByLibrary.simpleMessage("تحديث"),

@@ -28,7 +28,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
         "CATEGORY": MessageLookupByLibrary.simpleMessage("KATEGORIE"),
         "INVOICE": MessageLookupByLibrary.simpleMessage("FAKTUUR"),
-        "MOBIPOS": MessageLookupByLibrary.simpleMessage("Pos Saas"),
+        "MOBIPOS": MessageLookupByLibrary.simpleMessage("DylanPOS"),
         "OF": MessageLookupByLibrary.simpleMessage("van"),
         "Of": MessageLookupByLibrary.simpleMessage("van"),
         "Ok": MessageLookupByLibrary.simpleMessage("Ok"),
@@ -36,7 +36,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "PRICE": MessageLookupByLibrary.simpleMessage("PRYSING"),
         "PRODUCTNAME": MessageLookupByLibrary.simpleMessage("PRODUK NAAM"),
         "PosSaasLoginPanel": MessageLookupByLibrary.simpleMessage(
-          "Pos Saas Aanmeldingspaneel",
+          "DylanPOS Aanmeldingspaneel",
         ),
         "QTY": MessageLookupByLibrary.simpleMessage("BTW"),
         "Quantity": MessageLookupByLibrary.simpleMessage("Quantiteit*"),
@@ -716,10 +716,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "margin": MessageLookupByLibrary.simpleMessage("Marge"),
         "may": MessageLookupByLibrary.simpleMessage("Mei"),
         "mobiPosLoginPanel": MessageLookupByLibrary.simpleMessage(
-          "Pos Saas Intekenpaneel",
+          "DylanPOS Aanmeldingspaneel",
         ),
         "mobiPosSignUpPane": MessageLookupByLibrary.simpleMessage(
-          "Pos Saas Aanmeldingspaneel",
+          "DylanPOS Registrasiepaneel",
         ),
         "mobilePay": MessageLookupByLibrary.simpleMessage("Mobiele Betaling"),
         "mobilePayment": MessageLookupByLibrary.simpleMessage("Mobiele Betaling"),
@@ -985,7 +985,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "Voer asseblief geldige data in",
         ),
         "posSaasSingUpPanel": MessageLookupByLibrary.simpleMessage(
-          "Pos Saas Registrasiepaneel",
+          "DylanPOS Registrasiepaneel",
         ),
         "practies": MessageLookupByLibrary.simpleMessage("Oefening"),
         "premiumCustomerSupport": MessageLookupByLibrary.simpleMessage(
@@ -1110,7 +1110,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "right": MessageLookupByLibrary.simpleMessage("Reg"),
         "sAmount": MessageLookupByLibrary.simpleMessage("Sale Amount"),
         "safegurardYourBusinessDate": MessageLookupByLibrary.simpleMessage(
-          "Beskerm jou besigheidsdata sonder enige moeite. Ons Pos Saas POS Onbeperkte Opgradering sluit gratis data-rugsteun in, wat verseker dat jou waardevolle inligting teen enige onverwagse gebeure beskerm is. Fokus op wat werklik saak maak - jou besigheidsgroei.",
+          "Beskerm jou besigheidsdata sonder enige moeite. Ons DylanPOS POS Onbeperkte Opgradering sluit gratis data-rugsteun in, wat verseker dat jou waardevolle inligting teen enige onverwagse gebeure beskerm is. Fokus op wat werklik saak maak - jou besigheidsgroei.",
         ),
         "sale": MessageLookupByLibrary.simpleMessage("Verkoop"),
         "saleAmount": MessageLookupByLibrary.simpleMessage("Verkoopsom"),
@@ -1238,7 +1238,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "statistic": MessageLookupByLibrary.simpleMessage("Statistic"),
         "status": MessageLookupByLibrary.simpleMessage("Status"),
         "stayAtTheForFront": MessageLookupByLibrary.simpleMessage(
-          "Bly aan die voorpunt van tegnologiese ontwikkelings sonder enige ekstra koste. Ons Pos Saas POS Onbeperkte Opgradering verseker dat jy altyd die nuutste gereedskap en funksies tot jou beskikking het, en waarborg dat jou besigheid altyd voorste gehou word.",
+          "Bly aan die voorpunt van tegnologiese ontwikkelings sonder enige ekstra koste. Ons DylanPOS POS Onbeperkte Opgradering verseker dat jy altyd die nuutste gereedskap en funksies tot jou beskikking het, en waarborg dat jou besigheid altyd voorste gehou word.",
         ),
         "stayAtTheForeFrontOfTechnological": MessageLookupByLibrary.simpleMessage(
           "Bly aan die voorpunt van tegnologiese ontwikkelings sonder enige ekstra koste. Ons Pos Sass POS Onbeperkte Opgradering verseker dat jy altyd die nuutste gereedskap en funksies tot jou beskikking het, en waarborg dat jou besigheid altyd voorste gehou word.",
@@ -1293,7 +1293,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "Die rekening bestaan reeds vir daardie e-pos",
         ),
         "theNameSysIt": MessageLookupByLibrary.simpleMessage(
-          "Die naam sê alles. Met Pos Saas POS Onbeperkte is daar geen beperking op jou gebruik nie. Of jy nou \'n handjievol transaksies verwerk of \'n stortvloed van kliënte ervaar, kan jy met selfvertroue bedryf, wetende dat jy nie beperk word deur beperkings nie.",
+          "Die naam sê alles. Met DylanPOS POS Onbeperkte is daar geen beperking op jou gebruik nie. Of jy nou 'n handjievol transaksies verwerk of 'n stortvloed van kliënte ervaar, kan jy met selfvertroue bedryf, wetende dat jy nie beperk word deur beperkings nie.",
         ),
         "thePasswordProvidedIsTooWeak": MessageLookupByLibrary.simpleMessage(
           "Die wagwoord wat voorsien is, is te swak",
@@ -1377,7 +1377,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "Onbeperkte Gebruik",
         ),
         "unlockTheFull": MessageLookupByLibrary.simpleMessage(
-          "Ontgrendel die volle potensiaal van Pos Saas POS met gepersonaliseerde opleidingsessies deur ons kundige span. Van die basiese beginsels tot gevorderde tegnieke verseker ons dat jy goed toegerus is om elke aspek van die stelsel te benut om jou besigheidsprosesse te optimaliseer.",
+          "Ontgrendel die volle potensiaal van DylanPOS POS met gepersonaliseerde opleidingsessies deur ons kundige span. Van die basiese beginsels tot gevorderde tegnieke verseker ons dat jy goed toegerus is om elke aspek van die stelsel te benut om jou besigheidsprosesse te optimaliseer.",
         ),
         "unpaid": MessageLookupByLibrary.simpleMessage("Onbetaal"),
         "update": MessageLookupByLibrary.simpleMessage("Opdateer"),
