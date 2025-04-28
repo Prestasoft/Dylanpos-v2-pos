@@ -25,7 +25,7 @@ String sideBarLogo = 'images/pos.png';
 String appLogo = 'images/mobipos.png';
 bool isTwillio = true;
 bool isUltraMsg = false;
-String nameLogo = 'images/namelogo.svg';
+String nameLogo = 'images/sideLogo.png';
 String currentDomain = 'https://prestasoft.do';
 
 ///____________Purchase_C0de_______________________________________

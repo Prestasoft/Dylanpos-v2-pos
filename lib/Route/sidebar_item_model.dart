@@ -60,7 +60,7 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/sales',
       submenus: [
         SidebarSubmenuModel(
-          name: 'Pos Sale',
+          name: 'Pos',
           navigationPath: '/pos-sales',
         ),
         SidebarSubmenuModel(
@@ -76,7 +76,7 @@ List<SidebarItemModel> get topMenus {
           navigationPath: '/sales-return-list',
         ),
         SidebarSubmenuModel(
-          name: 'Quotation List',
+          name: 'Lista de cotizaciones',
           navigationPath: '/quotation-list',
         ),
       ],
@@ -185,7 +185,7 @@ List<SidebarItemModel> get topMenus {
       // sidebarItemType: SidebarItemType.submenu,
     ),
     SidebarItemModel(
-      name: 'Stock List',
+      name: 'Lista de Inventario',
       iconPath: 'images/dashboard_icon/stock_list.svg',
       navigationPath: '/stock-list',
       // sidebarItemType: SidebarItemType.submenu,
@@ -210,7 +210,7 @@ List<SidebarItemModel> get topMenus {
     ),
     SidebarItemModel(
       //name: 'Widgets',
-      name: 'Hrm',
+      name: 'Gestion de Nomina',
       iconPath: 'images/dashboard_icon/hrm.svg',
       sidebarItemType: SidebarItemType.submenu,
       navigationPath: '/hrm',
@@ -220,11 +220,11 @@ List<SidebarItemModel> get topMenus {
           navigationPath: '/designation-list',
         ),
         SidebarSubmenuModel(
-          name: 'Employee',
+          name: 'Empleados',
           navigationPath: '/employee',
         ),
         SidebarSubmenuModel(
-          name: 'Salaries List',
+          name: 'Lista de Salarios',
           navigationPath: '/salaries-list',
         ),
       ],

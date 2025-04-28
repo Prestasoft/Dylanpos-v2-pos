@@ -343,7 +343,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
     'Panjabi',
     'Pushto', //66
   ];
-  String selectedCountry = 'English';
+  String selectedCountry = 'Spanish';
 
   List<String> currencyList = [
     'USD',
@@ -762,7 +762,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   // count: '${showList.length}',
                                   count: '${saleCountOfcurrentMonth.length}',
                                   withOutCurrency: true,
-                                  footerTitle: 'This Month',
+                                  footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFB9FDEC),
                                   icon: 'images/cust.svg',
                                   predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
@@ -786,7 +786,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   title: lang.S.of(context).sAmount,
                                   count: '$totalSaleOfCurrentMonth',
                                   withOutCurrency: false,
-                                  footerTitle: 'This Month',
+                                  footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFDFDAFF),
                                   icon: 'images/sale.svg',
                                   predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
@@ -810,7 +810,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   title: lang.S.of(context).profit,
                                   count: "$totalProfitCurrentMonth",
                                   withOutCurrency: false,
-                                  footerTitle: 'This Month',
+                                  footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFC8E6FE),
                                   icon: 'images/pur.svg',
                                   predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
@@ -834,7 +834,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   title: lang.S.of(context).expenses,
                                   count: "$totalExpenseOfCurrentMonth",
                                   withOutCurrency: false,
-                                  footerTitle: 'This Month',
+                                  footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFFFD6E2),
                                   icon: 'images/ex.svg',
                                   predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
@@ -900,7 +900,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                     title: lang.S.of(context).inc,
                                     count: "$totalIncomeOfCurrentMonth",
                                     withOutCurrency: false,
-                                    footerTitle: 'This Month',
+                                    footerTitle: 'Este Mes',
                                     backgroundColor: const Color(0xFFC5FDBF),
                                     icon: 'images/in.svg',
                                     predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
@@ -1048,7 +1048,9 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   screenWidth < 400
                                       ? SizedBox.shrink()
                                       : Text(
-                                          totalSaleList.length > 5 ? '${lang.S.of(context).showing} ${recentFive.length} ${lang.S.of(context).OF} ${totalSaleList.length}' : '${lang.S.of(context).showing} ${totalSaleList.length} ${lang.S.of(context).OF} ${totalSaleList.length}',
+                                          totalSaleList.length > 5
+                                              ? '${lang.S.of(context).showing} ${recentFive.length} ${lang.S.of(context).OF} ${totalSaleList.length}'
+                                              : '${lang.S.of(context).showing} ${totalSaleList.length} ${lang.S.of(context).OF} ${totalSaleList.length}',
                                           style: theme.textTheme.titleSmall,
                                         ),
                                   TextButton(

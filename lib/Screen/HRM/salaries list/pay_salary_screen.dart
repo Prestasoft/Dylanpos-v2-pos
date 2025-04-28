@@ -30,10 +30,10 @@ class PaySalaryScreen extends StatefulWidget {
 
 class _PaySalaryScreenState extends State<PaySalaryScreen> {
   List<String> yearList = List.generate(111, (index) => (1990 + index).toString());
-  List<String> paymentItem = ['Cash', 'Bank', 'Mobile Pay'];
-  String? selectedPaymentOption = 'Cash';
+  List<String> paymentItem = ['Efectivo', 'Banco', 'Pago Móvil'];
+  String? selectedPaymentOption = 'Efectivo';
 
-  List<String> monthList = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  List<String> monthList = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
   final TextEditingController paySalaryController = TextEditingController();
   final TextEditingController notesController = TextEditingController();
@@ -103,7 +103,7 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text(
-                              'Pay Salary',
+                              'Pagar Salario',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -119,7 +119,7 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                         color: kNeutral300,
                       ),
 
-                      ///________Employee_and_Salary_______________________
+                      ///________Empleado_y_Salario_______________________
                       ResponsiveGridRow(children: [
                         ResponsiveGridCol(
                           lg: 6,
@@ -131,16 +131,16 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                               isExpanded: true,
                               validator: (value) {
                                 if (value == null) {
-                                  return 'Employee required';
+                                  return 'Empleado requerido';
                                 }
                                 return null;
                               },
                               decoration: const InputDecoration(
-                                labelText: 'Select Employee',
+                                labelText: 'Seleccionar Empleado',
                               ),
                               value: selectedEmployee,
                               hint: Text(
-                                'Select Employee Employee',
+                                'Seleccionar Empleado',
                                 style: theme.textTheme.bodyLarge,
                               ),
                               items: widget.listOfEmployees
@@ -176,11 +176,11 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildTextField(
                               controller: paySalaryController,
-                              label: 'Pay Salary Amount',
-                              hint: 'Please enter salary amount',
+                              label: 'Monto del Salario a Pagar',
+                              hint: 'Por favor ingrese el monto del salario',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter Pay Salary Amount';
+                                  return 'Ingrese el Monto del Salario a Pagar';
                                 }
                                 return null;
                               },

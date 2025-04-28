@@ -1060,7 +1060,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "salePrice": MessageLookupByLibrary.simpleMessage("Sale Price"),
         "salePrices": MessageLookupByLibrary.simpleMessage("Sale Price*"),
         "saleQuantity": MessageLookupByLibrary.simpleMessage("Sale Quantity"),
-        "saleReturn": MessageLookupByLibrary.simpleMessage("Sale Return"),
+        "saleReturn": MessageLookupByLibrary.simpleMessage("Devoluciones de ventas"),
         "saleSuccessfullyDone": MessageLookupByLibrary.simpleMessage(
           "Sale Successfully Done",
         ),

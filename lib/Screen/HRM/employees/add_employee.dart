@@ -106,7 +106,7 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                widget.employeeModel != null ? 'Edit Employee' : 'Add Employee',
+                                widget.employeeModel != null ? 'Editar Empleado' : 'Agregar Empleado',
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -133,11 +133,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildTextField(
                               controller: nameController,
-                              label: 'Name',
-                              hint: 'Please enter Employee Name',
+                              label: 'Nombre',
+                              hint: 'Por favor ingrese el nombre del empleado',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter Employee Name';
+                                  return 'Ingrese el nombre del empleado';
                                 }
                                 return null;
                               },
@@ -152,11 +152,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildTextField(
                               controller: phoneNumberController,
-                              label: 'Phone Number',
-                              hint: 'Please enter Phone Number',
+                              label: 'Número de Teléfono',
+                              hint: 'Por favor ingrese el número de teléfono',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter Phone Number';
+                                  return 'Ingrese el número de teléfono';
                                 }
                                 return null;
                               },
@@ -205,11 +205,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildTextField(
                               controller: emailController,
-                              label: 'Email',
-                              hint: 'Please enter Email',
+                              label: 'Correo Electrónico',
+                              hint: 'Por favor ingrese el correo electrónico',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter Email';
+                                  return 'Ingrese el correo electrónico';
                                 }
                                 return null;
                               },
@@ -224,11 +224,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildTextField(
                               controller: addressController,
-                              label: 'Address',
-                              hint: 'Please enter Address',
+                              label: 'Dirección',
+                              hint: 'Por favor ingrese la dirección',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter Address';
+                                  return 'Ingrese la dirección';
                                 }
                                 return null;
                               },
@@ -248,17 +248,17 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             child: DropdownButtonFormField<String>(
                               validator: (value) {
                                 if (value == null) {
-                                  return 'Gender required';
+                                  return 'Género requerido';
                                 }
                                 return null;
                               },
                               decoration: const InputDecoration(
-                                labelText: 'Gender',
+                                labelText: 'Género',
                               ),
                               value: selectedGender,
                               isExpanded: true,
                               hint: Text(
-                                'Select Gender',
+                                'Seleccione Género',
                                 style: theme.textTheme.titleMedium,
                               ),
                               items: genderList
@@ -290,16 +290,16 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                               isExpanded: true,
                               validator: (value) {
                                 if (value == null) {
-                                  return 'Employee type required';
+                                  return 'Tipo de empleado requerido';
                                 }
                                 return null;
                               },
                               decoration: const InputDecoration(
-                                labelText: 'Employee Type',
+                                labelText: 'Tipo de Empleado',
                               ),
                               value: selectedType,
                               hint: Text(
-                                'Select Employee Type',
+                                'Seleccione Tipo de Empleado',
                                 style: theme.textTheme.titleMedium,
                               ),
                               items: typeList
@@ -333,11 +333,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildTextField(
                               controller: salaryController,
-                              label: 'Salary',
-                              hint: 'Please enter Salary',
+                              label: 'Salario',
+                              hint: 'Por favor ingrese el salario',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter Salary';
+                                  return 'Ingrese el salario';
                                 }
                                 return null;
                               },
@@ -354,16 +354,16 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                               isExpanded: true,
                               validator: (value) {
                                 if (value == null) {
-                                  return 'Designations required';
+                                  return 'Designaciones requeridas';
                                 }
                                 return null;
                               },
                               decoration: const InputDecoration(
-                                labelText: 'Designations',
+                                labelText: 'Designaciones',
                               ),
                               value: selectedDesignation,
                               hint: Text(
-                                'Select Employee Designation',
+                                'Seleccione la designación del empleado',
                                 style: theme.textTheme.titleMedium,
                               ),
                               items: widget.designations!
@@ -397,7 +397,7 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildDatePickerField(
                               context: context,
-                              label: 'Birth Date',
+                              label: 'Fecha de Nacimiento',
                               selectedDate: birthDate,
                               onChanged: (value) => setState(() => birthDate = value),
                             ),
@@ -411,7 +411,7 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                             padding: const EdgeInsets.all(10.0),
                             child: _buildDatePickerField(
                               context: context,
-                              label: 'Joining Date',
+                              label: 'Fecha de Ingreso',
                               selectedDate: joiningDate,
                               onChanged: (value) => setState(() => joiningDate = value),
                             ),

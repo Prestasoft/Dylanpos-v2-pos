@@ -3305,7 +3305,7 @@ class _InventorySalesState extends State<InventorySales> {
                                   backgroundColor: Colors.black,
                                 ),
                                 onPressed: () async {
-                                  if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                  if (await Subscription.subscriptionChecker(item: 'Ventas')) {
                                     if (cartList.isEmpty) {
                                       EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
                                     } else {

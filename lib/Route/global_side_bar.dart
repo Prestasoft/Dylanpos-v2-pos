@@ -179,7 +179,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                         children: [
                                           const Icon(Icons.add_rounded, color: Color(0xFF15CD75)),
                                           Text(
-                                            'Purchase',
+                                            'Compra',
                                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                                   color: const Color(0xFF15CD75),
                                                   fontWeight: FontWeight.bold,
@@ -256,7 +256,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                         children: [
                                           const Icon(Icons.add_rounded, color: kMainColor),
                                           Text(
-                                            'Inventory',
+                                            'Inventario',
                                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                                   fontWeight: FontWeight.w600,
                                                   color: kMainColor,

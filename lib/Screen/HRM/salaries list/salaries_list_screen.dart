@@ -295,22 +295,22 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
                                                       ),
                                                       const DataColumn(
                                                         label: Text(
-                                                          'Name',
+                                                          'Nombre',
                                                         ),
                                                       ),
                                                       const DataColumn(
                                                         label: Text(
-                                                          'Phone',
+                                                          'Teléfono',
                                                         ),
                                                       ),
                                                       const DataColumn(
                                                         label: Text(
-                                                          'Designation',
+                                                          'Designación',
                                                         ),
                                                       ),
                                                       const DataColumn(
                                                         label: Text(
-                                                          'Salary',
+                                                          'Salario',
                                                         ),
                                                       ),
                                                       DataColumn(

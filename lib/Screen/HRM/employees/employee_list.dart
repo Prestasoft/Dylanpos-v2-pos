@@ -90,7 +90,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                               children: [
                                 Flexible(
                                   child: Text(
-                                    'Employee',
+                                    'Empleado',
                                     style: theme.textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -125,7 +125,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                         },
                                       );
                                     },
-                                    child: const Text('Add Employee')),
+                                    child: const Text('Agregar Empleado')),
                               ],
                             ),
                           ),
@@ -165,7 +165,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                     children: [
                                       Flexible(
                                           child: Text(
-                                        'Show-',
+                                        'Mostrar-',
                                         style: theme.textTheme.bodyLarge,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -183,7 +183,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                           return DropdownMenuItem<int>(
                                             value: value,
                                             child: Text(
-                                              value == -1 ? "All" : value.toString(),
+                                              value == -1 ? "Todos" : value.toString(),
                                               style: theme.textTheme.bodyLarge,
                                             ),
                                           );
@@ -275,22 +275,22 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                     ),
                                                     const DataColumn(
                                                       label: Text(
-                                                        'Name',
+                                                        'Nombre',
                                                       ),
                                                     ),
                                                     const DataColumn(
                                                       label: Text(
-                                                        'Phone',
+                                                        'Teléfono',
                                                       ),
                                                     ),
                                                     const DataColumn(
                                                       label: Text(
-                                                        'Designation',
+                                                        'Designación',
                                                       ),
                                                     ),
                                                     const DataColumn(
                                                       label: Text(
-                                                        'Salary',
+                                                        'Salario',
                                                       ),
                                                     ),
                                                     DataColumn(
@@ -497,7 +497,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                       topRight: Radius.circular(4.0),
                                                     ),
                                                   ),
-                                                  child: const Center(child: Text('Next')),
+                                                  child: const Center(child: Text('Siguiente')),
                                                 ),
                                               ),
                                             ],
@@ -507,7 +507,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                     ),
                                   ],
                                 )
-                              : const EmptyWidget(title: 'No Data Found'),
+                              : const EmptyWidget(title: 'No se encontraron datos'),
                         ],
                       ),
                     );

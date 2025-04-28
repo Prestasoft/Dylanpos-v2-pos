@@ -129,7 +129,7 @@ class _DueListState extends State<DueList> {
                           Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: Text(
-                              selectedParties == 'Customers' ? 'Due List (Customer)' : 'Due List (Supplier)',
+                              selectedParties == 'Customers' ? 'Lista de pagos pendientes (cliente)' : 'Lista de pagos pendientes (Proveedores)',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -236,7 +236,7 @@ class _DueListState extends State<DueList> {
                                           children: [
                                             Flexible(
                                                 child: Text(
-                                              'Show-',
+                                              'Mas-',
                                               style: theme.textTheme.bodyLarge,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -254,7 +254,7 @@ class _DueListState extends State<DueList> {
                                                 return DropdownMenuItem<int>(
                                                   value: value,
                                                   child: Text(
-                                                    value == -1 ? "All" : value.toString(),
+                                                    value == -1 ? "Todos" : value.toString(),
                                                     style: theme.textTheme.bodyLarge,
                                                   ),
                                                 );
@@ -306,7 +306,7 @@ class _DueListState extends State<DueList> {
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
                                       Text(
-                                        '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerDue(customers: selectedParties == 'Customers' ? showAbleCustomer : showAbleSupplier, selectedCustomerType: selectedParties).toStringAsFixed(2)) ?? 0)}',
+                                        '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerDue(customers: selectedParties == 'Clientes' ? showAbleCustomer : showAbleSupplier, selectedCustomerType: selectedParties).toStringAsFixed(2)) ?? 0)}',
                                         style: theme.textTheme.titleLarge?.copyWith(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600,
@@ -396,7 +396,7 @@ class _DueListState extends State<DueList> {
                                                           DataCell(
                                                             GestureDetector(
                                                               onTap: () async {
-                                                                if (await Subscription.subscriptionChecker(item: 'Due List')) {
+                                                                if (await Subscription.subscriptionChecker(item: 'Lista de pagos Pendientes')) {
                                                                   showDialog(
                                                                     barrierDismissible: false,
                                                                     context: context,
@@ -421,7 +421,7 @@ class _DueListState extends State<DueList> {
                                                                 }
                                                               },
                                                               child: const Text(
-                                                                'Collect Due >',
+                                                                'Aplicar pago >',
                                                                 style: TextStyle(color: Colors.blue),
                                                               ),
                                                             ),
@@ -508,7 +508,7 @@ class _DueListState extends State<DueList> {
                                                         topRight: Radius.circular(4.0),
                                                       ),
                                                     ),
-                                                    child: const Center(child: Text('Next')),
+                                                    child: const Center(child: Text('Siguiente')),
                                                   ),
                                                 ),
                                               ],

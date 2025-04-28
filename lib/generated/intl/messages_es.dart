@@ -28,7 +28,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
         "CATEGORY": MessageLookupByLibrary.simpleMessage("CATEGORÍA"),
         "INVOICE": MessageLookupByLibrary.simpleMessage("FACTURA"),
-        "MOBIPOS": MessageLookupByLibrary.simpleMessage("Pos Saas"),
+        "MOBIPOS": MessageLookupByLibrary.simpleMessage("DylanPos"),
         "OF": MessageLookupByLibrary.simpleMessage("de"),
         "Of": MessageLookupByLibrary.simpleMessage("de"),
         "Ok": MessageLookupByLibrary.simpleMessage("Ok"),
@@ -42,7 +42,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "Quantity": MessageLookupByLibrary.simpleMessage("Cantidad*"),
         "SL": MessageLookupByLibrary.simpleMessage("SL"),
         "STATUS": MessageLookupByLibrary.simpleMessage("ESTADO"),
-        "ShopGST": MessageLookupByLibrary.simpleMessage("GST de la tienda"),
+        "ShopGST": MessageLookupByLibrary.simpleMessage("RNC de la tienda"),
         "TOTALVALUE": MessageLookupByLibrary.simpleMessage("VALOR TOTAL"),
         "UserTitle": MessageLookupByLibrary.simpleMessage("Título de usuario"),
         "aboutApp": MessageLookupByLibrary.simpleMessage("Acerca de la aplicación"),
@@ -91,7 +91,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "addUserRole": MessageLookupByLibrary.simpleMessage(
           "Agregar rol de usuario",
         ),
-        "addWareHouse": MessageLookupByLibrary.simpleMessage("Agregar almacén"),
+        "addWareHouse": MessageLookupByLibrary.simpleMessage("Agregar Sucursal"),
         "addedSuccessfully": MessageLookupByLibrary.simpleMessage(
           "Añadido Exitosamente",
         ),
@@ -270,7 +270,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
         "customer": MessageLookupByLibrary.simpleMessage("Cliente"),
         "customerDue": MessageLookupByLibrary.simpleMessage("Cliente adeudado"),
-        "customerGST": MessageLookupByLibrary.simpleMessage("GST del Cliente"),
+        "customerGST": MessageLookupByLibrary.simpleMessage("RNC del Cliente"),
         "customerInvoices": MessageLookupByLibrary.simpleMessage(
           "Facturas de clientes",
         ),
@@ -565,7 +565,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "Ingrese un número válido",
         ),
         "enterWarehouseName": MessageLookupByLibrary.simpleMessage(
-          "Ingrese el nombre del almacén",
+          "Ingrese el nombre del la sucursal",
         ),
         "enterWarranty": MessageLookupByLibrary.simpleMessage(
           "Ingrese la garantía",
@@ -604,7 +604,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "Ingrese la dirección de su tienda",
         ),
         "enterYourShopGSTNumber": MessageLookupByLibrary.simpleMessage(
-          "Ingrese el número GST de su tienda",
+          "Ingrese el número RNC de su tienda",
         ),
         "enterYourShopName": MessageLookupByLibrary.simpleMessage(
           "Ingrese el nombre de su tienda",
@@ -761,13 +761,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "margin": MessageLookupByLibrary.simpleMessage("Margen"),
         "may": MessageLookupByLibrary.simpleMessage("Mayo"),
         "mobiPosLoginPanel": MessageLookupByLibrary.simpleMessage(
-          "Panel de inicio de sesión de Pos Saas",
+          "Panel de inicio de sesión de DylanPOS",
         ),
         "mobiPosSignUpPane": MessageLookupByLibrary.simpleMessage(
-          "Panel de registro de Pos Saas",
+          "Panel de registro de DylanPOS",
         ),
-        "mobilePay": MessageLookupByLibrary.simpleMessage("Pago Móvil"),
-        "mobilePayment": MessageLookupByLibrary.simpleMessage("Pago Móvil"),
+        "mobilePay": MessageLookupByLibrary.simpleMessage("Pago Via Transferencia"),
+        "mobilePayment": MessageLookupByLibrary.simpleMessage("Pago Via Transferencia"),
         "mobilePlusDesktop": MessageLookupByLibrary.simpleMessage(
           "Aplicación móvil\n+\nEscritorio",
         ),
@@ -1509,7 +1509,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "view": MessageLookupByLibrary.simpleMessage("Ver"),
         "viewAll": MessageLookupByLibrary.simpleMessage("Ver Todo"),
         "walkInCustomer": MessageLookupByLibrary.simpleMessage("Cliente que entra"),
-        "warehouse": MessageLookupByLibrary.simpleMessage("Almacén"),
+        "warehouse": MessageLookupByLibrary.simpleMessage("Sucursales"),
         "warehouseAlreadyExists": MessageLookupByLibrary.simpleMessage(
           "El almacén ya existe",
         ),
