@@ -631,7 +631,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "incomeList": MessageLookupByLibrary.simpleMessage("Income List"),
         "increaseStock": MessageLookupByLibrary.simpleMessage("Increase Stock"),
         "instantPrivacy": MessageLookupByLibrary.simpleMessage("Instant Privacy"),
-        "inventorySales": MessageLookupByLibrary.simpleMessage("Inventory Sales"),
+        "inventorySales": MessageLookupByLibrary.simpleMessage("Ventas de Inventario"),
         "invoice": MessageLookupByLibrary.simpleMessage("Invoice"),
         "invoiceCo": MessageLookupByLibrary.simpleMessage("Invoice:"),
         "invoiceHint": MessageLookupByLibrary.simpleMessage("Invoice NO.."),

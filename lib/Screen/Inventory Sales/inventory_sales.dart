@@ -87,11 +87,11 @@ class _InventorySalesState extends State<InventorySales> {
   }
 
   List<String> get paymentItem => [
-        'Cash',
+        'Efectivo',
         // lang.S.current.cash,
-        'Bank',
+        'Transferencia',
         // lang.S.current.bank,
-        'Mobile Pay',
+        'Tarjeta',
         // lang.S.current.mobilePay
       ];
   late String selectedPaymentOption = paymentItem.first;

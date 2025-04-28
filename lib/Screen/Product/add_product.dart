@@ -77,6 +77,7 @@ class _AddProductState extends State<AddProduct> {
   int lowerStockAlert = 5;
   String? expireDate;
   String? manufactureDate;
+  String selectedType = 'product'; // <<<<<< NUEVO aquí
 
   List<String> productSerialNumberList = [];
   bool saleButtonClicked = false;
@@ -158,6 +159,7 @@ class _AddProductState extends State<AddProduct> {
                             child: SizedBox(
                               width: 400,
                               child: TextFormField(
+                              
                                 controller: itemCategoryController,
                                 validator: (value) {
                                   if (value.isEmptyOrNull) {
@@ -182,6 +184,7 @@ class _AddProductState extends State<AddProduct> {
                         ],
                       ),
                       const SizedBox(height: 30.0),
+                      
                       Text(
                         lang.S.of(context).selectVariations,
                         style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
@@ -1072,24 +1075,7 @@ class _AddProductState extends State<AddProduct> {
                                                 } else if (!checkProductName(name: value!, id: selectedWareHouse!.id)) {
                                                   return 'Product Name already exists in this warehouse.';
                                                 } else {
-                                                  // String cleanedValue = value!.removeAllWhiteSpace().toLowerCase().trim();
-                                                  // int productIndex = widget.allProductsNameList.indexWhere((element) => element.trim() == cleanedValue);
-                                                  //
-                                                  // // Check if the product exists in any warehouse
-                                                  // if (productIndex != -1) {
-                                                  //   // Check if the product exists in the current warehouse
-                                                  //   int warehouseIndex = widget.warehouseID.indexWhere((element) => element == selectedWareHouse.id);
-                                                  //
-                                                  //   // Find the index of the product within the warehouse
-                                                  //   int existingProductIndexInWarehouse = widget.allProductsNameList.indexWhere((element) =>
-                                                  //   element == cleanedValue &&
-                                                  //       widget.warehouseID.indexOf(selectedWareHouse.id.removeAllWhiteSpace().toLowerCase()) == warehouseIndex);
-                                                  //
-                                                  //   // If the product exists in the warehouse and the warehouse index is the same as the product index, show error
-                                                  //   if (existingProductIndexInWarehouse != -1 && warehouseIndex != -1 && warehouseIndex == productIndex) {
-                                                  //     return 'Product Name already exists in this warehouse.';
-                                                  //   }
-                                                  // }
+                                                  
 
                                                   return null; // Validation passes
                                                 }
@@ -1114,18 +1100,7 @@ class _AddProductState extends State<AddProduct> {
                                           data: (category) {
                                             List<String> editNameList = [];
                                             List<String> categoryName = [];
-                                            // if (category.isEmpty) {
-                                            //   // postGeneralCategory();
-                                            //   ref.refresh(categoryProvider);
-                                            // }
-                                            // categoryTime == 0
-                                            //     // ignore: avoid_function_literals_in_foreach_calls
-                                            //     ? category.forEach((element) {
-                                            //
-                                            //         editNameList.add(element.categoryName.removeAllWhiteSpace().toLowerCase());
-                                            //         categoryTime++;
-                                            //       })
-                                            //     : null;
+                                         
                                             for (var element in category) {
                                               categoryName.add(element.categoryName);
                                               editNameList.add(element.categoryName.toLowerCase().removeAllWhiteSpace());
@@ -1414,101 +1389,7 @@ class _AddProductState extends State<AddProduct> {
                                       )
                                     ]),
 
-                                    // Row(
-                                    //   children: [
-                                    //     Expanded(
-                                    //       child: Padding(
-                                    //         padding: const EdgeInsets.only(top: 20.0, bottom: 20),
-                                    //         child: TextFormField(
-                                    //           validator: (value) {
-                                    //             return null;
-                                    //           },
-                                    //           onSaved: (value) {
-                                    //             typeController.text = value!;
-                                    //           },
-                                    //           showCursor: true,
-                                    //           controller: typeController,
-                                    //           cursorColor: kTitleColor,
-                                    //           decoration: kInputDecoration.copyWith(
-                                    //             labelText: lang.S.of(context).productType,
-                                    //             labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                    //             hintText: lang.S.of(context).enterProductType,
-                                    //             hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                    //           ),
-                                    //         ),
-                                    //       ),
-                                    //     ).visible(isTypeBoxShow),
-                                    //     const SizedBox(width: 20).visible(isTypeBoxShow && isWarrantyBoxShow),
-                                    //     Expanded(
-                                    //       child: Row(
-                                    //         children: [
-                                    //           Expanded(
-                                    //             child: Padding(
-                                    //               padding: const EdgeInsets.only(top: 20.0, bottom: 20),
-                                    //               child: TextFormField(
-                                    //                 validator: (value) {
-                                    //                   if (double.tryParse(value!) == null && !value.isEmptyOrNull) {
-                                    //                     return 'Enter Quantity in number.';
-                                    //                   } else {
-                                    //                     return null;
-                                    //                   }
-                                    //                 },
-                                    //                 onSaved: (value) {
-                                    //                   warrantyController.text = value!;
-                                    //                 },
-                                    //                 showCursor: true,
-                                    //                 controller: warrantyController,
-                                    //                 cursorColor: kTitleColor,
-                                    //                 decoration: kInputDecoration.copyWith(
-                                    //                   errorBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-                                    //                   labelText: lang.S.of(context).productWaranty,
-                                    //                   labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                    //                   hintText: lang.S.of(context).enterWarranty,
-                                    //                   hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                    //                 ),
-                                    //               ),
-                                    //             ),
-                                    //           ),
-                                    //           const SizedBox(width: 4),
-                                    //           SizedBox(
-                                    //             width: 200,
-                                    //             child: FormField(
-                                    //               builder: (FormFieldState<dynamic> field) {
-                                    //                 return InputDecorator(
-                                    //                   decoration: InputDecoration(
-                                    //                     enabledBorder: const OutlineInputBorder(
-                                    //                       borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                                    //                       borderSide: BorderSide(color: kBorderColorTextField, width: 2),
-                                    //                     ),
-                                    //                     contentPadding: const EdgeInsets.all(8.0),
-                                    //                     floatingLabelBehavior: FloatingLabelBehavior.always,
-                                    //                     labelText: lang.S.of(context).warranty,
-                                    //                   ),
-                                    //                   child: DropdownButtonHideUnderline(
-                                    //                       child: DropdownButton<String>(
-                                    //                     onChanged: (String? value) {
-                                    //                       setState(() {
-                                    //                         selectedTime = value!;
-                                    //                       });
-                                    //                     },
-                                    //                     hint: Text(lang.S.of(context).selectWarrantyTime),
-                                    //                     value: selectedTime,
-                                    //                     items: warrantyTime.map((String items) {
-                                    //                       return DropdownMenuItem(
-                                    //                         value: items,
-                                    //                         child: Text(items),
-                                    //                       );
-                                    //                     }).toList(),
-                                    //                   )),
-                                    //                 );
-                                    //               },
-                                    //             ),
-                                    //           ),
-                                    //         ],
-                                    //       ),
-                                    //     ).visible(isWarrantyBoxShow),
-                                    //   ],
-                                    // ),
+                                    
                                     ///_______brand_&_ProductCode________________________________________
                                     ResponsiveGridRow(children: [
                                       ResponsiveGridCol(
@@ -1520,14 +1401,7 @@ class _AddProductState extends State<AddProduct> {
                                           child: brandList.when(data: (brand) {
                                             List<String> editBrandList = [];
                                             List<String> brandName = [];
-                                            // brandTime == 0
-                                            //     // ignore: avoid_function_literals_in_foreach_calls
-                                            //     ? brand.forEach((element) {
-                                            //         brandName.add(element.brandName);
-                                            //         // editBrandList.add(element.brandName.removeAllWhiteSpace().toLowerCase());
-                                            //         brandTime++;
-                                            //       })
-                                            //     : null;
+                                            
                                             for (var element in brand) {
                                               brandName.add(element.brandName);
                                               editBrandList.add(element.brandName.toLowerCase().removeAllWhiteSpace());
@@ -1901,79 +1775,7 @@ class _AddProductState extends State<AddProduct> {
                                             ),
                                           ))
                                     ]),
-                                    // Row(
-                                    //   children: [
-                                    //     Expanded(
-                                    //         child: AppTextField(
-                                    //       textFieldType: TextFieldType.NAME,
-                                    //       readOnly: true,
-                                    //       validator: (value) {
-                                    //         return null;
-                                    //       },
-                                    //       controller: manufactureDateTextEditingController,
-                                    //       decoration: kInputDecoration.copyWith(
-                                    //         floatingLabelBehavior: FloatingLabelBehavior.always,
-                                    //         labelText: "Manufacture Date",
-                                    //         hintText: 'Enter Date',
-                                    //         labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                    //         hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                    //         border: const OutlineInputBorder(),
-                                    //         suffixIcon: IconButton(
-                                    //           onPressed: () async {
-                                    //             final DateTime? picked = await showDatePicker(
-                                    //               // initialDate: DateTime.now(),
-                                    //               firstDate: DateTime(2015, 8),
-                                    //               lastDate: DateTime(2101),
-                                    //               context: context,
-                                    //             );
-                                    //             setState(() {
-                                    //               picked != null ? manufactureDateTextEditingController.text = DateFormat.yMMMd().format(picked) : null;
-                                    //               picked != null ? manufactureDate = picked.toString() : null;
-                                    //             });
-                                    //           },
-                                    //           icon: const Icon(FeatherIcons.calendar),
-                                    //         ),
-                                    //       ),
-                                    //     )),
-                                    //     const SizedBox(
-                                    //       width: 20,
-                                    //     ),
-                                    //     Expanded(
-                                    //       child: AppTextField(
-                                    //         textFieldType: TextFieldType.NAME,
-                                    //         readOnly: true,
-                                    //         validator: (value) {
-                                    //           return null;
-                                    //         },
-                                    //         controller: expireDateTextEditingController,
-                                    //         decoration: kInputDecoration.copyWith(
-                                    //           floatingLabelBehavior: FloatingLabelBehavior.always,
-                                    //           labelText: 'Expire Date',
-                                    //           hintText: 'Enter Date',
-                                    //           labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                    //           hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                    //           border: const OutlineInputBorder(),
-                                    //           suffixIcon: IconButton(
-                                    //             onPressed: () async {
-                                    //               final DateTime? picked = await showDatePicker(
-                                    //                 // initialDate: DateTime.now(),
-                                    //                 firstDate: DateTime(2015, 8),
-                                    //                 lastDate: DateTime(2101),
-                                    //                 context: context,
-                                    //               );
-                                    //               setState(() {
-                                    //                 picked != null ? expireDateTextEditingController.text = DateFormat.yMMMd().format(picked) : null;
-                                    //                 picked != null ? expireDate = picked.toString() : null;
-                                    //               });
-                                    //             },
-                                    //             icon: const Icon(FeatherIcons.calendar),
-                                    //           ),
-                                    //         ),
-                                    //       ),
-                                    //     ),
-                                    //   ],
-                                    // ),
-
+                                    
                                     ///_______Lower_stock___________________________
                                     Padding(
                                       padding: const EdgeInsets.all(10.0),
@@ -2149,187 +1951,9 @@ class _AddProductState extends State<AddProduct> {
                                           ),
                                         ).visible(isSerialNumberTaken),
                                       ),
-                                      // ResponsiveGridCol(
-                                      //   xs: 12,
-                                      //   md: 12,
-                                      //   lg: 12,
-                                      //   child: Padding(
-                                      //     padding: const EdgeInsets.all(10.0),
-                                      //     child: Container(
-                                      //       // width: context.width() < 1280 ? 200 : 400,
-                                      //       // width: 400,
-                                      //       height: 102,
-                                      //       decoration: BoxDecoration(
-                                      //         border: Border.all(width: 1, color: kNeutral400),
-                                      //         borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                      //       ),
-                                      //       child: GridView.builder(
-                                      //           shrinkWrap: true,
-                                      //           itemCount: productSerialNumberList.length,
-                                      //           itemBuilder: (BuildContext context, int index) {
-                                      //             if (productSerialNumberList.isNotEmpty) {
-                                      //               return Padding(
-                                      //                 padding: const EdgeInsets.all(5.0),
-                                      //                 child: Container(
-                                      //                   padding: const EdgeInsets.all(8),
-                                      //                   color: kNeutral100,
-                                      //                   child: Row(
-                                      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      //                     children: [
-                                      //                       SizedBox(
-                                      //                         // width: 170,
-                                      //                         child: Text(
-                                      //                           productSerialNumberList[index],
-                                      //                           maxLines: 1,
-                                      //                           overflow: TextOverflow.ellipsis,
-                                      //                         ),
-                                      //                       ),
-                                      //                       GestureDetector(
-                                      //                         onTap: () {
-                                      //                           setState(() {
-                                      //                             productSerialNumberList.removeAt(index);
-                                      //                           });
-                                      //                         },
-                                      //                         child: const Icon(
-                                      //                           Icons.cancel,
-                                      //                           color: Colors.red,
-                                      //                           size: 15,
-                                      //                         ),
-                                      //                       ),
-                                      //                     ],
-                                      //                   ),
-                                      //                 ),
-                                      //               );
-                                      //             } else {
-                                      //               return const Text('No Serial Number Found');
-                                      //             }
-                                      //           },
-                                      //           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                      //             crossAxisCount: screenWidth < 570 ? 4 : 6,
-                                      //             childAspectRatio: screenWidth < 1240 ? 1 : 0.5,
-                                      //             crossAxisSpacing: .5,
-                                      //             mainAxisSpacing: 0.5,
-                                      //             // mainAxisExtent: 1,
-                                      //           )),
-                                      //     ),
-                                      //   ).visible(isSerialNumberTaken),
-                                      // ),
+                                      
                                     ]),
-                                    // Row(
-                                    //   crossAxisAlignment: CrossAxisAlignment.start,
-                                    //   mainAxisSize: MainAxisSize.min,
-                                    //   children: [
-                                    //     ///________serial_add_textField______________________________________________
-                                    //     Expanded(
-                                    //       child: AppTextField(
-                                    //         validator: (value) {
-                                    //           return null;
-                                    //         },
-                                    //         controller: productSerialNumberController,
-                                    //         showCursor: true,
-                                    //         cursorColor: kTitleColor,
-                                    //         onFieldSubmitted: (value) {
-                                    //           if (isSerialNumberUnique(allList: productSerialNumberList, newSerial: value)) {
-                                    //             setState(() {
-                                    //               productSerialNumberList.add(value);
-                                    //             });
-                                    //             productSerialNumberController.clear();
-                                    //           } else {
-                                    //             EasyLoading.showError('Serial number already added!');
-                                    //           }
-                                    //         },
-                                    //         textFieldType: TextFieldType.NAME,
-                                    //         decoration: kInputDecoration.copyWith(
-                                    //           labelText: lang.S.of(context).serialNumber,
-                                    //           labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                    //           hintText: lang.S.of(context).enterSerialNumber,
-                                    //           hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                    //         ),
-                                    //       ),
-                                    //     ),
-                                    //     const SizedBox(width: 10),
-                                    //
-                                    //     ///__________serial_add_button_______________________________________________
-                                    //     GestureDetector(
-                                    //       onTap: () {
-                                    //         if (isSerialNumberUnique(allList: productSerialNumberList, newSerial: productSerialNumberController.text)) {
-                                    //           setState(() {
-                                    //             productSerialNumberList.add(productSerialNumberController.text);
-                                    //           });
-                                    //           productSerialNumberController.clear();
-                                    //         } else {
-                                    //           EasyLoading.showError('Serial number already added!');
-                                    //         }
-                                    //       },
-                                    //       child: Container(
-                                    //         width: 70,
-                                    //         height: 53,
-                                    //         decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: kMainColor),
-                                    //         child: Center(
-                                    //           child: Text(
-                                    //             lang.S.of(context).add,
-                                    //             style: const TextStyle(color: Colors.white),
-                                    //           ),
-                                    //         ),
-                                    //       ),
-                                    //     ),
-                                    //     const SizedBox(width: 10),
-                                    //
-                                    //     ///__________serial_number_box________________________________________________
-                                    //     Container(
-                                    //       // width: context.width() < 1280 ? 200 : 400,
-                                    //       width: 400,
-                                    //       height: 150,
-                                    //       decoration: BoxDecoration(
-                                    //         border: Border.all(width: 1, color: Colors.grey),
-                                    //         borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                    //       ),
-                                    //       child: GridView.builder(
-                                    //           shrinkWrap: true,
-                                    //           itemCount: productSerialNumberList.length,
-                                    //           itemBuilder: (BuildContext context, int index) {
-                                    //             if (productSerialNumberList.isNotEmpty) {
-                                    //               return Padding(
-                                    //                 padding: const EdgeInsets.all(5.0),
-                                    //                 child: Row(
-                                    //                   children: [
-                                    //                     SizedBox(
-                                    //                       width: 170,
-                                    //                       child: Text(
-                                    //                         productSerialNumberList[index],
-                                    //                         maxLines: 1,
-                                    //                         overflow: TextOverflow.ellipsis,
-                                    //                       ),
-                                    //                     ),
-                                    //                     GestureDetector(
-                                    //                       onTap: () {
-                                    //                         setState(() {
-                                    //                           productSerialNumberList.removeAt(index);
-                                    //                         });
-                                    //                       },
-                                    //                       child: const Icon(
-                                    //                         Icons.cancel,
-                                    //                         color: Colors.red,
-                                    //                         size: 15,
-                                    //                       ),
-                                    //                     ),
-                                    //                   ],
-                                    //                 ),
-                                    //               );
-                                    //             } else {
-                                    //               return const Text('No Serial Number Found');
-                                    //             }
-                                    //           },
-                                    //           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    //             crossAxisCount: 2,
-                                    //             childAspectRatio: 6,
-                                    //             crossAxisSpacing: .5,
-                                    //             mainAxisSpacing: .5,
-                                    //             // mainAxisExtent: 1,
-                                    //           )),
-                                    //     ),
-                                    //   ],
-                                    // ).visible(isSerialNumberTaken),
+                                    
                                   ],
                                 ),
                               ),
@@ -2527,19 +2151,7 @@ class _AddProductState extends State<AddProduct> {
                                                 productPurchasePriceController.text = value!;
                                               },
                                               controller: productPurchasePriceController,
-                                              // validator: (value) {
-                                              //   if (productPurchasePrice.isEmptyOrNull) {
-                                              //     return 'Product Purchase Price is required.';
-                                              //   } else if (double.tryParse(productPurchasePrice) == null) {
-                                              //     return 'Enter price in number.';
-                                              //   } else {
-                                              //     return null;
-                                              //   }
-                                              // },
-                                              // onSaved: (value) {
-                                              //   productPurchasePriceController.text = value!;
-                                              // },
-                                              // controller: productPurchasePriceController,
+                                             
                                               showCursor: true,
                                               cursorColor: kTitleColor,
                                               decoration: InputDecoration(
@@ -2563,19 +2175,7 @@ class _AddProductState extends State<AddProduct> {
                                                   selection: TextSelection.collapsed(offset: formattedText.length),
                                                 );
                                               },
-                                              // validator: (value) {
-                                              //   if (productSalePrice.isEmptyOrNull) {
-                                              //     return 'Product Sale Price is required.';
-                                              //   } else if (double.tryParse(productSalePrice) == null) {
-                                              //     return 'Enter price in number.';
-                                              //   } else {
-                                              //     return null;
-                                              //   }
-                                              // },
-                                              // onSaved: (value) {
-                                              //   productSalePriceController.text = value!;
-                                              // },
-                                              // controller: productSalePriceController,
+                                              
                                               validator: (value) {
                                                 if (productSalePrice.isEmptyOrNull) {
                                                   //return 'Product Sale Price is required.';
@@ -2611,25 +2211,7 @@ class _AddProductState extends State<AddProduct> {
                                           child: Padding(
                                             padding: const EdgeInsets.all(10.0),
                                             child: TextFormField(
-                                              // validator: (value) {
-                                              //   if (double.tryParse(productDealerPrice) == null && productDealerPrice.isEmptyOrNull) {
-                                              //     return 'Enter price in number.';
-                                              //   } else {
-                                              //     return null;
-                                              //   }
-                                              // },
-                                              // validator: (value) {
-                                              //   if (productDealerPrice.isEmptyOrNull) {
-                                              //     return 'Product Sale Price is required.';
-                                              //   } else if (double.tryParse(productDealerPrice) == null) {
-                                              //     return 'Enter price in number.';
-                                              //   } else {
-                                              //     return null;
-                                              //   }
-                                              // },
-                                              // onSaved: (value) {
-                                              //   productDealerPriceController.text = value!;
-                                              // },
+                                              
                                               validator: (value) {
                                                 if (productDealerPrice.isEmptyOrNull) {
                                                   //return 'Product Sale Price is required.';
@@ -2826,86 +2408,7 @@ class _AddProductState extends State<AddProduct> {
                                         ),
                                       ))
                                 ]),
-                                // Center(
-                                //   child: SizedBox(
-                                //     width: MediaQuery.of(context).size.width < 1080 ? 1080 * .30 : MediaQuery.of(context).size.width * .30,
-                                //     child: ButtonGlobalWithoutIcon(
-                                //       buttontext: lang.S.of(context).saveAndPublished,
-                                //       buttonDecoration: kButtonDecoration.copyWith(color: kMainColor),
-                                //       onPressed: saleButtonClicked
-                                //           ? () {}
-                                //           : () async {
-                                //               if (!isDemo) {
-                                //                 if (await checkUserRolePermission(type: 'product')) {
-                                //                   if (validateAndSave() && selectedCategories != null && selectedCategories!.isNotEmpty) {
-                                //                     try {
-                                //                       setState(() {
-                                //                         saleButtonClicked = true;
-                                //                       });
-                                //                       EasyLoading.show(status: 'Loading...', dismissOnTap: false);
-                                //                       final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Products');
-                                //                       ProductModel productModel = ProductModel(
-                                //                         productNameController.text,
-                                //                         selectedCategories ?? '',
-                                //                         sizeController.text,
-                                //                         colorController.text,
-                                //                         weightController.text,
-                                //                         capacityController.text,
-                                //                         typeController.text,
-                                //                         warrantyController.text == '' ? '' : '${warrantyController.text} $selectedTime',
-                                //                         selectedBrand ?? '',
-                                //                         productCodeController.text,
-                                //                         productQuantityController.text,
-                                //                         selectedUnit ?? '',
-                                //                         productSalePrice,
-                                //                         productPurchasePrice,
-                                //                         productDiscountPriceController.text,
-                                //                         productWholeSalePrice,
-                                //                         productDealerPrice,
-                                //                         productManufacturerController.text,
-                                //                         selectedWareHouse!.warehouseName,
-                                //                         selectedWareHouse!.id,
-                                //                         productPicture,
-                                //                         productSerialNumberList,
-                                //                         expiringDate: expireDate,
-                                //                         lowerStockAlert: lowerStockAlert,
-                                //                         manufacturingDate: manufactureDate,
-                                //                         taxType: selectedTaxType,
-                                //                         margin: num.tryParse(marginController.text) ?? 0,
-                                //                         excTax: num.tryParse(excTaxAmount) ?? 0,
-                                //                         incTax: num.tryParse(incTaxAmount) ?? 0,
-                                //                         groupTaxName: selectedGroupTaxModel?.name ?? '',
-                                //                         groupTaxRate: selectedGroupTaxModel?.taxRate ?? 0,
-                                //                         subTaxes: selectedGroupTaxModel?.subTaxes ?? [],
-                                //                       );
-                                //                       await productInformationRef.push().set(productModel.toJson());
-                                //
-                                //                       Subscription.decreaseSubscriptionLimits(itemType: 'products', context: context);
-                                //
-                                //                       EasyLoading.showSuccess('Added Successfully', duration: const Duration(milliseconds: 500));
-                                //                       ref.refresh(productProvider);
-                                //                       Future.delayed(const Duration(milliseconds: 100), () {
-                                //                         context.pop();
-                                //                       });
-                                //                     } catch (e) {
-                                //                       setState(() {
-                                //                         saleButtonClicked = false;
-                                //                       });
-                                //                       EasyLoading.dismiss();
-                                //                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                                //                     }
-                                //                   } else {
-                                //                     EasyLoading.showInfo('Fill all required field');
-                                //                   }
-                                //                 }
-                                //               } else {
-                                //                 EasyLoading.showInfo(demoText);
-                                //               }
-                                //             },
-                                //       buttonTextColor: Colors.white,
-                                //     ),
-                                //   ),
-                                // ),
+                               
                                 ///____Image__________________
                                 Container(
                                   padding: const EdgeInsets.all(20.0),
@@ -2963,116 +2466,12 @@ class _AddProductState extends State<AddProduct> {
                                       const SizedBox(
                                         height: 10,
                                       ),
-                                      // image != null
-                                      //     ? Image.memory(
-                                      //         image!,
-                                      //         width: 150,
-                                      //         height: 150,
-                                      //       )
-                                      //     : Image.network(
-                                      //         productPicture,
-                                      //         width: 150,
-                                      //         height: 150,
-                                      //       ),
+                                      
                                     ],
                                   ),
                                 ),
 
-                                // const SizedBox(height: 30),
-                                //
-                                // ///_________Upload Excel_________________________
-                                // Container(
-                                //   padding: const EdgeInsets.only(bottom: 20, right: 20, left: 20, top: 10),
-                                //   decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhiteTextColor),
-                                //   child: Column(
-                                //     crossAxisAlignment: CrossAxisAlignment.start,
-                                //     children: [
-                                //       Row(
-                                //         children: [
-                                //           const Text(
-                                //             'Bulk Product Upload',
-                                //             style: TextStyle(fontSize: 16),
-                                //           ),
-                                //           const Spacer(),
-                                //           // TextButton(onPressed: () => downloadFile(), child: const Text('Download Excel Format')),
-                                //           TextButton(
-                                //               onPressed: () {
-                                //                 showDialog(
-                                //                   context: context,
-                                //                   builder: (context) => BulkProductUploadPopup(
-                                //                       allProductsCodeList: widget.allProductsCodeList, allProductsNameList: widget.allProductsNameList),
-                                //                 );
-                                //               },
-                                //               child: const Text('t')),
-                                //         ],
-                                //       ),
-                                //       const SizedBox(height: 10.0),
-                                //       DottedBorderWidget(
-                                //         padding: const EdgeInsets.all(6),
-                                //         color: kLitGreyColor,
-                                //         child: ClipRRect(
-                                //           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                //           child: Container(
-                                //             width: context.width(),
-                                //             padding: const EdgeInsets.all(10.0),
-                                //             decoration: BoxDecoration(
-                                //               borderRadius: BorderRadius.circular(20.0),
-                                //             ),
-                                //             // child: Column(
-                                //             //   children: [
-                                //             //     pickedFile == null
-                                //             //         ? Column(
-                                //             //             crossAxisAlignment: CrossAxisAlignment.center,
-                                //             //             children: [
-                                //             //               Icon(MdiIcons.microsoftExcel, size: 50.0, color: kLitGreyColor).onTap(() => pickExcelFile()),
-                                //             //               const SizedBox(height: 5.0),
-                                //             //               RichText(
-                                //             //                   text: TextSpan(
-                                //             //                       text: 'Upload an Excel',
-                                //             //                       style: kTextStyle.copyWith(color: kGreenTextColor, fontWeight: FontWeight.bold),
-                                //             //                       children: [
-                                //             //                     TextSpan(
-                                //             //                         text: ' or drag & drop .xlsx',
-                                //             //                         style: kTextStyle.copyWith(color: kGreyTextColor, fontWeight: FontWeight.bold))
-                                //             //                   ])),
-                                //             //               const SizedBox(height: 5.0),
-                                //             //             ],
-                                //             //           )
-                                //             //         : ListTile(
-                                //             //             leading: Icon(MdiIcons.microsoftExcel, size: 50.0, color: CupertinoColors.activeGreen),
-                                //             //             title: const Text('An Excel file picked'),
-                                //             //             trailing: GestureDetector(
-                                //             //                 onTap: () {
-                                //             //                   setState(() {
-                                //             //                     pickedFile = null;
-                                //             //                   });
-                                //             //                 },
-                                //             //                 child: const Text('Remove')),
-                                //             //           ),
-                                //             //     Visibility(
-                                //             //       visible: pickedFile != null,
-                                //             //       child: ElevatedButton(
-                                //             //           style: const ButtonStyle(backgroundColor: MaterialStatePropertyAll(kMainColor)),
-                                //             //           onPressed: () async {
-                                //             //             EasyLoading.show(status: 'Uploading...');
-                                //             //             await uploadProducts(context: context, ref: ref);
-                                //             //           },
-                                //             //           child: const Text(
-                                //             //             'Upload',
-                                //             //             style: TextStyle(color: Colors.white),
-                                //             //           )),
-                                //             //     )
-                                //             //   ],
-                                //             // ),
-                                //           ),
-                                //         ),
-                                //       ),
-                                //       const SizedBox(
-                                //         height: 10,
-                                //       ),
-                                //     ],
-                                //   ),
-                                // ),
+                                
                               ],
                             ),
                           ),

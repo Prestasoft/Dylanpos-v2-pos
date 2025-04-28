@@ -101,7 +101,7 @@ class S {
   /// `Inventory Sales`
   String get inventorySales {
     return Intl.message(
-      'Inventory Sales',
+      'Reservar Venta',
       name: 'inventorySales',
       desc: '',
       args: [],
@@ -3135,7 +3135,7 @@ class S {
       name: 'saleTransaction',
       desc: '',
       args: [],
-    );
+       );
   }
 
   /// `Total Returns`

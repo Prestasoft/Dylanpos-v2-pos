@@ -453,7 +453,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   }
 
   Future<void> addSales() async {
-    if (await Subscription.subscriptionChecker(item: 'Sales')) {
+    if (await Subscription.subscriptionChecker(item: 'Ventas')) {
       // Navigator.pushNamed(context, PosSale.route);
       context.go('pos-sales');
     } else {
@@ -462,8 +462,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   }
 
   Future<void> addPurchase() async {
-    if (await Subscription.subscriptionChecker(item: 'Purchase')) {
-      // Navigator.pushNamed(context, Purchase.route);
+    if (await Subscription.subscriptionChecker(item: 'Compra')) {
       context.go('pos-purchase');
     } else {
       EasyLoading.showError(lang.S.of(context).updateYourPlanFirst);
@@ -1267,7 +1266,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   void getAllTotal() async {
     // ignore: unused_local_variable
     List<ProductModel> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance.ref(await getUserID()).child('Productos').orderByKey().get().then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         totalStock = totalStock + (int.tryParse(data['productStock']) ?? 0);
