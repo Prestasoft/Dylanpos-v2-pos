@@ -415,40 +415,7 @@ class _CategoryListState extends State<CategoryList> {
                                                                 //EasyLoading.showSuccess("Successfully Added");
                                                                 EasyLoading.showSuccess(lang.S.of(context).successfullyAdded);
                                                                 finish(context);
-                                                                // try {
-                                                                //   print('step 1');
-                                                                //   final DatabaseReference categoryInformationRef =
-                                                                //       FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories');
-                                                                //   CategoryModel categoryModel = CategoryModel(
-                                                                //     categoryName: itemCategoryController.text,
-                                                                //     size: isSize,
-                                                                //     color: isColor,
-                                                                //     capacity: isCapacity,
-                                                                //     type: isType,
-                                                                //     weight: isWeight,
-                                                                //     warranty: isWarranty,
-                                                                //   );
-                                                                //   print('step 2');
-                                                                //   await categoryInformationRef.push().set(categoryModel.toJson());
-                                                                //   print('step 3');
-                                                                //   ref.refresh(categoryProvider);
-                                                                //   itemCategoryController.clear();
-                                                                //   isSize = false;
-                                                                //   isColor = false;
-                                                                //   isWeight = false;
-                                                                //   isCapacity = false;
-                                                                //   isType = false;
-                                                                //   isWarranty = false;
-                                                                //   //EasyLoading.showSuccess("Successfully Added");
-                                                                //   print('step 4');
-                                                                //   EasyLoading.showSuccess(lang.S.of(context).successfullyAdded);
-                                                                //   print('step 5');
-                                                                //   finish(context);
-                                                                //   print('step finnish');
-                                                                // } catch (e) {
-                                                                //   print('step catch ${e.toString()}');
-                                                                //   EasyLoading.showError(lang.S.of(context).error);
-                                                                // }
+
                                                               }
                                                             },
                                                             child: Text(
@@ -1183,7 +1150,7 @@ class _CategoryListState extends State<CategoryList> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const HugeIcon(
+                                                                     HugeIcon(
                                                                       icon: HugeIcons.strokeRoundedDelete02,
                                                                       color: kNeutral500,
                                                                       size: 20.0,

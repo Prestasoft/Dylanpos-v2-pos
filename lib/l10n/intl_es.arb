@@ -788,7 +788,20 @@
   "pleaseAddSalePrice": "Por favor, agregue el precio de venta",
   "pleaseAddPurchasePrice": "Por favor, agregue el precio de compra",
   "successfull": "Exitoso",
-  "addingCategory": "Agregando categoría"
+  "addingCategory": "Agregando categoría",
+    "servicePackages": "Paquetes de Servicio",
+    "addServicePackage": "Agregar Paquete",
+    "noServicePackagesFound": "No se encontraron paquetes",
+    "packageName": "Nombre del Paquete",
+    "category": "Categoría",
+    "subcategory": "Subcategoría",
+    "description": "Descripción",
+    "price": "Precio",
+    "duration": "Duración",
+    "unit": "Unidad",
+    "hours": "horas",
+    "days": "días"
+  }
 
 
 

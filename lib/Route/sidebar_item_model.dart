@@ -53,6 +53,46 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/dashboard',
       // sidebarItemType: SidebarItemType.submenu,
     ),
+
+
+
+
+
+
+    SidebarItemModel(
+      name: 'Paquete de Servicio', // Nombre del paquete
+      iconPath: 'images/dashboard_icon/dashboard.svg', // Icono para la sección del paquete
+      sidebarItemType: SidebarItemType.submenu, // Esto indica que tendrá submenús
+      navigationPath: '/service-package', // Ruta principal para el paquete (corregido)
+      submenus: [
+        SidebarSubmenuModel(
+          name: 'Registrar Paquete', // Submenú para registrar un nuevo paquete
+          navigationPath: '/register-package', // Ruta para registrar el paquete (corregido)
+        ),
+        SidebarSubmenuModel(
+          name: 'Registrar Vestidos', // Submenú para registrar un nuevo paquete
+          navigationPath: '/dresses', // Ruta para registrar el paquete (corregido)
+        ),
+
+      ],
+    ),
+    SidebarItemModel(
+      name: 'Reservas',
+      iconPath: 'images/dashboard_icon/dashboard.svg',
+      sidebarItemType: SidebarItemType.submenu,
+      navigationPath: '/reservations',
+      submenus: [
+        SidebarSubmenuModel(
+          name: 'Reservas Paquete',
+          navigationPath: '/list', // NO '/reservations-list'
+        ),
+        SidebarSubmenuModel(
+          name: 'Reservas calendario',
+          navigationPath: '/calendario', // NO '/reservations-list'
+        ),
+      ],
+    ),
+
     SidebarItemModel(
       name: lang.S.current.sales,
       iconPath: 'images/dashboard_icon/sales.svg',

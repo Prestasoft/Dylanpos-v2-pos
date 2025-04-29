@@ -39,7 +39,7 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_feather_icons: ^2.0.0+1
   material_design_icons_flutter: ^7.0.7296
-  font_awesome_flutter: ^10.1.0
+  font_awesome_flutter: ^10.8.0
   image_picker: ^1.0.2
   dotted_border: ^2.0.0+2
   flutter_simple_calculator: ^2.2.2
@@ -97,6 +97,9 @@ dependencies:
     git:
       url: https://github.com/iamtoricool/ResponsiveGrid_Flutter.git
       ref: master
+  cloud_firestore: ^5.6.6
+  table_calendar: ^3.1.3
+  carousel_slider: ^5.0.0
 
 
 dev_dependencies:

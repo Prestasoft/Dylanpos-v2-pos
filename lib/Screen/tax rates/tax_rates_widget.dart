@@ -351,7 +351,7 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                       child: Row(
                                                         spacing: 4,
                                                         children: [
-                                                          const HugeIcon(
+                                                           HugeIcon(
                                                             icon: HugeIcons.strokeRoundedDelete02,
                                                             color: Colors.red,
                                                             size: 22,
@@ -876,7 +876,7 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                             child: Row(
                                                               spacing: 4,
                                                               children: [
-                                                                const HugeIcon(
+                                                                 HugeIcon(
                                                                   icon: HugeIcons.strokeRoundedDelete02,
                                                                   color: Colors.red,
                                                                   size: 22,

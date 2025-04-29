@@ -408,7 +408,7 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           ).onTap(() async {
                             EasyLoading.show(status: lang.S.of(context).addingBrand);
                             final DatabaseReference _categoryInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Brands');
-                            BrandsModel brandModel = BrandsModel(brandNameController.text);
+                            BrandsModel brandModel = BrandsModel(brandName: brandNameController.text);
                             await _categoryInformationRef.push().set(brandModel.toJson());
                             ref.refresh(brandProvider);
                             setState(() {
@@ -929,7 +929,7 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           brandList.when(data: (brand) {
                             brandTime == 0
                                 ? brand.forEach((element) {
-                                    brandName.add(element.brandName);
+                                   brandName.add(element.brandName ?? '');
                                     brandTime++;
                                   })
                                 : null;

@@ -572,7 +572,7 @@ class _IncomeCategoryState extends State<IncomeCategory> {
                                                                     },
                                                                     child: Row(
                                                                       children: [
-                                                                        const HugeIcon(
+                                                                         HugeIcon(
                                                                           icon: HugeIcons.strokeRoundedDelete02,
                                                                           color: Colors.red,
                                                                           size: 22,

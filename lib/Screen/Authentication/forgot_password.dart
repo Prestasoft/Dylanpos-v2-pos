@@ -149,7 +149,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                                           border: Border(right: BorderSide(color: kBorderColor)),
                                                           // color: Color(0xff98A2B3),
                                                         ),
-                                                        child: const HugeIcon(
+                                                        child:  HugeIcon(
                                                           icon: HugeIcons.strokeRoundedMail01,
                                                           color: kNeutral600,
                                                           size: 24.0,

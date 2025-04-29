@@ -585,6 +585,9 @@ class _ProfileAddState extends State<ProfileAdd> {
                                             //_______________warehouse_setup______________
                                             final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Warehouse List');
                                             WareHouseModel warehouse = WareHouseModel(warehouseName: 'InHouse', warehouseAddress: companyNameController.text, id: id.toString());
+
+
+
                                             await productInformationRef.push().set(warehouse.toJson());
                                             await FirebaseDatabase.instance.ref().child('Admin Panel').child('Seller List').push().set(sellerInfoModel.toJson());
 

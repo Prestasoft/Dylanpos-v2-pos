@@ -82,7 +82,9 @@ class MyApp extends StatelessWidget {
             ),
           ],
           child: MaterialApp.router(
+
             locale: pro.Provider.of<LanguageChangeProvider>(context, listen: true).currentLocale,
+
             localizationsDelegates: const [
               S.delegate,
               GlobalMaterialLocalizations.delegate,
@@ -103,6 +105,7 @@ class MyApp extends StatelessWidget {
 
   Future<void> getPaypalInfo() async {
     DatabaseReference paypalRef = FirebaseDatabase.instance.ref('Admin Panel/Paypal Info');
+
     final paypalData = await paypalRef.get();
     PaypalInfoModel paypalInfoModel = PaypalInfoModel.fromJson(jsonDecode(jsonEncode(paypalData.value)));
 

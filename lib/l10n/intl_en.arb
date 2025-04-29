@@ -791,6 +791,20 @@
  "pleaseAddSalePrice" : "Please add sale price",
  "pleaseAddPurchasePrice" : "Please add purchase price",
  "successfull" : "Successfull",
- "addingCategory" : "Adding Category"
+ "addingCategory" : "Adding Category",
+   "servicePackages": "Service Packages",
+   "addServicePackage": "Add Service Package",
+   "noServicePackagesFound": "No service packages found",
+   "packageName": "Package Name",
+   "category": "Category",
+   "subcategory": "Subcategory",
+   "description": "Description",
+   "price": "Price",
+   "duration": "Duration",
+   "unit": "Unit",
+   "hours": "hours",
+   "days": "days",
+
+ }
 
 }

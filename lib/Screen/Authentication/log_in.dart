@@ -241,7 +241,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                     border: Border(right: BorderSide(color: kBorderColor)),
                                                     // color: Color(0xff98A2B3),
                                                   ),
-                                                  child: const HugeIcon(
+                                                  child:  HugeIcon(
                                                     icon: HugeIcons.strokeRoundedMail01,
                                                     color: kNeutral600,
                                                     size: 24.0,
@@ -282,7 +282,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                     border: Border(right: BorderSide(color: kBorderColor)),
                                                     // color: Color(0xff98A2B3),
                                                   ),
-                                                  child: const HugeIcon(
+                                                  child:  HugeIcon(
                                                     icon: HugeIcons.strokeRoundedSquareLock02,
                                                     color: kNeutral600,
                                                     size: 24.0,

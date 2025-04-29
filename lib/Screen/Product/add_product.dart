@@ -159,7 +159,7 @@ class _AddProductState extends State<AddProduct> {
                             child: SizedBox(
                               width: 400,
                               child: TextFormField(
-                              
+
                                 controller: itemCategoryController,
                                 validator: (value) {
                                   if (value.isEmptyOrNull) {
@@ -184,7 +184,7 @@ class _AddProductState extends State<AddProduct> {
                         ],
                       ),
                       const SizedBox(height: 30.0),
-                      
+
                       Text(
                         lang.S.of(context).selectVariations,
                         style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
@@ -531,7 +531,7 @@ class _AddProductState extends State<AddProduct> {
                               try {
                                 EasyLoading.show(status: 'Adding Brand');
                                 final DatabaseReference categoryInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Brands');
-                                BrandsModel brandModel = BrandsModel(brandNameController.text);
+                                BrandsModel brandModel = BrandsModel(brandName: brandNameController.text);
                                 await categoryInformationRef.push().set(brandModel.toJson());
                                 ref.refresh(brandProvider);
                                 setState(() {
@@ -1075,7 +1075,7 @@ class _AddProductState extends State<AddProduct> {
                                                 } else if (!checkProductName(name: value!, id: selectedWareHouse!.id)) {
                                                   return 'Product Name already exists in this warehouse.';
                                                 } else {
-                                                  
+
 
                                                   return null; // Validation passes
                                                 }
@@ -1100,7 +1100,7 @@ class _AddProductState extends State<AddProduct> {
                                           data: (category) {
                                             List<String> editNameList = [];
                                             List<String> categoryName = [];
-                                         
+
                                             for (var element in category) {
                                               categoryName.add(element.categoryName);
                                               editNameList.add(element.categoryName.toLowerCase().removeAllWhiteSpace());
@@ -1389,7 +1389,101 @@ class _AddProductState extends State<AddProduct> {
                                       )
                                     ]),
 
-                                    
+                                    // Row(
+                                    //   children: [
+                                    //     Expanded(
+                                    //       child: Padding(
+                                    //         padding: const EdgeInsets.only(top: 20.0, bottom: 20),
+                                    //         child: TextFormField(
+                                    //           validator: (value) {
+                                    //             return null;
+                                    //           },
+                                    //           onSaved: (value) {
+                                    //             typeController.text = value!;
+                                    //           },
+                                    //           showCursor: true,
+                                    //           controller: typeController,
+                                    //           cursorColor: kTitleColor,
+                                    //           decoration: kInputDecoration.copyWith(
+                                    //             labelText: lang.S.of(context).productType,
+                                    //             labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                    //             hintText: lang.S.of(context).enterProductType,
+                                    //             hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                    //           ),
+                                    //         ),
+                                    //       ),
+                                    //     ).visible(isTypeBoxShow),
+                                    //     const SizedBox(width: 20).visible(isTypeBoxShow && isWarrantyBoxShow),
+                                    //     Expanded(
+                                    //       child: Row(
+                                    //         children: [
+                                    //           Expanded(
+                                    //             child: Padding(
+                                    //               padding: const EdgeInsets.only(top: 20.0, bottom: 20),
+                                    //               child: TextFormField(
+                                    //                 validator: (value) {
+                                    //                   if (double.tryParse(value!) == null && !value.isEmptyOrNull) {
+                                    //                     return 'Enter Quantity in number.';
+                                    //                   } else {
+                                    //                     return null;
+                                    //                   }
+                                    //                 },
+                                    //                 onSaved: (value) {
+                                    //                   warrantyController.text = value!;
+                                    //                 },
+                                    //                 showCursor: true,
+                                    //                 controller: warrantyController,
+                                    //                 cursorColor: kTitleColor,
+                                    //                 decoration: kInputDecoration.copyWith(
+                                    //                   errorBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                                    //                   labelText: lang.S.of(context).productWaranty,
+                                    //                   labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                    //                   hintText: lang.S.of(context).enterWarranty,
+                                    //                   hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                    //                 ),
+                                    //               ),
+                                    //             ),
+                                    //           ),
+                                    //           const SizedBox(width: 4),
+                                    //           SizedBox(
+                                    //             width: 200,
+                                    //             child: FormField(
+                                    //               builder: (FormFieldState<dynamic> field) {
+                                    //                 return InputDecorator(
+                                    //                   decoration: InputDecoration(
+                                    //                     enabledBorder: const OutlineInputBorder(
+                                    //                       borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                                    //                       borderSide: BorderSide(color: kBorderColorTextField, width: 2),
+                                    //                     ),
+                                    //                     contentPadding: const EdgeInsets.all(8.0),
+                                    //                     floatingLabelBehavior: FloatingLabelBehavior.always,
+                                    //                     labelText: lang.S.of(context).warranty,
+                                    //                   ),
+                                    //                   child: DropdownButtonHideUnderline(
+                                    //                       child: DropdownButton<String>(
+                                    //                     onChanged: (String? value) {
+                                    //                       setState(() {
+                                    //                         selectedTime = value!;
+                                    //                       });
+                                    //                     },
+                                    //                     hint: Text(lang.S.of(context).selectWarrantyTime),
+                                    //                     value: selectedTime,
+                                    //                     items: warrantyTime.map((String items) {
+                                    //                       return DropdownMenuItem(
+                                    //                         value: items,
+                                    //                         child: Text(items),
+                                    //                       );
+                                    //                     }).toList(),
+                                    //                   )),
+                                    //                 );
+                                    //               },
+                                    //             ),
+                                    //           ),
+                                    //         ],
+                                    //       ),
+                                    //     ).visible(isWarrantyBoxShow),
+                                    //   ],
+                                    // ),
                                     ///_______brand_&_ProductCode________________________________________
                                     ResponsiveGridRow(children: [
                                       ResponsiveGridCol(
@@ -1401,10 +1495,17 @@ class _AddProductState extends State<AddProduct> {
                                           child: brandList.when(data: (brand) {
                                             List<String> editBrandList = [];
                                             List<String> brandName = [];
-                                            
+                                            // brandTime == 0
+                                            //     // ignore: avoid_function_literals_in_foreach_calls
+                                            //     ? brand.forEach((element) {
+                                            //         brandName.add(element.brandName);
+                                            //         // editBrandList.add(element.brandName.removeAllWhiteSpace().toLowerCase());
+                                            //         brandTime++;
+                                            //       })
+                                            //     : null;
                                             for (var element in brand) {
-                                              brandName.add(element.brandName);
-                                              editBrandList.add(element.brandName.toLowerCase().removeAllWhiteSpace());
+                                              brandName.add(element.brandName ?? '');
+                                              editBrandList.add(element.brandName?.toLowerCase().removeAllWhiteSpace() ?? '');
                                             }
 
                                             return SizedBox(
@@ -1775,7 +1876,7 @@ class _AddProductState extends State<AddProduct> {
                                             ),
                                           ))
                                     ]),
-                                    
+
                                     ///_______Lower_stock___________________________
                                     Padding(
                                       padding: const EdgeInsets.all(10.0),
@@ -1951,9 +2052,9 @@ class _AddProductState extends State<AddProduct> {
                                           ),
                                         ).visible(isSerialNumberTaken),
                                       ),
-                                      
+
                                     ]),
-                                    
+
                                   ],
                                 ),
                               ),
@@ -2151,7 +2252,7 @@ class _AddProductState extends State<AddProduct> {
                                                 productPurchasePriceController.text = value!;
                                               },
                                               controller: productPurchasePriceController,
-                                             
+
                                               showCursor: true,
                                               cursorColor: kTitleColor,
                                               decoration: InputDecoration(
@@ -2175,7 +2276,7 @@ class _AddProductState extends State<AddProduct> {
                                                   selection: TextSelection.collapsed(offset: formattedText.length),
                                                 );
                                               },
-                                              
+
                                               validator: (value) {
                                                 if (productSalePrice.isEmptyOrNull) {
                                                   //return 'Product Sale Price is required.';
@@ -2211,7 +2312,7 @@ class _AddProductState extends State<AddProduct> {
                                           child: Padding(
                                             padding: const EdgeInsets.all(10.0),
                                             child: TextFormField(
-                                              
+
                                               validator: (value) {
                                                 if (productDealerPrice.isEmptyOrNull) {
                                                   //return 'Product Sale Price is required.';
@@ -2408,7 +2509,7 @@ class _AddProductState extends State<AddProduct> {
                                         ),
                                       ))
                                 ]),
-                               
+
                                 ///____Image__________________
                                 Container(
                                   padding: const EdgeInsets.all(20.0),
@@ -2466,12 +2567,12 @@ class _AddProductState extends State<AddProduct> {
                                       const SizedBox(
                                         height: 10,
                                       ),
-                                      
+
                                     ],
                                   ),
                                 ),
 
-                                
+
                               ],
                             ),
                           ),

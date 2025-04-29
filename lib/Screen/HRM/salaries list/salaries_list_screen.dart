@@ -415,7 +415,7 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
                                                                   },
                                                                   child: Row(
                                                                     children: [
-                                                                      const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 22.0, color: kErrorColor),
+                                                                       HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 22.0, color: kErrorColor),
                                                                       const SizedBox(width: 4.0),
                                                                       Text(
                                                                         lang.S.of(context).delete,

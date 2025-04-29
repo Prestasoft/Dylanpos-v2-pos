@@ -559,7 +559,7 @@ class _ExpenseCategoryState extends State<ExpenseCategory> {
                                                                       },
                                                                       child: Row(
                                                                         children: [
-                                                                          const HugeIcon(
+                                                                           HugeIcon(
                                                                             icon: HugeIcons.strokeRoundedDelete02,
                                                                             color: kNeutral500,
                                                                             size: 22,

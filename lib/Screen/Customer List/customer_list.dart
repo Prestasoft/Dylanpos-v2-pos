@@ -637,7 +637,7 @@ class _CustomerListState extends State<CustomerList> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const HugeIcon(
+                                                                     HugeIcon(
                                                                       icon: HugeIcons.strokeRoundedDelete02,
                                                                       color: kNeutral500,
                                                                       size: 20.0,

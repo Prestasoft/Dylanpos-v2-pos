@@ -8,6 +8,7 @@ import 'package:salespro_admin/Screen/Category%20List/category_list.dart';
 import 'package:salespro_admin/Screen/Customer%20List/add_customer.dart';
 import 'package:salespro_admin/Screen/Customer%20List/customer_list.dart';
 import 'package:salespro_admin/Screen/Customer%20List/edit_customer.dart';
+import 'package:salespro_admin/Screen/Dress/DressScreen.dart';
 import 'package:salespro_admin/Screen/Due%20List/due_list_screen.dart';
 import 'package:salespro_admin/Screen/Expenses/expense_category.dart';
 import 'package:salespro_admin/Screen/Expenses/new_expense.dart';
@@ -17,9 +18,13 @@ import 'package:salespro_admin/Screen/Income/income_category.dart';
 import 'package:salespro_admin/Screen/Income/new_income.dart';
 import 'package:salespro_admin/Screen/Inventory%20Sales/inventory_sales.dart';
 import 'package:salespro_admin/Screen/POS%20Sale/pos_sale.dart';
+import 'package:salespro_admin/Screen/PackageService/RegisterPackageScreen.dart';
+import 'package:salespro_admin/Screen/PackageService/ServicePackageScreen.dart';
 import 'package:salespro_admin/Screen/Purchase%20List/purchase_list.dart';
 import 'package:salespro_admin/Screen/Purchase%20Return/purchase_returns_list.dart';
 import 'package:salespro_admin/Screen/Purchase/purchase.dart';
+import 'package:salespro_admin/Screen/Reservation/ReservationCalendarScreen.dart';
+import 'package:salespro_admin/Screen/Reservation/package_list_screen.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_edit.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_list.dart';
 import 'package:salespro_admin/Screen/Sales%20Return/sales_returns_list.dart';
@@ -82,6 +87,45 @@ abstract class AcnooAppRoutes {
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: MtHomeScreen(),
             ),
+          ),
+
+
+
+          GoRoute(
+            path: '/reservations',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: ServicePackageScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'list', // SOLO 'list' (NO '/reservations-list')
+                builder: (context, state) => const PackageListScreen(),
+              ),
+              GoRoute(
+                path: 'calendario',
+                builder: (context, state) => const ReservationCalendarScreen(),
+              ),
+            ],
+          ),
+
+
+
+
+          GoRoute(
+            path: '/service-package', // Ruta principal para Paquete de Servicio
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: ServicePackageScreen(), // Pantalla principal del Paquete
+            ),
+            routes: [
+              GoRoute(
+                path: 'register-package',
+                builder: (context, state) => const ServicePackageList(), // Pantalla de registro
+              ),
+              GoRoute(
+                path: 'dresses',
+                builder: (context, state) => const DressScreen(), // Pantalla de registro
+              ),
+            ],
           ),
 
           // ///---------update profile--------------------------
@@ -316,7 +360,6 @@ abstract class AcnooAppRoutes {
                   path: 'edit-product',
                   builder: (context, state) {
                     final extra = state.extra as Map<String, dynamic>?;
-
                     return EditProduct(
                       productModel: extra?['productModel'], // Pass productModel as is
                       allProductsNameList: extra?['allProductsNameList'] ?? [],
@@ -327,13 +370,12 @@ abstract class AcnooAppRoutes {
                     );
                   },
                 ),
-
                 ///----------------barcode-generator----------------------------
                 GoRoute(
                     path: 'barcode-generator',
                     pageBuilder: (context, state) => const NoTransitionPage<void>(
                           child: BarcodeGenerate(),
-                        ))
+                ))
               ]),
 
           ///--------------------Ware house Route----------------------------
@@ -446,6 +488,7 @@ abstract class AcnooAppRoutes {
                     child: ExpenseCategory(),
                   ),
                 ),
+
                 GoRoute(
                   path: 'edit-expense',
                   pageBuilder: (context, state) {

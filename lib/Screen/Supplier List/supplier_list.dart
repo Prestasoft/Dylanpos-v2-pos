@@ -520,7 +520,7 @@ class _SupplierListState extends State<SupplierList> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 20.0, color: kNeutral500),
+                                                                     HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 20.0, color: kNeutral500),
                                                                     const SizedBox(width: 4.0),
                                                                     Text(
                                                                       lang.S.of(context).delete,

@@ -53,10 +53,453 @@ class S {
     return Localizations.of<S>(context, S);
   }
 
+
+
+
+  /// `Service Packages`
+  String get servicePackages {
+    return Intl.message(
+      'Service Packages',
+      name: 'servicePackages',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add Service Package`
+  String get addServicePackage {
+    return Intl.message(
+      'Agregar paquete de servicios',
+      name: 'addServicePackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No service packages found`
+  String get noServicePackagesFound {
+    return Intl.message(
+      'No se han encontrado paquetes de servicio',
+      name: 'noServicePackagesFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Package Name`
+  String get packageName {
+    return Intl.message(
+      'Nombre del paquete',
+      name: 'packageName',
+      desc: '',
+      args: [],
+    );
+  }
+
+
+  // dresf
+  /// No Images Available
+  String get noImagesAvailable {
+    return Intl.message(
+      'No hay imágenes disponibles', // 👈 El texto que quieres mostrar
+      name: 'noImagesAvailable',
+      desc: 'Mensaje mostrado cuando no hay imágenes para un vestido',
+      args: [],
+    );
+  }
+  String get addDress {
+    return Intl.message(
+      'Agregar vestido', // 👈 El texto que quieres mostrar
+      name: 'addDress',
+      desc: 'Botón o título para agregar un nuevo vestido',
+      args: [],
+    );
+  }
+  String get branch {
+    return Intl.message(
+      'Sucursal', // 👈 El texto que quieres mostrar
+      name: 'branch',
+      desc: 'Nombre o título que representa una sucursal o tienda',
+      args: [],
+    );
+  }
+  String get available {
+    return Intl.message(
+      'Disponible',
+      name: 'available',
+      desc: 'Estado de disponibilidad de un vestido',
+      args: [],
+    );
+  }
+
+  String get viewImages {
+    return Intl.message(
+      'Ver Imágenes',
+      name: 'viewImages',
+      desc: 'Botón o acción para ver las imágenes de un vestido',
+      args: [],
+    );
+  }
+
+  String get noDressesFound {
+    return Intl.message(
+      'No se encontraron vestidos',
+      name: 'noDressesFound',
+      desc: 'Mensaje mostrado cuando no hay vestidos disponibles en la búsqueda',
+      args: [],
+    );
+  }
+
+  String get images {
+    return Intl.message(
+      'Imágenes',
+      name: 'images',
+      desc: 'Título o etiqueta para el apartado de imágenes',
+      args: [],
+    );
+  }
+
+  String get addImages {
+    return Intl.message(
+      'Agregar Imágenes',
+      name: 'addImages',
+      desc: 'Botón o acción para agregar nuevas imágenes',
+      args: [],
+    );
+  }
+
+  String get imagesFor {
+    return Intl.message(
+      'Imágenes de',
+      name: 'imagesFor',
+      desc: 'Texto que precede al nombre de un vestido para mostrar sus imágenes',
+      args: [],
+    );
+  }
+
+  String get areYouSureDeleteDress {
+    return Intl.message(
+      '¿Estás seguro de eliminar este vestido?',
+      name: 'areYouSureDeleteDress',
+      desc: 'Mensaje de confirmación antes de eliminar un vestido',
+      args: [],
+    );
+  }
+
+  String get dress {
+    return Intl.message(
+      'Vestido',
+      name: 'dress',
+      desc: 'Nombre singular para un vestido',
+      args: [],
+    );
+  }
+
+  String get errorDeletingDress {
+    return Intl.message(
+      'Error al eliminar el vestido',
+      name: 'errorDeletingDress',
+      desc: 'Mensaje mostrado cuando ocurre un error al intentar eliminar un vestido',
+      args: [],
+    );
+  }
+
+  String get deleted {
+    return Intl.message(
+      'Eliminado',
+      name: 'deleted',
+      desc: 'Mensaje breve indicando que algo fue eliminado exitosamente',
+      args: [],
+    );
+  }
+
+  String get updating {
+    return Intl.message(
+      'Actualizando...',
+      name: 'updating',
+      desc: 'Mensaje mostrado mientras se actualiza información',
+      args: [],
+    );
+  }
+
+  String get toggleDressAvailabilityProvider {
+    return Intl.message(
+      'Cambiar disponibilidad del vestido',
+      name: 'toggleDressAvailabilityProvider',
+      desc: 'Acción para activar o desactivar la disponibilidad de un vestido',
+      args: [],
+    );
+  }
+
+  String get dressAvailability {
+    return Intl.message(
+      'Disponibilidad del vestido',
+      name: 'dressAvailability',
+      desc: 'Título o descripción sobre la disponibilidad del vestido',
+      args: [],
+    );
+  }
+
+  String get enabled {
+    return Intl.message(
+      'Habilitado',
+      name: 'enabled',
+      desc: 'Estado que indica que algo está disponible o activo',
+      args: [],
+    );
+  }
+
+  String get disabled {
+    return Intl.message(
+      'Deshabilitado',
+      name: 'disabled',
+      desc: 'Estado que indica que algo no está disponible o está inactivo',
+      args: [],
+    );
+  }
+
+  String get errorUpdatingAvailability {
+    return Intl.message(
+      'Error al actualizar la disponibilidad',
+      name: 'errorUpdatingAvailability',
+      desc: 'Mensaje mostrado cuando ocurre un error al cambiar la disponibilidad',
+      args: [],
+    );
+  }
+
+  String get errorAddingDress {
+    return Intl.message(
+      'Error al agregar el vestido',
+      name: 'errorAddingDress',
+      desc: 'Mensaje mostrado cuando ocurre un error al intentar agregar un vestido',
+      args: [],
+    );
+  }
+
+  String get dressAdded {
+    return Intl.message(
+      'Vestido agregado',
+      name: 'dressAdded',
+      desc: 'Mensaje mostrado cuando un vestido se agrega exitosamente',
+      args: [],
+    );
+  }
+
+  String get adding {
+    return Intl.message(
+      'Agregando...',
+      name: 'adding',
+      desc: 'Mensaje mostrado mientras se está agregando información',
+      args: [],
+    );
+  }
+
+  String get pleaseSelectAtLeastOneImage {
+    return Intl.message(
+      'Por favor, selecciona al menos una imagen',
+      name: 'pleaseSelectAtLeastOneImage',
+      desc: 'Mensaje mostrado cuando el usuario no ha seleccionado ninguna imagen',
+      args: [],
+    );
+  }
+
+  String get branchRequired {
+    return Intl.message(
+      'Sucursal requerida',
+      name: 'branchRequired',
+      desc: 'Mensaje mostrado cuando no se ha seleccionado una sucursal',
+      args: [],
+    );
+  }
+
+  String get selectBranch {
+    return Intl.message(
+      'Seleccionar Sucursal',
+      name: 'selectBranch',
+      desc: 'Etiqueta o botón para seleccionar una sucursal',
+      args: [],
+    );
+  }
+
+  String get enterSubcategory {
+    return Intl.message(
+      'Ingresar Subcategoría',
+      name: 'enterSubcategory',
+      desc: 'Etiqueta o instrucción para ingresar una subcategoría',
+      args: [],
+    );
+  }
+
+  String get nameRequired {
+    return Intl.message(
+      'Nombre requerido',
+      name: 'nameRequired',
+      desc: 'Mensaje mostrado cuando el campo de nombre está vacío',
+      args: [],
+    );
+  }
+
+  String get enterDressName {
+    return Intl.message(
+      'Ingresar nombre del vestido',
+      name: 'enterDressName',
+      desc: 'Etiqueta o instrucción para ingresar el nombre de un vestido',
+      args: [],
+    );
+  }
+
+  String get errorUpdatingDress {
+    return Intl.message(
+      'Error al actualizar el vestido',
+      name: 'errorUpdatingDress',
+      desc: 'Mensaje mostrado cuando ocurre un error al actualizar la información de un vestido',
+      args: [],
+    );
+  }
+
+  String get dressUpdated {
+    return Intl.message(
+      'Vestido actualizado',
+      name: 'dressUpdated',
+      desc: 'Mensaje mostrado cuando un vestido se actualiza exitosamente',
+      args: [],
+    );
+  }
+
+  String get updateDressProvider {
+    return Intl.message(
+      'Actualizar vestido',
+      name: 'updateDressProvider',
+      desc: 'Nombre de la acción o método para actualizar un vestido',
+      args: [],
+    );
+  }
+
+
+
+
+
+
+
+  String get dresses {
+    return Intl.message(
+      'Vestidos', // 👈 El texto que quieres mostrar
+      name: 'dresses',
+      desc: 'Título o nombre de la sección de vestidos',
+      args: [],
+    );
+  }
+  /// `Category`
+  String get category {
+    return Intl.message(
+      'Categoría',
+      name: 'category',
+      desc: '',
+      args: [],
+    );
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /// `Subcategory`
+  String get subcategory {
+    return Intl.message(
+      'subcategoría',
+      name: 'subcategory',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Description`
+  String get description {
+    return Intl.message(
+      'Descripción',
+      name: 'description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Price`
+  String get price {
+    return Intl.message(
+      'Precio',
+      name: 'price',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Duration`
+  String get duration {
+    return Intl.message(
+      'Duración',
+      name: 'duration',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unit`
+  String get unit {
+    return Intl.message(
+      'Unidad',
+      name: 'unit',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `hours`
+  String get hours {
+    return Intl.message(
+      'horas',
+      name: 'hours',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `days`
+  String get days {
+    return Intl.message(
+      'Días',
+      name: 'days',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Edit Category`
   String get editCategory {
     return Intl.message(
-      'Edit Category',
+      'Editar categoría',
       name: 'editCategory',
       desc: '',
       args: [],
@@ -66,7 +509,7 @@ class S {
   /// `Pos Saas Login panel`
   String get PosSaasLoginPanel {
     return Intl.message(
-      'Pos Saas Login panel',
+      'Panel de inicio de sesión de Pos Saas',
       name: 'PosSaasLoginPanel',
       desc: '',
       args: [],
@@ -76,7 +519,7 @@ class S {
   /// `Pos Saas SingUp Panel`
   String get posSaasSingUpPanel {
     return Intl.message(
-      'Pos Saas SingUp Panel',
+      'Panel de Registro Pos Saas',
       name: 'posSaasSingUpPanel',
       desc: '',
       args: [],
@@ -1328,10 +1771,6 @@ class S {
     );
   }
 
-  /// `Description`
-  String get description {
-    return Intl.message('Description', name: 'description', desc: '', args: []);
-  }
 
   /// `Add description....`
   String get addDescription {
@@ -1408,10 +1847,7 @@ class S {
     return Intl.message('Name', name: 'name', desc: '', args: []);
   }
 
-  /// `Category`
-  String get category {
-    return Intl.message('Category', name: 'category', desc: '', args: []);
-  }
+
 
   /// `Reference No.`
   String get referenceNo {
@@ -2649,9 +3085,6 @@ class S {
   }
 
   /// `Price`
-  String get price {
-    return Intl.message('Price', name: 'price', desc: '', args: []);
-  }
 
   /// `Create`
   String get create {
@@ -2828,10 +3261,6 @@ class S {
     );
   }
 
-  /// `Unit`
-  String get unit {
-    return Intl.message('Unit', name: 'unit', desc: '', args: []);
-  }
 
   /// `Edit/Add Serial:`
   String get editOrAddSerial {
@@ -5788,10 +6217,7 @@ class S {
     );
   }
 
-  /// `Duration`
-  String get duration {
-    return Intl.message('Duration', name: 'duration', desc: '', args: []);
-  }
+
 
   /// `Whatsapp marketing enabled`
   String get whatsappMarketingEnabled {
@@ -6053,6 +6479,115 @@ class S {
     );
   }
 
+  /// `Package Name Required`
+  String get packageNameRequired {
+    return Intl.message(
+      'Package Name Required',
+      name: 'packageNameRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Category Required`
+  String get categoryRequired {
+    return Intl.message(
+      'Category Required',
+      name: 'categoryRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subcategory Hint`
+  String get subcategoryHint {
+    return Intl.message(
+      'Sugerencia de subcategoría',
+      name: 'subcategoryHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Price Required`
+  String get priceRequired {
+    return Intl.message(
+      'Price Required',
+      name: 'priceRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invalid Number`
+  String get invalidNumber {
+    return Intl.message(
+      'Invalid Number',
+      name: 'invalidNumber',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Duration Required`
+  String get durationRequired {
+    return Intl.message(
+      'Duration Required',
+      name: 'durationRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invalid Integer`
+  String get invalidInteger {
+    return Intl.message(
+      'Invalid Integer',
+      name: 'invalidInteger',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Adding Package`
+  String get addingPackage {
+    return Intl.message(
+      'Adding Package',
+      name: 'addingPackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to Add Package`
+  String get failedToAddPackage {
+    return Intl.message(
+      'Failed to Add Package',
+      name: 'failedToAddPackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Package Added Successfully`
+  String get packageAddedSuccess {
+    return Intl.message(
+      'Package Added Successfully',
+      name: 'packageAddedSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit Package`
+  String get editPackage {
+    return Intl.message(
+      'Edit Package',
+      name: 'editPackage',
+      desc: '',
+      args: [],
+    );
+  }
   /// `User Role Details`
   String get userRoleDetails {
     return Intl.message(
@@ -6513,6 +7048,75 @@ class S {
     );
   }
 
+  /// `Updating Package`
+  String get updatingPackage {
+    return Intl.message(
+      'Updating Package',
+      name: 'updatingPackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to Update Package`
+  String get failedToUpdatePackage {
+    return Intl.message(
+      'Failed to Update Package',
+      name: 'failedToUpdatePackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Package Updated Successfully`
+  String get packageUpdatedSuccess {
+    return Intl.message(
+      'Package Updated Successfully',
+      name: 'packageUpdatedSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm Delete`
+  String get confirmDelete {
+    return Intl.message(
+      'Confirm Delete',
+      name: 'confirmDelete',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete Package Confirmation`
+  String get deletePackageConfirmation {
+    return Intl.message(
+      'Delete Package Confirmation',
+      name: 'deletePackageConfirmation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Package Deleted Successfully`
+  String get packageDeletedSuccess {
+    return Intl.message(
+      'Package Deleted Successfully',
+      name: 'packageDeletedSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to Delete Package`
+  String get failedToDeletePackage {
+    return Intl.message(
+      'Failed to Delete Package',
+      name: 'failedToDeletePackage',
+      desc: '',
+      args: [],
+    );
+  }
   /// `Please Select a product Category`
   String get pleaseSelectAProductCategory {
     return Intl.message(
@@ -6669,4 +7273,6 @@ class AppLocalizationDelegate extends LocalizationsDelegate<S> {
     }
     return false;
   }
+
+
 }

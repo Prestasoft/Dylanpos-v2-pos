@@ -342,7 +342,8 @@ class _BulkProductUploadPopupState extends State<BulkProductUploadPopup> {
               DottedBorderWidget(
                 padding: const EdgeInsets.all(6),
                 color: kLitGreyColor,
-                child: ClipRRect(
+                child:
+                ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                   child: Container(
                     width: context.width(),

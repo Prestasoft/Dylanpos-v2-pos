@@ -70,6 +70,9 @@ class _PosSaleState extends State<PosSale> {
   String selectedCategory = 'Categories';
   String? selectedUserId = 'Guest';
   CustomerModel selectedUserName = CustomerModel(customerName: "Guest", phoneNumber: "00", type: "Guest", customerAddress: '', emailAddress: '', profilePicture: '', openingBalance: '0', remainedBalance: '0', dueAmount: '0', gst: '', receiveWhatsappUpdates: false);
+
+
+
   String? invoiceNumber;
   String previousDue = "0";
   FocusNode nameFocus = FocusNode();
