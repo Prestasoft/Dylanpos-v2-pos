@@ -11,6 +11,7 @@ import '../const.dart';
 import '../model/general_setting_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
+import 'package:intl/intl.dart';
 
 ///___________Sales_PDF_Formats____________________________________________________________________________________________________________________________
 FutureOr<Uint8List> generateSaleDocument(
@@ -215,31 +216,6 @@ FutureOr<Uint8List> generateSaleDocument(
                         ])
                       : pw.Container(),
 
-                  ///_____Remarks_______________________________________
-                  // pw.SizedBox(height: 2),
-                  // pw.Row(children: [
-                  //   pw.SizedBox(
-                  //     width: 60.0,
-                  //     child: pw.Text(
-                  //       'Remarks',
-                  //       style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                  //     ),
-                  //   ),
-                  //   pw.SizedBox(
-                  //     width: 10.0,
-                  //     child: pw.Text(
-                  //       ':',
-                  //       style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                  //     ),
-                  //   ),
-                  //   pw.SizedBox(
-                  //     width: 140.0,
-                  //     child: pw.Text(
-                  //       '',
-                  //       style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                  //     ),
-                  //   ),
-                  // ]),
                 ]),
 
                 ///_________Right_Side___________________________________________________________
@@ -565,29 +541,7 @@ FutureOr<Uint8List> generateSaleDocument(
                               ]);
                             },
                           ),
-                          // pw.Row(children: [
-                          //   pw.SizedBox(
-                          //     width: 100.0,
-                          //     child: pw.Text(
-                          //       'VAT/GST',
-                          //       style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                          //             color: PdfColors.black,
-                          //             fontSize: 11,
-                          //           ),
-                          //     ),
-                          //   ),
-                          //   pw.Container(
-                          //     alignment: pw.Alignment.centerRight,
-                          //     width: 150.0,
-                          //     child: pw.Text(
-                          //       myFormat.format(double.tryParse(transactions.vat.toString())??0),
-                          //       style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                          //             color: PdfColors.black,
-                          //             fontSize: 11,
-                          //           ),
-                          //     ),
-                          //   ),
-                          // ]),
+
                           pw.SizedBox(height: 2),
 
                           ///________Service/Shipping__________________________________
@@ -776,6 +730,411 @@ FutureOr<Uint8List> generateSaleDocument(
 
   return doc.save();
 }
+
+
+
+Future<Uint8List> generateThermalDocument({
+  required PersonalInformationModel personalInformation,
+  required SaleTransactionModel transactions,
+  required GeneralSettingModel generalSetting,
+}) async {
+  final pdf = pw.Document();
+
+  // Configuración para impresora térmica (80mm de ancho)
+  const pageWidth = 80 * PdfPageFormat.mm;
+  const pageHeight = double.infinity; // Altura variable
+
+  pdf.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat(pageWidth, pageHeight, marginAll: 2 * PdfPageFormat.mm),
+      build: (pw.Context context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            // Encabezado - Información de la empresa
+            pw.Center(
+              child: pw.Text(
+                personalInformation.companyName.toUpperCase(),
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 2),
+            pw.Center(
+              child: pw.Text(
+                'Tel: ${personalInformation.phoneNumber}',
+                style: pw.TextStyle(fontSize: 8),
+              ),
+            ),
+            if (personalInformation.gst.trim().isNotEmpty)
+              pw.Center(
+                child: pw.Text(
+                  'NIT: ${personalInformation.gst}',
+                  style: pw.TextStyle(fontSize: 8),
+                ),
+              ),
+            pw.Center(
+              child: pw.Text(
+                personalInformation.countryName,
+                style: pw.TextStyle(fontSize: 8),
+              ),
+            ),
+            pw.Divider(thickness: 0.5),
+
+            // Tipo de documento
+            pw.Center(
+              child: pw.Text(
+                'FACTURA DE VENTA',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 5),
+
+            // Información de la factura
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('No:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text('#${transactions.invoiceNumber}', style: pw.TextStyle(fontSize: 8)),
+              ],
+            ),
+            pw.SizedBox(height: 2),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Fecha:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  DateFormat('dd/MM/yy HH:mm').format(DateTime.parse(transactions.purchaseDate)),
+                  style: pw.TextStyle(fontSize: 8),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 2),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Cliente:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  transactions.customerName.length > 20
+                      ? '${transactions.customerName.substring(0, 20)}...'
+                      : transactions.customerName,
+                  style: pw.TextStyle(fontSize: 8),
+                ),
+              ],
+            ),
+            if (transactions.customerPhone.isNotEmpty) ...[
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Teléfono:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(transactions.customerPhone, style: pw.TextStyle(fontSize: 8)),
+                ],
+              ),
+            ],
+            if (transactions.customerGst.trim().isNotEmpty) ...[
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('NIT Cliente:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(transactions.customerGst, style: pw.TextStyle(fontSize: 8)),
+                ],
+              ),
+            ],
+            pw.Divider(thickness: 0.5),
+
+            // Encabezado de productos
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Cant.', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Descripción', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Total', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+              ],
+            ),
+            pw.Divider(thickness: 0.2),
+
+            // Lista de productos
+            ...transactions.productList!.map((item) {
+              final productName = item.productName ?? 'Producto sin nombre';
+              final truncatedName = productName.length > 20
+                  ? '${productName.substring(0, 17)}...'
+                  : productName;
+
+              return pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 3),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Cantidad
+                    pw.SizedBox(
+                      width: 12,
+                      child: pw.Text(
+                        '${item.quantity}',
+                        style: pw.TextStyle(fontSize: 8),
+                      ),
+                    ),
+
+                    // Descripción (con precio unitario si cabe)
+                    pw.SizedBox(
+                      width: 35,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            truncatedName,
+                            style: pw.TextStyle(fontSize: 8),
+                          ),
+                          pw.Text(
+                            '@${formatCurrency(double.parse(item.subTotal))}',
+                            style: pw.TextStyle(fontSize: 7),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Total
+                    pw.SizedBox(
+                      width: 20,
+                      child: pw.Text(
+                        formatCurrency(double.parse(item.subTotal) * item.quantity),
+                        style: pw.TextStyle(fontSize: 8),
+                        textAlign: pw.TextAlign.right,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            pw.Divider(thickness: 0.5),
+
+            // Totales
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Subtotal:', style: pw.TextStyle(fontSize: 8)),
+                pw.Text(
+                  formatCurrency(transactions.totalAmount! - transactions.vat! - transactions.serviceCharge!),
+                  style: pw.TextStyle(fontSize: 8),
+                ),
+              ],
+            ),
+
+            if (transactions.vat! > 0) ...[
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('IVA:', style: pw.TextStyle(fontSize: 8)),
+                  pw.Text(formatCurrency(transactions.vat!), style: pw.TextStyle(fontSize: 8)),
+                ],
+              ),
+            ],
+
+            if (transactions.serviceCharge! > 0) ...[
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Servicio:', style: pw.TextStyle(fontSize: 8)),
+                  pw.Text(formatCurrency(transactions.serviceCharge!), style: pw.TextStyle(fontSize: 8)),
+                ],
+              ),
+            ],
+
+            if (transactions.discountAmount! > 0) ...[
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Descuento:', style: pw.TextStyle(fontSize: 8)),
+                  pw.Text('-${formatCurrency(transactions.discountAmount!)}', style: pw.TextStyle(fontSize: 8)),
+                ],
+              ),
+            ],
+
+            pw.Divider(thickness: 0.5),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('TOTAL:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  formatCurrency(transactions.totalAmount!),
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                ),
+              ],
+            ),
+
+            pw.SizedBox(height: 5),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Pagado:', style: pw.TextStyle(fontSize: 8)),
+                pw.Text(
+                  formatCurrency(transactions.totalAmount! - transactions.dueAmount!),
+                  style: pw.TextStyle(fontSize: 8),
+                ),
+              ],
+            ),
+
+            if (transactions.dueAmount! > 0) ...[
+              pw.SizedBox(height: 2),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Pendiente:', style: pw.TextStyle(fontSize: 8)),
+                  pw.Text(formatCurrency(transactions.dueAmount!), style: pw.TextStyle(fontSize: 8)),
+                ],
+              ),
+            ],
+
+            pw.SizedBox(height: 2),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Método:', style: pw.TextStyle(fontSize: 8)),
+                pw.Text(transactions.paymentType ?? '', style: pw.TextStyle(fontSize: 8)),
+              ],
+            ),
+
+            pw.Divider(thickness: 0.5),
+            pw.SizedBox(height: 5),
+
+            // Mensaje de agradecimiento
+            pw.Center(
+              child: pw.Text(
+                '¡Gracias por su compra!',
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+              ),
+            ),
+
+            // Pie de página
+            pw.SizedBox(height: 5),
+            pw.Center(
+              child: pw.Text(
+                generalSetting.companyName.isNotEmpty
+                    ? generalSetting.companyName
+                    : 'Powered by $pdfFooter',
+                style: pw.TextStyle(fontSize: 7),
+              ),
+            ),
+
+            pw.Center(
+              child: pw.Text(
+                '${DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now())}',
+                style: pw.TextStyle(fontSize: 7),
+              ),
+            ),
+
+            // Espacio para firma (si es necesario)
+            pw.SizedBox(height: 15),
+            pw.Center(
+              child: pw.Text(
+                '_________________________',
+                style: pw.TextStyle(fontSize: 8),
+              ),
+            ),
+            pw.Center(
+              child: pw.Text(
+                'Firma Autorizada',
+                style: pw.TextStyle(fontSize: 8),
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+
+  return pdf.save();
+}
+
+
+
+
+
+
+/// Formatea una cantidad monetaria con símbolo de dólar y 2 decimales
+///
+/// Ejemplo:
+/// ```dart
+/// formatCurrency(1234.5)  // Retorna: \$1,234.50
+/// ```
+String formatCurrency(double amount, {String symbol = '\$', bool useCommas = true}) {
+  final formattedAmount = amount.toStringAsFixed(2);
+
+  if (useCommas) {
+    final parts = formattedAmount.split('.');
+    final integerPart = _addThousandSeparators(parts[0]);
+    return '$symbol$integerPart.${parts[1]}';
+  }
+
+  return '$symbol$formattedAmount';
+}
+String formatProductName(String? productName, {int maxLength = 20, String defaultText = 'Producto'}) {
+  if (productName == null || productName.isEmpty) {
+    return defaultText;
+  }
+
+  return productName.length > maxLength
+      ? '${productName.substring(0, maxLength)}...'
+      : productName;
+}
+/// Función auxiliar para agregar separadores de miles
+String _addThousandSeparators(String number) {
+  final reversed = number.split('').reversed.join();
+  final chunks = <String>[];
+
+  for (var i = 0; i < reversed.length; i += 3) {
+    final end = i + 3 > reversed.length ? reversed.length : i + 3;
+    chunks.add(reversed.substring(i, end));
+  }
+
+  return chunks.join(',').split('').reversed.join();
+}
+
+/// Formatea una fecha en formato dd/MM/yyyy HH:mm
+///
+/// Ejemplo:
+/// ```dart
+/// formatDate(DateTime.now())  // Retorna: 31/12/2023 23:59
+/// ```
+String formatDate(DateTime date, {bool includeSeconds = false}) {
+  final formatPattern = includeSeconds ? 'dd/MM/yyyy HH:mm:ss' : 'dd/MM/yyyy HH:mm';
+  return DateFormat(formatPattern).format(date);
+}
+
+/// Formatea una fecha en formato corto (dd/MM/yyyy)
+String formatShortDate(DateTime date) {
+  return DateFormat('dd/MM/yyyy').format(date);
+}
+
+/// Formatea una hora en formato HH:mm (opcionalmente con segundos)
+String formatTime(DateTime date, {bool includeSeconds = false}) {
+  return DateFormat(includeSeconds ? 'HH:mm:ss' : 'HH:mm').format(date);
+}
+
+/// Versión extendida con más opciones de formato
+String formatDateTime(
+    DateTime date, {
+      bool includeDate = true,
+      bool includeTime = true,
+      bool includeSeconds = false,
+      String separator = ' ',
+    }) {
+  final datePart = includeDate ? formatShortDate(date) : '';
+  final timePart = includeTime ? formatTime(date, includeSeconds: includeSeconds) : '';
+
+  return [datePart, timePart].where((part) => part.isNotEmpty).join(separator);
+}
+
 
 // FutureOr<Uint8List> generateSaleDocumentStyle2({required SaleTransactionModel transactions, required PersonalInformationModel personalInformation}) async {
 //   final pw.Document doc = pw.Document();

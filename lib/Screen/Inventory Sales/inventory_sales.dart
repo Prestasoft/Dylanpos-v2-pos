@@ -1610,12 +1610,67 @@ class _InventorySalesState extends State<InventorySales> {
                                                                     consumerRef.refresh(profileDetailsProvider);
 
                                                                     EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully);
-                                                                    GeneratePdfAndPrint().printQuotationInvoice(
-                                                                      personalInformationModel: data,
-                                                                      saleTransactionModel: transitionModel,
+                                                                    Navigator.pop(dialogContext);
+
+                                                                    // Mostrar diálogo de selección de formato de impresión
+                                                                    await showDialog(
                                                                       context: context,
-                                                                      isFromInventorySale: true,
+                                                                      builder: (printDialogContext) {
+                                                                        return AlertDialog(
+                                                                          title: Text("Selecciona Formato De imprecio Factura"),
+
+                                                                          content: Column(
+                                                                            mainAxisSize: MainAxisSize.min,
+                                                                            children: [
+                                                                              ElevatedButton(
+                                                                                onPressed: () {
+                                                                                  Navigator.pop(printDialogContext);
+                                                                                  GeneratePdfAndPrint().printQuotationInvoice(
+                                                                                    personalInformationModel: data,
+                                                                                    saleTransactionModel: transitionModel,
+                                                                                    context: context,
+                                                                                    isFromInventorySale: true,
+                                                                                    printFormat: 'large', // Formato grande
+                                                                                  );
+                                                                                },
+                                                                                child: Text("Largo"),
+                                                                              ),
+                                                                              const SizedBox(height: 10),
+                                                                              ElevatedButton(
+                                                                                onPressed: () {
+                                                                                  Navigator.pop(printDialogContext);
+                                                                                  GeneratePdfAndPrint().printQuotationInvoice(
+                                                                                    personalInformationModel: data,
+                                                                                    saleTransactionModel: transitionModel,
+                                                                                    context: context,
+                                                                                    isFromInventorySale: true,
+                                                                                    printFormat: 'small', // Formato pequeño
+                                                                                  );
+
+
+                                                                                },
+                                                                                child: Text("small"),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                          actions: [
+                                                                            TextButton(
+                                                                              onPressed: () => Navigator.pop(printDialogContext),
+                                                                              child: Text(lang.S.of(context).cancel),
+                                                                            ),
+                                                                          ],
+                                                                        );
+                                                                      },
                                                                     );
+
+                                                                    // GeneratePdfAndPrint().printQuotationInvoice(
+                                                                    //   personalInformationModel: data,
+                                                                    //   saleTransactionModel: transitionModel,
+                                                                    //   context: context,
+                                                                    //   isFromInventorySale: true,
+                                                                    //
+                                                                    // );
+
                                                                     GoRouter.of(dialogContext).pop();
                                                                   } catch (e) {
                                                                     EasyLoading.dismiss();
@@ -1719,8 +1774,47 @@ class _InventorySalesState extends State<InventorySales> {
                                                 setState(() {
                                                   saleButtonClicked = true;
                                                 });
-                                                EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
 
+
+                                                final printType = await showDialog<String>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: Text('Seleccionar formato de impresión'),
+                                                    content: Column(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        ListTile(
+                                                          leading: Icon(Icons.receipt, color: Colors.blue),
+                                                          title: Text('Factura térmica'),
+                                                          subtitle: Text('Para impresora de 58-80mm'),
+                                                          onTap: () => Navigator.pop(context, 'thermal'),
+                                                        ),
+                                                        Divider(),
+                                                        ListTile(
+                                                          leading: Icon(Icons.description, color: Colors.green),
+                                                          title: Text('Factura normal'),
+                                                          subtitle: Text('Formato completo A4/Letter'),
+                                                          onTap: () => Navigator.pop(context, 'normal'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        child: Text('Cancelar'),
+                                                        onPressed: () => Navigator.pop(context),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+
+                                                if (printType == null) {
+                                                  EasyLoading.dismiss();
+                                                  setState(() => saleButtonClicked = false);
+                                                  return;
+                                                }
+
+                                                print("TIPO DE DE IMPRECION $printType");
+                                                EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
                                                 DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
@@ -1729,7 +1823,34 @@ class _InventorySalesState extends State<InventorySales> {
                                                 transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
                                                 SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
                                                 await ref.push().set(post.toJson());
-                                                await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: data, saleTransactionModel: transitionModel, context: context, fromInventorySale: true, setting: setting);
+
+
+                                                //imprimir factura
+
+
+
+                                                if (printType == 'normal' || printType == 'both') {
+                                                  await GeneratePdfAndPrint().printSaleInvoice(
+                                                    personalInformationModel: data,
+                                                    saleTransactionModel: transitionModel,
+                                                    context: context,
+                                                    fromInventorySale: true,
+                                                    setting: setting,
+                                                    printType: 'normal',
+                                                  );
+                                                }
+
+                                                if (printType == 'thermal' || printType == 'both') {
+                                                  await GeneratePdfAndPrint().printSaleInvoice(
+                                                    personalInformationModel: data,
+                                                    saleTransactionModel: transitionModel,
+                                                    context: context,
+                                                    fromInventorySale: true,
+                                                    setting: setting,
+                                                    printType: 'thermal',
+                                                  );
+                                                }
+
                                                 final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
                                                 for (var element in transitionModel.productList!) {
                                                   var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
@@ -1793,6 +1914,8 @@ class _InventorySalesState extends State<InventorySales> {
                                                 consumerRef.refresh(dueTransactionProvider);
                                                 consumerRef.refresh(profileDetailsProvider);
                                                 consumerRef.refresh(dailyTransactionProvider);
+
+
                                                 EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
                                               } catch (e) {
                                                 setState(() {
@@ -1819,6 +1942,24 @@ class _InventorySalesState extends State<InventorySales> {
                                   child: CircularProgressIndicator(),
                                 );
                               })),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                           if (screenWidth > 1240) ResponsiveGridCol(lg: 3, xs: 0, md: 0, child: const SizedBox.shrink()),
 
 

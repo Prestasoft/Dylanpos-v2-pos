@@ -200,51 +200,7 @@ class GeneratePdfAndPrint {
     EasyLoading.dismiss();
   }
 
-  // Future<void> printSaleInvoice({
-  //   required PersonalInformationModel personalInformationModel,
-  //   required SaleTransactionModel saleTransactionModel,
-  //   required BuildContext context, // Pass a valid context from the parent widget
-  //   bool? fromInventorySale,
-  //   bool? fromSaleReports,
-  // }) async {
-  //   var data = await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
-  //   if (data.whatsappMarketingEnabled && (saleTransactionModel.sendWhatsappMessage ?? false)) {
-  //     try {
-  //       EasyLoading.show(status: 'Sending message...', dismissOnTap: true);
-  //       await sendSalesSms(saleTransactionModel);
-  //       EasyLoading.dismiss();
-  //     } catch (e) {
-  //       EasyLoading.dismiss();
-  //     }
-  //   }
-  //
-  //   EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
-  //   var pdfData = await generateSaleDocument(
-  //     personalInformation: personalInformationModel,
-  //     transactions: saleTransactionModel,
-  //   );
-  //
-  //   // Convert Uint8List to PDF and upload to Firebase storage
-  //   await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber);
-  //
-  //   await Printing.layoutPdf(
-  //     dynamicLayout: true,
-  //     onLayout: (PdfPageFormat format) async => pdfData,
-  //   );
-  //
-  //   EasyLoading.dismiss();
-  //
-  //   // Check if the context is still valid before using it
-  //   if (context.mounted) {
-  //     Future.delayed(const Duration(milliseconds: 200), () {
-  //       if ((fromInventorySale ?? false) && context.mounted) {
-  //         context.pushReplacementNamed('/sales/inventory-sales', extra: true);
-  //       } else if (context.mounted) {
-  //         context.pushReplacement('/sales/pos-sales', extra: true);
-  //       }
-  //     });
-  //   }
-  // }
+
 
   Future<void> printSaleInvoice({
     required PersonalInformationModel personalInformationModel,
@@ -253,10 +209,10 @@ class GeneratePdfAndPrint {
     bool? fromInventorySale,
     bool? isFromQuotation,
     int reservations = 0,
-
     bool? fromSaleReports,
     required GeneralSettingModel setting,
     bool? fromLedger,
+    String? printType = 'normal' // 'normal', 'thermal' o 'both'
   }) async {
     var data = await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
     if (data.whatsappMarketingEnabled && (saleTransactionModel.sendWhatsappMessage ?? false)) {
@@ -270,9 +226,26 @@ class GeneratePdfAndPrint {
     }
 
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
-    var pdfData = await generateSaleDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting);
+    Uint8List pdfData;
+    if (printType == 'thermal') {
+      pdfData = await generateThermalDocument(
+        personalInformation: personalInformationModel,
+        transactions: saleTransactionModel,
+        generalSetting: setting,
+      );
+    } else {
+       pdfData = await generateSaleDocument(
+        personalInformation: personalInformationModel,
+        transactions: saleTransactionModel,
+        generalSetting: setting,
+      );
+    }
+
+
+    //var pdfData = await generateSaleDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting);
 
     // Convert Uint8List to PDF and upload to Firebase storage
+    // Subir a Firebase y mostrar
     await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber);
 
     await Printing.layoutPdf(
@@ -285,14 +258,12 @@ class GeneratePdfAndPrint {
     // Only navigate if not from sale reports
     if (!(fromSaleReports ?? false) && context.mounted) {
       Future.delayed(const Duration(milliseconds: 200), () {
-        if (context.mounted) {
-          if (fromInventorySale ?? false) {
-            context.pushReplacementNamed('/sales/inventory-sales', extra: true);
-          } else if (isFromQuotation ?? false) {
-            context.pushReplacement('/sales/quotation-list', extra: true);
-          } else if (fromLedger ?? false) {
-            context.pushReplacement('/ledger', extra: true);
-          }
+        if (fromInventorySale ?? false) {
+          context.pushReplacementNamed('/sales/inventory-sales', extra: true);
+        } else if (isFromQuotation ?? false) {
+          context.pushReplacement('/sales/quotation-list', extra: true);
+        } else if (fromLedger ?? false) {
+          context.pushReplacement('/ledger', extra: true);
         } else {
           context.pushReplacement('/sales/pos-sales', extra: true);
         }
@@ -331,7 +302,10 @@ class GeneratePdfAndPrint {
       required SaleTransactionModel saleTransactionModel,
       BuildContext? context,
       bool? isFromInventorySale,
-      bool? isFromQuotation}) async {
+      bool? isFromQuotation,
+      String printFormat = 'large'  }
+
+      ) async {
     var data = await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
     if (data.whatsappMarketingEnabled && (saleTransactionModel.sendWhatsappMessage ?? false)) {
       try {
