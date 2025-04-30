@@ -6,8 +6,10 @@ import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
 import 'package:salespro_admin/model/ReservationProductModel.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
+import 'package:salespro_admin/model/customer_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import '../model/reservation_model.dart';
+import 'customer_provider.dart';
 import 'dress_provider.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -258,6 +260,139 @@ final cancelReservationProvider = FutureProvider.family<bool, String>((ref, rese
   }
 });
 
+final listaReservasProvaider = FutureProvider<List<FullReservation>>((ref) async {
+  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+  final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
+  final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
+
+  // Obtener todos los datos necesarios
+  final reservationsSnapshot = await reservationsRef.get();
+  final dressesSnapshot = await dressesRef.get();
+  final servicesSnapshot = await servicesRef.get();
+  final customers = await ref.watch(allCustomerProvider.future);
+
+  // Convertir a mapas
+  final reservationsMap = reservationsSnapshot.value as Map? ?? {};
+  final dressesMap = dressesSnapshot.value as Map? ?? {};
+  final servicesMap = servicesSnapshot.value as Map? ?? {};
+
+  // Procesar todas las reservaciones
+  return reservationsMap.entries.map((entry) {
+    final reservation = Map<String, dynamic>.from(entry.value as Map);
+    final dressId = reservation['dress_id']?.toString();
+    final serviceId = reservation['service_id']?.toString();
+    final clientId = reservation['client_id']?.toString();
+
+    // Buscar información relacionada
+    final dress = dressId != null ? dressesMap[dressId] : null;
+    final service = serviceId != null ? servicesMap[serviceId] : null;
+    final client = customers.firstWhere(
+          (c) => c.phoneNumber == clientId,
+      orElse: () => CustomerModel.empty(),
+    );
+
+    return FullReservation(
+      id: entry.key,
+      reservation: reservation,
+      dress: dress != null ? Map<String, dynamic>.from(dress) : null,
+      service: service != null ? Map<String, dynamic>.from(service) : null,
+      client: client.phoneNumber.isNotEmpty ? client : null,
+    );
+  }).toList();
+});
+
+final fullReservationByIdProviderVQ = FutureProvider.family<FullReservation?, String>(
+      (ref, reservationId) async {
+    final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+    final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
+    final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
+
+    // Obtener la lista de clientes
+    final customerList = await ref.read(allCustomerProvider.future);
+
+    // Obtener la reservación
+    final reservationSnapshot = await reservationsRef.child(reservationId).get();
+    final snapshot = reservationSnapshot.value;
+    if (snapshot == null || snapshot is! Map) return null;
+
+    final reservation = Map<String, dynamic>.from(snapshot as Map);
+    final dressId = reservation['dress_id']?.toString();
+    final serviceId = reservation['service_id']?.toString();
+    final clientId = reservation['client_id']?.toString();
+
+    // Buscar el cliente por ID
+    final client = customerList.firstWhere(
+          (c) => c.phoneNumber == clientId,
+      orElse: () => CustomerModel.empty(),
+    );
+
+    // Obtener datos de vestido y servicio
+    final dressSnap = await dressesRef.get();
+    final serviceSnap = await servicesRef.get();
+
+    final dressesMap = dressSnap.value as Map?;
+    final servicesMap = serviceSnap.value as Map?;
+
+    final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+    final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
+
+    // Devolver el objeto FullReservation con todos los datos
+    return FullReservation(
+      id: reservationId,
+      reservation: reservation,
+      dress: dress != null ? Map<String, dynamic>.from(dress) : null,
+      service: service != null ? Map<String, dynamic>.from(service) : null,
+      client: client.phoneNumber.isEmpty ? null : client,
+      dressIds: dressesMap?.keys.map((e) => e.toString()).toList() ?? [],
+      serviceIds: servicesMap?.keys.map((e) => e.toString()).toList() ?? [],
+    );
+  },
+);
+
+final fullReservationByIdProvider = StreamProvider.family<FullReservation?, String>((ref, reservationId) {
+  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+  final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
+  final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
+
+  final customerFuture = ref.read(allCustomerProvider.future);
+
+  return reservationsRef.child(reservationId).onValue.asyncMap((event) async {
+    final snapshot = event.snapshot.value;
+    if (snapshot == null || snapshot is! Map) return null;
+
+    final reservation = Map<String, dynamic>.from(snapshot as Map);
+    final dressId = reservation['dress_id']?.toString();
+    final serviceId = reservation['service_id']?.toString();
+    final clientId = reservation['client_id']?.toString();
+
+    final customerList = await customerFuture;
+    final client = customerList.firstWhere(
+          (c) => c.phoneNumber == clientId,
+      orElse: () => CustomerModel.empty(),
+    );
+
+    final dressSnap = await dressesRef.get();
+    final serviceSnap = await servicesRef.get();
+
+    final dressesMap = dressSnap.value as Map?;
+    final servicesMap = serviceSnap.value as Map?;
+
+    final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+    final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
+
+    return FullReservation(
+      id: reservationId,
+      reservation: reservation,
+      dress: dress != null ? Map<String, dynamic>.from(dress) : null,
+      service: service != null ? Map<String, dynamic>.from(service) : null,
+      client: client.phoneNumber.isEmpty ? null : client,  // Ahora asignas el cliente completo
+      dressIds: dressesMap?.keys.map((e) => e.toString()).toList() ?? [],
+      serviceIds: servicesMap?.keys.map((e) => e.toString()).toList() ?? [],
+    );
+  });
+});
+
+
 final fullReservationsByClientProvider = StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
   final today = DateTime.now();
   final formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
@@ -276,6 +411,7 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
 
     final data = snapshot.value as Map<dynamic, dynamic>;
 
+    // Filtrar las reservas para el cliente específico
     final reservations = data.entries.where((entry) {
       final value = entry.value;
       return value is Map &&
@@ -283,7 +419,7 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
           value['client_id'] == clientId;
     }).toList();
 
-    // Obtener IDs únicos de vestidos y servicios
+    // Obtener los IDs únicos de vestidos y servicios
     final dressIds = reservations.map((e) => e.value['dress_id']?.toString()).whereType<String>().toSet();
     final serviceIds = reservations.map((e) => e.value['service_id']?.toString()).whereType<String>().toSet();
 
@@ -294,20 +430,23 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
     final dressesMap = dressSnap.value as Map?;
     final servicesMap = serviceSnap.value as Map?;
 
-    return reservations.map((entry) {
+    // Construir las reservas completas y agregar automáticamente los IDs de vestidos y servicios
+    final fullReservations = reservations.map((entry) {
       final id = entry.key.toString();
       final data = Map<String, dynamic>.from(entry.value as Map);
       final dressId = data['dress_id']?.toString();
       final serviceId = data['service_id']?.toString();
 
-      final dress = dressesMap?[dressId] as Map?;
-      final service = servicesMap?[serviceId] as Map?;
+      final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+      final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
 
       return FullReservation(
         id: id,
         reservation: data,
         dress: dress != null ? Map<String, dynamic>.from(dress) : null,
         service: service != null ? Map<String, dynamic>.from(service) : null,
+        dressIds: dressIds.toList(), // Agregar automáticamente los IDs
+        serviceIds: serviceIds.toList(), // Agregar automáticamente los IDs
       );
     }).toList()
       ..sort((a, b) {
@@ -318,8 +457,11 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
         final dateCompare = dateA.compareTo(dateB);
         return dateCompare != 0 ? dateCompare : timeA.compareTo(timeB);
       });
+
+    return fullReservations;
   });
 });
+
 
 
 

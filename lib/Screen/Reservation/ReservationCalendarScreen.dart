@@ -138,6 +138,8 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   }
 
   Widget _buildReservationsList(AsyncValue<List<ReservationModel>> reservationsValue) {
+
+
     return reservationsValue.when(
       data: (allReservations) {
         // Filter reservations for selected day
@@ -283,8 +285,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             onPressed: () {
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close detail sheet
-              // Cancel reservation
-              // _cancelReservation(reservation.id);
+
             },
             child: const Text('Sí, Cancelar'),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -439,7 +440,7 @@ class ReservationCard extends StatelessWidget {
   }
 }
 
-class ReservationDetailView extends StatelessWidget {
+class ReservationDetailView extends ConsumerWidget {
   final ReservationModel reservation;
   final ScrollController scrollController;
   final VoidCallback onEdit;
@@ -454,99 +455,244 @@ class ReservationDetailView extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Usar el FutureProvider para obtener los detalles completos de la reservación
+    final fullReservationAsync = ref.watch(fullReservationByIdProviderVQ(reservation.id));
+
     return Container(
       padding: const EdgeInsets.all(16),
-      child: ListView(
-        controller: scrollController,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 5,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
+      child: fullReservationAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Text('Error al cargar detalles: $error',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+        data: (fullReservation) {
+          if (fullReservation == null) {
+            return const Center(
+              child: Text('No se encontraron detalles de la reservación',
+                style: TextStyle(fontSize: 16),
               ),
-            ),
-          ),
-          Text(
-            'Detalles de la Reservación',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          _buildDetailItem(Icons.calendar_today, 'Fecha', reservation.reservationDate),
-          _buildDetailItem(Icons.access_time, 'Hora', reservation.reservationTime),
-          _buildDetailItem(Icons.person, 'Cliente', 'ID: ${reservation.clientId}'),
-          _buildDetailItem(Icons.checkroom, 'Vestido', 'ID: ${reservation.dressId}'),
-          _buildDetailItem(Icons.business, 'Sucursal', reservation.branchId),
-          _buildDetailItem(Icons.engineering, 'Servicio', 'ID: ${reservation.serviceId}'),
-          _buildDetailItem(
-            Icons.update,
-            'Creada',
-            DateFormat('dd/MM/yyyy HH:mm').format(reservation.createdAt),
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            );
+          }
+
+          // Extraer los datos para mostrar
+          final reservationData = fullReservation.reservation;
+          final dress = fullReservation.dress;
+          final service = fullReservation.service;
+          final client = fullReservation.client;
+
+          // Formatear fecha para mostrar
+          String formattedDate = '';
+          try {
+            final date = DateFormat('yyyy-MM-dd').parse(reservationData['reservation_date'] ?? '');
+            formattedDate = DateFormat.yMMMMd('es').format(date); // "12 de abril de 2023"
+          } catch (e) {
+            formattedDate = reservationData['reservation_date'] ?? '';
+          }
+
+          return ListView(
+            controller: scrollController,
             children: [
-              ElevatedButton.icon(
-                onPressed: onEdit,
-                icon: const Icon(Icons.edit),
-                label: const Text('Editar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              // Indicador de arrastre
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: onCancel,
-                icon: const Icon(Icons.cancel),
-                label: const Text('Cancelar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+
+              // Título
+              Text(
+                'Detalles de la Reservación',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 24),
+
+              // Información del vestido con imagen (si está disponible)
+              if (dress != null && dress['images'] != null) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _buildDressImage(dress['images']),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Sección de detalles principales
+              Card(
+                elevation: 2,
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Información de la Reservación',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold
+                        ),
+                      ),
+                      const Divider(),
+                      _buildDetailItem(Icons.calendar_today, 'Fecha', formattedDate),
+                      _buildDetailItem(Icons.access_time, 'Hora', reservationData['reservation_time'] ?? ''),
+                      _buildDetailItem(Icons.business, 'Sucursal', reservationData['branch_id'] ?? ''),
+                    ],
+                  ),
                 ),
               ),
+
+              // Sección del cliente
+              if (client != null)
+                Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Información del Cliente',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        const Divider(),
+                        _buildDetailItem(Icons.person, 'Nombre', client.customerName),
+                        _buildDetailItem(Icons.phone, 'Teléfono', client.phoneNumber),
+                        _buildDetailItem(Icons.email, 'Email', client.emailAddress),
+                        if (client.customerAddress.isNotEmpty)
+                          _buildDetailItem(Icons.location_on, 'Dirección', client.customerAddress),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Sección del vestido
+              if (dress != null)
+                Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Información del Vestido',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        const Divider(),
+                        _buildDetailItem(Icons.checkroom, 'Vestido', dress['name'] ?? ''),
+                        _buildDetailItem(Icons.category, 'Categoría', dress['category'] ?? ''),
+                        if (dress['color'] != null)
+                          _buildDetailItem(Icons.color_lens, 'Color', dress['color']),
+                        if (dress['size'] != null)
+                          _buildDetailItem(Icons.straighten, 'Talla', dress['size']),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Sección del servicio
+              if (service != null)
+                Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Información del Servicio',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        const Divider(),
+                        _buildDetailItem(Icons.engineering, 'Servicio', service['name'] ?? ''),
+                        _buildDetailItem(Icons.timer, 'Duración', _formatDuration(service['duration'])),
+                        _buildDetailItem(Icons.attach_money, 'Precio', '\$${(service['price'] is num ? (service['price'] as num).toDouble() : 0.0).toStringAsFixed(2)}'),
+                        if (service['description'] != null && service['description'].toString().isNotEmpty)
+                          _buildDetailItem(Icons.description, 'Descripción', service['description']),
+                      ],
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 24),
+
+              // Botones para Editar y Cancelar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Editar'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.cancel),
+                    label: const Text('Cancelar'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildDetailItem(IconData icon, String label, String value) {
+  Widget _buildDetailItem(IconData icon, String title, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 24, color: Colors.grey[700]),
-          const SizedBox(width: 16),
+          Icon(icon, size: 22, color: Colors.grey[700]),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  title,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 16),
                 ),
               ],
             ),
@@ -554,5 +700,66 @@ class ReservationDetailView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildDressImage(dynamic images) {
+    String imageUrl = '';
+
+    if (images is String) {
+      // Obtener la primera imagen si es una lista como string
+      imageUrl = images.split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
+    } else if (images is List && images.isNotEmpty) {
+      imageUrl = images.first.toString();
+    }
+
+    if (imageUrl.isEmpty) {
+      return Container(
+        width: 120,
+        height: 120,
+        color: Colors.grey[200],
+        child: Icon(Icons.image_not_supported, color: Colors.grey[400], size: 40),
+      );
+    }
+
+    return Image.network(
+      imageUrl,
+      width: 120,
+      height: 120,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        width: 120,
+        height: 120,
+        color: Colors.grey[200],
+        child: Icon(Icons.image_not_supported, color: Colors.grey[400], size: 40),
+      ),
+    );
+  }
+
+  String _formatDuration(dynamic durationData) {
+    if (durationData == null) return 'No disponible';
+
+    try {
+      if (durationData is Map<String, dynamic>) {
+        final hours = durationData['hours'] ?? 0;
+        final minutes = durationData['minutes'] ?? 0;
+
+        String result = '';
+        if (hours > 0) {
+          result += '$hours ${hours == 1 ? 'hora' : 'horas'}';
+        }
+        if (minutes > 0) {
+          if (result.isNotEmpty) result += ' y ';
+          result += '$minutes ${minutes == 1 ? 'minuto' : 'minutos'}';
+        }
+
+        return result.isEmpty ? 'No especificada' : result;
+      } else if (durationData is String) {
+        return durationData;
+      }
+
+      return 'No disponible';
+    } catch (e) {
+      return 'Error en formato';
+    }
   }
 }

@@ -3,6 +3,21 @@ class CustomerModel {
   bool? receiveWhatsappUpdates;
 
   CustomerModel({required this.customerName, required this.phoneNumber, required this.type, required this.profilePicture, required this.emailAddress, required this.customerAddress, required this.dueAmount, required this.openingBalance, required this.remainedBalance, required this.gst, this.receiveWhatsappUpdates});
+  factory CustomerModel.empty() {
+    return CustomerModel(
+      customerName: '',
+      phoneNumber: '',
+      type: '',
+      profilePicture: '',
+      emailAddress: '',
+      customerAddress: '',
+      dueAmount: '',
+      openingBalance: '',
+      remainedBalance: '',
+      gst: '',
+      receiveWhatsappUpdates: false,
+    );
+  }
 
   CustomerModel.fromJson(Map<dynamic, dynamic> json)
       : customerName = json['customerName'] as String,

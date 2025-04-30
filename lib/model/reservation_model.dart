@@ -18,7 +18,7 @@ class ReservationModel {
     required this.reservationDate,
     required this.reservationTime,
     required this.createdAt,
-    required this.updatedAt,
+    required this.updatedAt
   });
 
   factory ReservationModel.fromMap(Map<String, dynamic> map, String documentId) {
@@ -31,7 +31,7 @@ class ReservationModel {
       reservationDate: map['reservation_date'] ?? '',
       reservationTime: map['reservation_time'] ?? '',
       createdAt: _parseTimestamp(map['created_at']),
-      updatedAt: _parseTimestamp(map['updated_at']),
+      updatedAt: _parseTimestamp(map['updated_at'])
     );
   }
 

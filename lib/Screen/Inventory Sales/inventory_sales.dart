@@ -18,8 +18,10 @@ import 'package:provider/provider.dart' as pro;
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
+import 'package:salespro_admin/Screen/Inventory%20Sales/share/TextIcon.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/ReservationProductModel.dart';
+import 'package:salespro_admin/utils/ReservationUtils.dart';
 
 import '../../PDF/print_pdf.dart';
 import '../../Provider/customer_provider.dart';
@@ -122,8 +124,11 @@ class _InventorySalesState extends State<InventorySales> {
     });
   }
 
-
   void showReservationSelection(String clientId) {
+    final TextStyle smallGreyTextStyle = TextStyle(
+      fontSize: 13,
+      color: Colors.grey[700], // Esto no puede ser const
+    );
     showDialog(
       context: context,
       builder: (context) {
@@ -139,9 +144,9 @@ class _InventorySalesState extends State<InventorySales> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Container(
-                    width: MediaQuery.of(context).size.width * 0.8,
+                    width: MediaQuery.of(context).size.width ,
                     constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                      maxHeight: MediaQuery.of(context).size.height * 0.9,
                       maxWidth: 500, // Limit maximum width
                     ),
                     child: Column(
@@ -193,10 +198,11 @@ class _InventorySalesState extends State<InventorySales> {
                               final dress = full.dress;
                               final service = full.service;
 
+
                               // Get dress image URL or use default
-                              final dressImageUrl = dress != null && dress['images'] != null ?
-                              dress['images'].toString() :
-                              'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672';
+                              // Obtener la primera imagen del campo 'images'
+                              final rawImages = dress?['images'] ?? '';
+                              final dressImageUrl = rawImages.toString().split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
 
                               // Create ReservationProductModel
                               final reservationModel = ReservationProductModel.fromMap({
@@ -216,6 +222,8 @@ class _InventorySalesState extends State<InventorySales> {
                                 'duration': service?['duration'] ?? {},
                               });
 
+                              print("jsonq ${ReservationUtils.formatFullReservation(full)}");
+
                               return InkWell(
                                 onTap: () {
                                   _addReservationToCart(reservationModel);
@@ -226,32 +234,22 @@ class _InventorySalesState extends State<InventorySales> {
                                   child: Row(
                                     children: [
                                       // Dress image
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: CachedNetworkImage(
-                                          imageUrl: dressImageUrl,
-                                          width: 60,
-                                          height: 60,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) => Container(
-                                            color: Colors.grey[300],
-                                            child: const Center(
-                                              child: SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              ),
+                                    SizedBox(
+                                        width: 60,
+                                        height: 60,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.network(
+                                            dressImageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Container(
+                                              color: Colors.grey[200],
+                                              child: Icon(Icons.image_not_supported, color: Colors.grey[400], size: 30),
                                             ),
                                           ),
-                                          errorWidget: (context, url, error) => Container(
-                                            color: Colors.grey[300],
-                                            child: const Icon(Icons.image_not_supported),
-                                          ),
                                         ),
-                                      ),
+                                    ),
                                       const SizedBox(width: 16),
-
-                                      // Details
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,33 +264,20 @@ class _InventorySalesState extends State<InventorySales> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             const SizedBox(height: 4),
-                                            Row(
-                                              children: [
-                                                const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  '${reservation['reservation_date'] ?? ''} • ${reservation['reservation_time'] ?? ''}',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.grey[700],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                            Text('📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}',style: smallGreyTextStyle ),
                                             const SizedBox(height: 2),
-                                            Row(
-                                              children: [
-                                                const Icon(Icons.store, size: 14, color: Colors.grey),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  'Sucursal: ${reservation['branch_id'] ?? '-'}',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.grey[700],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                            Text('🏬 Sucursal: ${reservation['branch_id']}',style: smallGreyTextStyle ),
+                                            const SizedBox(height: 2),
+                                            Text('👗 Vestido: ${dress?['name'] ?? '-'}',style: smallGreyTextStyle ),
+                                            const SizedBox(height: 2),
+                                            Text('🔖 Categoría: ${dress?['category'] ?? '-'}',style: smallGreyTextStyle ),
+                                            const SizedBox(height: 2),
+                                            Text('🛎️ Servicio: ${service?['name'] ?? '-'}',style: smallGreyTextStyle ),
+                                            const SizedBox(height: 2),
+                                            const SizedBox(height: 2),
+                                            Text('⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}',style: smallGreyTextStyle ),
+                                            const SizedBox(height: 2),
+                                            Text('📝 Descripción:\n${service?['description'] ?? '-'}',style: smallGreyTextStyle ),
                                           ],
                                         ),
                                       ),
@@ -357,7 +342,6 @@ class _InventorySalesState extends State<InventorySales> {
       setState(() => isAlertSet = true);
     }
   }
-
   bool isAlertSet = false;
   void showDialogBox() => showCupertinoDialog<String>(
     context: context,
@@ -614,7 +598,6 @@ class _InventorySalesState extends State<InventorySales> {
                           onPressed: () => showReservationSelection("8492220819"),
                           child: Text('Agregar Reserva'),
                         ),
-
                         const SizedBox(height: 5.0),
                         const Divider(thickness: 1.0, color: kNeutral300),
                         ResponsiveGridRow(rowSegments: 120, children: [
@@ -636,7 +619,7 @@ class _InventorySalesState extends State<InventorySales> {
                                       suffixIcon: const Icon(
                                         IconlyLight.calendar,
                                         color: kGreyTextColor,
-                                      )),
+                                  )),
                                 ),
                               )),
                           ResponsiveGridCol(
