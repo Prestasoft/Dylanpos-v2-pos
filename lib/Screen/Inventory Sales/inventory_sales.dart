@@ -1,7 +1,7 @@
-// ignore_for_file: use_build_context_synchronously, unused_result
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -46,18 +46,67 @@ import '../currency/currency_provider.dart';
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation});
 
-  // static const String route = '/inventory-sales';
   final SaleTransactionModel? quotation;
 
   @override
   State<InventorySales> createState() => _InventorySalesState();
 }
+
 class _InventorySalesState extends State<InventorySales> {
-  String searchItem = '';
-  ScrollController mainScroll = ScrollController();
   List<AddToCartModel> cartList = [];
   List<FocusNode> productFocusNode = [];
-  updateDueAmount() {
+  bool saleButtonClicked = false;
+  double serviceCharge = 0;
+  double discountAmount = 0;
+  double vatGst = 0;
+  DateTime selectedDueDate = DateTime.now();
+
+  TextEditingController payingAmountController = TextEditingController();
+  TextEditingController changeAmountController = TextEditingController();
+  TextEditingController dueAmountController = TextEditingController();
+  TextEditingController discountAmountEditingController = TextEditingController();
+  TextEditingController discountPercentageEditingController = TextEditingController();
+  TextEditingController nameCodeCategoryController = TextEditingController();
+
+  FocusNode nameFocus = FocusNode();
+  final ScrollController horizontalScroll = ScrollController();
+
+  String? selectedUserId = 'Guest';
+  CustomerModel? selectedUserName;
+  String? invoiceNumber;
+  String previousDue = "0";
+  late String selectedCustomerType = customerType.first;
+  late String selectedPaymentOption = paymentItem.first;
+
+  WareHouseModel? selectedWareHouse;
+  int i = 0;
+
+  List<String> get paymentItem => ['Efectivo', 'Transferencia', 'Tarjeta'];
+  List<String> get customerType => ['Retailer', 'Wholesaler', 'Dealer'];
+
+  @override
+  void initState() {
+    super.initState();
+    checkCurrentUserAndRestartApp();
+    payingAmountController.text = '0';
+    checkInternet();
+    updateDueAmount();
+
+    if (widget.quotation != null) {
+      for (var element in widget.quotation!.productList!) {
+        cartList.add(element);
+        addFocus();
+      }
+      discountAmountEditingController.text = widget.quotation!.discountAmount!.toStringAsFixed(2);
+      discountAmount = widget.quotation!.discountAmount!;
+      serviceCharge = widget.quotation!.discountAmount!;
+      selectedUserName?.customerName = widget.quotation!.customerName;
+      selectedUserName?.phoneNumber = widget.quotation!.customerPhone;
+      selectedUserName?.type = widget.quotation!.customerType;
+    }
+  }
+
+  void updateDueAmount() {
     setState(() {
       double total = double.parse(
         (double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(1),
@@ -72,9 +121,226 @@ class _InventorySalesState extends State<InventorySales> {
       }
     });
   }
-  bool saleButtonClicked = false;
-  Future<void> getPro() async {
-    return;
+
+
+  void showReservationSelection(String clientId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final reservations = ref.watch(fullReservationsByClientProvider(clientId));
+            return reservations.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Text('Error: $e'),
+              data: (reservations) {
+                return Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                      maxWidth: 500, // Limit maximum width
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header with close button
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Seleccionar Reserva',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryTextTheme.titleLarge?.color,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.close,
+                                  color: Theme.of(context).primaryTextTheme.titleLarge?.color,
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Content
+                        Flexible(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: reservations.length,
+                            separatorBuilder: (context, index) => const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final full = reservations[index];
+                              final reservation = full.reservation;
+                              final dress = full.dress;
+                              final service = full.service;
+
+                              // Get dress image URL or use default
+                              final dressImageUrl = dress != null && dress['images'] != null ?
+                              dress['images'].toString() :
+                              'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672';
+
+                              // Create ReservationProductModel
+                              final reservationModel = ReservationProductModel.fromMap({
+                                'id': full.id,
+                                'service_id': service?['id'] ?? '',
+                                'service_name': service?['name'] ?? 'Servicio',
+                                'client_id': clientId,
+                                'dress_id': dress?['id'] ?? '',
+                                'dress_name': dress?['name'] ?? 'Vestido',
+                                'branch_id': reservation['branch_id'] ?? '',
+                                'reservation_date': reservation['reservation_date'] ?? '',
+                                'reservation_time': reservation['reservation_time'] ?? '',
+                                'price': service != null && service['price'] != null ?
+                                (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0,
+                                'created_at': reservation['created_at'],
+                                'updated_at': reservation['updated_at'],
+                                'duration': service?['duration'] ?? {},
+                              });
+
+                              return InkWell(
+                                onTap: () {
+                                  _addReservationToCart(reservationModel);
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                  child: Row(
+                                    children: [
+                                      // Dress image
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: CachedNetworkImage(
+                                          imageUrl: dressImageUrl,
+                                          width: 60,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) => Container(
+                                            color: Colors.grey[300],
+                                            child: const Center(
+                                              child: SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(strokeWidth: 2),
+                                              ),
+                                            ),
+                                          ),
+                                          errorWidget: (context, url, error) => Container(
+                                            color: Colors.grey[300],
+                                            child: const Icon(Icons.image_not_supported),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+
+                                      // Details
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Vestido'}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${reservation['reservation_date'] ?? ''} • ${reservation['reservation_time'] ?? ''}',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.store, size: 14, color: Colors.grey),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Sucursal: ${reservation['branch_id'] ?? '-'}',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // Price and add icon
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            '\$${reservationModel.price.toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context).primaryColor,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Icon(
+                                              Icons.add_shopping_cart,
+                                              size: 18,
+                                              color: Theme.of(context).primaryColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
   void _addReservationToCart(ReservationProductModel reservation) {
     setState(() {
@@ -83,42 +349,98 @@ class _InventorySalesState extends State<InventorySales> {
       updateDueAmount();
     });
   }
-  List<String> get paymentItem => [
-        'Efectivo',
-        // lang.S.current.cash,
-        'Transferencia',
-        // lang.S.current.bank,
-        'Tarjeta',
-        // lang.S.current.mobilePay
-      ];
-  late String selectedPaymentOption = paymentItem.first;
-  late StreamSubscription subscription;
-  bool isDeviceConnected = false;
+
+  Future<void> checkInternet() async {
+    bool isDeviceConnected = await InternetConnection().hasInternetAccess;
+    if (!isDeviceConnected) {
+      showDialogBox();
+      setState(() => isAlertSet = true);
+    }
+  }
+
   bool isAlertSet = false;
-  showDialogBox() => showCupertinoDialog<String>(
-        context: context,
-        builder: (BuildContext context) => CupertinoAlertDialog(
-          title: Text(lang.S.of(context).noConnection),
-          content: Text(lang.S.of(context).pleaseCheckYourInternetConnectivity),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () async {
-                GoRouter.of(context).pop(lang.S.of(context).cancel);
-                // context.pop(lang.S.of(context).cancel);
-                // Navigator.pop(context, lang.S.of(context).cancel);
-                setState(() => isAlertSet = false);
-                // isDeviceConnected = await InternetConnection().hasInternetAccess;
-                bool isDeviceConnected = await InternetConnection().hasInternetAccess;
-                if (!isDeviceConnected && isAlertSet == false) {
-                  showDialogBox();
-                  setState(() => isAlertSet = true);
-                }
-              },
-              child: Text(lang.S.of(context).tryAgain),
-            ),
-          ],
+  void showDialogBox() => showCupertinoDialog<String>(
+    context: context,
+    builder: (BuildContext context) => CupertinoAlertDialog(
+      title: Text(lang.S.of(context).noConnection),
+      content: Text(lang.S.of(context).pleaseCheckYourInternetConnectivity),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () async {
+            GoRouter.of(context).pop(lang.S.of(context).cancel);
+            setState(() => isAlertSet = false);
+            bool isDeviceConnected = await InternetConnection().hasInternetAccess;
+            if (!isDeviceConnected && isAlertSet == false) {
+              showDialogBox();
+              setState(() => isAlertSet = true);
+            }
+          },
+          child: Text(lang.S.of(context).tryAgain),
         ),
-      );
+      ],
+    ),
+  );
+
+  String getTotalAmount() {
+    double total = 0.0;
+    for (var item in cartList) {
+      total = total + (double.parse(item.subTotal) * item.quantity);
+    }
+    return total.toStringAsFixed(2);
+  }
+
+  bool uniqueCheck(String code) {
+    bool isUnique = false;
+    for (var item in cartList) {
+      if (item.productId == code) {
+        if (item.quantity < item.stock!.toInt()) {
+          item.quantity += 1;
+        } else {
+          EasyLoading.showError(lang.S.of(context).outOfStock);
+        }
+        isUnique = true;
+        break;
+      }
+    }
+    return isUnique;
+  }
+
+  dynamic productPriceChecker({required ProductModel product, required String customerType}) {
+    if (customerType == "Retailer") {
+      return product.productSalePrice;
+    } else if (customerType == "Wholesaler") {
+      return product.productWholeSalePrice == '' ? '0' : product.productWholeSalePrice;
+    } else if (customerType == "Dealer") {
+      return product.productDealerPrice == '' ? '0' : product.productDealerPrice;
+    } else if (customerType == "Guest") {
+      return product.productSalePrice;
+    }
+  }
+
+  Future<void> _selectedDueDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDueDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101)
+    );
+    if (picked != null && picked != selectedDueDate) {
+      setState(() {
+        selectedDueDate = picked;
+      });
+    }
+  }
+
+  void addFocus() {
+    FocusNode f = FocusNode();
+    f.addListener(() {
+      if (!f.hasFocus) {
+        updateDueAmount();
+      }
+    });
+    productFocusNode.add(f);
+  }
+
   DropdownButton<String> getOption() {
     List<DropdownMenuItem<String>> dropDownItems = [];
     for (String des in paymentItem) {
@@ -139,22 +461,10 @@ class _InventorySalesState extends State<InventorySales> {
     );
   }
 
-  double dueAmount = 0.0;
-  TextEditingController payingAmountController = TextEditingController();
-  TextEditingController changeAmountController = TextEditingController();
-  TextEditingController dueAmountController = TextEditingController();
-
-  String searchProductCode = '';
-
-  String isSelected = 'Categories';
-  String selectedCategory = 'Categories';
-  String? selectedUserId = 'Guest';
-  CustomerModel? selectedUserName;
-  String? invoiceNumber;
-  String previousDue = "0";
-  FocusNode nameFocus = FocusNode();
   DropdownButton<String> getResult(List<CustomerModel> model) {
-    List<DropdownMenuItem<String>> dropDownItems = [DropdownMenuItem(value: 'Guest', child: Text(lang.S.of(context).guest))];
+    List<DropdownMenuItem<String>> dropDownItems = [
+      DropdownMenuItem(value: 'Guest', child: Text(lang.S.of(context).guest))
+    ];
     for (var des in model) {
       var item = DropdownMenuItem(
         alignment: Alignment.centerLeft,
@@ -172,10 +482,7 @@ class _InventorySalesState extends State<InventorySales> {
       dropDownItems.add(item);
     }
     return DropdownButton(
-      icon: const Icon(
-        Icons.keyboard_arrow_down,
-        color: kNeutral700,
-      ),
+      icon: const Icon(Icons.keyboard_arrow_down, color: kNeutral700),
       padding: const EdgeInsets.only(left: 10.0),
       isExpanded: true,
       alignment: Alignment.centerLeft,
@@ -188,7 +495,11 @@ class _InventorySalesState extends State<InventorySales> {
             if (element.phoneNumber == selectedUserId) {
               selectedUserName = element;
               previousDue = element.dueAmount;
-              selectedCustomerType == element.type ? null : {selectedCustomerType = element.type, cartList.clear(), productFocusNode.clear()};
+              selectedCustomerType == element.type ? null : {
+                selectedCustomerType = element.type,
+                cartList.clear(),
+                productFocusNode.clear()
+              };
             } else if (selectedUserId == 'Guest') {
               previousDue = '0';
               selectedCustomerType = 'Retailer';
@@ -200,50 +511,6 @@ class _InventorySalesState extends State<InventorySales> {
     );
   }
 
-  dynamic productPriceChecker({required ProductModel product, required String customerType}) {
-    if (customerType == "Retailer") {
-      return product.productSalePrice;
-    } else if (customerType == "Wholesaler") {
-      return product.productWholeSalePrice == '' ? '0' : product.productWholeSalePrice;
-    } else if (customerType == "Dealer") {
-      return product.productDealerPrice == '' ? '0' : product.productDealerPrice;
-    } else if (customerType == "Guest") {
-      return product.productSalePrice;
-    }
-  }
-  String getTotalAmount() {
-    double total = 0.0;
-    for (var item in cartList) {
-      total = total + (double.parse(item.subTotal) * item.quantity);
-    }
-    return total.toStringAsFixed(2);
-  }
-  bool uniqueCheck(String code) {
-    bool isUnique = false;
-    for (var item in cartList) {
-      if (item.productId == code) {
-        if (item.quantity < item.stock!.toInt()) {
-          item.quantity += 1;
-        } else {
-          EasyLoading.showError(lang.S.of(context).outOfStock);
-        }
-
-        isUnique = true;
-        break;
-      }
-    }
-    return isUnique;
-  }
-
-  List<String> get customerType => [
-        // lang.S.current.retailer,
-        'Retailer',
-        // lang.S.current.wholesaler,
-        'Wholesaler',
-        // lang.S.current.dealer,
-        'Dealer',
-      ];
-  late String selectedCustomerType = customerType.first;
   DropdownButton<String> getCategories() {
     List<DropdownMenuItem<String>> dropDownItems = [];
     for (String des in customerType) {
@@ -257,10 +524,7 @@ class _InventorySalesState extends State<InventorySales> {
       dropDownItems.add(item);
     }
     return DropdownButton(
-      icon: const Icon(
-        Icons.keyboard_arrow_down,
-        color: kGreyTextColor,
-      ),
+      icon: const Icon(Icons.keyboard_arrow_down, color: kGreyTextColor),
       items: dropDownItems,
       value: selectedCustomerType,
       onChanged: (value) {
@@ -272,126 +536,7 @@ class _InventorySalesState extends State<InventorySales> {
     );
   }
 
-  DateTime selectedDueDate = DateTime.now();
-
-  Future<void> _selectedDueDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDueDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
-    if (picked != null && picked != selectedDueDate) {
-      setState(() {
-        selectedDueDate = picked;
-      });
-    }
-  }
-
-
-  double serviceCharge = 0;
-  double discountAmount = 0;
-
-  TextEditingController discountAmountEditingController = TextEditingController();
-  // TextEditingController vatAmountEditingController = TextEditingController();
-  TextEditingController discountPercentageEditingController = TextEditingController();
-  // TextEditingController vatPercentageEditingController = TextEditingController();
-  double vatGst = 0;
-
-  addFocus() {
-    FocusNode f = FocusNode();
-    f.addListener(
-      () {
-        if (!f.hasFocus) {
-          updateDueAmount();
-        }
-      },
-    );
-    productFocusNode.add(f);
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    checkCurrentUserAndRestartApp();
-    // getConnectivity();
-    payingAmountController.text = '0';
-    checkInternet();
-    updateDueAmount();
-
-    if (widget.quotation != null) {
-      for (var element in widget.quotation!.productList!) {
-        cartList.add(element);
-        addFocus();
-      }
-      discountAmountEditingController.text = widget.quotation!.discountAmount!.toStringAsFixed(2);
-      discountAmount = widget.quotation!.discountAmount!;
-      serviceCharge = widget.quotation!.discountAmount!;
-      selectedUserName?.customerName = widget.quotation!.customerName;
-      selectedUserName?.phoneNumber = widget.quotation!.customerPhone;
-      selectedUserName?.type = widget.quotation!.customerType;
-    }
-  }
-
-  checkInternet() async {
-    // isDeviceConnected = await InternetConnection().hasInternetAccess;
-    isDeviceConnected = await InternetConnection().hasInternetAccess;
-    if (!isDeviceConnected) {
-      showDialogBox();
-      setState(() => isAlertSet = true);
-    }
-  }
-
-  void _showReservationSelection() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final reservations = ref.watch(upcomingReservationsProvider);
-            return reservations.when(
-              loading: () => Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error: $e'),
-              data: (reservations) {
-                return AlertDialog(
-                  title: Text('Seleccionar Reserva'),
-                  content: SizedBox(
-                    width: double.maxFinite,
-                    child: ListView.builder(
-                      itemCount: reservations.length,
-                      itemBuilder: (context, index) {
-                        final reservation = reservations[index];
-                        return ListTile(
-                          title: Text('${reservation.serviceId} - ${reservation.serviceId}'),
-                          subtitle: Text('${reservation.reservationDate} ${reservation.reservationTime}'),
-                          trailing: Text('\$${reservation.dressId}'),
-                          onTap: () {
-                            _addReservationToCart(reservation as ReservationProductModel);
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-
-
-  TextEditingController nameCodeCategoryController = TextEditingController();
-  final ScrollController mainSideScroller = ScrollController();
-
-  //____________________________WareHouseModel_________________
-
-  WareHouseModel? selectedWareHouse;
-
-  int i = 0;
-
   DropdownButton<WareHouseModel> getWare({required List<WareHouseModel> list}) {
-    // Set initial value to the first item in the list, if available
-    // selectedWareHouse = list.isNotEmpty ? list.first : null;
     List<DropdownMenuItem<WareHouseModel>> dropDownItems = [];
     for (var element in list) {
       dropDownItems.add(DropdownMenuItem(
@@ -407,12 +552,8 @@ class _InventorySalesState extends State<InventorySales> {
       }
       i++;
     }
-
     return DropdownButton(
-      icon: const Icon(
-        Icons.keyboard_arrow_down,
-        color: kNeutral700,
-      ),
+      icon: const Icon(Icons.keyboard_arrow_down, color: kNeutral700),
       items: dropDownItems,
       isExpanded: true,
       value: selectedWareHouse,
@@ -424,7 +565,6 @@ class _InventorySalesState extends State<InventorySales> {
     );
   }
 
-  final horizontalScroll = ScrollController();
   @override
   Widget build(BuildContext context) {
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
@@ -435,6 +575,7 @@ class _InventorySalesState extends State<InventorySales> {
     List<String> allProductsCodeList = [];
     List<String> warehouseIdList = [];
     List<WarehouseBasedProductModel> warehouseBasedProductModel = [];
+
     return SafeArea(
       child: Scaffold(
         backgroundColor: kDarkWhite,
@@ -444,6 +585,7 @@ class _InventorySalesState extends State<InventorySales> {
           final personalData = consumerRef.watch(profileDetailsProvider);
           final settingProvider = consumerRef.watch(generalSettingProvider);
           AsyncValue<List<ProductModel>> productList = consumerRef.watch(productProvider);
+
           return personalData.when(data: (data) {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -451,7 +593,10 @@ class _InventorySalesState extends State<InventorySales> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.0),
+                        color: kWhite
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -459,24 +604,20 @@ class _InventorySalesState extends State<InventorySales> {
                           padding: const EdgeInsets.only(left: 12, top: 12),
                           child: Text(
                             lang.S.of(context).inventorySales,
-                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w600
+                            ),
                           ),
                         ),
 
-                        // Y un botón/modal para seleccionar reservas
                         ElevatedButton(
-                          onPressed: () => _showReservationSelection(),
+                          onPressed: () => showReservationSelection("8492220819"),
                           child: Text('Agregar Reserva'),
-                        ),// Y un botón/modal para seleccionar reservas
-
+                        ),
 
                         const SizedBox(height: 5.0),
-                        const Divider(
-                          thickness: 1.0,
-                          color: kNeutral300,
-                        ),
+                        const Divider(thickness: 1.0, color: kNeutral300),
                         ResponsiveGridRow(rowSegments: 120, children: [
-                          //--------------------------date------------------
                           ResponsiveGridCol(
                               xs: 120,
                               md: 60,
@@ -498,7 +639,6 @@ class _InventorySalesState extends State<InventorySales> {
                                       )),
                                 ),
                               )),
-                          //--------------------due fields-------------------
                           ResponsiveGridCol(
                             xs: 120,
                             md: 60,
@@ -507,7 +647,6 @@ class _InventorySalesState extends State<InventorySales> {
                               List<String> listOfPhoneNumber = [];
                               List<CustomerModel> customersList = [];
                               for (var value1 in allCustomers) {
-                                // listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
                                 listOfPhoneNumber.add(value1.phoneNumber.replaceAll(RegExp(r'\s+'), '').toLowerCase());
                                 if (value1.type != 'Supplier') {
                                   customersList.add(value1);
@@ -577,7 +716,6 @@ class _InventorySalesState extends State<InventorySales> {
                               );
                             }),
                           ),
-                          //----------------invoice----------------------
                           ResponsiveGridCol(
                               xs: 40,
                               md: 40,
@@ -590,7 +728,6 @@ class _InventorySalesState extends State<InventorySales> {
                                   textAlign: TextAlign.center,
                                 ),
                               )),
-                          //----------------warehouse--------------------
                           ResponsiveGridCol(
                               xs: 80,
                               md: 80,
@@ -617,7 +754,6 @@ class _InventorySalesState extends State<InventorySales> {
                                       ),
                                     ),
                                   );
-
                                 },
                                 error: (e, stack) {
                                   return Center(
@@ -632,16 +768,12 @@ class _InventorySalesState extends State<InventorySales> {
                                   );
                                 },
                               )),
-                          //-----------------search product-----------------
                           ResponsiveGridCol(
                             xs: 120,
                             md: screenWidth < 780 ? 120 : 60,
                             lg: 60,
                             child: productList.when(data: (product) {
                               for (var element in product) {
-                                // allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
-                                // allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
-                                // warehouseIdList.add(element.warehouseId.removeAllWhiteSpace().toLowerCase());
                                 allProductsNameList.add(element.productName.replaceAll(RegExp(r'\s+'), '').toLowerCase());
                                 allProductsCodeList.add(element.productCode.replaceAll(RegExp(r'\s+'), '').toLowerCase());
                                 warehouseIdList.add(element.warehouseId.replaceAll(RegExp(r'\s+'), '').toLowerCase());
@@ -652,7 +784,6 @@ class _InventorySalesState extends State<InventorySales> {
                                 child: TypeAheadField(
                                   suggestionsCallback: (pattern) {
                                     ProductRepo pr = ProductRepo();
-                                    // return pr.getAllProductByJson(searchData: pattern);
                                     return pr.getAllProductByJsonWarehouse(searchData: pattern, warehouseId: selectedWareHouse!);
                                   },
                                   itemBuilder: (context, suggestion) {
@@ -663,7 +794,6 @@ class _InventorySalesState extends State<InventorySales> {
                                     );
                                     return ListTile(
                                       contentPadding: const EdgeInsets.fromLTRB(10.0, 5.0, 15.0, 5.0),
-                                      // visualDensity: const VisualDensity(vertical: -2),
                                       horizontalTitleGap: 10.0,
                                       leading: Container(
                                         height: 45.0,
@@ -713,8 +843,6 @@ class _InventorySalesState extends State<InventorySales> {
                                         productId: product.productCode,
                                         quantity: 1,
                                         productImage: product.productPicture,
-                                        // stock: product.productStock.toInt(),
-                                        // productPurchasePrice: product.productPurchasePrice.toDouble(),
                                         stock: int.tryParse(product.productStock) ?? 0,
                                         productPurchasePrice: double.tryParse(product.productPurchasePrice) ?? 0.0,
                                         subTotal: productPriceChecker(
@@ -734,11 +862,9 @@ class _InventorySalesState extends State<InventorySales> {
                                         addFocus();
                                         nameCodeCategoryController.clear();
                                         nameFocus.requestFocus();
-                                        searchProductCode = '';
                                       } else {
                                         nameCodeCategoryController.clear();
                                         nameFocus.requestFocus();
-                                        searchProductCode = '';
                                       }
                                       updateDueAmount();
                                     });
@@ -765,7 +891,6 @@ class _InventorySalesState extends State<InventorySales> {
                               );
                             }),
                           ),
-                          //----------------customer type---------------
                           ResponsiveGridCol(
                             xs: 120,
                             md: screenWidth < 780 ? 120 : 60,
@@ -787,242 +912,6 @@ class _InventorySalesState extends State<InventorySales> {
                             ),
                           )
                         ]),
-                        // Row(
-                        //   children: [
-                        //     Expanded(
-                        //         child: Column(
-                        //       crossAxisAlignment: CrossAxisAlignment.start,
-                        //       children: [
-                        //         Text(
-                        //           lang.S.of(context).date,
-                        //           // 'Date',
-                        //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 8,
-                        //         ),
-                        //         SizedBox(
-                        //           height: 40,
-                        //           child: TextFormField(
-                        //             readOnly: true,
-                        //             onTap: () {
-                        //               _selectedDueDate(context);
-                        //             },
-                        //             decoration: bInputDecoration.copyWith(
-                        //                 hintText: '${selectedDueDate.day}/${selectedDueDate.month}/${selectedDueDate.year}',
-                        //                 hintStyle: bTextStyle.copyWith(),
-                        //                 contentPadding: const EdgeInsets.only(left: 8.0),
-                        //                 suffixIcon: const Icon(
-                        //                   Icons.calendar_month,
-                        //                   color: kGreyTextColor,
-                        //                 )),
-                        //           ),
-                        //         )
-                        //       ],
-                        //     )),
-                        //     const SizedBox(
-                        //       width: 10,
-                        //     ),
-                        //     Expanded(
-                        //         child: Column(
-                        //       crossAxisAlignment: CrossAxisAlignment.start,
-                        //       children: [
-                        //         RichText(
-                        //           text: TextSpan(
-                        //             text: lang.S.of(context).party,
-                        //             style: bTextStyle.copyWith(
-                        //               fontWeight: FontWeight.bold,
-                        //             ),
-                        //             children: [
-                        //               TextSpan(text: '(${lang.S.of(context).previousDue}: ', style: bTextStyle.copyWith(color: Colors.red)),
-                        //               TextSpan(text: '$globalCurrency${myFormat.format(double.tryParse(previousDue) ?? 0)} )', style: kTextStyle.copyWith(color: Colors.red))
-                        //             ],
-                        //           ),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 8,
-                        //         ),
-                        //         customerList.when(data: (allCustomers) {
-                        //           List<String> listOfPhoneNumber = [];
-                        //           List<CustomerModel> customersList = [];
-                        //           for (var value1 in allCustomers) {
-                        //             listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
-                        //             if (value1.type != 'Supplier') {
-                        //               customersList.add(value1);
-                        //             }
-                        //           }
-                        //           return SizedBox(
-                        //             height: 40.0,
-                        //             child: FormField(
-                        //               builder: (FormFieldState<dynamic> field) {
-                        //                 return InputDecorator(
-                        //                   decoration: InputDecoration(
-                        //                     suffixIcon: Container(
-                        //                       height: 40,
-                        //                       width: 40,
-                        //                       decoration: const BoxDecoration(
-                        //                         borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
-                        //                         color: kBlueTextColor,
-                        //                       ),
-                        //                       child: const Center(
-                        //                         child: Icon(
-                        //                           FeatherIcons.userPlus,
-                        //                           size: 18.0,
-                        //                           color: Colors.white,
-                        //                         ),
-                        //                       ),
-                        //                     ).onTap(() => AddCustomer(
-                        //                           typeOfCustomerAdd: 'Buyer',
-                        //                           listOfPhoneNumber: listOfPhoneNumber,
-                        //                           sideBarNumber: 1,
-                        //                         ).launch(context)),
-                        //                     enabledBorder: const OutlineInputBorder(
-                        //                       borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                        //                       borderSide: BorderSide(color: kBorderColorTextField, width: 1),
-                        //                     ),
-                        //                     contentPadding: const EdgeInsets.only(left: 7.0, right: 7.0),
-                        //                     floatingLabelBehavior: FloatingLabelBehavior.never,
-                        //                   ),
-                        //                   child: widget.quotation != null
-                        //                       ? Text(widget.quotation!.customerName)
-                        //                       : Theme(
-                        //                           data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                        //                           child: DropdownButtonHideUnderline(child: getResult(customersList))),
-                        //                 );
-                        //               },
-                        //             ),
-                        //           );
-                        //
-                        //           //   Card(
-                        //           //   margin: EdgeInsets.zero,
-                        //           //   clipBehavior: Clip.antiAlias,
-                        //           //   color: Colors.white,
-                        //           //   elevation: 0,
-                        //           //   shape: RoundedRectangleBorder(
-                        //           //     borderRadius: BorderRadius.circular(5.0),
-                        //           //     side: const BorderSide(color: kLitGreyColor),
-                        //           //   ),
-                        //           //   child: SizedBox(
-                        //           //     height: 40,
-                        //           //     child: Row(
-                        //           //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //           //       children: [
-                        //           //         widget.quotation != null
-                        //           //             ? Text(widget.quotation!.customerName)
-                        //           //             : DropdownButtonHideUnderline(child: getResult(customersList)),
-                        //           //         Container(
-                        //           //           height: 40,
-                        //           //           width: 40,
-                        //           //           decoration: const BoxDecoration(
-                        //           //             borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
-                        //           //             color: kBlueTextColor,
-                        //           //           ),
-                        //           //           child: const Center(
-                        //           //             child: Icon(
-                        //           //               FeatherIcons.userPlus,
-                        //           //               size: 18.0,
-                        //           //               color: Colors.white,
-                        //           //             ),
-                        //           //           ),
-                        //           //         ).onTap(() => AddCustomer(
-                        //           //               typeOfCustomerAdd: 'Buyer',
-                        //           //               listOfPhoneNumber: listOfPhoneNumber,
-                        //           //               sideBarNumber: 1,
-                        //           //             ).launch(context))
-                        //           //       ],
-                        //           //     ),
-                        //           //   ),
-                        //           // );
-                        //         }, error: (e, stack) {
-                        //           return Center(
-                        //             child: Text(e.toString()),
-                        //           );
-                        //         }, loading: () {
-                        //           return const Center(
-                        //             child: CircularProgressIndicator(),
-                        //           );
-                        //         }),
-                        //       ],
-                        //     )),
-                        //     const SizedBox(
-                        //       width: 10,
-                        //     ),
-                        //     Expanded(
-                        //         child: Column(
-                        //       crossAxisAlignment: CrossAxisAlignment.start,
-                        //       children: [
-                        //         Text(
-                        //           lang.S.of(context).invoice,
-                        //           //'Invoice',
-                        //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 8,
-                        //         ),
-                        //         SizedBox(
-                        //           height: 40,
-                        //           child: TextFormField(
-                        //             readOnly: true,
-                        //             decoration: bInputDecoration.copyWith(
-                        //                 hintText: widget.quotation == null ? data.saleInvoiceCounter.toString() : widget.quotation!.invoiceNumber,
-                        //                 hintStyle: bTextStyle.copyWith(),
-                        //                 contentPadding: const EdgeInsets.only(left: 8.0)),
-                        //             textAlign: TextAlign.center,
-                        //           ),
-                        //         )
-                        //       ],
-                        //     )),
-                        //     const SizedBox(
-                        //       width: 10,
-                        //     ),
-                        //     wareHouseList.when(
-                        //       data: (warehouse) {
-                        //         return Expanded(
-                        //           child: Column(
-                        //             crossAxisAlignment: CrossAxisAlignment.start,
-                        //             children: [
-                        //               Text(
-                        //                 lang.S.of(context).warehouse,
-                        //                 // 'Warehouse',
-                        //                 style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                        //               ),
-                        //               const SizedBox(
-                        //                 height: 6,
-                        //               ),
-                        //               Container(
-                        //                 height: 40,
-                        //                 padding: const EdgeInsets.all(10),
-                        //                 decoration: BoxDecoration(
-                        //                     border: Border.all(
-                        //                       color: kBorderColorTextField,
-                        //                     ),
-                        //                     borderRadius: BorderRadius.circular(6.0)),
-                        //                 child: Theme(
-                        //                   data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor),
-                        //                   child: DropdownButtonHideUnderline(
-                        //                     child: getWare(list: warehouse ?? []),
-                        //                   ),
-                        //                 ),
-                        //               ),
-                        //             ],
-                        //           ),
-                        //         );
-                        //       },
-                        //       error: (e, stack) {
-                        //         return Center(
-                        //           child: Text(
-                        //             e.toString(),
-                        //           ),
-                        //         );
-                        //       },
-                        //       loading: () {
-                        //         return const Center(
-                        //           child: CircularProgressIndicator(),
-                        //         );
-                        //       },
-                        //     )
-                        //   ],
-                        // ),
                         const SizedBox(height: 20),
 
                         LayoutBuilder(
@@ -1037,7 +926,6 @@ class _InventorySalesState extends State<InventorySales> {
                                 scrollDirection: Axis.horizontal,
                                 controller: horizontalScroll,
                                 child: Container(
-                                  // width: context.width() < 1260 ? 630 : context.width() * 1,
                                   height: MediaQuery.of(context).size.height < 720 ? 720 - 410 : MediaQuery.of(context).size.height - 410,
                                   constraints: BoxConstraints(
                                     minWidth: kWidth,
@@ -1050,7 +938,6 @@ class _InventorySalesState extends State<InventorySales> {
                                           width: 1.0,
                                           borderRadius: BorderRadius.circular(10),
                                         ),
-
                                         dividerThickness: 0.0,
                                         dataRowColor: const WidgetStatePropertyAll(Colors.white),
                                         headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
@@ -1060,8 +947,8 @@ class _InventorySalesState extends State<InventorySales> {
                                         columns: [
                                           DataColumn(
                                               label: Text(
-                                            lang.S.of(context).productNam,
-                                          )),
+                                                lang.S.of(context).productNam,
+                                              )),
                                           DataColumn(
                                               headingRowAlignment: MainAxisAlignment.center,
                                               label: Text(
@@ -1121,16 +1008,12 @@ class _InventorySalesState extends State<InventorySales> {
                                                       if ((cartList[index].stock ?? 0) < (num.tryParse(value) ?? 0)) {
                                                         EasyLoading.showError(lang.S.of(context).outOfStock);
                                                         quantityController.clear();
-                                                        // updateDueAmount();
                                                       } else if (value == '') {
                                                         cartList[index].quantity = 1;
-                                                        // updateDueAmount();
                                                       } else if (value == '0') {
                                                         cartList[index].quantity = 1;
-                                                        // updateDueAmount();
                                                       } else {
                                                         cartList[index].quantity = (num.tryParse(value) ?? 1);
-                                                        // updateDueAmount();
                                                       }
                                                     },
                                                     onFieldSubmitted: (value) {
@@ -1155,10 +1038,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                         setState(() {
                                                           cartList[index].quantity += 1;
                                                           updateDueAmount();
-                                                          // toast(cartList[index].quantity.toString());
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(content: Text(cartList[index].quantity.toString())),
-                                                          );
                                                         });
                                                       } else {
                                                         EasyLoading.showError(lang.S.of(context).outOfStock);
@@ -1249,14 +1128,12 @@ class _InventorySalesState extends State<InventorySales> {
                           },
                         ),
                         const SizedBox(height: 10),
-                        //-------------calculation section------------------------------
                         ResponsiveGridRow(children: [
                           ResponsiveGridCol(
                             xs: 12,
                             md: screenWidth < 800 ? 12 : 6,
                             lg: 6,
                             child: ResponsiveGridRow(children: [
-                              //-----------------paying amount--------------------------------
                               ResponsiveGridCol(
                                   xs: 12,
                                   md: 6,
@@ -1266,7 +1143,6 @@ class _InventorySalesState extends State<InventorySales> {
                                     child: TextField(
                                       onChanged: (value) {
                                         setState(() {
-                                          // double total = double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1));
                                           double total = double.parse((double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(1));
 
                                           double paidAmount = double.parse(value);
@@ -1283,7 +1159,6 @@ class _InventorySalesState extends State<InventorySales> {
                                       decoration: InputDecoration(labelText: lang.S.of(context).payingAmount, hintText: lang.S.of(context).enterReceivedAmount),
                                     ),
                                   )),
-                              //------------------due amount------------------------------
                               ResponsiveGridCol(
                                   xs: 12,
                                   md: 6,
@@ -1296,7 +1171,6 @@ class _InventorySalesState extends State<InventorySales> {
                                       decoration: InputDecoration(labelText: lang.S.of(context).dueAmount, hintText: lang.S.of(context).enterDueAmount),
                                     ),
                                   )),
-                              //-------------------change return-----------------
                               ResponsiveGridCol(
                                   xs: 12,
                                   md: 6,
@@ -1312,7 +1186,6 @@ class _InventorySalesState extends State<InventorySales> {
                                       ),
                                     ),
                                   )),
-                              //---------------------payment type-------------
                               ResponsiveGridCol(
                                   xs: 12,
                                   md: 6,
@@ -1340,7 +1213,6 @@ class _InventorySalesState extends State<InventorySales> {
                                     ),
                                   ))
                             ]),
-
                           ),
                           ResponsiveGridCol(
                               xs: 12,
@@ -1354,7 +1226,6 @@ class _InventorySalesState extends State<InventorySales> {
                                     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 19),
                                     child: Column(
                                       children: [
-                                        ///__________total amount__________________________________________
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
                                             xs: 12,
@@ -1364,7 +1235,6 @@ class _InventorySalesState extends State<InventorySales> {
                                               padding: EdgeInsets.only(bottom: screenWidth < 577 ? 8 : 0),
                                               child: Text(
                                                 lang.S.of(context).totalAmount,
-                                                //'Total Amount',
                                                 style: theme.textTheme.bodyLarge,
                                               ),
                                             ),
@@ -1379,7 +1249,6 @@ class _InventorySalesState extends State<InventorySales> {
                                               decoration: const BoxDecoration(color: Color(0xff00AE1C), borderRadius: BorderRadius.all(Radius.circular(8))),
                                               child: Center(
                                                 child: Text(
-                                                  // '$globalCurrency ${myFormat.format(double.tryParse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(2)) ?? 0)}',
                                                   '$globalCurrency ${myFormat.format(double.tryParse((double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(2)) ?? 0)}',
                                                   style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
                                                 ),
@@ -1387,10 +1256,7 @@ class _InventorySalesState extends State<InventorySales> {
                                             ),
                                           ),
                                         ]),
-
                                         const SizedBox(height: 10.0),
-
-                                        ///__________service/shipping_____________________________
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
                                             xs: 12,
@@ -1400,7 +1266,6 @@ class _InventorySalesState extends State<InventorySales> {
                                               padding: EdgeInsets.only(bottom: screenWidth < 577 ? 8 : 0),
                                               child: Text(
                                                 lang.S.of(context).shpingOrServices,
-                                                //'Total Amount',
                                                 style: theme.textTheme.bodyLarge,
                                               ),
                                             ),
@@ -1415,7 +1280,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                 initialValue: serviceCharge.toString(),
                                                 onChanged: (value) {
                                                   setState(() {
-                                                    // serviceCharge = value.toDouble();
                                                     serviceCharge = double.parse(value);
                                                     updateDueAmount();
                                                   });
@@ -1427,8 +1291,6 @@ class _InventorySalesState extends State<InventorySales> {
                                           ),
                                         ]),
                                         const SizedBox(height: 10.0),
-
-                                        ///___________vat____________________________________
                                         ListView.builder(
                                           itemCount: getAllTaxFromCartList(cart: cartList).length,
                                           shrinkWrap: true,
@@ -1489,8 +1351,6 @@ class _InventorySalesState extends State<InventorySales> {
                                             );
                                           },
                                         ),
-
-                                        ///________discount_________________________________________________
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
                                             xs: 12,
@@ -1500,7 +1360,6 @@ class _InventorySalesState extends State<InventorySales> {
                                               padding: EdgeInsets.only(bottom: screenWidth < 577 ? 8 : 0),
                                               child: Text(
                                                 lang.S.of(context).shpingOrServices,
-                                                //'Total Amount',
                                                 style: theme.textTheme.bodyLarge,
                                               ),
                                             ),
@@ -1621,21 +1480,15 @@ class _InventorySalesState extends State<InventorySales> {
                                             ),
                                           ),
                                         ]),
-
                                       ],
                                     ),
                                   ),
                                 ),
                               ))
                         ]),
-
-
-                        const SizedBox(
-                          height: 10,
-                        ),
+                        const SizedBox(height: 10),
                         ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
                           if (screenWidth > 1240) ResponsiveGridCol(lg: 3, xs: 0, md: 0, child: const SizedBox.shrink()),
-                          //-----------------cancel button------------------
                           ResponsiveGridCol(
                             xs: 6,
                             md: 4,
@@ -1655,7 +1508,6 @@ class _InventorySalesState extends State<InventorySales> {
                               ),
                             ),
                           ),
-                          //---------------------quotation button----------
                           ResponsiveGridCol(
                             xs: 6,
                             md: 4,
@@ -1760,12 +1612,8 @@ class _InventorySalesState extends State<InventorySales> {
                                                                     transitionModel.paymentType = 'Just Quotation';
                                                                     transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
 
-                                                                    ///_________Push_on_dataBase____________________________________________________________________________
                                                                     await ref.push().set(transitionModel.toJson());
-
-                                                                    ///_________Invoice Increase____________________________________________________________________________
                                                                     updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
-
                                                                     consumerRef.refresh(profileDetailsProvider);
 
                                                                     EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully);
@@ -1775,11 +1623,9 @@ class _InventorySalesState extends State<InventorySales> {
                                                                       context: context,
                                                                       isFromInventorySale: true,
                                                                     );
-                                                                    // context.pop();
                                                                     GoRouter.of(dialogContext).pop();
                                                                   } catch (e) {
                                                                     EasyLoading.dismiss();
-                                                                    //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                                                   }
                                                                 },
                                                               ),
@@ -1795,7 +1641,6 @@ class _InventorySalesState extends State<InventorySales> {
                                           });
                                     }
                                   } else {
-                                    // EasyLoading.showError('Update your plan first\nSale Limit is over.');
                                     EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
                                   }
                                 },
@@ -1841,6 +1686,7 @@ class _InventorySalesState extends State<InventorySales> {
 
                                             if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
                                               EasyLoading.showError(lang.S.of(context).dueIsNotAvailableForGuest);
+
                                             } else {
                                               try {
                                                 setState(() {
@@ -1849,23 +1695,14 @@ class _InventorySalesState extends State<InventorySales> {
                                                 EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
 
                                                 DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
-
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
                                                 (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
-
                                                 transitionModel.paymentType = selectedPaymentOption;
                                                 transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
-
-                                                ///__________total LossProfit & quantity________________________________________________________________
                                                 SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
-
-                                                ///_________Push_on_dataBase____________________________________________________________________________
                                                 await ref.push().set(post.toJson());
-
                                                 await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: data, saleTransactionModel: transitionModel, context: context, fromInventorySale: true, setting: setting);
-
-                                                ///__________StockMange_________________________________________________________________________________
                                                 final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
                                                 for (var element in transitionModel.productList!) {
                                                   var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
@@ -1878,8 +1715,6 @@ class _InventorySalesState extends State<InventorySales> {
 
                                                   stockRef.child(productPath).update({'productStock': '$remainStock'});
 
-                                                  ///________Update_Serial_Number____________________________________________________
-
                                                   if (element.serialNumber?.isNotEmpty ?? false) {
                                                     var productOldSerialList = data2[productPath]['serialNumber'];
 
@@ -1890,14 +1725,8 @@ class _InventorySalesState extends State<InventorySales> {
                                                   }
                                                 }
 
-                                                ///_________Invoice Increase____________________________________________________________________________
                                                 updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
-
-                                                ///________Subscription_____________________________________________________
-
                                                 Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
-
-                                                ///________daily_transactionModel_________________________________________________________________________
 
                                                 DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                                   name: post.customerName,
@@ -1912,7 +1741,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                 );
                                                 postDailyTransaction(dailyTransactionModel: dailyTransaction);
 
-                                                ///_________DueUpdate___________________________________________________________________________________
                                                 if (transitionModel.customerName != 'Guest') {
                                                   final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
                                                   String? key;
@@ -1931,7 +1759,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                   int totalDue = previousDue + transitionModel.dueAmount!.toInt();
                                                   dueUpdateRef.child(key!).update({'due': '$totalDue'});
                                                 }
-                                                ///________update_all_provider___________________________________________________
                                                 consumerRef.refresh(allCustomerProvider);
                                                 consumerRef.refresh(transitionProvider);
                                                 consumerRef.refresh(productProvider);
@@ -1939,20 +1766,16 @@ class _InventorySalesState extends State<InventorySales> {
                                                 consumerRef.refresh(dueTransactionProvider);
                                                 consumerRef.refresh(profileDetailsProvider);
                                                 consumerRef.refresh(dailyTransactionProvider);
-                                                //
-                                                //EasyLoading.showSuccess('Sale Successfully Done');
                                                 EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
                                               } catch (e) {
                                                 setState(() {
                                                   saleButtonClicked = false;
                                                 });
                                                 EasyLoading.dismiss();
-                                                //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                               }
                                             }
                                           }
                                         } else {
-                                          //EasyLoading.showError('Update your plan first\nSale Limit is over.');
                                           EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
                                         }
                                       }
@@ -1979,13 +1802,9 @@ class _InventorySalesState extends State<InventorySales> {
               ),
             );
           }, error: (e, stack) {
-            return Center(
-              child: Text(e.toString()),
-            );
+            return Center(child: Text(e.toString()));
           }, loading: () {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           });
         }),
       ),

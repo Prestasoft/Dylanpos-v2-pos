@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
+import 'package:salespro_admin/model/FullReservation.dart';
 import 'package:salespro_admin/model/ReservationProductModel.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'package:salespro_admin/model/dress_model.dart';
@@ -257,41 +258,70 @@ final cancelReservationProvider = FutureProvider.family<bool, String>((ref, rese
   }
 });
 
-final upcomingReservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
+final fullReservationsByClientProvider = StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
   final today = DateTime.now();
   final formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
-  return FirebaseDatabase.instance
-      .ref('Admin Panel/reservations')
+  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+  final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
+  final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
+
+  return reservationsRef
       .orderByChild('reservation_date')
       .startAt(formattedToday)
       .onValue
-      .map((event) {
+      .asyncMap((event) async {
     final snapshot = event.snapshot;
-    if (snapshot.value == null) return [];
+    if (snapshot.value == null || snapshot.value is! Map) return [];
 
-    if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
-      final reservations = data.entries
-          .where((entry) => entry.value is Map && _isValidReservation(entry.value as Map))
-          .map((entry) {
-        return ReservationModel.fromMap(
-            Map<String, dynamic>.from(entry.value as Map),
-            entry.key.toString()
-        );
-      }).toList();
+    final data = snapshot.value as Map<dynamic, dynamic>;
 
-      reservations.sort((a, b) {
-        int dateCompare = a.reservationDate.compareTo(b.reservationDate);
-        if (dateCompare != 0) return dateCompare;
-        return a.reservationTime.compareTo(b.reservationTime);
+    final reservations = data.entries.where((entry) {
+      final value = entry.value;
+      return value is Map &&
+          _isValidReservation(value) &&
+          value['client_id'] == clientId;
+    }).toList();
+
+    // Obtener IDs únicos de vestidos y servicios
+    final dressIds = reservations.map((e) => e.value['dress_id']?.toString()).whereType<String>().toSet();
+    final serviceIds = reservations.map((e) => e.value['service_id']?.toString()).whereType<String>().toSet();
+
+    // Obtener todos los vestidos y servicios
+    final dressSnap = await dressesRef.get();
+    final serviceSnap = await servicesRef.get();
+
+    final dressesMap = dressSnap.value as Map?;
+    final servicesMap = serviceSnap.value as Map?;
+
+    return reservations.map((entry) {
+      final id = entry.key.toString();
+      final data = Map<String, dynamic>.from(entry.value as Map);
+      final dressId = data['dress_id']?.toString();
+      final serviceId = data['service_id']?.toString();
+
+      final dress = dressesMap?[dressId] as Map?;
+      final service = servicesMap?[serviceId] as Map?;
+
+      return FullReservation(
+        id: id,
+        reservation: data,
+        dress: dress != null ? Map<String, dynamic>.from(dress) : null,
+        service: service != null ? Map<String, dynamic>.from(service) : null,
+      );
+    }).toList()
+      ..sort((a, b) {
+        final dateA = a.reservation['reservation_date'] ?? '';
+        final dateB = b.reservation['reservation_date'] ?? '';
+        final timeA = a.reservation['reservation_time'] ?? '';
+        final timeB = b.reservation['reservation_time'] ?? '';
+        final dateCompare = dateA.compareTo(dateB);
+        return dateCompare != 0 ? dateCompare : timeA.compareTo(timeB);
       });
-
-      return reservations;
-    }
-    return <ReservationModel>[];
   });
 });
+
+
 
 
 

@@ -31,6 +31,46 @@ class ReservationProductModel {
     required this.duration,
   });
 
+  // Corrected fromMap factory constructor for ReservationProductModel
+  factory ReservationProductModel.fromMap(Map<String, dynamic> map) {
+    // Helper function to safely parse timestamps that could be in different formats
+    DateTime parseTimestamp(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is DateTime) return value;
+      if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          // Try to parse as milliseconds if it's a numeric string
+          if (int.tryParse(value) != null) {
+            return DateTime.fromMillisecondsSinceEpoch(int.parse(value));
+          }
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
+    return ReservationProductModel(
+      id: map['id'] ?? '',
+      serviceId: map['service_id'] ?? '',
+      serviceName: map['service_name'] ?? '',
+      clientId: map['client_id'] ?? '',
+      dressId: map['dress_id'] ?? '',
+      dressName: map['dress_name'] ?? '',
+      branchId: map['branch_id'] ?? '',
+      reservationDate: map['reservation_date'] ?? '',
+      reservationTime: map['reservation_time'] ?? '',
+      price: (map['price'] is num) ? (map['price'] as num).toDouble() : 0.0,
+      createdAt: parseTimestamp(map['created_at']),
+      updatedAt: parseTimestamp(map['updated_at']),
+      duration: map['duration'] is Map<String, dynamic>
+          ? map['duration'] as Map<String, dynamic>
+          : {},
+    );
+  }
+
   // Convertir a AddToCartModel para el carrito de compras
   AddToCartModel toCartItem() {
     return AddToCartModel(
@@ -57,6 +97,22 @@ class ReservationProductModel {
     );
   }
 
-
-// Métodos fromMap/toMap similares a los que ya tienes
+  // Optional: Add a toMap method for serialization if needed
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'service_id': serviceId,
+      'service_name': serviceName,
+      'client_id': clientId,
+      'dress_id': dressId,
+      'dress_name': dressName,
+      'branch_id': branchId,
+      'reservation_date': reservationDate,
+      'reservation_time': reservationTime,
+      'price': price,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'duration': duration,
+    };
+  }
 }
