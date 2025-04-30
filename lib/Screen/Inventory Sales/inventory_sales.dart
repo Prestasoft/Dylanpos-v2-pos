@@ -17,7 +17,9 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart' as pro;
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
+import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:salespro_admin/model/ReservationProductModel.dart';
 
 import '../../PDF/print_pdf.dart';
 import '../../Provider/customer_provider.dart';
@@ -38,11 +40,7 @@ import '../../model/sale_transaction_model.dart';
 import '../../subscription.dart';
 import '../Product/WarebasedProduct.dart';
 import '../WareHouse/warehouse_model.dart';
-import '../Widgets/Calculator/calculator.dart';
 import '../Widgets/Constant Data/constant.dart';
-import '../Widgets/Pop UP/Pos Sale/add_item_popup.dart';
-import '../Widgets/Pop UP/Pos Sale/due_sale_popup.dart';
-import '../Widgets/Pop UP/Pos Sale/sale_list_popup.dart';
 import '../currency/currency_provider.dart';
 
 class InventorySales extends StatefulWidget {
@@ -54,21 +52,16 @@ class InventorySales extends StatefulWidget {
   @override
   State<InventorySales> createState() => _InventorySalesState();
 }
-
 class _InventorySalesState extends State<InventorySales> {
   String searchItem = '';
   ScrollController mainScroll = ScrollController();
   List<AddToCartModel> cartList = [];
-
   List<FocusNode> productFocusNode = [];
-
   updateDueAmount() {
     setState(() {
-      // double total = double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)); nb utils
       double total = double.parse(
         (double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(1),
       );
-
       double paidAmount = double.tryParse(payingAmountController.text) ?? 0;
       if (paidAmount > total) {
         changeAmountController.text = (paidAmount - total).toString();
@@ -79,13 +72,17 @@ class _InventorySalesState extends State<InventorySales> {
       }
     });
   }
-
   bool saleButtonClicked = false;
-
   Future<void> getPro() async {
     return;
   }
-
+  void _addReservationToCart(ReservationProductModel reservation) {
+    setState(() {
+      cartList.add(reservation.toCartItem());
+      addFocus();
+      updateDueAmount();
+    });
+  }
   List<String> get paymentItem => [
         'Efectivo',
         // lang.S.current.cash,
@@ -95,11 +92,9 @@ class _InventorySalesState extends State<InventorySales> {
         // lang.S.current.mobilePay
       ];
   late String selectedPaymentOption = paymentItem.first;
-
   late StreamSubscription subscription;
   bool isDeviceConnected = false;
   bool isAlertSet = false;
-
   showDialogBox() => showCupertinoDialog<String>(
         context: context,
         builder: (BuildContext context) => CupertinoAlertDialog(
@@ -124,22 +119,6 @@ class _InventorySalesState extends State<InventorySales> {
           ],
         ),
       );
-
-  void deleteQuotation({required String date, required WidgetRef updateRef}) async {
-    String key = '';
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Sales Quotation').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['invoiceNumber'].toString() == date) {
-          key = element.key.toString();
-        }
-      }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation/$key");
-    await ref.remove();
-    updateRef.refresh(quotationProvider);
-  }
-
   DropdownButton<String> getOption() {
     List<DropdownMenuItem<String>> dropDownItems = [];
     for (String des in paymentItem) {
@@ -161,7 +140,6 @@ class _InventorySalesState extends State<InventorySales> {
   }
 
   double dueAmount = 0.0;
-
   TextEditingController payingAmountController = TextEditingController();
   TextEditingController changeAmountController = TextEditingController();
   TextEditingController dueAmountController = TextEditingController();
@@ -175,79 +153,6 @@ class _InventorySalesState extends State<InventorySales> {
   String? invoiceNumber;
   String previousDue = "0";
   FocusNode nameFocus = FocusNode();
-  // DropdownButtonFormField<String> getResult(List<CustomerModel> model, BuildContext context, List<String> listOfPhoneNumber) {
-  //   final theme = Theme.of(context);
-  //   List<DropdownMenuItem<String>> dropDownItems = [DropdownMenuItem(value: 'Guest', child: Text(lang.S.of(context).guest))];
-  //   for (var des in model) {
-  //     var item = DropdownMenuItem(
-  //       alignment: Alignment.centerLeft,
-  //       value: des.phoneNumber,
-  //       child: Expanded(
-  //         child: FittedBox(
-  //           fit: BoxFit.scaleDown,
-  //           child: Text(
-  //             widget.quotation != null ? widget.quotation!.customerName :'${des.customerName} ${des.phoneNumber}',
-  //             softWrap: true,
-  //             style: kTextStyle.copyWith(color: kTitleColor, overflow: TextOverflow.ellipsis),
-  //             textAlign: TextAlign.left,
-  //           ),
-  //         ),
-  //       ),
-  //     );
-  //     dropDownItems.add(item);
-  //   }
-  //   return DropdownButtonFormField(
-  //     isExpanded: true,
-  //     alignment: Alignment.centerLeft,
-  //     decoration: InputDecoration(
-  //       suffixIcon: Container(
-  //         height: 48,
-  //         width: 48,
-  //         decoration: const BoxDecoration(
-  //           borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
-  //           color: kBlueTextColor,
-  //         ),
-  //         child: const Center(
-  //           child: Icon(
-  //             FeatherIcons.userPlus,
-  //             size: 18.0,
-  //             color: Colors.white,
-  //           ),
-  //         ),
-  //       ).onTap(() => AddCustomer(
-  //         typeOfCustomerAdd: 'Buyer',
-  //         listOfPhoneNumber: listOfPhoneNumber,
-  //         sideBarNumber: 1,
-  //       ).launch(context)),
-  //       label: RichText(
-  //         text: TextSpan(
-  //           text: lang.S.of(context).party,
-  //           style: theme.textTheme.titleSmall?.copyWith(color: Colors.red),
-  //           children: [TextSpan(text: '(${lang.S.of(context).previousDue} '), TextSpan(text: '$globalCurrency${myFormat.format(double.tryParse(previousDue) ?? 0)} )')],
-  //         ),
-  //       ),
-  //     ),
-  //     items: dropDownItems,
-  //     value: selectedUserId,
-  //     onChanged: (value) {
-  //       setState(() {
-  //         selectedUserId = value!;
-  //         for (var element in model) {
-  //           if (element.phoneNumber == selectedUserId) {
-  //             selectedUserName = element;
-  //             previousDue = element.dueAmount;
-  //             selectedCustomerType == element.type ? null : {selectedCustomerType = element.type, cartList.clear(), productFocusNode.clear()};
-  //           } else if (selectedUserId == 'Guest') {
-  //             previousDue = '0';
-  //             selectedCustomerType = 'Retailer';
-  //           }
-  //         }
-  //         invoiceNumber = '';
-  //       });
-  //     },
-  //   );
-  // }
-
   DropdownButton<String> getResult(List<CustomerModel> model) {
     List<DropdownMenuItem<String>> dropDownItems = [DropdownMenuItem(value: 'Guest', child: Text(lang.S.of(context).guest))];
     for (var des in model) {
@@ -306,16 +211,13 @@ class _InventorySalesState extends State<InventorySales> {
       return product.productSalePrice;
     }
   }
-
   String getTotalAmount() {
     double total = 0.0;
     for (var item in cartList) {
       total = total + (double.parse(item.subTotal) * item.quantity);
     }
-
     return total.toStringAsFixed(2);
   }
-
   bool uniqueCheck(String code) {
     bool isUnique = false;
     for (var item in cartList) {
@@ -333,20 +235,6 @@ class _InventorySalesState extends State<InventorySales> {
     return isUnique;
   }
 
-  bool uniqueCheckForSerial({required String code, required List<dynamic> newSerialNumbers}) {
-    bool isUnique = false;
-    for (var item in cartList) {
-      if (item.productId == code) {
-        item.serialNumber = newSerialNumbers;
-        item.quantity = newSerialNumbers.isEmpty ? 1 : newSerialNumbers.length;
-        // item.serialNumber?.add(newSerialNumbers);
-        isUnique = true;
-        break;
-      }
-    }
-    return isUnique;
-  }
-
   List<String> get customerType => [
         // lang.S.current.retailer,
         'Retailer',
@@ -355,9 +243,7 @@ class _InventorySalesState extends State<InventorySales> {
         // lang.S.current.dealer,
         'Dealer',
       ];
-
   late String selectedCustomerType = customerType.first;
-
   DropdownButton<String> getCategories() {
     List<DropdownMenuItem<String>> dropDownItems = [];
     for (String des in customerType) {
@@ -397,151 +283,6 @@ class _InventorySalesState extends State<InventorySales> {
     }
   }
 
-  void showDueListPopUp() {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5.0),
-          ),
-          child: const DueSalePopUp(),
-        );
-      },
-    );
-  }
-
-  void showSaleListPopUp() {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-                child: const SaleListPopUP());
-          },
-        );
-      },
-    );
-  }
-
-  void showAddItemPopUp() {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5.0),
-              ),
-              child: const AddItemPopUP(),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void showHoldPopUp() {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5.0),
-              ),
-              child: SizedBox(
-                width: 500,
-                height: 200,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Text(
-                            lang.S.of(context).hold,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
-                          ),
-                          const Spacer(),
-                          GestureDetector(onTap: () => GoRouter.of(context).pop(), child: const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0))
-                        ],
-                      ),
-                    ),
-                    const Divider(thickness: 1.0, color: kLitGreyColor),
-                    const SizedBox(height: 10.0),
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            showCursor: true,
-                            cursorColor: kTitleColor,
-                            keyboardType: TextInputType.name,
-                            decoration: kInputDecoration.copyWith(
-                              labelText: lang.S.of(context).holdNumber,
-                              hintText: '2090.00',
-                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                            ),
-                          ),
-                          const SizedBox(height: 20.0),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              GestureDetector(
-                                onTap: () => GoRouter.of(context).pop(),
-                                child: Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5.0),
-                                      color: kRedTextColor,
-                                    ),
-                                    child: Text(
-                                      lang.S.of(context).cancel,
-                                      style: kTextStyle.copyWith(color: kWhite),
-                                    )),
-                              ),
-                              const SizedBox(width: 10.0),
-                              GestureDetector(
-                                onTap: () => GoRouter.of(context).pop(),
-                                child: Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5.0),
-                                      color: kBlueTextColor,
-                                    ),
-                                    child: Text(
-                                      lang.S.of(context).submit,
-                                      style: kTextStyle.copyWith(color: kWhite),
-                                    )),
-                              )
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   double serviceCharge = 0;
   double discountAmount = 0;
@@ -597,258 +338,39 @@ class _InventorySalesState extends State<InventorySales> {
     }
   }
 
-  void showSerialNumberPopUp({required ProductModel productModel}) {
-    AddToCartModel productInCart = AddToCartModel(
-      productPurchasePrice: 0,
-      serialNumber: [],
-      productImage: '',
-      warehouseName: '',
-      warehouseId: '',
-      taxType: '',
-      margin: 0,
-      incTax: 0,
-      groupTaxRate: 0,
-      groupTaxName: '',
-      excTax: 0,
-      subTaxes: [],
-    );
-    List<dynamic> selectedSerialNumbers = [];
-    List<String> list = [];
-    for (var element in cartList) {
-      if (element.productId == productModel.productCode) {
-        productInCart = element;
-        break;
-      }
-    }
-    selectedSerialNumbers = productInCart.serialNumber ?? [];
-
-    for (var element in productModel.serialNumber) {
-      if (!selectedSerialNumbers.contains(element)) {
-        list.add(element);
-      }
-    }
-    TextEditingController editingController = TextEditingController();
-    String searchWord = '';
-
+  void _showReservationSelection() {
     showDialog(
-      barrierDismissible: false,
       context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState1) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5.0),
-              ),
-              child: SizedBox(
-                width: 500,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Text(
-                            lang.S.of(context).selectSerialNumber,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
-                          ),
-                          const Spacer(),
-                          GestureDetector(onTap: () => GoRouter.of(context).pop(), child: const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0))
-                        ],
-                      ),
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final reservations = ref.watch(upcomingReservationsProvider);
+            return reservations.when(
+              loading: () => Center(child: CircularProgressIndicator()),
+              error: (e, _) => Text('Error: $e'),
+              data: (reservations) {
+                return AlertDialog(
+                  title: Text('Seleccionar Reserva'),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: ListView.builder(
+                      itemCount: reservations.length,
+                      itemBuilder: (context, index) {
+                        final reservation = reservations[index];
+                        return ListTile(
+                          title: Text('${reservation.serviceId} - ${reservation.serviceId}'),
+                          subtitle: Text('${reservation.reservationDate} ${reservation.reservationTime}'),
+                          trailing: Text('\$${reservation.dressId}'),
+                          onTap: () {
+                            _addReservationToCart(reservation as ReservationProductModel);
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
                     ),
-                    const Divider(thickness: 1.0, color: kLitGreyColor),
-                    const SizedBox(height: 10.0),
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextFormField(
-                            controller: editingController,
-                            showCursor: true,
-                            cursorColor: kTitleColor,
-                            onChanged: (value) {
-                              setState1(() {
-                                searchWord = value;
-                              });
-                            },
-                            onFieldSubmitted: (value) {
-                              for (var element in list) {
-                                if (value == element) {
-                                  setState1(() {
-                                    selectedSerialNumbers.add(element);
-                                    editingController.clear();
-                                    searchWord = '';
-                                    list.removeWhere((element1) {
-                                      return element1 == element;
-                                    });
-                                  });
-                                  break;
-                                }
-                              }
-                            },
-                            keyboardType: TextInputType.name,
-                            decoration: InputDecoration(
-                              suffix: const Icon(Icons.search),
-                              labelText: lang.S.of(context).searchSerialNumber,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(lang.S.of(context).serialNumber),
-                          const SizedBox(height: 10.0),
-                          Container(
-                            height: MediaQuery.of(context).size.height / 4,
-                            width: 500,
-                            decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: list.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  return Visibility(
-                                    visible: list[index].contains(searchWord),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(bottom: 10),
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState1(() {
-                                            selectedSerialNumbers.add(list[index]);
-                                            list.removeAt(index);
-                                          });
-                                        },
-                                        child: Text(list[index]),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20.0),
-                          Text(lang.S.of(context).selectSerialNumber),
-                          const SizedBox(height: 10.0),
-                          Container(
-                            width: 500,
-                            height: 100,
-                            decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
-                            child: GridView.builder(
-                                shrinkWrap: true,
-                                itemCount: selectedSerialNumbers.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  if (selectedSerialNumbers.isNotEmpty) {
-                                    return Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          GestureDetector(
-                                              onTap: () {
-                                                setState1(() {
-                                                  list.add(selectedSerialNumbers[index]);
-                                                  selectedSerialNumbers.removeAt(index);
-                                                });
-                                              },
-                                              child: const Icon(
-                                                Icons.cancel_outlined,
-                                                size: 15,
-                                              )),
-                                          Text(
-                                            '${selectedSerialNumbers[index]},',
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  } else {
-                                    return Text(lang.S.of(context).noSerialNumberFound);
-                                  }
-                                },
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  childAspectRatio: 4,
-                                  crossAxisSpacing: 1,
-                                  mainAxisSpacing: 1,
-                                  // mainAxisExtent: 1,
-                                )),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              GestureDetector(
-                                onTap: () => GoRouter.of(context).pop(),
-                                child: Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5.0),
-                                      color: kRedTextColor,
-                                    ),
-                                    child: Text(
-                                      lang.S.of(context).cancel,
-                                      style: kTextStyle.copyWith(color: kWhite),
-                                    )),
-                              ),
-                              const SizedBox(width: 10.0),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    AddToCartModel addToCartModel = AddToCartModel(
-                                        productName: productModel.productName,
-                                        warehouseName: productModel.warehouseName,
-                                        warehouseId: productModel.warehouseId,
-                                        productId: productModel.productCode,
-                                        productImage: productModel.productPicture,
-                                        // productPurchasePrice: productModel.productPurchasePrice.toDouble(),
-                                        productPurchasePrice: double.tryParse(productModel.productPurchasePrice) ?? 0.0,
-                                        subTotal: productPriceChecker(product: productModel, customerType: selectedCustomerType),
-                                        serialNumber: selectedSerialNumbers,
-                                        quantity: selectedSerialNumbers.isEmpty ? 1 : selectedSerialNumbers.length,
-                                        // stock: productModel.productStock.toInt(),
-                                        stock: int.tryParse(productModel.productStock) ?? 0,
-                                        productWarranty: productModel.warranty,
-                                        taxType: productModel.taxType,
-                                        margin: productModel.margin,
-                                        incTax: productModel.incTax,
-                                        groupTaxRate: productModel.groupTaxRate,
-                                        groupTaxName: productModel.groupTaxName,
-                                        excTax: productModel.excTax,
-                                        subTaxes: productModel.subTaxes);
-                                    if (!uniqueCheckForSerial(code: productModel.productCode, newSerialNumbers: selectedSerialNumbers)) {
-                                      if (productModel.productStock == '0') {
-                                        EasyLoading.showError(lang.S.of(context).productOutOfStock);
-                                      } else {
-                                        cartList.add(addToCartModel);
-                                        addFocus();
-                                      }
-                                    }
-                                  });
-                                  // context.pop();
-                                  GoRouter.of(context).pop();
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5.0),
-                                    color: kBlueTextColor,
-                                  ),
-                                  child: Text(
-                                    lang.S.of(context).submit,
-                                    style: kTextStyle.copyWith(color: kWhite),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         );
@@ -856,48 +378,7 @@ class _InventorySalesState extends State<InventorySales> {
     );
   }
 
-  void showCalcPopUp() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5.0),
-              ),
-              child: SizedBox(
-                width: 300,
-                height: MediaQuery.of(context).size.height * 0.5,
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [CalcButton()],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
-  void showSaleListInvoicePopUp() {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-                child: const SaleListPopUP());
-          },
-        );
-      },
-    );
-  }
 
   TextEditingController nameCodeCategoryController = TextEditingController();
   final ScrollController mainSideScroller = ScrollController();
@@ -981,6 +462,14 @@ class _InventorySalesState extends State<InventorySales> {
                             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                           ),
                         ),
+
+                        // Y un botón/modal para seleccionar reservas
+                        ElevatedButton(
+                          onPressed: () => _showReservationSelection(),
+                          child: Text('Agregar Reserva'),
+                        ),// Y un botón/modal para seleccionar reservas
+
+
                         const SizedBox(height: 5.0),
                         const Divider(
                           thickness: 1.0,
@@ -1128,21 +617,7 @@ class _InventorySalesState extends State<InventorySales> {
                                       ),
                                     ),
                                   );
-                                  // return Container(
-                                  //   height: 48,
-                                  //   padding: const EdgeInsets.all(10),
-                                  //   decoration: BoxDecoration(
-                                  //       border: Border.all(
-                                  //         color: kOutlineColor,
-                                  //       ),
-                                  //       borderRadius: BorderRadius.circular(6.0)),
-                                  //   child: Theme(
-                                  //     data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor),
-                                  //     child: DropdownButtonHideUnderline(
-                                  //       child: getWare(list: warehouse ?? []),
-                                  //     ),
-                                  //   ),
-                                  // );
+
                                 },
                                 error: (e, stack) {
                                   return Center(
@@ -1227,16 +702,6 @@ class _InventorySalesState extends State<InventorySales> {
                                           ),
                                         ],
                                       ),
-                                      // subtitle: Row(
-                                      //   crossAxisAlignment: CrossAxisAlignment.start,
-                                      //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      //   children: [
-                                      //     Text('Price : ${product.productSalePrice}'),
-                                      //     Text('Purchase: ${product.productPurchasePrice}'),
-                                      //     Text('Sale: ${product.productSalePrice}'),
-                                      //   ],
-                                      // ),
-                                      // trailing: Text('Purchase: ${product.productStock}',textAlign: TextAlign.start,style: kTextStyle.copyWith(color: kTitleColor,fontSize: 14.0)),
                                     );
                                   },
                                   onSelected: (suggestion) {
@@ -1559,275 +1024,7 @@ class _InventorySalesState extends State<InventorySales> {
                         //   ],
                         // ),
                         const SizedBox(height: 20),
-                        // Row(
-                        //   children: [
-                        //     productList.when(data: (product) {
-                        //       for (var element in product) {
-                        //         allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
-                        //         allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
-                        //         warehouseIdList.add(element.warehouseId.removeAllWhiteSpace().toLowerCase());
-                        //         warehouseBasedProductModel.add(WarehouseBasedProductModel(element.productName, element.warehouseId));
-                        //       }
-                        //       return Expanded(
-                        //           flex: 2,
-                        //           child: SizedBox(
-                        //             height: 40,
-                        //             child: TypeAheadField(
-                        //               // textFieldConfiguration: TextFieldConfiguration(
-                        //               //   style: DefaultTextStyle.of(context).style.copyWith(fontStyle: FontStyle.italic),
-                        //               //   decoration: InputDecoration(
-                        //               //     border: const OutlineInputBorder(borderSide: BorderSide(color: kBorderColorTextField)),
-                        //               //     labelText: 'Product',
-                        //               //     hintText: 'Search for product',
-                        //               //     suffixIcon: Container(
-                        //               //       height: 10,
-                        //               //       width: 10,
-                        //               //       decoration: const BoxDecoration(
-                        //               //         borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
-                        //               //         color: kBlueTextColor,
-                        //               //       ),
-                        //               //       child: const Center(
-                        //               //         child: Icon(FeatherIcons.plusSquare, color: Colors.white, size: 18.0),
-                        //               //       ),
-                        //               //     ).onTap(() => AddProduct(
-                        //               //           allProductsCodeList: allProductsCodeList,
-                        //               //           sideBarNumber: 1,
-                        //               //           warehouseBasedProductModel: warehouseBasedProductModel,
-                        //               //         ).launch(context)),
-                        //               //   ),
-                        //               // ),
-                        //               suggestionsCallback: (pattern) {
-                        //                 ProductRepo pr = ProductRepo();
-                        //                 // return pr.getAllProductByJson(searchData: pattern);
-                        //                 return pr.getAllProductByJsonWarehouse(searchData: pattern, warehouseId: selectedWareHouse!);
-                        //               },
-                        //               itemBuilder: (context, suggestion) {
-                        //                 ProductModel product = ProductModel.fromJson(
-                        //                   jsonDecode(
-                        //                     jsonEncode(suggestion),
-                        //                   ),
-                        //                 );
-                        //                 return ListTile(
-                        //                   contentPadding: const EdgeInsets.fromLTRB(10.0, 5.0, 15.0, 5.0),
-                        //                   // visualDensity: const VisualDensity(vertical: -2),
-                        //                   horizontalTitleGap: 10.0,
-                        //                   leading: Container(
-                        //                     height: 45.0,
-                        //                     width: 45.0,
-                        //                     decoration: BoxDecoration(
-                        //                       shape: BoxShape.circle,
-                        //                       border: Border.all(color: kBorderColorTextField),
-                        //                       image: DecorationImage(image: NetworkImage(product.productPicture), fit: BoxFit.cover),
-                        //                     ),
-                        //                   ),
-                        //                   title: Row(
-                        //                     crossAxisAlignment: CrossAxisAlignment.center,
-                        //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //                     children: [
-                        //                       Expanded(
-                        //                           flex: 3,
-                        //                           child: Text(
-                        //                             '${lang.S.of(context).name}: ${product.productName}',
-                        //                             textAlign: TextAlign.start,
-                        //                             style: kTextStyle.copyWith(color: kTitleColor, fontSize: 16.0, fontWeight: FontWeight.bold),
-                        //                           )),
-                        //                       const Spacer(),
-                        //                       Expanded(
-                        //                           flex: 2,
-                        //                           child: Text(
-                        //                             '${lang.S.of(context).purchasePrice}: ${product.productPurchasePrice}',
-                        //                             textAlign: TextAlign.start,
-                        //                             style: kTextStyle.copyWith(color: kGreyTextColor, fontSize: 12.0),
-                        //                           )),
-                        //                       const Spacer(),
-                        //                       Expanded(
-                        //                           flex: 2,
-                        //                           child: Text('${lang.S.of(context).salePrice}: ${product.productSalePrice}',
-                        //                               textAlign: TextAlign.start, style: kTextStyle.copyWith(color: kGreyTextColor, fontSize: 12.0))),
-                        //                       const Spacer(),
-                        //                       Expanded(
-                        //                         flex: 0,
-                        //                         child: Text('${lang.S.of(context).stock}: ${product.productStock}',
-                        //                             textAlign: TextAlign.start, style: kTextStyle.copyWith(color: kGreyTextColor, fontSize: 12.0)),
-                        //                       ),
-                        //                     ],
-                        //                   ),
-                        //                   // subtitle: Row(
-                        //                   //   crossAxisAlignment: CrossAxisAlignment.start,
-                        //                   //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //                   //   children: [
-                        //                   //     Text('Price : ${product.productSalePrice}'),
-                        //                   //     Text('Purchase: ${product.productPurchasePrice}'),
-                        //                   //     Text('Sale: ${product.productSalePrice}'),
-                        //                   //   ],
-                        //                   // ),
-                        //                   // trailing: Text('Purchase: ${product.productStock}',textAlign: TextAlign.start,style: kTextStyle.copyWith(color: kTitleColor,fontSize: 14.0)),
-                        //                 );
-                        //               },
-                        //               onSelected: (suggestion) {
-                        //                 ProductModel product = ProductModel.fromJson(jsonDecode(jsonEncode(suggestion)));
-                        //                 AddToCartModel addToCartModel = AddToCartModel(
-                        //                     productName: product.productName,
-                        //                     warehouseName: product.warehouseName,
-                        //                     warehouseId: product.warehouseId,
-                        //                     productId: product.productCode,
-                        //                     quantity: 1,
-                        //                     productImage: product.productPicture,
-                        //                     stock: product.productStock.toInt(),
-                        //                     productPurchasePrice: product.productPurchasePrice.toDouble(),
-                        //                     subTotal: productPriceChecker(
-                        //                       product: product,
-                        //                       customerType: selectedCustomerType,
-                        //                     ),
-                        //                     taxType: product.taxType,
-                        //                     margin: product.margin,
-                        //                     incTax: product.incTax,
-                        //                     groupTaxRate: product.groupTaxRate,
-                        //                     groupTaxName: product.groupTaxName,
-                        //                     excTax: product.excTax,
-                        //                     subTaxes: product.subTaxes);
-                        //                 setState(() {
-                        //                   if (!uniqueCheck(product.productCode)) {
-                        //                     cartList.add(addToCartModel);
-                        //                     addFocus();
-                        //                     nameCodeCategoryController.clear();
-                        //                     nameFocus.requestFocus();
-                        //                     searchProductCode = '';
-                        //                   } else {
-                        //                     nameCodeCategoryController.clear();
-                        //                     nameFocus.requestFocus();
-                        //                     searchProductCode = '';
-                        //                   }
-                        //                   updateDueAmount();
-                        //                 });
-                        //               },
-                        //               builder: (context, controller, focusNode) {
-                        //                 return TextField(controller: controller, focusNode: focusNode, autofocus: true, decoration: bInputDecoration);
-                        //               },
-                        //             ),
-                        //           )
-                        //           // child: SizedBox(
-                        //           //   height: 50.0,
-                        //           //   child: Card(
-                        //           //     color: Colors.white,
-                        //           //     elevation: 0,
-                        //           //     shape: RoundedRectangleBorder(
-                        //           //       borderRadius: BorderRadius.circular(5.0),
-                        //           //       side: const BorderSide(color: kLitGreyColor),
-                        //           //     ),
-                        //           //     child: AppTextField(
-                        //           //       controller: nameCodeCategoryController,
-                        //           //       showCursor: true,
-                        //           //       focus: nameFocus,
-                        //           //       autoFocus: true,
-                        //           //       cursorColor: kTitleColor,
-                        //           //       onTap: (){
-                        //           //
-                        //           //       },
-                        //           //       onChanged: (value) {
-                        //           //         setState(() {
-                        //           //           searchProductCode = value;
-                        //           //           selectedCategory = 'Categories';
-                        //           //           isSelected = "Categories";
-                        //           //         });
-                        //           //       },
-                        //           //       onFieldSubmitted: (value) {
-                        //           //         if (value != '') {
-                        //           //           if (product.isEmpty) {
-                        //           //             EasyLoading.showError('No Product Found');
-                        //           //           }
-                        //           //           for (int i = 0; i < product.length; i++) {
-                        //           //             if (product[i].productCode == value) {
-                        //           //               AddToCartModel addToCartModel = AddToCartModel(
-                        //           //                   productName: product[i].productName,
-                        //           //                   productId: product[i].productCode,
-                        //           //                   quantity: 1,
-                        //           //                   stock: product[i].productStock.toInt(),
-                        //           //                   productPurchasePrice: product[i].productPurchasePrice.toDouble(),
-                        //           //                   subTotal: productPriceChecker(product: product[i], customerType: selectedCustomerType));
-                        //           //               setState(() {
-                        //           //                 if (!uniqueCheck(product[i].productCode)) {
-                        //           //                   cartList.add(addToCartModel);
-                        //           //                   nameCodeCategoryController.clear();
-                        //           //                   nameFocus.requestFocus();
-                        //           //                   searchProductCode = '';
-                        //           //                 } else {
-                        //           //                   nameCodeCategoryController.clear();
-                        //           //                   nameFocus.requestFocus();
-                        //           //                   searchProductCode = '';
-                        //           //                 }
-                        //           //               });
-                        //           //               break;
-                        //           //             }
-                        //           //             if (i + 1 == product.length) {
-                        //           //               nameCodeCategoryController.clear();
-                        //           //               nameFocus.requestFocus();
-                        //           //               EasyLoading.showError('Not found');
-                        //           //               setState(() {
-                        //           //                 searchProductCode = '';
-                        //           //               });
-                        //           //             }
-                        //           //           }
-                        //           //         }
-                        //           //       },
-                        //           //       textFieldType: TextFieldType.NAME,
-                        //           //       decoration: InputDecoration(
-                        //           //         prefixIcon: const Icon(FeatherIcons.search, color: kTitleColor, size: 18.0),
-                        //           //         suffixIcon: Container(
-                        //           //           height: 10,
-                        //           //           width: 10,
-                        //           //           decoration: const BoxDecoration(
-                        //           //             borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
-                        //           //             color: kBlueTextColor,
-                        //           //           ),
-                        //           //           child: const Center(
-                        //           //             child: Icon(FeatherIcons.plusSquare, color: Colors.white, size: 18.0),
-                        //           //           ),
-                        //           //         ).onTap(() => AddProduct(
-                        //           //               allProductsCodeList: allProductsCodeList,
-                        //           //               allProductsNameList: allProductsNameList,
-                        //           //               sideBarNumber: 1,
-                        //           //             ).launch(context)),
-                        //           //         hintText: lang.S.of(context).nameCodeOrCateogry,
-                        //           //         hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                        //           //         border: InputBorder.none,
-                        //           //       ),
-                        //           //     ),
-                        //           //   ),
-                        //           // ),
-                        //           );
-                        //     }, error: (e, stack) {
-                        //       return Center(
-                        //         child: Text(e.toString()),
-                        //       );
-                        //     }, loading: () {
-                        //       return const Center(
-                        //         child: CircularProgressIndicator(),
-                        //       );
-                        //     }),
-                        //     const SizedBox(width: 10),
-                        //     Expanded(
-                        //       flex: 1,
-                        //       child: Card(
-                        //         color: Colors.white,
-                        //         elevation: 0,
-                        //         shape: RoundedRectangleBorder(
-                        //           borderRadius: BorderRadius.circular(5.0),
-                        //           side: const BorderSide(color: kLitGreyColor),
-                        //         ),
-                        //         child: SizedBox(
-                        //           height: 40,
-                        //           child: Padding(
-                        //             padding: const EdgeInsets.only(left: 5.0),
-                        //             child: Theme(
-                        //                 data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor),
-                        //                 child: DropdownButtonHideUnderline(child: getCategories())),
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   ],
-                        // ),
+
                         LayoutBuilder(
                           builder: (BuildContext context, BoxConstraints constraints) {
                             final kWidth = constraints.maxWidth - 20;
@@ -1853,12 +1050,7 @@ class _InventorySalesState extends State<InventorySales> {
                                           width: 1.0,
                                           borderRadius: BorderRadius.circular(10),
                                         ),
-                                        // border: const TableBorder(
-                                        //   horizontalInside: BorderSide(
-                                        //     width: 1,
-                                        //     color: kNeutral300,
-                                        //   ),
-                                        // ),
+
                                         dividerThickness: 0.0,
                                         dataRowColor: const WidgetStatePropertyAll(Colors.white),
                                         headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
@@ -2149,101 +1341,6 @@ class _InventorySalesState extends State<InventorySales> {
                                   ))
                             ]),
 
-                            // child: Row(
-                            //   children: [
-                            //     Expanded(
-                            //         child: Column(
-                            //       crossAxisAlignment: CrossAxisAlignment.start,
-                            //       children: [
-                            //         Text(
-                            //           lang.S.of(context).payingAmount,
-                            //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                            //         ),
-                            //         const SizedBox(
-                            //           height: 10,
-                            //         ),
-                            //         TextField(
-                            //           onChanged: (value) {
-                            //             setState(() {
-                            //               double total = double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1));
-                            //               double paidAmount = double.parse(value);
-                            //               if (paidAmount > total) {
-                            //                 changeAmountController.text = (paidAmount - total).toString();
-                            //                 dueAmountController.text = '0';
-                            //               } else {
-                            //                 dueAmountController.text = (total - paidAmount).abs().toStringAsFixed(2);
-                            //                 changeAmountController.text = '0';
-                            //               }
-                            //             });
-                            //           },
-                            //           controller: payingAmountController,
-                            //           decoration: bInputDecoration.copyWith(hintText: lang.S.of(context).enterReceivedAmount),
-                            //         ),
-                            //         const SizedBox(
-                            //           height: 20,
-                            //         ),
-                            //         Text(
-                            //           lang.S.of(context).changeReturn,
-                            //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                            //         ),
-                            //         const SizedBox(
-                            //           height: 10,
-                            //         ),
-                            //         TextField(
-                            //           readOnly: true,
-                            //           controller: changeAmountController,
-                            //           decoration: bInputDecoration.copyWith(hintText: lang.S.of(context).enterChangeReturn),
-                            //         ),
-                            //       ],
-                            //     )),
-                            //     const SizedBox(
-                            //       width: 20,
-                            //     ),
-                            //     Expanded(
-                            //         child: Column(
-                            //       crossAxisAlignment: CrossAxisAlignment.start,
-                            //       children: [
-                            //         Text(
-                            //           lang.S.of(context).dueAmount,
-                            //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                            //         ),
-                            //         const SizedBox(
-                            //           height: 10,
-                            //         ),
-                            //         TextField(
-                            //           readOnly: true,
-                            //           controller: dueAmountController,
-                            //           decoration: bInputDecoration.copyWith(hintText: lang.S.of(context).enterDueAmount),
-                            //         ),
-                            //         const SizedBox(
-                            //           height: 20,
-                            //         ),
-                            //         Text(
-                            //           lang.S.of(context).paymentType,
-                            //
-                            //           /// 'Payment Type',
-                            //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                            //         ),
-                            //         const SizedBox(height: 10),
-                            //         SizedBox(
-                            //           child: FormField(
-                            //             builder: (FormFieldState<dynamic> field) {
-                            //               return InputDecorator(
-                            //                 decoration: bInputDecoration.copyWith(hintText: '', contentPadding: EdgeInsets.all(8.0)),
-                            //                 child: Theme(
-                            //                   data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                            //                   child: DropdownButtonHideUnderline(
-                            //                     child: getOption(),
-                            //                   ),
-                            //                 ),
-                            //               );
-                            //             },
-                            //           ),
-                            //         ),
-                            //       ],
-                            //     )),
-                            //   ],
-                            // )
                           ),
                           ResponsiveGridCol(
                               xs: 12,
@@ -2290,30 +1387,7 @@ class _InventorySalesState extends State<InventorySales> {
                                             ),
                                           ),
                                         ]),
-                                        // Row(
-                                        //   mainAxisAlignment: MainAxisAlignment.start,
-                                        //   children: [
-                                        //     Text(
-                                        //       lang.S.of(context).totalAmount,
-                                        //       //'Total Amount',
-                                        //       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                                        //     ),
-                                        //     const Spacer(),
-                                        //     SizedBox(
-                                        //       width: context.width() < 1080 ? 1080 * .125 : MediaQuery.of(context).size.width * .250,
-                                        //       child: Container(
-                                        //         padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 8.0, bottom: 8.0),
-                                        //         decoration: const BoxDecoration(color: Color(0xff00AE1C), borderRadius: BorderRadius.all(Radius.circular(8))),
-                                        //         child: Center(
-                                        //           child: Text(
-                                        //             '$globalCurrency ${myFormat.format(double.tryParse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(2)) ?? 0)}',
-                                        //             style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
-                                        //           ),
-                                        //         ),
-                                        //       ),
-                                        //     ),
-                                        //   ],
-                                        // ),
+
                                         const SizedBox(height: 10.0),
 
                                         ///__________service/shipping_____________________________
@@ -2352,32 +1426,6 @@ class _InventorySalesState extends State<InventorySales> {
                                             ),
                                           ),
                                         ]),
-                                        // Row(
-                                        //   mainAxisAlignment: MainAxisAlignment.end,
-                                        //   children: [
-                                        //     Text(
-                                        //       lang.S.of(context).shpingOrServices,
-                                        //       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                                        //     ),
-                                        //     const Spacer(),
-                                        //     SizedBox(
-                                        //       width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .240,
-                                        //       height: 40,
-                                        //       child: TextFormField(
-                                        //         initialValue: serviceCharge.toString(),
-                                        //         onChanged: (value) {
-                                        //           setState(() {
-                                        //             serviceCharge = value.toDouble();
-                                        //             updateDueAmount();
-                                        //           });
-                                        //         },
-                                        //         decoration:
-                                        //             InputDecoration(border: const OutlineInputBorder(), hintText: lang.S.of(context).enterAmount, contentPadding: EdgeInsets.zero),
-                                        //         textAlign: TextAlign.center,
-                                        //       ),
-                                        //     ),
-                                        //   ],
-                                        // ),
                                         const SizedBox(height: 10.0),
 
                                         ///___________vat____________________________________
@@ -2441,114 +1489,7 @@ class _InventorySalesState extends State<InventorySales> {
                                             );
                                           },
                                         ),
-                                        // Row(
-                                        //   mainAxisAlignment: MainAxisAlignment.end,
-                                        //   children: [
-                                        //     Text(
-                                        //       lang.S.of(context).vatOrgst,
-                                        //       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                                        //     ),
-                                        //     const Spacer(),
-                                        //     Row(
-                                        //       children: [
-                                        //         SizedBox(
-                                        //           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .120,
-                                        //           height: 40.0,
-                                        //           child: Center(
-                                        //             child: AppTextField(
-                                        //               controller: vatPercentageEditingController,
-                                        //               onChanged: (value) {
-                                        //                 if (value == '') {
-                                        //                   setState(() {
-                                        //                     vatGst = 0.0;
-                                        //                     vatAmountEditingController.text = 0.toString();
-                                        //                   });
-                                        //                 } else {
-                                        //                   setState(() {
-                                        //                     vatGst = double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
-                                        //                     vatAmountEditingController.text = vatGst.toString();
-                                        //                   });
-                                        //                 }
-                                        //                 updateDueAmount();
-                                        //               },
-                                        //               textAlign: TextAlign.right,
-                                        //               decoration: InputDecoration(
-                                        //                 contentPadding: const EdgeInsets.only(right: 6.0),
-                                        //                 hintText: '0',
-                                        //                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                        //                 prefixIcon: Container(
-                                        //                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                                        //                   height: 40,
-                                        //                   decoration: const BoxDecoration(
-                                        //                       color: Color(0xffFF8C00),
-                                        //                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                        //                   child: const Text(
-                                        //                     '%',
-                                        //                     style: TextStyle(fontSize: 20.0, color: Colors.white),
-                                        //                   ),
-                                        //                 ),
-                                        //               ),
-                                        //               textFieldType: TextFieldType.PHONE,
-                                        //             ),
-                                        //           ),
-                                        //         ),
-                                        //         const SizedBox(
-                                        //           width: 15.0,
-                                        //         ),
-                                        //         SizedBox(
-                                        //           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .120,
-                                        //           height: 40.0,
-                                        //           child: Center(
-                                        //             child: AppTextField(
-                                        //               controller: vatAmountEditingController,
-                                        //               onChanged: (value) {
-                                        //                 if (value == '') {
-                                        //                   setState(() {
-                                        //                     vatGst = 0;
-                                        //                     vatPercentageEditingController.text = 0.toString();
-                                        //                   });
-                                        //                 } else {
-                                        //                   setState(() {
-                                        //                     vatGst = double.parse(value);
-                                        //                     vatPercentageEditingController.text = ((vatGst * 100) / getTotalAmount().toDouble()).toStringAsFixed(1);
-                                        //                   });
-                                        //                 }
-                                        //                 updateDueAmount();
-                                        //               },
-                                        //               textAlign: TextAlign.right,
-                                        //               decoration: InputDecoration(
-                                        //                 contentPadding: const EdgeInsets.only(right: 6.0),
-                                        //                 hintText: '0',
-                                        //                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 prefixIconConstraints: const BoxConstraints(maxWidth: 40.0, minWidth: 40.0),
-                                        //                 prefixIcon: Container(
-                                        //                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                                        //                   height: 40,
-                                        //                   decoration: const BoxDecoration(
-                                        //                       color: Color(0xff00AE1C),
-                                        //                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                        //                   child: Text(
-                                        //                     currency,
-                                        //                     style: const TextStyle(fontSize: 18.0, color: Colors.white),
-                                        //                   ),
-                                        //                 ),
-                                        //               ),
-                                        //               textFieldType: TextFieldType.PHONE,
-                                        //             ),
-                                        //           ),
-                                        //         ),
-                                        //       ],
-                                        //     ),
-                                        //   ],
-                                        // ),
-                                        // const SizedBox(height: 20.0),
+
                                         ///________discount_________________________________________________
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
@@ -2680,594 +1621,15 @@ class _InventorySalesState extends State<InventorySales> {
                                             ),
                                           ),
                                         ]),
-                                        // Row(
-                                        //   mainAxisAlignment: MainAxisAlignment.end,
-                                        //   children: [
-                                        //     Text(
-                                        //       lang.S.of(context).discount,
-                                        //       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                                        //     ),
-                                        //     const Spacer(),
-                                        //     Row(
-                                        //       children: [
-                                        //         SizedBox(
-                                        //           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .115,
-                                        //           height: 40.0,
-                                        //           child: Center(
-                                        //             child: AppTextField(
-                                        //               controller: discountPercentageEditingController,
-                                        //               onChanged: (value) {
-                                        //                 if (value == '') {
-                                        //                   setState(() {
-                                        //                     discountAmountEditingController.text = 0.toString();
-                                        //                   });
-                                        //                 } else {
-                                        //                   if (value.toInt() <= 100) {
-                                        //                     setState(() {
-                                        //                       discountAmount = double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
-                                        //                       discountAmountEditingController.text = discountAmount.toString();
-                                        //                     });
-                                        //                   } else {
-                                        //                     setState(() {
-                                        //                       discountAmount = 0;
-                                        //                       discountAmountEditingController.clear();
-                                        //                       discountPercentageEditingController.clear();
-                                        //                     });
-                                        //                     EasyLoading.showError(lang.S.of(context).enterAValidDiscount);
-                                        //                   }
-                                        //                 }
-                                        //                 updateDueAmount();
-                                        //               },
-                                        //               textAlign: TextAlign.right,
-                                        //               decoration: InputDecoration(
-                                        //                 contentPadding: const EdgeInsets.only(right: 6.0),
-                                        //                 hintText: '0',
-                                        //                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                                        //                 prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                        //                 prefixIcon: Container(
-                                        //                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                                        //                   height: 40,
-                                        //                   decoration: const BoxDecoration(
-                                        //                       color: Color(0xffFF8C00),
-                                        //                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                        //                   child: const Text(
-                                        //                     '%',
-                                        //                     style: TextStyle(fontSize: 18.0, color: Colors.white),
-                                        //                   ),
-                                        //                 ),
-                                        //               ),
-                                        //               textFieldType: TextFieldType.PHONE,
-                                        //             ),
-                                        //           ),
-                                        //         ),
-                                        //         const SizedBox(
-                                        //           width: 20.0,
-                                        //         ),
-                                        //         SizedBox(
-                                        //           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .120,
-                                        //           height: 40.0,
-                                        //           child: Center(
-                                        //             child: AppTextField(
-                                        //               controller: discountAmountEditingController,
-                                        //               onChanged: (value) {
-                                        //                 if (value == '') {
-                                        //                   setState(() {
-                                        //                     discountAmount = 0;
-                                        //                     discountPercentageEditingController.text = 0.toString();
-                                        //                   });
-                                        //                 } else {
-                                        //                   if (value.toInt() <= getTotalAmount().toDouble()) {
-                                        //                     setState(() {
-                                        //                       discountAmount = double.parse(value);
-                                        //                       discountPercentageEditingController.text = ((discountAmount * 100) / getTotalAmount().toDouble()).toStringAsFixed(1);
-                                        //                     });
-                                        //                   } else {
-                                        //                     setState(() {
-                                        //                       discountAmount = 0;
-                                        //                       discountPercentageEditingController.clear();
-                                        //                       discountAmountEditingController.clear();
-                                        //                     });
-                                        //                     EasyLoading.showError(lang.S.of(context).enterAValidDiscount);
-                                        //                   }
-                                        //                 }
-                                        //                 updateDueAmount();
-                                        //               },
-                                        //               textAlign: TextAlign.right,
-                                        //               decoration: InputDecoration(
-                                        //                 contentPadding: const EdgeInsets.only(right: 6.0),
-                                        //                 hintText: '0',
-                                        //                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                                        //                 prefixIconConstraints: const BoxConstraints(maxWidth: 40.0, minWidth: 40.0),
-                                        //                 prefixIcon: Container(
-                                        //                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                                        //                   height: 40,
-                                        //                   decoration: const BoxDecoration(
-                                        //                       color: Color(0xff00AE1C),
-                                        //                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                        //                   child: Text(
-                                        //                     currency,
-                                        //                     style: const TextStyle(fontSize: 18.0, color: Colors.white),
-                                        //                   ),
-                                        //                 ),
-                                        //               ),
-                                        //               textFieldType: TextFieldType.PHONE,
-                                        //             ),
-                                        //           ),
-                                        //         ),
-                                        //       ],
-                                        //     ),
-                                        //   ],
-                                        // ),
+
                                       ],
                                     ),
                                   ),
                                 ),
                               ))
                         ]),
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.start,
-                        //   crossAxisAlignment: CrossAxisAlignment.start,
-                        //   children: [
-                        //     Expanded(
-                        //         child: Column(
-                        //       crossAxisAlignment: CrossAxisAlignment.start,
-                        //       children: [
-                        //         Text(
-                        //           lang.S.of(context).payingAmount,
-                        //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 10,
-                        //         ),
-                        //         TextField(
-                        //           onChanged: (value) {
-                        //             setState(() {
-                        //               double total = double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1));
-                        //               double paidAmount = double.parse(value);
-                        //               if (paidAmount > total) {
-                        //                 changeAmountController.text = (paidAmount - total).toString();
-                        //                 dueAmountController.text = '0';
-                        //               } else {
-                        //                 dueAmountController.text = (total - paidAmount).abs().toStringAsFixed(2);
-                        //                 changeAmountController.text = '0';
-                        //               }
-                        //             });
-                        //           },
-                        //           controller: payingAmountController,
-                        //           decoration: bInputDecoration.copyWith(hintText: lang.S.of(context).enterReceivedAmount),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 20,
-                        //         ),
-                        //         Text(
-                        //           lang.S.of(context).changeReturn,
-                        //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 10,
-                        //         ),
-                        //         TextField(
-                        //           readOnly: true,
-                        //           controller: changeAmountController,
-                        //           decoration: bInputDecoration.copyWith(hintText: lang.S.of(context).enterChangeReturn),
-                        //         ),
-                        //       ],
-                        //     )),
-                        //     const SizedBox(
-                        //       width: 20,
-                        //     ),
-                        //     Expanded(
-                        //         child: Column(
-                        //       crossAxisAlignment: CrossAxisAlignment.start,
-                        //       children: [
-                        //         Text(
-                        //           lang.S.of(context).dueAmount,
-                        //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 10,
-                        //         ),
-                        //         TextField(
-                        //           readOnly: true,
-                        //           controller: dueAmountController,
-                        //           decoration: bInputDecoration.copyWith(hintText: lang.S.of(context).enterDueAmount),
-                        //         ),
-                        //         const SizedBox(
-                        //           height: 20,
-                        //         ),
-                        //         Text(
-                        //           lang.S.of(context).paymentType,
-                        //
-                        //           /// 'Payment Type',
-                        //           style: bTextStyle.copyWith(fontWeight: FontWeight.bold),
-                        //         ),
-                        //         const SizedBox(height: 10),
-                        //         SizedBox(
-                        //           child: FormField(
-                        //             builder: (FormFieldState<dynamic> field) {
-                        //               return InputDecorator(
-                        //                 decoration: bInputDecoration.copyWith(hintText: '', contentPadding: EdgeInsets.all(8.0)),
-                        //                 child: Theme(
-                        //                   data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                        //                   child: DropdownButtonHideUnderline(
-                        //                     child: getOption(),
-                        //                   ),
-                        //                 ),
-                        //               );
-                        //             },
-                        //           ),
-                        //         ),
-                        //       ],
-                        //     )),
-                        //     const SizedBox(width: 20),
-                        //     Expanded(
-                        //         flex: 2,
-                        //         child: Container(
-                        //           decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: const Color(0xffF8F1FF)),
-                        //           child: Padding(
-                        //             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 25),
-                        //             child: Column(
-                        //               children: [
-                        //                 ///__________total__________________________________________
-                        //                 Row(
-                        //                   mainAxisAlignment: MainAxisAlignment.start,
-                        //                   children: [
-                        //                     Text(
-                        //                       lang.S.of(context).totalAmount,
-                        //                       //'Total Amount',
-                        //                       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                        //                     ),
-                        //                     const Spacer(),
-                        //                     SizedBox(
-                        //                       width: context.width() < 1080 ? 1080 * .125 : MediaQuery.of(context).size.width * .250,
-                        //                       child: Container(
-                        //                         padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 8.0, bottom: 8.0),
-                        //                         decoration: const BoxDecoration(color: Color(0xff00AE1C), borderRadius: BorderRadius.all(Radius.circular(8))),
-                        //                         child: Center(
-                        //                           child: Text(
-                        //                             '$globalCurrency ${myFormat.format(double.tryParse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(2)) ?? 0)}',
-                        //                             style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
-                        //                           ),
-                        //                         ),
-                        //                       ),
-                        //                     ),
-                        //                   ],
-                        //                 ),
-                        //                 const SizedBox(height: 20.0),
-                        //
-                        //                 ///__________service/shipping_____________________________
-                        //                 Row(
-                        //                   mainAxisAlignment: MainAxisAlignment.end,
-                        //                   children: [
-                        //                     Text(
-                        //                       lang.S.of(context).shpingOrServices,
-                        //                       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                        //                     ),
-                        //                     const Spacer(),
-                        //                     SizedBox(
-                        //                       width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .240,
-                        //                       height: 40,
-                        //                       child: TextFormField(
-                        //                         initialValue: serviceCharge.toString(),
-                        //                         onChanged: (value) {
-                        //                           setState(() {
-                        //                             serviceCharge = value.toDouble();
-                        //                             updateDueAmount();
-                        //                           });
-                        //                         },
-                        //                         decoration:
-                        //                             InputDecoration(border: const OutlineInputBorder(), hintText: lang.S.of(context).enterAmount, contentPadding: EdgeInsets.zero),
-                        //                         textAlign: TextAlign.center,
-                        //                       ),
-                        //                     ),
-                        //                   ],
-                        //                 ),
-                        //                 const SizedBox(height: 10.0),
-                        //
-                        //                 ///___________vat____________________________________
-                        //
-                        //                 ListView.builder(
-                        //                   itemCount: getAllTaxFromCartList(cart: cartList).length,
-                        //                   shrinkWrap: true,
-                        //                   itemBuilder: (context, index) {
-                        //                     return Container(
-                        //                       margin: const EdgeInsets.only(top: 5, bottom: 5),
-                        //                       child: Row(
-                        //                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //                         children: [
-                        //                           Padding(
-                        //                             padding: const EdgeInsets.only(right: 20),
-                        //                             child: Text(
-                        //                               getAllTaxFromCartList(cart: cartList)[index].name,
-                        //                               textAlign: TextAlign.end,
-                        //                               style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                        //                             ),
-                        //                           ),
-                        //                           const Spacer(),
-                        //                           SizedBox(
-                        //                             width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .240,
-                        //                             height: 40.0,
-                        //                             child: Center(
-                        //                               child: AppTextField(
-                        //                                 initialValue: getAllTaxFromCartList(cart: cartList)[index].taxRate.toString(),
-                        //                                 readOnly: true,
-                        //                                 textAlign: TextAlign.right,
-                        //                                 decoration: InputDecoration(
-                        //                                   contentPadding: const EdgeInsets.only(right: 6.0),
-                        //                                   hintText: '0',
-                        //                                   border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                        //                                   enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                        //                                   disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                        //                                   focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                        //                                   prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                        //                                   prefixIcon: Container(
-                        //                                     padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                        //                                     height: 40,
-                        //                                     decoration: const BoxDecoration(
-                        //                                         color: Color(0xFFff5f00),
-                        //                                         borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                        //                                     child: const Text(
-                        //                                       '%',
-                        //                                       style: TextStyle(fontSize: 20.0, color: Colors.white),
-                        //                                     ),
-                        //                                   ),
-                        //                                 ),
-                        //                                 textFieldType: TextFieldType.NUMBER,
-                        //                               ),
-                        //                             ),
-                        //                           ),
-                        //                         ],
-                        //                       ),
-                        //                     );
-                        //                   },
-                        //                 ),
-                        //                 const SizedBox(height: 10.0),
-                        //                 // Row(
-                        //                 //   mainAxisAlignment: MainAxisAlignment.end,
-                        //                 //   children: [
-                        //                 //     Text(
-                        //                 //       lang.S.of(context).vatOrgst,
-                        //                 //       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                        //                 //     ),
-                        //                 //     const Spacer(),
-                        //                 //     Row(
-                        //                 //       children: [
-                        //                 //         SizedBox(
-                        //                 //           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .120,
-                        //                 //           height: 40.0,
-                        //                 //           child: Center(
-                        //                 //             child: AppTextField(
-                        //                 //               controller: vatPercentageEditingController,
-                        //                 //               onChanged: (value) {
-                        //                 //                 if (value == '') {
-                        //                 //                   setState(() {
-                        //                 //                     vatGst = 0.0;
-                        //                 //                     vatAmountEditingController.text = 0.toString();
-                        //                 //                   });
-                        //                 //                 } else {
-                        //                 //                   setState(() {
-                        //                 //                     vatGst = double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
-                        //                 //                     vatAmountEditingController.text = vatGst.toString();
-                        //                 //                   });
-                        //                 //                 }
-                        //                 //                 updateDueAmount();
-                        //                 //               },
-                        //                 //               textAlign: TextAlign.right,
-                        //                 //               decoration: InputDecoration(
-                        //                 //                 contentPadding: const EdgeInsets.only(right: 6.0),
-                        //                 //                 hintText: '0',
-                        //                 //                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                 //                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                 //                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                 //                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                 //                 prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                        //                 //                 prefixIcon: Container(
-                        //                 //                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                        //                 //                   height: 40,
-                        //                 //                   decoration: const BoxDecoration(
-                        //                 //                       color: Color(0xffFF8C00),
-                        //                 //                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                        //                 //                   child: const Text(
-                        //                 //                     '%',
-                        //                 //                     style: TextStyle(fontSize: 20.0, color: Colors.white),
-                        //                 //                   ),
-                        //                 //                 ),
-                        //                 //               ),
-                        //                 //               textFieldType: TextFieldType.PHONE,
-                        //                 //             ),
-                        //                 //           ),
-                        //                 //         ),
-                        //                 //         const SizedBox(
-                        //                 //           width: 15.0,
-                        //                 //         ),
-                        //                 //         SizedBox(
-                        //                 //           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .120,
-                        //                 //           height: 40.0,
-                        //                 //           child: Center(
-                        //                 //             child: AppTextField(
-                        //                 //               controller: vatAmountEditingController,
-                        //                 //               onChanged: (value) {
-                        //                 //                 if (value == '') {
-                        //                 //                   setState(() {
-                        //                 //                     vatGst = 0;
-                        //                 //                     vatPercentageEditingController.text = 0.toString();
-                        //                 //                   });
-                        //                 //                 } else {
-                        //                 //                   setState(() {
-                        //                 //                     vatGst = double.parse(value);
-                        //                 //                     vatPercentageEditingController.text = ((vatGst * 100) / getTotalAmount().toDouble()).toStringAsFixed(1);
-                        //                 //                   });
-                        //                 //                 }
-                        //                 //                 updateDueAmount();
-                        //                 //               },
-                        //                 //               textAlign: TextAlign.right,
-                        //                 //               decoration: InputDecoration(
-                        //                 //                 contentPadding: const EdgeInsets.only(right: 6.0),
-                        //                 //                 hintText: '0',
-                        //                 //                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                 //                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                 //                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                 //                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                 //                 prefixIconConstraints: const BoxConstraints(maxWidth: 40.0, minWidth: 40.0),
-                        //                 //                 prefixIcon: Container(
-                        //                 //                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                        //                 //                   height: 40,
-                        //                 //                   decoration: const BoxDecoration(
-                        //                 //                       color: Color(0xff00AE1C),
-                        //                 //                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                        //                 //                   child: Text(
-                        //                 //                     currency,
-                        //                 //                     style: const TextStyle(fontSize: 18.0, color: Colors.white),
-                        //                 //                   ),
-                        //                 //                 ),
-                        //                 //               ),
-                        //                 //               textFieldType: TextFieldType.PHONE,
-                        //                 //             ),
-                        //                 //           ),
-                        //                 //         ),
-                        //                 //       ],
-                        //                 //     ),
-                        //                 //   ],
-                        //                 // ),
-                        //                 // const SizedBox(height: 20.0),
-                        //
-                        //                 ///________discount_________________________________________________
-                        //                 Row(
-                        //                   mainAxisAlignment: MainAxisAlignment.end,
-                        //                   children: [
-                        //                     Text(
-                        //                       lang.S.of(context).discount,
-                        //                       style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                        //                     ),
-                        //                     const Spacer(),
-                        //                     Row(
-                        //                       children: [
-                        //                         SizedBox(
-                        //                           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .115,
-                        //                           height: 40.0,
-                        //                           child: Center(
-                        //                             child: AppTextField(
-                        //                               controller: discountPercentageEditingController,
-                        //                               onChanged: (value) {
-                        //                                 if (value == '') {
-                        //                                   setState(() {
-                        //                                     discountAmountEditingController.text = 0.toString();
-                        //                                   });
-                        //                                 } else {
-                        //                                   if (value.toInt() <= 100) {
-                        //                                     setState(() {
-                        //                                       discountAmount = double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
-                        //                                       discountAmountEditingController.text = discountAmount.toString();
-                        //                                     });
-                        //                                   } else {
-                        //                                     setState(() {
-                        //                                       discountAmount = 0;
-                        //                                       discountAmountEditingController.clear();
-                        //                                       discountPercentageEditingController.clear();
-                        //                                     });
-                        //                                     EasyLoading.showError(lang.S.of(context).enterAValidDiscount);
-                        //                                   }
-                        //                                 }
-                        //                                 updateDueAmount();
-                        //                               },
-                        //                               textAlign: TextAlign.right,
-                        //                               decoration: InputDecoration(
-                        //                                 contentPadding: const EdgeInsets.only(right: 6.0),
-                        //                                 hintText: '0',
-                        //                                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xffFF8C00))),
-                        //                                 prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                        //                                 prefixIcon: Container(
-                        //                                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                        //                                   height: 40,
-                        //                                   decoration: const BoxDecoration(
-                        //                                       color: Color(0xffFF8C00),
-                        //                                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                        //                                   child: const Text(
-                        //                                     '%',
-                        //                                     style: TextStyle(fontSize: 18.0, color: Colors.white),
-                        //                                   ),
-                        //                                 ),
-                        //                               ),
-                        //                               textFieldType: TextFieldType.PHONE,
-                        //                             ),
-                        //                           ),
-                        //                         ),
-                        //                         const SizedBox(
-                        //                           width: 20.0,
-                        //                         ),
-                        //                         SizedBox(
-                        //                           width: context.width() < 1080 ? 1080 * .105 : MediaQuery.of(context).size.width * .120,
-                        //                           height: 40.0,
-                        //                           child: Center(
-                        //                             child: AppTextField(
-                        //                               controller: discountAmountEditingController,
-                        //                               onChanged: (value) {
-                        //                                 if (value == '') {
-                        //                                   setState(() {
-                        //                                     discountAmount = 0;
-                        //                                     discountPercentageEditingController.text = 0.toString();
-                        //                                   });
-                        //                                 } else {
-                        //                                   if (value.toInt() <= getTotalAmount().toDouble()) {
-                        //                                     setState(() {
-                        //                                       discountAmount = double.parse(value);
-                        //                                       discountPercentageEditingController.text = ((discountAmount * 100) / getTotalAmount().toDouble()).toStringAsFixed(1);
-                        //                                     });
-                        //                                   } else {
-                        //                                     setState(() {
-                        //                                       discountAmount = 0;
-                        //                                       discountPercentageEditingController.clear();
-                        //                                       discountAmountEditingController.clear();
-                        //                                     });
-                        //                                     EasyLoading.showError(lang.S.of(context).enterAValidDiscount);
-                        //                                   }
-                        //                                 }
-                        //                                 updateDueAmount();
-                        //                               },
-                        //                               textAlign: TextAlign.right,
-                        //                               decoration: InputDecoration(
-                        //                                 contentPadding: const EdgeInsets.only(right: 6.0),
-                        //                                 hintText: '0',
-                        //                                 border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                                 enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                                 disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                                 focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xff00AE1C))),
-                        //                                 prefixIconConstraints: const BoxConstraints(maxWidth: 40.0, minWidth: 40.0),
-                        //                                 prefixIcon: Container(
-                        //                                   padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                        //                                   height: 40,
-                        //                                   decoration: const BoxDecoration(
-                        //                                       color: Color(0xff00AE1C),
-                        //                                       borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                        //                                   child: Text(
-                        //                                     currency,
-                        //                                     style: const TextStyle(fontSize: 18.0, color: Colors.white),
-                        //                                   ),
-                        //                                 ),
-                        //                               ),
-                        //                               textFieldType: TextFieldType.PHONE,
-                        //                             ),
-                        //                           ),
-                        //                         ),
-                        //                       ],
-                        //                     ),
-                        //                   ],
-                        //                 ),
-                        //               ],
-                        //             ),
-                        //           ),
-                        //         )),
-                        //   ],
-                        // ),
+
+
                         const SizedBox(
                           height: 10,
                         ),
@@ -3400,12 +1762,6 @@ class _InventorySalesState extends State<InventorySales> {
 
                                                                     ///_________Push_on_dataBase____________________________________________________________________________
                                                                     await ref.push().set(transitionModel.toJson());
-                                                                    // await GeneratePdfAndPrint().printQuotationInvoice(
-                                                                    //   personalInformationModel: data,
-                                                                    //   saleTransactionModel: transitionModel,
-                                                                    //   context: context,
-                                                                    //   isFromInventorySale: true,
-                                                                    // );
 
                                                                     ///_________Invoice Increase____________________________________________________________________________
                                                                     updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
@@ -3449,24 +1805,6 @@ class _InventorySalesState extends State<InventorySales> {
                               ),
                             ),
                           ),
-                          //-------------------hold button-----------------
-                          // ResponsiveGridCol(child: Expanded(
-                          //   flex: 1,
-                          //   child: Container(
-                          //     padding: const EdgeInsets.all(10.0),
-                          //     decoration: BoxDecoration(
-                          //       shape: BoxShape.rectangle,
-                          //       borderRadius: BorderRadius.circular(2.0),
-                          //       color: Colors.yellow,
-                          //     ),
-                          //     child: Text(
-                          //       lang.S.of(context).hold,
-                          //       textAlign: TextAlign.center,
-                          //       style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
-                          //     ),
-                          //   ).onTap(() => showHoldPopUp()),
-                          // ).visible(false),),
-                          //--------------------payment button--------------------
                           ResponsiveGridCol(
                               xs: 12,
                               md: 4,
@@ -3593,9 +1931,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                   int totalDue = previousDue + transitionModel.dueAmount!.toInt();
                                                   dueUpdateRef.child(key!).update({'due': '$totalDue'});
                                                 }
-
                                                 ///________update_all_provider___________________________________________________
-
                                                 consumerRef.refresh(allCustomerProvider);
                                                 consumerRef.refresh(transitionProvider);
                                                 consumerRef.refresh(productProvider);
@@ -3614,177 +1950,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                 //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                               }
                                             }
-                                            // try {
-                                            //   final result = await InternetAddress.lookup('google.com');
-                                            //   if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-                                            //     if (widget.transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
-                                            //       EasyLoading.showError('Due is not available For Guest');
-                                            //     } else {
-                                            //       try {
-                                            //         EasyLoading.show(status: 'Loading...', dismissOnTap: false);
-                                            //
-                                            //         DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
-                                            //         DatabaseReference ref1 = FirebaseDatabase.instance.ref("${await getUserID()}/Quotation Convert History");
-                                            //
-                                            //         dueAmountController.text.toDouble() <= 0 ? widget.transitionModel.isPaid = true : widget.transitionModel.isPaid = false;
-                                            //         dueAmountController.text.toDouble() <= 0
-                                            //             ? widget.transitionModel.dueAmount = 0
-                                            //             : widget.transitionModel.dueAmount = double.parse(dueAmountController.text);
-                                            //         changeAmountController.text.toDouble() > 0
-                                            //             ? widget.transitionModel.returnAmount = changeAmountController.text.toDouble().abs()
-                                            //             : widget.transitionModel.returnAmount = 0;
-                                            //         widget.transitionModel.totalAmount = widget.transitionModel.totalAmount!.toDouble().toDouble();
-                                            //         widget.transitionModel.paymentType = selectedPaymentOption;
-                                            //         widget.transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
-                                            //
-                                            //         // ///_____sms_______________________________________________________
-                                            //         // SmsModel smsModel = SmsModel(
-                                            //         //   customerName: widget.transitionModel.customerName,
-                                            //         //   customerPhone: widget.transitionModel.customerPhone,
-                                            //         //   invoiceNumber: widget.transitionModel.invoiceNumber,
-                                            //         //   dueAmount: widget.transitionModel.dueAmount.toString(),
-                                            //         //   paidAmount:
-                                            //         //       (widget.transitionModel.totalAmount!.toDouble() - widget.transitionModel.dueAmount!.toDouble()).toString(),
-                                            //         //   sellerId: userId,
-                                            //         //   sellerMobile: data.phoneNumber,
-                                            //         //   sellerName: data.companyName,
-                                            //         //   totalAmount: widget.transitionModel.totalAmount.toString(),
-                                            //         //   status: false,
-                                            //         // );
-                                            //
-                                            //         ///__________total LossProfit & quantity________________________________________________________________
-                                            //         SaleTransactionModel post = checkLossProfit(transitionModel: widget.transitionModel);
-                                            //
-                                            //         ///_________Push_on_dataBase____________________________________________________________________________
-                                            //         await ref.push().set(post.toJson());
-                                            //
-                                            //         ///_________Push_on_Quotation to Sale history____________________________________________________________________________
-                                            //         widget.isFromQuotation ? await ref1.push().set(post.toJson()) : null;
-                                            //
-                                            //         ///________sms_post________________________________________________________________________
-                                            //         // FirebaseDatabase.instance.ref('Admin Panel').child('Sms List').push().set(smsModel.toJson());
-                                            //
-                                            //         ///__________StockMange_________________________________________________________________________________
-                                            //         final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
-                                            //
-                                            //         for (var element in widget.transitionModel.productList!) {
-                                            //           var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
-                                            //           final data2 = jsonDecode(jsonEncode(data.snapshot.value));
-                                            //           String productPath = data.snapshot.value.toString().substring(1, 21);
-                                            //
-                                            //           var data1 = await stockRef.child('$productPath/productStock').once();
-                                            //           int stock = int.parse(data1.snapshot.value.toString());
-                                            //           int remainStock = stock - element.quantity;
-                                            //
-                                            //           stockRef.child(productPath).update({'productStock': '$remainStock'});
-                                            //
-                                            //           ///________Update_Serial_Number____________________________________________________
-                                            //
-                                            //           if (element.serialNumber!.isNotEmpty) {
-                                            //             var productOldSerialList = data2[productPath]['serialNumber'];
-                                            //
-                                            //             List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
-                                            //             stockRef.child(productPath).update({
-                                            //               'serialNumber': result.map((e) => e).toList(),
-                                            //             });
-                                            //           }
-                                            //         }
-                                            //
-                                            //         ///_________Invoice Increase____________________________________________________________________________
-                                            //         widget.isFromQuotation
-                                            //             ? null
-                                            //             : updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: widget.transitionModel.invoiceNumber.toInt());
-                                            //
-                                            //         ///_________delete_quotation___________________________________________________________________________________
-                                            //
-                                            //         widget.isFromQuotation ? deleteQuotation(date: widget.transitionModel.invoiceNumber, updateRef: consumerRef) : null;
-                                            //
-                                            //         ///________Subscription_____________________________________________________
-                                            //
-                                            //         Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
-                                            //
-                                            //         ///________daily_transactionModel_________________________________________________________________________
-                                            //
-                                            //         DailyTransactionModel dailyTransaction = DailyTransactionModel(
-                                            //           name: post.customerName,
-                                            //           date: post.purchaseDate,
-                                            //           type: 'Sale',
-                                            //           total: post.totalAmount!.toDouble(),
-                                            //           paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
-                                            //           paymentOut: 0,
-                                            //           remainingBalance: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
-                                            //           id: post.invoiceNumber,
-                                            //           saleTransactionModel: post,
-                                            //         );
-                                            //         postDailyTransaction(dailyTransactionModel: dailyTransaction);
-                                            //
-                                            //         ///_________DueUpdate___________________________________________________________________________________
-                                            //         if (widget.transitionModel.customerName != 'Guest') {
-                                            //           final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-                                            //           String? key;
-                                            //
-                                            //           await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
-                                            //             for (var element in value.children) {
-                                            //               var data = jsonDecode(jsonEncode(element.value));
-                                            //               if (data['phoneNumber'] == widget.transitionModel.customerPhone) {
-                                            //                 key = element.key;
-                                            //               }
-                                            //             }
-                                            //           });
-                                            //           var data1 = await dueUpdateRef.child('$key/due').once();
-                                            //           int previousDue = data1.snapshot.value.toString().toInt();
-                                            //
-                                            //           int totalDue = previousDue + widget.transitionModel.dueAmount!.toInt();
-                                            //           dueUpdateRef.child(key!).update({'due': '$totalDue'});
-                                            //         }
-                                            //
-                                            //         ///________update_all_provider___________________________________________________
-                                            //
-                                            //         consumerRef.refresh(allCustomerProvider);
-                                            //         consumerRef.refresh(transitionProvider);
-                                            //         consumerRef.refresh(productProvider);
-                                            //         consumerRef.refresh(purchaseTransitionProvider);
-                                            //         consumerRef.refresh(dueTransactionProvider);
-                                            //         consumerRef.refresh(profileDetailsProvider);
-                                            //         consumerRef.refresh(dailyTransactionProvider);
-                                            //
-                                            //         EasyLoading.showSuccess('Sale Successfully Done');
-                                            //
-                                            //         await GeneratePdfAndPrint()
-                                            //             .printSaleInvoice(personalInformationModel: data, saleTransactionModel: widget.transitionModel, context: context);
-                                            //       } catch (e) {
-                                            //         EasyLoading.dismiss();
-                                            //         //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                                            //       }
-                                            //     }
-                                            //     print('-----------------------connected-----------------');
-                                            //   }
-                                            // } on SocketException catch (_) {
-                                            //   setState(() {
-                                            //     showDialog(
-                                            //         context: context,
-                                            //         builder: (BuildContext context){
-                                            //           return AlertDialog(
-                                            //             shape: RoundedRectangleBorder(
-                                            //                 borderRadius: BorderRadius.circular(10)
-                                            //             ),
-                                            //             content: Column(
-                                            //               mainAxisSize: MainAxisSize.min,
-                                            //               children: [
-                                            //                 Text(lang.S.of(context).noConnection,style: kTextStyle.copyWith(fontWeight: FontWeight.bold),),
-                                            //                 Text(lang.S.of(context).pleaseCheckYourInternetConnectivity)
-                                            //               ],
-                                            //             ),
-                                            //           );
-                                            //         });
-                                            //   });
-                                            //   print('-----------------not connected---------------');
-                                            // }
-
-                                            // ShowPaymentPopUp(
-                                            //   transitionModel: transitionModel,
-                                            //   isFromQuotation: widget.quotation == null ? false : true,
-                                            // ).launch(context);
                                           }
                                         } else {
                                           //EasyLoading.showError('Update your plan first\nSale Limit is over.');

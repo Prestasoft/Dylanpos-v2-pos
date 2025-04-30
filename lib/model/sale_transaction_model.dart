@@ -1,4 +1,4 @@
-import 'add_to_cart_model.dart';
+import 'add_to_cart_model.dart';  // Asegúrate de que la ruta sea correcta
 
 class SaleTransactionModel {
   late String customerName, customerPhone, customerAddress, customerGst, customerType, customerImage, purchaseDate, invoiceNumber;
@@ -16,6 +16,7 @@ class SaleTransactionModel {
   String? sellerName;
   String? key;
   bool? sendWhatsappMessage;
+  List<String>? reservationIds;  // Agregado reservationIds
 
   SaleTransactionModel({
     required this.customerName,
@@ -40,28 +41,29 @@ class SaleTransactionModel {
     this.sellerName,
     this.key,
     this.sendWhatsappMessage,
+    this.reservationIds,  // Inicialización de reservationIds
   });
 
   SaleTransactionModel.fromJson(Map<dynamic, dynamic> json) {
     customerName = json['customerName'] as String;
-    customerPhone = json['customerPhone'].toString();
+    customerPhone = json['customerPhone']?.toString() ?? '';
     customerAddress = json['customerAddress'] ?? '';
     customerGst = json['customerGst'] ?? '';
-    customerImage = json['customerImage'] ?? 'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Profile%20Picture%2Fblank-profile-picture-973460_1280.webp?alt=media&token=3578c1e0-7278-4c03-8b56-dd007a9befd3';
+    customerImage = json['customerImage'] ?? 'https://default-image-url.com';  // URL por defecto
     invoiceNumber = json['invoiceNumber'].toString();
-    customerType = json['customerType'].toString();
-    purchaseDate = json['purchaseDate'].toString();
-    totalAmount = double.parse(json['totalAmount'].toString());
-    discountAmount = double.parse(json['discountAmount'].toString());
-    serviceCharge = double.parse(json['serviceCharge'].toString());
-    vat = double.parse(json['vat'].toString());
-    lossProfit = double.parse(json['lossProfit'].toString());
+    customerType = json['customerType']?.toString() ?? 'Unknown';
+    purchaseDate = json['purchaseDate']?.toString() ?? '';
+    totalAmount = double.tryParse(json['totalAmount']?.toString() ?? '0');
+    discountAmount = double.tryParse(json['discountAmount']?.toString() ?? '0');
+    serviceCharge = double.tryParse(json['serviceCharge']?.toString() ?? '0');
+    vat = double.tryParse(json['vat']?.toString() ?? '0');
+    lossProfit = double.tryParse(json['lossProfit']?.toString() ?? '0');
     totalQuantity = json['totalQuantity'];
     sellerName = json['sellerName'];
-    dueAmount = double.parse(json['dueAmount'].toString());
-    returnAmount = double.parse(json['returnAmount'].toString());
+    dueAmount = double.tryParse(json['dueAmount']?.toString() ?? '0');
+    returnAmount = double.tryParse(json['returnAmount']?.toString() ?? '0');
     isPaid = json['isPaid'];
-    paymentType = json['paymentType'].toString();
+    paymentType = json['paymentType']?.toString() ?? 'Unknown';
     sendWhatsappMessage = json['sendWhatsappMessage'] ?? false;
     if (json['productList'] != null) {
       productList = <AddToCartModel>[];
@@ -69,29 +71,33 @@ class SaleTransactionModel {
         productList!.add(AddToCartModel.fromJson(v));
       });
     }
+    if (json['reservationIds'] != null) {  // Agregar la lectura de reservationIds
+      reservationIds = List<String>.from(json['reservationIds']);
+    }
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'customerName': customerName,
-        'customerPhone': customerPhone,
-        'customerAddress': customerAddress,
-        'customerGst': customerGst,
-        'customerType': customerType,
-        'customerImage': customerImage,
-        'invoiceNumber': invoiceNumber,
-        'purchaseDate': purchaseDate,
-        'discountAmount': discountAmount,
-        'vat': vat,
-        'serviceCharge': serviceCharge,
-        'totalAmount': totalAmount,
-        'dueAmount': dueAmount,
-        'sellerName': sellerName,
-        'returnAmount': returnAmount,
-        'lossProfit': lossProfit,
-        'totalQuantity': totalQuantity,
-        'isPaid': isPaid,
-        'paymentType': paymentType,
-        'sendWhatsappMessage': sendWhatsappMessage ?? false,
-        'productList': productList?.map((e) => e.toJson()).toList(),
-      };
+    'customerName': customerName,
+    'customerPhone': customerPhone,
+    'customerAddress': customerAddress,
+    'customerGst': customerGst,
+    'customerType': customerType,
+    'customerImage': customerImage,
+    'invoiceNumber': invoiceNumber,
+    'purchaseDate': purchaseDate,
+    'discountAmount': discountAmount,
+    'vat': vat,
+    'serviceCharge': serviceCharge,
+    'totalAmount': totalAmount,
+    'dueAmount': dueAmount,
+    'sellerName': sellerName,
+    'returnAmount': returnAmount,
+    'lossProfit': lossProfit,
+    'totalQuantity': totalQuantity,
+    'isPaid': isPaid,
+    'paymentType': paymentType,
+    'sendWhatsappMessage': sendWhatsappMessage ?? false,
+    'productList': productList?.map((e) => e.toJson()).toList(),
+    'reservationIds': reservationIds,  // Agregar reservationIds al JSON
+  };
 }

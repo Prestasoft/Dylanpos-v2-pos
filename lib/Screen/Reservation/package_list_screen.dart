@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
+import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/ServicePackageModel.dart';
+import 'package:salespro_admin/model/customer_model.dart';
+import 'Seleccioncliente.dart';
 import 'dress_selection_screen.dart';
 import '../../commas.dart';
 
@@ -63,8 +66,11 @@ class PackageListScreen extends ConsumerWidget {
           body: Column(
             children: [
               _buildHeader(context, ref),
+              //Cliente(ref),
               _buildSearchBar(ref),
+
               _buildCategoryFilter(ref, categories, context),
+
               Expanded(
                 child: filteredPackages.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -210,7 +216,14 @@ class PackageListScreen extends ConsumerWidget {
     );
   }
 
-
+  // Widget Cliente(WidgetRef ref){
+  //   CustomerModel? selectedCustomer;
+  //     return Padding(
+  //               padding: const EdgeInsets.all(12),
+  //               child: CustomerSelector(initialCustomer : selectedCustomer, onCustomerSelected: (CustomerModel ) {
+  //           },),
+  //     );
+  // }
   Widget _buildSearchBar(WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(12),

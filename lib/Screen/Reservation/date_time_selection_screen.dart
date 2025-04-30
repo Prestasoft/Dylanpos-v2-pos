@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../Provider/reservation_provider.dart';
+import '../../model/customer_model.dart';
+import 'Seleccioncliente.dart';
 import 'confirmation_screen.dart';
 
 class DateTimeSelectionScreen extends ConsumerStatefulWidget {
@@ -27,6 +29,8 @@ class DateTimeSelectionScreen extends ConsumerStatefulWidget {
 class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScreen> {
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay.now();
+  CustomerModel? selectedCustomer;
+
   String? errorMessage;
   bool isChecking = false;
   Map<String, dynamic>? packageDuration;
@@ -134,6 +138,12 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
     setState(() {
       isChecking = false;
     });
+    if (selectedCustomer == null) {
+      setState(() {
+        errorMessage = "Por favor, selecciona un cliente.";
+      });
+      return;
+    }
 
     if (availability) {
       Navigator.push(
@@ -147,6 +157,7 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
             branchId: widget.branchId,
             selectedDate: selectedDate,
             selectedTime: selectedTime,
+            clientId: selectedCustomer!.phoneNumber,
           ),
         ),
       );
@@ -196,6 +207,16 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
+            Text(
+              "Seleeccione cliente",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Padding(
+                padding: const EdgeInsets.all(12),
+                child: CustomerSelector(initialCustomer : selectedCustomer, onCustomerSelected: (CustomerModel ) {
+                  selectedCustomer =CustomerModel;
+                }  )
+           ),
             Text(
               "Duración: ${_getDuracionTexto()}",
               style: TextStyle(fontSize: 14, color: Colors.grey[700]),

@@ -7,6 +7,8 @@ import '../model/product_model.dart';
 
 final cartNotifier = ChangeNotifierProvider((ref) => CartNotifier());
 
+
+
 class CartNotifier extends ChangeNotifier {
   List<AddToCartModel> cartItemList = [];
   double discount = 0;

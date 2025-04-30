@@ -252,6 +252,8 @@ class GeneratePdfAndPrint {
     required BuildContext context, // Pass a valid context from the parent widget
     bool? fromInventorySale,
     bool? isFromQuotation,
+    int reservations = 0,
+
     bool? fromSaleReports,
     required GeneralSettingModel setting,
     bool? fromLedger,

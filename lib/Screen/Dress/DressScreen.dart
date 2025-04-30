@@ -13,6 +13,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
 import 'package:salespro_admin/Provider/product_provider.dart';
+import 'package:salespro_admin/Screen/WareHouse/warehouse_model.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/export_button.dart';
 import 'package:salespro_admin/const.dart';
@@ -22,6 +23,7 @@ import 'package:salespro_admin/model/category_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:path/path.dart' as path;
+import 'package:salespro_admin/share/direccion.dart';
 
 class DressScreen extends StatefulWidget {
   const DressScreen({super.key});
@@ -38,6 +40,7 @@ class _DressScreenState extends State<DressScreen> {
 
   TextEditingController _nameController = TextEditingController();
   String? _selectedCategory;
+  WareHouseModel? selectedWareHouse;
   String? _selectedBranch;
   TextEditingController _subcategoryController = TextEditingController();
   ScrollController mainScroll = ScrollController();
@@ -1073,42 +1076,42 @@ class _DressScreenState extends State<DressScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              // Branch dropdown
-                              Consumer(
-                                builder: (_, ref, __) {
-                                  AsyncValue<List<BrandsModel>> branches = ref.watch(brandProvider);
-                                  return branches.when(
-                                    data: (branchList) {
-                                      return DropdownButtonFormField<String>(
-                                        value: _selectedBranch,
-                                        decoration: kInputDecoration.copyWith(
-                                          labelText: lang.S.of(context).branch,
-                                          hintText: lang.S.of(context).selectBranch,
-                                        ),
-                                        items: branchList.map((branch) {
-                                          return DropdownMenuItem<String>(
-                                            value: branch.brandName,
-                                            child: Text(branch.brandName?? ''),
-                                          );
-                                        }).toList(),
-                                        onChanged: (value) {
-                                          setState1(() {
-                                            _selectedBranch = value;
-                                          });
-                                        },
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return lang.S.of(context).branchRequired;
-                                          }
-                                          return null;
-                                        },
-                                      );
-                                    },
-                                    loading: () => const CircularProgressIndicator(),
-                                    error: (error, stack) => Text('Error: $error'),
-                                  );
-                                },
-                              ),
+                            Consumer(
+                              builder: (_, ref, __) {
+                                AsyncValue<List<WareHouseModel>> warehouses = ref.watch(warehouseProvider);
+                                return warehouses.when(
+                                  data: (warehouseList) {
+                                    return DropdownButtonFormField<String>(
+                                      value: _selectedBranch,
+                                      decoration: kInputDecoration.copyWith(
+                                        labelText: lang.S.of(context).branch,
+                                        hintText: lang.S.of(context).selectBranch,
+                                      ),
+                                      items: warehouseList.map((warehouse) {
+                                        return DropdownMenuItem<String>(
+                                          value: warehouse.warehouseName,
+                                          child: Text(warehouse.warehouseName),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState1(() {
+                                          _selectedBranch = value;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return lang.S.of(context).branchRequired;
+                                        }
+                                        return null;
+                                      },
+                                    );
+                                  },
+                                  loading: () => const CircularProgressIndicator(),
+                                  error: (error, stack) => Text('Error: $error'),
+                                );
+                              },
+                            ),
+
                               const SizedBox(height: 16),
 
                               // Available switch
@@ -1331,22 +1334,21 @@ class _DressScreenState extends State<DressScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              // Branch dropdown
                               Consumer(
                                 builder: (_, ref, __) {
-                                  AsyncValue<List<BrandsModel>> branches = ref.watch(brandProvider);
-                                  return branches.when(
-                                    data: (branchList) {
+                                  AsyncValue<List<WareHouseModel>> warehouses = ref.watch(warehouseProvider);
+                                  return warehouses.when(
+                                    data: (warehouseList) {
                                       return DropdownButtonFormField<String>(
                                         value: _selectedBranch,
                                         decoration: kInputDecoration.copyWith(
                                           labelText: lang.S.of(context).branch,
                                           hintText: lang.S.of(context).selectBranch,
                                         ),
-                                        items: branchList.map((branch) {
+                                        items: warehouseList.map((warehouse) {
                                           return DropdownMenuItem<String>(
-                                            value: branch.brandName,
-                                            child: Text(branch.brandName ?? ''),
+                                            value: warehouse.warehouseName,
+                                            child: Text(warehouse.warehouseName),
                                           );
                                         }).toList(),
                                         onChanged: (value) {
@@ -1368,7 +1370,6 @@ class _DressScreenState extends State<DressScreen> {
                                 },
                               ),
                               const SizedBox(height: 16),
-
                               // Available switch
                               SwitchListTile(
                                 title: Text(lang.S.of(context).available),

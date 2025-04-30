@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../Provider/reservation_provider.dart';
 
 class ConfirmationScreen extends ConsumerStatefulWidget {
@@ -11,8 +12,9 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
   final String branchId;
   final DateTime selectedDate;
   final TimeOfDay selectedTime;
+  final String clientId;
 
-  const ConfirmationScreen({
+  const ConfirmationScreen( {
     Key? key,
     required this.packageId,
     required this.packageName,
@@ -21,6 +23,7 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
     required this.branchId,
     required this.selectedDate,
     required this.selectedTime,
+    required this.clientId
   }) : super(key: key);
 
   @override
@@ -43,7 +46,6 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       isSubmitting = true;
     });
 
-    final String clientId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
     final String formattedDate = _formatDate(widget.selectedDate);
     final String formattedTime = _formatTime(widget.selectedTime);
 
@@ -71,7 +73,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     // Crear la reserva
     final success = await ref.read(createReservationProvider({
       'serviceId': widget.packageId,
-      'clientId': clientId,
+      'clientId': widget.clientId,
       'dressId': widget.dressId,
       'branchId': widget.branchId,
       'date': formattedDate,
@@ -92,9 +94,10 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                // Navegar de vuelta a la pantalla principal
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.of(context).pop(); // Cierra el diálogo primero
+                context.go('/reservations/list'); // Redirige a la ruta deseada
               },
+
               child: Text("Aceptar"),
             ),
           ],
