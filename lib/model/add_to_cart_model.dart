@@ -33,6 +33,7 @@ class AddToCartModel {
     this.serviceId,
   });
 
+  // Campos del modelo
   dynamic uuid;
   dynamic productId;
   String? productName;
@@ -58,11 +59,11 @@ class AddToCartModel {
   late num groupTaxRate;
   late List<TaxModel> subTaxes;
 
-  // Nuevos campos opcionales
-  final bool? isReservation;
-  final String? reservationId;
-  final String? dressId;
-  final String? serviceId;
+  // Campos de reserva (no final para permitir modificación)
+  bool? isReservation;
+  String? reservationId;
+  String? dressId;
+  String? serviceId;
 
   factory AddToCartModel.fromJson(String str) => AddToCartModel.fromMap(json.decode(str));
 
@@ -93,10 +94,10 @@ class AddToCartModel {
     groupTaxName: json['groupTaxName'] ?? '',
     groupTaxRate: json['groupTaxRate'] ?? 0,
     subTaxes: json['subTax'] != null ? List<TaxModel>.from(json['subTax'].map((x) => TaxModel.fromJson(x))) : [],
-    isReservation: json["isReservation"],  // Campo opcional
-    reservationId: json["reservationId"],  // Campo opcional
-    dressId: json["dressId"],  // Campo opcional
-    serviceId: json["serviceId"],  // Campo opcional
+    isReservation: json["isReservation"],
+    reservationId: json['reservationId'],
+    dressId: json["dressId"],
+    serviceId: json["serviceId"],
   );
 
   Map<String, dynamic> toMap() => {
@@ -123,9 +124,9 @@ class AddToCartModel {
     'groupTaxName': groupTaxName,
     'groupTaxRate': groupTaxRate,
     'subTax': subTaxes.map((e) => e.toJson()).toList(),
-    "isReservation": isReservation,  // Campo opcional
-    "reservationId": reservationId,  // Campo opcional
-    "dressId": dressId,  // Campo opcional
-    "serviceId": serviceId,  // Campo opcional
+    "isReservation": isReservation,
+    'reservationId': reservationId,
+    "dressId": dressId,
+    "serviceId": serviceId,
   };
 }

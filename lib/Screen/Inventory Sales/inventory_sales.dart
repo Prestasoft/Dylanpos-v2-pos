@@ -327,9 +327,12 @@ class _InventorySalesState extends State<InventorySales> {
       },
     );
   }
+
   void _addReservationToCart(ReservationProductModel reservation) {
     setState(() {
-      cartList.add(reservation.toCartItem());
+      cartList.add(
+        reservation.toCartItem()..reservationId = reservation.id, // Asignar ID
+      );
       addFocus();
       updateDueAmount();
     });
@@ -594,12 +597,14 @@ class _InventorySalesState extends State<InventorySales> {
                           ),
                         ),
 
-                        ElevatedButton(
-                          onPressed: () => showReservationSelection("8492220819"),
-                          child: Text('Agregar Reserva'),
-                        ),
+
                         const SizedBox(height: 5.0),
                         const Divider(thickness: 1.0, color: kNeutral300),
+
+                        ElevatedButton(
+                          onPressed: () => showReservationSelection(selectedUserId!),
+                          child: Text('Agregar Reserva'),
+                        ),
                         ResponsiveGridRow(rowSegments: 120, children: [
                           ResponsiveGridCol(
                               xs: 120,
@@ -1582,6 +1587,11 @@ class _InventorySalesState extends State<InventorySales> {
                                                                     discountAmount: discountAmount,
                                                                     serviceCharge: serviceCharge,
                                                                     vat: vatGst,
+
+                                                                    reservationIds: cartList
+                                                                        .where((item) => item.reservationId != null)  // Filtra items con reserva
+                                                                        .map((item) => item.reservationId!)  // Extrae IDs
+                                                                        .toList(),  // Convierte a lista
                                                                   );
 
                                                                   try {
@@ -1633,6 +1643,36 @@ class _InventorySalesState extends State<InventorySales> {
                               ),
                             ),
                           ),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                           ResponsiveGridCol(
                               xs: 12,
                               md: 4,
@@ -1665,6 +1705,10 @@ class _InventorySalesState extends State<InventorySales> {
                                               discountAmount: discountAmount,
                                               serviceCharge: serviceCharge,
                                               vat: vatGst,
+                                              reservationIds: cartList
+                                                  .where((item) => item.reservationId != null)
+                                                  .map((item) => item.reservationId!)
+                                                  .toList(),
                                             );
 
                                             if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
@@ -1776,6 +1820,10 @@ class _InventorySalesState extends State<InventorySales> {
                                 );
                               })),
                           if (screenWidth > 1240) ResponsiveGridCol(lg: 3, xs: 0, md: 0, child: const SizedBox.shrink()),
+
+
+
+
                         ]),
                       ],
                     ),
