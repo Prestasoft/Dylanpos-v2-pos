@@ -319,8 +319,7 @@ enum ReservationStatus {
   upcoming,
   aboutToExpire,
 }
-
-class ReservationCard extends StatelessWidget {
+class ReservationCard extends ConsumerWidget {
   final ReservationModel reservation;
   final ReservationStatus status;
   final VoidCallback onTap;
@@ -333,7 +332,8 @@ class ReservationCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Asigna color, icono y texto según el estado
     Color statusColor;
     IconData statusIcon;
     String statusText;
@@ -356,6 +356,9 @@ class ReservationCard extends StatelessWidget {
         break;
     }
 
+    // Obtenemos los datos completos de la reservación
+    final fullReservationAsync = ref.watch(fullReservationByIdProviderVQ(reservation.id));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -364,81 +367,83 @@ class ReservationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: fullReservationAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Text('Error al cargar datos: $error', style: TextStyle(color: Colors.red)),
+            data: (fullReservation) {
+              final clientName = fullReservation?.client?.customerName ?? 'Cliente desconocido';
+              final dressName = fullReservation?.dress?['name'] ?? 'Vestido no especificado';
+              final serviceName = fullReservation?.service?['name'] ?? 'Servicio no especificado';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '${reservation.reservationDate} - ${reservation.reservationTime}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${reservation.reservationDate} - ${reservation.reservationTime}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Chip(
+                        label: Text(statusText),
+                        avatar: Icon(statusIcon, size: 16, color: Colors.white),
+                        backgroundColor: statusColor,
+                        labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
-                  Chip(
-                    label: Text(statusText),
-                    avatar: Icon(statusIcon, size: 16, color: Colors.white),
-                    backgroundColor: statusColor,
-                    labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
-                    padding: EdgeInsets.zero,
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.person, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Cliente: $clientName', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Icon(Icons.person, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'ID Cliente: ${reservation.clientId}',
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.checkroom, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Vestido: $dressName', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.checkroom, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'ID Vestido: ${reservation.dressId}',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.business, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sucursal: ${reservation.branchId}',
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.engineering, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Servicio: $serviceName', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 }
+
 
 class ReservationDetailView extends ConsumerWidget {
   final ReservationModel reservation;

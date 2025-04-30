@@ -85,25 +85,15 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     });
 
     if (success) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: Text("¡Reservación Exitosa!"),
-          content: Text("Tu reserva ha sido confirmada. Gracias por elegir nuestros servicios."),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cierra el diálogo primero
-                context.go('/reservations/list'); // Redirige a la ruta deseada
-              },
+      await Future.delayed(Duration(seconds: 2));
+      if (mounted) {
 
-              child: Text("Aceptar"),
-            ),
-          ],
-        ),
-      );
-    } else {
+        Navigator.of(context).pop(); // Cierra el diálogo
+        Navigator.of(context).pop(); // Cierra la pantalla actual
+
+      }
+    }
+    else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error al crear la reserva. Por favor intenta de nuevo."),

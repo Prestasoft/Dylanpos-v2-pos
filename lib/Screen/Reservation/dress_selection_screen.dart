@@ -1,11 +1,11 @@
-// ARCHIVO 1: dress_selection_screen.dart (versión mejorada)
+// ARCHIVO 1: dress_selection_screen.dart (versión mejorada con diseño moderno)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'package:salespro_admin/model/dress_model.dart';
-
 import 'date_time_selection_screen.dart';
 
 class DressSelectionScreen extends ConsumerStatefulWidget {
@@ -42,15 +42,15 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         title: Text(
-          'Vestidos disponibles',
-          style: TextStyle(
-            color: Colors.black87,
+          'Selecciona tu vestido',
+          style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
         iconTheme: IconThemeData(color: Colors.black87),
@@ -62,14 +62,18 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
               controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Buscar vestidos...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: Icon(Icons.search, color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey[50],
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
+                fillColor: Colors.grey[100],
+                contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.primaryColor, width: 1),
+                ),
               ),
               onChanged: (value) {
                 setState(() {
@@ -81,7 +85,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
         ),
       ),
       body: dressesAsync.when(
-        loading: () => Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator(color: theme.primaryColor)),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -98,7 +102,6 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
           ),
         ),
         data: (dresses) {
-          // Filtrar vestidos según la búsqueda
           final filteredDresses = dresses.where((dress) {
             return dress.name.toLowerCase().contains(searchQuery) ||
                 (dress.name?.toLowerCase().contains(searchQuery) ?? false);
@@ -125,12 +128,12 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
             ),
           )
               : Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75, // Ajustado para imágenes más pequeñas
-                crossAxisSpacing: 12,
+                crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                childAspectRatio: 0.8,
+                crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
               itemCount: filteredDresses.length,
@@ -156,83 +159,88 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                     );
                   }
                       : null,
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    elevation: 2,
-                    shadowColor: Colors.black26,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Contenedor de imagen más pequeño
+                        // Contenedor de imagen con tamaño fijo 100x70
                         Container(
-                          height: 150, // Altura fija más pequeña
+                          width: 299,
+                          height: 299,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                            color: Colors.grey[100],
+                          ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                firstImage.isNotEmpty
-                                    ? Image.network(
-                                  firstImage,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                        color: Colors.grey[200],
-                                        child: Icon(Icons.image_not_supported,
-                                            color: Colors.grey[400], size: 40),
-                                      ),
-                                )
-                                    : Container(
-                                  color: Colors.grey[200],
-                                  child: Icon(Icons.image,
-                                      color: Colors.grey[400], size: 40),
-                                ),
+                                if (firstImage.isNotEmpty)
+                                 Slide(movie: firstImage)
+                                else
+                                  Container(
+                                    color: Colors.grey[200],
+                                    child: Icon(
+                                      Icons.image,
+                                      color: Colors.grey[400],
+                                      size: 40,
+                                    ),
+                                  ),
+
                                 if (!isAvailable)
                                   Container(
-                                    color: Colors.black.withOpacity(0.3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.4),
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                                    ),
                                     child: Center(
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          'No disponible',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
+                                      child: Text(
+                                        'RESERVADO',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          letterSpacing: 1.2,
                                         ),
                                       ),
                                     ),
                                   ),
+
                                 if (dress.images.length > 1)
                                   Positioned(
                                     bottom: 8,
                                     right: 8,
                                     child: GestureDetector(
-                                      onTap: () {
-                                        _showImageGallery(context, dress);
-                                      },
+                                      onTap: () => _showImageGallery(context, dress),
                                       child: Container(
-                                        height: 28,
-                                        width: 28,
+                                        padding: EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.9),
+                                          color: Colors.white,
                                           shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black12,
+                                              blurRadius: 4,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
                                         ),
                                         child: Icon(
                                           Icons.collections,
                                           color: theme.primaryColor,
-                                          size: 16,
+                                          size: 18,
                                         ),
                                       ),
                                     ),
@@ -241,38 +249,26 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                             ),
                           ),
                         ),
+
                         // Información del vestido
                         Padding(
-                          padding: const EdgeInsets.all(10.0),
+                          padding: const EdgeInsets.all(12.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 dress.name,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black87,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 6),
+                              SizedBox(height: 8),
                               DressStatusBadge(
                                 isAvailable: isAvailable,
                                 timeLeft: null,
                               ),
-                              // if (dress.price != null) ...[
-                              //   SizedBox(height: 6),
-                              //   Text(
-                              //     '\$${dress.price!.toStringAsFixed(2)}',
-                              //     style: TextStyle(
-                              //       fontSize: 14,
-                              //       fontWeight: FontWeight.w600,
-                              //       color: theme.primaryColor,
-                              //     ),
-                              //   ),
-                              // ],
                             ],
                           ),
                         ),
@@ -287,12 +283,12 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
       ),
     );
   }
-
   void _showImageGallery(BuildContext context, DressModel dress) {
     if (dress.images.isEmpty) return;
 
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (dialogContext) {
         int currentIndex = 0;
 
@@ -300,120 +296,85 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
           builder: (builderContext, setState) {
             return Dialog(
               backgroundColor: Colors.transparent,
-              insetPadding: EdgeInsets.all(20),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.7,
+              insetPadding: EdgeInsets.all(10), // margen del borde de pantalla
+              child: Container(
+                width: 300,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
+                    // Encabezado: contador y cerrar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    '${currentIndex + 1}/${dress.images.length}',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () => Navigator.of(dialogContext).pop(),
-                                  child: Container(
-                                    padding: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.close,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            '${currentIndex + 1}/${dress.images.length}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          Container(
-                            height: 300, // Tamaño más pequeño para el carrusel
-                            child: CarouselSlider.builder(
-                              itemCount: dress.images.length,
-                              options: CarouselOptions(
-                                height: 300,
-                                viewportFraction: 1.0,
-                                enableInfiniteScroll: dress.images.length > 1,
-                                autoPlay: false,
-                                enlargeCenterPage: true,
-                                onPageChanged: (index, reason) {
-                                  setState(() {
-                                    currentIndex = index;
-                                  });
-                                },
-                              ),
-                              itemBuilder: (context, index, _) {
-                                return Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 5),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.network(
-                                      dress.images[index],
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Container(
-                                            color: Colors.grey[800],
-                                            child: Center(
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(Icons.broken_image,
-                                                      size: 40, color: Colors.white60),
-                                                  SizedBox(height: 8),
-                                                  Text(
-                                                    'Error al cargar imagen',
-                                                    style: TextStyle(color: Colors.white60),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              dress.name,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          IconButton(
+                            icon: Icon(Icons.close, size: 20, color: Colors.grey[700]),
+                            onPressed: () => Navigator.of(dialogContext).pop(),
                           ),
                         ],
                       ),
                     ),
+
+                    // Imagen tamaño fijo 200x150
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 500,
+                        height: 300,
+                        child: Image.network(
+                          dress.images[currentIndex],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Botones de navegación si hay más de una imagen
+                    if (dress.images.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.arrow_back_ios_new, size: 20),
+                              onPressed: currentIndex > 0
+                                  ? () => setState(() => currentIndex--)
+                                  : null,
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.arrow_forward_ios, size: 20),
+                              onPressed: currentIndex < dress.images.length - 1
+                                  ? () => setState(() => currentIndex++)
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -423,9 +384,11 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
       },
     );
   }
+
+
+
 }
 
-// Mantener la clase DressStatusBadge igual que en la versión original
 class DressStatusBadge extends StatelessWidget {
   final bool isAvailable;
   final int? timeLeft;
@@ -438,25 +401,26 @@ class DressStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (isAvailable) {
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.green.shade50,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.green.shade300, width: 0.5),
+          color: Colors.green[50],
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle, size: 12, color: Colors.green),
+            Icon(Icons.check_circle, size: 14, color: Colors.green),
             SizedBox(width: 4),
             Text(
               'Disponible',
               style: TextStyle(
-                color: Colors.green.shade800,
+                color: Colors.green[800],
                 fontWeight: FontWeight.w500,
-                fontSize: 10,
+                fontSize: 12,
               ),
             ),
           ],
@@ -472,33 +436,102 @@ class DressStatusBadge extends StatelessWidget {
         if (hours > 0) {
           timeText = '$hours h $minutes m';
         } else {
-          timeText = '$minutes m ${duration.inSeconds % 60} s';
+          timeText = '$minutes m';
         }
       }
 
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.red.shade200, width: 0.5),
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.timer, size: 12, color: Colors.red),
+            Icon(Icons.timer, size: 14, color: Colors.red),
             SizedBox(width: 4),
             Text(
-              timeLeft != null ? 'Reservado: $timeText' : 'No disponible',
+              timeLeft != null ? 'Reservado ($timeText)' : 'No disponible',
               style: TextStyle(
-                color: Colors.red.shade700,
+                color: Colors.red[700],
                 fontWeight: FontWeight.w500,
-                fontSize: 10,
+                fontSize: 12,
               ),
             ),
           ],
         ),
       );
     }
+  }
+}
+
+
+
+
+
+
+class Slide extends StatelessWidget {
+  final String movie;
+
+  const Slide({super.key, required this.movie});
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyles = Theme.of(context).textTheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: 200,
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                movie,
+                width: 180,
+                height: 180,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+
+        ],
+      ),
+    );
+  }
+}
+
+class _Title extends StatelessWidget {
+  final String? title;
+  final String? subtitle;
+
+  const _Title({
+    this.title,
+    this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final titleStyle = Theme.of(context).textTheme.titleLarge;
+    return Container(
+      padding: const EdgeInsets.only(top: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        children: [
+          if (title != null) Text(title!, style: titleStyle),
+          const Spacer(),
+          if (subtitle != null)
+            FilledButton.tonal(
+              style: const ButtonStyle(visualDensity: VisualDensity.compact),
+              onPressed: () {},
+              child: Text(subtitle!),
+            ),
+        ],
+      ),
+    );
   }
 }
