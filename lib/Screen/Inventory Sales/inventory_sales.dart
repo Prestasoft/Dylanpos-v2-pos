@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:flutter/material.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
@@ -74,6 +75,8 @@ class _InventorySalesState extends State<InventorySales> {
   final ScrollController horizontalScroll = ScrollController();
 
   String? selectedUserId = 'Guest';
+  String? clientename = 'Guest';
+
   CustomerModel? selectedUserName;
   String? invoiceNumber;
   String previousDue = "0";
@@ -134,7 +137,7 @@ class _InventorySalesState extends State<InventorySales> {
       builder: (context) {
         return Consumer(
           builder: (context, ref, _) {
-            final reservations = ref.watch(fullReservationsByClientProvider(clientId));
+            final reservations = ref.watch(ReservaPendientProvider(clientId));
             return reservations.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Error: $e'),
@@ -448,6 +451,204 @@ class _InventorySalesState extends State<InventorySales> {
     );
   }
 
+
+// Añade al pubspec.yaml:
+// searchable_dropdown: ^1.1.3
+
+
+// Implementation of the search dialog with a modern look
+  Future<CustomerModel?> _showCustomerSearchDialog(BuildContext context, List<CustomerModel> customers) async {
+    TextEditingController searchController = TextEditingController();
+    List<CustomerModel> filteredCustomers = List.from(customers);
+
+    return showDialog<CustomerModel>(
+      context: context,
+      builder: (BuildContext context) {
+        // Obtenemos el tamaño de la pantalla
+        final screenSize = MediaQuery.of(context).size;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              // Limitamos el ancho del diálogo
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: screenSize.width > 600
+                    ? (screenSize.width - 700) / 2  // En pantallas grandes, ancho fijo de 400
+                    : 20,                           // En pantallas pequeñas, margen de 20
+                vertical: 24,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                // El ancho máximo del contenido
+                constraints: BoxConstraints(
+                  maxWidth: 400,
+                ),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Seleccionar Cliente',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () => Navigator.pop(context),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar cliente...',
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                        isDense: true,
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          filteredCustomers = customers
+                              .where((customer) => customer.customerName
+                              .toLowerCase()
+                              .contains(value.toLowerCase()))
+                              .toList();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.35,
+                      ),
+                      child: filteredCustomers.isEmpty
+                          ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 36,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No se encontraron clientes',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                          : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filteredCustomers.length,
+                        itemBuilder: (context, index) {
+                          final customer = filteredCustomers[index];
+                          return InkWell(
+                            onTap: () => Navigator.pop(context, customer),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.grey.shade200,
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: Colors.blue.shade50,
+                                    child: Text(
+                                      customer.customerName.isNotEmpty
+                                          ? customer.customerName[0].toUpperCase()
+                                          : '?',
+                                      style: TextStyle(
+                                        color: Colors.blue.shade700,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          customer.customerName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        Text(
+                                          customer.phoneNumber,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+
   DropdownButton<String> getResult(List<CustomerModel> model) {
     List<DropdownMenuItem<String>> dropDownItems = [
       DropdownMenuItem(value: 'Guest', child: Text(lang.S.of(context).guest))
@@ -631,79 +832,150 @@ class _InventorySalesState extends State<InventorySales> {
                             xs: 120,
                             md: 60,
                             lg: 30,
-                            child: customerList.when(data: (allCustomers) {
-                              List<String> listOfPhoneNumber = [];
-                              List<CustomerModel> customersList = [];
-                              for (var value1 in allCustomers) {
-                                listOfPhoneNumber.add(value1.phoneNumber.replaceAll(RegExp(r'\s+'), '').toLowerCase());
-                                if (value1.type != 'Supplier') {
-                                  customersList.add(value1);
+                            child: customerList.when(
+                              data: (allCustomers) {
+                                List<String> listOfPhoneNumber = [];
+                                List<CustomerModel> customersList = [];
+                                for (var value1 in allCustomers) {
+                                  listOfPhoneNumber.add(value1.phoneNumber.replaceAll(RegExp(r'\s+'), '').toLowerCase());
+                                  if (value1.type != 'Supplier') {
+                                    customersList.add(value1);
+                                  }
                                 }
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: SizedBox(
-                                  height: 48.0,
-                                  child: FormField(
-                                    builder: (FormFieldState<dynamic> field) {
-                                      return InputDecorator(
-                                        decoration: InputDecoration(
-                                          label: RichText(
-                                            text: TextSpan(
-                                              text: lang.S.of(context).party,
-                                              style: theme.textTheme.titleSmall?.copyWith(color: Colors.red),
-                                              children: [TextSpan(text: '(${lang.S.of(context).previousDue} '), TextSpan(text: '$globalCurrency${myFormat.format(double.tryParse(previousDue) ?? 0)} )')],
-                                            ),
-                                          ),
-                                          suffixIcon: GestureDetector(
-                                            onTap: () {
-                                              context.push(
-                                                '/add-customer',
-                                                extra: {
-                                                  'typeOfCustomerAdd': 'Buyer',
-                                                  'listOfPhoneNumber': listOfPhoneNumber,
-                                                },
-                                              );
-                                            },
-                                            child: Container(
-                                              height: 48,
-                                              width: 48,
-                                              decoration: const BoxDecoration(
-                                                borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
-                                                color: kBlueTextColor,
-                                              ),
-                                              child: const Center(
-                                                child: Icon(
-                                                  FeatherIcons.userPlus,
-                                                  size: 18.0,
-                                                  color: Colors.white,
+
+
+
+
+
+
+
+
+
+
+
+                                // Return the Consumer widget - this was missing before
+                                return Consumer(
+                                  builder: (context, ref, child) {
+                                    final customerListAsyncValue = ref.watch(allCustomerProvider);
+
+                                    return customerListAsyncValue.when(
+                                      data: (customerList) {
+                                        return GestureDetector(
+                                          onTap: () async {
+                                            CustomerModel? selectedCustomer = await _showCustomerSearchDialog(context, customerList);
+                                            if (selectedCustomer != null) {
+                                              setState(() {
+                                                clientename = selectedCustomer.customerName;
+                                                selectedUserId = selectedCustomer.phoneNumber;
+                                                
+                                                // Agregando la funcionalidad del DropdownButton original
+                                                selectedUserName = selectedCustomer;
+                                                previousDue = selectedCustomer.dueAmount;
+
+                                                // Verificar si cambió el tipo de cliente y limpiar el carrito si es necesario
+                                                if (selectedCustomerType != selectedCustomer.type) {
+                                                  selectedCustomerType = selectedCustomer.type;
+                                                  cartList.clear();
+                                                  productFocusNode.clear();
+                                                }
+
+                                                invoiceNumber = '';
+
+                                                invoiceNumber = '';
+
+                                              });
+
+
+                                            }
+                                          },
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: Colors.grey.shade300),
+                                              color: Colors.white,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.05),
+                                                  blurRadius: 5,
+                                                  offset: const Offset(0, 2),
                                                 ),
-                                              ),
+                                              ],
+                                            ),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    selectedUserId != null ? clientename ?? "--Seleccione Cliente--" : "--Seleccione Cliente--",
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      color: selectedUserId != null ? Colors.black87 : Colors.grey.shade600,
+                                                      fontWeight: selectedUserId != null ? FontWeight.w500 : FontWeight.normal,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  Icons.arrow_drop_down,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          enabledBorder: const OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                                            borderSide: BorderSide(color: kBorderColorTextField, width: 1),
-                                          ),
-                                          contentPadding: const EdgeInsets.only(left: 7.0, right: 7.0),
-                                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                                        );
+                                      },
+                                      loading: () => Container(
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.grey.shade300),
+                                          color: Colors.white,
                                         ),
-                                        child: widget.quotation != null ? Text(widget.quotation!.customerName) : Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getResult(customersList))),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
-                            }, error: (e, stack) {
-                              return Center(
-                                child: Text(e.toString()),
-                              );
-                            }, loading: () {
-                              return const Center(
+                                        child: const Center(
+                                          child: SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        ),
+                                      ),
+                                      error: (error, stackTrace) => Container(
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.red.shade300),
+                                          color: Colors.red.shade50,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.error_outline, color: Colors.red.shade700, size: 18),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Error al cargar clientes',
+                                                style: TextStyle(color: Colors.red.shade700),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              loading: () => const Center(
                                 child: CircularProgressIndicator(),
-                              );
-                            }),
-                          ),
+                              ),
+                              error: (e, stack) {
+                                return Center(
+                                  child: Text(e.toString()),
+                                );
+                              },
+                            ),
+                          )                          ,
                           ResponsiveGridCol(
                               xs: 40,
                               md: 40,
@@ -1700,34 +1972,6 @@ class _InventorySalesState extends State<InventorySales> {
                           ),
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                           ResponsiveGridCol(
                               xs: 12,
                               md: 4,
@@ -1854,7 +2098,13 @@ class _InventorySalesState extends State<InventorySales> {
                                                     printType: 'thermal',
                                                     post : post
                                                   );
+
+                                                  print("llego uoo ");
+
                                                 }
+
+                                               // limpiarCarro(); // <-- Añade esta línea
+                                                print("llegaaaaaaaaaaaaaa aqui limpiar ");
 
                                                 final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
                                                 for (var element in transitionModel.productList!) {
@@ -1878,6 +2128,8 @@ class _InventorySalesState extends State<InventorySales> {
                                                   }
                                                 }
 
+
+
                                                 updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
 
                                                 Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
@@ -1894,6 +2146,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                   saleTransactionModel: post,
                                                 );
                                                 postDailyTransaction(dailyTransactionModel: dailyTransaction);
+
 
                                                 if (transitionModel.customerName != 'Guest') {
                                                   final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
@@ -1913,6 +2166,8 @@ class _InventorySalesState extends State<InventorySales> {
                                                   int totalDue = previousDue + transitionModel.dueAmount!.toInt();
                                                   dueUpdateRef.child(key!).update({'due': '$totalDue'});
                                                 }
+
+                                                print("llegaaaaaaaaaaaaaa aqui ");
                                                 consumerRef.refresh(allCustomerProvider);
                                                 consumerRef.refresh(transitionProvider);
                                                 consumerRef.refresh(productProvider);
@@ -1987,5 +2242,21 @@ class _InventorySalesState extends State<InventorySales> {
         }),
       ),
     );
+  }
+  void limpiarCarro() {
+    setState(() {
+      print("limpiando carro");
+
+      cartList.clear(); // Limpia la lista de productos
+      productFocusNode.clear(); // Limpia los focus nodes
+      payingAmountController.text = '0'; // Resetea el monto pagado
+      changeAmountController.text = '0'; // Resetea el cambio
+      dueAmountController.text = '0'; // Resetea el adeudo
+      discountAmountEditingController.clear(); // Limpia el descuento en monto
+      discountPercentageEditingController.clear(); // Limpia el descuento en porcentaje
+      serviceCharge = 0; // Resetea el cargo por servicio
+      discountAmount = 0; // Resetea el monto de descuento
+      vatGst = 0; // Resetea los impuestos
+    });
   }
 }

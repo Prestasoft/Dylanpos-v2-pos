@@ -71,7 +71,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     }
 
     // Crear la reserva
-    final success = await ref.read(createReservationProvider({
+    final success = await ref.read(crearReservaProvider({
       'serviceId': widget.packageId,
       'clientId': widget.clientId,
       'dressId': widget.dressId,
@@ -85,15 +85,26 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     });
 
     if (success) {
-      await Future.delayed(Duration(seconds: 2));
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("¡Reserva registrada exitosamente!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate to the POS sales screen
       if (mounted) {
+        // Actualiza el estado del menú lateral
+        ref.read(sidebarProvider.notifier)
+          ..expandMenu('/sales') // Expande el menú de Ventas
+          ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
 
-        Navigator.of(context).pop(); // Cierra el diálogo
-        Navigator.of(context).pop(); // Cierra la pantalla actual
-
+        // Navega a la pantalla
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        context.go('/sales/inventory-sales');
       }
-    }
-    else {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error al crear la reserva. Por favor intenta de nuevo."),

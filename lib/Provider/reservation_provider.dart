@@ -26,19 +26,30 @@ final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
     if (snapshot.value is Map) {
       final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
 
-      // Filter out invalid entries (like the empty string entries at root level)
+      // Filtrar reservaciones que no estén en estado 'cancelado' o 'pendiente'
       return data.entries
           .where((entry) => entry.value is Map && _isValidReservation(entry.value as Map))
           .map((entry) {
-        return ReservationModel.fromMap(
-            Map<String, dynamic>.from(entry.value as Map),
-            entry.key.toString()
+        final reservation = ReservationModel.fromMap(
+          Map<String, dynamic>.from(entry.value as Map),
+          entry.key.toString(),
         );
-      }).toList();
+
+        // Retornar la reservación solo si el estado es diferente a 'cancelado' y 'pendiente'
+        if (reservation.estado != 'cancelado') {
+          return reservation;
+        }
+        return null; // Si el estado es 'cancelado' o 'pendiente', retornamos null
+      })
+          .where((reservation) => reservation != null) // Eliminar los valores nulos
+          .toList() // Convertimos el resultado a una lista de no nulos
+          .cast<ReservationModel>(); // Hacemos el cast a List<ReservationModel>
     }
     return <ReservationModel>[];
   });
 });
+
+
 
 // Helper function to check if a map represents a valid reservation
 bool _isValidReservation(Map<dynamic, dynamic> map) {
@@ -72,6 +83,97 @@ final reservationsByDateProvider = StreamProvider.family<List<ReservationModel>,
     return <ReservationModel>[];
   });
 });
+
+final ActualizarEstadoReservaProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+  try {
+    final List<String> reservationIds = List<String>.from(params['id']);
+    final String newEstado = params['estado'];
+    final updateData = <String, dynamic>{
+      'estado': newEstado,
+      'updated_at': ServerValue.timestamp,
+    };
+    for (final id in reservationIds) {
+      await FirebaseDatabase.instance
+          .ref('Admin Panel/reservations/$id')
+          .update(updateData);
+    }
+    return true;
+  } catch (e) {
+    print('Error al actualizar estado de múltiples reservas: $e');
+    return false;
+  }
+});
+
+final ReservaPendientProvider = StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
+  final today = DateTime.now();
+  final formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+  final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
+  final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
+
+  return reservationsRef
+      .orderByChild('reservation_date')
+      .startAt(formattedToday)
+      .onValue
+      .asyncMap((event) async {
+    final snapshot = event.snapshot;
+    if (snapshot.value == null || snapshot.value is! Map) return [];
+
+    final data = snapshot.value as Map<dynamic, dynamic>;
+
+    // Filtrar las reservas para el cliente específico y con estado "pendiente"
+    final reservations = data.entries.where((entry) {
+      final value = entry.value;
+      return value is Map &&
+          _isValidReservation(value) &&
+          value['client_id'] == clientId &&
+          value['estado'] == 'pendiente'; // Aquí se agrega el filtro de estado
+    }).toList();
+
+    // Obtener los IDs únicos de vestidos y servicios
+    final dressIds = reservations.map((e) => e.value['dress_id']?.toString()).whereType<String>().toSet();
+    final serviceIds = reservations.map((e) => e.value['service_id']?.toString()).whereType<String>().toSet();
+
+    // Obtener todos los vestidos y servicios
+    final dressSnap = await dressesRef.get();
+    final serviceSnap = await servicesRef.get();
+
+    final dressesMap = dressSnap.value as Map?;
+    final servicesMap = serviceSnap.value as Map?;
+
+    // Construir las reservas completas y agregar automáticamente los IDs de vestidos y servicios
+    final fullReservations = reservations.map((entry) {
+      final id = entry.key.toString();
+      final data = Map<String, dynamic>.from(entry.value as Map);
+      final dressId = data['dress_id']?.toString();
+      final serviceId = data['service_id']?.toString();
+
+      final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+      final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
+
+      return FullReservation(
+        id: id,
+        reservation: data,
+        dress: dress != null ? Map<String, dynamic>.from(dress) : null,
+        service: service != null ? Map<String, dynamic>.from(service) : null,
+        dressIds: dressIds.toList(), // Agregar automáticamente los IDs
+        serviceIds: serviceIds.toList(), // Agregar automáticamente los IDs
+      );
+    }).toList()
+      ..sort((a, b) {
+        final dateA = a.reservation['reservation_date'] ?? '';
+        final dateB = b.reservation['reservation_date'] ?? '';
+        final timeA = a.reservation['reservation_time'] ?? '';
+        final timeB = b.reservation['reservation_time'] ?? '';
+        final dateCompare = dateA.compareTo(dateB);
+        return dateCompare != 0 ? dateCompare : timeA.compareTo(timeB);
+      });
+
+    return fullReservations;
+  });
+});
+
 
 final reservationsByClientProvider = StreamProvider.family<List<ReservationModel>, String>((ref, clientId) {
   return FirebaseDatabase.instance
@@ -260,7 +362,7 @@ final cancelReservationProvider = FutureProvider.family<bool, String>((ref, rese
   }
 });
 
-final listaReservasProvaider = FutureProvider<List<FullReservation>>((ref) async {
+final fullReservationsProvider = FutureProvider<List<FullReservation>>((ref) async {
   final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
   final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
   final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
@@ -465,7 +567,38 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
 
 
 
+final sidebarProvider = StateNotifierProvider<SidebarNotifier, SidebarState>((ref) {
+  return SidebarNotifier();
+});
 
+class SidebarState {
+  final String? expandedMenuPath;
+  final String? selectedItemPath;
+
+  SidebarState({this.expandedMenuPath, this.selectedItemPath});
+
+  SidebarState copyWith({
+    String? expandedMenuPath,
+    String? selectedItemPath,
+  }) {
+    return SidebarState(
+      expandedMenuPath: expandedMenuPath ?? this.expandedMenuPath,
+      selectedItemPath: selectedItemPath ?? this.selectedItemPath,
+    );
+  }
+}
+
+class SidebarNotifier extends StateNotifier<SidebarState> {
+  SidebarNotifier() : super(SidebarState());
+
+  void expandMenu(String path) {
+    state = state.copyWith(expandedMenuPath: path);
+  }
+
+  void selectItem(String path) {
+    state = state.copyWith(selectedItemPath: path);
+  }
+}
 
 
 final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
@@ -486,21 +619,21 @@ final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic
 
     if (snapshot.value is Map) {
       final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+
       return !data.values.any((reservation) =>
       reservation['reservation_date'] == date &&
-          reservation['reservation_time'] == time);
+          reservation['reservation_time'] == time &&
+          reservation['status'] != 'cancelado');
     }
 
     return true;
   } catch (e) {
     print('Error checking dress availability: $e');
-    // Return true by default to prevent blocking the user
-    // but you might want to handle errors differently
-    return true;
+    return true; // Fallback a disponible en caso de error
   }
 });
 
-final createReservationProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+final crearReservaProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   try {
     final newReservationRef = FirebaseDatabase.instance
         .ref('Admin Panel/reservations')
@@ -515,10 +648,9 @@ final createReservationProvider = FutureProvider.family<bool, Map<String, dynami
       'reservation_time': params['time'],
       'created_at': ServerValue.timestamp,
       'updated_at': ServerValue.timestamp,
+      'estado':'pendiente',
     };
-
     await newReservationRef.set(reservationData);
-
     // Refresh the reservations provider
     ref.refresh(reservationsProvider);
     return true;

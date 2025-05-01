@@ -247,10 +247,6 @@ class GeneratePdfAndPrint {
     }
 
 
-    //var pdfData = await generateSaleDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting);
-
-    // Convert Uint8List to PDF and upload to Firebase storage
-    // Subir a Firebase y mostrar
     await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber);
 
     await Printing.layoutPdf(

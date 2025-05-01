@@ -358,9 +358,12 @@ class PackageListScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildInfoRow(Icons.category, package.category),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(Icons.view_list, package.subcategory),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 2),
+                    _buildInfoRow(Icons.description, package.subcategory),
+                    const SizedBox(height: 2),
+                    _buildInfoRow(Icons.category, package.description),
+
+                    const SizedBox(height: 2),
                     _buildInfoRow(
                       Icons.attach_money,
                       '\$${myFormat.format(package.price)}',
@@ -409,7 +412,6 @@ class PackageListScreen extends ConsumerWidget {
       ),
     );
   }
-
   Widget _buildInfoRow(IconData icon, String text, {bool isHighlighted = false}) {
     return Row(
       children: [
@@ -427,11 +429,11 @@ class PackageListScreen extends ConsumerWidget {
               fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
               color: isHighlighted ? Colors.green.shade800 : Colors.black87,
             ),
-            maxLines: 1,
+            // Changed from maxLines: 1 to maxLines: 2 to allow more text
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
     );
-  }
-}
+  }}
