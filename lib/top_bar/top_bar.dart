@@ -98,7 +98,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                           children: [
                             const Icon(Icons.add_rounded, color: kWhite),
                             Text(
-                              'Pos',
+                              'Rentar Vestidos',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
@@ -186,7 +186,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                           children: [
                             const Icon(Icons.add_rounded, color: kMainColor),
                             Text(
-                              'Product',
+                              'Vestidos',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(color: kMainColor, fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -218,7 +218,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                           children: [
                             const Icon(Icons.add_rounded, color: Color(0xFF15CD75)),
                             Text(
-                              'Purchase',
+                              'Calendario',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     color: const Color(0xFF15CD75),
                                     fontWeight: FontWeight.bold,

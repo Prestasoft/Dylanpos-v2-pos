@@ -14,12 +14,12 @@ import 'model/sale_transaction_model.dart';
 import 'model/user_role_model.dart';
 
 ///______________DATA____________
-String appsName = 'Dylan POS';
-String appsTitle = 'Dylan POS Web';
+String appsName = 'VICTOR GUZMAN FOTOGRAFIA';
+String appsTitle = 'VICTOR GUZMAN FOTOGRAFIA';
 String pdfFooter = 'PrestaSoft SRL';
 String madeBy = 'Prestasoft.do';
 bool isDemo = false;
-String invoiceFileName = "Dylan_POS";
+String invoiceFileName = "VICTOR GUZMAN FOTOGRAFIA";
 String demoText = 'You Can\'t change anything in demo mode';
 String sideBarLogo = 'images/pos.png';
 String appLogo = 'images/mobipos.png';
