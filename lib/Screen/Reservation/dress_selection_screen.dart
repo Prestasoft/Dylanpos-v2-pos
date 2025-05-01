@@ -1,7 +1,5 @@
-// ARCHIVO 1: dress_selection_screen.dart (versión mejorada con diseño moderno)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
@@ -29,6 +27,7 @@ class DressSelectionScreen extends ConsumerStatefulWidget {
 class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
+  bool isUsingOneTimeProvider = false; // Flag para alternar entre proveedores
 
   @override
   void dispose() {
@@ -36,9 +35,29 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
     super.dispose();
   }
 
+  // Función para cambiar al proveedor alternativo si el principal tarda mucho
+  void _switchToOneTimeProvider() {
+    if (mounted && !isUsingOneTimeProvider) {
+      setState(() {
+        isUsingOneTimeProvider = true;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Programamos un cambio automático si tarda más de 5 segundos
+    Future.delayed(Duration(seconds: 5), _switchToOneTimeProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dressesAsync = ref.watch(availableDressesByComponentsProvider(widget.packagesAsync.category));
+    // Seleccionamos el proveedor a usar basado en la bandera
+    final dressesAsync = isUsingOneTimeProvider
+        ? ref.watch(dressesOnceProvider(widget.packagesAsync.category))
+        : ref.watch(availableDressesByComponentsProvider(widget.packagesAsync.category));
+
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -54,6 +73,17 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
           ),
         ),
         iconTheme: IconThemeData(color: Colors.black87),
+        actions: [
+          // Botón para recargar/alternar entre proveedores
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                isUsingOneTimeProvider = !isUsingOneTimeProvider;
+              });
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(60),
           child: Padding(
@@ -85,8 +115,31 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
         ),
       ),
       body: dressesAsync.when(
-        loading: () => Center(child: CircularProgressIndicator(color: theme.primaryColor)),
-        error: (e, _) => Center(
+        loading: () => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: theme.primaryColor),
+                SizedBox(height: 16),
+                Text(
+                  isUsingOneTimeProvider
+                      ? 'Cargando vestidos...'
+                      : 'Buscando vestidos disponibles...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                // Botón para cambiar manualmente de proveedor si está tardando
+                if (!isUsingOneTimeProvider)
+                  TextButton(
+                    onPressed: _switchToOneTimeProvider,
+                    child: Text('¿Carga lenta? Toca aquí'),
+                  )
+              ],
+            )
+        ),
+        error: (e, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -98,6 +151,15 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
               ),
               SizedBox(height: 8),
               Text('$e', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isUsingOneTimeProvider = !isUsingOneTimeProvider;
+                  });
+                },
+                child: Text('Intentar otra vez'),
+              ),
             ],
           ),
         ),
@@ -174,10 +236,9 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Contenedor de imagen con tamaño fijo 100x70
+                        // Contenedor de imagen con carga optimizada y manejo de errores
                         Container(
-                          width: 299,
-                          height: 299,
+                          height: 150,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                             color: Colors.grey[100],
@@ -188,7 +249,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                               fit: StackFit.expand,
                               children: [
                                 if (firstImage.isNotEmpty)
-                                 Slide(movie: firstImage)
+                                  _OptimizedImageWidget(imageUrl: firstImage)
                                 else
                                   Container(
                                     color: Colors.grey[200],
@@ -283,6 +344,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
       ),
     );
   }
+
   void _showImageGallery(BuildContext context, DressModel dress) {
     if (dress.images.isEmpty) return;
 
@@ -296,7 +358,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
           builder: (builderContext, setState) {
             return Dialog(
               backgroundColor: Colors.transparent,
-              insetPadding: EdgeInsets.all(10), // margen del borde de pantalla
+              insetPadding: EdgeInsets.all(10),
               child: Container(
                 width: 300,
                 decoration: BoxDecoration(
@@ -313,7 +375,6 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Encabezado: contador y cerrar
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       child: Row(
@@ -334,26 +395,15 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                       ),
                     ),
 
-                    // Imagen tamaño fijo 200x150
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: SizedBox(
-                        width: 500,
-                        height: 300,
-                        child: Image.network(
-                          dress.images[currentIndex],
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
-                            ),
-                          ),
-                        ),
+                        width: 280,
+                        height: 250,
+                        child: _OptimizedImageWidget(imageUrl: dress.images[currentIndex]),
                       ),
                     ),
 
-                    // Botones de navegación si hay más de una imagen
                     if (dress.images.length > 1)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -384,9 +434,42 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
       },
     );
   }
+}
 
+// Widget optimizado para cargar imágenes con manejo de memoria y errores
+class _OptimizedImageWidget extends StatelessWidget {
+  final String imageUrl;
 
+  const _OptimizedImageWidget({required this.imageUrl});
 
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      // Añadimos un framework de caché para mejorar rendimiento
+      cacheWidth: 300, // Para optimizar el uso de memoria
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        return Center(
+          child: CircularProgressIndicator(
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                : null,
+            strokeWidth: 2,
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: Colors.grey[200],
+        child: Center(
+          child: Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
+        ),
+      ),
+    );
+  }
 }
 
 class DressStatusBadge extends StatelessWidget {
@@ -463,75 +546,5 @@ class DressStatusBadge extends StatelessWidget {
         ),
       );
     }
-  }
-}
-
-
-
-
-
-
-class Slide extends StatelessWidget {
-  final String movie;
-
-  const Slide({super.key, required this.movie});
-
-  @override
-  Widget build(BuildContext context) {
-    final textStyles = Theme.of(context).textTheme;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: 200,
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                movie,
-                width: 180,
-                height: 180,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
-        ],
-      ),
-    );
-  }
-}
-
-class _Title extends StatelessWidget {
-  final String? title;
-  final String? subtitle;
-
-  const _Title({
-    this.title,
-    this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.titleLarge;
-    return Container(
-      padding: const EdgeInsets.only(top: 10),
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      child: Row(
-        children: [
-          if (title != null) Text(title!, style: titleStyle),
-          const Spacer(),
-          if (subtitle != null)
-            FilledButton.tonal(
-              style: const ButtonStyle(visualDensity: VisualDensity.compact),
-              onPressed: () {},
-              child: Text(subtitle!),
-            ),
-        ],
-      ),
-    );
   }
 }

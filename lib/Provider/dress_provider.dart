@@ -220,30 +220,92 @@ final dressesProvider = StreamProvider<List<DressModel>>((ref) {
 });
 
 
-// Get available dresses by components
-final availableDressesByComponentsProvider = StreamProvider.family<List<DressModel>, String>((ref, category) {
-  if (category.isEmpty) {
-    return Stream.value([]); // Empty category check
-  }
 
-  return FirebaseDatabase.instance.ref('Admin Panel/dresses').onValue.map((event) {
+// 1. Proveedor con timeout y manejo de errores
+final availableDressesByComponentsProvider = StreamProvider.family<List<DressModel>, String>((ref, String category) {
+  // Crear un completer para gestionar el timeout
+  final future = FirebaseDatabase.instance
+      .ref('Admin Panel/dresses')
+  // 2. Optimizar consulta: limitamos el tamaño de descarga
+      .limitToFirst(100) // Ajusta este número según tus necesidades
+      .onValue
+      .timeout(
+    Duration(seconds: 15), // Timeout de 15 segundos
+    onTimeout: (sink) {
+      print('Firebase query timeout: Category $category');
+      sink.addError('Tiempo de espera agotado. Verifica tu conexión a internet.');
+      sink.close();
+    },
+  )
+      .map((event) {
     final snapshot = event.snapshot;
+
+    // 3. Manejo adecuado de valores nulos
+    if (snapshot.value == null) {
+      print('No dresses found for category: $category');
+      return <DressModel>[];
+    }
+
+    try {
+      // 4. Manejo seguro de tipos
+      final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
+      List<DressModel> dresses = [];
+
+      // 5. Validación de cada elemento antes de procesarlo
+      data.forEach((key, value) {
+        if (value is Map<dynamic, dynamic>) {
+          try {
+            // Solo filtramos por categoría si existe
+            final dressCategory = value['category'];
+            if (dressCategory != null && dressCategory == category) {
+              dresses.add(DressModel.fromRealtimeDB(value, key));
+            }
+          } catch (e) {
+            print('Error parsing dress with key $key: $e');
+            // Continuamos con el siguiente vestido en caso de error
+          }
+        }
+      });
+
+      // 6. Ordenamiento más eficiente
+      dresses.sort((a, b) => a.available == b.available ? 0 : (a.available ? -1 : 1));
+
+      return dresses;
+    } catch (e) {
+      print('Error processing dresses: $e');
+      throw 'Error al procesar los datos de vestidos. Intenta de nuevo.';
+    }
+  });
+
+  return future;
+});
+
+// 7. Proveedor alternativo con método de una sola vez (sin listener permanente)
+final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>((ref, String category) async {
+  try {
+    final snapshot = await FirebaseDatabase.instance
+        .ref('Admin Panel/dresses')
+        .get(); // Usa get() en lugar de onValue para una sola consulta
+
     if (snapshot.value == null) return [];
 
-    Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+    final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
     List<DressModel> dresses = [];
 
     data.forEach((key, value) {
-      if (value is Map<dynamic, dynamic> &&
-          value['category'] == category && // Category filter here
-          value['available'] == true) {
+      if (value is Map<dynamic, dynamic> && value['category'] == category) {
         dresses.add(DressModel.fromRealtimeDB(value, key));
       }
     });
-    return dresses;
-  });
-});
 
+    dresses.sort((a, b) => a.available == b.available ? 0 : (a.available ? -1 : 1));
+
+    return dresses;
+  } catch (e) {
+    print('Error fetching dresses: $e');
+    throw 'Error al cargar los vestidos. Por favor, intenta de nuevo.';
+  }
+});
 
 // Get a single dress
 final singleDressProvider = FutureProvider.family<DressModel?, String>((ref, dressId) async {
