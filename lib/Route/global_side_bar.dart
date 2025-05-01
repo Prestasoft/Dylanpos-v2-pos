@@ -319,45 +319,45 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                   decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), color: kMainColor),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SvgPicture.asset(
-                            'images/dashboard_icon/crown.svg',
-                            height: 35,
-                            width: 35,
-                          ),
-                          if (!widget.iconOnly) const SizedBox(width: 10),
-                          if (!widget.iconOnly)
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    subscriptionModel.subscriptionName,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          color: kWhite,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18,
-                                        ),
-                                    maxLines: 3,
-                                  ),
-                                  Text(
-                                    'Expires in: ${(DateTime.parse(subscriptionModel.subscriptionDate).difference(DateTime.now()).inDays.abs() - subscriptionModel.duration).abs()} Days',
-                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                          color: kWhite,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                    maxLines: 3,
-                                  ).visible(subscriptionModel.subscriptionName != 'Lifetime'),
-                                  SizedBox(height: 10),
-                                  ElevatedButton(style: ElevatedButton.styleFrom(side: BorderSide(color: Colors.white.withValues(alpha: 0.3)), backgroundColor: Colors.white.withValues(alpha: 0.2)), onPressed: () => context.go('/subscription'), child: Text('Upgrade Plan'))
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
+                  //  children: [
+                    //  Row(
+                     //   crossAxisAlignment: CrossAxisAlignment.start,
+                      //  children: [
+                       //   SvgPicture.asset(
+                       //     'images/dashboard_icon/crown.svg',
+                       //     height: 35,
+                       //     width: 35,
+                      //    ),
+                      //    if (!widget.iconOnly) const SizedBox(width: 10),
+                      //    if (!widget.iconOnly)
+                          //  Expanded(
+                          //    child: Column(
+                            //    crossAxisAlignment: CrossAxisAlignment.start,
+                              //  children: [
+                              //    Text(
+                                 //   subscriptionModel.subscriptionName,
+                                 //   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      //    color: kWhite,
+                                      //    fontWeight: FontWeight.w600,
+                                      //    fontSize: 18,
+                                    //    ),
+                                 //   maxLines: 3,
+                                //  ),
+                                //  Text(
+                                 //   'Expires in: ${(DateTime.parse(subscriptionModel.subscriptionDate).difference(DateTime.now()).inDays.abs() - subscriptionModel.duration).abs()} Days',
+                                 //   style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                   //       color: kWhite,
+                                   //       fontWeight: FontWeight.w500,
+                                 //       ),
+                                 //   maxLines: 3,
+                             //     ).visible(subscriptionModel.subscriptionName != 'Lifetime'),
+                             //    SizedBox(height: 10),
+                            //      ElevatedButton(style: ElevatedButton.styleFrom(side: BorderSide(color: Colors.white.withValues(alpha: 0.3)), backgroundColor: Colors.white.withValues(alpha: 0.2)), onPressed: () => context.go('/subscription'), child: Text('Actualizar Plan'))
+                            //    ],
+                           //   ),
+                        //    ),
+                       // ],
+                     // ),
 
                       // Wrap(
                       //   direction: Axis.horizontal,
@@ -390,20 +390,20 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                       //       ),
                       //   ],
                       // ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            lang.S.of(context).upgradeOnMobileApp,
-                            style: kTextStyle.copyWith(color: kYellowColor, fontWeight: FontWeight.bold),
-                          ),
-                          const Icon(
-                            FontAwesomeIcons.arrowRight,
-                            color: kYellowColor,
-                          ),
-                        ],
-                      ).visible(false),
-                    ],
+                     // Row(
+                      //  mainAxisAlignment: MainAxisAlignment.end,
+                       // children: [
+                         // Text(
+                           // lang.S.of(context).upgradeOnMobileApp,
+                          //  style: kTextStyle.copyWith(color: kYellowColor, fontWeight: FontWeight.bold),
+                         // ),
+                         // const Icon(
+                          //  FontAwesomeIcons.arrowRight,
+                          //  color: kYellowColor,
+                         // ),
+                       // ],
+                     // ).visible(false),
+                    //],
                   ),
                 ),
               ),
