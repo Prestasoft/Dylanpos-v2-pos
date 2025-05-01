@@ -2105,7 +2105,7 @@ class _InventorySalesState extends State<InventorySales> {
 
                                                limpiarCarro();
 
-                                                
+
 
                                                 final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
                                                 for (var element in transitionModel.productList!) {

@@ -1119,7 +1119,7 @@ Future<Uint8List> generateThermalDocument({
                       width: 13,
                       child: pw.Text(
                         '${item.quantity}',
-                        style: pw.TextStyle(fontSize: 7),
+                        style: fontWeight: pw.FontWeight.bold,
                       ),
                     ),
                     pw.Expanded(

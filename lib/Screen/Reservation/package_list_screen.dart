@@ -216,14 +216,6 @@ class PackageListScreen extends ConsumerWidget {
     );
   }
 
-  // Widget Cliente(WidgetRef ref){
-  //   CustomerModel? selectedCustomer;
-  //     return Padding(
-  //               padding: const EdgeInsets.all(12),
-  //               child: CustomerSelector(initialCustomer : selectedCustomer, onCustomerSelected: (CustomerModel ) {
-  //           },),
-  //     );
-  // }
   Widget _buildSearchBar(WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -359,10 +351,12 @@ class PackageListScreen extends ConsumerWidget {
                   children: [
                     _buildInfoRow(Icons.category, package.category),
                     const SizedBox(height: 2),
-                    _buildInfoRow(Icons.description, package.subcategory),
                     const SizedBox(height: 2),
-                    _buildInfoRow(Icons.category, package.description),
-
+                    _buildInfoRow(
+                      Icons.description,
+                      package.description,
+                      isDescription: true,
+                    ),
                     const SizedBox(height: 2),
                     _buildInfoRow(
                       Icons.attach_money,
@@ -412,28 +406,51 @@ class PackageListScreen extends ConsumerWidget {
       ),
     );
   }
-  Widget _buildInfoRow(IconData icon, String text, {bool isHighlighted = false}) {
-    return Row(
+  Widget _buildInfoRow(IconData icon, String text, {bool isHighlighted = false, bool isDescription = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: isHighlighted ? Colors.green : Colors.grey,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: isHighlighted ? 16 : 14,
-              fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
-              color: isHighlighted ? Colors.green.shade800 : Colors.black87,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(top: isDescription ? 3 : 0),
+              child: Icon(
+                icon,
+                size: 16,
+                color: isHighlighted ? Colors.green : Colors.grey,
+              ),
             ),
-            // Changed from maxLines: 1 to maxLines: 2 to allow more text
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+            const SizedBox(width: 8),
+            if (!isDescription)
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: isHighlighted ? 16 : 14,
+                    fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+                    color: isHighlighted ? Colors.green.shade800 : Colors.black87,
+                  ),
+                ),
+              ),
+          ],
         ),
+        if (isDescription)
+          Padding(
+            padding: const EdgeInsets.only(left: 24),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+              maxLines: isDescription ? null : 1,
+              overflow: isDescription ? null : TextOverflow.ellipsis,
+            ),
+          ),
       ],
     );
-  }}
+  }
+}
+
+
