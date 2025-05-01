@@ -14,7 +14,7 @@ class ReservationProductModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final Map<String, dynamic> duration; // Duración del servicio
-
+  final String descricpion;
   ReservationProductModel({
     required this.id,
     required this.serviceId,
@@ -29,6 +29,7 @@ class ReservationProductModel {
     required this.createdAt,
     required this.updatedAt,
     required this.duration,
+    required this.descricpion,
   });
 
   // Corrected fromMap factory constructor for ReservationProductModel
@@ -68,18 +69,20 @@ class ReservationProductModel {
       duration: map['duration'] is Map<String, dynamic>
           ? map['duration'] as Map<String, dynamic>
           : {},
+      descricpion: map['description'] ?? '',
+
     );
   }
 
   // Convertir a AddToCartModel para el carrito de compras
   AddToCartModel toCartItem() {
     return AddToCartModel(
-      productName: 'Reserva: $serviceName - $dressName',
+      productName: '$serviceName - $dressName',
       productId: id,
       quantity: 1,
       subTotal: price.toString(),
       productPurchasePrice: 0,
-      warehouseName: 'Reservas',
+      warehouseName: descricpion,
       warehouseId: 'reserva-warehouse',
       unitPrice: price,
       productImage: 'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
@@ -94,6 +97,7 @@ class ReservationProductModel {
       reservationId: id,
       dressId: dressId,
       serviceId: serviceId,
+
     );
   }
 
