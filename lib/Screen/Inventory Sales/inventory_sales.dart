@@ -1745,6 +1745,9 @@ class _InventorySalesState extends State<InventorySales> {
                                           if (cartList.isEmpty) {
                                             EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
                                           } else {
+
+
+
                                             SaleTransactionModel transitionModel = SaleTransactionModel(
                                               customerName: selectedUserName?.customerName ?? '',
                                               customerType: selectedUserName?.type ?? '',
@@ -1837,6 +1840,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                     fromInventorySale: true,
                                                     setting: setting,
                                                     printType: 'normal',
+                                                    post : post
                                                   );
                                                 }
 
@@ -1848,6 +1852,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                     fromInventorySale: true,
                                                     setting: setting,
                                                     printType: 'thermal',
+                                                    post : post
                                                   );
                                                 }
 
@@ -1874,6 +1879,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                 }
 
                                                 updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
+
                                                 Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
 
                                                 DailyTransactionModel dailyTransaction = DailyTransactionModel(

@@ -212,7 +212,8 @@ class GeneratePdfAndPrint {
     bool? fromSaleReports,
     required GeneralSettingModel setting,
     bool? fromLedger,
-    String? printType = 'normal' // 'normal', 'thermal' o 'both'
+    String? printType = 'normal' ,// 'normal', 'thermal' o 'both'
+    SaleTransactionModel?  post
   }) async {
     var data = await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
     if (data.whatsappMarketingEnabled && (saleTransactionModel.sendWhatsappMessage ?? false)) {
@@ -232,12 +233,16 @@ class GeneratePdfAndPrint {
         personalInformation: personalInformationModel,
         transactions: saleTransactionModel,
         generalSetting: setting,
+          post:  post,
+          context: context
       );
     } else {
        pdfData = await generateSaleDocument(
         personalInformation: personalInformationModel,
         transactions: saleTransactionModel,
         generalSetting: setting,
+           post:  post
+           //context: context
       );
     }
 

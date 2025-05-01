@@ -233,7 +233,10 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                                                               PopupMenuItem(
                                                                                 child: GestureDetector(
                                                                                   onTap: () async {
-                                                                                    await GeneratePdfAndPrint().printSaleInvoice(setting: setting, personalInformationModel: profile.value!, saleTransactionModel: showAbleSaleTransactions[index], context: context);
+                                                                                    await GeneratePdfAndPrint().printSaleInvoice(
+                                                                                        setting: setting, personalInformationModel: profile.value!,
+                                                                                        saleTransactionModel: showAbleSaleTransactions[index],
+                                                                                        context: context);
                                                                                     // SaleInvoice(
                                                                                     //   isPosScreen: false,
                                                                                     //   transitionModel: showAbleSaleTransactions[index],
