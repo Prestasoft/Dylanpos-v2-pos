@@ -27,15 +27,29 @@ class DressSelectionScreen extends ConsumerStatefulWidget {
 class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  bool isUsingOneTimeProvider = false; // Flag para alternar entre proveedores
+  bool isUsingOneTimeProvider = false;
+  final ScrollController _scrollController = ScrollController();
+  int _currentPage = 0;
+  final int _itemsPerPage = 12; // Múltiplo de 4 para mejor alineación
+  List<DressModel> _allDresses = [];
+  List<DressModel> _displayedDresses = [];
+  bool _isLoadingMore = false;
+  bool _hasMoreItems = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_scrollListener);
+    Future.delayed(Duration(seconds: 5), _switchToOneTimeProvider);
+  }
 
   @override
   void dispose() {
     searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  // Función para cambiar al proveedor alternativo si el principal tarda mucho
   void _switchToOneTimeProvider() {
     if (mounted && !isUsingOneTimeProvider) {
       setState(() {
@@ -44,21 +58,65 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // Programamos un cambio automático si tarda más de 5 segundos
-    Future.delayed(Duration(seconds: 5), _switchToOneTimeProvider);
+  void _loadMoreItems() {
+    if (_isLoadingMore || !_hasMoreItems) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    final nextPage = _currentPage + 1;
+    final startIndex = nextPage * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage;
+
+    if (startIndex >= _allDresses.length) {
+      setState(() {
+        _hasMoreItems = false;
+        _isLoadingMore = false;
+      });
+      return;
+    }
+
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (!mounted) return;
+
+      setState(() {
+        _displayedDresses.addAll(_allDresses.sublist(
+          startIndex,
+          endIndex > _allDresses.length ? _allDresses.length : endIndex,
+        ));
+        _currentPage = nextPage;
+        _isLoadingMore = false;
+      });
+    });
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      _loadMoreItems();
+    }
+  }
+
+  void _filterDresses(String query) {
+    setState(() {
+      searchQuery = query.toLowerCase();
+      _displayedDresses = _allDresses
+          .where((dress) => dress.name.toLowerCase().contains(searchQuery))
+          .toList();
+      _currentPage = 0;
+      _hasMoreItems = _displayedDresses.length > _itemsPerPage;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Seleccionamos el proveedor a usar basado en la bandera
     final dressesAsync = isUsingOneTimeProvider
         ? ref.watch(dressesOnceProvider(widget.packagesAsync.category))
         : ref.watch(availableDressesByComponentsProvider(widget.packagesAsync.category));
 
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final itemWidth = screenWidth / 4 - 16; // 4 items por fila con margen
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -74,12 +132,15 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
         ),
         iconTheme: IconThemeData(color: Colors.black87),
         actions: [
-          // Botón para recargar/alternar entre proveedores
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
               setState(() {
                 isUsingOneTimeProvider = !isUsingOneTimeProvider;
+                _allDresses = [];
+                _displayedDresses = [];
+                _currentPage = 0;
+                _hasMoreItems = true;
               });
             },
           ),
@@ -105,11 +166,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                   borderSide: BorderSide(color: theme.primaryColor, width: 1),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value.toLowerCase();
-                });
-              },
+              onChanged: _filterDresses,
             ),
           ),
         ),
@@ -130,7 +187,6 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                     color: Colors.grey[700],
                   ),
                 ),
-                // Botón para cambiar manualmente de proveedor si está tardando
                 if (!isUsingOneTimeProvider)
                   TextButton(
                     onPressed: _switchToOneTimeProvider,
@@ -164,12 +220,25 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
           ),
         ),
         data: (dresses) {
-          final filteredDresses = dresses.where((dress) {
-            return dress.name.toLowerCase().contains(searchQuery) ||
-                (dress.name?.toLowerCase().contains(searchQuery) ?? false);
-          }).toList();
+          if (_allDresses.length != dresses.length) {
+            _allDresses = dresses;
+            _displayedDresses = _allDresses
+                .where((dress) => dress.name.toLowerCase().contains(searchQuery))
+                .toList();
+            _currentPage = 0;
+            _hasMoreItems = _displayedDresses.length > _itemsPerPage;
+          }
 
-          return filteredDresses.isEmpty
+          final itemsToDisplay = _displayedDresses.length > _itemsPerPage
+              ? _displayedDresses.sublist(
+            0,
+            (_currentPage + 1) * _itemsPerPage > _displayedDresses.length
+                ? _displayedDresses.length
+                : (_currentPage + 1) * _itemsPerPage,
+          )
+              : _displayedDresses;
+
+          return itemsToDisplay.isEmpty
               ? Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -190,17 +259,27 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
             ),
           )
               : Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: GridView.builder(
+              controller: _scrollController,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                crossAxisCount: 4, // 4 items por fila
+                childAspectRatio: 0.7, // Más cuadrados
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
               ),
-              itemCount: filteredDresses.length,
+              itemCount: itemsToDisplay.length + (_hasMoreItems ? 1 : 0),
               itemBuilder: (context, index) {
-                final dress = filteredDresses[index];
+                if (index >= itemsToDisplay.length) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                final dress = itemsToDisplay[index];
                 final isAvailable = dress.available;
                 final firstImage = dress.images.isNotEmpty ? dress.images.first : '';
 
@@ -224,11 +303,11 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
+                          blurRadius: 4,
                           offset: Offset(0, 2),
                         ),
                       ],
@@ -236,27 +315,31 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Contenedor de imagen con carga optimizada y manejo de errores
+                        // Contenedor de imagen más pequeño
                         Container(
-                          height: 150,
+                          height: itemWidth * 0.9, // Altura proporcional al ancho
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                             color: Colors.grey[100],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
                                 if (firstImage.isNotEmpty)
-                                  _OptimizedImageWidget(imageUrl: firstImage)
+                                  _OptimizedImageWidget(
+                                    imageUrl: firstImage,
+                                    width: itemWidth.toInt(),
+                                    height: (itemWidth * 0.9).toInt(),
+                                  )
                                 else
                                   Container(
                                     color: Colors.grey[200],
                                     child: Icon(
                                       Icons.image,
                                       color: Colors.grey[400],
-                                      size: 40,
+                                      size: 24,
                                     ),
                                   ),
 
@@ -264,7 +347,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                                   Container(
                                     decoration: BoxDecoration(
                                       color: Colors.black.withOpacity(0.4),
-                                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                                     ),
                                     child: Center(
                                       child: Text(
@@ -272,36 +355,8 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                          letterSpacing: 1.2,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                if (dress.images.length > 1)
-                                  Positioned(
-                                    bottom: 8,
-                                    right: 8,
-                                    child: GestureDetector(
-                                      onTap: () => _showImageGallery(context, dress),
-                                      child: Container(
-                                        padding: EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black12,
-                                              blurRadius: 4,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Icon(
-                                          Icons.collections,
-                                          color: theme.primaryColor,
-                                          size: 18,
+                                          fontSize: 10,
+                                          letterSpacing: 1.1,
                                         ),
                                       ),
                                     ),
@@ -311,24 +366,25 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                           ),
                         ),
 
-                        // Información del vestido
+                        // Información del vestido (más compacta)
                         Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: const EdgeInsets.all(8.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 dress.name,
-                                style: theme.textTheme.bodyLarge?.copyWith(
+                                style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 8),
+                              SizedBox(height: 4),
                               DressStatusBadge(
                                 isAvailable: isAvailable,
                                 timeLeft: null,
+                                compact: true, // Versión compacta del badge
                               ),
                             ],
                           ),
@@ -436,36 +492,40 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
   }
 }
 
-// Widget optimizado para cargar imágenes con manejo de memoria y errores
 class _OptimizedImageWidget extends StatelessWidget {
   final String imageUrl;
+  final int width;
+  final int height;
 
-  const _OptimizedImageWidget({required this.imageUrl});
+  const _OptimizedImageWidget({
+    required this.imageUrl,
+    this.width = 150,
+    this.height = 150,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Image.network(
       imageUrl,
       fit: BoxFit.cover,
-      // Añadimos un framework de caché para mejorar rendimiento
-      cacheWidth: 300, // Para optimizar el uso de memoria
+      width: width.toDouble(),
+      height: height.toDouble(),
+      cacheWidth: width, // Optimización de memoria
       loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
+        if (loadingProgress == null) return child;
         return Center(
           child: CircularProgressIndicator(
             value: loadingProgress.expectedTotalBytes != null
                 ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
                 : null,
-            strokeWidth: 2,
+            strokeWidth: 1,
           ),
         );
       },
       errorBuilder: (context, error, stackTrace) => Container(
         color: Colors.grey[200],
         child: Center(
-          child: Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
+          child: Icon(Icons.broken_image, size: 24, color: Colors.grey[400]),
         ),
       ),
     );
@@ -475,11 +535,13 @@ class _OptimizedImageWidget extends StatelessWidget {
 class DressStatusBadge extends StatelessWidget {
   final bool isAvailable;
   final int? timeLeft;
+  final bool compact;
 
   const DressStatusBadge({
     Key? key,
     required this.isAvailable,
     this.timeLeft,
+    this.compact = false,
   }) : super(key: key);
 
   @override
@@ -488,22 +550,28 @@ class DressStatusBadge extends StatelessWidget {
 
     if (isAvailable) {
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: compact
+            ? EdgeInsets.symmetric(horizontal: 6, vertical: 2)
+            : EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.green[50],
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(compact ? 8 : 12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle, size: 14, color: Colors.green),
-            SizedBox(width: 4),
+            Icon(
+              Icons.check_circle,
+              size: compact ? 12 : 14,
+              color: Colors.green,
+            ),
+            SizedBox(width: compact ? 2 : 4),
             Text(
               'Disponible',
               style: TextStyle(
                 color: Colors.green[800],
                 fontWeight: FontWeight.w500,
-                fontSize: 12,
+                fontSize: compact ? 10 : 12,
               ),
             ),
           ],
@@ -524,22 +592,28 @@ class DressStatusBadge extends StatelessWidget {
       }
 
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: compact
+            ? EdgeInsets.symmetric(horizontal: 6, vertical: 2)
+            : EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.red[50],
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(compact ? 8 : 12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.timer, size: 14, color: Colors.red),
-            SizedBox(width: 4),
+            Icon(
+              Icons.timer,
+              size: compact ? 12 : 14,
+              color: Colors.red,
+            ),
+            SizedBox(width: compact ? 2 : 4),
             Text(
-              timeLeft != null ? 'Reservado ($timeText)' : 'No disponible',
+              timeLeft != null ? 'Reservado' : 'No disponible',
               style: TextStyle(
                 color: Colors.red[700],
                 fontWeight: FontWeight.w500,
-                fontSize: 12,
+                fontSize: compact ? 10 : 12,
               ),
             ),
           ],
@@ -548,3 +622,4 @@ class DressStatusBadge extends StatelessWidget {
     }
   }
 }
+

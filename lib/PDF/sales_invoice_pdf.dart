@@ -1109,6 +1109,8 @@ Future<Uint8List> generateThermalDocument({
 // Lista de productos
             ...transactions.productList!.map((item) {
 //
+              final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+              final serviceDescription = fullReservation?.service?['description'] ?? '';
 
               return pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 3),
@@ -1127,7 +1129,7 @@ Future<Uint8List> generateThermalDocument({
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            item?.productName ?? '',
+                            serviceDescription ?? '',
                             style: pw.TextStyle(fontSize: 6),
                           ),
                           pw.Text(
