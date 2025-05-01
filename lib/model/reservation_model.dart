@@ -8,22 +8,26 @@ class ReservationModel {
   final String reservationTime;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? estado;
 
   ReservationModel({
-    required this.id,
+    String? id,
     required this.serviceId,
     required this.clientId,
     required this.dressId,
     required this.branchId,
     required this.reservationDate,
     required this.reservationTime,
-    required this.createdAt,
-    required this.updatedAt
-  });
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    this.estado = "pendiente",
+  })  : id = id ?? '',
+        createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
-  factory ReservationModel.fromMap(Map<String, dynamic> map, String documentId) {
+  factory ReservationModel.fromMap(Map<String, dynamic> map, String id) {
     return ReservationModel(
-      id: documentId,
+      id: id,
       serviceId: map['service_id'] ?? '',
       clientId: map['client_id'] ?? '',
       dressId: map['dress_id'] ?? '',
@@ -31,26 +35,23 @@ class ReservationModel {
       reservationDate: map['reservation_date'] ?? '',
       reservationTime: map['reservation_time'] ?? '',
       createdAt: _parseTimestamp(map['created_at']),
-      updatedAt: _parseTimestamp(map['updated_at'])
+      updatedAt: _parseTimestamp(map['updated_at']),
+      estado: map['estado'],
     );
   }
 
-  // Helper function to safely parse timestamps from different formats
   static DateTime _parseTimestamp(dynamic timestamp) {
     if (timestamp == null || timestamp == '') {
       return DateTime.now();
     } else if (timestamp is int) {
       return DateTime.fromMillisecondsSinceEpoch(timestamp);
     } else if (timestamp is String) {
-      // Try to parse as int first
       try {
         return DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp));
       } catch (_) {
-        // If not an int string, try to parse as datetime string
         try {
           return DateTime.parse(timestamp);
         } catch (_) {
-          // Default to now if parsing fails
           return DateTime.now();
         }
       }
@@ -68,6 +69,7 @@ class ReservationModel {
       'reservation_time': reservationTime,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
+      'estado': estado,
     };
   }
 }

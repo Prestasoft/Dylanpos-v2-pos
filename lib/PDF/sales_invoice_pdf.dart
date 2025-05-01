@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:intl/intl.dart';
@@ -938,9 +939,14 @@ Future<Uint8List> generateThermalDocument({
 }) async {
   final pdf = pw.Document();
   final ref = ProviderScope.containerOf(context);
-
-  // Obtener la lista de IDs de reservaciones
   final List<String> idReservaciones = post?.reservationIds ?? [];
+
+  //actualizar los prodcutos
+  await ref.read(ActualizarEstadoReservaProvider({
+    'id': idReservaciones,
+    'estado': 'confirmado',
+  }));
+  // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero
   final List<FullReservation?> reservaciones = await Future.wait(idReservaciones
       .map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
@@ -1034,7 +1040,8 @@ Future<Uint8List> generateThermalDocument({
                     style: pw.TextStyle(
                         fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 pw.Text(
-                  transactions.customerName,
+                  post?.customerName ?? '',
+                  // Fallback to an empty string if customerName is null
                   style: pw.TextStyle(fontSize: 8),
                 ),
               ],
@@ -1076,20 +1083,23 @@ Future<Uint8List> generateThermalDocument({
             pw.Row(
               children: [
                 pw.SizedBox(
-                  width: 10,
-                  child: pw.Text('Nº.',
-                      style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  width: 13,
+                  child: pw.Text('Nº ',
+                      style: pw.TextStyle(
+                          fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 ),
                 pw.Expanded(
                   flex: 2,
                   child: pw.Text('Descripción',
-                      style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                      style: pw.TextStyle(
+                          fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 ),
                 pw.SizedBox(
                   width: 30,
                   child: pw.Text('Total',
                       textAlign: pw.TextAlign.right,
-                      style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                      style: pw.TextStyle(
+                          fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 ),
               ],
             ),
@@ -1098,14 +1108,14 @@ Future<Uint8List> generateThermalDocument({
 
 // Lista de productos
             ...transactions.productList!.map((item) {
-              final productName = item.productName ?? 'Producto sin nombre';
+//
 
               return pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 3),
                 child: pw.Row(
                   children: [
                     pw.SizedBox(
-                      width: 10,
+                      width: 13,
                       child: pw.Text(
                         '${item.quantity}',
                         style: pw.TextStyle(fontSize: 7),
@@ -1117,7 +1127,7 @@ Future<Uint8List> generateThermalDocument({
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            productName,
+                            item?.productName ?? '',
                             style: pw.TextStyle(fontSize: 6),
                           ),
                           pw.Text(
@@ -1130,7 +1140,8 @@ Future<Uint8List> generateThermalDocument({
                     pw.SizedBox(
                       width: 40,
                       child: pw.Text(
-                        formatCurrency(double.parse(item.subTotal) * item.quantity),
+                        formatCurrency(
+                            double.parse(item.subTotal) * item.quantity),
                         style: pw.TextStyle(fontSize: 6),
                         textAlign: pw.TextAlign.right,
                       ),
@@ -1139,7 +1150,6 @@ Future<Uint8List> generateThermalDocument({
                 ),
               );
             }),
-
 
             pw.Divider(thickness: 0.5),
 
@@ -1286,14 +1296,6 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
   return pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [
-      // pw.Row(
-      //   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      //   children: [
-      //     pw.Text('Reserva No:',
-      //         style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-      //     pw.Text('#${reservacion.id}', style: pw.TextStyle(fontSize: 8)),
-      //   ],
-      // ),
       pw.SizedBox(height: 2),
       pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -1355,8 +1357,8 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           pw.Text('Estado:',
               style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
           pw.Text(
-            reservacion.reservation['status']?.toString().toUpperCase() ??
-                'PENDIENTE',
+            reservacion.reservation['stado']?.toString().toUpperCase() ??
+                'confirmado',
             style: pw.TextStyle(fontSize: 8),
           ),
         ],

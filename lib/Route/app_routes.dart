@@ -148,15 +148,7 @@ abstract class AcnooAppRoutes {
               return null;
             },
             routes: [
-              ///----------------Pos Sale Route------------------------------
-              // GoRoute(
-              //   path: 'pos-sales',
-              //   builder: (context, state) {
-              //     // Replace 'Quotation' with the actual type of reTransaction[index]
-              //     final quotation = state.extra as SaleTransactionModel; // Corrected type
-              //     return PosSale(quotation: quotation);
-              //   },
-              // ),
+
               GoRoute(
                 path: 'pos-sales',
                 builder: (context, state) {
