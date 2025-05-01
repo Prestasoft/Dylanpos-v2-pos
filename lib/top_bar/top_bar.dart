@@ -131,7 +131,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                           children: [
                             const Icon(Icons.add_rounded, color: kMainColor),
                             Text(
-                              'Inventory',
+                              'Facturar Reserva',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: kMainColor,
