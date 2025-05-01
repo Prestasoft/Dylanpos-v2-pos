@@ -1106,7 +1106,6 @@ Future<Uint8List> generateThermalDocument({
 
             pw.Divider(thickness: 0.2),
 
-// Lista de productos
             ...transactions.productList!.map((item) {
 //
               final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
