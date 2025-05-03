@@ -412,7 +412,9 @@ class PackageListScreen extends ConsumerWidget {
       ),
     );
   }
-  Widget _buildInfoRow(IconData icon, String text, {bool isHighlighted = false}) {
+
+  // Ajustar la altura de la caja de descripción para permitir 13 líneas
+  Widget _buildInfoRow(IconData icon, dynamic text, {bool isHighlighted = false}) {
     return Row(
       children: [
         Icon(
@@ -423,17 +425,17 @@ class PackageListScreen extends ConsumerWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            text,
+            text.toString(),
             style: TextStyle(
-              fontSize: isHighlighted ? 16 : 14,
-              fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+              fontSize: isHighlighted ? 14 : 12,
+              fontWeight: FontWeight.bold,
               color: isHighlighted ? Colors.green.shade800 : Colors.black87,
             ),
-            // Changed from maxLines: 1 to maxLines: 2 to allow more text
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            maxLines: 13, // Permitir hasta 13 líneas
+            overflow: TextOverflow.ellipsis, // Truncar texto largo si excede
           ),
         ),
       ],
     );
-  }}
+  }
+}

@@ -170,7 +170,7 @@ class _InventorySalesState extends State<InventorySales> {
 
   String isSelected = 'Categories';
   String selectedCategory = 'Categories';
-  String? selectedUserId = 'Guest';
+  String? selectedUserId = 'Seleccionar Cliente';
   CustomerModel? selectedUserName;
   String? invoiceNumber;
   String previousDue = "0";
@@ -249,7 +249,7 @@ class _InventorySalesState extends State<InventorySales> {
   // }
 
   DropdownButton<String> getResult(List<CustomerModel> model) {
-    List<DropdownMenuItem<String>> dropDownItems = [DropdownMenuItem(value: 'Guest', child: Text(lang.S.of(context).guest))];
+    List<DropdownMenuItem<String>> dropDownItems = [DropdownMenuItem(value: 'Seleccionar Cliente', child: Text(lang.S.of(context).guest))];
     for (var des in model) {
       var item = DropdownMenuItem(
         alignment: Alignment.centerLeft,
@@ -284,9 +284,9 @@ class _InventorySalesState extends State<InventorySales> {
               selectedUserName = element;
               previousDue = element.dueAmount;
               selectedCustomerType == element.type ? null : {selectedCustomerType = element.type, cartList.clear(), productFocusNode.clear()};
-            } else if (selectedUserId == 'Guest') {
+            } else if (selectedUserId == 'Seleccionar Cliente') {
               previousDue = '0';
-              selectedCustomerType = 'Retailer';
+              selectedCustomerType = 'Cliente Final';
             }
           }
           invoiceNumber = '';
@@ -296,13 +296,13 @@ class _InventorySalesState extends State<InventorySales> {
   }
 
   dynamic productPriceChecker({required ProductModel product, required String customerType}) {
-    if (customerType == "Retailer") {
+    if (customerType == "Cliente Final") {
       return product.productSalePrice;
     } else if (customerType == "Wholesaler") {
       return product.productWholeSalePrice == '' ? '0' : product.productWholeSalePrice;
     } else if (customerType == "Dealer") {
       return product.productDealerPrice == '' ? '0' : product.productDealerPrice;
-    } else if (customerType == "Guest") {
+    } else if (customerType == "Seleccionar Cliente") {
       return product.productSalePrice;
     }
   }
@@ -349,7 +349,7 @@ class _InventorySalesState extends State<InventorySales> {
 
   List<String> get customerType => [
         // lang.S.current.retailer,
-        'Retailer',
+        'Cliente Final',
         // lang.S.current.wholesaler,
         'Wholesaler',
         // lang.S.current.dealer,
@@ -1313,7 +1313,7 @@ class _InventorySalesState extends State<InventorySales> {
                                   builder: (FormFieldState<dynamic> field) {
                                     return InputDecorator(
                                         decoration: const InputDecoration(
-                                          labelText: 'Party Type',
+                                          labelText: 'Tipo de cliente',
                                         ),
                                         child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getCategories())));
                                   },
@@ -3501,7 +3501,7 @@ class _InventorySalesState extends State<InventorySales> {
                                               vat: vatGst,
                                             );
 
-                                            if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
+                                            if (transitionModel.customerType == "Selecionar Cliente" && dueAmountController.text.toDouble() > 0) {
                                               EasyLoading.showError(lang.S.of(context).dueIsNotAvailableForGuest);
                                             } else {
                                               try {
@@ -3575,7 +3575,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                 postDailyTransaction(dailyTransactionModel: dailyTransaction);
 
                                                 ///_________DueUpdate___________________________________________________________________________________
-                                                if (transitionModel.customerName != 'Guest') {
+                                                if (transitionModel.customerName != 'Selecionar Cliente') {
                                                   final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
                                                   String? key;
 

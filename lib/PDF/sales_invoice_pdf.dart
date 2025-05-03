@@ -983,7 +983,7 @@ Future<Uint8List> generateThermalDocument({
             if (personalInformation.gst.trim().isNotEmpty)
               pw.Center(
                 child: pw.Text(
-                  'NIT: ${personalInformation.gst}',
+                  'RNC: ${personalInformation.gst}',
                   style: pw.TextStyle(fontSize: 8),
                 ),
               ),
@@ -998,7 +998,7 @@ Future<Uint8List> generateThermalDocument({
             // Tipo de documento
             pw.Center(
               child: pw.Text(
-                'FACTURA DE VENTA',
+                'FACTURA DE RESERVACIÓN',
                 style: pw.TextStyle(
                   fontSize: 9,
                   fontWeight: pw.FontWeight.bold,
@@ -1359,7 +1359,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
               style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
           pw.Text(
             reservacion.reservation['stado']?.toString().toUpperCase() ??
-                'confirmado',
+                'Confirmado',
             style: pw.TextStyle(fontSize: 8),
           ),
         ],

@@ -584,14 +584,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                           const SizedBox(height: 16),
 
                           // Description
-                          TextFormField(
-                            controller: _descriptionController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).description,
-                              border: OutlineInputBorder(),
-                            ),
-                            maxLines: 3,
-                          ),
+                          AdjustableDescriptionField(controller: _descriptionController),
                           const SizedBox(height: 16),
 
                           // Price
@@ -722,7 +715,9 @@ class _ServicePackageListState extends State<ServicePackageList> {
                               )
                             ],
                           ),
-                          const SizedBox(height: 12)
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.02, // Ajusta el tamaño según el alto de la pantalla
+                          )
                         ],
                       ),
                     ),
@@ -868,14 +863,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                           const SizedBox(height: 16),
 
                           // Description
-                          TextFormField(
-                            controller: _descriptionController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).description,
-                              border: OutlineInputBorder(),
-                            ),
-                            maxLines: 3,
-                          ),
+                          AdjustableDescriptionField(controller: _descriptionController),
                           const SizedBox(height: 16),
 
                           // Price
@@ -1001,7 +989,9 @@ class _ServicePackageListState extends State<ServicePackageList> {
                               )
                             ],
                           ),
-                          const SizedBox(height: 12)
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.02, // Ajusta el tamaño según el alto de la pantalla
+                          )
                         ],
                       ),
                     ),
@@ -1058,5 +1048,92 @@ class _ServicePackageListState extends State<ServicePackageList> {
     _priceController.clear();
     _durationValueController.clear();
     _durationUnit = 'hours';
+  }
+
+  String _formatDescription(String input) {
+    // Divide el texto en líneas y elimina espacios innecesarios
+    List<String> lines = input.split(RegExp(r'\n|\r')).map((line) => line.trim()).toList();
+
+    // Agrega viñetas con el símbolo '•' a cada línea no vacía
+    List<String> formattedLines = lines.map((line) {
+      if (line.isNotEmpty) {
+        return '• ' + line;
+      }
+      return '';
+    }).toList();
+
+    // Une las líneas formateadas con saltos de línea
+    return formattedLines.join('\n');
+  }
+}
+
+// Agregar funcionalidad para ajustar manualmente el tamaño del campo de descripción
+class AdjustableDescriptionField extends StatefulWidget {
+  final TextEditingController controller;
+
+  AdjustableDescriptionField({required this.controller});
+
+  @override
+  _AdjustableDescriptionFieldState createState() => _AdjustableDescriptionFieldState();
+}
+
+class _AdjustableDescriptionFieldState extends State<AdjustableDescriptionField> {
+  double _fieldHeight = 100.0; // Altura inicial del campo de descripción
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: _fieldHeight,
+          child: TextFormField(
+            controller: widget.controller,
+            decoration: InputDecoration(
+              labelText: 'Descripción',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: null, // Permitir múltiples líneas
+            expands: true, // Expandir para llenar el contenedor
+          ),
+        ),
+        Slider(
+          value: _fieldHeight,
+          min: 50.0,
+          max: 300.0,
+          divisions: 25,
+          label: '${_fieldHeight.round()} px',
+          onChanged: (double value) {
+            setState(() {
+              _fieldHeight = value;
+            });
+          },
+        ),
+        ElevatedButton(
+          onPressed: () {
+            setState(() {
+              widget.controller.text = _formatDescription(widget.controller.text);
+            });
+          },
+          child: Text('Formatear Descripción'),
+        ),
+      ],
+    );
+  }
+
+  String _formatDescription(String input) {
+    // Divide el texto en líneas y elimina espacios innecesarios
+    List<String> lines = input.split(RegExp(r'\n|\r')).map((line) => line.trim()).toList();
+
+    // Agrega viñetas con el símbolo '•' a cada línea no vacía
+    List<String> formattedLines = lines.map((line) {
+      if (line.isNotEmpty) {
+        return '• ' + line;
+      }
+      return '';
+    }).toList();
+
+    // Une las líneas formateadas con saltos de línea
+    return formattedLines.join('\n');
   }
 }
