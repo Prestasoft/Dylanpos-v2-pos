@@ -1119,7 +1119,7 @@ Future<Uint8List> generateThermalDocument({
                       width: 13,
                       child: pw.Text(
                         '${item.quantity}',
-                        style: fontWeight: pw.FontWeight.bold,
+                        style: pw.TextStyle(fontSize: 7),
                       ),
                     ),
                     pw.Expanded(
@@ -1132,7 +1132,7 @@ Future<Uint8List> generateThermalDocument({
                             style: pw.TextStyle(fontSize: 6),
                           ),
                           pw.Text(
-                            '@${formatCurrency(double.parse(item.subTotal))}',
+                            '${formatCurrency(double.parse(item.subTotal))}',
                             style: pw.TextStyle(fontSize: 6),
                           ),
                         ],
