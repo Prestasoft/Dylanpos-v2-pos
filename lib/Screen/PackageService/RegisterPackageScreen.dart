@@ -1250,7 +1250,7 @@ class AdjustableDescriptionField extends StatefulWidget {
 
 class _AdjustableDescriptionFieldState
     extends State<AdjustableDescriptionField> {
-  double _fieldHeight = 100.0; // Altura inicial del campo de descripción
+  double _fieldHeight = 300.0; // Altura inicial del campo de descripción
 
   @override
   Widget build(BuildContext context) {
@@ -1302,7 +1302,7 @@ class _AdjustableDescriptionFieldState
     // Agrega viñetas con el símbolo '•' a cada línea no vacía
     List<String> formattedLines = lines.map((line) {
       if (line.isNotEmpty) {
-        return '• ' + line;
+        return '- ' + line;
       }
       return '';
     }).toList();
