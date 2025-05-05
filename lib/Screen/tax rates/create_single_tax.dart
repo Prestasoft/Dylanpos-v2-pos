@@ -25,12 +25,12 @@ class CreateSingleTaxPopUp extends StatefulWidget {
 class _CreateSingleTaxPopUpState extends State<CreateSingleTaxPopUp> {
   String name = '';
   num rate = 0;
-  String id = DateTime.now().millisecondsSinceEpoch.toString() + Random().nextInt(1000).toString();
+  String id = DateTime.now().millisecondsSinceEpoch.toString() +
+      Random().nextInt(1000).toString();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
 
     List<String> names = [];
     for (var element in widget.listOfTax) {
@@ -61,7 +61,8 @@ class _CreateSingleTaxPopUpState extends State<CreateSingleTaxPopUp> {
                   ),
                   IconButton(
                     padding: EdgeInsets.zero,
-                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    visualDensity:
+                        const VisualDensity(horizontal: -4, vertical: -4),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
                   )
@@ -78,7 +79,8 @@ class _CreateSingleTaxPopUpState extends State<CreateSingleTaxPopUp> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${lang.S.of(context).name}*', style: theme.textTheme.titleSmall),
+                  Text('${lang.S.of(context).name}*',
+                      style: theme.textTheme.titleSmall),
                   const SizedBox(height: 8.0),
                   TextFormField(
                     onChanged: (value) {
@@ -114,18 +116,30 @@ class _CreateSingleTaxPopUpState extends State<CreateSingleTaxPopUp> {
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(minimumSize: const Size(450, 48)),
+                style:
+                    ElevatedButton.styleFrom(minimumSize: const Size(450, 48)),
                 onPressed: () async {
-                  if (name != '' && !names.contains(name.toLowerCase().removeAllWhiteSpace())) {
-                    TaxModel tax = TaxModel(name: name, taxRate: rate, id: id.toString());
+                  if (name != '' &&
+                      !names
+                          .contains(name.toLowerCase().removeAllWhiteSpace())) {
+                    TaxModel tax =
+                        TaxModel(name: name, taxRate: rate, id: id.toString());
                     try {
-                      EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                      final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Tax List');
+                      EasyLoading.show(
+                          status: '${lang.S.of(context).loading}...',
+                          dismissOnTap: false);
+                      final DatabaseReference productInformationRef =
+                          FirebaseDatabase.instance
+                              .ref()
+                              .child(await getUserID())
+                              .child('Tax List');
                       await productInformationRef.push().set(tax.toJson());
-                      EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                      EasyLoading.showSuccess(
+                          lang.S.of(context).addedSuccessfully,
+                          duration: const Duration(milliseconds: 500));
 
                       ///____provider_refresh____________________________________________
-                      ref.refresh(taxProvider);
+                      final _ = ref.refresh(taxProvider);
 
                       Future.delayed(const Duration(milliseconds: 100), () {
                         context.pop();
@@ -134,7 +148,8 @@ class _CreateSingleTaxPopUpState extends State<CreateSingleTaxPopUp> {
                       EasyLoading.dismiss();
                       //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                     }
-                  } else if (names.contains(name.toLowerCase().removeAllWhiteSpace())) {
+                  } else if (names
+                      .contains(name.toLowerCase().removeAllWhiteSpace())) {
                     EasyLoading.showError(lang.S.of(context).alreadyExists);
                   } else {
                     EasyLoading.showError(lang.S.of(context).enterName);
@@ -143,7 +158,10 @@ class _CreateSingleTaxPopUpState extends State<CreateSingleTaxPopUp> {
                 child: Text(
                   lang.S.of(context).save,
                   //'Save',
-                  style: kTextStyle.copyWith(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: kTextStyle.copyWith(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -180,7 +198,12 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
 
   void getTaxKey() async {
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Tax List').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Tax List')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['name'].toString() == widget.taxModel.name) {
@@ -202,14 +225,12 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     List<String> names = [];
     for (var element in widget.taxList) {
       names.add(element.name.removeAllWhiteSpace().toLowerCase());
     }
     return Consumer(
       builder: (BuildContext context, WidgetRef ref, Widget? child) {
-        final groupTax = ref.watch(groupTaxProvider);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +254,8 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
                   ),
                   IconButton(
                     padding: EdgeInsets.zero,
-                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    visualDensity:
+                        const VisualDensity(horizontal: -4, vertical: -4),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
                   )
@@ -251,7 +273,8 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${lang.S.of(context).name}*', style: theme.textTheme.titleMedium),
+                  Text('${lang.S.of(context).name}*',
+                      style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8.0),
                   TextFormField(
                     initialValue: name,
@@ -289,19 +312,35 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(minimumSize: const Size(450, 48)),
+                style:
+                    ElevatedButton.styleFrom(minimumSize: const Size(450, 48)),
                 onPressed: () {
-                  TaxModel tax = TaxModel(taxRate: rate, id: widget.taxModel.id, name: name);
-                  if (name != '' && name == widget.taxModel.name ? true : !names.contains(name.toLowerCase().removeAllWhiteSpace())) {
+                  TaxModel tax = TaxModel(
+                      taxRate: rate, id: widget.taxModel.id, name: name);
+                  if (name != '' && name == widget.taxModel.name
+                      ? true
+                      : !names
+                          .contains(name.toLowerCase().removeAllWhiteSpace())) {
                     setState(() async {
                       try {
-                        EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                        final DatabaseReference taxInfoRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Tax List').child(taxKey);
+                        EasyLoading.show(
+                            status: '${lang.S.of(context).loading}...',
+                            dismissOnTap: false);
+                        final DatabaseReference taxInfoRef = FirebaseDatabase
+                            .instance
+                            .ref()
+                            .child(await getUserID())
+                            .child('Tax List')
+                            .child(taxKey);
                         await taxInfoRef.set(tax.toJson());
-                        EasyLoading.showSuccess(lang.S.of(context).editSuccessfully, duration: const Duration(milliseconds: 500));
+                        EasyLoading.showSuccess(
+                            lang.S.of(context).editSuccessfully,
+                            duration: const Duration(milliseconds: 500));
 
                         ///____provider_refresh____________________________________________
+                        // ignore: unused_result
                         ref.refresh(taxProvider);
+                        // ignore: unused_result
                         ref.refresh(groupTaxProvider);
                         Future.delayed(const Duration(milliseconds: 100), () {
                           context.pop();
@@ -311,7 +350,8 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
                         //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                       }
                     });
-                  } else if (names.contains(name.toLowerCase().removeAllWhiteSpace())) {
+                  } else if (names
+                      .contains(name.toLowerCase().removeAllWhiteSpace())) {
                     EasyLoading.showError(lang.S.of(context).nameAlreadyExists);
                   } else {
                     EasyLoading.showError(lang.S.of(context).nameCantBeEmpty);

@@ -3,15 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 
 // Estado inicial
-final initialServicePackagesState = AsyncValue<List<ServicePackageModel>>.loading();
+final initialServicePackagesState =
+    AsyncValue<List<ServicePackageModel>>.loading();
 
 // Provider principal
-final servicePackagesProvider = StateNotifierProvider<ServicePackageNotifier, AsyncValue<List<ServicePackageModel>>>((ref) {
+final servicePackagesProvider = StateNotifierProvider<ServicePackageNotifier,
+    AsyncValue<List<ServicePackageModel>>>((ref) {
   return ServicePackageNotifier(ref);
 });
 
 // Notifier
-class ServicePackageNotifier extends StateNotifier<AsyncValue<List<ServicePackageModel>>> {
+class ServicePackageNotifier
+    extends StateNotifier<AsyncValue<List<ServicePackageModel>>> {
   final Ref ref;
   final DatabaseReference _dbRef;
 
@@ -22,16 +25,14 @@ class ServicePackageNotifier extends StateNotifier<AsyncValue<List<ServicePackag
     loadPackages();
   }
 
-  // Obtener referencia a la base de datos
-  DatabaseReference get _dbServiceRef => _dbRef;
-
   /// Cargar todos los paquetes de servicio
   Future<void> loadPackages() async {
     try {
       state = const AsyncValue.loading(); // Mostrar estado de carga
 
       final snapshot = await _dbRef.get();
-      print('Snapshot: ${snapshot.value}'); // Ver qué datos están siendo devueltos
+      print(
+          'Snapshot: ${snapshot.value}'); // Ver qué datos están siendo devueltos
       if (snapshot.exists) {
         final packages = <ServicePackageModel>[];
 
@@ -58,7 +59,6 @@ class ServicePackageNotifier extends StateNotifier<AsyncValue<List<ServicePackag
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
-
 
   /// Agregar un nuevo paquete
   Future<bool> addPackage(ServicePackageModel newPackage) async {
@@ -131,7 +131,8 @@ class ServicePackageNotifier extends StateNotifier<AsyncValue<List<ServicePackag
       );
 
       state.whenData((packages) {
-        state = AsyncValue.data(packages.map((p) => p.id == updated.id ? updated : p).toList());
+        state = AsyncValue.data(
+            packages.map((p) => p.id == updated.id ? updated : p).toList());
       });
 
       return true;
@@ -152,7 +153,8 @@ class ServicePackageNotifier extends StateNotifier<AsyncValue<List<ServicePackag
 
       // Actualizar estado local
       state.whenData((packages) {
-        state = AsyncValue.data(packages.where((p) => p.id != packageId).toList());
+        state =
+            AsyncValue.data(packages.where((p) => p.id != packageId).toList());
       });
 
       return true;
@@ -170,11 +172,12 @@ class ServicePackageNotifier extends StateNotifier<AsyncValue<List<ServicePackag
       data: (packages) {
         if (query.isEmpty) return packages;
 
-        return packages.where((package) =>
-        package.name.toLowerCase().contains(query.toLowerCase()) ||
-            package.category.toLowerCase().contains(query.toLowerCase()) ||
-            package.subcategory.toLowerCase().contains(query.toLowerCase())
-        ).toList();
+        return packages
+            .where((package) =>
+                package.name.toLowerCase().contains(query.toLowerCase()) ||
+                package.category.toLowerCase().contains(query.toLowerCase()) ||
+                package.subcategory.toLowerCase().contains(query.toLowerCase()))
+            .toList();
       },
     );
   }
@@ -196,14 +199,17 @@ class ServicePackageNotifier extends StateNotifier<AsyncValue<List<ServicePackag
 }
 
 // Providers adicionales para funcionalidades específicas
-final packageSearchProvider = Provider.family<List<ServicePackageModel>, String>((ref, query) {
+final packageSearchProvider =
+    Provider.family<List<ServicePackageModel>, String>((ref, query) {
   return ref.watch(servicePackagesProvider.notifier).searchPackages(query);
 });
 
-final packageByIdProvider = Provider.family<ServicePackageModel?, String>((ref, id) {
+final packageByIdProvider =
+    Provider.family<ServicePackageModel?, String>((ref, id) {
   return ref.watch(servicePackagesProvider.notifier).getPackageById(id);
 });
 // Cambia esto en el archivo donde tienes definido packageByIdProvider
-final packageByIdProviderA1 = FutureProvider.family<ServicePackageModel?, String>((ref, id) async {
+final packageByIdProviderA1 =
+    FutureProvider.family<ServicePackageModel?, String>((ref, id) async {
   return ref.watch(servicePackagesProvider.notifier).getPackageById(id);
 });

@@ -33,12 +33,19 @@ class QuotationList extends StatefulWidget {
 
 class _QuotationListState extends State<QuotationList> {
   ScrollController mainScroll = ScrollController();
-  void deleteQuotation({required String date, required WidgetRef updateRef, required BuildContext context}) async {
+  void deleteQuotation(
+      {required String date,
+      required WidgetRef updateRef,
+      required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
     String key = '';
     try {
       // Fetch data from Firebase
-      final snapshot = await FirebaseDatabase.instance.ref(await getUserID()).child('Sales Quotation').orderByKey().get();
+      final snapshot = await FirebaseDatabase.instance
+          .ref(await getUserID())
+          .child('Sales Quotation')
+          .orderByKey()
+          .get();
 
       // Find the key for the given date
       for (var element in snapshot.children) {
@@ -51,7 +58,8 @@ class _QuotationListState extends State<QuotationList> {
 
       // Delete the record
       if (key.isNotEmpty) {
-        DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation/$key");
+        DatabaseReference ref = FirebaseDatabase.instance
+            .ref("${await getUserID()}/Sales Quotation/$key");
         await ref.remove();
         EasyLoading.showSuccess(lang.S.of(context).done);
       } else {
@@ -61,7 +69,7 @@ class _QuotationListState extends State<QuotationList> {
       EasyLoading.showError('Failed to delete: $e');
     } finally {
       // Refresh the provider and navigate back
-      updateRef.refresh(quotationProvider);
+      final _ = updateRef.refresh(quotationProvider);
       GoRouter.of(context).pop();
     }
   }
@@ -93,7 +101,14 @@ class _QuotationListState extends State<QuotationList> {
             List<SaleTransactionModel> reTransaction = [];
 
             for (var element in transaction.reversed.toList()) {
-              if (searchItem != '' && (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()))) {
+              if (searchItem != '' &&
+                  (element.customerName
+                          .removeAllWhiteSpace()
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase()) ||
+                      element.invoiceNumber
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase()))) {
                 reTransaction.add(element);
               } else if (searchItem == '') {
                 reTransaction.add(element);
@@ -101,7 +116,9 @@ class _QuotationListState extends State<QuotationList> {
             }
             final totalPages = (reTransaction.length / itemsPerPage).ceil();
             final startIndex = (currentPage - 1) * itemsPerPage;
-            final endIndex = itemsPerPage == -1 ? reTransaction.length : startIndex + itemsPerPage;
+            final endIndex = itemsPerPage == -1
+                ? reTransaction.length
+                : startIndex + itemsPerPage;
             final paginatedTransactions = reTransaction.sublist(
               startIndex,
               endIndex > reTransaction.length ? reTransaction.length : endIndex,
@@ -110,12 +127,14 @@ class _QuotationListState extends State<QuotationList> {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 13),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -127,7 +146,8 @@ class _QuotationListState extends State<QuotationList> {
                           ),
                           ElevatedButton(
                               onPressed: () {
-                                context.go('/sales/quotation-list/quotation-screen');
+                                context.go(
+                                    '/sales/quotation-list/quotation-screen');
                               },
                               child: Text('Add Quotation'))
                         ],
@@ -168,7 +188,9 @@ class _QuotationListState extends State<QuotationList> {
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Flexible(child: Text('Show-', style: theme.textTheme.bodyLarge)),
+                                Flexible(
+                                    child: Text('Show-',
+                                        style: theme.textTheme.bodyLarge)),
                                 DropdownButton<int>(
                                   isDense: true,
                                   padding: EdgeInsets.zero,
@@ -178,7 +200,8 @@ class _QuotationListState extends State<QuotationList> {
                                     Icons.keyboard_arrow_down,
                                     color: Colors.black,
                                   ),
-                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                  items: [10, 20, 50, 100, -1]
+                                      .map<DropdownMenuItem<int>>((int value) {
                                     return DropdownMenuItem<int>(
                                       value: value,
                                       child: Text(
@@ -190,7 +213,8 @@ class _QuotationListState extends State<QuotationList> {
                                   onChanged: (int? newValue) {
                                     setState(() {
                                       if (newValue == -1) {
-                                        itemsPerPage = -1; // Set to -1 for "All"
+                                        itemsPerPage =
+                                            -1; // Set to -1 for "All"
                                       } else {
                                         itemsPerPage = newValue ?? 10;
                                       }
@@ -219,7 +243,8 @@ class _QuotationListState extends State<QuotationList> {
                             },
                             textFieldType: TextFieldType.NAME,
                             decoration: InputDecoration(
-                              hintText: lang.S.of(context).searchByInvoiceOrName,
+                              hintText:
+                                  lang.S.of(context).searchByInvoiceOrName,
                               suffixIcon: const Icon(
                                 FeatherIcons.search,
                                 color: kNeutral700,
@@ -243,7 +268,8 @@ class _QuotationListState extends State<QuotationList> {
                             children: [
                               //-------------------data table---------------
                               LayoutBuilder(
-                                builder: (BuildContext context, BoxConstraints constraints) {
+                                builder: (BuildContext context,
+                                    BoxConstraints constraints) {
                                   final kWidth = constraints.maxWidth;
                                   return Scrollbar(
                                     thickness: 8.0,
@@ -259,7 +285,9 @@ class _QuotationListState extends State<QuotationList> {
                                         ),
                                         child: Theme(
                                           data: theme.copyWith(
-                                            dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                            dividerTheme:
+                                                const DividerThemeData(
+                                                    color: Colors.transparent),
                                           ),
                                           child: DataTable(
                                             border: const TableBorder(
@@ -268,22 +296,48 @@ class _QuotationListState extends State<QuotationList> {
                                                 color: kNeutral300,
                                               ),
                                             ),
-                                            dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                            dataRowColor:
+                                                const WidgetStatePropertyAll(
+                                                    whiteColor),
+                                            headingRowColor:
+                                                WidgetStateProperty.all(
+                                                    const Color(0xFFF8F3FF)),
                                             showBottomBorder: false,
                                             dividerThickness: 0.0,
-                                            headingTextStyle: theme.textTheme.titleMedium,
-                                            dataTextStyle: theme.textTheme.bodyLarge,
+                                            headingTextStyle:
+                                                theme.textTheme.titleMedium,
+                                            dataTextStyle:
+                                                theme.textTheme.bodyLarge,
                                             columns: [
-                                              DataColumn(label: Text(lang.S.of(context).SL)),
-                                              DataColumn(label: Text(lang.S.of(context).date)),
-                                              DataColumn(label: Text(lang.S.of(context).invoice)),
-                                              DataColumn(label: Text(lang.S.of(context).partyName)),
-                                              DataColumn(label: Text(lang.S.of(context).type)),
-                                              DataColumn(label: Text(lang.S.of(context).amount)),
-                                              DataColumn(label: Text(lang.S.of(context).setting)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).SL)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).date)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .invoice)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .partyName)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).type)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .amount)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .setting)),
                                             ],
-                                            rows: List.generate(paginatedTransactions.length, (index) {
+                                            rows: List.generate(
+                                                paginatedTransactions.length,
+                                                (index) {
                                               return DataRow(cells: [
                                                 //-------------serial number----------------------------
                                                 DataCell(Text(
@@ -292,33 +346,45 @@ class _QuotationListState extends State<QuotationList> {
                                                 //______________Date__________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedTransactions[index].purchaseDate.substring(0, 10),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    paginatedTransactions[index]
+                                                        .purchaseDate
+                                                        .substring(0, 10),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     maxLines: 2,
                                                   ),
                                                 ),
                                                 //____________Invoice_________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedTransactions[index].invoiceNumber,
+                                                    paginatedTransactions[index]
+                                                        .invoiceNumber,
                                                   ),
                                                 ),
                                                 //______Party Name___________________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedTransactions[index].customerName,
+                                                    paginatedTransactions[index]
+                                                        .customerName,
                                                   ),
                                                 ),
                                                 //___________Type______________________________________________
                                                 DataCell(
                                                   Text(
-                                                    lang.S.of(context).quotation,
+                                                    lang.S
+                                                        .of(context)
+                                                        .quotation,
                                                   ),
                                                 ),
                                                 //___________Amount____________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    myFormat.format(int.tryParse(paginatedTransactions[index].totalAmount.toString()) ?? 0),
+                                                    myFormat.format(int.tryParse(
+                                                            paginatedTransactions[
+                                                                    index]
+                                                                .totalAmount
+                                                                .toString()) ??
+                                                        0),
                                                   ),
                                                 ),
                                                 //_______________actions_________________________________________________
@@ -326,23 +392,51 @@ class _QuotationListState extends State<QuotationList> {
                                                   SizedBox(
                                                     width: 30,
                                                     child: Theme(
-                                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                                      data: ThemeData(
+                                                          highlightColor:
+                                                              dropdownItemColor,
+                                                          focusColor:
+                                                              dropdownItemColor,
+                                                          hoverColor:
+                                                              dropdownItemColor),
                                                       child: PopupMenuButton(
-                                                        surfaceTintColor: Colors.white,
-                                                        padding: EdgeInsets.zero,
-                                                        itemBuilder: (BuildContext bc) => [
+                                                        surfaceTintColor:
+                                                            Colors.white,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        itemBuilder:
+                                                            (BuildContext bc) =>
+                                                                [
                                                           PopupMenuItem(
                                                             onTap: () async {
-                                                              await GeneratePdfAndPrint().printQuotationInvoice(personalInformationModel: profile.value!, saleTransactionModel: paginatedTransactions[index]);
+                                                              await GeneratePdfAndPrint().printQuotationInvoice(
+                                                                  personalInformationModel:
+                                                                      profile
+                                                                          .value!,
+                                                                  saleTransactionModel:
+                                                                      paginatedTransactions[
+                                                                          index]);
                                                             },
                                                             child: Row(
                                                               children: [
-                                                                HugeIcon(icon: HugeIcons.strokeRoundedPrinter, size: 22.0, color: kGreyTextColor),
-                                                                const SizedBox(width: 4.0),
+                                                                HugeIcon(
+                                                                    icon: HugeIcons
+                                                                        .strokeRoundedPrinter,
+                                                                    size: 22.0,
+                                                                    color:
+                                                                        kGreyTextColor),
+                                                                const SizedBox(
+                                                                    width: 4.0),
                                                                 Text(
-                                                                  lang.S.of(context).print,
-                                                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                                                    color: kGreyTextColor,
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .print,
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge
+                                                                      ?.copyWith(
+                                                                    color:
+                                                                        kGreyTextColor,
                                                                   ),
                                                                 ),
                                                               ],
@@ -351,24 +445,40 @@ class _QuotationListState extends State<QuotationList> {
                                                           PopupMenuItem(
                                                             onTap: () {
                                                               showDialog(
-                                                                  barrierDismissible: false,
-                                                                  context: context,
-                                                                  builder: (BuildContext dialogContext) {
+                                                                  barrierDismissible:
+                                                                      false,
+                                                                  context:
+                                                                      context,
+                                                                  builder:
+                                                                      (BuildContext
+                                                                          dialogContext) {
                                                                     return Center(
-                                                                      child: Container(
-                                                                        width: 500,
-                                                                        decoration: const BoxDecoration(
-                                                                          color: Colors.white,
-                                                                          borderRadius: BorderRadius.all(
+                                                                      child:
+                                                                          Container(
+                                                                        width:
+                                                                            500,
+                                                                        decoration:
+                                                                            const BoxDecoration(
+                                                                          color:
+                                                                              Colors.white,
+                                                                          borderRadius:
+                                                                              BorderRadius.all(
                                                                             Radius.circular(15),
                                                                           ),
                                                                         ),
-                                                                        child: Padding(
-                                                                          padding: const EdgeInsets.all(20.0),
-                                                                          child: Column(
-                                                                            mainAxisSize: MainAxisSize.min,
-                                                                            crossAxisAlignment: CrossAxisAlignment.center,
-                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                        child:
+                                                                            Padding(
+                                                                          padding: const EdgeInsets
+                                                                              .all(
+                                                                              20.0),
+                                                                          child:
+                                                                              Column(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            crossAxisAlignment:
+                                                                                CrossAxisAlignment.center,
+                                                                            mainAxisAlignment:
+                                                                                MainAxisAlignment.center,
                                                                             children: [
                                                                               Text(
                                                                                 lang.S.of(context).areYouWantToDeleteThisQuotion,
@@ -481,41 +591,69 @@ class _QuotationListState extends State<QuotationList> {
                                                             child: Row(
                                                               children: [
                                                                 HugeIcon(
-                                                                  icon: HugeIcons.strokeRoundedDelete02,
-                                                                  color: kGreyTextColor,
+                                                                  icon: HugeIcons
+                                                                      .strokeRoundedDelete02,
+                                                                  color:
+                                                                      kGreyTextColor,
                                                                   size: 22,
                                                                 ),
                                                                 const SizedBox(
                                                                   width: 10.0,
                                                                 ),
                                                                 Text(
-                                                                  lang.S.of(context).delete,
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .delete,
                                                                   // 'Delete',
-                                                                  style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge
+                                                                      ?.copyWith(
+                                                                          color:
+                                                                              kGreyTextColor),
                                                                 ),
                                                               ],
                                                             ),
                                                           ),
                                                           PopupMenuItem(
                                                             onTap: () async {
-                                                              if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                                              if (await Subscription
+                                                                  .subscriptionChecker(
+                                                                      item:
+                                                                          'Sales')) {
                                                                 // Check if reTransaction[index] is not null and is of type SaleTransactionModel
                                                                 context.go(
                                                                   '/sales/pos-sales',
-                                                                  extra: reTransaction[index],
+                                                                  extra:
+                                                                      reTransaction[
+                                                                          index],
                                                                 );
                                                               } else {
-                                                                EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
+                                                                EasyLoading
+                                                                    .showError(
+                                                                        '${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
                                                               }
                                                             },
                                                             child: Row(
                                                               children: [
-                                                                const Icon(Icons.point_of_sale_sharp, size: 22.0, color: kGreyTextColor),
-                                                                const SizedBox(width: 4.0),
+                                                                const Icon(
+                                                                    Icons
+                                                                        .point_of_sale_sharp,
+                                                                    size: 22.0,
+                                                                    color:
+                                                                        kGreyTextColor),
+                                                                const SizedBox(
+                                                                    width: 4.0),
                                                                 Text(
-                                                                  lang.S.of(context).convertToSale,
-                                                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                                                    color: kGreyTextColor,
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .convertToSale,
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge
+                                                                      ?.copyWith(
+                                                                    color:
+                                                                        kGreyTextColor,
                                                                   ),
                                                                 ),
                                                               ],
@@ -550,9 +688,11 @@ class _QuotationListState extends State<QuotationList> {
                                                           child: Container(
                                                               height: 18,
                                                               width: 18,
-                                                              alignment: Alignment.centerRight,
+                                                              alignment: Alignment
+                                                                  .centerRight,
                                                               child: const Icon(
-                                                                Icons.more_vert_sharp,
+                                                                Icons
+                                                                    .more_vert_sharp,
                                                                 size: 18,
                                                               )),
                                                         ),
@@ -842,14 +982,17 @@ class _QuotationListState extends State<QuotationList> {
                                 },
                               ),
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 10, 20, 24),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
                                         'Showing ${startIndex + 1} to ${endIndex > reTransaction.length ? reTransaction.length : endIndex} of ${reTransaction.length} entries',
-                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
                                           color: kNeutral700,
                                         ),
                                         maxLines: 2,
@@ -866,7 +1009,8 @@ class _QuotationListState extends State<QuotationList> {
                                       child: Row(
                                         children: [
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
                                             child: GestureDetector(
                                               onTap: () {
                                                 if (currentPage > 1) {
@@ -877,7 +1021,8 @@ class _QuotationListState extends State<QuotationList> {
                                               },
                                               child: Text(
                                                 'Previous',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
@@ -892,10 +1037,13 @@ class _QuotationListState extends State<QuotationList> {
                                                   color: kNeutral300,
                                                 ))),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                               child: Text(
                                                 '$currentPage',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: Colors.white,
                                                 ),
                                               ),
@@ -909,17 +1057,21 @@ class _QuotationListState extends State<QuotationList> {
                                               color: kNeutral300,
                                             ))),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                               child: Text(
                                                 '$totalPages',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
                                             ),
                                           ),
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
                                             child: GestureDetector(
                                               onTap: () {
                                                 if (currentPage < totalPages) {
@@ -930,7 +1082,8 @@ class _QuotationListState extends State<QuotationList> {
                                               },
                                               child: Text(
                                                 'Next',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),

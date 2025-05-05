@@ -68,7 +68,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(4.0),
-                            decoration: const BoxDecoration(shape: BoxShape.rectangle),
+                            decoration:
+                                const BoxDecoration(shape: BoxShape.rectangle),
                             child: const Icon(
                               FeatherIcons.plus,
                               color: kTitleColor,
@@ -77,7 +78,10 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           const SizedBox(width: 4.0),
                           Text(
                             lang.S.of(context).addItemCategory,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0, fontWeight: FontWeight.bold),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold),
                           ),
                           const Spacer(),
                           const Icon(
@@ -99,7 +103,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         children: [
                           Text(
                             lang.S.of(context).nam,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor, fontSize: 18.0),
                           ),
                           const SizedBox(width: 50),
                           SizedBox(
@@ -112,7 +117,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   hintText: lang.S.of(context).name,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -122,7 +128,10 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                       const SizedBox(height: 10.0),
                       Text(
                         lang.S.of(context).selectVariations,
-                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                        style: kTextStyle.copyWith(
+                            color: kTitleColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18.0),
                       ),
                       Row(
                         children: [
@@ -261,7 +270,9 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kRedTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kRedTextColor),
                             child: Text(
                               lang.S.of(context).cancel,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -274,22 +285,39 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           ),
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kGreenTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kGreenTextColor),
                             child: Text(
                               lang.S.of(context).submit,
                               style: kTextStyle.copyWith(color: kWhite),
                             ),
                           ).onTap(() async {
-                            EasyLoading.show(status: lang.S.of(context).addingCategory);
-                            final DatabaseReference categoryInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories');
-                            CategoryModel categoryModel = CategoryModel(categoryName: itemCategoryController.text, size: isSize, color: isColor, capacity: isCapacity, type: isType, weight: isWeight, warranty: isWarranty);
-                            await categoryInformationRef.push().set(categoryModel.toJson());
-                            ref.refresh(categoryProvider);
+                            EasyLoading.show(
+                                status: lang.S.of(context).addingCategory);
+                            final DatabaseReference categoryInformationRef =
+                                FirebaseDatabase.instance
+                                    .ref()
+                                    .child(await getUserID())
+                                    .child('Categories');
+                            CategoryModel categoryModel = CategoryModel(
+                                categoryName: itemCategoryController.text,
+                                size: isSize,
+                                color: isColor,
+                                capacity: isCapacity,
+                                type: isType,
+                                weight: isWeight,
+                                warranty: isWarranty);
+                            await categoryInformationRef
+                                .push()
+                                .set(categoryModel.toJson());
+                            final _ = ref.refresh(categoryProvider);
                             setState(() {
                               categoryType = 0;
                               categoryName.clear();
                             });
-                            EasyLoading.showSuccess(lang.S.of(context).successfull);
+                            EasyLoading.showSuccess(
+                                lang.S.of(context).successfull);
                             finish(context);
                           })
                         ],
@@ -325,7 +353,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(4.0),
-                            decoration: const BoxDecoration(shape: BoxShape.rectangle),
+                            decoration:
+                                const BoxDecoration(shape: BoxShape.rectangle),
                             child: const Icon(
                               FeatherIcons.plus,
                               color: kTitleColor,
@@ -334,7 +363,10 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           const SizedBox(width: 4.0),
                           Text(
                             lang.S.of(context).addBrand,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0, fontWeight: FontWeight.bold),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold),
                           ),
                           const Spacer(),
                           const Icon(
@@ -356,7 +388,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         children: [
                           Text(
                             lang.S.of(context).nam,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor, fontSize: 18.0),
                           ),
                           const SizedBox(width: 50),
                           SizedBox(
@@ -369,7 +402,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   hintText: lang.S.of(context).name,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -387,7 +421,9 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kRedTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kRedTextColor),
                             child: Text(
                               lang.S.of(context).cancel,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -400,22 +436,33 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           ),
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kGreenTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kGreenTextColor),
                             child: Text(
                               lang.S.of(context).submit,
                               style: kTextStyle.copyWith(color: kWhite),
                             ),
                           ).onTap(() async {
-                            EasyLoading.show(status: lang.S.of(context).addingBrand);
-                            final DatabaseReference _categoryInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Brands');
-                            BrandsModel brandModel = BrandsModel(brandName: brandNameController.text);
-                            await _categoryInformationRef.push().set(brandModel.toJson());
-                            ref.refresh(brandProvider);
+                            EasyLoading.show(
+                                status: lang.S.of(context).addingBrand);
+                            final DatabaseReference _categoryInformationRef =
+                                FirebaseDatabase.instance
+                                    .ref()
+                                    .child(await getUserID())
+                                    .child('Brands');
+                            BrandsModel brandModel = BrandsModel(
+                                brandName: brandNameController.text);
+                            await _categoryInformationRef
+                                .push()
+                                .set(brandModel.toJson());
+                            final _ = ref.refresh(brandProvider);
                             setState(() {
                               brandTime = 0;
                               brandName.clear();
                             });
-                            EasyLoading.showSuccess(lang.S.of(context).successfull);
+                            EasyLoading.showSuccess(
+                                lang.S.of(context).successfull);
                             finish(context);
                           })
                         ],
@@ -449,7 +496,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(4.0),
-                          decoration: const BoxDecoration(shape: BoxShape.rectangle),
+                          decoration:
+                              const BoxDecoration(shape: BoxShape.rectangle),
                           child: const Icon(
                             FeatherIcons.plus,
                             color: kTitleColor,
@@ -458,7 +506,10 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         const SizedBox(width: 4.0),
                         Text(
                           lang.S.of(context).addUnit,
-                          style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0, fontWeight: FontWeight.bold),
+                          style: kTextStyle.copyWith(
+                              color: kTitleColor,
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold),
                         ),
                         const Spacer(),
                         const Icon(
@@ -480,7 +531,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                       children: [
                         Text(
                           lang.S.of(context).unit,
-                          style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                          style: kTextStyle.copyWith(
+                              color: kTitleColor, fontSize: 18.0),
                         ),
                         const SizedBox(width: 50),
                         SizedBox(
@@ -493,7 +545,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 hintText: lang.S.of(context).name,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -505,7 +558,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                       children: [
                         Text(
                           lang.S.of(context).description,
-                          style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                          style: kTextStyle.copyWith(
+                              color: kTitleColor, fontSize: 18.0),
                         ),
                         const SizedBox(width: 10.0),
                         SizedBox(
@@ -518,7 +572,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 hintText: lang.S.of(context).description,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -536,7 +591,9 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(10.0),
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kRedTextColor),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5.0),
+                              color: kRedTextColor),
                           child: Text(
                             lang.S.of(context).cancel,
                             style: kTextStyle.copyWith(color: kWhite),
@@ -549,26 +606,34 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         ),
                         Container(
                           padding: const EdgeInsets.all(10.0),
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kGreenTextColor),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5.0),
+                              color: kGreenTextColor),
                           child: Text(
                             lang.S.of(context).submit,
                             style: kTextStyle.copyWith(color: kWhite),
                           ),
                         ).onTap(() async {
-                          EasyLoading.show(status: lang.S.of(context).addingUnits);
-                          final DatabaseReference _categoryInformationRef = FirebaseDatabase.instance
-                              // ignore: deprecated_member_use
-                              .ref()
-                              .child(await getUserID())
-                              .child('Units');
-                          UnitModel unitModel = UnitModel(unitNameController.text);
-                          await _categoryInformationRef.push().set(unitModel.toJson());
-                          ref.refresh(unitProvider);
+                          EasyLoading.show(
+                              status: lang.S.of(context).addingUnits);
+                          final DatabaseReference _categoryInformationRef =
+                              FirebaseDatabase.instance
+                                  // ignore: deprecated_member_use
+                                  .ref()
+                                  .child(await getUserID())
+                                  .child('Units');
+                          UnitModel unitModel =
+                              UnitModel(unitNameController.text);
+                          await _categoryInformationRef
+                              .push()
+                              .set(unitModel.toJson());
+                          final _ = ref.refresh(unitProvider);
                           setState(() {
                             unitTime = 0;
                             unitType.clear();
                           });
-                          EasyLoading.showSuccess("${lang.S.of(context).successfull}");
+                          EasyLoading.showSuccess(
+                              "${lang.S.of(context).successfull}");
                           finish(context);
                         })
                       ],
@@ -595,7 +660,9 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
           status: '${lang.S.of(context).uploading}... ',
           dismissOnTap: false,
         );
-        var snapshot = await FirebaseStorage.instance.ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}').putData(bytesFromPicker!);
+        var snapshot = await FirebaseStorage.instance
+            .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+            .putData(bytesFromPicker!);
         var url = await snapshot.ref.getDownloadURL();
         EasyLoading.showSuccess('${lang.S.of(context).uploadSuccessful}!');
         setState(() {
@@ -604,7 +671,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
         });
       } on firebase_core.FirebaseException catch (e) {
         EasyLoading.dismiss();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.code.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.code.toString())));
       }
     }
   }
@@ -634,14 +702,18 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
 
   String? selectedUnit;
 
-  String productPicture = 'https://tasteofasia.com.au/uploads/2/products/undefine.jpg';
+  String productPicture =
+      'https://tasteofasia.com.au/uploads/2/products/undefine.jpg';
   TextEditingController productNameController = TextEditingController();
   TextEditingController productCodeController = TextEditingController();
   TextEditingController productStockController = TextEditingController();
   TextEditingController productSalePriceController = TextEditingController();
-  TextEditingController productPurchasePriceController = TextEditingController();
-  TextEditingController productDiscountPriceController = TextEditingController();
-  TextEditingController productWholesalePriceController = TextEditingController();
+  TextEditingController productPurchasePriceController =
+      TextEditingController();
+  TextEditingController productDiscountPriceController =
+      TextEditingController();
+  TextEditingController productWholesalePriceController =
+      TextEditingController();
   TextEditingController productDealerPriceController = TextEditingController();
   TextEditingController productManufacturerController = TextEditingController();
 
@@ -657,10 +729,12 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
   TextEditingController typeController = TextEditingController();
   TextEditingController warrantyController = TextEditingController();
 
-  WareHouseModel ware = WareHouseModel(warehouseName: 'Select warehouse', warehouseAddress: '', id: '');
+  WareHouseModel ware = WareHouseModel(
+      warehouseName: 'Select warehouse', warehouseAddress: '', id: '');
   late WareHouseModel selectedWareHouse = ware;
 
-  DropdownButton<WareHouseModel> getAreaName({required List<WareHouseModel> list}) {
+  DropdownButton<WareHouseModel> getAreaName(
+      {required List<WareHouseModel> list}) {
     List<DropdownMenuItem<WareHouseModel>> dropDownItems = [
       DropdownMenuItem(
         enabled: false,
@@ -705,16 +779,21 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                  padding:
+                      const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
                         lang.S.of(context).addItem,
-                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                        style: kTextStyle.copyWith(
+                            color: kTitleColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20.0),
                       ),
                       const Spacer(),
-                      const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                      const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0)
+                          .onTap(() => {finish(context)})
                     ],
                   ),
                 ),
@@ -735,9 +814,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).productNam,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterProductName,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -755,21 +836,32 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                   builder: (FormFieldState<dynamic> field) {
                                     return InputDecorator(
                                       decoration: InputDecoration(
-                                          enabledBorder: const OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                                            borderSide: BorderSide(color: kBorderColorTextField, width: 2),
+                                          enabledBorder:
+                                              const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(8.0)),
+                                            borderSide: BorderSide(
+                                                color: kBorderColorTextField,
+                                                width: 2),
                                           ),
-                                          suffixIcon: const Icon(FeatherIcons.plus, color: kTitleColor).onTap(() => showPopUp(ref)),
-                                          contentPadding: const EdgeInsets.all(8.0),
-                                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                                          labelText: lang.S.of(context).category),
+                                          suffixIcon: const Icon(
+                                                  FeatherIcons.plus,
+                                                  color: kTitleColor)
+                                              .onTap(() => showPopUp(ref)),
+                                          contentPadding:
+                                              const EdgeInsets.all(8.0),
+                                          floatingLabelBehavior:
+                                              FloatingLabelBehavior.always,
+                                          labelText:
+                                              lang.S.of(context).category),
                                       child: DropdownButtonHideUnderline(
                                           child: DropdownButton<String>(
                                         onChanged: (String? value) {
                                           setState(() {
                                             selectedCategories = value!;
                                             category.forEach((element) {
-                                              if (element.categoryName == selectedCategories) {
+                                              if (element.categoryName ==
+                                                  selectedCategories) {
                                                 isSized = element.size;
                                                 isColored = element.color;
                                                 isWeights = element.weight;
@@ -821,16 +913,19 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   labelText: lang.S.of(context).productSize,
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
                                   hintText: lang.S.of(context).enterProductSize,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
                           ).visible(isSized),
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
+                              padding: const EdgeInsets.only(
+                                  top: 10.0, bottom: 10.0),
                               child: AppTextField(
                                 showCursor: true,
                                 controller: colorController,
@@ -838,9 +933,12 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   labelText: lang.S.of(context).productColor,
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                  hintText: lang.S.of(context).enterProductColor,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
+                                  hintText:
+                                      lang.S.of(context).enterProductColor,
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -859,9 +957,12 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   labelText: lang.S.of(context).productWeight,
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                  hintText: lang.S.of(context).enterProductWeight,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
+                                  hintText:
+                                      lang.S.of(context).enterProductWeight,
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -876,9 +977,12 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   labelText: lang.S.of(context).productcapacity,
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                  hintText: lang.S.of(context).enterProductCapacity,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
+                                  hintText:
+                                      lang.S.of(context).enterProductCapacity,
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -889,7 +993,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         children: [
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 20.0, bottom: 20),
+                              padding:
+                                  const EdgeInsets.only(top: 20.0, bottom: 20),
                               child: AppTextField(
                                 showCursor: true,
                                 controller: typeController,
@@ -897,9 +1002,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   labelText: lang.S.of(context).productType,
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
                                   hintText: lang.S.of(context).enterProductType,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -907,7 +1014,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           const SizedBox(width: 20).visible(type && warranty),
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 20.0, bottom: 20),
+                              padding:
+                                  const EdgeInsets.only(top: 20.0, bottom: 20),
                               child: AppTextField(
                                 showCursor: true,
                                 controller: warrantyController,
@@ -915,9 +1023,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   labelText: lang.S.of(context).productWaranty,
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
                                   hintText: lang.S.of(context).enterWarranty,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -929,7 +1039,7 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           brandList.when(data: (brand) {
                             brandTime == 0
                                 ? brand.forEach((element) {
-                                   brandName.add(element.brandName ?? '');
+                                    brandName.add(element.brandName ?? '');
                                     brandTime++;
                                   })
                                 : null;
@@ -939,12 +1049,20 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                   return InputDecorator(
                                     decoration: InputDecoration(
                                         enabledBorder: const OutlineInputBorder(
-                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                                          borderSide: BorderSide(color: kBorderColorTextField, width: 2),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(8.0)),
+                                          borderSide: BorderSide(
+                                              color: kBorderColorTextField,
+                                              width: 2),
                                         ),
-                                        suffixIcon: const Icon(FeatherIcons.plus, color: kTitleColor).onTap(() => showBrandPopUp(ref)),
-                                        contentPadding: const EdgeInsets.all(8.0),
-                                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                                        suffixIcon: const Icon(
+                                                FeatherIcons.plus,
+                                                color: kTitleColor)
+                                            .onTap(() => showBrandPopUp(ref)),
+                                        contentPadding:
+                                            const EdgeInsets.all(8.0),
+                                        floatingLabelBehavior:
+                                            FloatingLabelBehavior.always,
                                         labelText: lang.S.of(context).brand),
                                     child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
@@ -984,9 +1102,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).productCod,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterProductCode,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                                 suffixIcon: const Icon(
                                   Icons.scanner,
                                   color: kTitleColor,
@@ -1007,9 +1127,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).stock,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterStockAmount,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -1026,14 +1148,23 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
                                     decoration: InputDecoration(
-                                        suffixIcon: const Icon(FeatherIcons.plus, color: kTitleColor).onTap(() => showUnitPopUp(ref)),
+                                        suffixIcon: const Icon(
+                                                FeatherIcons.plus,
+                                                color: kTitleColor)
+                                            .onTap(() => showUnitPopUp(ref)),
                                         enabledBorder: const OutlineInputBorder(
-                                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                                          borderSide: BorderSide(color: kBorderColorTextField, width: 2),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(8.0)),
+                                          borderSide: BorderSide(
+                                              color: kBorderColorTextField,
+                                              width: 2),
                                         ),
-                                        contentPadding: const EdgeInsets.all(8.0),
-                                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                                        labelText: lang.S.of(context).productUnit),
+                                        contentPadding:
+                                            const EdgeInsets.all(8.0),
+                                        floatingLabelBehavior:
+                                            FloatingLabelBehavior.always,
+                                        labelText:
+                                            lang.S.of(context).productUnit),
                                     child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
                                       onChanged: (String? value) {
@@ -1076,9 +1207,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).salePrice,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterSalePrice,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -1091,9 +1224,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).purchasePrice,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterPurchasePrice,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -1110,9 +1245,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).discountPrice,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterDiscountPrice,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -1125,9 +1262,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).wholeSaleprice,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterPrice,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -1144,9 +1283,11 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               textFieldType: TextFieldType.NAME,
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).dealerPrice,
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                                 hintText: lang.S.of(context).enterDealePrice,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
                               ),
                             ),
                           ),
@@ -1161,9 +1302,12 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   labelText: lang.S.of(context).manufacturer,
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                  hintText: lang.S.of(context).enterManufacturerName,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
+                                  hintText:
+                                      lang.S.of(context).enterManufacturerName,
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -1177,7 +1321,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           padding: const EdgeInsets.all(6),
                           color: kLitGreyColor,
                           child: ClipRRect(
-                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(12)),
                             child: Container(
                               width: context.width(),
                               padding: const EdgeInsets.all(10.0),
@@ -1187,13 +1332,30 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               child: Column(
                                 children: [
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
-                                      Icon(MdiIcons.cloudUpload, size: 50.0, color: kLitGreyColor).onTap(() => uploadFile()),
+                                      Icon(MdiIcons.cloudUpload,
+                                              size: 50.0, color: kLitGreyColor)
+                                          .onTap(() => uploadFile()),
                                     ],
                                   ),
                                   const SizedBox(height: 5.0),
-                                  RichText(text: TextSpan(text: lang.S.of(context).uploadAImage, style: kTextStyle.copyWith(color: kGreenTextColor, fontWeight: FontWeight.bold), children: [TextSpan(text: lang.S.of(context).orDragAndDropPng, style: kTextStyle.copyWith(color: kGreyTextColor, fontWeight: FontWeight.bold))]))
+                                  RichText(
+                                      text: TextSpan(
+                                          text: lang.S.of(context).uploadAImage,
+                                          style: kTextStyle.copyWith(
+                                              color: kGreenTextColor,
+                                              fontWeight: FontWeight.bold),
+                                          children: [
+                                        TextSpan(
+                                            text: lang.S
+                                                .of(context)
+                                                .orDragAndDropPng,
+                                            style: kTextStyle.copyWith(
+                                                color: kGreyTextColor,
+                                                fontWeight: FontWeight.bold))
+                                      ]))
                                 ],
                               ),
                             ),
@@ -1238,26 +1400,47 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                               ),
                               onPressed: () async {
                                 if (productNameController.text.isEmpty) {
-                                  EasyLoading.showError(lang.S.of(context).pleaseAddAProductName);
+                                  EasyLoading.showError(
+                                      lang.S.of(context).pleaseAddAProductName);
                                 } else if (productCodeController.text.isEmpty) {
-                                  EasyLoading.showError(lang.S.of(context).pleaseAddAProductCode);
+                                  EasyLoading.showError(
+                                      lang.S.of(context).pleaseAddAProductCode);
                                 } else if (selectedCategories.isEmptyOrNull) {
-                                  EasyLoading.showError(lang.S.of(context).pleaseSelectAProductCategory);
+                                  EasyLoading.showError(lang.S
+                                      .of(context)
+                                      .pleaseSelectAProductCategory);
                                 } else if (selectedBrand.isEmptyOrNull) {
-                                  EasyLoading.showError(lang.S.of(context).pleaseSelectABrand);
-                                } else if (productStockController.text.isEmpty) {
-                                  EasyLoading.showError(lang.S.of(context).enterStockNumber);
+                                  EasyLoading.showError(
+                                      lang.S.of(context).pleaseSelectABrand);
+                                } else if (productStockController
+                                    .text.isEmpty) {
+                                  EasyLoading.showError(
+                                      lang.S.of(context).enterStockNumber);
                                 } else if (selectedUnit.isEmptyOrNull) {
-                                  EasyLoading.showError(lang.S.of(context).selectUnitType);
-                                } else if (productSalePriceController.text.isEmpty) {
-                                  EasyLoading.showError(lang.S.of(context).pleaseAddSalePrice);
-                                } else if (productPurchasePriceController.text.isEmpty) {
-                                  EasyLoading.showError(lang.S.of(context).pleaseAddPurchasePrice);
+                                  EasyLoading.showError(
+                                      lang.S.of(context).selectUnitType);
+                                } else if (productSalePriceController
+                                    .text.isEmpty) {
+                                  EasyLoading.showError(
+                                      lang.S.of(context).pleaseAddSalePrice);
+                                } else if (productPurchasePriceController
+                                    .text.isEmpty) {
+                                  EasyLoading.showError(lang.S
+                                      .of(context)
+                                      .pleaseAddPurchasePrice);
                                 } else {
                                   try {
-                                    EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                    EasyLoading.show(
+                                        status:
+                                            '${lang.S.of(context).loading}...',
+                                        dismissOnTap: false);
                                     // ignore: no_leading_underscores_for_local_identifiers
-                                    final DatabaseReference _productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Products');
+                                    final DatabaseReference
+                                        _productInformationRef =
+                                        FirebaseDatabase.instance
+                                            .ref()
+                                            .child(await getUserID())
+                                            .child('Products');
                                     ProductModel productModel = ProductModel(
                                       productNameController.text,
                                       selectedCategories!,
@@ -1292,11 +1475,19 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                       groupTaxRate: 0,
                                       subTaxes: [],
                                     );
-                                    await _productInformationRef.push().set(productModel.toJson());
-                                    EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                    await _productInformationRef
+                                        .push()
+                                        .set(productModel.toJson());
+                                    EasyLoading.showSuccess(
+                                        lang.S.of(context).addedSuccessfully,
+                                        duration:
+                                            const Duration(milliseconds: 500));
+                                    // ignore: unused_result
                                     ref.refresh(productProvider);
-                                    Future.delayed(const Duration(milliseconds: 100), () {
-                                      const PosSale().launch(context, isNewTask: true);
+                                    Future.delayed(
+                                        const Duration(milliseconds: 100), () {
+                                      const PosSale()
+                                          .launch(context, isNewTask: true);
                                     });
                                   } catch (e) {
                                     EasyLoading.dismiss();

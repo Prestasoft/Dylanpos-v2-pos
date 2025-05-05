@@ -9,7 +9,6 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/expense_category_proivder.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/income_catehory_model.dart';
-
 import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 
@@ -42,7 +41,6 @@ class _AddIncomeCategoryState extends State<AddIncomeCategory> {
     return Consumer(
       builder: (context, ref, child) {
         final theme = Theme.of(context);
-        final screenWidth = MediaQuery.of(context).size.width;
 
         return Container(
           decoration: const BoxDecoration(
@@ -72,7 +70,9 @@ class _AddIncomeCategoryState extends State<AddIncomeCategory> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        IconButton(onPressed: () => GoRouter.of(context).pop(), icon: const Icon(FeatherIcons.x, size: 22.0))
+                        IconButton(
+                            onPressed: () => GoRouter.of(context).pop(),
+                            icon: const Icon(FeatherIcons.x, size: 22.0))
                       ],
                     ),
                   ),
@@ -148,28 +148,51 @@ class _AddIncomeCategoryState extends State<AddIncomeCategory> {
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
                           onPressed: () async {
-                            if (categoryName != '' && !names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
-                              IncomeCategoryModel expenseCategory = IncomeCategoryModel(categoryName: categoryName, categoryDescription: categoryDescription);
+                            if (categoryName != '' &&
+                                !names.contains(categoryName
+                                    .toLowerCase()
+                                    .removeAllWhiteSpace())) {
+                              IncomeCategoryModel expenseCategory =
+                                  IncomeCategoryModel(
+                                      categoryName: categoryName,
+                                      categoryDescription: categoryDescription);
                               try {
-                                EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Income Category');
-                                await productInformationRef.push().set(expenseCategory.toJson());
-                                EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                EasyLoading.show(
+                                    status: '${lang.S.of(context).loading}...',
+                                    dismissOnTap: false);
+                                final DatabaseReference productInformationRef =
+                                    FirebaseDatabase.instance
+                                        .ref()
+                                        .child(await getUserID())
+                                        .child('Income Category');
+                                await productInformationRef
+                                    .push()
+                                    .set(expenseCategory.toJson());
+                                EasyLoading.showSuccess(
+                                    lang.S.of(context).addedSuccessfully,
+                                    duration:
+                                        const Duration(milliseconds: 500));
 
                                 ///____provider_refresh____________________________________________
+                                // ignore: unused_result
                                 ref.refresh(incomeCategoryProvider);
 
-                                Future.delayed(const Duration(milliseconds: 100), () {
+                                Future.delayed(
+                                    const Duration(milliseconds: 100), () {
                                   GoRouter.of(context).pop();
                                 });
                               } catch (e) {
                                 EasyLoading.dismiss();
                                 //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                               }
-                            } else if (names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
-                              EasyLoading.showError(lang.S.of(context).categoryNameAlreadyExists);
+                            } else if (names.contains(categoryName
+                                .toLowerCase()
+                                .removeAllWhiteSpace())) {
+                              EasyLoading.showError(
+                                  lang.S.of(context).categoryNameAlreadyExists);
                             } else {
-                              EasyLoading.showError(lang.S.of(context).enterCategoryName);
+                              EasyLoading.showError(
+                                  lang.S.of(context).enterCategoryName);
                             }
                           },
                           child: Text(

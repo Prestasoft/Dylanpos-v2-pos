@@ -17,7 +17,12 @@ import '../../model/expense_category_model.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditIncomeCategory extends StatefulWidget {
-  const EditIncomeCategory({Key? key, required this.listOfExpanseCategory, required this.incomeCategoryModel, required this.menuContext}) : super(key: key);
+  const EditIncomeCategory(
+      {Key? key,
+      required this.listOfExpanseCategory,
+      required this.incomeCategoryModel,
+      required this.menuContext})
+      : super(key: key);
 
   final List<IncomeCategoryModel> listOfExpanseCategory;
   final IncomeCategoryModel incomeCategoryModel;
@@ -35,10 +40,16 @@ class _EditIncomeCategoryState extends State<EditIncomeCategory> {
 
   void getExpenseKey() async {
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Income Category').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Income Category')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
-        if (data['categoryName'].toString() == widget.incomeCategoryModel.categoryName) {
+        if (data['categoryName'].toString() ==
+            widget.incomeCategoryModel.categoryName) {
           expenseKey = element.key.toString();
         }
       }
@@ -64,7 +75,6 @@ class _EditIncomeCategoryState extends State<EditIncomeCategory> {
     return Consumer(
       builder: (context, ref, child) {
         final theme = Theme.of(context);
-        final screenWidth = MediaQuery.of(context).size.width;
         return Container(
           decoration: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -172,19 +182,43 @@ class _EditIncomeCategoryState extends State<EditIncomeCategory> {
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
                           onPressed: () async {
-                            ExpenseCategoryModel expenseCategory = ExpenseCategoryModel(categoryName: categoryName, categoryDescription: categoryDescription);
-                            if (categoryName != '' && categoryName == widget.incomeCategoryModel.categoryName ? true : !names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
+                            ExpenseCategoryModel expenseCategory =
+                                ExpenseCategoryModel(
+                                    categoryName: categoryName,
+                                    categoryDescription: categoryDescription);
+                            if (categoryName != '' &&
+                                    categoryName ==
+                                        widget.incomeCategoryModel.categoryName
+                                ? true
+                                : !names.contains(categoryName
+                                    .toLowerCase()
+                                    .removeAllWhiteSpace())) {
                               setState(() async {
                                 try {
-                                  EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                  final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Income Category').child(expenseKey);
-                                  await productInformationRef.set(expenseCategory.toJson());
-                                  EasyLoading.showSuccess(lang.S.of(context).editSuccessfully, duration: const Duration(milliseconds: 500));
+                                  EasyLoading.show(
+                                      status:
+                                          '${lang.S.of(context).loading}...',
+                                      dismissOnTap: false);
+                                  final DatabaseReference
+                                      productInformationRef = FirebaseDatabase
+                                          .instance
+                                          .ref()
+                                          .child(await getUserID())
+                                          .child('Income Category')
+                                          .child(expenseKey);
+                                  await productInformationRef
+                                      .set(expenseCategory.toJson());
+                                  EasyLoading.showSuccess(
+                                      lang.S.of(context).editSuccessfully,
+                                      duration:
+                                          const Duration(milliseconds: 500));
 
                                   ///____provider_refresh____________________________________________
+                                  // ignore: unused_result
                                   ref.refresh(incomeCategoryProvider);
 
-                                  Future.delayed(const Duration(milliseconds: 100), () {
+                                  Future.delayed(
+                                      const Duration(milliseconds: 100), () {
                                     GoRouter.of(context).pop();
                                     // Navigator.pop(widget.menuContext);
                                   });
@@ -193,10 +227,14 @@ class _EditIncomeCategoryState extends State<EditIncomeCategory> {
                                   //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                 }
                               });
-                            } else if (names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
-                              EasyLoading.showError(lang.S.of(context).categoryNameAlreadyExists);
+                            } else if (names.contains(categoryName
+                                .toLowerCase()
+                                .removeAllWhiteSpace())) {
+                              EasyLoading.showError(
+                                  lang.S.of(context).categoryNameAlreadyExists);
                             } else {
-                              EasyLoading.showError(lang.S.of(context).enterCategoryName);
+                              EasyLoading.showError(
+                                  lang.S.of(context).enterCategoryName);
                             }
                           },
                           child: Text(lang.S.of(context).cancel),

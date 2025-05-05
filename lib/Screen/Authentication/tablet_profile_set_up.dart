@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
 import 'package:firebase_database/firebase_database.dart';
@@ -13,7 +12,6 @@ import 'package:image_picker_web/image_picker_web.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-
 import '../../Provider/profile_provider.dart';
 import '../../const.dart';
 import '../../model/personal_information_model.dart';
@@ -21,7 +19,8 @@ import '../Widgets/Constant Data/button_global.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class TabletProfileSetUp extends StatefulWidget {
-  const TabletProfileSetUp({Key? key, required this.personalInformationModel}) : super(key: key);
+  const TabletProfileSetUp({Key? key, required this.personalInformationModel})
+      : super(key: key);
   final PersonalInformationModel personalInformationModel;
 
   static const String route = '/mprofilesetup';
@@ -47,7 +46,9 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
           status: '${lang.S.of(context).uploading}... ',
           dismissOnTap: false,
         );
-        var snapshot = await FirebaseStorage.instance.ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}').putData(bytesFromPicker!);
+        var snapshot = await FirebaseStorage.instance
+            .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+            .putData(bytesFromPicker!);
         var url = await snapshot.ref.getDownloadURL();
         //EasyLoading.showSuccess('Upload Successful!');
         EasyLoading.showSuccess('${lang.S.of(context).uploadSuccessful}!');
@@ -147,7 +148,12 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
   late String customerKey;
 
   void getCustomerKey(String phoneNumber) async {
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Customers')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['phoneNumber'].toString() == phoneNumber) {
@@ -209,7 +215,10 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                           const SizedBox(height: 10.0),
                           Text(
                             lang.S.of(context).editYourProfile,
-                            style: kTextStyle.copyWith(color: kGreyTextColor, fontWeight: FontWeight.bold, fontSize: 21.0),
+                            style: kTextStyle.copyWith(
+                                color: kGreyTextColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 21.0),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 10.0),
@@ -219,37 +228,73 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(20.0),
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: kWhite),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       DottedBorderWidget(
                                         color: kLitGreyColor,
                                         child: ClipRRect(
-                                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(12)),
                                           child: Container(
                                             width: context.width(),
                                             padding: const EdgeInsets.all(10.0),
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(20.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(20.0),
                                             ),
                                             child: Column(
                                               children: [
                                                 Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
                                                   children: [
-                                                    Icon(MdiIcons.cloudUpload, size: 50.0, color: kLitGreyColor).onTap(() => uploadFile()),
+                                                    Icon(MdiIcons.cloudUpload,
+                                                            size: 50.0,
+                                                            color:
+                                                                kLitGreyColor)
+                                                        .onTap(
+                                                            () => uploadFile()),
                                                   ],
                                                 ),
                                                 const SizedBox(height: 5.0),
-                                                RichText(text: TextSpan(text: lang.S.of(context).uploadAImage, style: kTextStyle.copyWith(color: kGreenTextColor, fontWeight: FontWeight.bold), children: [TextSpan(text: lang.S.of(context).orDragAndDropPng, style: kTextStyle.copyWith(color: kGreyTextColor, fontWeight: FontWeight.bold))])),
+                                                RichText(
+                                                    text: TextSpan(
+                                                        text: lang.S
+                                                            .of(context)
+                                                            .uploadAImage,
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreenTextColor,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                        children: [
+                                                      TextSpan(
+                                                          text: lang.S
+                                                              .of(context)
+                                                              .orDragAndDropPng,
+                                                          style: kTextStyle.copyWith(
+                                                              color:
+                                                                  kGreyTextColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold))
+                                                    ])),
                                                 image != null
                                                     ? Image.memory(
                                                         image!,
                                                         width: 150,
                                                         height: 150,
                                                       )
-                                                    : Image.network(profilePicture, width: 150, height: 150),
+                                                    : Image.network(
+                                                        profilePicture,
+                                                        width: 150,
+                                                        height: 150),
                                               ],
                                             ),
                                           ),
@@ -264,8 +309,18 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                   child: FormField(
                                     builder: (FormFieldState<dynamic> field) {
                                       return InputDecorator(
-                                        decoration: kInputDecoration.copyWith(floatingLabelBehavior: FloatingLabelBehavior.never, labelText: lang.S.of(context).businessCategory, border: OutlineInputBorder(borderRadius: BorderRadius.circular(5.0))),
-                                        child: DropdownButtonHideUnderline(child: getCategories()),
+                                        decoration: kInputDecoration.copyWith(
+                                            floatingLabelBehavior:
+                                                FloatingLabelBehavior.never,
+                                            labelText: lang.S
+                                                .of(context)
+                                                .businessCategory,
+                                            border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        5.0))),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getCategories()),
                                       );
                                     },
                                   ),
@@ -281,12 +336,17 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                           cursorColor: kTitleColor,
                                           textFieldType: TextFieldType.EMAIL,
                                           validator: (value) {
-                                            if (value == null || value.isEmpty) {
+                                            if (value == null ||
+                                                value.isEmpty) {
                                               // return 'Company Name can\'n be empty';
-                                              return lang.S.of(context).companyNameCanNotBeEmpty;
+                                              return lang.S
+                                                  .of(context)
+                                                  .companyNameCanNotBeEmpty;
                                             } else if (!value.contains('@')) {
                                               //return 'Please enter a Company Name';
-                                              return lang.S.of(context).pleaseEnterACompanyName;
+                                              return lang.S
+                                                  .of(context)
+                                                  .pleaseEnterACompanyName;
                                             }
                                             return null;
                                           },
@@ -296,11 +356,18 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                             });
                                           },
                                           decoration: kInputDecoration.copyWith(
-                                            labelText: lang.S.of(context).companyName,
-                                            labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                            hintText: lang.S.of(context).enterYourCompanyName,
-                                            hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                            prefixIcon: Icon(MdiIcons.officeBuilding, color: kTitleColor),
+                                            labelText:
+                                                lang.S.of(context).companyName,
+                                            labelStyle: kTextStyle.copyWith(
+                                                color: kTitleColor),
+                                            hintText: lang.S
+                                                .of(context)
+                                                .enterYourCompanyName,
+                                            hintStyle: kTextStyle.copyWith(
+                                                color: kGreyTextColor),
+                                            prefixIcon: Icon(
+                                                MdiIcons.officeBuilding,
+                                                color: kTitleColor),
                                           ),
                                         ),
                                         const SizedBox(height: 10.0),
@@ -308,12 +375,17 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                           controller: phoneNumberController,
                                           textFieldType: TextFieldType.PHONE,
                                           validator: (value) {
-                                            if (value == null || value.isEmpty) {
+                                            if (value == null ||
+                                                value.isEmpty) {
                                               // return 'Phone Number can\'n be empty';
-                                              return lang.S.of(context).phoneNumberCanNotBeEmpty;
+                                              return lang.S
+                                                  .of(context)
+                                                  .phoneNumberCanNotBeEmpty;
                                             } else if (!value.contains('@')) {
                                               // return 'Please enter Phone Number';
-                                              return lang.S.of(context).pleaseEnterPhoneNumber;
+                                              return lang.S
+                                                  .of(context)
+                                                  .pleaseEnterPhoneNumber;
                                             }
                                             return null;
                                           },
@@ -323,10 +395,15 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                             });
                                           },
                                           decoration: kInputDecoration.copyWith(
-                                            labelText: lang.S.of(context).phoneNumber,
-                                            hintText: lang.S.of(context).enterYourPhoneNumber,
-                                            floatingLabelBehavior: FloatingLabelBehavior.never,
-                                            prefixIcon: Icon(MdiIcons.phone, color: kTitleColor),
+                                            labelText:
+                                                lang.S.of(context).phoneNumber,
+                                            hintText: lang.S
+                                                .of(context)
+                                                .enterYourPhoneNumber,
+                                            floatingLabelBehavior:
+                                                FloatingLabelBehavior.never,
+                                            prefixIcon: Icon(MdiIcons.phone,
+                                                color: kTitleColor),
                                           ),
                                         ),
                                         const SizedBox(height: 10.0),
@@ -334,12 +411,17 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                           controller: addressController,
                                           textFieldType: TextFieldType.ADDRESS,
                                           validator: (value) {
-                                            if (value == null || value.isEmpty) {
+                                            if (value == null ||
+                                                value.isEmpty) {
                                               // return 'Address can\'n be empty';
-                                              return lang.S.of(context).addressCanNotBeEmpty;
+                                              return lang.S
+                                                  .of(context)
+                                                  .addressCanNotBeEmpty;
                                             } else if (!value.contains('@')) {
                                               //return 'Please enter Your Address';
-                                              return lang.S.of(context).pleaseEnterYourAddress;
+                                              return lang.S
+                                                  .of(context)
+                                                  .pleaseEnterYourAddress;
                                             }
                                             return null;
                                           },
@@ -349,10 +431,15 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                             });
                                           },
                                           decoration: kInputDecoration.copyWith(
-                                            labelText: lang.S.of(context).address,
-                                            hintText: lang.S.of(context).enterYourAddress,
-                                            floatingLabelBehavior: FloatingLabelBehavior.never,
-                                            prefixIcon: Icon(MdiIcons.warehouse, color: kTitleColor),
+                                            labelText:
+                                                lang.S.of(context).address,
+                                            hintText: lang.S
+                                                .of(context)
+                                                .enterYourAddress,
+                                            floatingLabelBehavior:
+                                                FloatingLabelBehavior.never,
+                                            prefixIcon: Icon(MdiIcons.warehouse,
+                                                color: kTitleColor),
                                           ),
                                         ),
                                       ],
@@ -363,8 +450,18 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                   child: FormField(
                                     builder: (FormFieldState<dynamic> field) {
                                       return InputDecorator(
-                                        decoration: kInputDecoration.copyWith(floatingLabelBehavior: FloatingLabelBehavior.never, labelText: lang.S.of(context).selectYourLanguage, border: OutlineInputBorder(borderRadius: BorderRadius.circular(5.0))),
-                                        child: DropdownButtonHideUnderline(child: getLanguage()),
+                                        decoration: kInputDecoration.copyWith(
+                                            floatingLabelBehavior:
+                                                FloatingLabelBehavior.never,
+                                            labelText: lang.S
+                                                .of(context)
+                                                .selectYourLanguage,
+                                            border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        5.0))),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getLanguage()),
                                       );
                                     },
                                   ),
@@ -372,12 +469,21 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                 const SizedBox(height: 20.0),
                                 ButtonGlobal(
                                   buttontext: lang.S.of(context).continu,
-                                  buttonDecoration: kButtonDecoration.copyWith(color: kGreenTextColor, borderRadius: BorderRadius.circular(8.0)),
+                                  buttonDecoration: kButtonDecoration.copyWith(
+                                      color: kGreenTextColor,
+                                      borderRadius: BorderRadius.circular(8.0)),
                                   onPressed: () async {
                                     try {
-                                      EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                      DatabaseReference reference = FirebaseDatabase.instance.ref("${FirebaseAuth.instance.currentUser!.uid}/Customers/$customerKey");
-                                      PersonalInformationModel personalInformation = PersonalInformationModel(
+                                      EasyLoading.show(
+                                          status:
+                                              '${lang.S.of(context).loading}...',
+                                          dismissOnTap: false);
+                                      DatabaseReference reference =
+                                          FirebaseDatabase.instance.ref(
+                                              "${FirebaseAuth.instance.currentUser!.uid}/Customers/$customerKey");
+                                      PersonalInformationModel
+                                          personalInformation =
+                                          PersonalInformationModel(
                                         phoneNumber: phoneNumberController.text,
                                         pictureUrl: profilePicture,
                                         companyName: companyNameController.text,
@@ -393,9 +499,12 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                         currentLocale: 'en',
                                         gst: '',
                                       );
-                                      await reference.set(personalInformation.toJson());
+                                      await reference
+                                          .set(personalInformation.toJson());
                                       // EasyLoading.showSuccess('Added Successfully!');
-                                      EasyLoading.showSuccess('${lang.S.of(context).addedSuccessfully}!');
+                                      EasyLoading.showSuccess(
+                                          '${lang.S.of(context).addedSuccessfully}!');
+                                      // ignore: unused_result
                                       ref.refresh(profileDetailsProvider);
                                       // ignore: use_build_context_synchronously
                                       context.go('/dashboard');

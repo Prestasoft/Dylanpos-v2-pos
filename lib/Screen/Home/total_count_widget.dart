@@ -18,7 +18,13 @@ import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
 
 class TotalCountWidget extends StatelessWidget {
-  const TotalCountWidget({super.key, required this.icon, required this.title, required this.count, required this.changes, required this.iconColor});
+  const TotalCountWidget(
+      {super.key,
+      required this.icon,
+      required this.title,
+      required this.count,
+      required this.changes,
+      required this.iconColor});
 
   final String title;
   final String count;
@@ -50,7 +56,11 @@ class TotalCountWidget extends StatelessWidget {
               Text(
                 '$globalCurrency ${myFormat.format(double.tryParse(count) ?? 0)}',
                 maxLines: 2,
-                style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: context.width() < 1000 ? 14 : context.width() * 0.018),
+                style: kTextStyle.copyWith(
+                    color: kTitleColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize:
+                        context.width() < 1000 ? 14 : context.width() * 0.018),
                 overflow: TextOverflow.ellipsis,
               ),
               // const SizedBox(width: 10.0),
@@ -128,7 +138,9 @@ class TotalSummary extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
-              withOutCurrency ? myFormat.format(double.tryParse(count) ?? 0) : '$globalCurrency ${myFormat.format(double.tryParse(count) ?? 0)}',
+              withOutCurrency
+                  ? myFormat.format(double.tryParse(count) ?? 0)
+                  : '$globalCurrency ${myFormat.format(double.tryParse(count) ?? 0)}',
               maxLines: 1,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
@@ -168,12 +180,15 @@ class TotalSummary extends StatelessWidget {
                 ),
               ),
               TextSpan(
-                text: ' ${difWithoutCurrency ? monthlyDifferent : '$globalCurrency$monthlyDifferent'} ',
-                style: theme.textTheme.bodyMedium?.copyWith(color: predictIconColor),
+                text:
+                    ' ${difWithoutCurrency ? monthlyDifferent : '$globalCurrency$monthlyDifferent'} ',
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: predictIconColor),
               ),
               TextSpan(
                 text: footerTitle,
-                style: theme.textTheme.bodyMedium?.copyWith(color: kGreyTextColor),
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: kGreyTextColor),
               )
             ])),
             // child: Row(
@@ -208,7 +223,20 @@ class TotalSummary extends StatelessWidget {
 ///---------------------fl chart ------------------------------------------------------
 
 class StatisticsData extends StatefulWidget {
-  const StatisticsData({super.key, required this.totalSaleCurrentYear, required this.totalSaleCurrentMonths, required this.totalSaleLastMonth, required this.monthlySale, required this.dailySale, required this.totalSaleCount, required this.freeUser, required this.totalExpenseCurrentYear, required this.totalExpenseCurrentMonths, required this.totalExpenseLastMonth, required this.monthlyExpense, required this.dailyExpense});
+  const StatisticsData(
+      {super.key,
+      required this.totalSaleCurrentYear,
+      required this.totalSaleCurrentMonths,
+      required this.totalSaleLastMonth,
+      required this.monthlySale,
+      required this.dailySale,
+      required this.totalSaleCount,
+      required this.freeUser,
+      required this.totalExpenseCurrentYear,
+      required this.totalExpenseCurrentMonths,
+      required this.totalExpenseLastMonth,
+      required this.monthlyExpense,
+      required this.dailyExpense});
 //_______________Sale_______________
   final double totalSaleCurrentYear;
   final double totalSaleCurrentMonths;
@@ -259,8 +287,10 @@ class _StatisticsDataState extends State<StatisticsData> {
       MonthlyIncomeData('Aug', widget.monthlySale[7], widget.monthlyExpense[7]),
       MonthlyIncomeData('Sep', widget.monthlySale[8], widget.monthlyExpense[8]),
       MonthlyIncomeData('Oct', widget.monthlySale[9], widget.monthlyExpense[9]),
-      MonthlyIncomeData('Nov', widget.monthlySale[10], widget.monthlyExpense[10]),
-      MonthlyIncomeData('Dec', widget.monthlySale[11], widget.monthlyExpense[11]),
+      MonthlyIncomeData(
+          'Nov', widget.monthlySale[10], widget.monthlyExpense[10]),
+      MonthlyIncomeData(
+          'Dec', widget.monthlySale[11], widget.monthlyExpense[11]),
     ];
     dailyData = initializeSalesData();
     getAllTotal();
@@ -280,7 +310,8 @@ class _StatisticsDataState extends State<StatisticsData> {
         value: des,
         child: Text(
           des,
-          style: const TextStyle(color: kTitleColor, fontWeight: FontWeight.normal, fontSize: 14),
+          style: const TextStyle(
+              color: kTitleColor, fontWeight: FontWeight.normal, fontSize: 14),
         ),
       );
       dropDownItems.add(item);
@@ -305,7 +336,10 @@ class _StatisticsDataState extends State<StatisticsData> {
   List<DailyIncomeData> initializeSalesData() {
     return List.generate(
       widget.dailySale.length,
-      (index) => DailyIncomeData((index + 1).toString(), widget.dailySale[index].toDouble(), widget.dailyExpense[index].toDouble()),
+      (index) => DailyIncomeData(
+          (index + 1).toString(),
+          widget.dailySale[index].toDouble(),
+          widget.dailyExpense[index].toDouble()),
     );
   }
 
@@ -330,11 +364,9 @@ class _StatisticsDataState extends State<StatisticsData> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
-    final globalCurrency = currencyProvider.currency ?? '\$';
+    pro.Provider.of<CurrencyProvider>(context);
     final isYearly = selectedMonth == 'Yearly';
     TextTheme textTheme = Theme.of(context).textTheme;
-    double percentageChange = 0.0;
     // Example usage:
     final DateTime now = DateTime.now();
     final int currentMonth = now.month;
@@ -344,12 +376,13 @@ class _StatisticsDataState extends State<StatisticsData> {
     double paidPercentage = 100 - freePercentage;
     print(freePercentage);
     print(paidPercentage);
-    final hasData = data.isNotEmpty;
-    final maxYValue = data.map((e) => e.sales).followedBy(data.map((e) => e.expense)).reduce((a, b) => a > b ? a : b);
+    final maxYValue = data
+        .map((e) => e.sales)
+        .followedBy(data.map((e) => e.expense))
+        .reduce((a, b) => a > b ? a : b);
     return Consumer(
       builder: (_, ref, watch) {
-        List<ProductModel> stockList = [];
-        final product = ref.watch(productProvider);
+        ref.watch(productProvider);
         return Container(
           height: 400,
           // width: double.infinity,
@@ -370,7 +403,8 @@ class _StatisticsDataState extends State<StatisticsData> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 child: Row(
                   children: [
                     const Icon(Icons.trending_up),
@@ -450,7 +484,8 @@ class _StatisticsDataState extends State<StatisticsData> {
                       ),
                     ),
                     TextSpan(
-                      text: ' ${lang.S.of(context).totalSales}: ${totalIncome.toStringAsFixed(2)}',
+                      text:
+                          ' ${lang.S.of(context).totalSales}: ${totalIncome.toStringAsFixed(2)}',
                       style: textTheme.titleMedium,
                     )
                   ])),
@@ -465,7 +500,8 @@ class _StatisticsDataState extends State<StatisticsData> {
                       ),
                     ),
                     TextSpan(
-                      text: ' ${lang.S.of(context).totalExpense}: ${totalExpense.toStringAsFixed(2)}',
+                      text:
+                          ' ${lang.S.of(context).totalExpense}: ${totalExpense.toStringAsFixed(2)}',
                       style: textTheme.titleMedium,
                     )
                   ])),
@@ -531,18 +567,22 @@ class _StatisticsDataState extends State<StatisticsData> {
                                 sideTitles: SideTitles(
                                   showTitles: true,
                                   reservedSize: 50,
-                                  interval: 1, // Ensures titles are shown at regular intervals
+                                  interval:
+                                      1, // Ensures titles are shown at regular intervals
                                   getTitlesWidget: (value, meta) {
                                     // Validate that the value corresponds to a valid index in the data list
-                                    if (value.toInt() >= 0 && value.toInt() < data.length) {
-                                      final monthName = data[value.toInt()].month;
+                                    if (value.toInt() >= 0 &&
+                                        value.toInt() < data.length) {
+                                      final monthName =
+                                          data[value.toInt()].month;
 
                                       // Ensure each month name is only displayed once
                                       return SideTitleWidget(
                                         meta: meta,
                                         child: Text(
                                           monthName,
-                                          style: kTextStyle.copyWith(color: kTitleColor),
+                                          style: kTextStyle.copyWith(
+                                              color: kTitleColor),
                                         ),
                                       );
                                     }
@@ -579,13 +619,16 @@ class _StatisticsDataState extends State<StatisticsData> {
                                   getTitlesWidget: (value, meta) {
                                     // Hide the highest data value
                                     if (value == meta.max) {
-                                      return const SizedBox.shrink(); // Hide the title for the maximum value
+                                      return const SizedBox
+                                          .shrink(); // Hide the title for the maximum value
                                     }
                                     return SideTitleWidget(
                                       meta: meta,
                                       child: Text(
-                                        formatNumber(value), // Format the number
-                                        style: kTextStyle.copyWith(color: kGreyTextColor),
+                                        formatNumber(
+                                            value), // Format the number
+                                        style: kTextStyle.copyWith(
+                                            color: kGreyTextColor),
                                       ),
                                     );
                                   },
@@ -596,7 +639,8 @@ class _StatisticsDataState extends State<StatisticsData> {
                             borderData: FlBorderData(
                               show: true,
                               border: const Border(
-                                bottom: BorderSide(color: kLitGreyColor, width: 1),
+                                bottom:
+                                    BorderSide(color: kLitGreyColor, width: 1),
                               ),
                             ),
                             lineBarsData: [
@@ -641,14 +685,20 @@ class _StatisticsDataState extends State<StatisticsData> {
                                 return const FlLine(
                                   color: kLitGreyColor,
                                   strokeWidth: 1,
-                                  dashArray: [3, 3], // Add dash array for dashed lines
+                                  dashArray: [
+                                    3,
+                                    3
+                                  ], // Add dash array for dashed lines
                                 );
                               },
                               getDrawingVerticalLine: (value) {
                                 return const FlLine(
                                   color: kLitGreyColor,
                                   strokeWidth: 1,
-                                  dashArray: [3, 3], // Add dash array for dashed lines
+                                  dashArray: [
+                                    3,
+                                    3
+                                  ], // Add dash array for dashed lines
                                 );
                               },
                             ),
@@ -660,13 +710,16 @@ class _StatisticsDataState extends State<StatisticsData> {
                                   getTitlesWidget: (value, meta) {
                                     // Hide the highest data value
                                     if (value == meta.max) {
-                                      return const SizedBox.shrink(); // Hide the title for the maximum value
+                                      return const SizedBox
+                                          .shrink(); // Hide the title for the maximum value
                                     }
                                     return SideTitleWidget(
                                       meta: meta,
                                       child: Text(
-                                        formatNumber(value), // Format the number
-                                        style: kTextStyle.copyWith(color: kGreyTextColor),
+                                        formatNumber(
+                                            value), // Format the number
+                                        style: kTextStyle.copyWith(
+                                            color: kGreyTextColor),
                                       ),
                                     );
                                   },
@@ -681,7 +734,8 @@ class _StatisticsDataState extends State<StatisticsData> {
                             ),
                             borderData: FlBorderData(
                               show: true,
-                              border: const Border(bottom: BorderSide(color: kLitGreyColor)),
+                              border: const Border(
+                                  bottom: BorderSide(color: kLitGreyColor)),
                             ),
                             clipData: const FlClipData.all(),
                             minY: 0, // Set the minimum Y value
@@ -745,12 +799,21 @@ class _StatisticsDataState extends State<StatisticsData> {
   void getAllTotal() async {
     // ignore: unused_local_variable
     List<ProductModel> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Products')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         totalStock = totalStock + int.parse(data['productStock']);
-        totalSalePrice = totalSalePrice + (int.tryParse(data['productSalePrice']) ?? 0 * (int.tryParse(data['productStock']) ?? 0));
-        totalParPrice = totalParPrice + (int.parse(data['productPurchasePrice']) * int.parse(data['productStock']));
+        totalSalePrice = totalSalePrice +
+            (int.tryParse(data['productSalePrice']) ??
+                0 * (int.tryParse(data['productStock']) ?? 0));
+        totalParPrice = totalParPrice +
+            (int.parse(data['productPurchasePrice']) *
+                int.parse(data['productStock']));
         // productList.add(ProductModel.fromJson(jsonDecode(jsonEncode(element.value))));
       }
     });
@@ -827,11 +890,16 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
 
     // Determine which data to use based on the selected period
     final isYearly = selectedPeriod == 'Yearly';
-    final chartData = isYearly ? widget.monthlySale : widget.dailySale.map((e) => e.toDouble()).toList();
-    final chartExpenses = isYearly ? widget.monthlyExpense : widget.dailyExpense.map((e) => e.toDouble()).toList();
+    final chartData = isYearly
+        ? widget.monthlySale
+        : widget.dailySale.map((e) => e.toDouble()).toList();
+    final chartExpenses = isYearly
+        ? widget.monthlyExpense
+        : widget.dailyExpense.map((e) => e.toDouble()).toList();
 
     // Calculate the maximum Y value for the chart
-    final maxYValue = chartData.followedBy(chartExpenses).reduce((a, b) => a > b ? a : b);
+    final maxYValue =
+        chartData.followedBy(chartExpenses).reduce((a, b) => a > b ? a : b);
     final interval = maxYValue / 4;
 
     // Ensure interval is not zero
@@ -925,13 +993,18 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
                     TextSpan(
                       text: "${_lng.income}: ",
                       style: TextStyle(
-                        color: _isDark ? _theme.colorScheme.onPrimaryContainer : const Color(0xff667085),
+                        color: _isDark
+                            ? _theme.colorScheme.onPrimaryContainer
+                            : const Color(0xff667085),
                       ),
                     ),
                     TextSpan(
-                      text: "$globalCurrency${isYearly ? widget.totalSaleCurrentYear.toStringAsFixed(2) : widget.totalSaleCurrentMonths.toStringAsFixed(2)}",
+                      text:
+                          "$globalCurrency${isYearly ? widget.totalSaleCurrentYear.toStringAsFixed(2) : widget.totalSaleCurrentMonths.toStringAsFixed(2)}",
                       style: TextStyle(
-                        color: _isDark ? _theme.colorScheme.onPrimaryContainer : const Color(0xff344054),
+                        color: _isDark
+                            ? _theme.colorScheme.onPrimaryContainer
+                            : const Color(0xff344054),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -949,13 +1022,18 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
                     TextSpan(
                       text: "${_lng.expense}: ",
                       style: TextStyle(
-                        color: _isDark ? _theme.colorScheme.onPrimaryContainer : const Color(0xff667085),
+                        color: _isDark
+                            ? _theme.colorScheme.onPrimaryContainer
+                            : const Color(0xff667085),
                       ),
                     ),
                     TextSpan(
-                      text: "$globalCurrency${isYearly ? widget.totalExpenseCurrentYear.toStringAsFixed(2) : widget.totalExpenseCurrentMonths.toStringAsFixed(2)}",
+                      text:
+                          "$globalCurrency${isYearly ? widget.totalExpenseCurrentYear.toStringAsFixed(2) : widget.totalExpenseCurrentMonths.toStringAsFixed(2)}",
                       style: TextStyle(
-                        color: _isDark ? _theme.colorScheme.onPrimaryContainer : const Color(0xff344054),
+                        color: _isDark
+                            ? _theme.colorScheme.onPrimaryContainer
+                            : const Color(0xff344054),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1022,15 +1100,20 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
                                 style: TextStyle(color: item.bar.color),
                               ),
                               TextSpan(
-                                text: "${item.barIndex == 0 ? _lng.income : _lng.expense}:",
+                                text:
+                                    "${item.barIndex == 0 ? _lng.income : _lng.expense}:",
                                 style: TextStyle(
-                                  color: _isDark ? _theme.colorScheme.onPrimaryContainer : const Color(0xff667085),
+                                  color: _isDark
+                                      ? _theme.colorScheme.onPrimaryContainer
+                                      : const Color(0xff667085),
                                 ),
                               ),
                               TextSpan(
                                 text: " $_value",
                                 style: TextStyle(
-                                  color: _isDark ? _theme.colorScheme.onPrimaryContainer : const Color(0xff344054),
+                                  color: _isDark
+                                      ? _theme.colorScheme.onPrimaryContainer
+                                      : const Color(0xff344054),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1040,7 +1123,9 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
                       },
                       tooltipRoundedRadius: 4,
                       getTooltipColor: (touchedSpot) {
-                        return _isDark ? _theme.colorScheme.tertiaryContainer : Colors.white;
+                        return _isDark
+                            ? _theme.colorScheme.tertiaryContainer
+                            : Colors.white;
                       },
                     ),
                   ),
@@ -1134,7 +1219,9 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
                               end: 24,
                             ),
                             child: Transform.rotate(
-                              angle: _mqSize.width < 480 ? (-45 * (3.1416 / 180)) : 0,
+                              angle: _mqSize.width < 480
+                                  ? (-45 * (3.1416 / 180))
+                                  : 0,
                               child: Text(
                                 _titles[value.toInt()] ?? '',
                                 style: _theme.textTheme.bodyMedium?.copyWith(

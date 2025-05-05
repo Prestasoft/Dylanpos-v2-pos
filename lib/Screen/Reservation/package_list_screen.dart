@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
-import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/ServicePackageModel.dart';
-import 'package:salespro_admin/model/customer_model.dart';
-import 'Seleccioncliente.dart';
 import 'dress_selection_screen.dart';
 import '../../commas.dart';
 
@@ -15,7 +12,8 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 final categoryFilterProvider = StateProvider<String?>((ref) => null);
 
 // Proveedor para los paquetes filtrados
-final filteredPackagesProvider = Provider<AsyncValue<List<ServicePackageModel>>>((ref) {
+final filteredPackagesProvider =
+    Provider<AsyncValue<List<ServicePackageModel>>>((ref) {
   final packages = ref.watch(servicePackagesProvider);
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase();
   final categoryFilter = ref.watch(categoryFilterProvider);
@@ -29,8 +27,8 @@ final filteredPackagesProvider = Provider<AsyncValue<List<ServicePackageModel>>>
           package.subcategory.toLowerCase().contains(searchQuery);
 
       // Filtrar por categoría
-      final matchesCategory = categoryFilter == null ||
-          package.category == categoryFilter;
+      final matchesCategory =
+          categoryFilter == null || package.category == categoryFilter;
 
       return matchesSearch && matchesCategory;
     }).toList();
@@ -57,7 +55,6 @@ class PackageListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filteredPackages = ref.watch(filteredPackagesProvider);
     final categories = ref.watch(availableCategoriesProvider);
-    final selectedCategory = ref.watch(categoryFilterProvider);
 
     return SafeArea(
       child: Padding(
@@ -73,9 +70,11 @@ class PackageListScreen extends ConsumerWidget {
 
               Expanded(
                 child: filteredPackages.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(
-                    child: Text('Error: $error', style: TextStyle(color: Colors.red)),
+                    child: Text('Error: $error',
+                        style: TextStyle(color: Colors.red)),
                   ),
                   data: (packages) {
                     if (packages.isEmpty) {
@@ -83,17 +82,22 @@ class PackageListScreen extends ConsumerWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                            Icon(Icons.search_off,
+                                size: 64, color: Colors.grey[400]),
                             const SizedBox(height: 16),
                             const Text(
                               'No se encontraron paquetes',
-                              style: TextStyle(fontSize: 18, color: Colors.grey),
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.grey),
                             ),
                             const SizedBox(height: 8),
                             ElevatedButton.icon(
                               onPressed: () {
-                                ref.read(searchQueryProvider.notifier).state = '';
-                                ref.read(categoryFilterProvider.notifier).state = null;
+                                ref.read(searchQueryProvider.notifier).state =
+                                    '';
+                                ref
+                                    .read(categoryFilterProvider.notifier)
+                                    .state = null;
                               },
                               icon: const Icon(Icons.refresh),
                               label: const Text('Limpiar filtros'),
@@ -104,29 +108,32 @@ class PackageListScreen extends ConsumerWidget {
                     }
 
                     return RefreshIndicator(
-                      onRefresh: () => ref.read(servicePackagesProvider.notifier).loadPackages(),
-                      child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            // Diseño responsivo - ajustar columnas según el ancho disponible
-                            final crossAxisCount = _calculateColumnCount(constraints.maxWidth);
+                      onRefresh: () => ref
+                          .read(servicePackagesProvider.notifier)
+                          .loadPackages(),
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        // Diseño responsivo - ajustar columnas según el ancho disponible
+                        final crossAxisCount =
+                            _calculateColumnCount(constraints.maxWidth);
 
-                            return Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: GridView.builder(
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  childAspectRatio: 1.0,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                ),
-                                itemCount: packages.length,
-                                itemBuilder: (context, index) {
-                                  return _buildPackageCard(context, packages[index]);
-                                },
-                              ),
-                            );
-                          }
-                      ),
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: GridView.builder(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              childAspectRatio: 1.0,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            itemCount: packages.length,
+                            itemBuilder: (context, index) {
+                              return _buildPackageCard(
+                                  context, packages[index]);
+                            },
+                          ),
+                        );
+                      }),
                     );
                   },
                 ),
@@ -134,7 +141,8 @@ class PackageListScreen extends ConsumerWidget {
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => ref.read(servicePackagesProvider.notifier).loadPackages(),
+            onPressed: () =>
+                ref.read(servicePackagesProvider.notifier).loadPackages(),
             child: const Icon(Icons.refresh),
             backgroundColor: Colors.black,
             tooltip: 'Actualizar paquetes',
@@ -185,30 +193,33 @@ class PackageListScreen extends ConsumerWidget {
                 style: TextStyle(color: colorScheme.onPrimary.withOpacity(0.7)),
               ),
               ref.watch(servicePackagesProvider).when(
-                loading: () => SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
-                  ),
-                ),
-                error: (_, __) => Icon(Icons.error, color: colorScheme.error),
-                data: (data) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: colorScheme.onPrimary.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '${data.length}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onPrimary,
+                    loading: () => SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onPrimary),
+                      ),
+                    ),
+                    error: (_, __) =>
+                        Icon(Icons.error, color: colorScheme.error),
+                    data: (data) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: colorScheme.onPrimary.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${data.length}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
             ],
           ),
         ],
@@ -236,11 +247,11 @@ class PackageListScreen extends ConsumerWidget {
           prefixIcon: const Icon(Icons.search),
           suffixIcon: ref.watch(searchQueryProvider).isNotEmpty
               ? IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              ref.read(searchQueryProvider.notifier).state = '';
-            },
-          )
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    ref.read(searchQueryProvider.notifier).state = '';
+                  },
+                )
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -254,7 +265,8 @@ class PackageListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCategoryFilter(WidgetRef ref, AsyncValue<List<String>> categoriesAsync, BuildContext context) {
+  Widget _buildCategoryFilter(WidgetRef ref,
+      AsyncValue<List<String>> categoriesAsync, BuildContext context) {
     final selectedCategory = ref.watch(categoryFilterProvider);
 
     return Padding(
@@ -270,7 +282,8 @@ class PackageListScreen extends ConsumerWidget {
                 FilterChip(
                   label: const Text('Todos'),
                   selected: selectedCategory == null,
-                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  selectedColor:
+                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
                   checkmarkColor: Theme.of(context).colorScheme.primary,
                   labelStyle: TextStyle(
                     color: selectedCategory == null
@@ -289,7 +302,10 @@ class PackageListScreen extends ConsumerWidget {
                     child: FilterChip(
                       label: Text(category),
                       selected: isSelected,
-                      selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      selectedColor: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.2),
                       checkmarkColor: Theme.of(context).colorScheme.primary,
                       labelStyle: TextStyle(
                         color: isSelected
@@ -298,7 +314,7 @@ class PackageListScreen extends ConsumerWidget {
                       ),
                       onSelected: (_) {
                         ref.read(categoryFilterProvider.notifier).state =
-                        isSelected ? null : category;
+                            isSelected ? null : category;
                       },
                     ),
                   );
@@ -311,110 +327,118 @@ class PackageListScreen extends ConsumerWidget {
     );
   }
 
-
   Widget _buildPackageCard(BuildContext context, ServicePackageModel package) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DressSelectionScreen(
-                packagesAsync: package,
-                packageId: package.id,
-                packageName: package.name,
-                dressIds: package.components,
-              ),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Encabezado de la tarjeta
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Theme.of(context).primaryColor,
-              child: Text(
-                package.name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: 500, maxHeight: 600),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DressSelectionScreen(
+                  packagesAsync: package,
+                  packageId: package.id,
+                  packageName: package.name,
+                  dressIds: package.components,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-
-            // Cuerpo de la tarjeta
-            Expanded(
-              child: Padding(
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Encabezado
+              Container(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoRow(Icons.category, package.category),
-                    const SizedBox(height: 2),
-                    _buildInfoRow(Icons.description, package.subcategory),
-                    const SizedBox(height: 2),
-                    _buildInfoRow(Icons.category, package.description),
-
-                    const SizedBox(height: 2),
-                    _buildInfoRow(
-                      Icons.attach_money,
-                      '\$${myFormat.format(package.price)}',
-                      isHighlighted: true,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                        Icons.timer,
-                        '${package.duration['value']} ${package.duration['unit']}'
-                    ),
-                  ],
+                color: Theme.of(context).primaryColor,
+                child: Text(
+                  package.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ),
 
-            // Botón de selección
-            Container(
-              color: Colors.grey.shade100,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              // Cuerpo (con precio arriba del documento)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoRow(Icons.category, package.category),
+                        const SizedBox(height: 6),
+                        _buildInfoRow(Icons.description, package.subcategory),
+                        const SizedBox(height: 6),
+                        _buildInfoRow(
+                          Icons.attach_money,
+                          '\$${myFormat.format(package.price)}',
+                          isHighlighted: true,
+                        ),
+                        const SizedBox(height: 6),
+                        _buildInfoRow(
+                          Icons.info_outline,
+                          package.description,
+                        ),
+                        const SizedBox(height: 6),
+                        _buildInfoRow(
+                          Icons.timer,
+                          '${package.duration['value']} ${package.duration['unit']}',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DressSelectionScreen(
-                        packagesAsync: package,
-                        packageId: package.id,
-                        packageName: package.name,
-                        dressIds: package.components,
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Seleccionar'),
               ),
-            ),
-          ],
+
+              // Botón de selección
+              Container(
+                color: Colors.grey.shade100,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DressSelectionScreen(
+                          packagesAsync: package,
+                          packageId: package.id,
+                          packageName: package.name,
+                          dressIds: package.components,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Seleccionar'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   // Ajustar la altura de la caja de descripción para permitir 13 líneas
-  Widget _buildInfoRow(IconData icon, dynamic text, {bool isHighlighted = false}) {
+  Widget _buildInfoRow(IconData icon, dynamic text,
+      {bool isHighlighted = false}) {
     return Row(
       children: [
         Icon(

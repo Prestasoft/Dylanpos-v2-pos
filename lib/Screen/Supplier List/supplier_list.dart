@@ -62,10 +62,18 @@ class _SupplierListState extends State<SupplierList> {
     );
   }
 
-  void deleteCustomer({required String phoneNumber, required WidgetRef updateRef, required BuildContext context}) async {
+  void deleteCustomer(
+      {required String phoneNumber,
+      required WidgetRef updateRef,
+      required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
     String customerKey = '';
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Customers')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['phoneNumber'].toString() == phoneNumber) {
@@ -73,9 +81,11 @@ class _SupplierListState extends State<SupplierList> {
         }
       }
     });
-    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Customers/$customerKey");
+    DatabaseReference ref = FirebaseDatabase.instance
+        .ref("${await getUserID()}/Customers/$customerKey");
     await ref.remove();
-    updateRef.refresh(allCustomerProvider);
+    final refreshedCustomers = updateRef.refresh(allCustomerProvider);
+    print(refreshedCustomers);
     // ignore: use_build_context_synchronously
     // Navigator.pop(context);
     GoRouter.of(context).pop();
@@ -105,7 +115,8 @@ class _SupplierListState extends State<SupplierList> {
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          AsyncValue<List<CustomerModel>> allCustomers = ref.watch(allCustomerProvider);
+          AsyncValue<List<CustomerModel>> allCustomers =
+              ref.watch(allCustomerProvider);
           return allCustomers.when(data: (allList) {
             List<CustomerModel> allCustomers = allList.reversed.toList();
             List<String> listOfPhoneNumber = [];
@@ -113,14 +124,19 @@ class _SupplierListState extends State<SupplierList> {
             List<CustomerModel> allSupplier = [];
 
             for (var value1 in allCustomers) {
-              listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
+              listOfPhoneNumber
+                  .add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
               if (value1.type == 'Supplier') {
                 allSupplier.add(value1);
               }
             }
 
             for (var element in allSupplier) {
-              if (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.phoneNumber.contains(searchItem)) {
+              if (element.customerName
+                      .removeAllWhiteSpace()
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) ||
+                  element.phoneNumber.contains(searchItem)) {
                 showAbleSuppliers.add(element);
               } else if (searchItem == '') {
                 showAbleSuppliers.add(element);
@@ -131,7 +147,8 @@ class _SupplierListState extends State<SupplierList> {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Column(
                   children: [
                     Padding(
@@ -149,7 +166,8 @@ class _SupplierListState extends State<SupplierList> {
                           ),
                           ElevatedButton.icon(
                             onPressed: () async {
-                              if (await Subscription.subscriptionChecker(item: 'Parties')) {
+                              if (await Subscription.subscriptionChecker(
+                                  item: 'Parties')) {
                                 // Navigate to the GoRoute screen
                                 context.push(
                                   '/add-customer',
@@ -168,10 +186,12 @@ class _SupplierListState extends State<SupplierList> {
                                 //       );
                                 //     });
                               } else {
-                                EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
+                                EasyLoading.showError(
+                                    '${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
                               }
                             },
-                            icon: const Icon(FeatherIcons.plus, color: kWhite, size: 18.0),
+                            icon: const Icon(FeatherIcons.plus,
+                                color: kWhite, size: 18.0),
                             label: Text(
                               lang.S.of(context).addSupplier,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -230,7 +250,8 @@ class _SupplierListState extends State<SupplierList> {
                                     Icons.keyboard_arrow_down,
                                     color: Colors.black,
                                   ),
-                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                  items: [10, 20, 50, 100, -1]
+                                      .map<DropdownMenuItem<int>>((int value) {
                                     return DropdownMenuItem<int>(
                                       value: value,
                                       child: Text(
@@ -242,7 +263,8 @@ class _SupplierListState extends State<SupplierList> {
                                   onChanged: (int? newValue) {
                                     setState(() {
                                       if (newValue == -1) {
-                                        _categoryPerPage = -1; // Set to -1 for "All"
+                                        _categoryPerPage =
+                                            -1; // Set to -1 for "All"
                                       } else {
                                         _categoryPerPage = newValue ?? 10;
                                       }
@@ -271,7 +293,8 @@ class _SupplierListState extends State<SupplierList> {
                               },
                               keyboardType: TextInputType.name,
                               decoration: InputDecoration(
-                                hintText: (lang.S.of(context).searchByNameOrPhone),
+                                hintText:
+                                    (lang.S.of(context).searchByNameOrPhone),
                                 suffixIcon: const Icon(
                                   FeatherIcons.search,
                                   color: kTitleColor,
@@ -287,7 +310,8 @@ class _SupplierListState extends State<SupplierList> {
                         ? Column(
                             children: [
                               LayoutBuilder(
-                                builder: (BuildContext context, BoxConstraints constraints) {
+                                builder: (BuildContext context,
+                                    BoxConstraints constraints) {
                                   final kWidth = constraints.maxWidth;
                                   return Scrollbar(
                                     controller: _horizontalScroll,
@@ -298,11 +322,14 @@ class _SupplierListState extends State<SupplierList> {
                                       controller: _horizontalScroll,
                                       scrollDirection: Axis.horizontal,
                                       child: ConstrainedBox(
-                                        constraints: BoxConstraints(minWidth: kWidth),
+                                        constraints:
+                                            BoxConstraints(minWidth: kWidth),
                                         child: Theme(
                                           data: theme.copyWith(
                                             dividerColor: Colors.transparent,
-                                            dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                            dividerTheme:
+                                                const DividerThemeData(
+                                                    color: Colors.transparent),
                                           ),
                                           child: DataTable(
                                             border: const TableBorder(
@@ -311,11 +338,16 @@ class _SupplierListState extends State<SupplierList> {
                                                 color: kNeutral300,
                                               ),
                                             ),
-                                            dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                            dataRowColor:
+                                                const WidgetStatePropertyAll(
+                                                    Colors.white),
+                                            headingRowColor:
+                                                WidgetStateProperty.all(
+                                                    const Color(0xFFF8F3FF)),
                                             showBottomBorder: false,
                                             dividerThickness: 0.0,
-                                            headingTextStyle: theme.textTheme.titleMedium,
+                                            headingTextStyle:
+                                                theme.textTheme.titleMedium,
                                             columns: [
                                               DataColumn(
                                                 label: Text(
@@ -349,78 +381,139 @@ class _SupplierListState extends State<SupplierList> {
                                                   label: Text(
                                                 lang.S.of(context).due,
                                               )),
-                                              const DataColumn(label: Icon(FeatherIcons.settings)),
+                                              const DataColumn(
+                                                  label: Icon(
+                                                      FeatherIcons.settings)),
                                             ],
                                             rows: List.generate(
                                               showAbleSuppliers.length,
                                               (index) {
-                                                print(showAbleSuppliers[index].profilePicture);
+                                                print(showAbleSuppliers[index]
+                                                    .profilePicture);
                                                 return DataRow(
                                                   cells: [
                                                     DataCell(Text(
                                                       (index + 1).toString(),
-                                                      style: kTextStyle.copyWith(color: kGreyTextColor),
-                                                      textAlign: TextAlign.start,
+                                                      style: kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
+                                                      textAlign:
+                                                          TextAlign.start,
                                                     )),
                                                     DataCell(Container(
                                                       height: 40,
                                                       width: 40,
                                                       decoration: BoxDecoration(
                                                         shape: BoxShape.circle,
-                                                        border: Border.all(color: kBorderColorTextField),
-                                                        image: DecorationImage(image: NetworkImage(showAbleSuppliers[index].profilePicture), fit: BoxFit.cover),
+                                                        border: Border.all(
+                                                            color:
+                                                                kBorderColorTextField),
+                                                        image: DecorationImage(
+                                                            image: NetworkImage(
+                                                                showAbleSuppliers[
+                                                                        index]
+                                                                    .profilePicture),
+                                                            fit: BoxFit.cover),
                                                       ),
                                                     )),
                                                     DataCell(
                                                       Text(
-                                                        showAbleSuppliers[index].customerName,
-                                                        style: kTextStyle.copyWith(color: kTitleColor),
+                                                        showAbleSuppliers[index]
+                                                            .customerName,
+                                                        style:
+                                                            kTextStyle.copyWith(
+                                                                color:
+                                                                    kTitleColor),
                                                       ),
                                                     ),
                                                     DataCell(
-                                                      Text(showAbleSuppliers[index].type),
+                                                      Text(showAbleSuppliers[
+                                                              index]
+                                                          .type),
                                                     ),
                                                     DataCell(
-                                                      Text(showAbleSuppliers[index].phoneNumber),
+                                                      Text(showAbleSuppliers[
+                                                              index]
+                                                          .phoneNumber),
                                                     ),
                                                     DataCell(
-                                                      Text(showAbleSuppliers[index].emailAddress),
+                                                      Text(showAbleSuppliers[
+                                                              index]
+                                                          .emailAddress),
                                                     ),
                                                     DataCell(
-                                                      Text(myFormat.format(double.tryParse(showAbleSuppliers[index].dueAmount) ?? 0)),
+                                                      Text(myFormat.format(
+                                                          double.tryParse(
+                                                                  showAbleSuppliers[
+                                                                          index]
+                                                                      .dueAmount) ??
+                                                              0)),
                                                     ),
                                                     DataCell(
                                                       SizedBox(
                                                         width: 20,
                                                         child: Theme(
-                                                          data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                          child: PopupMenuButton(
-                                                            surfaceTintColor: Colors.white,
-                                                            padding: EdgeInsets.zero,
-                                                            itemBuilder: (BuildContext bc) => [
+                                                          data: ThemeData(
+                                                              highlightColor:
+                                                                  dropdownItemColor,
+                                                              focusColor:
+                                                                  dropdownItemColor,
+                                                              hoverColor:
+                                                                  dropdownItemColor),
+                                                          child:
+                                                              PopupMenuButton(
+                                                            surfaceTintColor:
+                                                                Colors.white,
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            itemBuilder:
+                                                                (BuildContext
+                                                                        bc) =>
+                                                                    [
                                                               PopupMenuItem(
                                                                 onTap: () {
-                                                                  final customerModel = showAbleSuppliers[index];
-                                                                  final allPreviousCustomer = allCustomers;
-                                                                  const typeOfCustomerAdd = 'Supplier';
+                                                                  final customerModel =
+                                                                      showAbleSuppliers[
+                                                                          index];
+                                                                  final allPreviousCustomer =
+                                                                      allCustomers;
+                                                                  const typeOfCustomerAdd =
+                                                                      'Supplier';
 
                                                                   // Use go_router to navigate to the EditCustomer screen
                                                                   context.push(
                                                                     '/edit-customer',
                                                                     extra: {
-                                                                      'customerModel': customerModel,
-                                                                      'allPreviousCustomer': allPreviousCustomer,
-                                                                      'typeOfCustomerAdd': typeOfCustomerAdd,
+                                                                      'customerModel':
+                                                                          customerModel,
+                                                                      'allPreviousCustomer':
+                                                                          allPreviousCustomer,
+                                                                      'typeOfCustomerAdd':
+                                                                          typeOfCustomerAdd,
                                                                     },
                                                                   );
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const Icon(IconlyLight.edit, size: 20.0, color: kNeutral500),
-                                                                    const SizedBox(width: 4.0),
+                                                                    const Icon(
+                                                                        IconlyLight
+                                                                            .edit,
+                                                                        size:
+                                                                            20.0,
+                                                                        color:
+                                                                            kNeutral500),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).edit,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .edit,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                              color: kNeutral500),
                                                                     ),
                                                                   ],
                                                                 ),
@@ -429,11 +522,17 @@ class _SupplierListState extends State<SupplierList> {
                                                                 value: 'delete',
                                                                 onTap: () {
                                                                   if (!isDemo) {
-                                                                    if (double.parse(showAbleSuppliers[index].dueAmount.toString()) == 0) {
+                                                                    if (double.parse(showAbleSuppliers[index]
+                                                                            .dueAmount
+                                                                            .toString()) ==
+                                                                        0) {
                                                                       showDialog(
-                                                                          barrierDismissible: false,
-                                                                          context: context,
-                                                                          builder: (BuildContext dialogContext) {
+                                                                          barrierDismissible:
+                                                                              false,
+                                                                          context:
+                                                                              context,
+                                                                          builder:
+                                                                              (BuildContext dialogContext) {
                                                                             return Padding(
                                                                               padding: const EdgeInsets.all(10.0),
                                                                               child: Center(
@@ -511,38 +610,65 @@ class _SupplierListState extends State<SupplierList> {
                                                                             );
                                                                           });
                                                                     } else {
-                                                                      EasyLoading.showError(lang.S.of(context).thisCustomerHavePreviousDue);
-                                                                      GoRouter.of(context).pop();
+                                                                      EasyLoading.showError(lang
+                                                                          .S
+                                                                          .of(context)
+                                                                          .thisCustomerHavePreviousDue);
+                                                                      GoRouter.of(
+                                                                              context)
+                                                                          .pop();
                                                                     }
                                                                   } else {
-                                                                    EasyLoading.showInfo(demoText);
+                                                                    EasyLoading
+                                                                        .showInfo(
+                                                                            demoText);
                                                                   }
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                     HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 20.0, color: kNeutral500),
-                                                                    const SizedBox(width: 4.0),
+                                                                    HugeIcon(
+                                                                        icon: HugeIcons
+                                                                            .strokeRoundedDelete02,
+                                                                        size:
+                                                                            20.0,
+                                                                        color:
+                                                                            kNeutral500),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).delete,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                                                        color: kNeutral500,
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .delete,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kNeutral500,
                                                                       ),
                                                                     ),
                                                                   ],
                                                                 ),
                                                               )
                                                             ],
-                                                            onSelected: (value) {
-                                                              context.go('$value');
+                                                            onSelected:
+                                                                (value) {
+                                                              context
+                                                                  .go('$value');
                                                               // Navigator.pushNamed(context, '$value');
                                                             },
                                                             child: Center(
                                                               child: Container(
                                                                   height: 18,
                                                                   width: 18,
-                                                                  alignment: Alignment.centerRight,
-                                                                  child: const Icon(
-                                                                    Icons.more_vert_sharp,
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerRight,
+                                                                  child:
+                                                                      const Icon(
+                                                                    Icons
+                                                                        .more_vert_sharp,
                                                                     size: 18,
                                                                   )),
                                                             ),
@@ -564,7 +690,8 @@ class _SupplierListState extends State<SupplierList> {
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
@@ -576,21 +703,30 @@ class _SupplierListState extends State<SupplierList> {
                                     Row(
                                       children: [
                                         InkWell(
-                                          overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                          overlayColor:
+                                              WidgetStateProperty.all<Color>(
+                                                  Colors.grey),
                                           hoverColor: Colors.grey,
-                                          onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                          onTap: _currentPage > 1
+                                              ? () =>
+                                                  setState(() => _currentPage--)
+                                              : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
-                                              borderRadius: const BorderRadius.only(
-                                                bottomLeft: Radius.circular(4.0),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomLeft:
+                                                    Radius.circular(4.0),
                                                 topLeft: Radius.circular(4.0),
                                               ),
                                             ),
                                             child: Center(
-                                              child: Text(lang.S.of(context).previous),
+                                              child: Text(
+                                                  lang.S.of(context).previous),
                                             ),
                                           ),
                                         ),
@@ -598,13 +734,15 @@ class _SupplierListState extends State<SupplierList> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
                                             color: kMainColor,
                                           ),
                                           child: Center(
                                             child: Text(
                                               '$_currentPage',
-                                              style: const TextStyle(color: Colors.white),
+                                              style: const TextStyle(
+                                                  color: Colors.white),
                                             ),
                                           ),
                                         ),
@@ -612,7 +750,8 @@ class _SupplierListState extends State<SupplierList> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
                                             color: Colors.transparent,
                                           ),
                                           child: Center(
@@ -622,20 +761,32 @@ class _SupplierListState extends State<SupplierList> {
                                           ),
                                         ),
                                         InkWell(
-                                          hoverColor: Colors.blue.withOpacity(0.1),
-                                          overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                          onTap: _currentPage * _categoryPerPage < showAbleSuppliers.length ? () => setState(() => _currentPage++) : null,
+                                          hoverColor:
+                                              Colors.blue.withOpacity(0.1),
+                                          overlayColor:
+                                              MaterialStateProperty.all<Color>(
+                                                  Colors.blue),
+                                          onTap: _currentPage *
+                                                      _categoryPerPage <
+                                                  showAbleSuppliers.length
+                                              ? () =>
+                                                  setState(() => _currentPage++)
+                                              : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
-                                              borderRadius: const BorderRadius.only(
-                                                bottomRight: Radius.circular(4.0),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomRight:
+                                                    Radius.circular(4.0),
                                                 topRight: Radius.circular(4.0),
                                               ),
                                             ),
-                                            child: const Center(child: Text('Next')),
+                                            child: const Center(
+                                                child: Text('Next')),
                                           ),
                                         ),
                                       ],
@@ -645,7 +796,8 @@ class _SupplierListState extends State<SupplierList> {
                               ),
                             ],
                           )
-                        : EmptyWidget(title: lang.S.of(context).noSupplierFound),
+                        : EmptyWidget(
+                            title: lang.S.of(context).noSupplierFound),
                   ],
                 ),
               ),

@@ -57,7 +57,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
 
   updateDueAmount() {
     setState(() {
-      double total = double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1));
+      double total = double.parse((getTotalAmount().toDouble() +
+              serviceCharge -
+              discountAmount +
+              vatGst)
+          .toStringAsFixed(1));
       double paidAmount = double.tryParse(payingAmountController.text) ?? 0;
       if (paidAmount > total) {
         changeAmountController.text = (paidAmount - total).toString();
@@ -99,7 +103,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
               onPressed: () async {
                 Navigator.pop(context, lang.S.of(context).cancel);
                 setState(() => isAlertSet = false);
-                isDeviceConnected = await InternetConnection().hasInternetAccess;
+                isDeviceConnected =
+                    await InternetConnection().hasInternetAccess;
                 if (!isDeviceConnected && isAlertSet == false) {
                   showDialogBox();
                   setState(() => isAlertSet = true);
@@ -111,9 +116,15 @@ class _QuotationScreenState extends State<QuotationScreen> {
         ),
       );
 
-  void deleteQuotation({required String date, required WidgetRef updateRef}) async {
+  void deleteQuotation(
+      {required String date, required WidgetRef updateRef}) async {
     String key = '';
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Sales Quotation').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Sales Quotation')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['invoiceNumber'].toString() == date) {
@@ -121,9 +132,10 @@ class _QuotationScreenState extends State<QuotationScreen> {
         }
       }
     });
-    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation/$key");
+    DatabaseReference ref = FirebaseDatabase.instance
+        .ref("${await getUserID()}/Sales Quotation/$key");
     await ref.remove();
-    updateRef.refresh(quotationProvider);
+    final _ = updateRef.refresh(quotationProvider);
   }
 
   DropdownButton<String> getOption() {
@@ -171,7 +183,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
         child: Text(
           '${des.customerName} ${des.phoneNumber}',
           softWrap: true,
-          style: kTextStyle.copyWith(color: kTitleColor, overflow: TextOverflow.ellipsis),
+          style: kTextStyle.copyWith(
+              color: kTitleColor, overflow: TextOverflow.ellipsis),
           textAlign: TextAlign.left,
         ),
       );
@@ -189,7 +202,13 @@ class _QuotationScreenState extends State<QuotationScreen> {
             if (element.phoneNumber == selectedUserId) {
               selectedUserName = element;
               previousDue = element.dueAmount;
-              selectedCustomerType == element.type ? null : {selectedCustomerType = element.type, cartList.clear(), productFocusNode.clear()};
+              selectedCustomerType == element.type
+                  ? null
+                  : {
+                      selectedCustomerType = element.type,
+                      cartList.clear(),
+                      productFocusNode.clear()
+                    };
             } else if (selectedUserId == 'Guest') {
               previousDue = '0';
               selectedCustomerType = 'Retailer';
@@ -201,13 +220,18 @@ class _QuotationScreenState extends State<QuotationScreen> {
     );
   }
 
-  dynamic productPriceChecker({required ProductModel product, required String customerType}) {
+  dynamic productPriceChecker(
+      {required ProductModel product, required String customerType}) {
     if (customerType == "Retailer") {
       return product.productSalePrice;
     } else if (customerType == "Wholesaler") {
-      return product.productWholeSalePrice == '' ? '0' : product.productWholeSalePrice;
+      return product.productWholeSalePrice == ''
+          ? '0'
+          : product.productWholeSalePrice;
     } else if (customerType == "Dealer") {
-      return product.productDealerPrice == '' ? '0' : product.productDealerPrice;
+      return product.productDealerPrice == ''
+          ? '0'
+          : product.productDealerPrice;
     } else if (customerType == "Guest") {
       return product.productSalePrice;
     }
@@ -239,7 +263,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
     return isUnique;
   }
 
-  bool uniqueCheckForSerial({required String code, required List<dynamic> newSerialNumbers}) {
+  bool uniqueCheckForSerial(
+      {required String code, required List<dynamic> newSerialNumbers}) {
     bool isUnique = false;
     for (var item in cartList) {
       if (item.productId == code) {
@@ -272,7 +297,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
         value: des,
         child: Text(
           des,
-          style: kTextStyle.copyWith(color: kTitleColor, overflow: TextOverflow.ellipsis),
+          style: kTextStyle.copyWith(
+              color: kTitleColor, overflow: TextOverflow.ellipsis),
         ),
       );
       dropDownItems.add(item);
@@ -292,7 +318,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
   DateTime selectedDueDate = DateTime.now();
 
   Future<void> _selectedDueDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDueDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDueDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDueDate) {
       setState(() {
         selectedDueDate = picked;
@@ -370,16 +400,22 @@ class _QuotationScreenState extends State<QuotationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                      padding: const EdgeInsets.only(
+                          top: 10.0, left: 10.0, right: 10.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Text(
                             lang.S.of(context).hold,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20.0),
                           ),
                           const Spacer(),
-                          const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                          const Icon(FeatherIcons.x,
+                                  color: kTitleColor, size: 25.0)
+                              .onTap(() => {finish(context)})
                         ],
                       ),
                     ),
@@ -396,8 +432,10 @@ class _QuotationScreenState extends State<QuotationScreen> {
                             decoration: kInputDecoration.copyWith(
                               labelText: lang.S.of(context).holdNumber,
                               hintText: '2090.00',
-                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                              hintStyle:
+                                  kTextStyle.copyWith(color: kGreyTextColor),
+                              labelStyle:
+                                  kTextStyle.copyWith(color: kTitleColor),
                             ),
                           ),
                           const SizedBox(height: 20.0),
@@ -405,7 +443,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 30.0,
+                                      right: 30.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     color: kRedTextColor,
@@ -416,7 +458,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                   )).onTap(() => {finish(context)}),
                               const SizedBox(width: 10.0),
                               Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 30.0,
+                                      right: 30.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     color: kBlueTextColor,
@@ -443,10 +489,12 @@ class _QuotationScreenState extends State<QuotationScreen> {
   double serviceCharge = 0;
   double discountAmount = 0;
 
-  TextEditingController discountAmountEditingController = TextEditingController();
+  TextEditingController discountAmountEditingController =
+      TextEditingController();
 
   // TextEditingController vatAmountEditingController = TextEditingController();
-  TextEditingController discountPercentageEditingController = TextEditingController();
+  TextEditingController discountPercentageEditingController =
+      TextEditingController();
 
   // TextEditingController vatPercentageEditingController = TextEditingController();
   double vatGst = 0;
@@ -478,7 +526,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
         cartList.add(element);
         addFocus();
       }
-      discountAmountEditingController.text = widget.quotation!.discountAmount!.toStringAsFixed(2);
+      discountAmountEditingController.text =
+          widget.quotation!.discountAmount!.toStringAsFixed(2);
       discountAmount = widget.quotation!.discountAmount!;
       serviceCharge = widget.quotation!.discountAmount!;
       selectedUserName?.customerName = widget.quotation!.customerName;
@@ -545,16 +594,22 @@ class _QuotationScreenState extends State<QuotationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                      padding: const EdgeInsets.only(
+                          top: 10.0, left: 10.0, right: 10.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Text(
                             lang.S.of(context).selectSerialNumber,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20.0),
                           ),
                           const Spacer(),
-                          const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                          const Icon(FeatherIcons.x,
+                                  color: kTitleColor, size: 25.0)
+                              .onTap(() => {finish(context)})
                         ],
                       ),
                     ),
@@ -592,10 +647,14 @@ class _QuotationScreenState extends State<QuotationScreen> {
                             textFieldType: TextFieldType.NAME,
                             suffix: const Icon(Icons.search),
                             decoration: kInputDecoration.copyWith(
-                              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
+                              border: const OutlineInputBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(30))),
                               labelText: lang.S.of(context).searchSerialNumber,
-                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                              hintStyle:
+                                  kTextStyle.copyWith(color: kGreyTextColor),
+                              labelStyle:
+                                  kTextStyle.copyWith(color: kTitleColor),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -604,7 +663,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                           Container(
                             height: MediaQuery.of(context).size.height / 4,
                             width: 500,
-                            decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                            decoration: BoxDecoration(
+                                border:
+                                    Border.all(width: 1, color: Colors.grey),
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(10))),
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: ListView.builder(
@@ -616,7 +679,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                     child: GestureDetector(
                                       onTap: () {
                                         setState1(() {
-                                          selectedSerialNumbers.add(list[index]);
+                                          selectedSerialNumbers
+                                              .add(list[index]);
                                           list.removeAt(index);
                                         });
                                       },
@@ -633,7 +697,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                           Container(
                             width: 500,
                             height: 100,
-                            decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                            decoration: BoxDecoration(
+                                border:
+                                    Border.all(width: 1, color: Colors.grey),
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(10))),
                             child: GridView.builder(
                                 shrinkWrap: true,
                                 itemCount: selectedSerialNumbers.length,
@@ -642,13 +710,17 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                     return Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           GestureDetector(
                                               onTap: () {
                                                 setState1(() {
-                                                  list.add(selectedSerialNumbers[index]);
-                                                  selectedSerialNumbers.removeAt(index);
+                                                  list.add(
+                                                      selectedSerialNumbers[
+                                                          index]);
+                                                  selectedSerialNumbers
+                                                      .removeAt(index);
                                                 });
                                               },
                                               child: const Icon(
@@ -662,10 +734,12 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                       ),
                                     );
                                   } else {
-                                    return Text(lang.S.of(context).noSerialNumberFound);
+                                    return Text(
+                                        lang.S.of(context).noSerialNumberFound);
                                   }
                                 },
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
                                   childAspectRatio: 4,
                                   crossAxisSpacing: 1,
@@ -678,7 +752,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 30.0,
+                                      right: 30.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     color: kRedTextColor,
@@ -693,10 +771,50 @@ class _QuotationScreenState extends State<QuotationScreen> {
                               GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    AddToCartModel addToCartModel = AddToCartModel(productName: productModel.productName, warehouseName: productModel.warehouseName, warehouseId: productModel.warehouseId, productId: productModel.productCode, productImage: productModel.productPicture, productPurchasePrice: productModel.productPurchasePrice.toDouble(), subTotal: productPriceChecker(product: productModel, customerType: selectedCustomerType), serialNumber: selectedSerialNumbers, quantity: selectedSerialNumbers.isEmpty ? 1 : selectedSerialNumbers.length, stock: productModel.productStock.toInt(), productWarranty: productModel.warranty, taxType: productModel.taxType, margin: productModel.margin, incTax: productModel.incTax, groupTaxRate: productModel.groupTaxRate, groupTaxName: productModel.groupTaxName, excTax: productModel.excTax, subTaxes: productModel.subTaxes);
-                                    if (!uniqueCheckForSerial(code: productModel.productCode, newSerialNumbers: selectedSerialNumbers)) {
+                                    AddToCartModel addToCartModel =
+                                        AddToCartModel(
+                                            productName:
+                                                productModel.productName,
+                                            warehouseName:
+                                                productModel.warehouseName,
+                                            warehouseId:
+                                                productModel.warehouseId,
+                                            productId: productModel.productCode,
+                                            productImage:
+                                                productModel.productPicture,
+                                            productPurchasePrice: productModel
+                                                .productPurchasePrice
+                                                .toDouble(),
+                                            subTotal: productPriceChecker(
+                                                product: productModel,
+                                                customerType:
+                                                    selectedCustomerType),
+                                            serialNumber: selectedSerialNumbers,
+                                            quantity: selectedSerialNumbers
+                                                    .isEmpty
+                                                ? 1
+                                                : selectedSerialNumbers.length,
+                                            stock: productModel.productStock
+                                                .toInt(),
+                                            productWarranty:
+                                                productModel.warranty,
+                                            taxType: productModel.taxType,
+                                            margin: productModel.margin,
+                                            incTax: productModel.incTax,
+                                            groupTaxRate:
+                                                productModel.groupTaxRate,
+                                            groupTaxName:
+                                                productModel.groupTaxName,
+                                            excTax: productModel.excTax,
+                                            subTaxes: productModel.subTaxes);
+                                    if (!uniqueCheckForSerial(
+                                        code: productModel.productCode,
+                                        newSerialNumbers:
+                                            selectedSerialNumbers)) {
                                       if (productModel.productStock == '0') {
-                                        EasyLoading.showError(lang.S.of(context).productOutOfStock);
+                                        EasyLoading.showError(lang.S
+                                            .of(context)
+                                            .productOutOfStock);
                                       } else {
                                         cartList.add(addToCartModel);
                                         addFocus();
@@ -706,7 +824,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                   Navigator.pop(context);
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 30.0,
+                                      right: 30.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     color: kBlueTextColor,
@@ -822,7 +944,6 @@ class _QuotationScreenState extends State<QuotationScreen> {
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
     final globalCurrency = currencyProvider.currency ?? '\$';
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     List<String> allProductsNameList = [];
     List<String> allProductsCodeList = [];
     List<String> warehouseIdList = [];
@@ -834,7 +955,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
           final wareHouseList = consumerRef.watch(warehouseProvider);
           final customerList = consumerRef.watch(allCustomerProvider);
           final personalData = consumerRef.watch(profileDetailsProvider);
-          AsyncValue<List<ProductModel>> productList = consumerRef.watch(productProvider);
+          AsyncValue<List<ProductModel>> productList =
+              consumerRef.watch(productProvider);
           return personalData.when(data: (data) {
             return SingleChildScrollView(
               padding: EdgeInsets.all(16),
@@ -843,8 +965,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                 children: [
                   //_______________________________top_bar____________________________
                   Container(
-                    padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                    padding: const EdgeInsets.only(
+                        left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.0),
+                        color: kWhite),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -852,7 +977,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
                           padding: const EdgeInsets.only(left: 12, top: 12),
                           child: Text(
                             "Quotation",
-                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                         ),
                         const SizedBox(height: 5.0),
@@ -875,9 +1001,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                     _selectedDueDate(context);
                                   },
                                   decoration: bInputDecoration.copyWith(
-                                      hintText: '${selectedDueDate.day}/${selectedDueDate.month}/${selectedDueDate.year}',
+                                      hintText:
+                                          '${selectedDueDate.day}/${selectedDueDate.month}/${selectedDueDate.year}',
                                       hintStyle: bTextStyle.copyWith(),
-                                      contentPadding: const EdgeInsets.only(left: 8.0),
+                                      contentPadding:
+                                          const EdgeInsets.only(left: 8.0),
                                       suffixIcon: const Icon(
                                         Icons.calendar_month,
                                         color: kGreyTextColor,
@@ -894,7 +1022,9 @@ class _QuotationScreenState extends State<QuotationScreen> {
                               List<CustomerModel> customersList = [];
                               for (var value1 in allCustomers) {
                                 // listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
-                                listOfPhoneNumber.add(value1.phoneNumber.replaceAll(RegExp(r'\s+'), '').toLowerCase());
+                                listOfPhoneNumber.add(value1.phoneNumber
+                                    .replaceAll(RegExp(r'\s+'), '')
+                                    .toLowerCase());
                                 if (value1.type != 'Supplier') {
                                   customersList.add(value1);
                                 }
@@ -910,8 +1040,16 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                           label: RichText(
                                             text: TextSpan(
                                               text: lang.S.of(context).party,
-                                              style: theme.textTheme.titleSmall?.copyWith(color: Colors.red),
-                                              children: [TextSpan(text: '(${lang.S.of(context).previousDue} '), TextSpan(text: '$globalCurrency${myFormat.format(double.tryParse(previousDue) ?? 0)} )')],
+                                              style: theme.textTheme.titleSmall
+                                                  ?.copyWith(color: Colors.red),
+                                              children: [
+                                                TextSpan(
+                                                    text:
+                                                        '(${lang.S.of(context).previousDue} '),
+                                                TextSpan(
+                                                    text:
+                                                        '$globalCurrency${myFormat.format(double.tryParse(previousDue) ?? 0)} )')
+                                              ],
                                             ),
                                           ),
                                           suffixIcon: GestureDetector(
@@ -920,7 +1058,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                 '/add-customer',
                                                 extra: {
                                                   'typeOfCustomerAdd': 'Buyer',
-                                                  'listOfPhoneNumber': listOfPhoneNumber,
+                                                  'listOfPhoneNumber':
+                                                      listOfPhoneNumber,
                                                 },
                                               );
                                             },
@@ -928,7 +1067,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                               height: 48,
                                               width: 48,
                                               decoration: const BoxDecoration(
-                                                borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
+                                                borderRadius: BorderRadius.only(
+                                                    topRight:
+                                                        Radius.circular(5),
+                                                    bottomRight:
+                                                        Radius.circular(5)),
                                                 color: kBlueTextColor,
                                               ),
                                               child: const Center(
@@ -940,14 +1083,34 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                               ),
                                             ),
                                           ),
-                                          enabledBorder: const OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                                            borderSide: BorderSide(color: kBorderColorTextField, width: 1),
+                                          enabledBorder:
+                                              const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(8.0)),
+                                            borderSide: BorderSide(
+                                                color: kBorderColorTextField,
+                                                width: 1),
                                           ),
-                                          contentPadding: const EdgeInsets.only(left: 7.0, right: 7.0),
-                                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                                          contentPadding: const EdgeInsets.only(
+                                              left: 7.0, right: 7.0),
+                                          floatingLabelBehavior:
+                                              FloatingLabelBehavior.always,
                                         ),
-                                        child: widget.quotation != null ? Text(widget.quotation!.customerName) : Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getResult(customersList))),
+                                        child: widget.quotation != null
+                                            ? Text(
+                                                widget.quotation!.customerName)
+                                            : Theme(
+                                                data: ThemeData(
+                                                    highlightColor:
+                                                        dropdownItemColor,
+                                                    focusColor:
+                                                        dropdownItemColor,
+                                                    hoverColor:
+                                                        dropdownItemColor),
+                                                child:
+                                                    DropdownButtonHideUnderline(
+                                                        child: getResult(
+                                                            customersList))),
                                       );
                                     },
                                   ),
@@ -972,7 +1135,13 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                 padding: const EdgeInsets.all(10.0),
                                 child: TextFormField(
                                   readOnly: true,
-                                  decoration: InputDecoration(labelText: lang.S.of(context).invoice, hintText: widget.quotation == null ? data.saleInvoiceCounter.toString() : widget.quotation!.invoiceNumber, contentPadding: const EdgeInsets.only(left: 10.0)),
+                                  decoration: InputDecoration(
+                                      labelText: lang.S.of(context).invoice,
+                                      hintText: widget.quotation == null
+                                          ? data.saleInvoiceCounter.toString()
+                                          : widget.quotation!.invoiceNumber,
+                                      contentPadding:
+                                          const EdgeInsets.only(left: 10.0)),
                                   textAlign: TextAlign.center,
                                 ),
                               )),
@@ -988,14 +1157,16 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                     child: SizedBox(
                                       height: 48.0,
                                       child: FormField(
-                                        builder: (FormFieldState<dynamic> field) {
+                                        builder:
+                                            (FormFieldState<dynamic> field) {
                                           return InputDecorator(
                                             decoration: InputDecoration(
-                                              labelText: lang.S.of(context).warehouse,
+                                              labelText:
+                                                  lang.S.of(context).warehouse,
                                             ),
                                             child: DropdownButtonHideUnderline(
                                               child: getWare(
-                                                list: warehouse ?? [],
+                                                list: warehouse,
                                               ),
                                             ),
                                           );
@@ -1042,10 +1213,19 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                 // allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
                                 // allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
                                 // warehouseIdList.add(element.warehouseId.removeAllWhiteSpace().toLowerCase());
-                                allProductsNameList.add(element.productName.replaceAll(RegExp(r'\s+'), '').toLowerCase());
-                                allProductsCodeList.add(element.productCode.replaceAll(RegExp(r'\s+'), '').toLowerCase());
-                                warehouseIdList.add(element.warehouseId.replaceAll(RegExp(r'\s+'), '').toLowerCase());
-                                warehouseBasedProductModel.add(WarehouseBasedProductModel(element.productName, element.warehouseId));
+                                allProductsNameList.add(element.productName
+                                    .replaceAll(RegExp(r'\s+'), '')
+                                    .toLowerCase());
+                                allProductsCodeList.add(element.productCode
+                                    .replaceAll(RegExp(r'\s+'), '')
+                                    .toLowerCase());
+                                warehouseIdList.add(element.warehouseId
+                                    .replaceAll(RegExp(r'\s+'), '')
+                                    .toLowerCase());
+                                warehouseBasedProductModel.add(
+                                    WarehouseBasedProductModel(
+                                        element.productName,
+                                        element.warehouseId));
                               }
                               return Padding(
                                 padding: const EdgeInsets.all(10.0),
@@ -1053,16 +1233,20 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                   suggestionsCallback: (pattern) {
                                     ProductRepo pr = ProductRepo();
                                     // return pr.getAllProductByJson(searchData: pattern);
-                                    return pr.getAllProductByJsonWarehouse(searchData: pattern, warehouseId: selectedWareHouse!);
+                                    return pr.getAllProductByJsonWarehouse(
+                                        searchData: pattern,
+                                        warehouseId: selectedWareHouse!);
                                   },
                                   itemBuilder: (context, suggestion) {
-                                    ProductModel product = ProductModel.fromJson(
+                                    ProductModel product =
+                                        ProductModel.fromJson(
                                       jsonDecode(
                                         jsonEncode(suggestion),
                                       ),
                                     );
                                     return ListTile(
-                                      contentPadding: const EdgeInsets.fromLTRB(10.0, 5.0, 15.0, 5.0),
+                                      contentPadding: const EdgeInsets.fromLTRB(
+                                          10.0, 5.0, 15.0, 5.0),
                                       // visualDensity: const VisualDensity(vertical: -2),
                                       horizontalTitleGap: 10.0,
                                       leading: Container(
@@ -1070,20 +1254,30 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                         width: 45.0,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          border: Border.all(color: kBorderColorTextField),
-                                          image: DecorationImage(image: NetworkImage(product.productPicture), fit: BoxFit.cover),
+                                          border: Border.all(
+                                              color: kBorderColorTextField),
+                                          image: DecorationImage(
+                                              image: NetworkImage(
+                                                  product.productPicture),
+                                              fit: BoxFit.cover),
                                         ),
                                       ),
                                       title: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                               flex: 3,
                                               child: Text(
                                                 '${lang.S.of(context).name}: ${product.productName}',
                                                 textAlign: TextAlign.start,
-                                                style: kTextStyle.copyWith(color: kTitleColor, fontSize: 16.0, fontWeight: FontWeight.bold),
+                                                style: kTextStyle.copyWith(
+                                                    color: kTitleColor,
+                                                    fontSize: 16.0,
+                                                    fontWeight:
+                                                        FontWeight.bold),
                                               )),
                                           const Spacer(),
                                           Expanded(
@@ -1091,14 +1285,28 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                               child: Text(
                                                 '${lang.S.of(context).purchasePrice}: ${product.productPurchasePrice}',
                                                 textAlign: TextAlign.start,
-                                                style: kTextStyle.copyWith(color: kGreyTextColor, fontSize: 12.0),
+                                                style: kTextStyle.copyWith(
+                                                    color: kGreyTextColor,
+                                                    fontSize: 12.0),
                                               )),
                                           const Spacer(),
-                                          Expanded(flex: 2, child: Text('${lang.S.of(context).salePrice}: ${product.productSalePrice}', textAlign: TextAlign.start, style: kTextStyle.copyWith(color: kGreyTextColor, fontSize: 12.0))),
+                                          Expanded(
+                                              flex: 2,
+                                              child: Text(
+                                                  '${lang.S.of(context).salePrice}: ${product.productSalePrice}',
+                                                  textAlign: TextAlign.start,
+                                                  style: kTextStyle.copyWith(
+                                                      color: kGreyTextColor,
+                                                      fontSize: 12.0))),
                                           const Spacer(),
                                           Expanded(
                                             flex: 0,
-                                            child: Text('${lang.S.of(context).stock}: ${product.productStock}', textAlign: TextAlign.start, style: kTextStyle.copyWith(color: kGreyTextColor, fontSize: 12.0)),
+                                            child: Text(
+                                                '${lang.S.of(context).stock}: ${product.productStock}',
+                                                textAlign: TextAlign.start,
+                                                style: kTextStyle.copyWith(
+                                                    color: kGreyTextColor,
+                                                    fontSize: 12.0)),
                                           ),
                                         ],
                                       ),
@@ -1115,29 +1323,40 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                     );
                                   },
                                   onSelected: (suggestion) {
-                                    ProductModel product = ProductModel.fromJson(jsonDecode(jsonEncode(suggestion)));
-                                    AddToCartModel addToCartModel = AddToCartModel(
-                                        productName: product.productName,
-                                        warehouseName: product.warehouseName,
-                                        warehouseId: product.warehouseId,
-                                        productId: product.productCode,
-                                        quantity: 1,
-                                        productImage: product.productPicture,
-                                        // stock: product.productStock.toInt(),
-                                        // productPurchasePrice: product.productPurchasePrice.toDouble(),
-                                        stock: int.tryParse(product.productStock) ?? 0,
-                                        productPurchasePrice: double.tryParse(product.productPurchasePrice) ?? 0.0,
-                                        subTotal: productPriceChecker(
-                                          product: product,
-                                          customerType: selectedCustomerType,
-                                        ),
-                                        taxType: product.taxType,
-                                        margin: product.margin,
-                                        incTax: product.incTax,
-                                        groupTaxRate: product.groupTaxRate,
-                                        groupTaxName: product.groupTaxName,
-                                        excTax: product.excTax,
-                                        subTaxes: product.subTaxes);
+                                    ProductModel product =
+                                        ProductModel.fromJson(
+                                            jsonDecode(jsonEncode(suggestion)));
+                                    AddToCartModel addToCartModel =
+                                        AddToCartModel(
+                                            productName: product.productName,
+                                            warehouseName:
+                                                product.warehouseName,
+                                            warehouseId: product.warehouseId,
+                                            productId: product.productCode,
+                                            quantity: 1,
+                                            productImage:
+                                                product.productPicture,
+                                            // stock: product.productStock.toInt(),
+                                            // productPurchasePrice: product.productPurchasePrice.toDouble(),
+                                            stock: int.tryParse(
+                                                    product.productStock) ??
+                                                0,
+                                            productPurchasePrice:
+                                                double.tryParse(product
+                                                        .productPurchasePrice) ??
+                                                    0.0,
+                                            subTotal: productPriceChecker(
+                                              product: product,
+                                              customerType:
+                                                  selectedCustomerType,
+                                            ),
+                                            taxType: product.taxType,
+                                            margin: product.margin,
+                                            incTax: product.incTax,
+                                            groupTaxRate: product.groupTaxRate,
+                                            groupTaxName: product.groupTaxName,
+                                            excTax: product.excTax,
+                                            subTaxes: product.subTaxes);
                                     setState(() {
                                       if (!uniqueCheck(product.productCode)) {
                                         cartList.add(addToCartModel);
@@ -1159,8 +1378,11 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                         focusNode: focusNode,
                                         autofocus: true,
                                         decoration: InputDecoration(
-                                          labelText: lang.S.of(context).selectProduct,
-                                          hintText: lang.S.of(context).searchWithProductName,
+                                          labelText:
+                                              lang.S.of(context).selectProduct,
+                                          hintText: lang.S
+                                              .of(context)
+                                              .searchWithProductName,
                                         ));
                                   },
                                 ),
@@ -1180,29 +1402,39 @@ class _QuotationScreenState extends State<QuotationScreen> {
                           height: 20,
                         ),
                         LayoutBuilder(
-                          builder: (BuildContext context, BoxConstraints constraints) {
+                          builder: (BuildContext context,
+                              BoxConstraints constraints) {
                             final kWidth = constraints.maxWidth - 20;
                             return Scrollbar(
                               controller: horizontalScroll,
                               thickness: 8,
                               thumbVisibility: true,
                               child: SingleChildScrollView(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
                                 scrollDirection: Axis.horizontal,
                                 controller: horizontalScroll,
                                 child: Container(
                                   // width: context.width() < 1260 ? 630 : context.width() * 1,
-                                  height: MediaQuery.of(context).size.height < 720 ? 720 - 410 : MediaQuery.of(context).size.height - 410,
+                                  height:
+                                      MediaQuery.of(context).size.height < 720
+                                          ? 720 - 410
+                                          : MediaQuery.of(context).size.height -
+                                              410,
                                   constraints: BoxConstraints(
                                     minWidth: kWidth,
                                   ),
                                   child: Theme(
-                                    data: theme.copyWith(dividerColor: Colors.transparent, dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                    data: theme.copyWith(
+                                        dividerColor: Colors.transparent,
+                                        dividerTheme: const DividerThemeData(
+                                            color: Colors.transparent)),
                                     child: DataTable(
                                         border: TableBorder.all(
                                           color: kNeutral300,
                                           width: 1.0,
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                         ),
                                         // border: const TableBorder(
                                         //   horizontalInside: BorderSide(
@@ -1211,47 +1443,76 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                         //   ),
                                         // ),
                                         dividerThickness: 0.0,
-                                        dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                        headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                        dataRowColor:
+                                            const WidgetStatePropertyAll(
+                                                Colors.white),
+                                        headingRowColor:
+                                            WidgetStateProperty.all(
+                                                const Color(0xFFF8F3FF)),
                                         showBottomBorder: false,
-                                        headingTextStyle: theme.textTheme.titleMedium,
-                                        dataTextStyle: theme.textTheme.bodyLarge,
+                                        headingTextStyle:
+                                            theme.textTheme.titleMedium,
+                                        dataTextStyle:
+                                            theme.textTheme.bodyLarge,
                                         columns: [
                                           DataColumn(
                                               label: Text(
                                             lang.S.of(context).productNam,
-                                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
                                           )),
                                           DataColumn(
                                               label: Text(
                                             lang.S.of(context).quantity,
-                                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
                                           )),
                                           DataColumn(
                                               label: Text(
                                             lang.S.of(context).price,
-                                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
                                           )),
                                           DataColumn(
                                               label: Text(
                                             lang.S.of(context).subTotal,
-                                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
                                           )),
                                           DataColumn(
                                               label: Text(
                                             lang.S.of(context).action,
-                                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
                                           )),
                                         ],
-                                        rows: List.generate(cartList.length, (index) {
-                                          TextEditingController quantityController = TextEditingController(text: cartList[index].quantity.toString());
+                                        rows: List.generate(cartList.length,
+                                            (index) {
+                                          TextEditingController
+                                              quantityController =
+                                              TextEditingController(
+                                                  text: cartList[index]
+                                                      .quantity
+                                                      .toString());
                                           return DataRow(cells: [
                                             DataCell(
                                               Text(
-                                                cartList[index].productName ?? '',
+                                                cartList[index].productName ??
+                                                    '',
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: theme.textTheme.bodyLarge,
+                                                style:
+                                                    theme.textTheme.bodyLarge,
                                               ),
                                             ),
                                             DataCell(Row(
@@ -1259,71 +1520,129 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                 GestureDetector(
                                                     onTap: () {
                                                       setState(() {
-                                                        cartList[index].quantity > 1 ? cartList[index].quantity-- : cartList[index].quantity = 1;
+                                                        cartList[index]
+                                                                    .quantity >
+                                                                1
+                                                            ? cartList[index]
+                                                                .quantity--
+                                                            : cartList[index]
+                                                                .quantity = 1;
                                                         updateDueAmount();
                                                       });
                                                     },
-                                                    child: const Icon(FontAwesomeIcons.solidSquareMinus, color: kBlueTextColor)),
+                                                    child: const Icon(
+                                                        FontAwesomeIcons
+                                                            .solidSquareMinus,
+                                                        color: kBlueTextColor)),
                                                 Container(
                                                   width: 60,
                                                   height: 35,
-                                                  padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 2.0, bottom: 2.0),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 10.0,
+                                                          right: 10.0,
+                                                          top: 2.0,
+                                                          bottom: 2.0),
                                                   decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(2.0),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            2.0),
                                                     color: Colors.white,
                                                   ),
                                                   child: TextFormField(
-                                                    controller: quantityController,
-                                                    focusNode: productFocusNode[index],
+                                                    controller:
+                                                        quantityController,
+                                                    focusNode:
+                                                        productFocusNode[index],
                                                     textAlign: TextAlign.center,
                                                     onChanged: (value) {
-                                                      if ((cartList[index].stock ?? 0) < (num.tryParse(value) ?? 0)) {
-                                                        EasyLoading.showError(lang.S.of(context).outOfStock);
-                                                        quantityController.clear();
+                                                      if ((cartList[index]
+                                                                  .stock ??
+                                                              0) <
+                                                          (num.tryParse(
+                                                                  value) ??
+                                                              0)) {
+                                                        EasyLoading.showError(
+                                                            lang.S
+                                                                .of(context)
+                                                                .outOfStock);
+                                                        quantityController
+                                                            .clear();
                                                         // updateDueAmount();
                                                       } else if (value == '') {
-                                                        cartList[index].quantity = 1;
+                                                        cartList[index]
+                                                            .quantity = 1;
                                                         // updateDueAmount();
                                                       } else if (value == '0') {
-                                                        cartList[index].quantity = 1;
+                                                        cartList[index]
+                                                            .quantity = 1;
                                                         // updateDueAmount();
                                                       } else {
-                                                        cartList[index].quantity = (num.tryParse(value) ?? 1);
+                                                        cartList[index]
+                                                                .quantity =
+                                                            (num.tryParse(
+                                                                    value) ??
+                                                                1);
                                                         // updateDueAmount();
                                                       }
                                                     },
                                                     onFieldSubmitted: (value) {
                                                       if (value == '') {
                                                         setState(() {
-                                                          cartList[index].quantity = 1;
+                                                          cartList[index]
+                                                              .quantity = 1;
                                                           updateDueAmount();
                                                         });
                                                       } else {
                                                         setState(() {
-                                                          cartList[index].quantity = (num.tryParse(value) ?? 1);
+                                                          cartList[index]
+                                                                  .quantity =
+                                                              (num.tryParse(
+                                                                      value) ??
+                                                                  1);
                                                           updateDueAmount();
                                                         });
                                                       }
                                                     },
-                                                    decoration: const InputDecoration(border: InputBorder.none),
+                                                    decoration:
+                                                        const InputDecoration(
+                                                            border: InputBorder
+                                                                .none),
                                                   ),
                                                 ),
                                                 GestureDetector(
                                                     onTap: () {
-                                                      if (cartList[index].quantity < cartList[index].stock!.toInt()) {
+                                                      if (cartList[index]
+                                                              .quantity <
+                                                          cartList[index]
+                                                              .stock!
+                                                              .toInt()) {
                                                         setState(() {
-                                                          cartList[index].quantity += 1;
+                                                          cartList[index]
+                                                              .quantity += 1;
                                                           updateDueAmount();
                                                           // toast(cartList[index].quantity.toString());
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(content: Text(cartList[index].quantity.toString())),
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            SnackBar(
+                                                                content: Text(cartList[
+                                                                        index]
+                                                                    .quantity
+                                                                    .toString())),
                                                           );
                                                         });
                                                       } else {
-                                                        EasyLoading.showError(lang.S.of(context).outOfStock);
+                                                        EasyLoading.showError(
+                                                            lang.S
+                                                                .of(context)
+                                                                .outOfStock);
                                                       }
                                                     },
-                                                    child: const Icon(FontAwesomeIcons.solidSquarePlus, color: kBlueTextColor)),
+                                                    child: const Icon(
+                                                        FontAwesomeIcons
+                                                            .solidSquarePlus,
+                                                        color: kBlueTextColor)),
                                               ],
                                             )),
                                             DataCell(
@@ -1331,17 +1650,31 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                 width: 70,
                                                 height: 35,
                                                 child: TextFormField(
-                                                  initialValue: myFormat.format(double.tryParse(cartList[index].subTotal) ?? 0),
+                                                  initialValue: myFormat.format(
+                                                      double.tryParse(
+                                                              cartList[index]
+                                                                  .subTotal) ??
+                                                          0),
                                                   onChanged: (value) {
                                                     if (value == '') {
                                                       setState(() {
-                                                        cartList[index].subTotal = 0.toString();
+                                                        cartList[index]
+                                                                .subTotal =
+                                                            0.toString();
                                                       });
-                                                    } else if (double.tryParse(value) == null) {
-                                                      EasyLoading.showError(lang.S.of(context).enterAValidPrice);
+                                                    } else if (double.tryParse(
+                                                            value) ==
+                                                        null) {
+                                                      EasyLoading.showError(lang
+                                                          .S
+                                                          .of(context)
+                                                          .enterAValidPrice);
                                                     } else {
                                                       setState(() {
-                                                        cartList[index].subTotal = double.parse(value).toStringAsFixed(2);
+                                                        cartList[index]
+                                                            .subTotal = double
+                                                                .parse(value)
+                                                            .toStringAsFixed(2);
                                                       });
                                                     }
                                                     updateDueAmount();
@@ -1349,26 +1682,48 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                   onFieldSubmitted: (value) {
                                                     if (value == '') {
                                                       setState(() {
-                                                        cartList[index].subTotal = 0.toString();
+                                                        cartList[index]
+                                                                .subTotal =
+                                                            0.toString();
                                                         updateDueAmount();
                                                       });
-                                                    } else if (double.tryParse(value) == null) {
-                                                      EasyLoading.showError(lang.S.of(context).enterAValidPrice);
+                                                    } else if (double.tryParse(
+                                                            value) ==
+                                                        null) {
+                                                      EasyLoading.showError(lang
+                                                          .S
+                                                          .of(context)
+                                                          .enterAValidPrice);
                                                     } else {
                                                       setState(() {
-                                                        cartList[index].subTotal = double.parse(value).toStringAsFixed(2);
+                                                        cartList[index]
+                                                            .subTotal = double
+                                                                .parse(value)
+                                                            .toStringAsFixed(2);
                                                         updateDueAmount();
                                                       });
                                                     }
                                                   },
-                                                  decoration: const InputDecoration(border: InputBorder.none),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                          border:
+                                                              InputBorder.none),
                                                 ),
                                               ),
                                             ),
                                             DataCell(
                                               Text(
-                                                myFormat.format(double.tryParse((double.parse(cartList[index].subTotal) * cartList[index].quantity).toStringAsFixed(2)) ?? 0),
-                                                style: theme.textTheme.bodyLarge,
+                                                myFormat.format(double.tryParse(
+                                                        (double.parse(cartList[
+                                                                        index]
+                                                                    .subTotal) *
+                                                                cartList[index]
+                                                                    .quantity)
+                                                            .toStringAsFixed(
+                                                                2)) ??
+                                                    0),
+                                                style:
+                                                    theme.textTheme.bodyLarge,
                                               ),
                                             ),
                                             DataCell(
@@ -1376,7 +1731,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                 onTap: () {
                                                   setState(() {
                                                     cartList.removeAt(index);
-                                                    productFocusNode.removeAt(index);
+                                                    productFocusNode
+                                                        .removeAt(index);
                                                     updateDueAmount();
                                                   });
                                                 },
@@ -1633,123 +1989,227 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                 padding: const EdgeInsets.all(10.0),
                                 child: ElevatedButton(
                                   onPressed: () async {
-                                    if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                    if (await Subscription.subscriptionChecker(
+                                        item: 'Sales')) {
                                       if (cartList.isEmpty) {
-                                        EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
+                                        EasyLoading.showError(lang.S
+                                            .of(context)
+                                            .pleaseAddSomeProductFirst);
                                       } else {
                                         if (selectedUserName == null) {
-                                          EasyLoading.showError("Please select a customer");
+                                          EasyLoading.showError(
+                                              "Please select a customer");
                                           return;
                                         }
                                         showDialog(
                                             barrierDismissible: false,
                                             context: context,
-                                            builder: (BuildContext dialogContext) {
+                                            builder:
+                                                (BuildContext dialogContext) {
                                               return Center(
                                                 child: Container(
                                                   width: 450,
-                                                  decoration: const BoxDecoration(
+                                                  decoration:
+                                                      const BoxDecoration(
                                                     color: Colors.white,
-                                                    borderRadius: BorderRadius.all(
+                                                    borderRadius:
+                                                        BorderRadius.all(
                                                       Radius.circular(15),
                                                     ),
                                                   ),
                                                   child: Padding(
-                                                    padding: const EdgeInsets.all(20.0),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            20.0),
                                                     child: Column(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
                                                       children: [
                                                         Text(
-                                                          lang.S.of(context).areYouWantToCreateThisQuation,
-                                                          style: theme.textTheme.headlineSmall?.copyWith(
-                                                            fontWeight: FontWeight.w600,
+                                                          lang.S
+                                                              .of(context)
+                                                              .areYouWantToCreateThisQuation,
+                                                          style: theme.textTheme
+                                                              .headlineSmall
+                                                              ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.w600,
                                                           ),
-                                                          textAlign: TextAlign.center,
+                                                          textAlign:
+                                                              TextAlign.center,
                                                         ),
-                                                        const SizedBox(height: 20),
-                                                        ResponsiveGridRow(children: [
-                                                          ResponsiveGridCol(
-                                                            lg: 6,
-                                                            md: 6,
-                                                            sm: 6,
-                                                            child: Padding(
-                                                              padding: const EdgeInsets.all(10.0),
-                                                              child: ElevatedButton(
-                                                                style: ElevatedButton.styleFrom(
-                                                                  backgroundColor: Colors.red,
-                                                                ),
-                                                                child: Text(
-                                                                  lang.S.of(context).cancel,
-                                                                ),
-                                                                onPressed: () {
-                                                                  GoRouter.of(dialogContext).pop();
-                                                                },
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          ResponsiveGridCol(
-                                                            lg: 6,
-                                                            md: 6,
-                                                            sm: 6,
-                                                            child: Padding(
-                                                              padding: const EdgeInsets.all(10.0),
-                                                              child: ElevatedButton(
-                                                                onPressed: () async {
-                                                                  SaleTransactionModel transitionModel = SaleTransactionModel(
-                                                                    customerName: selectedUserName?.customerName ?? '',
-                                                                    customerType: selectedUserName?.type ?? '',
-                                                                    customerImage: selectedUserName?.profilePicture ?? '',
-                                                                    customerAddress: selectedUserName?.customerAddress ?? '',
-                                                                    customerPhone: selectedUserName?.phoneNumber ?? '',
-                                                                    customerGst: selectedUserName?.gst ?? '',
-                                                                    invoiceNumber: data.saleInvoiceCounter.toString(),
-                                                                    sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
-                                                                    purchaseDate: DateTime.now().toString(),
-                                                                    productList: cartList,
-                                                                    totalAmount: double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)),
-                                                                    discountAmount: discountAmount,
-                                                                    serviceCharge: serviceCharge,
-                                                                    vat: vatGst,
-                                                                  );
-
-                                                                  try {
-                                                                    EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                                    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation");
-
-                                                                    transitionModel.isPaid = false;
-                                                                    transitionModel.dueAmount = 0;
-                                                                    transitionModel.lossProfit = 0;
-                                                                    transitionModel.returnAmount = 0;
-                                                                    transitionModel.paymentType = 'Just Quotation';
-                                                                    transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
-
-                                                                    ///_________Push_on_dataBase____________________________________________________________________________
-                                                                    await ref.push().set(transitionModel.toJson());
-                                                                    //await GeneratePdfAndPrint().printQuotationInvoice(personalInformationModel: data, saleTransactionModel: transitionModel, context: context);
-
-                                                                    ///_________Invoice Increase____________________________________________________________________________
-                                                                    updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
-
-                                                                    consumerRef.refresh(profileDetailsProvider);
-                                                                    consumerRef.refresh(quotationProvider);
-
-                                                                    EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully);
-                                                                    GeneratePdfAndPrint().printQuotationInvoice(personalInformationModel: data, saleTransactionModel: transitionModel, context: context, isFromQuotation: true);
-                                                                    GoRouter.of(context).pop();
-                                                                  } catch (e) {
-                                                                    EasyLoading.dismiss();
-                                                                    //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                                                                  }
-                                                                },
-                                                                child: Text(
-                                                                  lang.S.of(context).create,
+                                                        const SizedBox(
+                                                            height: 20),
+                                                        ResponsiveGridRow(
+                                                            children: [
+                                                              ResponsiveGridCol(
+                                                                lg: 6,
+                                                                md: 6,
+                                                                sm: 6,
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          10.0),
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    style: ElevatedButton
+                                                                        .styleFrom(
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .red,
+                                                                    ),
+                                                                    child: Text(
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .cancel,
+                                                                    ),
+                                                                    onPressed:
+                                                                        () {
+                                                                      GoRouter.of(
+                                                                              dialogContext)
+                                                                          .pop();
+                                                                    },
+                                                                  ),
                                                                 ),
                                                               ),
-                                                            ),
-                                                          )
-                                                        ]),
+                                                              ResponsiveGridCol(
+                                                                lg: 6,
+                                                                md: 6,
+                                                                sm: 6,
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          10.0),
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    onPressed:
+                                                                        () async {
+                                                                      SaleTransactionModel
+                                                                          transitionModel =
+                                                                          SaleTransactionModel(
+                                                                        customerName:
+                                                                            selectedUserName?.customerName ??
+                                                                                '',
+                                                                        customerType:
+                                                                            selectedUserName?.type ??
+                                                                                '',
+                                                                        customerImage:
+                                                                            selectedUserName?.profilePicture ??
+                                                                                '',
+                                                                        customerAddress:
+                                                                            selectedUserName?.customerAddress ??
+                                                                                '',
+                                                                        customerPhone:
+                                                                            selectedUserName?.phoneNumber ??
+                                                                                '',
+                                                                        customerGst:
+                                                                            selectedUserName?.gst ??
+                                                                                '',
+                                                                        invoiceNumber: data
+                                                                            .saleInvoiceCounter
+                                                                            .toString(),
+                                                                        sendWhatsappMessage:
+                                                                            selectedUserName?.receiveWhatsappUpdates ??
+                                                                                false,
+                                                                        purchaseDate:
+                                                                            DateTime.now().toString(),
+                                                                        productList:
+                                                                            cartList,
+                                                                        totalAmount: double.parse((getTotalAmount().toDouble() +
+                                                                                serviceCharge -
+                                                                                discountAmount +
+                                                                                vatGst)
+                                                                            .toStringAsFixed(1)),
+                                                                        discountAmount:
+                                                                            discountAmount,
+                                                                        serviceCharge:
+                                                                            serviceCharge,
+                                                                        vat:
+                                                                            vatGst,
+                                                                      );
+
+                                                                      try {
+                                                                        EasyLoading.show(
+                                                                            status:
+                                                                                '${lang.S.of(context).loading}...',
+                                                                            dismissOnTap:
+                                                                                false);
+                                                                        DatabaseReference
+                                                                            ref =
+                                                                            FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation");
+
+                                                                        transitionModel.isPaid =
+                                                                            false;
+                                                                        transitionModel
+                                                                            .dueAmount = 0;
+                                                                        transitionModel
+                                                                            .lossProfit = 0;
+                                                                        transitionModel
+                                                                            .returnAmount = 0;
+                                                                        transitionModel.paymentType =
+                                                                            'Just Quotation';
+                                                                        transitionModel.sellerName = isSubUser
+                                                                            ? constSubUserTitle
+                                                                            : 'Admin';
+
+                                                                        ///_________Push_on_dataBase____________________________________________________________________________
+                                                                        await ref
+                                                                            .push()
+                                                                            .set(transitionModel.toJson());
+                                                                        //await GeneratePdfAndPrint().printQuotationInvoice(personalInformationModel: data, saleTransactionModel: transitionModel, context: context);
+
+                                                                        ///_________Invoice Increase____________________________________________________________________________
+                                                                        updateInvoice(
+                                                                            typeOfInvoice:
+                                                                                'saleInvoiceCounter',
+                                                                            invoice:
+                                                                                transitionModel.invoiceNumber.toInt());
+
+                                                                        consumerRef
+                                                                            // ignore: unused_result
+                                                                            .refresh(profileDetailsProvider);
+                                                                        consumerRef
+                                                                            // ignore: unused_result
+                                                                            .refresh(quotationProvider);
+
+                                                                        EasyLoading.showSuccess(lang
+                                                                            .S
+                                                                            .of(context)
+                                                                            .addedSuccessfully);
+                                                                        GeneratePdfAndPrint().printQuotationInvoice(
+                                                                            personalInformationModel:
+                                                                                data,
+                                                                            saleTransactionModel:
+                                                                                transitionModel,
+                                                                            context:
+                                                                                context,
+                                                                            isFromQuotation:
+                                                                                true);
+                                                                        GoRouter.of(context)
+                                                                            .pop();
+                                                                      } catch (e) {
+                                                                        EasyLoading
+                                                                            .dismiss();
+                                                                        //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                                                      }
+                                                                    },
+                                                                    child: Text(
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .create,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              )
+                                                            ]),
                                                       ],
                                                     ),
                                                   ),
@@ -1759,7 +2219,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                       }
                                     } else {
                                       // EasyLoading.showError('Update your plan first\nSale Limit is over.');
-                                      EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
+                                      EasyLoading.showError(
+                                          '${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
                                     }
                                   },
                                   child: Text(

@@ -40,44 +40,70 @@ class PurchaseReturn extends StatefulWidget {
 }
 
 class _PurchaseReturnState extends State<PurchaseReturn> {
-  Future<void> saleReturn({required PurchaseTransactionModel purchase, required WidgetRef consumerRef, required BuildContext context}) async {
+  Future<void> saleReturn(
+      {required PurchaseTransactionModel purchase,
+      required WidgetRef consumerRef,
+      required BuildContext context}) async {
     try {
-      EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+      EasyLoading.show(
+          status: '${lang.S.of(context).loading}...', dismissOnTap: false);
 
       ///_________Push_on_Sale_return_dataBase____________________________________________________________________________
-      DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Return");
+      DatabaseReference ref =
+          FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Return");
       await ref.push().set(purchase.toJson());
 
       ///________________delete_From_Sale_transaction______________________________________________________________________
       String? key;
-      await FirebaseDatabase.instance.ref(await getUserID()).child('Purchase Transition').orderByKey().get().then((value) {
+      await FirebaseDatabase.instance
+          .ref(await getUserID())
+          .child('Purchase Transition')
+          .orderByKey()
+          .get()
+          .then((value) {
         for (var element in value.children) {
-          final t = PurchaseTransactionModel.fromJson(jsonDecode(jsonEncode(element.value)));
+          final t = PurchaseTransactionModel.fromJson(
+              jsonDecode(jsonEncode(element.value)));
           if (purchase.invoiceNumber == t.invoiceNumber) {
             key = element.key;
           }
         }
       });
-      await FirebaseDatabase.instance.ref(await getUserID()).child('Purchase Transition').child(key!).remove();
+      await FirebaseDatabase.instance
+          .ref(await getUserID())
+          .child('Purchase Transition')
+          .child(key!)
+          .remove();
 
       ///__________StockMange_________________________________________________________________________________
-      final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+      final stockRef =
+          FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
 
       for (var element in purchase.productList!) {
-        var data = await stockRef.orderByChild('productCode').equalTo(element.productCode).once();
-        final data2 = jsonDecode(jsonEncode(data.snapshot.children.first.value));
+        var data = await stockRef
+            .orderByChild('productCode')
+            .equalTo(element.productCode)
+            .once();
+        final data2 =
+            jsonDecode(jsonEncode(data.snapshot.children.first.value));
 
-        var data1 = await stockRef.child('${data.snapshot.children.first.key}/productStock').get();
+        var data1 = await stockRef
+            .child('${data.snapshot.children.first.key}/productStock')
+            .get();
         int stock = int.parse(data1.value.toString());
         int remainStock = stock - (int.tryParse(element.productStock) ?? 0);
 
-        stockRef.child(data.snapshot.children.first.key!).update({'productStock': '$remainStock'});
+        stockRef
+            .child(data.snapshot.children.first.key!)
+            .update({'productStock': '$remainStock'});
 
         ///________Update_Serial_Number____________________________________________________
 
         if (element.serialNumber.isNotEmpty) {
           ProductModel p = ProductModel.fromJson(data2);
-          final newList = p.serialNumber.where((item) => !element.serialNumber.contains(item)).toList();
+          final newList = p.serialNumber
+              .where((item) => !element.serialNumber.contains(item))
+              .toList();
 
           // List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
           stockRef.child(data.snapshot.children.first.key!).update({
@@ -89,21 +115,39 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
 
       ///________daily_transactionModel_________________________________________________________________________
 
-      DailyTransactionModel dailyTransaction = DailyTransactionModel(name: purchase.customerName, date: purchase.purchaseDate, type: 'Purchase Return', total: purchase.totalAmount!.toDouble(), paymentIn: purchase.totalAmount!.toDouble() - purchase.dueAmount!.toDouble(), paymentOut: 0, remainingBalance: purchase.totalAmount!.toDouble() - purchase.dueAmount!.toDouble(), id: purchase.invoiceNumber, purchaseTransactionModel: purchase);
+      DailyTransactionModel dailyTransaction = DailyTransactionModel(
+          name: purchase.customerName,
+          date: purchase.purchaseDate,
+          type: 'Purchase Return',
+          total: purchase.totalAmount!.toDouble(),
+          paymentIn:
+              purchase.totalAmount!.toDouble() - purchase.dueAmount!.toDouble(),
+          paymentOut: 0,
+          remainingBalance:
+              purchase.totalAmount!.toDouble() - purchase.dueAmount!.toDouble(),
+          id: purchase.invoiceNumber,
+          purchaseTransactionModel: purchase);
       postDailyTransaction(dailyTransactionModel: dailyTransaction);
 
       ///_________DueUpdate___________________________________________________________________________________
       if (purchase.customerName != 'Guest') {
-        final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
+        final dueUpdateRef =
+            FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
         // String? key;
-        final customerQuery = dueUpdateRef.orderByChild('phoneNumber').equalTo(purchase.customerPhone);
+        final customerQuery = dueUpdateRef
+            .orderByChild('phoneNumber')
+            .equalTo(purchase.customerPhone);
         final customerSnapshot = await customerQuery.once();
 
-        var data1 = await dueUpdateRef.child('${customerSnapshot.snapshot.children.first.key}/due').get();
+        var data1 = await dueUpdateRef
+            .child('${customerSnapshot.snapshot.children.first.key}/due')
+            .get();
         int previousDue = data1.value.toString().toInt();
 
         int totalDue = previousDue - purchase.dueAmount!.toInt();
-        dueUpdateRef.child(customerSnapshot.snapshot.children.first.key!).update({'due': '$totalDue'});
+        dueUpdateRef
+            .child(customerSnapshot.snapshot.children.first.key!)
+            .update({'due': '$totalDue'});
       }
 
       consumerRef.refresh(allCustomerProvider);
@@ -141,37 +185,51 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     return SafeArea(
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
           final settingProvider = ref.watch(generalSettingProvider);
-          AsyncValue<List<PurchaseTransactionModel>> transactionReport = ref.watch(purchaseReturnProvider);
+          AsyncValue<List<PurchaseTransactionModel>> transactionReport =
+              ref.watch(purchaseReturnProvider);
           final profile = ref.watch(profileDetailsProvider);
           return transactionReport.when(data: (mainTransaction) {
             final reMainTransaction = mainTransaction.reversed.toList();
             List<dynamic> showAbleSaleTransactions = [];
             for (var element in reMainTransaction) {
-              if (searchItem != '' && (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()))) {
+              if (searchItem != '' &&
+                  (element.customerName
+                          .removeAllWhiteSpace()
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase()) ||
+                      element.invoiceNumber
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase()))) {
                 showAbleSaleTransactions.add(element);
               } else if (searchItem == '') {
                 showAbleSaleTransactions.add(element);
               }
             }
-            final totalPages = (showAbleSaleTransactions.length / itemsPerPage).ceil();
+            final totalPages =
+                (showAbleSaleTransactions.length / itemsPerPage).ceil();
             final startIndex = (currentPage - 1) * itemsPerPage;
             final endIndex = startIndex + itemsPerPage;
-            final paginatedTransactions = showAbleSaleTransactions.sublist(startIndex, endIndex > showAbleSaleTransactions.length ? showAbleSaleTransactions.length : endIndex);
+            final paginatedTransactions = showAbleSaleTransactions.sublist(
+                startIndex,
+                endIndex > showAbleSaleTransactions.length
+                    ? showAbleSaleTransactions.length
+                    : endIndex);
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 13),
                       child: Text(
                         lang.S.of(context).saleReturn,
                         style: theme.textTheme.titleLarge?.copyWith(
@@ -203,7 +261,8 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                             keyboardType: TextInputType.name,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.all(10.0),
-                              hintText: (lang.S.of(context).searchByInvoiceOrName),
+                              hintText:
+                                  (lang.S.of(context).searchByInvoiceOrName),
                               suffixIcon: const Icon(
                                 FeatherIcons.search,
                                 color: kTitleColor,
@@ -220,7 +279,8 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                         ? Column(
                             children: [
                               LayoutBuilder(
-                                builder: (BuildContext context, BoxConstraints constraints) {
+                                builder: (BuildContext context,
+                                    BoxConstraints constraints) {
                                   final kWidth = constraints.maxWidth;
                                   return Scrollbar(
                                     thickness: 8.0,
@@ -236,7 +296,9 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                         ),
                                         child: Theme(
                                           data: theme.copyWith(
-                                            dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                            dividerTheme:
+                                                const DividerThemeData(
+                                                    color: Colors.transparent),
                                           ),
                                           child: DataTable(
                                               border: const TableBorder(
@@ -245,24 +307,58 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      whiteColor),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle: theme.textTheme.titleMedium,
-                                              dataTextStyle: theme.textTheme.bodyLarge,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
+                                              dataTextStyle:
+                                                  theme.textTheme.bodyLarge,
                                               columns: [
-                                                DataColumn(label: Text(lang.S.of(context).SL)),
-                                                DataColumn(label: Text(lang.S.of(context).date)),
-                                                DataColumn(label: Text(lang.S.of(context).invoice)),
-                                                DataColumn(label: Text(lang.S.of(context).partyName)),
-                                                DataColumn(label: Text(lang.S.of(context).partyType)),
-                                                DataColumn(label: Text(lang.S.of(context).amount)),
-                                                DataColumn(label: Text(lang.S.of(context).due)),
-                                                DataColumn(label: Text(lang.S.of(context).status)),
-                                                DataColumn(label: Text(lang.S.of(context).setting)),
+                                                DataColumn(
+                                                    label: Text(
+                                                        lang.S.of(context).SL)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .date)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .invoice)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .partyName)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .partyType)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .amount)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .due)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .status)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .setting)),
                                               ],
-                                              rows: List.generate(paginatedTransactions.length, (index) {
+                                              rows: List.generate(
+                                                  paginatedTransactions.length,
+                                                  (index) {
                                                 return DataRow(cells: [
                                                   ///______________S.L__________________________________________________
                                                   DataCell(
@@ -274,44 +370,63 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                                   ///______________Date__________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].purchaseDate.substring(0, 10),
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .purchaseDate
+                                                          .substring(0, 10),
                                                     ),
                                                   ),
 
                                                   ///____________Invoice_________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].invoiceNumber,
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .invoiceNumber,
                                                       maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
 
                                                   ///______Party Name___________________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].customerName,
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .customerName,
                                                     ),
                                                   ),
 
                                                   ///___________Party Type______________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].paymentType.toString(),
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .paymentType
+                                                          .toString(),
                                                     ),
                                                   ),
 
                                                   ///___________Amount____________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      myFormat.format(double.tryParse(paginatedTransactions[index].totalAmount.toString()) ?? 0),
+                                                      myFormat.format(double.tryParse(
+                                                              paginatedTransactions[
+                                                                      index]
+                                                                  .totalAmount
+                                                                  .toString()) ??
+                                                          0),
                                                     ),
                                                   ),
 
                                                   ///___________Due____________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].dueAmount.toString(),
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .dueAmount
+                                                          .toString(),
                                                     ),
                                                   ),
 
@@ -319,33 +434,77 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
 
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].isPaid! ? lang.S.of(context).paid : lang.S.of(context).due,
+                                                      paginatedTransactions[
+                                                                  index]
+                                                              .isPaid!
+                                                          ? lang.S
+                                                              .of(context)
+                                                              .paid
+                                                          : lang.S
+                                                              .of(context)
+                                                              .due,
                                                     ),
                                                   ),
 
                                                   ///_______________actions_________________________________________________
                                                   DataCell(
-                                                    settingProvider.when(data: (setting) {
+                                                    settingProvider.when(
+                                                        data: (setting) {
                                                       return SizedBox(
                                                         width: 30,
                                                         child: Theme(
-                                                          data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                          child: PopupMenuButton(
-                                                            surfaceTintColor: Colors.white,
-                                                            padding: EdgeInsets.zero,
-                                                            itemBuilder: (BuildContext bc) => [
+                                                          data: ThemeData(
+                                                              highlightColor:
+                                                                  dropdownItemColor,
+                                                              focusColor:
+                                                                  dropdownItemColor,
+                                                              hoverColor:
+                                                                  dropdownItemColor),
+                                                          child:
+                                                              PopupMenuButton(
+                                                            surfaceTintColor:
+                                                                Colors.white,
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            itemBuilder:
+                                                                (BuildContext
+                                                                        bc) =>
+                                                                    [
                                                               PopupMenuItem(
-                                                                onTap: () async {
-                                                                  await GeneratePdfAndPrint().printPurchaseReturnInvoice(setting: setting, personalInformationModel: profile.value!, purchaseTransactionModel: paginatedTransactions[index]);
+                                                                onTap:
+                                                                    () async {
+                                                                  await GeneratePdfAndPrint().printPurchaseReturnInvoice(
+                                                                      setting:
+                                                                          setting,
+                                                                      personalInformationModel:
+                                                                          profile
+                                                                              .value!,
+                                                                      purchaseTransactionModel:
+                                                                          paginatedTransactions[
+                                                                              index]);
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    HugeIcon(icon: HugeIcons.strokeRoundedPrinter, size: 22.0, color: kGreyTextColor),
-                                                                    const SizedBox(width: 4.0),
+                                                                    HugeIcon(
+                                                                        icon: HugeIcons
+                                                                            .strokeRoundedPrinter,
+                                                                        size:
+                                                                            22.0,
+                                                                        color:
+                                                                            kGreyTextColor),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).print,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                                                        color: kGreyTextColor,
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .print,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kGreyTextColor,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -457,9 +616,13 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                                               child: Container(
                                                                   height: 18,
                                                                   width: 18,
-                                                                  alignment: Alignment.centerRight,
-                                                                  child: const Icon(
-                                                                    Icons.more_vert_sharp,
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerRight,
+                                                                  child:
+                                                                      const Icon(
+                                                                    Icons
+                                                                        .more_vert_sharp,
                                                                     size: 18,
                                                                   )),
                                                             ),
@@ -469,7 +632,9 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                                     }, error: (e, stack) {
                                                       return Text(e.toString());
                                                     }, loading: () {
-                                                      return Center(child: CircularProgressIndicator());
+                                                      return Center(
+                                                          child:
+                                                              CircularProgressIndicator());
                                                     }),
                                                   ),
                                                 ]);
@@ -481,14 +646,17 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                 },
                               ),
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 10, 20, 24),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
                                         'Showing ${startIndex + 1} to ${endIndex > showAbleSaleTransactions.length ? showAbleSaleTransactions.length : endIndex} of ${showAbleSaleTransactions.length} entries',
-                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
                                           color: kNeutral700,
                                         ),
                                         maxLines: 2,
@@ -505,7 +673,8 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                       child: Row(
                                         children: [
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
                                             child: GestureDetector(
                                               onTap: () {
                                                 if (currentPage > 1) {
@@ -516,7 +685,8 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                               },
                                               child: Text(
                                                 'Previous',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
@@ -531,10 +701,13 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                                   color: kNeutral300,
                                                 ))),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                               child: Text(
                                                 '$currentPage',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: Colors.white,
                                                 ),
                                               ),
@@ -548,17 +721,21 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                               color: kNeutral300,
                                             ))),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                               child: Text(
                                                 '$totalPages',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
                                             ),
                                           ),
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
                                             child: GestureDetector(
                                               onTap: () {
                                                 if (currentPage < totalPages) {
@@ -569,7 +746,8 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                               },
                                               child: Text(
                                                 'Next',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
@@ -583,7 +761,8 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                               )
                             ],
                           )
-                        : EmptyWidget(title: lang.S.of(context).noSaleTransaactionFound)
+                        : EmptyWidget(
+                            title: lang.S.of(context).noSaleTransaactionFound)
                   ],
                 ),
               ),

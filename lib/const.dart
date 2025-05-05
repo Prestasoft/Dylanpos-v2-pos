@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -37,13 +36,23 @@ String calculateProductVat({required AddToCartModel product}) {
     //double taxAmount = purchasePrice / (1 + taxRate) * taxRate;
     double taxRate = product.groupTaxRate / 100;
     print(product.groupTaxRate);
-    return (((double.tryParse(product.productPurchasePrice.toString()) ?? 0) / (taxRate + 1) * taxRate) * product.quantity).toStringAsFixed(1);
+    return (((double.tryParse(product.productPurchasePrice.toString()) ?? 0) /
+                (taxRate + 1) *
+                taxRate) *
+            product.quantity)
+        .toStringAsFixed(1);
   } else {
-    return (((product.groupTaxRate * (double.tryParse(product.productPurchasePrice.toString()) ?? 0)) / 100) * product.quantity).toStringAsFixed(1);
+    return (((product.groupTaxRate *
+                    (double.tryParse(product.productPurchasePrice.toString()) ??
+                        0)) /
+                100) *
+            product.quantity)
+        .toStringAsFixed(1);
   }
 }
 
-SaleTransactionModel checkLossProfit({required SaleTransactionModel transitionModel}) {
+SaleTransactionModel checkLossProfit(
+    {required SaleTransactionModel transitionModel}) {
   double calculateAmountFromPercentage(double percentage, double price) {
     return (percentage * price) / 100;
   }
@@ -54,17 +63,26 @@ SaleTransactionModel checkLossProfit({required SaleTransactionModel transitionMo
   double totalSalePrice = 0;
   for (var element in transitionModel.productList!) {
     if (element.taxType == 'Exclusive') {
-      double tax = calculateAmountFromPercentage(element.groupTaxRate.toDouble(), (double.tryParse(element.productPurchasePrice.toString()) ?? 0));
-      totalPurchasePrice = totalPurchasePrice + ((((double.tryParse(element.productPurchasePrice.toString()) ?? 0) + tax) * element.quantity));
+      double tax = calculateAmountFromPercentage(
+          element.groupTaxRate.toDouble(),
+          (double.tryParse(element.productPurchasePrice.toString()) ?? 0));
+      totalPurchasePrice = totalPurchasePrice +
+          ((((double.tryParse(element.productPurchasePrice.toString()) ?? 0) +
+                  tax) *
+              element.quantity));
     } else {
-      totalPurchasePrice = totalPurchasePrice + ((double.tryParse(element.productPurchasePrice.toString()) ?? 0) * element.quantity);
+      totalPurchasePrice = totalPurchasePrice +
+          ((double.tryParse(element.productPurchasePrice.toString()) ?? 0) *
+              element.quantity);
     }
 
-    totalSalePrice = totalSalePrice + (double.parse(element.subTotal) * element.quantity);
+    totalSalePrice =
+        totalSalePrice + (double.parse(element.subTotal) * element.quantity);
 
     totalQuantity = totalQuantity + element.quantity;
   }
-  lossProfit = ((totalSalePrice - totalPurchasePrice.toDouble()) - double.parse(transitionModel.discountAmount.toString()));
+  lossProfit = ((totalSalePrice - totalPurchasePrice.toDouble()) -
+      double.parse(transitionModel.discountAmount.toString()));
 
   transitionModel.totalQuantity = totalQuantity;
   transitionModel.lossProfit = double.parse(lossProfit.toStringAsFixed(2));
@@ -88,8 +106,6 @@ List<TaxModel> getAllTaxFromCartList({required List<AddToCartModel> cart}) {
   return data;
 }
 
-final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
-
 // String appLogo='images/mobipos.png';
 // String appsName = 'Pos Saas';
 // String appsTitle = 'Pos Saas Web';
@@ -102,7 +118,13 @@ List<String> selectedNumbers = [];
 
 Future<String?> getSaleID({required String id}) async {
   String? key;
-  await FirebaseDatabase.instance.ref().child('Admin Panel').child('Seller List').orderByKey().get().then((value) async {
+  await FirebaseDatabase.instance
+      .ref()
+      .child('Admin Panel')
+      .child('Seller List')
+      .orderByKey()
+      .get()
+      .then((value) async {
     for (var element in value.children) {
       var data = jsonDecode(jsonEncode(element.value));
       if (data['userId'].toString() == id) {
@@ -124,9 +146,13 @@ String searchItems = '';
 String mainLoginPassword = '';
 String mainLoginEmail = '';
 
-UserRoleModel finalUserRoleModel = UserRoleModel(email: '', userTitle: '', databaseId: '');
+UserRoleModel finalUserRoleModel =
+    UserRoleModel(email: '', userTitle: '', databaseId: '');
 
-Future<void> setUserDataOnLocalData({required String uid, required String subUserTitle, required bool isSubUser}) async {
+Future<void> setUserDataOnLocalData(
+    {required String uid,
+    required String subUserTitle,
+    required bool isSubUser}) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('userId', uid);
   await prefs.setString('subUserTitle', subUserTitle);
@@ -139,7 +165,9 @@ Future<void> getUserDataFromLocal() async {
   constSubUserTitle = prefs.getString('subUserTitle') ?? '';
   isSubUser = prefs.getBool('isSubUser') ?? false;
   String? data = prefs.getString("userPermission");
-  data != null ? finalUserRoleModel = UserRoleModel.fromJson(jsonDecode(data)) : null;
+  data != null
+      ? finalUserRoleModel = UserRoleModel.fromJson(jsonDecode(data))
+      : null;
 }
 
 String userPermissionErrorText = 'Access not granted';
@@ -209,7 +237,8 @@ Future<String> getUserID() async {
   return uid ?? '';
 }
 
-void putUserDataImidiyate({required String uid, required String title, required bool isSubUse}) {
+void putUserDataImidiyate(
+    {required String uid, required String title, required bool isSubUse}) {
   constUserId = uid;
   constSubUserTitle = title;
   isSubUser = isSubUse;
@@ -260,9 +289,12 @@ String dropdownValue = 'Select Business Category';
 final currentDate = DateTime.now();
 final firstDayOfCurrentMonth = DateTime(currentDate.year, currentDate.month, 1);
 final firstDayOfCurrentYear = DateTime(currentDate.year, 1, 1);
-final firstDayOfPreviousYear = firstDayOfCurrentYear.subtract(const Duration(days: 1));
-final lastDayOfPreviousMonth = firstDayOfCurrentMonth.subtract(const Duration(days: 1));
-final firstDayOfPreviousMonth = DateTime(lastDayOfPreviousMonth.year, lastDayOfPreviousMonth.month, 1);
+final firstDayOfPreviousYear =
+    firstDayOfCurrentYear.subtract(const Duration(days: 1));
+final lastDayOfPreviousMonth =
+    firstDayOfCurrentMonth.subtract(const Duration(days: 1));
+final firstDayOfPreviousMonth =
+    DateTime(lastDayOfPreviousMonth.year, lastDayOfPreviousMonth.month, 1);
 
 DateFormat dataTypeFormat = DateFormat('dd MMM yyyy');
 

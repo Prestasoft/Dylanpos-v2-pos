@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,17 +13,17 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
   final TimeOfDay selectedTime;
   final String clientId;
 
-  const ConfirmationScreen( {
-    Key? key,
-    required this.packageId,
-    required this.packageName,
-    required this.dressId,
-    required this.dressName,
-    required this.branchId,
-    required this.selectedDate,
-    required this.selectedTime,
-    required this.clientId
-  }) : super(key: key);
+  const ConfirmationScreen(
+      {Key? key,
+      required this.packageId,
+      required this.packageName,
+      required this.dressId,
+      required this.dressName,
+      required this.branchId,
+      required this.selectedDate,
+      required this.selectedTime,
+      required this.clientId})
+      : super(key: key);
 
   @override
   _ConfirmationScreenState createState() => _ConfirmationScreenState();
@@ -63,7 +62,8 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
+          content: Text(
+              "Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
           backgroundColor: Colors.red,
         ),
       );
@@ -107,7 +107,8 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error al crear la reserva. Por favor intenta de nuevo."),
+          content:
+              Text("Error al crear la reserva. Por favor intenta de nuevo."),
           backgroundColor: Colors.red,
         ),
       );
@@ -157,9 +158,9 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                 child: isSubmitting
                     ? CircularProgressIndicator(color: Colors.white)
                     : Text(
-                  "Confirmar Reserva",
-                  style: TextStyle(fontSize: 18),
-                ),
+                        "Confirmar Reserva",
+                        style: TextStyle(fontSize: 18),
+                      ),
               ),
             ),
           ],

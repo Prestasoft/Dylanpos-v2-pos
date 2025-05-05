@@ -1,14 +1,20 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show CircularProgressIndicator, Colors, DropdownButton, DropdownButtonHideUnderline, DropdownMenuItem, Theme;
+import 'package:flutter/material.dart'
+    show
+        CircularProgressIndicator,
+        Colors,
+        DropdownButton,
+        DropdownButtonHideUnderline,
+        DropdownMenuItem;
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/model/customer_model.dart';
-
 import '../Provider/customer_provider.dart' show allCustomerProvider;
-import '../Screen/Widgets/Constant Data/constant.dart' show kBlueTextColor, kNeutral400, kTextStyle, kTitleColor;
+import '../Screen/Widgets/Constant Data/constant.dart'
+    show kBlueTextColor, kNeutral400, kTextStyle, kTitleColor;
 
 class CustomerSelectionWidget extends ConsumerWidget {
   final String? selectedUserId;
@@ -31,7 +37,6 @@ class CustomerSelectionWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customerList = ref.watch(allCustomerProvider);
-    final theme = Theme.of(context);
 
     return customerList.when(
       data: (allCustomers) {
@@ -39,7 +44,8 @@ class CustomerSelectionWidget extends ConsumerWidget {
         List<CustomerModel> customersList = [];
 
         for (var value1 in allCustomers) {
-          listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
+          listOfPhoneNumber
+              .add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
           if (value1.type != 'Supplier') {
             customersList.add(value1);
           }
@@ -160,8 +166,7 @@ class CustomerSelectionWidget extends ConsumerWidget {
         child: Text(
           des,
           style: kTextStyle.copyWith(
-              overflow: TextOverflow.ellipsis,
-              color: kTitleColor),
+              overflow: TextOverflow.ellipsis, color: kTitleColor),
         ),
       );
       dropDownItems.add(item);

@@ -19,16 +19,16 @@ class MtTopStock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
-    final globalCurrency = currencyProvider.currency ?? '\$';
     final theme = Theme.of(context);
     return Container(
       height: 400,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.0), color: kWhite),
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 14),
+            padding:
+                EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 SvgPicture.asset(
@@ -60,7 +60,8 @@ class MtTopStock extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (_, i) {
-                    report.sort((a, b) => b.stock!.compareTo(a.stock.toString()));
+                    report
+                        .sort((a, b) => b.stock!.compareTo(a.stock.toString()));
                     return (ListTile(
                       leading: Container(
                         height: 40.0,
@@ -82,10 +83,12 @@ class MtTopStock extends StatelessWidget {
                         style: theme.textTheme.titleSmall,
                       ),
                       trailing: Text(
-                        myFormat.format(double.tryParse(report[i].stock ?? '') ?? 0),
+                        myFormat.format(
+                            double.tryParse(report[i].stock ?? '') ?? 0),
                         style: theme.textTheme.titleMedium,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
                       horizontalTitleGap: 12,
                     ));
                   })
@@ -115,11 +118,13 @@ class TopSellingProduct extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       height: 400,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.0), color: kWhite),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsetsDirectional.symmetric(
+                horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 SvgPicture.asset(
@@ -154,7 +159,9 @@ class TopSellingProduct extends StatelessWidget {
                     width: 40.0,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30.0),
-                      image: DecorationImage(image: NetworkImage(report[i].productImage ?? ''), fit: BoxFit.cover),
+                      image: DecorationImage(
+                          image: NetworkImage(report[i].productImage ?? ''),
+                          fit: BoxFit.cover),
                       border: Border.all(color: kBorderColorTextField),
                     ),
                   ),
@@ -214,12 +221,14 @@ class TopCustomerTable extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       height: 400,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.0), color: kWhite),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsetsDirectional.symmetric(
+                horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 HugeIcon(
@@ -230,7 +239,8 @@ class TopCustomerTable extends StatelessWidget {
                 const SizedBox(width: 8.0),
                 Text(
                   lang.S.of(context).customerOfTheMonth,
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
                 ),
               ],
             ),
@@ -252,7 +262,9 @@ class TopCustomerTable extends StatelessWidget {
                         width: 40.0,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30.0),
-                          image: DecorationImage(image: NetworkImage(report[i].image ?? ''), fit: BoxFit.cover),
+                          image: DecorationImage(
+                              image: NetworkImage(report[i].image ?? ''),
+                              fit: BoxFit.cover),
                           border: Border.all(color: kBorderColorTextField),
                         ),
                       ),
@@ -270,7 +282,8 @@ class TopCustomerTable extends StatelessWidget {
                         "$globalCurrency ${myFormat.format(double.tryParse(report[i].amount ?? '') ?? 0)}",
                         style: theme.textTheme.titleMedium,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
                       horizontalTitleGap: 12,
                     ));
                   },

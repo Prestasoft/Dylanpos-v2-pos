@@ -36,7 +36,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
     return total;
   }
 
-  double calculateTotalPaymentOut(List<DailyTransactionModel> dailyTransaction) {
+  double calculateTotalPaymentOut(
+      List<DailyTransactionModel> dailyTransaction) {
     double total = 0.0;
     for (var element in dailyTransaction) {
       total += element.paymentOut;
@@ -46,11 +47,18 @@ class _DailyTransactionState extends State<DailyTransaction> {
 
   String searchItem = '';
 
-  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime selectedDate =
+      DateTime(DateTime.now().year, DateTime.now().month, 1);
 
-  List<String> month = ['This Month', 'Last Month', 'Last 6 Month', 'This Year', 'View All'];
+  List<String> month = [
+    'Este mes',
+    'Ultimo mes',
+    'Ultimos 6 meses',
+    'Este año',
+    'Ver todo'
+  ];
 
-  String selectedMonth = 'This Month';
+  String selectedMonth = 'Este mes';
 
   DropdownButton<String> getMonth() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -72,33 +80,38 @@ class _DailyTransactionState extends State<DailyTransaction> {
         setState(() {
           selectedMonth = value!;
           switch (selectedMonth) {
-            case 'This Month':
+            case 'Este mes':
               {
-                var date = DateTime(DateTime.now().year, DateTime.now().month, 1).toString();
+                var date =
+                    DateTime(DateTime.now().year, DateTime.now().month, 1)
+                        .toString();
 
                 selectedDate = DateTime.parse(date);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'Last Month':
+            case 'Ultimo mes':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
+                selected2ndDate =
+                    DateTime(DateTime.now().year, DateTime.now().month, 0);
               }
               break;
-            case 'Last 6 Month':
+            case 'Ultimos 6 meses':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'This Year':
+            case 'Este año':
               {
                 selectedDate = DateTime(DateTime.now().year, 1, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'View All':
+            case 'Ver todo':
               {
                 selectedDate = DateTime(1900, 01, 01);
                 selected2ndDate = DateTime.now();
@@ -111,7 +124,11 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -120,16 +137,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   DateTime selected2ndDate = DateTime.now();
-
-  Future<void> _selectedDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selected2ndDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
-    if (picked != null && picked != selected2ndDate) {
-      setState(() {
-        selected2ndDate = picked;
-      });
-    }
-  }
-
   final _horizontalScroll = ScrollController();
   int _lossProfitPerPage = 10; // Default number of items to display
   int _currentPage = 1;
@@ -172,7 +179,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
                 continue;
               }
 
-              if ((selectedDate.isBefore(parsedDate) || parsedDate.isAtSameMomentAs(selectedDate)) && (selected2ndDate.isAfter(parsedDate) || parsedDate.isAtSameMomentAs(selected2ndDate))) {
+              if ((selectedDate.isBefore(parsedDate) ||
+                      parsedDate.isAtSameMomentAs(selectedDate)) &&
+                  (selected2ndDate.isAfter(parsedDate) ||
+                      parsedDate.isAtSameMomentAs(selected2ndDate))) {
                 reTransaction.add(element);
               }
             }
@@ -181,7 +191,19 @@ class _DailyTransactionState extends State<DailyTransaction> {
           // Apply search filter
           if (searchItem.isNotEmpty) {
             reTransaction = reTransaction.where((element) {
-              return element.name.toLowerCase().contains(searchItem.toLowerCase()) || element.date.toLowerCase().contains(searchItem.toLowerCase()) || element.type.toLowerCase().contains(searchItem.toLowerCase()) || element.total.toString().contains(searchItem) || element.paymentIn.toString().contains(searchItem) || element.paymentOut.toString().contains(searchItem) || element.remainingBalance.toString().contains(searchItem);
+              return element.name
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) ||
+                  element.date
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) ||
+                  element.type
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) ||
+                  element.total.toString().contains(searchItem) ||
+                  element.paymentIn.toString().contains(searchItem) ||
+                  element.paymentOut.toString().contains(searchItem) ||
+                  element.remainingBalance.toString().contains(searchItem);
             }).toList();
           }
 
@@ -195,9 +217,16 @@ class _DailyTransactionState extends State<DailyTransaction> {
           // );
 
           // Calculate pagination
-          final pages = _lossProfitPerPage == -1 ? 1 : (reTransaction.length / _lossProfitPerPage).ceil();
-          final startIndex = _lossProfitPerPage == -1 ? 0 : (_currentPage - 1) * _lossProfitPerPage;
-          final endIndex = _lossProfitPerPage == -1 ? reTransaction.length : (startIndex + _lossProfitPerPage).clamp(0, reTransaction.length);
+          final pages = _lossProfitPerPage == -1
+              ? 1
+              : (reTransaction.length / _lossProfitPerPage).ceil();
+          final startIndex = _lossProfitPerPage == -1
+              ? 0
+              : (_currentPage - 1) * _lossProfitPerPage;
+          final endIndex = _lossProfitPerPage == -1
+              ? reTransaction.length
+              : (startIndex + _lossProfitPerPage)
+                  .clamp(0, reTransaction.length);
 
           // Get paginated transactions
           final paginatedList = reTransaction.sublist(startIndex, endIndex);
@@ -235,7 +264,13 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                     decoration: const InputDecoration(
                                         // border: InputBorder.none,
                                         ),
-                                    child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getMonth())),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getMonth())),
                                   );
                                 },
                               ),
@@ -250,37 +285,48 @@ class _DailyTransactionState extends State<DailyTransaction> {
                             padding: const EdgeInsets.all(10.0),
                             child: Container(
                                 height: 48,
-                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), border: Border.all(color: kGreyTextColor)),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5.0),
+                                    border: Border.all(color: kGreyTextColor)),
                                 child: Row(
                                   children: [
                                     Container(
                                       height: 48,
                                       padding: const EdgeInsets.all(4),
                                       alignment: Alignment.center,
-                                      decoration: const BoxDecoration(shape: BoxShape.rectangle, color: kGreyTextColor),
+                                      decoration: const BoxDecoration(
+                                          shape: BoxShape.rectangle,
+                                          color: kGreyTextColor),
                                       child: Center(
                                         child: Text(
                                           lang.S.of(context).between,
-                                          style: kTextStyle.copyWith(color: kWhite),
+                                          style: kTextStyle.copyWith(
+                                              color: kWhite),
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: 10.0),
                                     Flexible(
                                       child: GestureDetector(
-                                        onTap: () => _selectDate(context), // Handle date selection
+                                        onTap: () => _selectDate(
+                                            context), // Handle date selection
                                         child: RichText(
                                           text: TextSpan(
                                             style: theme.textTheme.titleSmall,
                                             children: [
                                               TextSpan(
-                                                text: '${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ',
-                                                style: theme.textTheme.titleSmall,
+                                                text:
+                                                    '${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ',
+                                                style:
+                                                    theme.textTheme.titleSmall,
                                               ),
-                                              TextSpan(text: lang.S.of(context).to),
                                               TextSpan(
-                                                text: ' ${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
-                                                style: theme.textTheme.titleSmall,
+                                                  text: lang.S.of(context).to),
+                                              TextSpan(
+                                                text:
+                                                    ' ${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                                style:
+                                                    theme.textTheme.titleSmall,
                                               ),
                                             ],
                                           ),
@@ -300,7 +346,11 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
                             child: Container(
-                              padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                              padding: const EdgeInsets.only(
+                                  left: 10.0,
+                                  right: 20.0,
+                                  top: 10.0,
+                                  bottom: 10.0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10.0),
                                 color: const Color(0xFFCFF4E3),
@@ -310,8 +360,13 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    reTransaction.isNotEmpty ? '$globalCurrency${myFormat.format(double.tryParse(reTransaction.first.remainingBalance.toStringAsFixed(2))?.abs() ?? 0)}' : '0',
-                                    style: theme.textTheme.titleLarge?.copyWith(color: kTitleColor, fontWeight: FontWeight.w600, fontSize: 18),
+                                    reTransaction.isNotEmpty
+                                        ? '$globalCurrency${myFormat.format(double.tryParse(reTransaction.first.remainingBalance.toStringAsFixed(2))?.abs() ?? 0)}'
+                                        : '0',
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                        color: kTitleColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 18),
                                   ),
                                   Text(
                                     lang.S.of(context).remainingBalance,
@@ -329,7 +384,11 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
                             child: Container(
-                              padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                              padding: const EdgeInsets.only(
+                                  left: 10.0,
+                                  right: 20.0,
+                                  top: 10.0,
+                                  bottom: 10.0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10.0),
                                 color: const Color(0xFFFEE7CB),
@@ -340,7 +399,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 children: [
                                   Text(
                                     '$globalCurrency ${reTransaction.isNotEmpty ? myFormat.format(double.tryParse(calculateTotalPaymentOut(reTransaction).toStringAsFixed(2)) ?? 0) : 0}',
-                                    style: theme.textTheme.titleLarge?.copyWith(color: kTitleColor, fontWeight: FontWeight.w600, fontSize: 18),
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                        color: kTitleColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 18),
                                   ),
                                   Text(
                                     lang.S.of(context).totalpaymentIn,
@@ -358,7 +420,11 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
                             child: Container(
-                              padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                              padding: const EdgeInsets.only(
+                                  left: 10.0,
+                                  right: 20.0,
+                                  top: 10.0,
+                                  bottom: 10.0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10.0),
                                 color: const Color(0xFFFED3D3),
@@ -369,7 +435,9 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 children: [
                                   Text(
                                     '$globalCurrency ${reTransaction.isNotEmpty ? myFormat.format(double.tryParse(calculateTotalPaymentIn(reTransaction).toStringAsFixed(2)) ?? 0) : 0}',
-                                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 18),
                                   ),
                                   Text(
                                     lang.S.of(context).totalPaymentOut,
@@ -440,7 +508,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 children: [
                                   Flexible(
                                       child: Text(
-                                    'Show-',
+                                    'Mostrar-',
                                     style: theme.textTheme.bodyLarge,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -454,11 +522,19 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                    items: [
+                                      10,
+                                      20,
+                                      50,
+                                      100,
+                                      -1
+                                    ].map<DropdownMenuItem<int>>((int value) {
                                       return DropdownMenuItem<int>(
                                         value: value,
                                         child: Text(
-                                          value == -1 ? "All" : value.toString(),
+                                          value == -1
+                                              ? "All"
+                                              : value.toString(),
                                           style: theme.textTheme.bodyLarge,
                                         ),
                                       );
@@ -466,7 +542,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                     onChanged: (int? newValue) {
                                       setState(() {
                                         if (newValue == -1) {
-                                          _lossProfitPerPage = -1; // Set to -1 for "All"
+                                          _lossProfitPerPage =
+                                              -1; // Set to -1 for "All"
                                         } else {
                                           _lossProfitPerPage = newValue ?? 10;
                                         }
@@ -496,7 +573,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                               keyboardType: TextInputType.name,
                               decoration: kInputDecoration.copyWith(
                                 contentPadding: const EdgeInsets.all(10.0),
-                                hintText: (lang.S.of(context).searchByInvoiceOrName),
+                                hintText:
+                                    (lang.S.of(context).searchByInvoiceOrName),
                                 border: InputBorder.none,
                                 suffixIcon: const Icon(
                                   FeatherIcons.search,
@@ -512,7 +590,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           ? Column(
                               children: [
                                 LayoutBuilder(
-                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  builder: (BuildContext context,
+                                      BoxConstraints constraints) {
                                     return Scrollbar(
                                       controller: _horizontalScroll,
                                       thumbVisibility: true,
@@ -528,7 +607,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                           child: Theme(
                                             data: theme.copyWith(
                                               dividerColor: Colors.transparent,
-                                              dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                              dividerTheme:
+                                                  const DividerThemeData(
+                                                      color:
+                                                          Colors.transparent),
                                             ),
                                             child: DataTable(
                                               border: const TableBorder(
@@ -537,13 +619,20 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      Colors.white),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle: theme.textTheme.titleMedium,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
                                               columns: [
-                                                DataColumn(label: Text(lang.S.of(context).SL)),
+                                                DataColumn(
+                                                    label: Text(
+                                                        lang.S.of(context).SL)),
                                                 DataColumn(
                                                   label: Text(
                                                     lang.S.of(context).name,
@@ -566,12 +655,16 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                 ),
                                                 DataColumn(
                                                   label: Text(
-                                                    lang.S.of(context).paymentIn,
+                                                    lang.S
+                                                        .of(context)
+                                                        .paymentIn,
                                                   ),
                                                 ),
                                                 DataColumn(
                                                   label: Text(
-                                                    lang.S.of(context).paymentOut,
+                                                    lang.S
+                                                        .of(context)
+                                                        .paymentOut,
                                                   ),
                                                 ),
                                                 DataColumn(
@@ -587,157 +680,249 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                               ],
                                               rows: List.generate(
                                                 paginatedList.length,
-                                                (index) => paginatedList.last.date != paginatedList[index].date
-                                                    ? DataRow(cells: [
-                                                        DataCell(Text('${startIndex + index + 1}')),
-                                                        DataCell(
-                                                          Text(
-                                                            paginatedList[index].name,
-                                                          ),
-                                                        ),
-                                                        DataCell(
-                                                          Text(
-                                                            paginatedList[index].date.substring(0, 10),
-                                                          ),
-                                                        ),
-                                                        DataCell(
-                                                          Text(
-                                                            paginatedList[index].type,
-                                                          ),
-                                                        ),
-                                                        DataCell(
-                                                          Text(
-                                                            '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].total.toStringAsFixed(2)) ?? 0)}',
-                                                          ),
-                                                        ),
-                                                        DataCell(
-                                                          Text(
-                                                            myFormat.format(double.tryParse(paginatedList[index].paymentIn.toStringAsFixed(2)) ?? 0) == '0' ? '' : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentIn.toStringAsFixed(2)) ?? 0)}',
-                                                          ),
-                                                        ),
-                                                        DataCell(
-                                                          Text(
-                                                            myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ?? 0) == '0' ? '' : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ?? 0)}',
-                                                          ),
-                                                        ),
-                                                        DataCell(
-                                                          Text('$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].remainingBalance.toStringAsFixed(2)) ?? 0)}'),
-                                                        ),
-                                                        DataCell(settingProvider.when(data: (setting) {
-                                                          return Theme(
-                                                            data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                            child: PopupMenuButton(
-                                                              surfaceTintColor: Colors.white,
-                                                              icon: const Icon(FeatherIcons.moreVertical, size: 18.0),
-                                                              padding: EdgeInsets.zero,
-                                                              itemBuilder: (BuildContext bc) => [
-                                                                PopupMenuItem(
-                                                                  onTap: () async {
-                                                                    if (paginatedList[index].type == 'Sale') {
-                                                                      await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: profile.value!, setting: setting, saleTransactionModel: paginatedList[index].saleTransactionModel!, context: context);
-                                                                    } else if (paginatedList[index].type == 'Sale Return') {
-                                                                      await GeneratePdfAndPrint().printSaleReturnInvoice(setting: setting, personalInformationModel: profile.value!, saleTransactionModel: paginatedList[index].saleTransactionModel!);
-                                                                    } else if (paginatedList[index].type == 'Purchase') {
-                                                                      await GeneratePdfAndPrint().printPurchaseInvoice(setting: setting, personalInformationModel: profile.value!, purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
-                                                                    } else if (paginatedList[index].type == 'Purchase Return') {
-                                                                      await GeneratePdfAndPrint().printPurchaseReturnInvoice(setting: setting, personalInformationModel: profile.value!, purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
-                                                                    } else if (paginatedList[index].type == 'Due Collection' || paginatedList[index].type == 'Due Payment') {
-                                                                      await GeneratePdfAndPrint().printDueInvoice(setting: setting, personalInformationModel: profile.value!, dueTransactionModel: paginatedList[index].dueTransactionModel!);
-                                                                    } else if (paginatedList[index].type == 'Expense') {
-                                                                      showDialog(
-                                                                        barrierDismissible: false,
-                                                                        context: context,
-                                                                        builder: (BuildContext context) {
-                                                                          return StatefulBuilder(
-                                                                            builder: (context, setStates) {
-                                                                              return Dialog(
-                                                                                surfaceTintColor: Colors.white,
-                                                                                shape: RoundedRectangleBorder(
-                                                                                  borderRadius: BorderRadius.circular(20.0),
-                                                                                ),
-                                                                                child: ExpenseDetails(expense: paginatedList[index].expenseModel!, manuContext: bc),
-                                                                              );
-                                                                            },
-                                                                          );
-                                                                        },
-                                                                      );
-                                                                    } else if (paginatedList[index].type == 'Income') {
-                                                                      showDialog(
-                                                                        barrierDismissible: false,
-                                                                        context: context,
-                                                                        builder: (BuildContext context) {
-                                                                          return StatefulBuilder(
-                                                                            builder: (context, setStates) {
-                                                                              return Dialog(
-                                                                                surfaceTintColor: Colors.white,
-                                                                                shape: RoundedRectangleBorder(
-                                                                                  borderRadius: BorderRadius.circular(20.0),
-                                                                                ),
-                                                                                child: IncomeDetails(income: paginatedList[index].incomeModel!, manuContext: bc),
-                                                                              );
-                                                                            },
-                                                                          );
-                                                                        },
-                                                                      );
-                                                                    }
-                                                                  },
-                                                                  child: Row(
-                                                                    children: [
-                                                                      paginatedList[index].type == 'Income' || paginatedList[index].type == 'Expense' ? Icon(IconlyLight.show, size: 22.0, color: kGreyTextColor) : HugeIcon(icon: HugeIcons.strokeRoundedPrinter, size: 22.0, color: kGreyTextColor),
-                                                                      const SizedBox(width: 4.0),
-                                                                      Text(
-                                                                        // Show "View" for Income/Expense, "Print" for others
-                                                                        paginatedList[index].type == 'Income' || paginatedList[index].type == 'Expense' ? lang.S.of(context).view : lang.S.of(context).print,
-                                                                        style: theme.textTheme.bodyLarge?.copyWith(
-                                                                          color: kGreyTextColor,
-                                                                        ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                              onSelected: (value) {
-                                                                Navigator.pushNamed(context, '$value');
-                                                              },
+                                                (index) =>
+                                                    paginatedList.last.date !=
+                                                            paginatedList[index]
+                                                                .date
+                                                        ? DataRow(cells: [
+                                                            DataCell(Text(
+                                                                '${startIndex + index + 1}')),
+                                                            DataCell(
+                                                              Text(
+                                                                paginatedList[
+                                                                        index]
+                                                                    .name,
+                                                              ),
                                                             ),
-                                                          );
-                                                        }, error: (e, stack) {
-                                                          return Text(e.toString());
-                                                        }, loading: () {
-                                                          return Center(
-                                                            child: CircularProgressIndicator(),
-                                                          );
-                                                        })),
-                                                      ])
-                                                    : DataRow(cells: [
-                                                        const DataCell(
-                                                          Text(''),
-                                                        ),
-                                                        DataCell(
-                                                          Text(lang.S.of(context).openingBalance),
-                                                        ),
-                                                        const DataCell(
-                                                          Text(''),
-                                                        ),
-                                                        const DataCell(
-                                                          Text(''),
-                                                        ),
-                                                        const DataCell(
-                                                          Text(''),
-                                                        ),
-                                                        const DataCell(
-                                                          Text(''),
-                                                        ),
-                                                        const DataCell(
-                                                          Text(''),
-                                                        ),
-                                                        DataCell(
-                                                          Text(myFormat.format(profile.value!.shopOpeningBalance)),
-                                                        ),
-                                                        const DataCell(
-                                                          Text(''),
-                                                        ),
-                                                      ]),
+                                                            DataCell(
+                                                              Text(
+                                                                paginatedList[
+                                                                        index]
+                                                                    .date
+                                                                    .substring(
+                                                                        0, 10),
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              Text(
+                                                                paginatedList[
+                                                                        index]
+                                                                    .type,
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              Text(
+                                                                '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].total.toStringAsFixed(2)) ?? 0)}',
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              Text(
+                                                                myFormat.format(double.tryParse(paginatedList[index].paymentIn.toStringAsFixed(2)) ??
+                                                                            0) ==
+                                                                        '0'
+                                                                    ? ''
+                                                                    : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentIn.toStringAsFixed(2)) ?? 0)}',
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              Text(
+                                                                myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ??
+                                                                            0) ==
+                                                                        '0'
+                                                                    ? ''
+                                                                    : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ?? 0)}',
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              Text(
+                                                                  '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].remainingBalance.toStringAsFixed(2)) ?? 0)}'),
+                                                            ),
+                                                            DataCell(
+                                                                settingProvider
+                                                                    .when(data:
+                                                                        (setting) {
+                                                              return Theme(
+                                                                data: ThemeData(
+                                                                    highlightColor:
+                                                                        dropdownItemColor,
+                                                                    focusColor:
+                                                                        dropdownItemColor,
+                                                                    hoverColor:
+                                                                        dropdownItemColor),
+                                                                child:
+                                                                    PopupMenuButton(
+                                                                  surfaceTintColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  icon: const Icon(
+                                                                      FeatherIcons
+                                                                          .moreVertical,
+                                                                      size:
+                                                                          18.0),
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .zero,
+                                                                  itemBuilder:
+                                                                      (BuildContext
+                                                                              bc) =>
+                                                                          [
+                                                                    PopupMenuItem(
+                                                                      onTap:
+                                                                          () async {
+                                                                        if (paginatedList[index].type ==
+                                                                            'Sale') {
+                                                                          await GeneratePdfAndPrint().printSaleInvoice(
+                                                                              personalInformationModel: profile.value!,
+                                                                              setting: setting,
+                                                                              saleTransactionModel: paginatedList[index].saleTransactionModel!,
+                                                                              context: context);
+                                                                        } else if (paginatedList[index].type ==
+                                                                            'Sale Return') {
+                                                                          await GeneratePdfAndPrint().printSaleReturnInvoice(
+                                                                              setting: setting,
+                                                                              personalInformationModel: profile.value!,
+                                                                              saleTransactionModel: paginatedList[index].saleTransactionModel!);
+                                                                        } else if (paginatedList[index].type ==
+                                                                            'Purchase') {
+                                                                          await GeneratePdfAndPrint().printPurchaseInvoice(
+                                                                              setting: setting,
+                                                                              personalInformationModel: profile.value!,
+                                                                              purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
+                                                                        } else if (paginatedList[index].type ==
+                                                                            'Purchase Return') {
+                                                                          await GeneratePdfAndPrint().printPurchaseReturnInvoice(
+                                                                              setting: setting,
+                                                                              personalInformationModel: profile.value!,
+                                                                              purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
+                                                                        } else if (paginatedList[index].type ==
+                                                                                'Due Collection' ||
+                                                                            paginatedList[index].type ==
+                                                                                'Due Payment') {
+                                                                          await GeneratePdfAndPrint().printDueInvoice(
+                                                                              setting: setting,
+                                                                              personalInformationModel: profile.value!,
+                                                                              dueTransactionModel: paginatedList[index].dueTransactionModel!);
+                                                                        } else if (paginatedList[index].type ==
+                                                                            'Expense') {
+                                                                          showDialog(
+                                                                            barrierDismissible:
+                                                                                false,
+                                                                            context:
+                                                                                context,
+                                                                            builder:
+                                                                                (BuildContext context) {
+                                                                              return StatefulBuilder(
+                                                                                builder: (context, setStates) {
+                                                                                  return Dialog(
+                                                                                    surfaceTintColor: Colors.white,
+                                                                                    shape: RoundedRectangleBorder(
+                                                                                      borderRadius: BorderRadius.circular(20.0),
+                                                                                    ),
+                                                                                    child: ExpenseDetails(expense: paginatedList[index].expenseModel!, manuContext: bc),
+                                                                                  );
+                                                                                },
+                                                                              );
+                                                                            },
+                                                                          );
+                                                                        } else if (paginatedList[index].type ==
+                                                                            'Income') {
+                                                                          showDialog(
+                                                                            barrierDismissible:
+                                                                                false,
+                                                                            context:
+                                                                                context,
+                                                                            builder:
+                                                                                (BuildContext context) {
+                                                                              return StatefulBuilder(
+                                                                                builder: (context, setStates) {
+                                                                                  return Dialog(
+                                                                                    surfaceTintColor: Colors.white,
+                                                                                    shape: RoundedRectangleBorder(
+                                                                                      borderRadius: BorderRadius.circular(20.0),
+                                                                                    ),
+                                                                                    child: IncomeDetails(income: paginatedList[index].incomeModel!, manuContext: bc),
+                                                                                  );
+                                                                                },
+                                                                              );
+                                                                            },
+                                                                          );
+                                                                        }
+                                                                      },
+                                                                      child:
+                                                                          Row(
+                                                                        children: [
+                                                                          paginatedList[index].type == 'Income' || paginatedList[index].type == 'Expense'
+                                                                              ? Icon(IconlyLight.show, size: 22.0, color: kGreyTextColor)
+                                                                              : HugeIcon(icon: HugeIcons.strokeRoundedPrinter, size: 22.0, color: kGreyTextColor),
+                                                                          const SizedBox(
+                                                                              width: 4.0),
+                                                                          Text(
+                                                                            // Show "View" for Income/Expense, "Print" for others
+                                                                            paginatedList[index].type == 'Income' || paginatedList[index].type == 'Expense'
+                                                                                ? lang.S.of(context).view
+                                                                                : lang.S.of(context).print,
+                                                                            style:
+                                                                                theme.textTheme.bodyLarge?.copyWith(
+                                                                              color: kGreyTextColor,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                  onSelected:
+                                                                      (value) {
+                                                                    Navigator.pushNamed(
+                                                                        context,
+                                                                        '$value');
+                                                                  },
+                                                                ),
+                                                              );
+                                                            }, error: (e,
+                                                                        stack) {
+                                                              return Text(
+                                                                  e.toString());
+                                                            }, loading: () {
+                                                              return Center(
+                                                                child:
+                                                                    CircularProgressIndicator(),
+                                                              );
+                                                            })),
+                                                          ])
+                                                        : DataRow(cells: [
+                                                            const DataCell(
+                                                              Text(''),
+                                                            ),
+                                                            DataCell(
+                                                              Text(lang.S
+                                                                  .of(context)
+                                                                  .openingBalance),
+                                                            ),
+                                                            const DataCell(
+                                                              Text(''),
+                                                            ),
+                                                            const DataCell(
+                                                              Text(''),
+                                                            ),
+                                                            const DataCell(
+                                                              Text(''),
+                                                            ),
+                                                            const DataCell(
+                                                              Text(''),
+                                                            ),
+                                                            const DataCell(
+                                                              Text(''),
+                                                            ),
+                                                            DataCell(
+                                                              Text(myFormat
+                                                                  .format(profile
+                                                                      .value!
+                                                                      .shopOpeningBalance)),
+                                                            ),
+                                                            const DataCell(
+                                                              Text(''),
+                                                            ),
+                                                          ]),
                                               ),
                                             ),
                                           ),
@@ -749,7 +934,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Flexible(
                                         child: Text(
@@ -761,21 +947,32 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                       Row(
                                         children: [
                                           InkWell(
-                                            overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                            overlayColor:
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.grey),
                                             hoverColor: Colors.grey,
-                                            onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                            onTap: _currentPage > 1
+                                                ? () => setState(
+                                                    () => _currentPage--)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomLeft: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(4.0),
                                                   topLeft: Radius.circular(4.0),
                                                 ),
                                               ),
                                               child: Center(
-                                                child: Text(lang.S.of(context).previous),
+                                                child: Text(lang.S
+                                                    .of(context)
+                                                    .previous),
                                               ),
                                             ),
                                           ),
@@ -783,13 +980,15 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: kMainColor,
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$_currentPage',
-                                                style: const TextStyle(color: Colors.white),
+                                                style: const TextStyle(
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           ),
@@ -797,7 +996,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: Colors.transparent,
                                             ),
                                             child: Center(
@@ -807,20 +1007,34 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                             ),
                                           ),
                                           InkWell(
-                                            hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                            overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                            onTap: _currentPage * _lossProfitPerPage < reTransaction.length ? () => setState(() => _currentPage++) : null,
+                                            hoverColor: Colors.blue
+                                                .withValues(alpha: 0.1),
+                                            overlayColor:
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.blue),
+                                            onTap: _currentPage *
+                                                        _lossProfitPerPage <
+                                                    reTransaction.length
+                                                ? () => setState(
+                                                    () => _currentPage++)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomRight: Radius.circular(4.0),
-                                                  topRight: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomRight:
+                                                      Radius.circular(4.0),
+                                                  topRight:
+                                                      Radius.circular(4.0),
                                                 ),
                                               ),
-                                              child: const Center(child: Text('Next')),
+                                              child: const Center(
+                                                  child: Text('Next')),
                                             ),
                                           ),
                                         ],
@@ -830,7 +1044,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 ),
                               ],
                             )
-                          : EmptyWidget(title: lang.S.of(context).noTransactionFound),
+                          : EmptyWidget(
+                              title: lang.S.of(context).noTransactionFound),
                     ],
                   ),
                 )

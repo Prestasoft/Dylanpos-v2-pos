@@ -42,7 +42,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return ri.Consumer(builder: (context, ref, __) {
-      AsyncValue<PersonalInformationModel> userProfileDetails = ref.watch(profileDetailsProvider);
+      AsyncValue<PersonalInformationModel> userProfileDetails =
+          ref.watch(profileDetailsProvider);
       return AppBar(
         backgroundColor: Colors.white,
         leadingWidth: 40,
@@ -65,11 +66,14 @@ class _TopBarWidgetState extends State<TopBarWidget> {
         ).value,
         toolbarHeight: rf.ResponsiveValue<double?>(
           context,
-          conditionalValues: [rf.Condition.largerThan(name: BreakpointName.SM.name, value: 70)],
+          conditionalValues: [
+            rf.Condition.largerThan(name: BreakpointName.SM.name, value: 70)
+          ],
         ).value,
         surfaceTintColor: Colors.transparent,
         title: ri.Consumer(builder: (context, ref, __) {
-          AsyncValue<PersonalInformationModel> userProfileDetails = ref.watch(profileDetailsProvider);
+          AsyncValue<PersonalInformationModel> userProfileDetails =
+              ref.watch(profileDetailsProvider);
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -84,10 +88,12 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
                           backgroundColor: const Color(0xFF8424FF),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0)),
                           // side: const BorderSide(color: kBorderColorTextField, width: 1),
                           textStyle: kTextStyle.copyWith(color: kWhite),
-                          surfaceTintColor: const Color(0xFF8424FF).withOpacity(0.5),
+                          surfaceTintColor:
+                              const Color(0xFF8424FF).withOpacity(0.5),
                           shadowColor: const Color(0xFF8424FF).withOpacity(0.1),
                         ),
                         onPressed: () {
@@ -99,7 +105,10 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                             const Icon(Icons.add_rounded, color: kWhite),
                             Text(
                               'Rentar Vestidos',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),
@@ -108,14 +117,17 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         ),
                       ),
                     ),
-              screenWidth < 670 ? const SizedBox.shrink() : const SizedBox(width: 10.0),
+              screenWidth < 670
+                  ? const SizedBox.shrink()
+                  : const SizedBox(width: 10.0),
               screenWidth < 590
                   ? const SizedBox.shrink()
                   : SizedBox(
                       height: 40,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0)),
                           padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
                           backgroundColor: kMainColor.withValues(alpha: 0.1),
                           side: const BorderSide(color: kMainColor, width: 1),
@@ -132,7 +144,10 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                             const Icon(Icons.add_rounded, color: kMainColor),
                             Text(
                               'Facturar Reserva',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: kMainColor,
                                   ),
@@ -141,16 +156,21 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         ),
                       ),
                     ),
-              screenWidth < 590 ? const SizedBox.shrink() : const SizedBox(width: 10.0),
+              screenWidth < 590
+                  ? const SizedBox.shrink()
+                  : const SizedBox(width: 10.0),
               userProfileDetails.when(data: (details) {
                 return SizedBox(
                   width: screenWidth < 335 ? 150 : 180,
                   child: Text(
-                    isSubUser ? '${details.companyName ?? ''} [$constSubUserTitle]' : details.companyName ?? '',
+                    isSubUser
+                        ? '${details.companyName} [$constSubUserTitle]'
+                        : details.companyName,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: GoogleFonts.poppins(
-                      fontSize: context.width() < 900 ? 25 : context.width() * 0.018,
+                      fontSize:
+                          context.width() < 900 ? 25 : context.width() * 0.018,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -169,11 +189,13 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                       height: 40,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0)),
                           padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
                           backgroundColor: kMainColor.withValues(alpha: 0.05),
                           side: const BorderSide(color: kMainColor, width: 1),
-                          textStyle: kTextStyle.copyWith(color: const Color(0xFFFF2525)),
+                          textStyle: kTextStyle.copyWith(
+                              color: const Color(0xFFFF2525)),
                           surfaceTintColor: kWhite,
                           shadowColor: kMainColor.withOpacity(0.1),
                           foregroundColor: kMainColor.withOpacity(0.1),
@@ -187,27 +209,39 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                             const Icon(Icons.add_rounded, color: kMainColor),
                             Text(
                               'Vestidos',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: kMainColor, fontWeight: FontWeight.w600),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                      color: kMainColor,
+                                      fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
                       ),
                     ),
-              screenWidth < 800 ? const SizedBox.shrink() : const SizedBox(width: 10.0),
+              screenWidth < 800
+                  ? const SizedBox.shrink()
+                  : const SizedBox(width: 10.0),
               screenWidth < 800
                   ? const SizedBox.shrink()
                   : SizedBox(
                       height: 40,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0)),
                           padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                          backgroundColor: const Color(0xFF15CD75).withValues(alpha: 0.05),
-                          side: const BorderSide(color: Color(0xFF15CD75), width: 1),
-                          textStyle: kTextStyle.copyWith(color: const Color(0xFF15CD75)),
+                          backgroundColor:
+                              const Color(0xFF15CD75).withValues(alpha: 0.05),
+                          side: const BorderSide(
+                              color: Color(0xFF15CD75), width: 1),
+                          textStyle: kTextStyle.copyWith(
+                              color: const Color(0xFF15CD75)),
                           surfaceTintColor: kWhite,
                           shadowColor: const Color(0xFF15CD75).withOpacity(0.1),
-                          foregroundColor: const Color(0xFF15CD75).withOpacity(0.1),
+                          foregroundColor:
+                              const Color(0xFF15CD75).withOpacity(0.1),
                         ),
                         onPressed: () {
                           // Navigator.pushNamed(context, PurchaseList.route);
@@ -216,10 +250,14 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         },
                         child: Row(
                           children: [
-                            const Icon(Icons.add_rounded, color: Color(0xFF15CD75)),
+                            const Icon(Icons.add_rounded,
+                                color: Color(0xFF15CD75)),
                             Text(
                               'Calendario',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     color: const Color(0xFF15CD75),
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -228,17 +266,28 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         ),
                       ),
                     ),
-              screenWidth < 1260 ? const SizedBox.shrink() : const SizedBox(width: 10.0),
-              screenWidth < 1260 ? const SizedBox.shrink() : const GlobalLanguage(isDrawer: false),
-              screenWidth < 1430 ? const SizedBox.shrink() : const SizedBox(width: 10.0),
-              screenWidth < 1430 ? const SizedBox.shrink() : const GlobalCurrency(isDrawer: false)
+              screenWidth < 1260
+                  ? const SizedBox.shrink()
+                  : const SizedBox(width: 10.0),
+              screenWidth < 1260
+                  ? const SizedBox.shrink()
+                  : const GlobalLanguage(isDrawer: false),
+              screenWidth < 1430
+                  ? const SizedBox.shrink()
+                  : const SizedBox(width: 10.0),
+              screenWidth < 1430
+                  ? const SizedBox.shrink()
+                  : const GlobalCurrency(isDrawer: false)
             ],
           );
         }),
         actions: [
           userProfileDetails.when(data: (details) {
             return Theme(
-              data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+              data: ThemeData(
+                  highlightColor: dropdownItemColor,
+                  focusColor: dropdownItemColor,
+                  hoverColor: dropdownItemColor),
               child: PopupMenuButton(
                 surfaceTintColor: Colors.white,
                 padding: EdgeInsets.zero,
@@ -250,20 +299,26 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                     color: const Color(0xFF2DB0F6).withOpacity(0.1),
                     shape: BoxShape.rectangle,
                   ),
-                  child: const Icon(Icons.settings, color: Color(0xFF2DB0F6), size: 30.0),
+                  child: const Icon(Icons.settings,
+                      color: Color(0xFF2DB0F6), size: 30.0),
                 ),
                 itemBuilder: (BuildContext bc) => [
                   PopupMenuItem(
                     onTap: () {
                       // isSubUser ? null : ProfileUpdate(personalInformationModel: details).launch(context);
-                      isSubUser ? null : context.go('/profile-update', extra: details);
+                      isSubUser
+                          ? null
+                          : context.go('/profile-update', extra: details);
                     },
                     child: Row(
                       children: [
-                        const Icon(Icons.manage_accounts_sharp, size: 18.0, color: kTitleColor),
+                        const Icon(Icons.manage_accounts_sharp,
+                            size: 18.0, color: kTitleColor),
                         const SizedBox(width: 4.0),
                         Text(
-                          isSubUser ? '${details.companyName}[$constSubUserTitle]' : lang.S.of(context).prof,
+                          isSubUser
+                              ? '${details.companyName}[$constSubUserTitle]'
+                              : lang.S.of(context).prof,
                           style: kTextStyle.copyWith(color: kTitleColor),
                         ),
                       ],
@@ -284,7 +339,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                     },
                     child: Row(
                       children: [
-                        const Icon(FeatherIcons.logOut, size: 18.0, color: kTitleColor),
+                        const Icon(FeatherIcons.logOut,
+                            size: 18.0, color: kTitleColor),
                         const SizedBox(width: 4.0),
                         Text(
                           lang.S.of(context).logOut,

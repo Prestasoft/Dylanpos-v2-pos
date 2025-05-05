@@ -338,12 +338,22 @@ class _ProductState extends State<Product> {
   //   );
   // }
 
-  Future<void> productStockEditPopUp({required ProductModel product, required BuildContext popUp, required WidgetRef pref}) async {
+  Future<void> productStockEditPopUp(
+      {required ProductModel product,
+      required BuildContext popUp,
+      required WidgetRef pref}) async {
     TextEditingController stockController = TextEditingController(text: '0');
-    TextEditingController saleController = TextEditingController(text: myFormat.format(double.tryParse(product.productSalePrice) ?? 0));
-    TextEditingController purchaseController = TextEditingController(text: myFormat.format(double.tryParse(product.productPurchasePrice) ?? 0));
-    TextEditingController wholeSeller = TextEditingController(text: myFormat.format(double.tryParse(product.productWholeSalePrice) ?? 0));
-    TextEditingController dealer = TextEditingController(text: myFormat.format(double.tryParse(product.productDealerPrice) ?? 0));
+    TextEditingController saleController = TextEditingController(
+        text: myFormat.format(double.tryParse(product.productSalePrice) ?? 0));
+    TextEditingController purchaseController = TextEditingController(
+        text: myFormat
+            .format(double.tryParse(product.productPurchasePrice) ?? 0));
+    TextEditingController wholeSeller = TextEditingController(
+        text: myFormat
+            .format(double.tryParse(product.productWholeSalePrice) ?? 0));
+    TextEditingController dealer = TextEditingController(
+        text:
+            myFormat.format(double.tryParse(product.productDealerPrice) ?? 0));
 
     String stock = '0';
     String productSalePrice = product.productSalePrice;
@@ -422,16 +432,20 @@ class _ProductState extends State<Product> {
                                 controller: stockController,
                                 onChanged: (value) {
                                   stock = value.replaceAll(',', '');
-                                  var formattedText = myFormat.format(num.parse(stock));
-                                  stockController.value = stockController.value.copyWith(
+                                  var formattedText =
+                                      myFormat.format(num.parse(stock));
+                                  stockController.value =
+                                      stockController.value.copyWith(
                                     text: formattedText,
-                                    selection: TextSelection.collapsed(offset: formattedText.length),
+                                    selection: TextSelection.collapsed(
+                                        offset: formattedText.length),
                                   );
                                 },
                                 validator: (value) {
                                   if (stock.isEmptyOrNull) {
                                     return 'Please enter Stock';
-                                  } else if (double.tryParse(stock) == null && stock.isEmptyOrNull) {
+                                  } else if (double.tryParse(stock) == null &&
+                                      stock.isEmptyOrNull) {
                                     return 'Enter Stock in number.';
                                   } else {
                                     return null;
@@ -441,7 +455,9 @@ class _ProductState extends State<Product> {
                                 cursorColor: kTitleColor,
                                 decoration: InputDecoration(
                                   labelText: lang.S.of(context).productStock,
-                                  hintText: lang.S.of(context).pleaseEnterProductStock,
+                                  hintText: lang.S
+                                      .of(context)
+                                      .pleaseEnterProductStock,
                                 ),
                               ),
                             ),
@@ -455,17 +471,26 @@ class _ProductState extends State<Product> {
                                     child: TextFormField(
                                       controller: purchaseController,
                                       onChanged: (value) {
-                                        productPurchasePrice = value.replaceAll(',', '');
-                                        var formattedText = myFormat.format(num.parse(productPurchasePrice));
-                                        purchaseController.value = purchaseController.value.copyWith(
+                                        productPurchasePrice =
+                                            value.replaceAll(',', '');
+                                        var formattedText = myFormat.format(
+                                            num.parse(productPurchasePrice));
+                                        purchaseController.value =
+                                            purchaseController.value.copyWith(
                                           text: formattedText,
-                                          selection: TextSelection.collapsed(offset: formattedText.length),
+                                          selection: TextSelection.collapsed(
+                                              offset: formattedText.length),
                                         );
                                       },
                                       validator: (value) {
-                                        if (productPurchasePrice.isEmptyOrNull) {
+                                        if (productPurchasePrice
+                                            .isEmptyOrNull) {
                                           return 'Please enter Purchase Price';
-                                        } else if (double.tryParse(productPurchasePrice) == null && productPurchasePrice.isEmptyOrNull) {
+                                        } else if (double.tryParse(
+                                                    productPurchasePrice) ==
+                                                null &&
+                                            productPurchasePrice
+                                                .isEmptyOrNull) {
                                           return 'Enter Price in number.';
                                         } else {
                                           return null;
@@ -474,8 +499,11 @@ class _ProductState extends State<Product> {
                                       showCursor: true,
                                       cursorColor: kTitleColor,
                                       decoration: InputDecoration(
-                                        labelText: lang.S.of(context).purchasePrice,
-                                        hintText: lang.S.of(context).enterPurchasePrice,
+                                        labelText:
+                                            lang.S.of(context).purchasePrice,
+                                        hintText: lang.S
+                                            .of(context)
+                                            .enterPurchasePrice,
                                       ),
                                     ),
                                   )),
@@ -488,17 +516,24 @@ class _ProductState extends State<Product> {
                                     child: TextFormField(
                                       controller: saleController,
                                       onChanged: (value) {
-                                        productSalePrice = value.replaceAll(',', '');
-                                        var formattedText = myFormat.format(num.parse(productSalePrice));
-                                        saleController.value = saleController.value.copyWith(
+                                        productSalePrice =
+                                            value.replaceAll(',', '');
+                                        var formattedText = myFormat.format(
+                                            num.parse(productSalePrice));
+                                        saleController.value =
+                                            saleController.value.copyWith(
                                           text: formattedText,
-                                          selection: TextSelection.collapsed(offset: formattedText.length),
+                                          selection: TextSelection.collapsed(
+                                              offset: formattedText.length),
                                         );
                                       },
                                       validator: (value) {
                                         if (productSalePrice.isEmptyOrNull) {
                                           return 'Please enter Sale Price';
-                                        } else if (double.tryParse(productSalePrice) == null && productSalePrice.isEmptyOrNull) {
+                                        } else if (double.tryParse(
+                                                    productSalePrice) ==
+                                                null &&
+                                            productSalePrice.isEmptyOrNull) {
                                           return 'Enter Price in number.';
                                         } else {
                                           return null;
@@ -507,8 +542,10 @@ class _ProductState extends State<Product> {
                                       showCursor: true,
                                       cursorColor: kTitleColor,
                                       decoration: InputDecoration(
-                                        labelText: lang.S.of(context).salePrices,
-                                        hintText: lang.S.of(context).enterSalePrice,
+                                        labelText:
+                                            lang.S.of(context).salePrices,
+                                        hintText:
+                                            lang.S.of(context).enterSalePrice,
                                       ),
                                     ),
                                   ))
@@ -523,11 +560,14 @@ class _ProductState extends State<Product> {
                                     child: TextFormField(
                                       controller: dealer,
                                       onChanged: (value) {
-                                        productDealerPrice = value.replaceAll(',', '');
-                                        var formattedText = myFormat.format(num.parse(productDealerPrice));
+                                        productDealerPrice =
+                                            value.replaceAll(',', '');
+                                        var formattedText = myFormat.format(
+                                            num.parse(productDealerPrice));
                                         dealer.value = dealer.value.copyWith(
                                           text: formattedText,
-                                          selection: TextSelection.collapsed(offset: formattedText.length),
+                                          selection: TextSelection.collapsed(
+                                              offset: formattedText.length),
                                         );
                                       },
                                       validator: (value) {
@@ -536,8 +576,10 @@ class _ProductState extends State<Product> {
                                       showCursor: true,
                                       cursorColor: kTitleColor,
                                       decoration: InputDecoration(
-                                        labelText: lang.S.of(context).dealerPrice,
-                                        hintText: lang.S.of(context).enterDealePrice,
+                                        labelText:
+                                            lang.S.of(context).dealerPrice,
+                                        hintText:
+                                            lang.S.of(context).enterDealePrice,
                                       ),
                                     ),
                                   )),
@@ -550,11 +592,15 @@ class _ProductState extends State<Product> {
                                     child: TextFormField(
                                       controller: wholeSeller,
                                       onChanged: (value) {
-                                        productWholePrice = value.replaceAll(',', '');
-                                        var formattedText = myFormat.format(num.parse(productWholePrice));
-                                        wholeSeller.value = wholeSeller.value.copyWith(
+                                        productWholePrice =
+                                            value.replaceAll(',', '');
+                                        var formattedText = myFormat.format(
+                                            num.parse(productWholePrice));
+                                        wholeSeller.value =
+                                            wholeSeller.value.copyWith(
                                           text: formattedText,
-                                          selection: TextSelection.collapsed(offset: formattedText.length),
+                                          selection: TextSelection.collapsed(
+                                              offset: formattedText.length),
                                         );
                                       },
                                       validator: (value) {
@@ -563,7 +609,8 @@ class _ProductState extends State<Product> {
                                       showCursor: true,
                                       cursorColor: kTitleColor,
                                       decoration: InputDecoration(
-                                        labelText: lang.S.of(context).wholeSaleprice,
+                                        labelText:
+                                            lang.S.of(context).wholeSaleprice,
                                         hintText: lang.S.of(context).enterPrice,
                                       ),
                                     ),
@@ -581,7 +628,8 @@ class _ProductState extends State<Product> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red),
                                   onPressed: () => GoRouter.of(context).pop(),
                                   child: Text(
                                     lang.S.of(context).cancel,
@@ -596,32 +644,45 @@ class _ProductState extends State<Product> {
                               child: ElevatedButton(
                                 onPressed: () async {
                                   if (finalUserRoleModel.productEdit == false) {
-                                    EasyLoading.showError(userPermissionErrorText);
+                                    EasyLoading.showError(
+                                        userPermissionErrorText);
                                     return;
                                   }
                                   if (validateAndSave()) {
                                     final userID = await getUserID();
-                                    final ref = FirebaseDatabase.instance.ref(userID).child('Products');
+                                    final ref = FirebaseDatabase.instance
+                                        .ref(userID)
+                                        .child('Products');
                                     String productKey = '';
 
                                     await ref.orderByKey().get().then((value) {
                                       for (var element in value.children) {
-                                        var data = jsonDecode(jsonEncode(element.value));
-                                        if (data['productCode'].toString() == product.productCode) {
+                                        var data = jsonDecode(
+                                            jsonEncode(element.value));
+                                        if (data['productCode'].toString() ==
+                                            product.productCode) {
                                           productKey = element.key.toString();
                                         }
                                       }
                                     });
 
                                     await ref.child(productKey).update({
-                                      'productStock': ((num.tryParse(stock) ?? 0) + (num.tryParse(product.productStock) ?? 0)).toString(),
+                                      'productStock': ((num.tryParse(stock) ??
+                                                  0) +
+                                              (num.tryParse(
+                                                      product.productStock) ??
+                                                  0))
+                                          .toString(),
                                       // 'productStock': stockController.text,
                                       'productSalePrice': productSalePrice,
-                                      'productPurchasePrice': productPurchasePrice,
-                                      'productWholeSalePrice': productWholePrice,
+                                      'productPurchasePrice':
+                                          productPurchasePrice,
+                                      'productWholeSalePrice':
+                                          productWholePrice,
                                       'productDealerPrice': productDealerPrice,
                                     });
                                     EasyLoading.showSuccess('Done');
+                                    // ignore: unused_result
                                     pref.refresh(productProvider);
                                     GoRouter.of(context).pop();
                                     // Navigator.pop(popUp);
@@ -654,7 +715,8 @@ class _ProductState extends State<Product> {
 
     try {
       String userId = await getUserID(); // Get User ID first
-      DatabaseReference productRef = FirebaseDatabase.instance.ref('$userId/Products');
+      DatabaseReference productRef =
+          FirebaseDatabase.instance.ref('$userId/Products');
 
       DataSnapshot snapshot = await productRef.orderByKey().get();
 
@@ -670,9 +732,10 @@ class _ProductState extends State<Product> {
       }
 
       if (customerKey.isNotEmpty) {
-        await FirebaseDatabase.instance.ref('$userId/Products/$customerKey').remove();
-        updateProduct.refresh(productProvider); // Refresh UI
-
+        await FirebaseDatabase.instance
+            .ref('$userId/Products/$customerKey')
+            .remove();
+        final _ = updateProduct.refresh(productProvider); // Refresh UI
         EasyLoading.showSuccess('Product Deleted');
       } else {
         EasyLoading.showError('Product Not Found');
@@ -709,20 +772,38 @@ class _ProductState extends State<Product> {
       backgroundColor: kDarkWhite,
       body: Consumer(
         builder: (_, ref, watch) {
-          AsyncValue<List<ProductModel>> productList = ref.watch(productProvider);
+          AsyncValue<List<ProductModel>> productList =
+              ref.watch(productProvider);
           final groupTax = ref.watch(groupTaxProvider);
           return productList.when(data: (allProducts) {
             List<ProductModel> showAbleProducts = [];
             for (var element in allProducts) {
-              allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
-              allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
-              warehouseBasedProductModel.add(WarehouseBasedProductModel(element.productName, element.warehouseId));
+              allProductsNameList
+                  .add(element.productName.removeAllWhiteSpace().toLowerCase());
+              allProductsCodeList
+                  .add(element.productCode.removeAllWhiteSpace().toLowerCase());
+              warehouseBasedProductModel.add(WarehouseBasedProductModel(
+                  element.productName, element.warehouseId));
               if (!isRegularSelected) {
-                if (((element.productName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.productName.contains(searchItem))) && element.expiringDate != null && ((DateTime.tryParse(element.expiringDate ?? '') ?? DateTime.now()).isBefore(DateTime.now().add(const Duration(days: 7))))) {
+                if (((element.productName
+                            .removeAllWhiteSpace()
+                            .toLowerCase()
+                            .contains(searchItem.toLowerCase()) ||
+                        element.productName.contains(searchItem))) &&
+                    element.expiringDate != null &&
+                    ((DateTime.tryParse(element.expiringDate ?? '') ??
+                            DateTime.now())
+                        .isBefore(
+                            DateTime.now().add(const Duration(days: 7))))) {
                   showAbleProducts.add(element);
                 }
               } else {
-                if (searchItem != '' && (element.productName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.productName.contains(searchItem))) {
+                if (searchItem != '' &&
+                    (element.productName
+                            .removeAllWhiteSpace()
+                            .toLowerCase()
+                            .contains(searchItem.toLowerCase()) ||
+                        element.productName.contains(searchItem))) {
                   showAbleProducts.add(element);
                 } else if (searchItem == '') {
                   showAbleProducts.add(element);
@@ -736,12 +817,14 @@ class _ProductState extends State<Product> {
                 // width: MediaQuery.of(context).size.width < 1275 ? 1275 - 240 : MediaQuery.of(context).size.width - 240,
                 decoration: const BoxDecoration(color: kDarkWhite),
                 child: Container(
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.0), color: kWhite),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 13),
                         child: Text(
                           lang.S.of(context).productList,
                           style: theme.textTheme.titleLarge?.copyWith(
@@ -785,7 +868,9 @@ class _ProductState extends State<Product> {
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Flexible(child: Text('Show-', style: theme.textTheme.bodyLarge)),
+                                  Flexible(
+                                      child: Text('Show-',
+                                          style: theme.textTheme.bodyLarge)),
                                   DropdownButton<int>(
                                     isDense: true,
                                     padding: EdgeInsets.zero,
@@ -795,11 +880,19 @@ class _ProductState extends State<Product> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                    items: [
+                                      10,
+                                      20,
+                                      50,
+                                      100,
+                                      -1
+                                    ].map<DropdownMenuItem<int>>((int value) {
                                       return DropdownMenuItem<int>(
                                         value: value,
                                         child: Text(
-                                          value == -1 ? "All" : value.toString(),
+                                          value == -1
+                                              ? "All"
+                                              : value.toString(),
                                           style: theme.textTheme.bodyLarge,
                                         ),
                                       );
@@ -807,7 +900,8 @@ class _ProductState extends State<Product> {
                                     onChanged: (int? newValue) {
                                       setState(() {
                                         if (newValue == -1) {
-                                          itemsPerPage = -1; // Set to -1 for "All"
+                                          itemsPerPage =
+                                              -1; // Set to -1 for "All"
                                         } else {
                                           itemsPerPage = newValue ?? 10;
                                         }
@@ -836,7 +930,8 @@ class _ProductState extends State<Product> {
                               },
                               textFieldType: TextFieldType.NAME,
                               decoration: InputDecoration(
-                                hintText: lang.S.of(context).searchByInvoiceOrName,
+                                hintText:
+                                    lang.S.of(context).searchByInvoiceOrName,
                                 suffixIcon: const Icon(
                                   FeatherIcons.search,
                                   color: kNeutral700,
@@ -870,15 +965,21 @@ class _ProductState extends State<Product> {
                                   padding: const EdgeInsets.all(10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
-                                    color: isSelected == title[0] ? kBlueTextColor : white,
+                                    color: isSelected == title[0]
+                                        ? kBlueTextColor
+                                        : white,
                                     border: Border.all(
-                                      color: isSelected == title[0] ? kBlueTextColor : kBorderColorTextField,
+                                      color: isSelected == title[0]
+                                          ? kBlueTextColor
+                                          : kBorderColorTextField,
                                     ),
                                   ),
                                   child: Text(
                                     title[0],
                                     style: theme.textTheme.titleSmall?.copyWith(
-                                      color: isSelected == title[0] ? kWhite : kTitleColor,
+                                      color: isSelected == title[0]
+                                          ? kWhite
+                                          : kTitleColor,
                                     ),
                                   ),
                                 ),
@@ -907,15 +1008,21 @@ class _ProductState extends State<Product> {
                                   padding: const EdgeInsets.all(10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
-                                    color: isSelected == title[1] ? kBlueTextColor : white,
+                                    color: isSelected == title[1]
+                                        ? kBlueTextColor
+                                        : white,
                                     border: Border.all(
-                                      color: isSelected == title[1] ? kBlueTextColor : kBorderColorTextField,
+                                      color: isSelected == title[1]
+                                          ? kBlueTextColor
+                                          : kBorderColorTextField,
                                     ),
                                   ),
                                   child: Text(
                                     title[1],
                                     style: theme.textTheme.titleSmall?.copyWith(
-                                      color: isSelected == title[1] ? kWhite : kTitleColor,
+                                      color: isSelected == title[1]
+                                          ? kWhite
+                                          : kTitleColor,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -982,7 +1089,11 @@ class _ProductState extends State<Product> {
                             child: Container(
                               alignment: Alignment.center,
                               padding: const EdgeInsets.all(10.0),
-                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kWhite, border: Border.all(color: kBorderColorTextField)),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: kWhite,
+                                  border:
+                                      Border.all(color: kBorderColorTextField)),
                               child: Text(
                                 "Bulk Upload",
                                 style: theme.textTheme.titleSmall,
@@ -990,7 +1101,9 @@ class _ProductState extends State<Product> {
                             ).onTap(() async {
                               await showDialog(
                                 context: context,
-                                builder: (context) => BulkProductUploadPopup(allProductsCodeList: allProductsCodeList, allProductsNameList: allProductsNameList),
+                                builder: (context) => BulkProductUploadPopup(
+                                    allProductsCodeList: allProductsCodeList,
+                                    allProductsNameList: allProductsNameList),
                               );
                               setState(() {});
                             }),
@@ -1006,10 +1119,15 @@ class _ProductState extends State<Product> {
                             child: Container(
                               alignment: Alignment.center,
                               padding: const EdgeInsets.all(10.0),
-                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kWhite, border: Border.all(color: kBorderColorTextField)),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: kWhite,
+                                  border:
+                                      Border.all(color: kBorderColorTextField)),
                               child: Row(
                                 children: [
-                                  const Icon(FeatherIcons.plus, color: kTitleColor, size: 18.0),
+                                  const Icon(FeatherIcons.plus,
+                                      color: kTitleColor, size: 18.0),
                                   const SizedBox(width: 5.0),
                                   Flexible(
                                     child: Text(
@@ -1022,7 +1140,8 @@ class _ProductState extends State<Product> {
                                 ],
                               ),
                             ).onTap(() async {
-                              if (await Subscription.subscriptionChecker(item: 'Products')) {
+                              if (await Subscription.subscriptionChecker(
+                                  item: 'Products')) {
                                 context.push(
                                   '/product/add-product',
                                   extra: {
@@ -1031,7 +1150,8 @@ class _ProductState extends State<Product> {
                                   },
                                 );
                               } else {
-                                EasyLoading.showError(lang.S.of(context).updateYourPlanFirst);
+                                EasyLoading.showError(
+                                    lang.S.of(context).updateYourPlanFirst);
                               }
                             }),
                           ),
@@ -1044,16 +1164,23 @@ class _ProductState extends State<Product> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: InkWell(
-                                onTap: () => context.go('/product/barcode-generator'),
+                                onTap: () =>
+                                    context.go('/product/barcode-generator'),
                                 child: Container(
                                   alignment: Alignment.center,
                                   padding: const EdgeInsets.all(10.0),
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kWhite, border: Border.all(color: kBorderColorTextField)),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5.0),
+                                      color: kWhite,
+                                      border: Border.all(
+                                          color: kBorderColorTextField)),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
-                                      const Icon(Icons.qr_code, color: kTitleColor, size: 18.0),
+                                      const Icon(Icons.qr_code,
+                                          color: kTitleColor, size: 18.0),
                                       const SizedBox(width: 5.0),
                                       Flexible(
                                         child: Text(
@@ -1551,7 +1678,8 @@ class _ProductState extends State<Product> {
                                   controller: _horizontalController,
                                   radius: const Radius.circular(5),
                                   child: LayoutBuilder(
-                                    builder: (BuildContext context, BoxConstraints constraints) {
+                                    builder: (BuildContext context,
+                                        BoxConstraints constraints) {
                                       final kWidth = constraints.maxWidth;
                                       return SingleChildScrollView(
                                         scrollDirection: Axis.horizontal,
@@ -1561,7 +1689,13 @@ class _ProductState extends State<Product> {
                                             minWidth: kWidth,
                                           ),
                                           child: Theme(
-                                            data: theme.copyWith(dividerColor: Colors.transparent, dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                            data: theme.copyWith(
+                                                dividerColor:
+                                                    Colors.transparent,
+                                                dividerTheme:
+                                                    const DividerThemeData(
+                                                        color: Colors
+                                                            .transparent)),
                                             child: DataTable(
                                               border: const TableBorder(
                                                 horizontalInside: BorderSide(
@@ -1569,50 +1703,88 @@ class _ProductState extends State<Product> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      whiteColor),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle: theme.textTheme.titleMedium,
-                                              dataTextStyle: theme.textTheme.bodyLarge,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
+                                              dataTextStyle:
+                                                  theme.textTheme.bodyLarge,
                                               columns: const [
                                                 DataColumn(label: Text('S.L')),
-                                                DataColumn(label: Text('Image')),
-                                                DataColumn(label: Text('Product Name')),
-                                                DataColumn(label: Text('Category')),
-                                                DataColumn(label: Text('Retailer')),
-                                                DataColumn(label: Text('Dealer')),
-                                                DataColumn(label: Text('Wholesale')),
-                                                DataColumn(label: Text('Warehouse')),
-                                                DataColumn(label: Text('Stock')),
-                                                DataColumn(label: Icon(Icons.settings)),
+                                                DataColumn(
+                                                    label: Text('Image')),
+                                                DataColumn(
+                                                    label:
+                                                        Text('Product Name')),
+                                                DataColumn(
+                                                    label: Text('Category')),
+                                                DataColumn(
+                                                    label: Text('Retailer')),
+                                                DataColumn(
+                                                    label: Text('Dealer')),
+                                                DataColumn(
+                                                    label: Text('Wholesale')),
+                                                DataColumn(
+                                                    label: Text('Warehouse')),
+                                                DataColumn(
+                                                    label: Text('Stock')),
+                                                DataColumn(
+                                                    label:
+                                                        Icon(Icons.settings)),
                                               ],
                                               rows: List.generate(
                                                 _productsPerPage == -1
                                                     ? showAbleProducts.length
-                                                    : (_currentPage - 1) * _productsPerPage + _productsPerPage <= showAbleProducts.length
+                                                    : (_currentPage - 1) *
+                                                                    _productsPerPage +
+                                                                _productsPerPage <=
+                                                            showAbleProducts
+                                                                .length
                                                         ? _productsPerPage
-                                                        : showAbleProducts.length - (_currentPage - 1) * _productsPerPage,
+                                                        : showAbleProducts
+                                                                .length -
+                                                            (_currentPage - 1) *
+                                                                _productsPerPage,
                                                 (index) {
-                                                  final dataIndex = (_currentPage - 1) * _productsPerPage + index;
-                                                  final product = showAbleProducts[dataIndex];
+                                                  final dataIndex =
+                                                      (_currentPage - 1) *
+                                                              _productsPerPage +
+                                                          index;
+                                                  final product =
+                                                      showAbleProducts[
+                                                          dataIndex];
                                                   return DataRow(
                                                     cells: [
                                                       DataCell(
-                                                        Text('${(_currentPage - 1) * _productsPerPage + index + 1}'),
+                                                        Text(
+                                                            '${(_currentPage - 1) * _productsPerPage + index + 1}'),
                                                       ),
                                                       DataCell(
                                                         Container(
                                                           height: 40,
                                                           width: 40,
-                                                          decoration: BoxDecoration(
-                                                            shape: BoxShape.circle,
-                                                            border: Border.all(color: kBorderColorTextField),
-                                                            image: DecorationImage(
-                                                                image: NetworkImage(
-                                                                  product.productPicture,
-                                                                ),
-                                                                fit: BoxFit.cover),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            shape:
+                                                                BoxShape.circle,
+                                                            border: Border.all(
+                                                                color:
+                                                                    kBorderColorTextField),
+                                                            image:
+                                                                DecorationImage(
+                                                                    image:
+                                                                        NetworkImage(
+                                                                      product
+                                                                          .productPicture,
+                                                                    ),
+                                                                    fit: BoxFit
+                                                                        .cover),
                                                           ),
                                                         ),
                                                       ),
@@ -1623,7 +1795,20 @@ class _ProductState extends State<Product> {
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          (!isRegularSelected && product.expiringDate != null) ? ((DateTime.tryParse(product.expiringDate ?? '') ?? DateTime.now()).isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)) ? 'Expired' : "Will Expire at\n${DateFormat.yMMMd().format(DateTime.tryParse(product.expiringDate ?? '') ?? DateTime.now())}") : product.productCategory,
+                                                          (!isRegularSelected &&
+                                                                  product.expiringDate !=
+                                                                      null)
+                                                              ? ((DateTime.tryParse(product.expiringDate ?? '') ?? DateTime.now()).isBefore(DateTime(
+                                                                      DateTime.now()
+                                                                          .year,
+                                                                      DateTime.now()
+                                                                          .month,
+                                                                      DateTime.now()
+                                                                          .day))
+                                                                  ? 'Expired'
+                                                                  : "Will Expire at\n${DateFormat.yMMMd().format(DateTime.tryParse(product.expiringDate ?? '') ?? DateTime.now())}")
+                                                              : product
+                                                                  .productCategory,
                                                         ),
                                                       ),
                                                       DataCell(
@@ -1648,22 +1833,47 @@ class _ProductState extends State<Product> {
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          myFormat.format(double.tryParse(product.productStock) ?? 0),
+                                                          myFormat.format(double
+                                                                  .tryParse(product
+                                                                      .productStock) ??
+                                                              0),
                                                         ),
                                                       ),
                                                       DataCell(
                                                         SizedBox(
                                                           width: 30,
-                                                          child: StatefulBuilder(
-                                                            builder: (BuildContext context, void Function(void Function()) setState) {
+                                                          child:
+                                                              StatefulBuilder(
+                                                            builder: (BuildContext
+                                                                    context,
+                                                                void Function(
+                                                                        void
+                                                                            Function())
+                                                                    setState) {
                                                               return Theme(
-                                                                data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                                child: PopupMenuButton(
-                                                                  surfaceTintColor: Colors.white,
-                                                                  padding: EdgeInsets.zero,
-                                                                  itemBuilder: (BuildContext bc) => [
+                                                                data: ThemeData(
+                                                                    highlightColor:
+                                                                        dropdownItemColor,
+                                                                    focusColor:
+                                                                        dropdownItemColor,
+                                                                    hoverColor:
+                                                                        dropdownItemColor),
+                                                                child:
+                                                                    PopupMenuButton(
+                                                                  surfaceTintColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .zero,
+                                                                  itemBuilder:
+                                                                      (BuildContext
+                                                                              bc) =>
+                                                                          [
                                                                     PopupMenuItem(
-                                                                        onTap: () => context.push(
+                                                                        onTap: () =>
+                                                                            context
+                                                                                .push(
                                                                               '/product/edit-product',
                                                                               extra: {
                                                                                 'productModel': product,
@@ -1671,9 +1881,12 @@ class _ProductState extends State<Product> {
                                                                                 'groupTaxModel': groupTax.value ?? [],
                                                                               },
                                                                             ),
-                                                                        child: Row(
+                                                                        child:
+                                                                            Row(
                                                                           children: [
-                                                                            Icon(IconlyLight.edit, size: 22.0, color: kGreyTextColor),
+                                                                            Icon(IconlyLight.edit,
+                                                                                size: 22.0,
+                                                                                color: kGreyTextColor),
                                                                             const SizedBox(width: 4.0),
                                                                             Text(
                                                                               lang.S.of(context).edit,
@@ -1682,12 +1895,19 @@ class _ProductState extends State<Product> {
                                                                           ],
                                                                         )),
                                                                     PopupMenuItem(
-                                                                        onTap: () async {
-                                                                          await productStockEditPopUp(product: product, popUp: context, pref: ref);
+                                                                        onTap:
+                                                                            () async {
+                                                                          await productStockEditPopUp(
+                                                                              product: product,
+                                                                              popUp: context,
+                                                                              pref: ref);
                                                                         },
-                                                                        child: Row(
+                                                                        child:
+                                                                            Row(
                                                                           children: [
-                                                                            const Icon(Icons.add, size: 22.0, color: kTitleColor),
+                                                                            const Icon(Icons.add,
+                                                                                size: 22.0,
+                                                                                color: kTitleColor),
                                                                             const SizedBox(width: 4.0),
                                                                             Text(
                                                                               lang.S.of(context).increaseStock,
@@ -1696,11 +1916,15 @@ class _ProductState extends State<Product> {
                                                                           ],
                                                                         )),
                                                                     PopupMenuItem(
-                                                                      onTap: () {
+                                                                      onTap:
+                                                                          () {
                                                                         showDialog(
-                                                                            barrierDismissible: false,
-                                                                            context: context,
-                                                                            builder: (BuildContext dialogContext) {
+                                                                            barrierDismissible:
+                                                                                false,
+                                                                            context:
+                                                                                context,
+                                                                            builder:
+                                                                                (BuildContext dialogContext) {
                                                                               return Padding(
                                                                                 padding: const EdgeInsets.all(10.0),
                                                                                 child: Center(
@@ -1781,8 +2005,10 @@ class _ProductState extends State<Product> {
                                                                               );
                                                                             });
                                                                       },
-                                                                      child: GestureDetector(
-                                                                        child: Row(
+                                                                      child:
+                                                                          GestureDetector(
+                                                                        child:
+                                                                            Row(
                                                                           children: [
                                                                             HugeIcon(
                                                                               icon: HugeIcons.strokeRoundedDelete02,
@@ -1801,8 +2027,11 @@ class _ProductState extends State<Product> {
                                                                       ),
                                                                     ),
                                                                   ],
-                                                                  onSelected: (value) {
-                                                                    Navigator.pushNamed(context, '$value');
+                                                                  onSelected:
+                                                                      (value) {
+                                                                    Navigator.pushNamed(
+                                                                        context,
+                                                                        '$value');
                                                                   },
                                                                   child: Center(
                                                                     child: Container(
@@ -1810,8 +2039,10 @@ class _ProductState extends State<Product> {
                                                                         width: 18,
                                                                         alignment: Alignment.centerRight,
                                                                         child: const Icon(
-                                                                          Icons.more_vert_sharp,
-                                                                          size: 18,
+                                                                          Icons
+                                                                              .more_vert_sharp,
+                                                                          size:
+                                                                              18,
                                                                         )),
                                                                   ),
                                                                 ),
@@ -1843,16 +2074,24 @@ class _ProductState extends State<Product> {
                                       Row(
                                         children: [
                                           InkWell(
-                                            overlayColor: MaterialStateProperty.all<Color>(Colors.grey),
+                                            overlayColor: MaterialStateProperty
+                                                .all<Color>(Colors.grey),
                                             hoverColor: Colors.grey,
-                                            onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                            onTap: _currentPage > 1
+                                                ? () => setState(
+                                                    () => _currentPage--)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomLeft: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(4.0),
                                                   topLeft: Radius.circular(4.0),
                                                 ),
                                               ),
@@ -1865,31 +2104,46 @@ class _ProductState extends State<Product> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kMainColor),
+                                              border:
+                                                  Border.all(color: kMainColor),
                                               color: kMainColor,
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$_currentPage',
-                                                style: const TextStyle(color: Colors.white),
+                                                style: const TextStyle(
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           ),
                                           InkWell(
-                                            hoverColor: Colors.blue.withOpacity(0.1),
-                                            overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                            onTap: _currentPage * _productsPerPage < showAbleProducts.length ? () => setState(() => _currentPage++) : null,
+                                            hoverColor:
+                                                Colors.blue.withOpacity(0.1),
+                                            overlayColor: MaterialStateProperty
+                                                .all<Color>(Colors.blue),
+                                            onTap: _currentPage *
+                                                        _productsPerPage <
+                                                    showAbleProducts.length
+                                                ? () => setState(
+                                                    () => _currentPage++)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomRight: Radius.circular(4.0),
-                                                  topRight: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomRight:
+                                                      Radius.circular(4.0),
+                                                  topRight:
+                                                      Radius.circular(4.0),
                                                 ),
                                               ),
-                                              child: const Center(child: Text('Next')),
+                                              child: const Center(
+                                                  child: Text('Next')),
                                             ),
                                           ),
                                         ],
@@ -1899,7 +2153,8 @@ class _ProductState extends State<Product> {
                                 ),
                               ],
                             )
-                          : EmptyWidget(title: lang.S.of(context).noProductFound),
+                          : EmptyWidget(
+                              title: lang.S.of(context).noProductFound),
                     ],
                   ),
                 ),

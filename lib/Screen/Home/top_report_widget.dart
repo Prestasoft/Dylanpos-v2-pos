@@ -24,7 +24,7 @@ class TopReportWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     return transactionReport.when(
       data: (topSell) {
         List<AddToCartModel> saleProductList = [];
@@ -33,7 +33,8 @@ class TopReportWidget extends StatelessWidget {
         // Helper functions
         bool isContain({required AddToCartModel element}) {
           for (var p in saleProductList) {
-            if (p.productName == element.productName && p.productId == element.productId) {
+            if (p.productName == element.productName &&
+                p.productId == element.productId) {
               p.quantity += element.quantity;
               return true;
             }
@@ -43,8 +44,11 @@ class TopReportWidget extends StatelessWidget {
 
         bool isContainCustomer({required SaleTransactionModel element}) {
           for (var p in currentMonthCustomerList) {
-            if (p.customerName == element.customerName && p.phoneNumber == element.customerPhone) {
-              p.openingBalance = (double.parse(p.openingBalance) + double.parse(element.totalAmount.toString())).toString();
+            if (p.customerName == element.customerName &&
+                p.phoneNumber == element.customerPhone) {
+              p.openingBalance = (double.parse(p.openingBalance) +
+                      double.parse(element.totalAmount.toString()))
+                  .toString();
               return true;
             }
           }
@@ -53,7 +57,8 @@ class TopReportWidget extends StatelessWidget {
 
         // Process top selling products and customers
         for (var element in topSell) {
-          final saleData = DateTime.tryParse(element.purchaseDate.toString()) ?? DateTime.now();
+          final saleData = DateTime.tryParse(element.purchaseDate.toString()) ??
+              DateTime.now();
           if (isAfterFirstDayOfCurrentMonth(saleData)) {
             // Process customers
             if (!isContainCustomer(element: element)) {
@@ -107,7 +112,8 @@ class TopReportWidget extends StatelessWidget {
         }
 
         saleProductList.sort((a, b) => b.quantity.compareTo(a.quantity));
-        currentMonthCustomerList.sort((a, b) => double.parse(b.openingBalance).compareTo(double.parse(a.openingBalance)));
+        currentMonthCustomerList.sort((a, b) => double.parse(b.openingBalance)
+            .compareTo(double.parse(a.openingBalance)));
 
         if (reportType == "TopSelling") {
           return Padding(
@@ -131,7 +137,9 @@ class TopReportWidget extends StatelessWidget {
               bool isContainPurchase({required ProductModel element}) {
                 for (var p in purchaseProductList) {
                   if (p.productCode == element.productCode) {
-                    p.productStock = ((int.tryParse(p.productStock) ?? 0) + (int.tryParse(element.productStock) ?? 0)).toString();
+                    p.productStock = ((int.tryParse(p.productStock) ?? 0) +
+                            (int.tryParse(element.productStock) ?? 0))
+                        .toString();
                     return true;
                   }
                 }
@@ -139,7 +147,9 @@ class TopReportWidget extends StatelessWidget {
               }
 
               for (var element in purchase) {
-                final saleData = DateTime.tryParse(element.purchaseDate.toString()) ?? DateTime.now();
+                final saleData =
+                    DateTime.tryParse(element.purchaseDate.toString()) ??
+                        DateTime.now();
                 if (isAfterFirstDayOfCurrentMonth(saleData)) {
                   for (var product in element.productList ?? []) {
                     if (!isContainPurchase(element: product)) {
@@ -182,11 +192,13 @@ class TopReportWidget extends StatelessWidget {
                 }
               }
 
-              purchaseProductList.sort((a, b) => int.parse(b.productStock).compareTo(int.parse(a.productStock)));
+              purchaseProductList.sort((a, b) => int.parse(b.productStock)
+                  .compareTo(int.parse(a.productStock)));
 
               return Padding(
                 padding: const EdgeInsets.all(10.0),
-                child: MtTopStock(report: getTopPurchaseReport(purchaseProductList)),
+                child: MtTopStock(
+                    report: getTopPurchaseReport(purchaseProductList)),
               );
             },
             error: (e, stack) {
@@ -213,7 +225,7 @@ class TopReportWidget extends StatelessWidget {
         .map(
           (element) => TopPurchaseReport(
             element.productName,
-            element.productPurchasePrice.toString() ?? '',
+            element.productPurchasePrice.toString(),
             element.productCategory,
             element.productPicture,
             element.productStock,
@@ -227,7 +239,7 @@ class TopReportWidget extends StatelessWidget {
         .map(
           (element) => TopCustomer(
             element.customerName,
-            element.openingBalance.toString() ?? '',
+            element.openingBalance.toString(),
             element.phoneNumber,
             element.profilePicture.toString(),
           ),

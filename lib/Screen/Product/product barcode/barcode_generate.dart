@@ -84,7 +84,6 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
     final globalCurrency = currencyProvider.currency ?? '\$';
     List<String> allProductsNameList = [];
@@ -94,19 +93,23 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
       body: Consumer(
         builder: (_, ref, watch) {
           final profile = ref.watch(profileDetailsProvider);
-          AsyncValue<List<ProductModel>> productList = ref.watch(productProvider);
+          AsyncValue<List<ProductModel>> productList =
+              ref.watch(productProvider);
           return productList.when(data: (product) {
-            List<ProductModel> finalList = [];
             for (var element in product) {
-              allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
-              allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
+              allProductsNameList
+                  .add(element.productName.removeAllWhiteSpace().toLowerCase());
+              allProductsCodeList
+                  .add(element.productCode.removeAllWhiteSpace().toLowerCase());
             }
             return SingleChildScrollView(
               padding: EdgeInsets.all(16),
               child: Column(
                 children: [
                   Container(
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.0),
+                        color: kWhite),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -137,8 +140,12 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                               // const SizedBox(height: 10.0),
                               productList.when(data: (product) {
                                 for (var element in product) {
-                                  allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
-                                  allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
+                                  allProductsNameList.add(element.productName
+                                      .removeAllWhiteSpace()
+                                      .toLowerCase());
+                                  allProductsCodeList.add(element.productCode
+                                      .removeAllWhiteSpace()
+                                      .toLowerCase());
                                 }
                                 return TypeAheadField(
                                   // textFieldConfiguration: TextFieldConfiguration(
@@ -151,15 +158,25 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                   // ),
                                   suggestionsCallback: (pattern) {
                                     ProductRepo pr = ProductRepo();
-                                    return pr.getAllProductByJson(searchData: pattern);
+                                    return pr.getAllProductByJson(
+                                        searchData: pattern);
                                   },
                                   itemBuilder: (context, suggestion) {
-                                    ProductModel product = ProductModel.fromJson(jsonDecode(jsonEncode(suggestion)));
+                                    ProductModel product =
+                                        ProductModel.fromJson(
+                                            jsonDecode(jsonEncode(suggestion)));
                                     return ListTile(
                                       leading: Container(
                                         height: 60,
                                         width: 60,
-                                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: kBorderColorTextField), image: DecorationImage(image: NetworkImage(product.productPicture), fit: BoxFit.cover)),
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            image: DecorationImage(
+                                                image: NetworkImage(
+                                                    product.productPicture),
+                                                fit: BoxFit.cover)),
                                       ),
                                       title: Text(
                                         product.productName,
@@ -176,15 +193,19 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                     );
                                   },
                                   onSelected: (suggestion) {
-                                    ProductModel product = ProductModel.fromJson(jsonDecode(jsonEncode(suggestion)));
-                                    AddToCartModel addToCartModel = AddToCartModel(
+                                    ProductModel product =
+                                        ProductModel.fromJson(
+                                            jsonDecode(jsonEncode(suggestion)));
+                                    AddToCartModel addToCartModel =
+                                        AddToCartModel(
                                       productName: product.productName,
                                       warehouseName: product.warehouseName,
                                       warehouseId: product.warehouseId,
                                       productId: product.productCode,
                                       quantity: 1,
                                       stock: product.productStock.toInt(),
-                                      productPurchasePrice: product.productSalePrice.toDouble(),
+                                      productPurchasePrice:
+                                          product.productSalePrice.toDouble(),
                                       subTotal: product.productSalePrice,
                                       productImage: product.productPicture,
                                       subTaxes: product.subTaxes,
@@ -225,7 +246,8 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                   Text(
                                     lang.S.of(context).components,
                                     //'Components',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -243,7 +265,8 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                           child: Checkbox(
                                             activeColor: kMainColor,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(2.0),
                                             ),
                                             value: siteName,
                                             onChanged: (val) {
@@ -269,7 +292,8 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                           child: Checkbox(
                                             activeColor: kMainColor,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(2.0),
                                             ),
                                             value: productName,
                                             onChanged: (val) {
@@ -295,7 +319,8 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                           child: Checkbox(
                                             activeColor: kMainColor,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(2.0),
                                             ),
                                             value: productCode,
                                             onChanged: (val) {
@@ -321,7 +346,8 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                           child: Checkbox(
                                             activeColor: kMainColor,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(2.0),
                                             ),
                                             value: price,
                                             onChanged: (val) {
@@ -344,7 +370,8 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                   Form(
                                     key: globalKey,
                                     child: LayoutBuilder(
-                                      builder: (BuildContext context, BoxConstraints constraints) {
+                                      builder: (BuildContext context,
+                                          BoxConstraints constraints) {
                                         return Scrollbar(
                                           controller: _horizontalScroll,
                                           thumbVisibility: true,
@@ -359,33 +386,52 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                               ),
                                               child: Theme(
                                                 data: theme.copyWith(
-                                                  dividerColor: Colors.transparent,
-                                                  dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                                  dividerColor:
+                                                      Colors.transparent,
+                                                  dividerTheme:
+                                                      const DividerThemeData(
+                                                          color: Colors
+                                                              .transparent),
                                                 ),
                                                 child: DataTable(
                                                   border: const TableBorder(
-                                                    horizontalInside: BorderSide(
+                                                    horizontalInside:
+                                                        BorderSide(
                                                       width: 1,
                                                       color: kNeutral300,
                                                     ),
                                                   ),
-                                                  dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                  headingRowColor: WidgetStateProperty.all(const Color(0xffF5F5F5)),
+                                                  dataRowColor:
+                                                      const WidgetStatePropertyAll(
+                                                          Colors.white),
+                                                  headingRowColor:
+                                                      WidgetStateProperty.all(
+                                                          const Color(
+                                                              0xffF5F5F5)),
                                                   showBottomBorder: false,
                                                   dividerThickness: 0.0,
-                                                  headingTextStyle: theme.textTheme.titleMedium,
+                                                  headingTextStyle: theme
+                                                      .textTheme.titleMedium,
                                                   columns: [
                                                     DataColumn(
-                                                      label: Text(lang.S.of(context).productNameWithCode),
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .productNameWithCode),
                                                     ),
                                                     DataColumn(
-                                                      label: Text(lang.S.of(context).stock),
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .stock),
                                                     ),
                                                     DataColumn(
-                                                      label: Text(lang.S.of(context).quantity),
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .quantity),
                                                     ),
                                                     DataColumn(
-                                                      label: Text(lang.S.of(context).delete),
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .delete),
                                                     ),
                                                   ],
                                                   rows: List.generate(
@@ -393,42 +439,87 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                                     (index) => DataRow(
                                                       cells: [
                                                         DataCell(
-                                                          Text(cartList[index].productName ?? ''),
+                                                          Text(cartList[index]
+                                                                  .productName ??
+                                                              ''),
                                                         ),
                                                         DataCell(
-                                                          Text(cartList[index].stock.toString()),
+                                                          Text(cartList[index]
+                                                              .stock
+                                                              .toString()),
                                                         ),
                                                         DataCell(
                                                           Padding(
-                                                            padding: const EdgeInsets.all(5.0),
-                                                            child: TextFormField(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(5.0),
+                                                            child:
+                                                                TextFormField(
                                                               autofocus: true,
-                                                              keyboardType: TextInputType.number,
-                                                              decoration: InputDecoration(
-                                                                contentPadding: const EdgeInsets.only(left: 7.0, right: 7.0),
-                                                                floatingLabelBehavior: FloatingLabelBehavior.always,
-                                                                border: const OutlineInputBorder(),
-                                                                hintText: lang.S.of(context).enterQuantity,
-                                                                errorStyle: const TextStyle(height: 0, color: Colors.red, fontSize: 10.0),
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .number,
+                                                              decoration:
+                                                                  InputDecoration(
+                                                                contentPadding:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                        left:
+                                                                            7.0,
+                                                                        right:
+                                                                            7.0),
+                                                                floatingLabelBehavior:
+                                                                    FloatingLabelBehavior
+                                                                        .always,
+                                                                border:
+                                                                    const OutlineInputBorder(),
+                                                                hintText: lang.S
+                                                                    .of(context)
+                                                                    .enterQuantity,
+                                                                errorStyle: const TextStyle(
+                                                                    height: 0,
+                                                                    color: Colors
+                                                                        .red,
+                                                                    fontSize:
+                                                                        10.0),
                                                               ),
-                                                              validator: (value) {
-                                                                if (value == null || value.isEmpty) {
+                                                              validator:
+                                                                  (value) {
+                                                                if (value ==
+                                                                        null ||
+                                                                    value
+                                                                        .isEmpty) {
                                                                   // return 'Quantity is required';
-                                                                  return lang.S.of(context).quantityIsRequired;
+                                                                  return lang.S
+                                                                      .of(context)
+                                                                      .quantityIsRequired;
                                                                 }
-                                                                int? quantity = int.tryParse(value);
-                                                                if (quantity == null) {
+                                                                int? quantity =
+                                                                    int.tryParse(
+                                                                        value);
+                                                                if (quantity ==
+                                                                    null) {
                                                                   //return 'Enter valid number';
-                                                                  return lang.S.of(context).enterValidNumber;
+                                                                  return lang.S
+                                                                      .of(context)
+                                                                      .enterValidNumber;
                                                                 }
                                                                 return null;
                                                               },
-                                                              onChanged: (value) {
-                                                                cartList[index].quantity = value.toInt();
+                                                              onChanged:
+                                                                  (value) {
+                                                                cartList[index]
+                                                                        .quantity =
+                                                                    value
+                                                                        .toInt();
                                                               },
-                                                              onFieldSubmitted: (value) {
+                                                              onFieldSubmitted:
+                                                                  (value) {
                                                                 setState(() {
-                                                                  cartList[index].quantity = value.toInt();
+                                                                  cartList[index]
+                                                                          .quantity =
+                                                                      value
+                                                                          .toInt();
                                                                 });
                                                               },
                                                             ),
@@ -436,11 +527,13 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                                         ),
                                                         DataCell(
                                                           const Icon(
-                                                            Icons.delete_forever,
+                                                            Icons
+                                                                .delete_forever,
                                                             color: redColor,
                                                           ).onTap(() {
                                                             setState(() {
-                                                              cartList.removeAt(index);
+                                                              cartList.removeAt(
+                                                                  index);
                                                             });
                                                           }),
                                                         ),
@@ -485,10 +578,15 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                               width: 200,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 8, 15, 8),
                                   backgroundColor: kWhite,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0), side: const BorderSide(color: kMainColor)),
-                                  textStyle: kTextStyle.copyWith(color: Colors.white),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30.0),
+                                      side:
+                                          const BorderSide(color: kMainColor)),
+                                  textStyle:
+                                      kTextStyle.copyWith(color: Colors.white),
                                 ),
                                 onPressed: () async {
                                   if (cartList.isNotEmpty) {
@@ -501,12 +599,15 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.refresh, color: kMainColor),
+                                    const Icon(Icons.refresh,
+                                        color: kMainColor),
                                     const SizedBox(width: 5.0),
                                     Text(
                                       lang.S.of(context).reset,
                                       // 'Reset',
-                                      style: kTextStyle.copyWith(color: kMainColor, fontWeight: FontWeight.bold),
+                                      style: kTextStyle.copyWith(
+                                          color: kMainColor,
+                                          fontWeight: FontWeight.bold),
                                     ),
                                   ],
                                 ),
@@ -518,12 +619,14 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                               width: 200,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 8, 15, 8),
                                   backgroundColor: kMainColor,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30.0),
                                   ),
-                                  textStyle: kTextStyle.copyWith(color: Colors.white),
+                                  textStyle:
+                                      kTextStyle.copyWith(color: Colors.white),
                                 ),
                                 onPressed: () async {
                                   if (cartList.isNotEmpty) {
@@ -533,22 +636,28 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                       });
                                     } else {
                                       // EasyLoading.showInfo('Quantity is required');
-                                      EasyLoading.showInfo(lang.S.of(context).quantityIsRequired);
+                                      EasyLoading.showInfo(lang.S
+                                          .of(context)
+                                          .quantityIsRequired);
                                     }
                                   } else {
-                                    EasyLoading.showInfo(lang.S.of(context).selectProduct);
+                                    EasyLoading.showInfo(
+                                        lang.S.of(context).selectProduct);
                                   }
                                 },
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.settings, color: Colors.white),
+                                    const Icon(Icons.settings,
+                                        color: Colors.white),
                                     const SizedBox(width: 5.0),
                                     Text(
                                       lang.S.of(context).generate,
                                       // 'Generate',
-                                      style: kTextStyle.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                                      style: kTextStyle.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold),
                                     ),
                                   ],
                                 ),
@@ -579,19 +688,23 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                       width: 100,
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              15, 8, 15, 8),
                                           backgroundColor: kMainColor,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(30.0),
+                                            borderRadius:
+                                                BorderRadius.circular(30.0),
                                           ),
-                                          textStyle: kTextStyle.copyWith(color: Colors.white),
+                                          textStyle: kTextStyle.copyWith(
+                                              color: Colors.white),
                                         ),
                                         onPressed: () async {
                                           if (cartList.isNotEmpty) {
                                             if (validateAndSave()) {
                                               await generateBarcodeFunc(
                                                 carts: cartList,
-                                                personalInformationModel: profile.value!,
+                                                personalInformationModel:
+                                                    profile.value!,
                                                 context: context,
                                                 site: siteName,
                                                 name: productName,
@@ -599,21 +712,30 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                                 price: price,
                                               );
                                             } else {
-                                              EasyLoading.showInfo(lang.S.of(context).quantityIsRequired);
+                                              EasyLoading.showInfo(lang.S
+                                                  .of(context)
+                                                  .quantityIsRequired);
                                             }
                                           } else {
-                                            EasyLoading.showInfo(lang.S.of(context).selectProduct);
+                                            EasyLoading.showInfo(lang.S
+                                                .of(context)
+                                                .selectProduct);
                                           }
                                         },
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
-                                            const Icon(Icons.print, color: Colors.white),
+                                            const Icon(Icons.print,
+                                                color: Colors.white),
                                             const SizedBox(width: 5.0),
                                             Text(
                                               lang.S.of(context).print,
-                                              style: kTextStyle.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                                              style: kTextStyle.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
@@ -624,62 +746,103 @@ class _BarcodeGenerateState extends State<BarcodeGenerate> {
                                   ListView.builder(
                                     shrinkWrap: true,
                                     itemCount: cartList.length,
-                                    itemBuilder: (BuildContext context, int index) {
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
                                       return Wrap(
-                                          crossAxisAlignment: WrapCrossAlignment.start,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.start,
                                           alignment: WrapAlignment.start,
                                           spacing: 20,
                                           runSpacing: 0,
                                           children: List.generate(
                                             cartList[index].quantity.round(),
                                             (index2) => Padding(
-                                              padding: const EdgeInsets.only(bottom: 5.0),
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 5.0),
                                               child: Container(
-                                                padding: const EdgeInsets.all(5.0),
-                                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(6.0), border: Border.all(color: kBorderColorTextField)),
+                                                padding:
+                                                    const EdgeInsets.all(5.0),
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            6.0),
+                                                    border: Border.all(
+                                                        color:
+                                                            kBorderColorTextField)),
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
                                                   children: [
                                                     Visibility(
                                                       visible: siteName,
-                                                      child: profile.when(data: (profileData) {
+                                                      child: profile.when(
+                                                          data: (profileData) {
                                                         return Text(
-                                                          profileData.companyName,
-                                                          style: kTextStyle.copyWith(color: kTitleColor, fontSize: 8),
+                                                          profileData
+                                                              .companyName,
+                                                          style:
+                                                              kTextStyle.copyWith(
+                                                                  color:
+                                                                      kTitleColor,
+                                                                  fontSize: 8),
                                                         );
                                                       }, error: (e, stack) {
                                                         return Center(
-                                                          child: Text(e.toString()),
+                                                          child: Text(
+                                                              e.toString()),
                                                         );
                                                       }, loading: () {
                                                         return const Center(
-                                                          child: CircularProgressIndicator(),
+                                                          child:
+                                                              CircularProgressIndicator(),
                                                         );
                                                       }),
                                                     ),
                                                     Visibility(
                                                       visible: productName,
                                                       child: Text(
-                                                        cartList[index].productName.toString(),
-                                                        style: kTextStyle.copyWith(color: kTitleColor, fontSize: 8),
+                                                        cartList[index]
+                                                            .productName
+                                                            .toString(),
+                                                        style:
+                                                            kTextStyle.copyWith(
+                                                                color:
+                                                                    kTitleColor,
+                                                                fontSize: 8),
                                                       ),
                                                     ),
                                                     Visibility(
                                                       visible: price,
                                                       child: Text(
                                                         '$globalCurrency${cartList[index].productPurchasePrice.toString()}',
-                                                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 10),
+                                                        style:
+                                                            kTextStyle.copyWith(
+                                                                color:
+                                                                    kTitleColor,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 10),
                                                       ),
                                                     ),
                                                     BarcodeWidget(
-                                                      barcode: Barcode.code128(),
-                                                      data: cartList[index].productId,
-                                                      drawText: productCode ? true : false,
+                                                      barcode:
+                                                          Barcode.code128(),
+                                                      data: cartList[index]
+                                                          .productId,
+                                                      drawText: productCode
+                                                          ? true
+                                                          : false,
                                                       color: black,
                                                       width: 140,
                                                       height: 40,
-                                                      style: kTextStyle.copyWith(color: kTitleColor, fontSize: 8.0),
+                                                      style:
+                                                          kTextStyle.copyWith(
+                                                              color:
+                                                                  kTitleColor,
+                                                              fontSize: 8.0),
                                                     ),
                                                   ],
                                                 ),

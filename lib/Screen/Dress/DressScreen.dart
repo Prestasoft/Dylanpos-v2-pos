@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -18,12 +17,9 @@ import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/export_button.dart';
 import 'package:salespro_admin/const.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-import 'package:salespro_admin/model/brands_model.dart';
 import 'package:salespro_admin/model/category_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:path/path.dart' as path;
-import 'package:salespro_admin/share/direccion.dart';
 
 class DressScreen extends StatefulWidget {
   const DressScreen({super.key});
@@ -49,9 +45,9 @@ class _DressScreenState extends State<DressScreen> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   // For image handling
-  final List<dynamic> _selectedImages = []; // Can hold File (mobile) or XFile/Uint8List (web)
+  final List<dynamic> _selectedImages =
+      []; // Can hold File (mobile) or XFile/Uint8List (web)
   final List<String> _existingImageUrls = [];
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -73,7 +69,8 @@ class _DressScreenState extends State<DressScreen> {
             _selectedImages.addAll(pickedImages);
           } else {
             // For mobile, convert to File objects
-            _selectedImages.addAll(pickedImages.map((xFile) => File(xFile.path)));
+            _selectedImages
+                .addAll(pickedImages.map((xFile) => File(xFile.path)));
           }
         });
       }
@@ -84,7 +81,6 @@ class _DressScreenState extends State<DressScreen> {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +96,10 @@ class _DressScreenState extends State<DressScreen> {
             List<DressModel> showAbleDresses = [];
 
             for (var element in list) {
-              if (element.name.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase())) {
+              if (element.name
+                  .removeAllWhiteSpace()
+                  .toLowerCase()
+                  .contains(searchItem.toLowerCase())) {
                 showAbleDresses.add(element);
               } else if (searchItem == '') {
                 showAbleDresses.add(element);
@@ -118,7 +117,8 @@ class _DressScreenState extends State<DressScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
+                      padding:
+                          const EdgeInsets.only(left: 12, right: 12, top: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -136,7 +136,8 @@ class _DressScreenState extends State<DressScreen> {
                             onPressed: () async {
                               _showAddDressDialog(context, ref);
                             },
-                            icon: const Icon(FeatherIcons.plus, color: kWhite, size: 18.0),
+                            icon: const Icon(FeatherIcons.plus,
+                                color: kWhite, size: 18.0),
                             label: Text(
                               _lang.addDress,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -156,8 +157,16 @@ class _DressScreenState extends State<DressScreen> {
                     // Search and pagination controls
                     ResponsiveGridRow(rowSegments: 100, children: [
                       ResponsiveGridCol(
-                        xs: screenWidth < 360 ? 50 : screenWidth > 430 ? 33 : 40,
-                        md: screenWidth < 768 ? 24 : screenWidth < 950 ? 20 : 15,
+                        xs: screenWidth < 360
+                            ? 50
+                            : screenWidth > 430
+                                ? 33
+                                : 40,
+                        md: screenWidth < 768
+                            ? 24
+                            : screenWidth < 950
+                                ? 20
+                                : 15,
                         lg: screenWidth < 1700 ? 15 : 10,
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
@@ -175,11 +184,11 @@ class _DressScreenState extends State<DressScreen> {
                               children: [
                                 Flexible(
                                     child: Text(
-                                      'Show-',
-                                      style: theme.textTheme.bodyLarge,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    )),
+                                  'Show-',
+                                  style: theme.textTheme.bodyLarge,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )),
                                 DropdownButton<int>(
                                   isDense: true,
                                   padding: EdgeInsets.zero,
@@ -189,7 +198,8 @@ class _DressScreenState extends State<DressScreen> {
                                     Icons.keyboard_arrow_down,
                                     color: Colors.black,
                                   ),
-                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                  items: [10, 20, 50, 100, -1]
+                                      .map<DropdownMenuItem<int>>((int value) {
                                     return DropdownMenuItem<int>(
                                       value: value,
                                       child: Text(
@@ -244,313 +254,467 @@ class _DressScreenState extends State<DressScreen> {
                     const SizedBox(height: 20.0),
                     showAbleDresses.isNotEmpty
                         ? Column(
-                      children: [
-                        LayoutBuilder(
-                          builder: (BuildContext context, BoxConstraints constraints) {
-                            final kWidth = constraints.maxWidth;
-                            return Scrollbar(
-                              controller: _horizontalScroll,
-                              thumbVisibility: true,
-                              radius: const Radius.circular(8),
-                              thickness: 8,
-                              child: SingleChildScrollView(
-                                controller: _horizontalScroll,
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    minWidth: kWidth,
-                                  ),
-                                  child: Theme(
-                                    data: theme.copyWith(
-                                      dividerColor: Colors.transparent,
-                                      dividerTheme: const DividerThemeData(color: Colors.transparent),
-                                    ),
-                                    child: DataTable(
-                                        border: const TableBorder(
-                                          horizontalInside: BorderSide(
-                                            width: 1,
-                                            color: kNeutral300,
-                                          ),
+                            children: [
+                              LayoutBuilder(
+                                builder: (BuildContext context,
+                                    BoxConstraints constraints) {
+                                  final kWidth = constraints.maxWidth;
+                                  return Scrollbar(
+                                    controller: _horizontalScroll,
+                                    thumbVisibility: true,
+                                    radius: const Radius.circular(8),
+                                    thickness: 8,
+                                    child: SingleChildScrollView(
+                                      controller: _horizontalScroll,
+                                      scrollDirection: Axis.horizontal,
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minWidth: kWidth,
                                         ),
-                                        dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                        headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
-                                        showBottomBorder: false,
-                                        dividerThickness: 0.0,
-                                        headingTextStyle: theme.textTheme.titleMedium,
-                                        columns: [
-                                          DataColumn(label: Text(_lang.SL)),
-                                          DataColumn(label: Text(_lang.image)),
-                                          DataColumn(label: Text(_lang.name)),
-                                          DataColumn(label: Text(_lang.category)),
-                                          DataColumn(label: Text(_lang.subcategory)),
-                                          DataColumn(label: Text(_lang.branch)),
-                                          DataColumn(label: Text(_lang.available)),
-                                          const DataColumn(label: Icon(FeatherIcons.settings)),
-                                        ],
-                                        rows: List.generate(
-                                            _itemsPerPage == -1
-                                                ? showAbleDresses.length
-                                                : (_currentPage - 1) * _itemsPerPage + _itemsPerPage <= showAbleDresses.length
-                                                ? _itemsPerPage
-                                                : showAbleDresses.length - (_currentPage - 1) * _itemsPerPage, (index) {
-                                          final dataIndex = (_currentPage - 1) * _itemsPerPage + index;
-                                          final dress = showAbleDresses[dataIndex];
-                                          return DataRow(cells: [
-                                            // SL Number
-                                            DataCell(Text('${(_currentPage - 1) * _itemsPerPage + index + 1}')),
-
-                                            // Image (Thumbnail)
-                                            DataCell(
-                                              dress.images.isNotEmpty
-                                                  ? ClipRRect(
-                                                borderRadius: BorderRadius.circular(4),
-                                                child: Image.network(
-                                                  dress.images.first,
-                                                  width: 50,
-                                                  height: 50,
-                                                  fit: BoxFit.cover,
-                                                  loadingBuilder: (context, child, loadingProgress) {
-                                                    if (loadingProgress == null) return child;
-                                                    return Container(
-                                                      width: 50,
-                                                      height: 50,
-                                                      color: Colors.grey.shade200,
-                                                      child: Center(
-                                                        child: CircularProgressIndicator(
-                                                          value: loadingProgress.expectedTotalBytes != null
-                                                              ? loadingProgress.cumulativeBytesLoaded /
-                                                              loadingProgress.expectedTotalBytes!
-                                                              : null,
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    print('Error con Image.network: $error');
-                                                    return Container(
-                                                      width: 50,
-                                                      height: 50,
-                                                      color: Colors.grey.shade200,
-                                                      child: const Icon(Icons.error, color: Colors.red),
-                                                    );
-                                                  },
+                                        child: Theme(
+                                          data: theme.copyWith(
+                                            dividerColor: Colors.transparent,
+                                            dividerTheme:
+                                                const DividerThemeData(
+                                                    color: Colors.transparent),
+                                          ),
+                                          child: DataTable(
+                                              border: const TableBorder(
+                                                horizontalInside: BorderSide(
+                                                  width: 1,
+                                                  color: kNeutral300,
                                                 ),
-                                              )
-                                                  : Container(
-                                                width: 50,
-                                                height: 50,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey.shade200,
-                                                  borderRadius: BorderRadius.circular(4),
-                                                ),
-                                                child: const Icon(Icons.image_not_supported, color: Colors.grey),
                                               ),
-                                            ),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      Colors.white),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
+                                              showBottomBorder: false,
+                                              dividerThickness: 0.0,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
+                                              columns: [
+                                                DataColumn(
+                                                    label: Text(_lang.SL)),
+                                                DataColumn(
+                                                    label: Text(_lang.image)),
+                                                DataColumn(
+                                                    label: Text(_lang.name)),
+                                                DataColumn(
+                                                    label:
+                                                        Text(_lang.category)),
+                                                DataColumn(
+                                                    label: Text(
+                                                        _lang.subcategory)),
+                                                DataColumn(
+                                                    label: Text(_lang.branch)),
+                                                DataColumn(
+                                                    label:
+                                                        Text(_lang.available)),
+                                                const DataColumn(
+                                                    label: Icon(
+                                                        FeatherIcons.settings)),
+                                              ],
+                                              rows: List.generate(
+                                                  _itemsPerPage == -1
+                                                      ? showAbleDresses.length
+                                                      : (_currentPage - 1) *
+                                                                      _itemsPerPage +
+                                                                  _itemsPerPage <=
+                                                              showAbleDresses
+                                                                  .length
+                                                          ? _itemsPerPage
+                                                          : showAbleDresses
+                                                                  .length -
+                                                              (_currentPage -
+                                                                      1) *
+                                                                  _itemsPerPage,
+                                                  (index) {
+                                                final dataIndex =
+                                                    (_currentPage - 1) *
+                                                            _itemsPerPage +
+                                                        index;
+                                                final dress =
+                                                    showAbleDresses[dataIndex];
+                                                return DataRow(cells: [
+                                                  // SL Number
+                                                  DataCell(Text(
+                                                      '${(_currentPage - 1) * _itemsPerPage + index + 1}')),
 
-                                            // Name
-                                            DataCell(Text(dress.name)),
-
-                                            // Category
-                                            DataCell(Text(dress.category)),
-
-                                            // Subcategory
-                                            DataCell(Text(dress.subcategory)),
-
-                                            // Branch
-                                            DataCell(Text(dress.branchId)),
-
-                                            // Available
-                                            DataCell(
-                                              Switch(
-                                                value: dress.available,
-                                                activeColor: kMainColor,
-                                                onChanged: (value) async {
-                                                  _toggleDressAvailability(context, ref, dress, value);
-                                                },
-                                              ),
-                                            ),
-
-                                            // Actions
-                                            DataCell(
-                                              Theme(
-                                                data: ThemeData(
-                                                    highlightColor: dropdownItemColor,
-                                                    focusColor: dropdownItemColor,
-                                                    hoverColor: dropdownItemColor),
-                                                child: SizedBox(
-                                                  width: 20,
-                                                  child: PopupMenuButton(
-                                                    surfaceTintColor: Colors.white,
-                                                    padding: EdgeInsets.zero,
-                                                    itemBuilder: (BuildContext bc) => [
-                                                      // Edit
-                                                      PopupMenuItem(
-                                                          onTap: () {
-                                                            _showEditDressDialog(context, ref, dress);
-                                                          },
-                                                          child: Row(
-                                                            children: [
-                                                              const Icon(IconlyLight.edit, size: 20.0, color: kNeutral500),
-                                                              const SizedBox(width: 4.0),
-                                                              Text(
-                                                                _lang.edit,
-                                                                style: theme.textTheme.bodyLarge?.copyWith(
-                                                                  color: kNeutral500,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          )),
-
-                                                      // View Images
-                                                      PopupMenuItem(
-                                                          onTap: () {
-                                                            _showImagesGallery(context, dress);
-                                                          },
-                                                          child: Row(
-                                                            children: [
-                                                              const Icon(IconlyLight.image, size: 20.0, color: kNeutral500),
-                                                              const SizedBox(width: 4.0),
-                                                              Text(
-                                                                _lang.viewImages,
-                                                                style: theme.textTheme.bodyLarge?.copyWith(
-                                                                  color: kNeutral500,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          )),
-
-                                                      // Delete
-                                                      PopupMenuItem(
-                                                        onTap: () {
-                                                          _showDeleteConfirmation(context, ref, dress);
-                                                        },
-                                                        child: Row(
-                                                          children: [
-                                                            HugeIcon(
-                                                              icon: HugeIcons.strokeRoundedDelete02,
-                                                              color: kNeutral500,
-                                                              size: 20.0,
+                                                  // Image (Thumbnail)
+                                                  DataCell(
+                                                    dress.images.isNotEmpty
+                                                        ? ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        4),
+                                                            child:
+                                                                Image.network(
+                                                              dress
+                                                                  .images.first,
+                                                              width: 50,
+                                                              height: 50,
+                                                              fit: BoxFit.cover,
+                                                              loadingBuilder:
+                                                                  (context,
+                                                                      child,
+                                                                      loadingProgress) {
+                                                                if (loadingProgress ==
+                                                                    null)
+                                                                  return child;
+                                                                return Container(
+                                                                  width: 50,
+                                                                  height: 50,
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade200,
+                                                                  child: Center(
+                                                                    child:
+                                                                        CircularProgressIndicator(
+                                                                      value: loadingProgress.expectedTotalBytes !=
+                                                                              null
+                                                                          ? loadingProgress.cumulativeBytesLoaded /
+                                                                              loadingProgress.expectedTotalBytes!
+                                                                          : null,
+                                                                      strokeWidth:
+                                                                          2,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                              errorBuilder:
+                                                                  (context,
+                                                                      error,
+                                                                      stackTrace) {
+                                                                print(
+                                                                    'Error con Image.network: $error');
+                                                                return Container(
+                                                                  width: 50,
+                                                                  height: 50,
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade200,
+                                                                  child: const Icon(
+                                                                      Icons
+                                                                          .error,
+                                                                      color: Colors
+                                                                          .red),
+                                                                );
+                                                              },
                                                             ),
-                                                            const SizedBox(width: 4.0),
-                                                            Text(
-                                                              _lang.delete,
-                                                              style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
+                                                          )
+                                                        : Container(
+                                                            width: 50,
+                                                            height: 50,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: Colors.grey
+                                                                  .shade200,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          4),
                                                             ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                    onSelected: (value) {
-                                                      context.go('/$value');
-                                                    },
-                                                    child: Center(
-                                                      child: Container(
-                                                          height: 18,
-                                                          width: 18,
-                                                          alignment: Alignment.centerRight,
-                                                          child: const Icon(
-                                                            Icons.more_vert_sharp,
-                                                            size: 18,
-                                                          )),
+                                                            child: const Icon(
+                                                                Icons
+                                                                    .image_not_supported,
+                                                                color: Colors
+                                                                    .grey),
+                                                          ),
+                                                  ),
+
+                                                  // Name
+                                                  DataCell(Text(dress.name)),
+
+                                                  // Category
+                                                  DataCell(
+                                                      Text(dress.category)),
+
+                                                  // Subcategory
+                                                  DataCell(
+                                                      Text(dress.subcategory)),
+
+                                                  // Branch
+                                                  DataCell(
+                                                      Text(dress.branchId)),
+
+                                                  // Available
+                                                  DataCell(
+                                                    Switch(
+                                                      value: dress.available,
+                                                      activeColor: kMainColor,
+                                                      onChanged: (value) async {
+                                                        _toggleDressAvailability(
+                                                            context,
+                                                            ref,
+                                                            dress,
+                                                            value);
+                                                      },
                                                     ),
                                                   ),
-                                                ),
+
+                                                  // Actions
+                                                  DataCell(
+                                                    Theme(
+                                                      data: ThemeData(
+                                                          highlightColor:
+                                                              dropdownItemColor,
+                                                          focusColor:
+                                                              dropdownItemColor,
+                                                          hoverColor:
+                                                              dropdownItemColor),
+                                                      child: SizedBox(
+                                                        width: 20,
+                                                        child: PopupMenuButton(
+                                                          surfaceTintColor:
+                                                              Colors.white,
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          itemBuilder:
+                                                              (BuildContext
+                                                                      bc) =>
+                                                                  [
+                                                            // Edit
+                                                            PopupMenuItem(
+                                                                onTap: () {
+                                                                  _showEditDressDialog(
+                                                                      context,
+                                                                      ref,
+                                                                      dress);
+                                                                },
+                                                                child: Row(
+                                                                  children: [
+                                                                    const Icon(
+                                                                        IconlyLight
+                                                                            .edit,
+                                                                        size:
+                                                                            20.0,
+                                                                        color:
+                                                                            kNeutral500),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
+                                                                    Text(
+                                                                      _lang
+                                                                          .edit,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kNeutral500,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                )),
+
+                                                            // View Images
+                                                            PopupMenuItem(
+                                                                onTap: () {
+                                                                  _showImagesGallery(
+                                                                      context,
+                                                                      dress);
+                                                                },
+                                                                child: Row(
+                                                                  children: [
+                                                                    const Icon(
+                                                                        IconlyLight
+                                                                            .image,
+                                                                        size:
+                                                                            20.0,
+                                                                        color:
+                                                                            kNeutral500),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
+                                                                    Text(
+                                                                      _lang
+                                                                          .viewImages,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kNeutral500,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                )),
+
+                                                            // Delete
+                                                            PopupMenuItem(
+                                                              onTap: () {
+                                                                _showDeleteConfirmation(
+                                                                    context,
+                                                                    ref,
+                                                                    dress);
+                                                              },
+                                                              child: Row(
+                                                                children: [
+                                                                  HugeIcon(
+                                                                    icon: HugeIcons
+                                                                        .strokeRoundedDelete02,
+                                                                    color:
+                                                                        kNeutral500,
+                                                                    size: 20.0,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          4.0),
+                                                                  Text(
+                                                                    _lang
+                                                                        .delete,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                            color:
+                                                                                kNeutral500),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                          onSelected: (value) {
+                                                            context
+                                                                .go('/$value');
+                                                          },
+                                                          child: Center(
+                                                            child: Container(
+                                                                height: 18,
+                                                                width: 18,
+                                                                alignment: Alignment
+                                                                    .centerRight,
+                                                                child:
+                                                                    const Icon(
+                                                                  Icons
+                                                                      .more_vert_sharp,
+                                                                  size: 18,
+                                                                )),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ]);
+                                              })),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Pagination controls
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        '${_lang.showing} ${((_currentPage - 1) * _itemsPerPage + 1).toString()} to ${((_currentPage - 1) * _itemsPerPage + _itemsPerPage).clamp(0, showAbleDresses.length)} of ${showAbleDresses.length} entries',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        InkWell(
+                                          overlayColor:
+                                              WidgetStateProperty.all<Color>(
+                                                  Colors.grey),
+                                          hoverColor: Colors.grey,
+                                          onTap: _currentPage > 1
+                                              ? () =>
+                                                  setState(() => _currentPage--)
+                                              : null,
+                                          child: Container(
+                                            height: 32,
+                                            width: 90,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomLeft:
+                                                    Radius.circular(4.0),
+                                                topLeft: Radius.circular(4.0),
                                               ),
                                             ),
-                                          ]);
-                                        })),
-                                  ),
+                                            child: Center(
+                                              child: Text(_lang.previous),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 32,
+                                          width: 32,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            color: kMainColor,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '$_currentPage',
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 32,
+                                          width: 32,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            color: Colors.transparent,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '$pages',
+                                            ),
+                                          ),
+                                        ),
+                                        InkWell(
+                                          hoverColor:
+                                              Colors.blue.withOpacity(0.1),
+                                          overlayColor:
+                                              MaterialStateProperty.all<Color>(
+                                                  Colors.blue),
+                                          onTap: _currentPage * _itemsPerPage <
+                                                  showAbleDresses.length
+                                              ? () =>
+                                                  setState(() => _currentPage++)
+                                              : null,
+                                          child: Container(
+                                            height: 32,
+                                            width: 90,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomRight:
+                                                    Radius.circular(4.0),
+                                                topRight: Radius.circular(4.0),
+                                              ),
+                                            ),
+                                            child: const Center(
+                                                child: Text('Next')),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                        // Pagination controls
-                        Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  '${_lang.showing} ${((_currentPage - 1) * _itemsPerPage + 1).toString()} to ${((_currentPage - 1) * _itemsPerPage + _itemsPerPage).clamp(0, showAbleDresses.length)} of ${showAbleDresses.length} entries',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  InkWell(
-                                    overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
-                                    hoverColor: Colors.grey,
-                                    onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
-                                    child: Container(
-                                      height: 32,
-                                      width: 90,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: kBorderColorTextField),
-                                        borderRadius: const BorderRadius.only(
-                                          bottomLeft: Radius.circular(4.0),
-                                          topLeft: Radius.circular(4.0),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text(_lang.previous),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 32,
-                                    width: 32,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: kBorderColorTextField),
-                                      color: kMainColor,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '$_currentPage',
-                                        style: const TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 32,
-                                    width: 32,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: kBorderColorTextField),
-                                      color: Colors.transparent,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '$pages',
-                                      ),
-                                    ),
-                                  ),
-                                  InkWell(
-                                    hoverColor: Colors.blue.withOpacity(0.1),
-                                    overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                    onTap: _currentPage * _itemsPerPage < showAbleDresses.length ? () => setState(() => _currentPage++) : null,
-                                    child: Container(
-                                      height: 32,
-                                      width: 90,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: kBorderColorTextField),
-                                        borderRadius: const BorderRadius.only(
-                                          bottomRight: Radius.circular(4.0),
-                                          topRight: Radius.circular(4.0),
-                                        ),
-                                      ),
-                                      child: const Center(child: Text('Next')),
-                                    ),
-                                  ),
-                                ],
-                              )
                             ],
-                          ),
-                        ),
-                      ],
-                    )
+                          )
                         : EmptyWidget(title: _lang.noDressesFound)
                   ],
                 ),
@@ -670,7 +834,8 @@ class _DressScreenState extends State<DressScreen> {
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildErrorWidget(),
                 );
               }
               return _buildPlaceholder();
@@ -697,7 +862,8 @@ class _DressScreenState extends State<DressScreen> {
                 width: 100,
                 height: 100,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+                errorBuilder: (context, error, stackTrace) =>
+                    _buildErrorWidget(),
               );
             }
             return _buildPlaceholder();
@@ -718,10 +884,6 @@ class _DressScreenState extends State<DressScreen> {
     }
     return _buildErrorWidget();
   }
-
-
-
-
 
   Widget _buildPlaceholder() {
     return Container(
@@ -753,11 +915,11 @@ class _DressScreenState extends State<DressScreen> {
       ),
     );
   }
+
   void _showImagesGallery(BuildContext context, DressModel dress) {
     if (dress.images.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(lang.S.of(context).noImagesAvailable))
-      );
+          SnackBar(content: Text(lang.S.of(context).noImagesAvailable)));
       return;
     }
 
@@ -790,7 +952,8 @@ class _DressScreenState extends State<DressScreen> {
                 const Divider(),
                 Expanded(
                   child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
@@ -806,7 +969,8 @@ class _DressScreenState extends State<DressScreen> {
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             color: Colors.grey.shade200,
-                            child: const Center(child: CircularProgressIndicator()),
+                            child: const Center(
+                                child: CircularProgressIndicator()),
                           ),
                           errorWidget: (context, url, error) => Container(
                             color: Colors.grey.shade200,
@@ -841,8 +1005,10 @@ class _DressScreenState extends State<DressScreen> {
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
-                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.red),
+                  placeholder: (context, url) =>
+                      const Center(child: CircularProgressIndicator()),
+                  errorWidget: (context, url, error) =>
+                      const Icon(Icons.error, color: Colors.red),
                 ),
               ),
               Positioned(
@@ -859,6 +1025,7 @@ class _DressScreenState extends State<DressScreen> {
       },
     );
   }
+
 // Clear form fields for adding or editing dresses
   void _clearForm() {
     setState(() {
@@ -873,7 +1040,8 @@ class _DressScreenState extends State<DressScreen> {
   }
 
 // Show confirmation dialog before deleting a dress
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref, DressModel dress) {
+  void _showDeleteConfirmation(
+      BuildContext context, WidgetRef ref, DressModel dress) {
     final _lang = lang.S.of(context);
 
     showDialog(
@@ -892,7 +1060,8 @@ class _DressScreenState extends State<DressScreen> {
                 Navigator.pop(context);
                 EasyLoading.show(status: _lang.deleting);
 
-                final result = await ref.read(deleteDressProvider(dress.id).future);
+                final result =
+                    await ref.read(deleteDressProvider(dress.id).future);
 
                 EasyLoading.dismiss();
                 if (result) {
@@ -905,7 +1074,8 @@ class _DressScreenState extends State<DressScreen> {
                   );
                 }
               },
-              child: Text(_lang.delete, style: const TextStyle(color: Colors.red)),
+              child:
+                  Text(_lang.delete, style: const TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -914,21 +1084,22 @@ class _DressScreenState extends State<DressScreen> {
   }
 
 // Toggle dress availability (enable/disable)
-  void _toggleDressAvailability(BuildContext context, WidgetRef ref, DressModel dress, bool value) async {
+  void _toggleDressAvailability(
+      BuildContext context, WidgetRef ref, DressModel dress, bool value) async {
     final _lang = lang.S.of(context);
 
     EasyLoading.show(status: _lang.updating);
 
-    final result = await ref.read(toggleDressAvailabilityProvider({
-      'dressId': dress.id,
-      'available': value
-    }).future);
+    final result = await ref.read(toggleDressAvailabilityProvider(
+        {'dressId': dress.id, 'available': value}).future);
 
     EasyLoading.dismiss();
 
     if (result) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_lang.dressAvailability} ${value ? _lang.enabled : _lang.disabled}')),
+        SnackBar(
+            content: Text(
+                '${_lang.dressAvailability} ${value ? _lang.enabled : _lang.disabled}')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -938,7 +1109,8 @@ class _DressScreenState extends State<DressScreen> {
   }
 
 // Show dialog to edit an existing dress
-  void _showEditDressDialog(BuildContext context, WidgetRef ref, DressModel dress) {
+  void _showEditDressDialog(
+      BuildContext context, WidgetRef ref, DressModel dress) {
     // Set form values with existing dress data
     _nameController.text = dress.name;
     _selectedCategory = dress.category;
@@ -956,7 +1128,8 @@ class _DressScreenState extends State<DressScreen> {
           builder: (context, setState1) {
             return Dialog(
               surfaceTintColor: kWhite,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0)),
               child: Container(
                 width: 600,
                 constraints: BoxConstraints(
@@ -976,9 +1149,12 @@ class _DressScreenState extends State<DressScreen> {
                               '${lang.S.of(context).edit} ${dress.name}',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                           IconButton(
@@ -990,8 +1166,7 @@ class _DressScreenState extends State<DressScreen> {
                                 FeatherIcons.x,
                                 color: kTitleColor,
                                 size: 21.0,
-                              )
-                          ),
+                              )),
                         ],
                       ),
                     ),
@@ -1009,7 +1184,8 @@ class _DressScreenState extends State<DressScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Images section
-                              _buildImagePicker(existingImages: _existingImageUrls),
+                              _buildImagePicker(
+                                  existingImages: _existingImageUrls),
                               const SizedBox(height: 16),
 
                               // Name field
@@ -1031,14 +1207,17 @@ class _DressScreenState extends State<DressScreen> {
                               // Category dropdown
                               Consumer(
                                 builder: (_, ref, __) {
-                                  AsyncValue<List<CategoryModel>> categories = ref.watch(categoryProvider);
+                                  AsyncValue<List<CategoryModel>> categories =
+                                      ref.watch(categoryProvider);
                                   return categories.when(
                                     data: (categoryList) {
                                       return DropdownButtonFormField<String>(
                                         value: _selectedCategory,
                                         decoration: kInputDecoration.copyWith(
-                                          labelText: lang.S.of(context).category,
-                                          hintText: lang.S.of(context).selectCategory,
+                                          labelText:
+                                              lang.S.of(context).category,
+                                          hintText:
+                                              lang.S.of(context).selectCategory,
                                         ),
                                         items: categoryList.map((category) {
                                           return DropdownMenuItem<String>(
@@ -1053,14 +1232,18 @@ class _DressScreenState extends State<DressScreen> {
                                         },
                                         validator: (value) {
                                           if (value == null || value.isEmpty) {
-                                            return lang.S.of(context).categoryRequired;
+                                            return lang.S
+                                                .of(context)
+                                                .categoryRequired;
                                           }
                                           return null;
                                         },
                                       );
                                     },
-                                    loading: () => const CircularProgressIndicator(),
-                                    error: (error, stack) => Text('Error: $error'),
+                                    loading: () =>
+                                        const CircularProgressIndicator(),
+                                    error: (error, stack) =>
+                                        Text('Error: $error'),
                                   );
                                 },
                               ),
@@ -1076,41 +1259,48 @@ class _DressScreenState extends State<DressScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                            Consumer(
-                              builder: (_, ref, __) {
-                                AsyncValue<List<WareHouseModel>> warehouses = ref.watch(warehouseProvider);
-                                return warehouses.when(
-                                  data: (warehouseList) {
-                                    return DropdownButtonFormField<String>(
-                                      value: _selectedBranch,
-                                      decoration: kInputDecoration.copyWith(
-                                        labelText: lang.S.of(context).branch,
-                                        hintText: lang.S.of(context).selectBranch,
-                                      ),
-                                      items: warehouseList.map((warehouse) {
-                                        return DropdownMenuItem<String>(
-                                          value: warehouse.warehouseName,
-                                          child: Text(warehouse.warehouseName),
-                                        );
-                                      }).toList(),
-                                      onChanged: (value) {
-                                        setState1(() {
-                                          _selectedBranch = value;
-                                        });
-                                      },
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return lang.S.of(context).branchRequired;
-                                        }
-                                        return null;
-                                      },
-                                    );
-                                  },
-                                  loading: () => const CircularProgressIndicator(),
-                                  error: (error, stack) => Text('Error: $error'),
-                                );
-                              },
-                            ),
+                              Consumer(
+                                builder: (_, ref, __) {
+                                  AsyncValue<List<WareHouseModel>> warehouses =
+                                      ref.watch(warehouseProvider);
+                                  return warehouses.when(
+                                    data: (warehouseList) {
+                                      return DropdownButtonFormField<String>(
+                                        value: _selectedBranch,
+                                        decoration: kInputDecoration.copyWith(
+                                          labelText: lang.S.of(context).branch,
+                                          hintText:
+                                              lang.S.of(context).selectBranch,
+                                        ),
+                                        items: warehouseList.map((warehouse) {
+                                          return DropdownMenuItem<String>(
+                                            value: warehouse.warehouseName,
+                                            child:
+                                                Text(warehouse.warehouseName),
+                                          );
+                                        }).toList(),
+                                        onChanged: (value) {
+                                          setState1(() {
+                                            _selectedBranch = value;
+                                          });
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return lang.S
+                                                .of(context)
+                                                .branchRequired;
+                                          }
+                                          return null;
+                                        },
+                                      );
+                                    },
+                                    loading: () =>
+                                        const CircularProgressIndicator(),
+                                    error: (error, stack) =>
+                                        Text('Error: $error'),
+                                  );
+                                },
+                              ),
 
                               const SizedBox(height: 16),
 
@@ -1165,9 +1355,11 @@ class _DressScreenState extends State<DressScreen> {
                                 );
 
                                 Navigator.pop(context);
-                                EasyLoading.show(status: lang.S.of(context).updating);
+                                EasyLoading.show(
+                                    status: lang.S.of(context).updating);
 
-                                final result = await ref.read(updateDressProvider({
+                                final result =
+                                    await ref.read(updateDressProvider({
                                   'dress': updatedDress,
                                   'imageFiles': _selectedImages,
                                 }).future);
@@ -1176,12 +1368,17 @@ class _DressScreenState extends State<DressScreen> {
 
                                 if (result) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(lang.S.of(context).dressUpdated)),
+                                    SnackBar(
+                                        content: Text(
+                                            lang.S.of(context).dressUpdated)),
                                   );
                                   _clearForm();
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(lang.S.of(context).errorUpdatingDress)),
+                                    SnackBar(
+                                        content: Text(lang.S
+                                            .of(context)
+                                            .errorUpdatingDress)),
                                   );
                                 }
                               }
@@ -1214,7 +1411,8 @@ class _DressScreenState extends State<DressScreen> {
           builder: (context, setState1) {
             return Dialog(
               surfaceTintColor: kWhite,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0)),
               child: Container(
                 width: 600,
                 constraints: BoxConstraints(
@@ -1234,9 +1432,12 @@ class _DressScreenState extends State<DressScreen> {
                               lang.S.of(context).addDress,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                           IconButton(
@@ -1248,8 +1449,7 @@ class _DressScreenState extends State<DressScreen> {
                                 FeatherIcons.x,
                                 color: kTitleColor,
                                 size: 21.0,
-                              )
-                          ),
+                              )),
                         ],
                       ),
                     ),
@@ -1289,14 +1489,17 @@ class _DressScreenState extends State<DressScreen> {
                               // Category dropdown
                               Consumer(
                                 builder: (_, ref, __) {
-                                  AsyncValue<List<CategoryModel>> categories = ref.watch(categoryProvider);
+                                  AsyncValue<List<CategoryModel>> categories =
+                                      ref.watch(categoryProvider);
                                   return categories.when(
                                     data: (categoryList) {
                                       return DropdownButtonFormField<String>(
                                         value: _selectedCategory,
                                         decoration: kInputDecoration.copyWith(
-                                          labelText: lang.S.of(context).category,
-                                          hintText: lang.S.of(context).selectCategory,
+                                          labelText:
+                                              lang.S.of(context).category,
+                                          hintText:
+                                              lang.S.of(context).selectCategory,
                                         ),
                                         items: categoryList.map((category) {
                                           return DropdownMenuItem<String>(
@@ -1311,14 +1514,18 @@ class _DressScreenState extends State<DressScreen> {
                                         },
                                         validator: (value) {
                                           if (value == null || value.isEmpty) {
-                                            return lang.S.of(context).categoryRequired;
+                                            return lang.S
+                                                .of(context)
+                                                .categoryRequired;
                                           }
                                           return null;
                                         },
                                       );
                                     },
-                                    loading: () => const CircularProgressIndicator(),
-                                    error: (error, stack) => Text('Error: $error'),
+                                    loading: () =>
+                                        const CircularProgressIndicator(),
+                                    error: (error, stack) =>
+                                        Text('Error: $error'),
                                   );
                                 },
                               ),
@@ -1336,19 +1543,22 @@ class _DressScreenState extends State<DressScreen> {
 
                               Consumer(
                                 builder: (_, ref, __) {
-                                  AsyncValue<List<WareHouseModel>> warehouses = ref.watch(warehouseProvider);
+                                  AsyncValue<List<WareHouseModel>> warehouses =
+                                      ref.watch(warehouseProvider);
                                   return warehouses.when(
                                     data: (warehouseList) {
                                       return DropdownButtonFormField<String>(
                                         value: _selectedBranch,
                                         decoration: kInputDecoration.copyWith(
                                           labelText: lang.S.of(context).branch,
-                                          hintText: lang.S.of(context).selectBranch,
+                                          hintText:
+                                              lang.S.of(context).selectBranch,
                                         ),
                                         items: warehouseList.map((warehouse) {
                                           return DropdownMenuItem<String>(
                                             value: warehouse.warehouseName,
-                                            child: Text(warehouse.warehouseName),
+                                            child:
+                                                Text(warehouse.warehouseName),
                                           );
                                         }).toList(),
                                         onChanged: (value) {
@@ -1358,14 +1568,18 @@ class _DressScreenState extends State<DressScreen> {
                                         },
                                         validator: (value) {
                                           if (value == null || value.isEmpty) {
-                                            return lang.S.of(context).branchRequired;
+                                            return lang.S
+                                                .of(context)
+                                                .branchRequired;
                                           }
                                           return null;
                                         },
                                       );
                                     },
-                                    loading: () => const CircularProgressIndicator(),
-                                    error: (error, stack) => Text('Error: $error'),
+                                    loading: () =>
+                                        const CircularProgressIndicator(),
+                                    error: (error, stack) =>
+                                        Text('Error: $error'),
                                   );
                                 },
                               ),
@@ -1409,12 +1623,16 @@ class _DressScreenState extends State<DressScreen> {
                               if (_formKey.currentState!.validate()) {
                                 if (_selectedImages.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(lang.S.of(context).pleaseSelectAtLeastOneImage)),
+                                    SnackBar(
+                                        content: Text(lang.S
+                                            .of(context)
+                                            .pleaseSelectAtLeastOneImage)),
                                   );
                                   return;
                                 }
 
-                                final dressId = 'dress_${DateTime.now().millisecondsSinceEpoch}';
+                                final dressId =
+                                    'dress_${DateTime.now().millisecondsSinceEpoch}';
                                 final newDress = DressModel(
                                   id: dressId,
                                   name: _nameController.text,
@@ -1428,22 +1646,29 @@ class _DressScreenState extends State<DressScreen> {
                                 );
 
                                 Navigator.pop(context);
-                                EasyLoading.show(status: lang.S.of(context).adding);
+                                EasyLoading.show(
+                                    status: lang.S.of(context).adding);
 
                                 final result = await ref.read(addDressProvider({
                                   'dress': newDress,
-                                  'imageFiles': _selectedImages, // This is now List<dynamic>
+                                  'imageFiles':
+                                      _selectedImages, // This is now List<dynamic>
                                 }).future);
 
                                 EasyLoading.dismiss();
                                 if (result) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(lang.S.of(context).dressAdded)),
+                                    SnackBar(
+                                        content: Text(
+                                            lang.S.of(context).dressAdded)),
                                   );
                                   _clearForm();
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(lang.S.of(context).errorAddingDress)),
+                                    SnackBar(
+                                        content: Text(lang.S
+                                            .of(context)
+                                            .errorAddingDress)),
                                   );
                                 }
                               }
@@ -1463,4 +1688,3 @@ class _DressScreenState extends State<DressScreen> {
     );
   }
 }
-

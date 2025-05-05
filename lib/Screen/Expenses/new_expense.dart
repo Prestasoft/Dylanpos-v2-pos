@@ -55,7 +55,8 @@ class _NewExpenseState extends State<NewExpense> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(4.0),
-                            decoration: const BoxDecoration(shape: BoxShape.rectangle),
+                            decoration:
+                                const BoxDecoration(shape: BoxShape.rectangle),
                             child: const Icon(
                               FeatherIcons.plus,
                               color: kTitleColor,
@@ -64,7 +65,10 @@ class _NewExpenseState extends State<NewExpense> {
                           const SizedBox(width: 4.0),
                           Text(
                             lang.S.of(context).addCategory,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0, fontWeight: FontWeight.bold),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold),
                           ),
                           const Spacer(),
                           const Icon(
@@ -86,7 +90,8 @@ class _NewExpenseState extends State<NewExpense> {
                         children: [
                           Text(
                             lang.S.of(context).nam,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor, fontSize: 18.0),
                           ),
                           const SizedBox(width: 50),
                           SizedBox(
@@ -98,7 +103,8 @@ class _NewExpenseState extends State<NewExpense> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   hintText: lang.S.of(context).name,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -116,7 +122,9 @@ class _NewExpenseState extends State<NewExpense> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kRedTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kRedTextColor),
                             child: Text(
                               lang.S.of(context).cancel,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -129,7 +137,9 @@ class _NewExpenseState extends State<NewExpense> {
                           ),
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kGreenTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kGreenTextColor),
                             child: Text(
                               lang.S.of(context).submit,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -151,7 +161,11 @@ class _NewExpenseState extends State<NewExpense> {
   DateTime selectedDate = DateTime.now();
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -221,9 +235,15 @@ class _NewExpenseState extends State<NewExpense> {
   }
 
   Future<void> category() async {
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Expense Category').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Expense Category')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        var data = ExpenseCategoryModel.fromJson(jsonDecode(jsonEncode(element.value)));
+        var data = ExpenseCategoryModel.fromJson(
+            jsonDecode(jsonEncode(element.value)));
         categories.add(data.categoryName);
       }
     });
@@ -262,7 +282,7 @@ class _NewExpenseState extends State<NewExpense> {
     final screenWidth = MediaQuery.of(context).size.width;
     return Consumer(
       builder: (context, ref, child) {
-        final expenseCategory = ref.watch(expenseCategoryProvider);
+        ref.watch(expenseCategoryProvider);
 
         return Scaffold(
           backgroundColor: kDarkWhite,
@@ -271,7 +291,8 @@ class _NewExpenseState extends State<NewExpense> {
             child: Container(
               // height: MediaQuery.of(context).size.height - 240,
               // padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.0), color: kWhite),
               child: Form(
                 key: formKey,
                 child: Column(
@@ -290,8 +311,10 @@ class _NewExpenseState extends State<NewExpense> {
                                 ),
                                 children: [
                                   TextSpan(
-                                    text: lang.S.of(context).addUpdateExpenseList,
-                                    style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
+                                    text:
+                                        lang.S.of(context).addUpdateExpenseList,
+                                    style: theme.textTheme.bodyLarge
+                                        ?.copyWith(color: kNeutral500),
                                   )
                                 ])),
                           ),
@@ -325,10 +348,13 @@ class _NewExpenseState extends State<NewExpense> {
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
                                     decoration: InputDecoration(
-                                      suffixIcon: const Icon(IconlyLight.calendar, color: kGreyTextColor),
+                                      suffixIcon: const Icon(
+                                          IconlyLight.calendar,
+                                          color: kGreyTextColor),
                                       contentPadding: const EdgeInsets.all(8.0),
                                       labelText: lang.S.of(context).expenseDate,
-                                      hintText: lang.S.of(context).enterExpenseDate,
+                                      hintText:
+                                          lang.S.of(context).enterExpenseDate,
                                     ),
                                     child: Text(
                                       '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
@@ -351,10 +377,17 @@ class _NewExpenseState extends State<NewExpense> {
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
                                     decoration: InputDecoration(
-                                        contentPadding: const EdgeInsets.all(8.0),
+                                        contentPadding:
+                                            const EdgeInsets.all(8.0),
                                         //labelText: 'Category'
                                         labelText: lang.S.of(context).category),
-                                    child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getCategories())),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getCategories())),
                                   );
                                 },
                               ),
@@ -405,10 +438,17 @@ class _NewExpenseState extends State<NewExpense> {
                                   return InputDecorator(
                                     decoration: InputDecoration(
                                       contentPadding: const EdgeInsets.all(8.0),
-                                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                                      floatingLabelBehavior:
+                                          FloatingLabelBehavior.always,
                                       labelText: lang.S.of(context).paymentType,
                                     ),
-                                    child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getPaymentMethods())),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getPaymentMethods())),
                                   );
                                 },
                               ),
@@ -430,17 +470,21 @@ class _NewExpenseState extends State<NewExpense> {
                               controller: expanseAmountController,
                               onChanged: (value) {
                                 expenseAmount = value.replaceAll(',', '');
-                                var formattedText = myFormat.format(int.parse(expenseAmount));
-                                expanseAmountController.value = expanseAmountController.value.copyWith(
+                                var formattedText =
+                                    myFormat.format(int.parse(expenseAmount));
+                                expanseAmountController.value =
+                                    expanseAmountController.value.copyWith(
                                   text: formattedText,
-                                  selection: TextSelection.collapsed(offset: formattedText.length),
+                                  selection: TextSelection.collapsed(
+                                      offset: formattedText.length),
                                 );
                               },
                               validator: (value) {
                                 if (expenseAmount.isEmptyOrNull) {
                                   //return 'please Inter Amount';
                                   return lang.S.of(context).pleaseInterAmount;
-                                } else if (double.tryParse(expenseAmount) == null) {
+                                } else if (double.tryParse(expenseAmount) ==
+                                    null) {
                                   //return 'Enter a valid Amount';
                                   return lang.S.of(context).enterAValidAmount;
                                 }
@@ -475,7 +519,8 @@ class _NewExpenseState extends State<NewExpense> {
                               cursorColor: kTitleColor,
                               decoration: InputDecoration(
                                 labelText: lang.S.of(context).referenceNumber,
-                                hintText: lang.S.of(context).enterReferenceNumber,
+                                hintText:
+                                    lang.S.of(context).enterReferenceNumber,
                               ),
                             ),
                           ))
@@ -508,7 +553,11 @@ class _NewExpenseState extends State<NewExpense> {
                     ///___________buttons___________________________________________
                     const SizedBox(height: 10.0),
                     ResponsiveGridRow(rowSegments: 100, children: [
-                      ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                      ResponsiveGridCol(
+                          md: screenWidth < 768 ? 15 : 25,
+                          xs: 100,
+                          lg: 30,
+                          child: const SizedBox.shrink()),
                       ResponsiveGridCol(
                         md: screenWidth < 768 ? 35 : 25,
                         xs: 100,
@@ -538,13 +587,16 @@ class _NewExpenseState extends State<NewExpense> {
                             onPressed: saleButtonClicked
                                 ? () {}
                                 : () async {
-                                    if (validateAndSave() && selectedCategories != null && selectedCategories!.isNotEmpty) {
+                                    if (validateAndSave() &&
+                                        selectedCategories != null &&
+                                        selectedCategories!.isNotEmpty) {
                                       ExpenseModel expense = ExpenseModel(
                                         expenseDate: selectedDate.toString(),
                                         category: selectedCategories.toString(),
                                         account: '',
                                         amount: expenseAmount,
-                                        expanseFor: expanseForNameController.text,
+                                        expanseFor:
+                                            expanseForNameController.text,
                                         paymentType: selectedPaymentType,
                                         referenceNo: expanseRefController.text,
                                         note: expanseNoteController.text,
@@ -553,28 +605,52 @@ class _NewExpenseState extends State<NewExpense> {
                                         setState(() {
                                           saleButtonClicked = true;
                                         });
-                                        EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                        final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Expense');
-                                        await productInformationRef.push().set(expense.toJson()).then((_) {
-                                          EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                        EasyLoading.show(
+                                            status:
+                                                '${lang.S.of(context).loading}...',
+                                            dismissOnTap: false);
+                                        final DatabaseReference
+                                            productInformationRef =
+                                            FirebaseDatabase.instance
+                                                .ref()
+                                                .child(await getUserID())
+                                                .child('Expense');
+                                        await productInformationRef
+                                            .push()
+                                            .set(expense.toJson())
+                                            .then((_) {
+                                          EasyLoading.showSuccess(
+                                              lang.S
+                                                  .of(context)
+                                                  .addedSuccessfully,
+                                              duration: const Duration(
+                                                  milliseconds: 500));
 
-                                          DailyTransactionModel dailyTransaction = DailyTransactionModel(
+                                          DailyTransactionModel
+                                              dailyTransaction =
+                                              DailyTransactionModel(
                                             name: expense.expanseFor,
                                             date: expense.expenseDate,
                                             type: 'Expense',
                                             total: expense.amount.toDouble(),
                                             paymentIn: 0,
-                                            paymentOut: expense.amount.toDouble(),
-                                            remainingBalance: expense.amount.toDouble(),
+                                            paymentOut:
+                                                expense.amount.toDouble(),
+                                            remainingBalance:
+                                                expense.amount.toDouble(),
                                             id: expense.expenseDate,
                                             expenseModel: expense,
                                           );
-                                          postDailyTransaction(dailyTransactionModel: dailyTransaction);
+                                          postDailyTransaction(
+                                              dailyTransactionModel:
+                                                  dailyTransaction);
 
                                           ref.refresh(expenseProvider);
                                           ref.refresh(dailyTransactionProvider);
 
-                                          Future.delayed(const Duration(milliseconds: 100), () {
+                                          Future.delayed(
+                                              const Duration(milliseconds: 100),
+                                              () {
                                             if (mounted) {
                                               GoRouter.of(context).pop();
                                             }
@@ -584,17 +660,24 @@ class _NewExpenseState extends State<NewExpense> {
                                             saleButtonClicked = false;
                                           });
                                           EasyLoading.dismiss();
-                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(SnackBar(
+                                                  content:
+                                                      Text(error.toString())));
                                         });
                                       } catch (e) {
                                         setState(() {
                                           saleButtonClicked = false;
                                         });
                                         EasyLoading.dismiss();
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(
+                                                content: Text(e.toString())));
                                       }
                                     } else {
-                                      EasyLoading.showInfo(lang.S.of(context).pleaseSelectACategory);
+                                      EasyLoading.showInfo(lang.S
+                                          .of(context)
+                                          .pleaseSelectACategory);
                                     }
                                   },
                             child: Text(
@@ -668,7 +751,11 @@ class _NewExpenseState extends State<NewExpense> {
                           //     )),
                         ),
                       ),
-                      ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                      ResponsiveGridCol(
+                          md: screenWidth < 768 ? 15 : 25,
+                          xs: 100,
+                          lg: 30,
+                          child: const SizedBox.shrink()),
                     ]),
                     const SizedBox(height: 20.0),
                   ],

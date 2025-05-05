@@ -68,7 +68,8 @@ class _IncomeEditState extends State<IncomeEdit> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(4.0),
-                                decoration: const BoxDecoration(shape: BoxShape.rectangle),
+                                decoration: const BoxDecoration(
+                                    shape: BoxShape.rectangle),
                                 child: const Icon(
                                   FeatherIcons.plus,
                                   color: kTitleColor,
@@ -77,7 +78,10 @@ class _IncomeEditState extends State<IncomeEdit> {
                               const SizedBox(width: 4.0),
                               Text(
                                 lang.S.of(context).addCategory,
-                                style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0, fontWeight: FontWeight.bold),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor,
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.bold),
                               ),
                               const Spacer(),
                               const Icon(
@@ -99,7 +103,8 @@ class _IncomeEditState extends State<IncomeEdit> {
                             children: [
                               Text(
                                 lang.S.of(context).nam,
-                                style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor, fontSize: 18.0),
                               ),
                               const SizedBox(width: 50),
                               SizedBox(
@@ -111,7 +116,8 @@ class _IncomeEditState extends State<IncomeEdit> {
                                     textFieldType: TextFieldType.NAME,
                                     decoration: kInputDecoration.copyWith(
                                       hintText: lang.S.of(context).name,
-                                      hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                      hintStyle: kTextStyle.copyWith(
+                                          color: kGreyTextColor),
                                     ),
                                   ),
                                 ),
@@ -129,7 +135,9 @@ class _IncomeEditState extends State<IncomeEdit> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kRedTextColor),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5.0),
+                                    color: kRedTextColor),
                                 child: Text(
                                   lang.S.of(context).cancel,
                                   style: kTextStyle.copyWith(color: kWhite),
@@ -142,7 +150,9 @@ class _IncomeEditState extends State<IncomeEdit> {
                               ),
                               Container(
                                 padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kGreenTextColor),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5.0),
+                                    color: kGreenTextColor),
                                 child: Text(
                                   lang.S.of(context).submit,
                                   style: kTextStyle.copyWith(color: kWhite),
@@ -166,7 +176,11 @@ class _IncomeEditState extends State<IncomeEdit> {
   DateTime selectedDate = DateTime.now();
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -196,10 +210,18 @@ class _IncomeEditState extends State<IncomeEdit> {
 
   void getExpenseKey() async {
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Income').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Income')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
-        if (data['incomeFor'].toString() == widget.incomeModel.incomeFor && data['amount'].toString() == widget.incomeModel.amount && data['incomeDate'].toString() == widget.incomeModel.incomeDate && data['paymentType'].toString() == widget.incomeModel.paymentType) {
+        if (data['incomeFor'].toString() == widget.incomeModel.incomeFor &&
+            data['amount'].toString() == widget.incomeModel.amount &&
+            data['incomeDate'].toString() == widget.incomeModel.incomeDate &&
+            data['paymentType'].toString() == widget.incomeModel.paymentType) {
           expenseKey = element.key.toString();
         }
       }
@@ -254,9 +276,15 @@ class _IncomeEditState extends State<IncomeEdit> {
   Future<void> category() async {
     final userId = await getUserID();
 
-    await FirebaseDatabase.instance.ref(userId).child('Income Category').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Income Category')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        var data = ExpenseCategoryModel.fromJson(jsonDecode(jsonEncode(element.value)));
+        var data = ExpenseCategoryModel.fromJson(
+            jsonDecode(jsonEncode(element.value)));
         categories.add(data.categoryName);
       }
     });
@@ -296,7 +324,8 @@ class _IncomeEditState extends State<IncomeEdit> {
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Form(
                   key: formKey,
                   child: Column(
@@ -346,10 +375,13 @@ class _IncomeEditState extends State<IncomeEdit> {
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
                                     decoration: InputDecoration(
-                                      suffixIcon: const Icon(IconlyLight.calendar, color: kGreyTextColor),
+                                      suffixIcon: const Icon(
+                                          IconlyLight.calendar,
+                                          color: kGreyTextColor),
                                       contentPadding: const EdgeInsets.all(8.0),
                                       labelText: lang.S.of(context).incomeDate,
-                                      hintText: lang.S.of(context).enterIncomeDate,
+                                      hintText:
+                                          lang.S.of(context).enterIncomeDate,
                                     ),
                                     child: Text(
                                       '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
@@ -374,8 +406,23 @@ class _IncomeEditState extends State<IncomeEdit> {
                               child: FormField(
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
-                                    decoration: InputDecoration(suffixIcon: const Icon(FeatherIcons.plus, color: kTitleColor).onTap(() => showCategoryPopUp()), contentPadding: const EdgeInsets.all(8.0), floatingLabelBehavior: FloatingLabelBehavior.always, labelText: lang.S.of(context).category),
-                                    child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getCategories())),
+                                    decoration: InputDecoration(
+                                        suffixIcon: const Icon(
+                                                FeatherIcons.plus,
+                                                color: kTitleColor)
+                                            .onTap(() => showCategoryPopUp()),
+                                        contentPadding:
+                                            const EdgeInsets.all(8.0),
+                                        floatingLabelBehavior:
+                                            FloatingLabelBehavior.always,
+                                        labelText: lang.S.of(context).category),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getCategories())),
                                   );
                                 },
                               ),
@@ -427,8 +474,24 @@ class _IncomeEditState extends State<IncomeEdit> {
                               child: FormField(
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
-                                    decoration: InputDecoration(suffixIcon: const Icon(FeatherIcons.plus, color: kTitleColor).onTap(() => showCategoryPopUp()), contentPadding: const EdgeInsets.all(8.0), floatingLabelBehavior: FloatingLabelBehavior.always, labelText: lang.S.of(context).paymentType),
-                                    child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getPaymentMethods())),
+                                    decoration: InputDecoration(
+                                        suffixIcon: const Icon(
+                                                FeatherIcons.plus,
+                                                color: kTitleColor)
+                                            .onTap(() => showCategoryPopUp()),
+                                        contentPadding:
+                                            const EdgeInsets.all(8.0),
+                                        floatingLabelBehavior:
+                                            FloatingLabelBehavior.always,
+                                        labelText:
+                                            lang.S.of(context).paymentType),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getPaymentMethods())),
                                   );
                                 },
                               ),
@@ -490,7 +553,8 @@ class _IncomeEditState extends State<IncomeEdit> {
                               cursorColor: kTitleColor,
                               decoration: InputDecoration(
                                 labelText: lang.S.of(context).referenceNumber,
-                                hintText: lang.S.of(context).enterReferenceNumber,
+                                hintText:
+                                    lang.S.of(context).enterReferenceNumber,
                               ),
                             ),
                           ),
@@ -573,14 +637,19 @@ class _IncomeEditState extends State<IncomeEdit> {
                             labelText: lang.S.of(context).note,
                             labelStyle: kTextStyle.copyWith(color: kTitleColor),
                             hintText: lang.S.of(context).enterNote,
-                            hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                            hintStyle:
+                                kTextStyle.copyWith(color: kGreyTextColor),
                           ),
                         ),
                       ),
 
                       ///___________buttons___________________________________________
                       ResponsiveGridRow(rowSegments: 100, children: [
-                        ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                        ResponsiveGridCol(
+                            md: screenWidth < 768 ? 15 : 25,
+                            xs: 100,
+                            lg: 30,
+                            child: const SizedBox.shrink()),
                         ResponsiveGridCol(
                           md: screenWidth < 768 ? 35 : 25,
                           xs: 100,
@@ -620,15 +689,31 @@ class _IncomeEditState extends State<IncomeEdit> {
                                       note: incomeNoteController.text,
                                     );
                                     try {
-                                      EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                      final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Income').child(expenseKey);
-                                      await productInformationRef.set(income.toJson());
-                                      EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                      EasyLoading.show(
+                                          status:
+                                              '${lang.S.of(context).loading}...',
+                                          dismissOnTap: false);
+                                      final DatabaseReference
+                                          productInformationRef =
+                                          FirebaseDatabase.instance
+                                              .ref()
+                                              .child(await getUserID())
+                                              .child('Income')
+                                              .child(expenseKey);
+                                      await productInformationRef
+                                          .set(income.toJson());
+                                      EasyLoading.showSuccess(
+                                          lang.S.of(context).addedSuccessfully,
+                                          duration: const Duration(
+                                              milliseconds: 500));
 
                                       ///____provider_refresh____________________________________________
+                                      // ignore: unused_result
                                       ref.refresh(incomeProvider);
 
-                                      Future.delayed(const Duration(milliseconds: 100), () {
+                                      Future.delayed(
+                                          const Duration(milliseconds: 100),
+                                          () {
                                         // const Product().launch(context, isNewTask: true);
                                         Navigator.pop(context);
                                       });
@@ -643,7 +728,11 @@ class _IncomeEditState extends State<IncomeEdit> {
                                 )),
                           ),
                         ),
-                        ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                        ResponsiveGridCol(
+                            md: screenWidth < 768 ? 15 : 25,
+                            xs: 100,
+                            lg: 30,
+                            child: const SizedBox.shrink()),
                       ]),
                       // Row(
                       //   mainAxisSize: MainAxisSize.max,

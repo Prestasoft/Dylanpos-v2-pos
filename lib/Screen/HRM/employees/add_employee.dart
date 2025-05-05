@@ -14,10 +14,15 @@ import '../Designation/model/designation_model.dart';
 import 'model/employee_model.dart';
 
 class AddEmployeeScreen extends StatefulWidget {
-  AddEmployeeScreen({super.key, required this.listOfEmployees, this.employeeModel, required this.ref, required this.designations});
+  const AddEmployeeScreen(
+      {super.key,
+      required this.listOfEmployees,
+      this.employeeModel,
+      required this.ref,
+      required this.designations});
 
   final List<EmployeeModel> listOfEmployees;
-  EmployeeModel? employeeModel;
+  final EmployeeModel? employeeModel;
   final List<DesignationModel> designations;
   final WidgetRef ref;
 
@@ -106,13 +111,18 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                widget.employeeModel != null ? 'Editar Empleado' : 'Agregar Empleado',
+                                widget.employeeModel != null
+                                    ? 'Editar Empleado'
+                                    : 'Agregar Empleado',
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                            IconButton(onPressed: () => GoRouter.of(context).pop(), icon: const Icon(FeatherIcons.x, color: kTitleColor, size: 22.0))
+                            IconButton(
+                                onPressed: () => GoRouter.of(context).pop(),
+                                icon: const Icon(FeatherIcons.x,
+                                    color: kTitleColor, size: 22.0))
                           ],
                         ),
                       ),
@@ -265,7 +275,9 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                                   .map(
                                     (gender) => DropdownMenuItem(
                                       value: gender,
-                                      child: FittedBox(fit: BoxFit.scaleDown, child: Text(gender)),
+                                      child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(gender)),
                                     ),
                                   )
                                   .toList(),
@@ -274,9 +286,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                                   selectedGender = value;
                                 });
                               },
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
                               dropdownColor: Colors.white,
-                              style: const TextStyle(color: Colors.black, fontSize: 16),
+                              style: const TextStyle(
+                                  color: Colors.black, fontSize: 16),
                             ),
                           ),
                         ),
@@ -306,7 +320,9 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                                   .map(
                                     (gender) => DropdownMenuItem(
                                       value: gender,
-                                      child: FittedBox(fit: BoxFit.scaleDown, child: Text(gender)),
+                                      child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(gender)),
                                     ),
                                   )
                                   .toList(),
@@ -315,9 +331,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                                   selectedType = value;
                                 });
                               },
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
                               dropdownColor: Colors.white,
-                              style: const TextStyle(color: Colors.black, fontSize: 16),
+                              style: const TextStyle(
+                                  color: Colors.black, fontSize: 16),
                             ),
                           ),
                         )
@@ -366,11 +384,13 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                                 'Seleccione la designación del empleado',
                                 style: theme.textTheme.titleMedium,
                               ),
-                              items: widget.designations!
+                              items: widget.designations
                                   .map(
                                     (items) => DropdownMenuItem(
                                       value: items,
-                                      child: FittedBox(fit: BoxFit.scaleDown, child: Text(items.designation)),
+                                      child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(items.designation)),
                                     ),
                                   )
                                   .toList(),
@@ -379,7 +399,8 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                                   selectedDesignation = value;
                                 });
                               },
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
                               dropdownColor: Colors.white,
                               style: theme.textTheme.titleMedium,
                             ),
@@ -399,7 +420,8 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                               context: context,
                               label: 'Fecha de Nacimiento',
                               selectedDate: birthDate,
-                              onChanged: (value) => setState(() => birthDate = value),
+                              onChanged: (value) =>
+                                  setState(() => birthDate = value),
                             ),
                           ),
                         ),
@@ -413,7 +435,8 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                               context: context,
                               label: 'Fecha de Ingreso',
                               selectedDate: joiningDate,
-                              onChanged: (value) => setState(() => joiningDate = value),
+                              onChanged: (value) =>
+                                  setState(() => joiningDate = value),
                             ),
                           ),
                         ),
@@ -441,56 +464,75 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
                             child: _buildButton(
-                              label: widget.employeeModel != null ? lang.S.of(context).update : lang.S.of(context).saveAndPublish,
+                              label: widget.employeeModel != null
+                                  ? lang.S.of(context).update
+                                  : lang.S.of(context).saveAndPublish,
                               color: kGreenTextColor,
                               onTap: widget.employeeModel != null
                                   ? () async {
-                                      if (formKey.currentState?.validate() ?? false) {
+                                      if (formKey.currentState?.validate() ??
+                                          false) {
                                         EmployeeModel data = EmployeeModel(
                                           id: widget.employeeModel!.id,
                                           name: nameController.text,
-                                          phoneNumber: phoneNumberController.text,
+                                          phoneNumber:
+                                              phoneNumberController.text,
                                           email: emailController.text,
                                           address: addressController.text,
                                           gender: selectedGender ?? '',
                                           employmentType: selectedType ?? '',
-                                          designationId: selectedDesignation!.id,
-                                          designation: selectedDesignation!.designation,
+                                          designationId:
+                                              selectedDesignation!.id,
+                                          designation:
+                                              selectedDesignation!.designation,
                                           birthDate: birthDate,
                                           joiningDate: joiningDate,
-                                          salary: double.parse(salaryController.text),
+                                          salary: double.parse(
+                                              salaryController.text),
                                         );
 
-                                        bool result = await EmployeeRepository().updateEmployee(employee: data);
+                                        bool result = await EmployeeRepository()
+                                            .updateEmployee(employee: data);
 
                                         if (result) {
+                                          // ignore: unused_result
                                           ref.refresh(employeeProvider);
                                           GoRouter.of(context).pop();
                                         }
                                       }
                                     }
                                   : () async {
-                                      if (formKey.currentState?.validate() ?? false) {
-                                        num id = DateTime.now().millisecondsSinceEpoch;
+                                      if (formKey.currentState?.validate() ??
+                                          false) {
+                                        num id = DateTime.now()
+                                            .millisecondsSinceEpoch;
 
-                                        bool result = await EmployeeRepository().addEmployee(
+                                        bool result = await EmployeeRepository()
+                                            .addEmployee(
                                           employee: EmployeeModel(
                                             id: id,
                                             name: nameController.text.trim(),
-                                            phoneNumber: phoneNumberController.text.trim(),
+                                            phoneNumber: phoneNumberController
+                                                .text
+                                                .trim(),
                                             email: emailController.text.trim(),
-                                            address: addressController.text.trim(),
-                                            salary: double.parse(salaryController.text.trim()),
+                                            address:
+                                                addressController.text.trim(),
+                                            salary: double.parse(
+                                                salaryController.text.trim()),
                                             birthDate: birthDate,
                                             joiningDate: joiningDate,
                                             gender: selectedGender!,
                                             employmentType: selectedType!,
-                                            designation: selectedDesignation!.designation,
-                                            designationId: selectedDesignation!.id,
+                                            designation: selectedDesignation!
+                                                .designation,
+                                            designationId:
+                                                selectedDesignation!.id,
                                           ),
                                         );
 
                                         if (result) {
+                                          // ignore: unused_result
                                           ref.refresh(employeeProvider);
                                           GoRouter.of(context).pop();
                                         }
@@ -531,7 +573,10 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
     );
   }
 
-  Widget _buildButton({required String label, required Color color, required VoidCallback onTap}) {
+  Widget _buildButton(
+      {required String label,
+      required Color color,
+      required VoidCallback onTap}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: color,

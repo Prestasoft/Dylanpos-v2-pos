@@ -1,19 +1,9 @@
-import 'dart:async';
-
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
-import 'package:salespro_admin/model/ReservationProductModel.dart';
-import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'package:salespro_admin/model/customer_model.dart';
-import 'package:salespro_admin/model/dress_model.dart';
 import '../model/reservation_model.dart';
 import 'customer_provider.dart';
-import 'dress_provider.dart';
-import 'package:rxdart/rxdart.dart';
-
-
 
 final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
   return FirebaseDatabase.instance
@@ -24,32 +14,33 @@ final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
     if (snapshot.value == null) return [];
 
     if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<dynamic, dynamic> data =
+          snapshot.value as Map<dynamic, dynamic>;
 
       // Filtrar reservaciones que no estén en estado 'cancelado' o 'pendiente'
       return data.entries
-          .where((entry) => entry.value is Map && _isValidReservation(entry.value as Map))
+          .where((entry) =>
+              entry.value is Map && _isValidReservation(entry.value as Map))
           .map((entry) {
-        final reservation = ReservationModel.fromMap(
-          Map<String, dynamic>.from(entry.value as Map),
-          entry.key.toString(),
-        );
+            final reservation = ReservationModel.fromMap(
+              Map<String, dynamic>.from(entry.value as Map),
+              entry.key.toString(),
+            );
 
-        // Retornar la reservación solo si el estado es diferente a 'cancelado' y 'pendiente'
-        if (reservation.estado != 'cancelado') {
-          return reservation;
-        }
-        return null; // Si el estado es 'cancelado' o 'pendiente', retornamos null
-      })
-          .where((reservation) => reservation != null) // Eliminar los valores nulos
+            // Retornar la reservación solo si el estado es diferente a 'cancelado' y 'pendiente'
+            if (reservation.estado != 'cancelado') {
+              return reservation;
+            }
+            return null; // Si el estado es 'cancelado' o 'pendiente', retornamos null
+          })
+          .where((reservation) =>
+              reservation != null) // Eliminar los valores nulos
           .toList() // Convertimos el resultado a una lista de no nulos
           .cast<ReservationModel>(); // Hacemos el cast a List<ReservationModel>
     }
     return <ReservationModel>[];
   });
 });
-
-
 
 // Helper function to check if a map represents a valid reservation
 bool _isValidReservation(Map<dynamic, dynamic> map) {
@@ -59,7 +50,8 @@ bool _isValidReservation(Map<dynamic, dynamic> map) {
       map['reservation_date'] != "";
 }
 
-final reservationsByDateProvider = StreamProvider.family<List<ReservationModel>, String>((ref, date) {
+final reservationsByDateProvider =
+    StreamProvider.family<List<ReservationModel>, String>((ref, date) {
   return FirebaseDatabase.instance
       .ref('Admin Panel/reservations')
       .orderByChild('reservation_date')
@@ -70,21 +62,23 @@ final reservationsByDateProvider = StreamProvider.family<List<ReservationModel>,
     if (snapshot.value == null) return [];
 
     if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<dynamic, dynamic> data =
+          snapshot.value as Map<dynamic, dynamic>;
       return data.entries
-          .where((entry) => entry.value is Map && _isValidReservation(entry.value as Map))
+          .where((entry) =>
+              entry.value is Map && _isValidReservation(entry.value as Map))
           .map((entry) {
         return ReservationModel.fromMap(
             Map<String, dynamic>.from(entry.value as Map),
-            entry.key.toString()
-        );
+            entry.key.toString());
       }).toList();
     }
     return <ReservationModel>[];
   });
 });
 
-final ActualizarEstadoReservaProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+final ActualizarEstadoReservaProvider =
+    FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   try {
     final List<String> reservationIds = List<String>.from(params['id']);
     final String newEstado = params['estado'];
@@ -104,11 +98,14 @@ final ActualizarEstadoReservaProvider = FutureProvider.family<bool, Map<String, 
   }
 });
 
-final ReservaPendientProvider = StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
+final ReservaPendientProvider =
+    StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
   final today = DateTime.now();
-  final formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+  final formattedToday =
+      "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
-  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+  final reservationsRef =
+      FirebaseDatabase.instance.ref('Admin Panel/reservations');
   final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
   final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
 
@@ -132,8 +129,14 @@ final ReservaPendientProvider = StreamProvider.family<List<FullReservation>, Str
     }).toList();
 
     // Obtener los IDs únicos de vestidos y servicios
-    final dressIds = reservations.map((e) => e.value['dress_id']?.toString()).whereType<String>().toSet();
-    final serviceIds = reservations.map((e) => e.value['service_id']?.toString()).whereType<String>().toSet();
+    final dressIds = reservations
+        .map((e) => e.value['dress_id']?.toString())
+        .whereType<String>()
+        .toSet();
+    final serviceIds = reservations
+        .map((e) => e.value['service_id']?.toString())
+        .whereType<String>()
+        .toSet();
 
     // Obtener todos los vestidos y servicios
     final dressSnap = await dressesRef.get();
@@ -149,8 +152,11 @@ final ReservaPendientProvider = StreamProvider.family<List<FullReservation>, Str
       final dressId = data['dress_id']?.toString();
       final serviceId = data['service_id']?.toString();
 
-      final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
-      final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
+      final dress =
+          dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+      final service = serviceId != null && servicesMap != null
+          ? servicesMap[serviceId]
+          : null;
 
       return FullReservation(
         id: id,
@@ -174,8 +180,8 @@ final ReservaPendientProvider = StreamProvider.family<List<FullReservation>, Str
   });
 });
 
-
-final reservationsByClientProvider = StreamProvider.family<List<ReservationModel>, String>((ref, clientId) {
+final reservationsByClientProvider =
+    StreamProvider.family<List<ReservationModel>, String>((ref, clientId) {
   return FirebaseDatabase.instance
       .ref('Admin Panel/reservations')
       .orderByChild('client_id')
@@ -186,21 +192,23 @@ final reservationsByClientProvider = StreamProvider.family<List<ReservationModel
     if (snapshot.value == null) return [];
 
     if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<dynamic, dynamic> data =
+          snapshot.value as Map<dynamic, dynamic>;
       return data.entries
-          .where((entry) => entry.value is Map && _isValidReservation(entry.value as Map))
+          .where((entry) =>
+              entry.value is Map && _isValidReservation(entry.value as Map))
           .map((entry) {
         return ReservationModel.fromMap(
             Map<String, dynamic>.from(entry.value as Map),
-            entry.key.toString()
-        );
+            entry.key.toString());
       }).toList();
     }
     return <ReservationModel>[];
   });
 });
 
-final reservationsByBranchProvider = StreamProvider.family<List<ReservationModel>, String>((ref, branchId) {
+final reservationsByBranchProvider =
+    StreamProvider.family<List<ReservationModel>, String>((ref, branchId) {
   return FirebaseDatabase.instance
       .ref('Admin Panel/reservations')
       .orderByChild('branch_id')
@@ -211,31 +219,31 @@ final reservationsByBranchProvider = StreamProvider.family<List<ReservationModel
     if (snapshot.value == null) return [];
 
     if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<dynamic, dynamic> data =
+          snapshot.value as Map<dynamic, dynamic>;
       return data.entries
-          .where((entry) => entry.value is Map && _isValidReservation(entry.value as Map))
+          .where((entry) =>
+              entry.value is Map && _isValidReservation(entry.value as Map))
           .map((entry) {
         return ReservationModel.fromMap(
             Map<String, dynamic>.from(entry.value as Map),
-            entry.key.toString()
-        );
+            entry.key.toString());
       }).toList();
     }
     return <ReservationModel>[];
   });
 });
 
-
-
-
 // Provider actualizado
 
-
 // En tu provider de reservaciones, añade un método para verificar disponibilidad
-final isDressAvailableForRangeProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+final isDressAvailableForRangeProvider =
+    FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   final String dressId = params['dressId'];
-  final String startDate = params['startDate']; // Fecha de inicio formato 'YYYY-MM-DD'
-  final Map<String, dynamic> durationMap = params['duration']; // Duración como Map
+  final String startDate =
+      params['startDate']; // Fecha de inicio formato 'YYYY-MM-DD'
+  final Map<String, dynamic> durationMap =
+      params['duration']; // Duración como Map
 
   try {
     // Convertir fecha de inicio a DateTime
@@ -254,17 +262,18 @@ final isDressAvailableForRangeProvider = FutureProvider.family<bool, Map<String,
     }
 
     // Obtener todas las reservas para este vestido
-    final DatabaseReference dbRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
-    final DatabaseEvent event = await dbRef
-        .orderByChild('dress_id')
-        .equalTo(dressId)
-        .once();
+    final DatabaseReference dbRef =
+        FirebaseDatabase.instance.ref('Admin Panel/reservations');
+    final DatabaseEvent event =
+        await dbRef.orderByChild('dress_id').equalTo(dressId).once();
 
     final snapshot = event.snapshot;
-    if (snapshot.value == null) return true; // No hay reservas para este vestido
+    if (snapshot.value == null)
+      return true; // No hay reservas para este vestido
 
     if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<dynamic, dynamic> data =
+          snapshot.value as Map<dynamic, dynamic>;
 
       // Verificar si alguna reserva existente se superpone con el período deseado
       for (var reservation in data.values) {
@@ -282,24 +291,28 @@ final isDressAvailableForRangeProvider = FutureProvider.family<bool, Map<String,
               .get();
 
           if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
-            final Map<dynamic, dynamic> serviceData = serviceSnapshot.value as Map<dynamic, dynamic>;
+            final Map<dynamic, dynamic> serviceData =
+                serviceSnapshot.value as Map<dynamic, dynamic>;
             final Map<String, dynamic> reservationDurationMap =
-            (serviceData['duration'] is Map)
-                ? Map<String, dynamic>.from(serviceData['duration'])
-                : {'value': 1, 'unit': 'days'};
+                (serviceData['duration'] is Map)
+                    ? Map<String, dynamic>.from(serviceData['duration'])
+                    : {'value': 1, 'unit': 'days'};
 
             // Calcular la fecha de fin de la reserva existente
             DateTime reservationEnd;
             if (reservationDurationMap['unit'] == 'days') {
-              reservationEnd = reservationStart.add(Duration(days: reservationDurationMap['value']));
+              reservationEnd = reservationStart
+                  .add(Duration(days: reservationDurationMap['value']));
             } else if (reservationDurationMap['unit'] == 'hours') {
-              reservationEnd = reservationStart.add(Duration(hours: reservationDurationMap['value']));
+              reservationEnd = reservationStart
+                  .add(Duration(hours: reservationDurationMap['value']));
             } else {
               reservationEnd = reservationStart.add(Duration(days: 1));
             }
 
             // Verificar superposición
-            if (!(endDateTime.isBefore(reservationStart) || startDateTime.isAfter(reservationEnd))) {
+            if (!(endDateTime.isBefore(reservationStart) ||
+                startDateTime.isAfter(reservationEnd))) {
               return false; // Hay superposición, no está disponible
             }
           }
@@ -314,7 +327,9 @@ final isDressAvailableForRangeProvider = FutureProvider.family<bool, Map<String,
   }
 });
 
-final singleReservationProvider = FutureProvider.family<ReservationModel?, String>((ref, reservationId) async {
+final singleReservationProvider =
+    FutureProvider.family<ReservationModel?, String>(
+        (ref, reservationId) async {
   final snapshot = await FirebaseDatabase.instance
       .ref('Admin Panel/reservations/$reservationId')
       .get();
@@ -323,15 +338,14 @@ final singleReservationProvider = FutureProvider.family<ReservationModel?, Strin
     Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
     if (_isValidReservation(data)) {
       return ReservationModel.fromMap(
-          Map<String, dynamic>.from(data),
-          reservationId
-      );
+          Map<String, dynamic>.from(data), reservationId);
     }
   }
   return null;
 });
 
-final updateReservationProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+final updateReservationProvider =
+    FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   try {
     final String reservationId = params['reservationId'];
     final Map<String, dynamic> updateData = params['updateData'];
@@ -349,7 +363,8 @@ final updateReservationProvider = FutureProvider.family<bool, Map<String, dynami
   }
 });
 
-final cancelReservationProvider = FutureProvider.family<bool, String>((ref, reservationId) async {
+final cancelReservationProvider =
+    FutureProvider.family<bool, String>((ref, reservationId) async {
   try {
     await FirebaseDatabase.instance
         .ref('Admin Panel/reservations/$reservationId')
@@ -362,8 +377,10 @@ final cancelReservationProvider = FutureProvider.family<bool, String>((ref, rese
   }
 });
 
-final fullReservationsProvider = FutureProvider<List<FullReservation>>((ref) async {
-  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+final fullReservationsProvider =
+    FutureProvider<List<FullReservation>>((ref) async {
+  final reservationsRef =
+      FirebaseDatabase.instance.ref('Admin Panel/reservations');
   final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
   final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
 
@@ -389,7 +406,7 @@ final fullReservationsProvider = FutureProvider<List<FullReservation>>((ref) asy
     final dress = dressId != null ? dressesMap[dressId] : null;
     final service = serviceId != null ? servicesMap[serviceId] : null;
     final client = customers.firstWhere(
-          (c) => c.phoneNumber == clientId,
+      (c) => c.phoneNumber == clientId,
       orElse: () => CustomerModel.empty(),
     );
 
@@ -403,9 +420,11 @@ final fullReservationsProvider = FutureProvider<List<FullReservation>>((ref) asy
   }).toList();
 });
 
-final fullReservationByIdProviderVQ = FutureProvider.family<FullReservation?, String>(
-      (ref, reservationId) async {
-    final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+final fullReservationByIdProviderVQ =
+    FutureProvider.family<FullReservation?, String>(
+  (ref, reservationId) async {
+    final reservationsRef =
+        FirebaseDatabase.instance.ref('Admin Panel/reservations');
     final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
     final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
 
@@ -413,18 +432,19 @@ final fullReservationByIdProviderVQ = FutureProvider.family<FullReservation?, St
     final customerList = await ref.read(allCustomerProvider.future);
 
     // Obtener la reservación
-    final reservationSnapshot = await reservationsRef.child(reservationId).get();
+    final reservationSnapshot =
+        await reservationsRef.child(reservationId).get();
     final snapshot = reservationSnapshot.value;
     if (snapshot == null || snapshot is! Map) return null;
 
-    final reservation = Map<String, dynamic>.from(snapshot as Map);
+    final reservation = Map<String, dynamic>.from(snapshot);
     final dressId = reservation['dress_id']?.toString();
     final serviceId = reservation['service_id']?.toString();
     final clientId = reservation['client_id']?.toString();
 
     // Buscar el cliente por ID
     final client = customerList.firstWhere(
-          (c) => c.phoneNumber == clientId,
+      (c) => c.phoneNumber == clientId,
       orElse: () => CustomerModel.empty(),
     );
 
@@ -435,8 +455,11 @@ final fullReservationByIdProviderVQ = FutureProvider.family<FullReservation?, St
     final dressesMap = dressSnap.value as Map?;
     final servicesMap = serviceSnap.value as Map?;
 
-    final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
-    final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
+    final dress =
+        dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+    final service = serviceId != null && servicesMap != null
+        ? servicesMap[serviceId]
+        : null;
 
     // Devolver el objeto FullReservation con todos los datos
     return FullReservation(
@@ -451,8 +474,10 @@ final fullReservationByIdProviderVQ = FutureProvider.family<FullReservation?, St
   },
 );
 
-final fullReservationByIdProvider = StreamProvider.family<FullReservation?, String>((ref, reservationId) {
-  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+final fullReservationByIdProvider =
+    StreamProvider.family<FullReservation?, String>((ref, reservationId) {
+  final reservationsRef =
+      FirebaseDatabase.instance.ref('Admin Panel/reservations');
   final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
   final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
 
@@ -462,14 +487,14 @@ final fullReservationByIdProvider = StreamProvider.family<FullReservation?, Stri
     final snapshot = event.snapshot.value;
     if (snapshot == null || snapshot is! Map) return null;
 
-    final reservation = Map<String, dynamic>.from(snapshot as Map);
+    final reservation = Map<String, dynamic>.from(snapshot);
     final dressId = reservation['dress_id']?.toString();
     final serviceId = reservation['service_id']?.toString();
     final clientId = reservation['client_id']?.toString();
 
     final customerList = await customerFuture;
     final client = customerList.firstWhere(
-          (c) => c.phoneNumber == clientId,
+      (c) => c.phoneNumber == clientId,
       orElse: () => CustomerModel.empty(),
     );
 
@@ -479,27 +504,34 @@ final fullReservationByIdProvider = StreamProvider.family<FullReservation?, Stri
     final dressesMap = dressSnap.value as Map?;
     final servicesMap = serviceSnap.value as Map?;
 
-    final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
-    final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
+    final dress =
+        dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+    final service = serviceId != null && servicesMap != null
+        ? servicesMap[serviceId]
+        : null;
 
     return FullReservation(
       id: reservationId,
       reservation: reservation,
       dress: dress != null ? Map<String, dynamic>.from(dress) : null,
       service: service != null ? Map<String, dynamic>.from(service) : null,
-      client: client.phoneNumber.isEmpty ? null : client,  // Ahora asignas el cliente completo
+      client: client.phoneNumber.isEmpty
+          ? null
+          : client, // Ahora asignas el cliente completo
       dressIds: dressesMap?.keys.map((e) => e.toString()).toList() ?? [],
       serviceIds: servicesMap?.keys.map((e) => e.toString()).toList() ?? [],
     );
   });
 });
 
-
-final fullReservationsByClientProvider = StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
+final fullReservationsByClientProvider =
+    StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
   final today = DateTime.now();
-  final formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+  final formattedToday =
+      "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
-  final reservationsRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+  final reservationsRef =
+      FirebaseDatabase.instance.ref('Admin Panel/reservations');
   final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
   final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
 
@@ -522,8 +554,14 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
     }).toList();
 
     // Obtener los IDs únicos de vestidos y servicios
-    final dressIds = reservations.map((e) => e.value['dress_id']?.toString()).whereType<String>().toSet();
-    final serviceIds = reservations.map((e) => e.value['service_id']?.toString()).whereType<String>().toSet();
+    final dressIds = reservations
+        .map((e) => e.value['dress_id']?.toString())
+        .whereType<String>()
+        .toSet();
+    final serviceIds = reservations
+        .map((e) => e.value['service_id']?.toString())
+        .whereType<String>()
+        .toSet();
 
     // Obtener todos los vestidos y servicios
     final dressSnap = await dressesRef.get();
@@ -539,8 +577,11 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
       final dressId = data['dress_id']?.toString();
       final serviceId = data['service_id']?.toString();
 
-      final dress = dressId != null && dressesMap != null ? dressesMap[dressId] : null;
-      final service = serviceId != null && servicesMap != null ? servicesMap[serviceId] : null;
+      final dress =
+          dressId != null && dressesMap != null ? dressesMap[dressId] : null;
+      final service = serviceId != null && servicesMap != null
+          ? servicesMap[serviceId]
+          : null;
 
       return FullReservation(
         id: id,
@@ -564,10 +605,8 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
   });
 });
 
-
-
-
-final sidebarProvider = StateNotifierProvider<SidebarNotifier, SidebarState>((ref) {
+final sidebarProvider =
+    StateNotifierProvider<SidebarNotifier, SidebarState>((ref) {
   return SidebarNotifier();
 });
 
@@ -600,28 +639,28 @@ class SidebarNotifier extends StateNotifier<SidebarState> {
   }
 }
 
-
-final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+final isDressAvailableProvider =
+    FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   final String dressId = params['dressId'];
   final String date = params['date'];
   final String time = params['time'];
 
   try {
-    final DatabaseReference ref = FirebaseDatabase.instance.ref('Admin Panel/reservations');
-    final DatabaseEvent event = await ref
-        .orderByChild('dress_id')
-        .equalTo(dressId)
-        .once();
+    final DatabaseReference ref =
+        FirebaseDatabase.instance.ref('Admin Panel/reservations');
+    final DatabaseEvent event =
+        await ref.orderByChild('dress_id').equalTo(dressId).once();
 
     final snapshot = event.snapshot;
 
     if (snapshot.value == null) return true;
 
     if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<dynamic, dynamic> data =
+          snapshot.value as Map<dynamic, dynamic>;
 
       return !data.values.any((reservation) =>
-      reservation['reservation_date'] == date &&
+          reservation['reservation_date'] == date &&
           reservation['reservation_time'] == time &&
           reservation['status'] != 'cancelado');
     }
@@ -633,11 +672,11 @@ final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic
   }
 });
 
-final crearReservaProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+final crearReservaProvider =
+    FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   try {
-    final newReservationRef = FirebaseDatabase.instance
-        .ref('Admin Panel/reservations')
-        .push();
+    final newReservationRef =
+        FirebaseDatabase.instance.ref('Admin Panel/reservations').push();
 
     final Map<String, dynamic> reservationData = {
       'service_id': params['serviceId'],
@@ -648,10 +687,11 @@ final crearReservaProvider = FutureProvider.family<bool, Map<String, dynamic>>((
       'reservation_time': params['time'],
       'created_at': ServerValue.timestamp,
       'updated_at': ServerValue.timestamp,
-      'estado':'pendiente',
+      'estado': 'pendiente',
     };
     await newReservationRef.set(reservationData);
     // Refresh the reservations provider
+    // ignore: unused_result
     ref.refresh(reservationsProvider);
     return true;
   } catch (e) {

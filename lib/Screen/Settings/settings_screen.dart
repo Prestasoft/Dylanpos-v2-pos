@@ -49,7 +49,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           status: '${lang.S.of(context).uploading}... ',
           dismissOnTap: false,
         );
-        var snapshot = await FirebaseStorage.instance.ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}').putData(bytesFromPicker!);
+        var snapshot = await FirebaseStorage.instance
+            .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+            .putData(bytesFromPicker!);
         var url = await snapshot.ref.getDownloadURL();
         EasyLoading.showSuccess('${lang.S.of(context).uploadSuccessful}!');
         setState(() {
@@ -105,7 +107,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       //   ),
                       // ),
                       Container(
-                        width: MediaQuery.of(context).size.width < 1275 ? 1275 - 240 : MediaQuery.of(context).size.width - 240,
+                        width: MediaQuery.of(context).size.width < 1275
+                            ? 1275 - 240
+                            : MediaQuery.of(context).size.width - 240,
                         // width: context.width() < 1080 ? 1080 - 240 : MediaQuery.of(context).size.width - 240,
                         decoration: const BoxDecoration(color: kDarkWhite),
                         child: SingleChildScrollView(
@@ -119,15 +123,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 padding: const EdgeInsets.all(20.0),
                                 child: Container(
                                   width: 600,
-                                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                                  padding: const EdgeInsets.only(
+                                      left: 20.0,
+                                      right: 20.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      color: kWhite),
                                   child: Column(
                                     children: [
                                       Row(
                                         children: [
                                           Text(
                                             lang.S.of(context).setting,
-                                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                            style: kTextStyle.copyWith(
+                                                color: kTitleColor,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 18.0),
                                           ),
                                           const Spacer(),
 
@@ -141,32 +154,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                       Container(
                                         padding: const EdgeInsets.all(20.0),
-                                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+                                        decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
+                                            color: kWhite),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
                                             DottedBorderWidget(
                                               color: kLitGreyColor,
                                               child: ClipRRect(
-                                                borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                        Radius.circular(12)),
                                                 child: Container(
                                                   width: context.width(),
-                                                  padding: const EdgeInsets.all(10.0),
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
                                                   decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(20.0),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20.0),
                                                   ),
                                                   child: Column(
                                                     children: [
                                                       image == null
                                                           ? Column(
-                                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .center,
                                                               children: [
-                                                                Icon(MdiIcons.cloudUpload, size: 50.0, color: kLitGreyColor).onTap(() => uploadFile()),
-                                                                const SizedBox(height: 10.0),
-                                                                RichText(text: TextSpan(text: lang.S.of(context).uploadAnInvoiceLogo, style: kTextStyle.copyWith(color: kGreenTextColor, fontWeight: FontWeight.bold), children: [TextSpan(text: lang.S.of(context).orDragAndDropPng, style: kTextStyle.copyWith(color: kGreyTextColor, fontWeight: FontWeight.bold))])),
+                                                                Icon(
+                                                                        MdiIcons
+                                                                            .cloudUpload,
+                                                                        size:
+                                                                            50.0,
+                                                                        color:
+                                                                            kLitGreyColor)
+                                                                    .onTap(() =>
+                                                                        uploadFile()),
+                                                                const SizedBox(
+                                                                    height:
+                                                                        10.0),
+                                                                RichText(
+                                                                    text: TextSpan(
+                                                                        text: lang
+                                                                            .S
+                                                                            .of(
+                                                                                context)
+                                                                            .uploadAnInvoiceLogo,
+                                                                        style: kTextStyle.copyWith(
+                                                                            color:
+                                                                                kGreenTextColor,
+                                                                            fontWeight:
+                                                                                FontWeight.bold),
+                                                                        children: [
+                                                                      TextSpan(
+                                                                          text: lang
+                                                                              .S
+                                                                              .of(
+                                                                                  context)
+                                                                              .orDragAndDropPng,
+                                                                          style: kTextStyle.copyWith(
+                                                                              color: kGreyTextColor,
+                                                                              fontWeight: FontWeight.bold))
+                                                                    ])),
                                                               ],
                                                             )
-                                                          : Image.network(profilePicture, width: 150, height: 150),
+                                                          : Image.network(
+                                                              profilePicture,
+                                                              width: 150,
+                                                              height: 150),
                                                     ],
                                                   ),
                                                 ),
@@ -178,8 +237,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             Row(
                                               children: [
                                                 Text(
-                                                  lang.S.of(context).showLogoInInvoice,
-                                                  style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                                  lang.S
+                                                      .of(context)
+                                                      .showLogoInInvoice,
+                                                  style: kTextStyle.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                                 const Spacer(),
                                                 CupertinoSwitch(
@@ -198,21 +262,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             Row(
                                               children: [
                                                 Text(
-                                                  lang.S.of(context).logoPositionInInvoice,
-                                                  style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                                  lang.S
+                                                      .of(context)
+                                                      .logoPositionInInvoice,
+                                                  style: kTextStyle.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                                 const Spacer(),
                                                 Row(
                                                   children: [
                                                     Text(
                                                       lang.S.of(context).left,
-                                                      style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                                      style:
+                                                          kTextStyle.copyWith(
+                                                              color:
+                                                                  kTitleColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
                                                     ),
                                                     Padding(
-                                                      padding: const EdgeInsets.only(left: 10.0, right: 10.0),
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 10.0,
+                                                              right: 10.0),
                                                       child: CupertinoSwitch(
                                                         value: isRight,
-                                                        onChanged: (bool value) {
+                                                        onChanged:
+                                                            (bool value) {
                                                           setState(() {
                                                             isRight = value;
                                                           });
@@ -221,7 +300,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     ),
                                                     Text(
                                                       lang.S.of(context).right,
-                                                      style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                                      style:
+                                                          kTextStyle.copyWith(
+                                                              color:
+                                                                  kTitleColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
                                                     ),
                                                   ],
                                                 ),
@@ -234,11 +319,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               showCursor: true,
                                               cursorColor: kTitleColor,
                                               textFieldType: TextFieldType.NAME,
-                                              decoration: kInputDecoration.copyWith(
-                                                labelText: lang.S.of(context).companyName,
-                                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                hintText: lang.S.of(context).enterYourCompanyAddress,
-                                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                              decoration:
+                                                  kInputDecoration.copyWith(
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .companyName,
+                                                labelStyle: kTextStyle.copyWith(
+                                                    color: kTitleColor),
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterYourCompanyAddress,
+                                                hintStyle: kTextStyle.copyWith(
+                                                    color: kGreyTextColor),
                                               ),
                                             ),
                                             const SizedBox(
@@ -247,12 +339,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             AppTextField(
                                               showCursor: true,
                                               cursorColor: kTitleColor,
-                                              textFieldType: TextFieldType.PHONE,
-                                              decoration: kInputDecoration.copyWith(
-                                                labelText: lang.S.of(context).companyPhoneNumber,
-                                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                hintText: lang.S.of(context).enterCompanyPhoneNumber,
-                                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                              textFieldType:
+                                                  TextFieldType.PHONE,
+                                              decoration:
+                                                  kInputDecoration.copyWith(
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .companyPhoneNumber,
+                                                labelStyle: kTextStyle.copyWith(
+                                                    color: kTitleColor),
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterCompanyPhoneNumber,
+                                                hintStyle: kTextStyle.copyWith(
+                                                    color: kGreyTextColor),
                                               ),
                                             ),
                                             const SizedBox(
@@ -261,12 +361,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             AppTextField(
                                               showCursor: true,
                                               cursorColor: kTitleColor,
-                                              textFieldType: TextFieldType.EMAIL,
-                                              decoration: kInputDecoration.copyWith(
-                                                labelText: lang.S.of(context).companyEmailAddress,
-                                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                hintText: lang.S.of(context).enterCompanyEmailAddress,
-                                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                              textFieldType:
+                                                  TextFieldType.EMAIL,
+                                              decoration:
+                                                  kInputDecoration.copyWith(
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .companyEmailAddress,
+                                                labelStyle: kTextStyle.copyWith(
+                                                    color: kTitleColor),
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterCompanyEmailAddress,
+                                                hintStyle: kTextStyle.copyWith(
+                                                    color: kGreyTextColor),
                                               ),
                                             ),
                                             const SizedBox(
@@ -276,11 +384,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               showCursor: true,
                                               cursorColor: kTitleColor,
                                               textFieldType: TextFieldType.NAME,
-                                              decoration: kInputDecoration.copyWith(
-                                                labelText: lang.S.of(context).companyWebsiteUrl,
-                                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                hintText: lang.S.of(context).enterCompanyWebsiteUrl,
-                                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                              decoration:
+                                                  kInputDecoration.copyWith(
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .companyWebsiteUrl,
+                                                labelStyle: kTextStyle.copyWith(
+                                                    color: kTitleColor),
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterCompanyWebsiteUrl,
+                                                hintStyle: kTextStyle.copyWith(
+                                                    color: kGreyTextColor),
                                               ),
                                             ),
                                             const SizedBox(
@@ -289,23 +404,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             AppTextField(
                                               showCursor: true,
                                               cursorColor: kTitleColor,
-                                              textFieldType: TextFieldType.MULTILINE,
-                                              decoration: kInputDecoration.copyWith(
-                                                labelText: lang.S.of(context).companyDescription,
-                                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                hintText: lang.S.of(context).enterCompanyDesciption,
-                                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                              textFieldType:
+                                                  TextFieldType.MULTILINE,
+                                              decoration:
+                                                  kInputDecoration.copyWith(
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .companyDescription,
+                                                labelStyle: kTextStyle.copyWith(
+                                                    color: kTitleColor),
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterCompanyDesciption,
+                                                hintStyle: kTextStyle.copyWith(
+                                                    color: kGreyTextColor),
                                               ),
                                             ),
                                             const SizedBox(
                                               height: 10.0,
                                             ),
                                             ButtonGlobalWithoutIcon(
-                                              buttontext: lang.S.of(context).saveChanges,
-                                              buttonDecoration: kButtonDecoration.copyWith(color: kMainColor),
+                                              buttontext: lang.S
+                                                  .of(context)
+                                                  .saveChanges,
+                                              buttonDecoration:
+                                                  kButtonDecoration.copyWith(
+                                                      color: kMainColor),
                                               onPressed: () async {
-                                                final dbRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Invoice Settings');
-                                                InvoiceModel inv = InvoiceModel(phoneNumber: data.phoneNumber, companyName: data.companyName, pictureUrl: profilePicture, emailAddress: companyEmailController.text, address: companyAddressController.text, description: companyDescriptionController.text, website: companyWebsiteController.text, isRight: isRight, showInvoice: showLogo);
+                                                final dbRef = FirebaseDatabase
+                                                    .instance
+                                                    .ref()
+                                                    .child(await getUserID())
+                                                    .child('Invoice Settings');
+                                                InvoiceModel inv = InvoiceModel(
+                                                    phoneNumber:
+                                                        data.phoneNumber,
+                                                    companyName:
+                                                        data.companyName,
+                                                    pictureUrl: profilePicture,
+                                                    emailAddress:
+                                                        companyEmailController
+                                                            .text,
+                                                    address:
+                                                        companyAddressController
+                                                            .text,
+                                                    description:
+                                                        companyDescriptionController
+                                                            .text,
+                                                    website:
+                                                        companyWebsiteController
+                                                            .text,
+                                                    isRight: isRight,
+                                                    showInvoice: showLogo);
+                                                await dbRef.set(inv.toJson());
                                               },
                                               buttonTextColor: Colors.white,
                                             ),

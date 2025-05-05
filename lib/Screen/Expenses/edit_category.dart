@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -9,14 +8,18 @@ import 'package:go_router/go_router.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-
 import '../../Provider/expense_category_proivder.dart';
 import '../../const.dart';
 import '../../model/expense_category_model.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditCategory extends StatefulWidget {
-  const EditCategory({Key? key, required this.listOfExpanseCategory, required this.expenseCategoryModel, required this.menuContext}) : super(key: key);
+  const EditCategory(
+      {Key? key,
+      required this.listOfExpanseCategory,
+      required this.expenseCategoryModel,
+      required this.menuContext})
+      : super(key: key);
 
   final List<ExpenseCategoryModel> listOfExpanseCategory;
   final ExpenseCategoryModel expenseCategoryModel;
@@ -33,10 +36,16 @@ class _EditCategoryState extends State<EditCategory> {
   String expenseKey = '';
 
   void getExpenseKey() async {
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Expense Category').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Expense Category')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
-        if (data['categoryName'].toString() == widget.expenseCategoryModel.categoryName) {
+        if (data['categoryName'].toString() ==
+            widget.expenseCategoryModel.categoryName) {
           expenseKey = element.key.toString();
         }
       }
@@ -56,7 +65,6 @@ class _EditCategoryState extends State<EditCategory> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     List<String> names = [];
     for (var element in widget.listOfExpanseCategory) {
       names.add(element.categoryName.removeAllWhiteSpace().toLowerCase());
@@ -84,7 +92,10 @@ class _EditCategoryState extends State<EditCategory> {
                         Flexible(
                           child: Text(
                             lang.S.of(context).enterExpanseCategory,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 21.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 21.0),
                           ),
                         ),
                         IconButton(
@@ -169,20 +180,45 @@ class _EditCategoryState extends State<EditCategory> {
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
                           onPressed: () {
-                            ExpenseCategoryModel expenseCategory = ExpenseCategoryModel(categoryName: categoryName, categoryDescription: categoryDescription);
-                            if (categoryName != '' && categoryName == widget.expenseCategoryModel.categoryName ? true : !names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
+                            ExpenseCategoryModel expenseCategory =
+                                ExpenseCategoryModel(
+                                    categoryName: categoryName,
+                                    categoryDescription: categoryDescription);
+                            if (categoryName != '' &&
+                                    categoryName ==
+                                        widget.expenseCategoryModel.categoryName
+                                ? true
+                                : !names.contains(categoryName
+                                    .toLowerCase()
+                                    .removeAllWhiteSpace())) {
                               setState(() async {
                                 try {
-                                  EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                  final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Expense Category').child(expenseKey);
-                                  await productInformationRef.set(expenseCategory.toJson());
-                                  EasyLoading.showSuccess(lang.S.of(context).editSuccessfully, duration: const Duration(milliseconds: 500));
+                                  EasyLoading.show(
+                                      status:
+                                          '${lang.S.of(context).loading}...',
+                                      dismissOnTap: false);
+                                  final DatabaseReference
+                                      productInformationRef = FirebaseDatabase
+                                          .instance
+                                          .ref()
+                                          .child(await getUserID())
+                                          .child('Expense Category')
+                                          .child(expenseKey);
+                                  await productInformationRef
+                                      .set(expenseCategory.toJson());
+                                  EasyLoading.showSuccess(
+                                      lang.S.of(context).editSuccessfully,
+                                      duration:
+                                          const Duration(milliseconds: 500));
 
                                   ///____provider_refresh____________________________________________
+                                  // ignore: unused_result
                                   ref.refresh(expenseCategoryProvider);
 
-                                  Future.delayed(const Duration(milliseconds: 100), () {
-                                    GoRouter.of(context).pop(widget.menuContext);
+                                  Future.delayed(
+                                      const Duration(milliseconds: 100), () {
+                                    GoRouter.of(context)
+                                        .pop(widget.menuContext);
                                     // Navigator.pop(widget.menuContext);
                                   });
                                 } catch (e) {
@@ -190,11 +226,15 @@ class _EditCategoryState extends State<EditCategory> {
                                   //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                 }
                               });
-                            } else if (names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
+                            } else if (names.contains(categoryName
+                                .toLowerCase()
+                                .removeAllWhiteSpace())) {
                               //EasyLoading.showError('Category Name Already Exists');
-                              EasyLoading.showError(lang.S.of(context).categoryNameAlreadyExists);
+                              EasyLoading.showError(
+                                  lang.S.of(context).categoryNameAlreadyExists);
                             } else {
-                              EasyLoading.showError(lang.S.of(context).enterCategoryName);
+                              EasyLoading.showError(
+                                  lang.S.of(context).enterCategoryName);
                             }
                           },
                           child: Text(

@@ -47,7 +47,8 @@ class _WareHouseListState extends State<WareHouseList> {
   String address = '';
   DateTime id = DateTime.now();
 
-  bool checkWarehouse({required List<WareHouseModel> allList, required String category}) {
+  bool checkWarehouse(
+      {required List<WareHouseModel> allList, required String category}) {
     for (var element in allList) {
       if (element.id == id.toString()) {
         return false;
@@ -58,11 +59,19 @@ class _WareHouseListState extends State<WareHouseList> {
 
   int selectedIndex = -1;
 
-  void deleteExpenseCategory({required String incomeCategoryName, required WidgetRef updateRef, required BuildContext context}) async {
+  void deleteExpenseCategory(
+      {required String incomeCategoryName,
+      required WidgetRef updateRef,
+      required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
     String expenseKey = '';
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Warehouse List').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Warehouse List')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['warehouseName'].toString() == incomeCategoryName) {
@@ -70,31 +79,28 @@ class _WareHouseListState extends State<WareHouseList> {
         }
       }
     });
-    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Warehouse List/$expenseKey");
+    DatabaseReference ref = FirebaseDatabase.instance
+        .ref("${await getUserID()}/Warehouse List/$expenseKey");
     await ref.remove();
-    updateRef.refresh(warehouseProvider);
+    final _ = await updateRef.refresh(warehouseProvider);
     EasyLoading.showSuccess(lang.S.of(context).done).then(
       (value) => GoRouter.of(context).pop(),
     );
-  }
-
-  void _onRowSelected(int index, bool selected) {
-    setState(() {
-      selectedIndex = selected ? index : -1;
-    });
   }
 
   num grandTotalStockValue = 0;
 
   // double grandTotal = calculateGrandTotal(showAbleProducts, productSnap);
 
-  double calculateGrandTotal(List<WareHouseModel> showAbleProducts, List<ProductModel> productSnap) {
+  double calculateGrandTotal(
+      List<WareHouseModel> showAbleProducts, List<ProductModel> productSnap) {
     double grandTotal = 0;
     // grandTotal = 0;
     for (var index = 0; index < showAbleProducts.length; index++) {
       for (var element in productSnap) {
         if (showAbleProducts[index].id == element.warehouseId) {
-          double stockValue = (double.tryParse(element.productStock) ?? 0) * (double.tryParse(element.productSalePrice) ?? 0);
+          double stockValue = (double.tryParse(element.productStock) ?? 0) *
+              (double.tryParse(element.productSalePrice) ?? 0);
           grandTotal += stockValue;
         }
       }
@@ -127,49 +133,65 @@ class _WareHouseListState extends State<WareHouseList> {
           body: Consumer(
             builder: (_, ref, watch) {
               final warehouse = ref.watch(warehouseProvider);
-              AsyncValue<List<ProductModel>> productList = ref.watch(productProvider);
+              AsyncValue<List<ProductModel>> productList =
+                  ref.watch(productProvider);
               return warehouse.when(
                 data: (snapShot) {
                   List<String> names = [];
                   for (var element in snapShot) {
-                    names.add(element.warehouseName.removeAllWhiteSpace().toLowerCase());
+                    names.add(element.warehouseName
+                        .removeAllWhiteSpace()
+                        .toLowerCase());
                   }
                   return productList.when(
                     data: (productSnap) {
                       List<WareHouseModel> showAbleProducts = [];
                       for (var element in snapShot) {
-                        if (element.warehouseName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.warehouseName.contains(searchItem)) {
+                        if (element.warehouseName
+                                .removeAllWhiteSpace()
+                                .toLowerCase()
+                                .contains(searchItem.toLowerCase()) ||
+                            element.warehouseName.contains(searchItem)) {
                           showAbleProducts.add(element);
                         }
                       }
-                      final pages = (showAbleProducts.length / _productPerPage).ceil();
+                      final pages =
+                          (showAbleProducts.length / _productPerPage).ceil();
                       return SingleChildScrollView(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
                             Container(
-                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  color: kWhite),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   ///________title and add product_______________________________________
                                   Padding(
-                                    padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
+                                    padding: const EdgeInsets.only(
+                                        left: 12, right: 12, top: 12),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Flexible(
                                           child: Text(
                                             lang.S.of(context).warehouseList,
                                             //'Warehouse List',
-                                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                                            style: theme.textTheme.titleLarge
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                         Flexible(
                                           child: ElevatedButton.icon(
-                                            icon: const Icon(FeatherIcons.plus, color: kWhite, size: 18.0),
+                                            icon: const Icon(FeatherIcons.plus,
+                                                color: kWhite, size: 18.0),
                                             label: Text(
                                               lang.S.of(context).addWareHouse,
                                               maxLines: 2,
@@ -179,37 +201,63 @@ class _WareHouseListState extends State<WareHouseList> {
                                               showDialog(
                                                 barrierDismissible: false,
                                                 context: context,
-                                                builder: (BuildContext context) {
+                                                builder:
+                                                    (BuildContext context) {
                                                   return StatefulBuilder(
-                                                    builder: (context, setStates) {
+                                                    builder:
+                                                        (context, setStates) {
                                                       return Dialog(
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(20.0),
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      20.0),
                                                         ),
                                                         child: Container(
-                                                          decoration: const BoxDecoration(
-                                                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .all(Radius
+                                                                        .circular(
+                                                                            20)),
                                                             color: kWhite,
                                                           ),
                                                           width: 600,
                                                           child: Column(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
                                                             children: [
                                                               Column(
-                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
                                                                 children: [
                                                                   Padding(
-                                                                    padding: const EdgeInsets.all(12.0),
+                                                                    padding:
+                                                                        const EdgeInsets
+                                                                            .all(
+                                                                            12.0),
                                                                     child: Row(
-                                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
                                                                       children: [
                                                                         Flexible(
-                                                                          child: Text(
+                                                                          child:
+                                                                              Text(
                                                                             lang.S.of(context).addNewWareHouse,
-                                                                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-                                                                            maxLines: 2,
-                                                                            overflow: TextOverflow.ellipsis,
+                                                                            style:
+                                                                                theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                                                                            maxLines:
+                                                                                2,
+                                                                            overflow:
+                                                                                TextOverflow.ellipsis,
                                                                           ),
                                                                         ),
                                                                         Flexible(
@@ -226,116 +274,159 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                     ),
                                                                   ),
                                                                   const Divider(
-                                                                    thickness: 1.0,
-                                                                    color: kNeutral300,
+                                                                    thickness:
+                                                                        1.0,
+                                                                    color:
+                                                                        kNeutral300,
                                                                     height: 1,
                                                                   ),
                                                                   Padding(
-                                                                    padding: const EdgeInsets.all(12.0),
-                                                                    child: Column(
-                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                    padding:
+                                                                        const EdgeInsets
+                                                                            .all(
+                                                                            12.0),
+                                                                    child:
+                                                                        Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .start,
                                                                       children: [
                                                                         Text(
-                                                                          lang.S.of(context).pleaseEnterValidData,
-                                                                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                                                          lang.S
+                                                                              .of(context)
+                                                                              .pleaseEnterValidData,
+                                                                          style: theme
+                                                                              .textTheme
+                                                                              .titleMedium
+                                                                              ?.copyWith(fontWeight: FontWeight.w600),
                                                                         ),
-                                                                        const SizedBox(height: 20.0),
+                                                                        const SizedBox(
+                                                                            height:
+                                                                                20.0),
                                                                         TextFormField(
-                                                                          onChanged: (value) {
-                                                                            warehouseName = value;
+                                                                          onChanged:
+                                                                              (value) {
+                                                                            warehouseName =
+                                                                                value;
                                                                           },
-                                                                          showCursor: true,
-                                                                          cursorColor: kTitleColor,
-                                                                          keyboardType: TextInputType.name,
-                                                                          decoration: InputDecoration(
+                                                                          showCursor:
+                                                                              true,
+                                                                          cursorColor:
+                                                                              kTitleColor,
+                                                                          keyboardType:
+                                                                              TextInputType.name,
+                                                                          decoration:
+                                                                              InputDecoration(
                                                                             //labelText: 'Warehouse Name',
-                                                                            labelText: lang.S.of(context).warehouseName,
+                                                                            labelText:
+                                                                                lang.S.of(context).warehouseName,
                                                                             //hintText: 'Enter name',
-                                                                            hintText: lang.S.of(context).enterName,
+                                                                            hintText:
+                                                                                lang.S.of(context).enterName,
                                                                           ),
                                                                         ),
-                                                                        const SizedBox(height: 20.0),
+                                                                        const SizedBox(
+                                                                            height:
+                                                                                20.0),
                                                                         TextFormField(
-                                                                          onChanged: (value) {
-                                                                            address = value;
+                                                                          onChanged:
+                                                                              (value) {
+                                                                            address =
+                                                                                value;
                                                                           },
-                                                                          showCursor: true,
-                                                                          cursorColor: kTitleColor,
-                                                                          keyboardType: TextInputType.name,
-                                                                          decoration: InputDecoration(
+                                                                          showCursor:
+                                                                              true,
+                                                                          cursorColor:
+                                                                              kTitleColor,
+                                                                          keyboardType:
+                                                                              TextInputType.name,
+                                                                          decoration:
+                                                                              InputDecoration(
                                                                             //labelText: 'Address',
-                                                                            labelText: lang.S.of(context).address,
+                                                                            labelText:
+                                                                                lang.S.of(context).address,
                                                                             // hintText: 'Enter address',
-                                                                            hintText: lang.S.of(context).enterAddress,
+                                                                            hintText:
+                                                                                lang.S.of(context).enterAddress,
                                                                           ),
                                                                         ),
                                                                       ],
                                                                     ),
                                                                   ),
-                                                                  ResponsiveGridRow(children: [
-                                                                    ResponsiveGridCol(
-                                                                      xs: 12,
-                                                                      md: 6,
-                                                                      lg: 6,
-                                                                      child: Padding(
-                                                                        padding: const EdgeInsets.all(10),
-                                                                        child: ElevatedButton(
-                                                                          style: ElevatedButton.styleFrom(
-                                                                            backgroundColor: Colors.red,
-                                                                          ),
-                                                                          onPressed: () => GoRouter.of(context).pop(),
-                                                                          child: Column(
-                                                                            children: [
-                                                                              Text(
-                                                                                lang.S.of(context).cancel,
+                                                                  ResponsiveGridRow(
+                                                                      children: [
+                                                                        ResponsiveGridCol(
+                                                                          xs: 12,
+                                                                          md: 6,
+                                                                          lg: 6,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(10),
+                                                                            child:
+                                                                                ElevatedButton(
+                                                                              style: ElevatedButton.styleFrom(
+                                                                                backgroundColor: Colors.red,
                                                                               ),
-                                                                            ],
+                                                                              onPressed: () => GoRouter.of(context).pop(),
+                                                                              child: Column(
+                                                                                children: [
+                                                                                  Text(
+                                                                                    lang.S.of(context).cancel,
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ),
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                    ),
-                                                                    ResponsiveGridCol(
-                                                                      xs: 12,
-                                                                      md: 6,
-                                                                      lg: 6,
-                                                                      child: Padding(
-                                                                        padding: const EdgeInsets.all(10.0),
-                                                                        child: ElevatedButton(
-                                                                          onPressed: () async {
-                                                                            if (warehouseName != '' && !names.contains(warehouseName.toLowerCase().removeAllWhiteSpace())) {
-                                                                              WareHouseModel warehouse = WareHouseModel(warehouseName: warehouseName, warehouseAddress: address, id: id.toString());
-                                                                              try {
-                                                                                EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                                                final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Warehouse List');
-                                                                                await productInformationRef.push().set(warehouse.toJson());
-                                                                                EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                                                        ResponsiveGridCol(
+                                                                          xs: 12,
+                                                                          md: 6,
+                                                                          lg: 6,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(10.0),
+                                                                            child:
+                                                                                ElevatedButton(
+                                                                              onPressed: () async {
+                                                                                if (warehouseName != '' && !names.contains(warehouseName.toLowerCase().removeAllWhiteSpace())) {
+                                                                                  WareHouseModel warehouse = WareHouseModel(warehouseName: warehouseName, warehouseAddress: address, id: id.toString());
+                                                                                  try {
+                                                                                    EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                                                                    final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Warehouse List');
+                                                                                    await productInformationRef.push().set(warehouse.toJson());
+                                                                                    EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
 
-                                                                                ///____provider_refresh____________________________________________
-                                                                                ref.refresh(warehouseProvider);
+                                                                                    ///____provider_refresh____________________________________________
+                                                                                    // ignore: unused_result
+                                                                                    await ref.refresh(warehouseProvider);
 
-                                                                                Future.delayed(const Duration(milliseconds: 100), () {
-                                                                                  GoRouter.of(context).pop();
-                                                                                });
-                                                                              } catch (e) {
-                                                                                EasyLoading.dismiss();
-                                                                                //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                                                                              }
-                                                                            } else if (names.contains(warehouseName.toLowerCase().removeAllWhiteSpace())) {
-                                                                              //EasyLoading.showError('Category Name Already Exists');
-                                                                              EasyLoading.showError(lang.S.of(context).categoryNameAlreadyExists);
-                                                                            } else {
-                                                                              // EasyLoading.showError('Enter Warehouse Name');
-                                                                              EasyLoading.showError(lang.S.of(context).enterWarehouseName);
-                                                                            }
-                                                                          },
-                                                                          child: Text(
-                                                                            lang.S.of(context).saveAndPublish,
+                                                                                    Future.delayed(const Duration(milliseconds: 100), () {
+                                                                                      GoRouter.of(context).pop();
+                                                                                    });
+                                                                                  } catch (e) {
+                                                                                    EasyLoading.dismiss();
+                                                                                    //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                                                                  }
+                                                                                } else if (names.contains(warehouseName.toLowerCase().removeAllWhiteSpace())) {
+                                                                                  //EasyLoading.showError('Category Name Already Exists');
+                                                                                  EasyLoading.showError(lang.S.of(context).categoryNameAlreadyExists);
+                                                                                } else {
+                                                                                  // EasyLoading.showError('Enter Warehouse Name');
+                                                                                  EasyLoading.showError(lang.S.of(context).enterWarehouseName);
+                                                                                }
+                                                                              },
+                                                                              child: Text(
+                                                                                lang.S.of(context).saveAndPublish,
+                                                                              ),
+                                                                            ),
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                    ),
-                                                                  ]),
-                                                                  const SizedBox(height: 10),
+                                                                      ]),
+                                                                  const SizedBox(
+                                                                      height:
+                                                                          10),
                                                                 ],
                                                               ),
                                                             ],
@@ -361,119 +452,156 @@ class _WareHouseListState extends State<WareHouseList> {
                                   const SizedBox(height: 10),
 
                                   ///___________search________________________________________________-
-                                  ResponsiveGridRow(rowSegments: 100, children: [
-                                    ResponsiveGridCol(
-                                      xs: screenWidth < 360
-                                          ? 50
-                                          : screenWidth > 430
-                                              ? 33
-                                              : 40,
-                                      md: screenWidth < 768
-                                          ? 24
-                                          : screenWidth < 950
-                                              ? 20
-                                              : 15,
-                                      lg: screenWidth < 1700 ? 15 : 10,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10.0),
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          height: 48,
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(8.0),
-                                            border: Border.all(color: kNeutral300),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Flexible(
-                                                  child: Text(
-                                                'Show-',
-                                                style: theme.textTheme.bodyLarge,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              )),
-                                              DropdownButton<int>(
-                                                isDense: true,
-                                                padding: EdgeInsets.zero,
-                                                underline: const SizedBox(),
-                                                value: _productPerPage,
-                                                icon: const Icon(
-                                                  Icons.keyboard_arrow_down,
-                                                  color: Colors.black,
-                                                ),
-                                                items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
-                                                  return DropdownMenuItem<int>(
-                                                    value: value,
-                                                    child: Text(
-                                                      value == -1 ? "All" : value.toString(),
-                                                      style: theme.textTheme.bodyLarge,
-                                                    ),
-                                                  );
-                                                }).toList(),
-                                                onChanged: (int? newValue) {
-                                                  setState(() {
-                                                    if (newValue == -1) {
-                                                      _productPerPage = -1; // Set to -1 for "All"
-                                                    } else {
-                                                      _productPerPage = newValue ?? 10;
-                                                    }
-                                                    _currentPage = 1;
-                                                  });
-                                                },
+                                  ResponsiveGridRow(
+                                      rowSegments: 100,
+                                      children: [
+                                        ResponsiveGridCol(
+                                          xs: screenWidth < 360
+                                              ? 50
+                                              : screenWidth > 430
+                                                  ? 33
+                                                  : 40,
+                                          md: screenWidth < 768
+                                              ? 24
+                                              : screenWidth < 950
+                                                  ? 20
+                                                  : 15,
+                                          lg: screenWidth < 1700 ? 15 : 10,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(10.0),
+                                            child: Container(
+                                              alignment: Alignment.center,
+                                              height: 48,
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
+                                                border: Border.all(
+                                                    color: kNeutral300),
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    ResponsiveGridCol(
-                                        xs: 100,
-                                        md: 60,
-                                        lg: 35,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(10),
-                                          child: TextFormField(
-                                            showCursor: true,
-                                            cursorColor: kTitleColor,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                searchItem = value;
-                                              });
-                                            },
-                                            keyboardType: TextInputType.name,
-                                            decoration: kInputDecoration.copyWith(
-                                              contentPadding: const EdgeInsets.all(10.0),
-                                              hintText: (lang.S.of(context).searchWithName),
-                                              suffixIcon: const Icon(
-                                                FeatherIcons.search,
-                                                color: kNeutral400,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Flexible(
+                                                      child: Text(
+                                                    'Show-',
+                                                    style: theme
+                                                        .textTheme.bodyLarge,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  )),
+                                                  DropdownButton<int>(
+                                                    isDense: true,
+                                                    padding: EdgeInsets.zero,
+                                                    underline: const SizedBox(),
+                                                    value: _productPerPage,
+                                                    icon: const Icon(
+                                                      Icons.keyboard_arrow_down,
+                                                      color: Colors.black,
+                                                    ),
+                                                    items: [
+                                                      10,
+                                                      20,
+                                                      50,
+                                                      100,
+                                                      -1
+                                                    ].map<
+                                                        DropdownMenuItem<
+                                                            int>>((int value) {
+                                                      return DropdownMenuItem<
+                                                          int>(
+                                                        value: value,
+                                                        child: Text(
+                                                          value == -1
+                                                              ? "All"
+                                                              : value
+                                                                  .toString(),
+                                                          style: theme.textTheme
+                                                              .bodyLarge,
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                    onChanged: (int? newValue) {
+                                                      setState(() {
+                                                        if (newValue == -1) {
+                                                          _productPerPage =
+                                                              -1; // Set to -1 for "All"
+                                                        } else {
+                                                          _productPerPage =
+                                                              newValue ?? 10;
+                                                        }
+                                                        _currentPage = 1;
+                                                      });
+                                                    },
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ),
-                                        )),
-                                  ]),
+                                        ),
+                                        ResponsiveGridCol(
+                                            xs: 100,
+                                            md: 60,
+                                            lg: 35,
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(10),
+                                              child: TextFormField(
+                                                showCursor: true,
+                                                cursorColor: kTitleColor,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    searchItem = value;
+                                                  });
+                                                },
+                                                keyboardType:
+                                                    TextInputType.name,
+                                                decoration:
+                                                    kInputDecoration.copyWith(
+                                                  contentPadding:
+                                                      const EdgeInsets.all(
+                                                          10.0),
+                                                  hintText: (lang.S
+                                                      .of(context)
+                                                      .searchWithName),
+                                                  suffixIcon: const Icon(
+                                                    FeatherIcons.search,
+                                                    color: kNeutral400,
+                                                  ),
+                                                ),
+                                              ),
+                                            )),
+                                      ]),
                                   Padding(
                                     padding: const EdgeInsets.all(12.0),
                                     child: Container(
                                       height: 80,
-                                      padding: const EdgeInsets.fromLTRB(10.0, 10.0, 100.0, 10.0),
-                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), color: const Color(0xFFD6FFDF)),
+                                      padding: const EdgeInsets.fromLTRB(
+                                          10.0, 10.0, 100.0, 10.0),
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          color: const Color(0xFFD6FFDF)),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             // '$globalCurrency${grandTotal.toStringAsFixed(2)}',
                                             '$globalCurrency${myFormat.format(double.tryParse(calculateGrandTotal(showAbleProducts, productSnap).toString()) ?? 0)}',
-                                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                            style: kTextStyle.copyWith(
+                                                color: kTitleColor,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 18.0),
                                           ),
                                           const SizedBox(height: 4.0),
                                           Text(
                                             lang.S.of(context).totalValue,
                                             //'Total value',
-                                            style: kTextStyle.copyWith(color: kGreyTextColor),
+                                            style: kTextStyle.copyWith(
+                                                color: kGreyTextColor),
                                           ),
                                         ],
                                       ),
@@ -481,7 +609,8 @@ class _WareHouseListState extends State<WareHouseList> {
                                   ),
                                   const SizedBox(height: 10.0),
                                   LayoutBuilder(
-                                    builder: (BuildContext context, BoxConstraints constraints) {
+                                    builder: (BuildContext context,
+                                        BoxConstraints constraints) {
                                       final kWidth = constraints.maxWidth;
                                       return Scrollbar(
                                         thickness: 8,
@@ -496,7 +625,11 @@ class _WareHouseListState extends State<WareHouseList> {
                                               minWidth: kWidth,
                                             ),
                                             child: Theme(
-                                              data: theme.copyWith(dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                              data: theme.copyWith(
+                                                  dividerTheme:
+                                                      const DividerThemeData(
+                                                          color: Colors
+                                                              .transparent)),
                                               child: DataTable(
                                                 border: const TableBorder(
                                                   horizontalInside: BorderSide(
@@ -504,114 +637,224 @@ class _WareHouseListState extends State<WareHouseList> {
                                                     color: kNeutral300,
                                                   ),
                                                 ),
-                                                dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                dataRowColor:
+                                                    const WidgetStatePropertyAll(
+                                                        Colors.white),
+                                                headingRowColor:
+                                                    WidgetStateProperty.all(
+                                                        const Color(
+                                                            0xFFF8F3FF)),
                                                 showBottomBorder: false,
                                                 dividerThickness: 0.0,
-                                                headingTextStyle: theme.textTheme.titleMedium,
+                                                headingTextStyle:
+                                                    theme.textTheme.titleMedium,
                                                 columns: [
                                                   DataColumn(
-                                                    label: Text(lang.S.of(context).SL),
+                                                    label: Text(
+                                                        lang.S.of(context).SL),
                                                   ),
-                                                  DataColumn(label: Text(lang.S.of(context).warehouseName)),
-                                                  DataColumn(label: Text(lang.S.of(context).address)),
-                                                  DataColumn(label: Center(child: Text(lang.S.of(context).stockQuantity))),
-                                                  DataColumn(label: Center(child: Text(lang.S.of(context).stockValue))),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .warehouseName)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .address)),
+                                                  DataColumn(
+                                                      label: Center(
+                                                          child: Text(lang.S
+                                                              .of(context)
+                                                              .stockQuantity))),
+                                                  DataColumn(
+                                                      label: Center(
+                                                          child: Text(lang.S
+                                                              .of(context)
+                                                              .stockValue))),
                                                   DataColumn(
                                                       label: Text(
                                                     lang.S.of(context).action,
                                                     //'Action',
-                                                    style: kTextStyle.copyWith(color: Colors.black, overflow: TextOverflow.ellipsis),
+                                                    style: kTextStyle.copyWith(
+                                                        color: Colors.black,
+                                                        overflow: TextOverflow
+                                                            .ellipsis),
                                                   )),
                                                 ],
                                                 rows: List.generate(
                                                   _productPerPage == -1
                                                       ? showAbleProducts.length
-                                                      : (_currentPage - 1) * _productPerPage + _productPerPage <= showAbleProducts.length
+                                                      : (_currentPage - 1) *
+                                                                      _productPerPage +
+                                                                  _productPerPage <=
+                                                              showAbleProducts
+                                                                  .length
                                                           ? _productPerPage
-                                                          : showAbleProducts.length - (_currentPage - 1) * _productPerPage,
+                                                          : showAbleProducts
+                                                                  .length -
+                                                              (_currentPage -
+                                                                      1) *
+                                                                  _productPerPage,
                                                   (index) {
                                                     num stockValue = 0;
                                                     num totalStock = 0;
-                                                    for (var element in productSnap) {
-                                                      if (showAbleProducts[index].id == element.warehouseId) {
-                                                        stockValue += (num.tryParse(element.productStock) ?? 0) * (num.tryParse(element.productSalePrice) ?? 0);
-                                                        totalStock += (num.tryParse(element.productStock) ?? 0);
+                                                    for (var element
+                                                        in productSnap) {
+                                                      if (showAbleProducts[
+                                                                  index]
+                                                              .id ==
+                                                          element.warehouseId) {
+                                                        stockValue += (num.tryParse(
+                                                                    element
+                                                                        .productStock) ??
+                                                                0) *
+                                                            (num.tryParse(element
+                                                                    .productSalePrice) ??
+                                                                0);
+                                                        totalStock +=
+                                                            (num.tryParse(element
+                                                                    .productStock) ??
+                                                                0);
                                                       }
                                                     }
                                                     return DataRow(
                                                       cells: [
                                                         DataCell(
-                                                          Text('${(_currentPage - 1) * _productPerPage + index + 1}'),
+                                                          Text(
+                                                              '${(_currentPage - 1) * _productPerPage + index + 1}'),
                                                         ),
                                                         DataCell(
                                                           Text(
-                                                            showAbleProducts[index].warehouseName,
-                                                            style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                            showAbleProducts[
+                                                                    index]
+                                                                .warehouseName,
+                                                            style: kTextStyle
+                                                                .copyWith(
+                                                                    color:
+                                                                        kGreyTextColor),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
                                                         ),
                                                         DataCell(
                                                           Text(
-                                                            showAbleProducts[index].warehouseAddress,
-                                                            style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                            showAbleProducts[
+                                                                    index]
+                                                                .warehouseAddress,
+                                                            style: kTextStyle
+                                                                .copyWith(
+                                                                    color:
+                                                                        kGreyTextColor),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
                                                         ),
                                                         DataCell(
                                                           Padding(
-                                                            padding: EdgeInsets.only(left: kWidth * 0.05),
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                    left: kWidth *
+                                                                        0.05),
                                                             child: Text(
-                                                              totalStock.toString(),
-                                                              style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                              totalStock
+                                                                  .toString(),
+                                                              style: kTextStyle
+                                                                  .copyWith(
+                                                                      color:
+                                                                          kGreyTextColor),
                                                               maxLines: 2,
-                                                              textAlign: TextAlign.center,
-                                                              overflow: TextOverflow.ellipsis,
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
                                                             ),
                                                           ),
                                                         ),
                                                         DataCell(
                                                           Padding(
-                                                            padding: EdgeInsets.only(left: kWidth * 0.01),
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                    left: kWidth *
+                                                                        0.01),
                                                             child: Text(
                                                               '$globalCurrency${stockValue.toString()}',
-                                                              style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                              style: kTextStyle
+                                                                  .copyWith(
+                                                                      color:
+                                                                          kGreyTextColor),
                                                               maxLines: 2,
-                                                              overflow: TextOverflow.ellipsis,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
                                                             ),
                                                           ),
                                                         ),
                                                         DataCell(
                                                           StatefulBuilder(
-                                                            builder: (BuildContext context, void Function(void Function()) setState) {
+                                                            builder: (BuildContext
+                                                                    context,
+                                                                void Function(
+                                                                        void
+                                                                            Function())
+                                                                    setState) {
                                                               return Theme(
-                                                                data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                                child: PopupMenuButton(
-                                                                  surfaceTintColor: Colors.white,
-                                                                  padding: EdgeInsets.zero,
-                                                                  itemBuilder: (BuildContext bc) => [
+                                                                data: ThemeData(
+                                                                    highlightColor:
+                                                                        dropdownItemColor,
+                                                                    focusColor:
+                                                                        dropdownItemColor,
+                                                                    hoverColor:
+                                                                        dropdownItemColor),
+                                                                child:
+                                                                    PopupMenuButton(
+                                                                  surfaceTintColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .zero,
+                                                                  itemBuilder:
+                                                                      (BuildContext
+                                                                              bc) =>
+                                                                          [
                                                                     PopupMenuItem(
-                                                                      onTap: () => context.go(
+                                                                      onTap: () =>
+                                                                          context
+                                                                              .go(
                                                                         '/warehouse-details/${showAbleProducts[index].id}',
-                                                                        extra: showAbleProducts[index].warehouseName,
+                                                                        extra: showAbleProducts[index]
+                                                                            .warehouseName,
                                                                       ),
-                                                                      child: Row(
+                                                                      child:
+                                                                          Row(
                                                                         children: [
-                                                                          const Icon(Icons.remove_red_eye, size: 18.0, color: kNeutral500),
-                                                                          const SizedBox(width: 4.0),
+                                                                          const Icon(
+                                                                              Icons.remove_red_eye,
+                                                                              size: 18.0,
+                                                                              color: kNeutral500),
+                                                                          const SizedBox(
+                                                                              width: 4.0),
                                                                           Text(
                                                                             lang.S.of(context).view,
                                                                             // 'View',
-                                                                            style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
+                                                                            style:
+                                                                                theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
                                                                           ),
                                                                         ],
                                                                       ),
                                                                     ),
-                                                                    if (showAbleProducts[index].warehouseName != 'InHouse')
+                                                                    if (showAbleProducts[index]
+                                                                            .warehouseName !=
+                                                                        'InHouse')
                                                                       PopupMenuItem(
-                                                                        onTap: () {
+                                                                        onTap:
+                                                                            () {
                                                                           snapShot[index].warehouseName == 'InHouse'
                                                                               ? EasyLoading.showInfo(lang.S.of(context).inHouseCantBeEdit)
                                                                               : showDialog(
@@ -635,9 +878,12 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                                   },
                                                                                 );
                                                                         },
-                                                                        child: Row(
+                                                                        child:
+                                                                            Row(
                                                                           children: [
-                                                                            const Icon(IconlyLight.edit, size: 20.0, color: kNeutral500),
+                                                                            const Icon(IconlyLight.edit,
+                                                                                size: 20.0,
+                                                                                color: kNeutral500),
                                                                             const SizedBox(width: 4.0),
                                                                             Text(
                                                                               lang.S.of(context).edit,
@@ -648,10 +894,15 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                       ),
 
                                                                     ///____________Delete___________________________________________
-                                                                    if (showAbleProducts[index].warehouseName != 'InHouse')
+                                                                    if (showAbleProducts[index]
+                                                                            .warehouseName !=
+                                                                        'InHouse')
                                                                       PopupMenuItem(
-                                                                        onTap: () {
-                                                                          if (checkWarehouse(allList: warehouse.value!, category: showAbleProducts[index].warehouseName)) {
+                                                                        onTap:
+                                                                            () {
+                                                                          if (checkWarehouse(
+                                                                              allList: warehouse.value!,
+                                                                              category: showAbleProducts[index].warehouseName)) {
                                                                             showAbleProducts[index].warehouseName == 'InHouse'
                                                                                 ? EasyLoading.showInfo(lang.S.of(context).inHouseCantBeDelete)
                                                                                 : showDialog(
@@ -728,7 +979,8 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                             EasyLoading.showError(lang.S.of(context).thisCategoryCannotBeDeleted);
                                                                           }
                                                                         },
-                                                                        child: Row(
+                                                                        child:
+                                                                            Row(
                                                                           children: [
                                                                             HugeIcon(
                                                                               icon: HugeIcons.strokeRoundedDelete02,
@@ -744,11 +996,16 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                         ),
                                                                       ),
                                                                   ],
-                                                                  onSelected: (value) {
-                                                                    Navigator.pushNamed(context, '$value');
+                                                                  onSelected:
+                                                                      (value) {
+                                                                    Navigator.pushNamed(
+                                                                        context,
+                                                                        '$value');
                                                                   },
-                                                                  child: const Icon(
-                                                                    Icons.more_vert_sharp,
+                                                                  child:
+                                                                      const Icon(
+                                                                    Icons
+                                                                        .more_vert_sharp,
                                                                     size: 18,
                                                                   ),
                                                                 ),
@@ -782,7 +1039,8 @@ class _WareHouseListState extends State<WareHouseList> {
                                   Padding(
                                     padding: const EdgeInsets.all(10.0),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Flexible(
                                           child: Text(
@@ -794,21 +1052,32 @@ class _WareHouseListState extends State<WareHouseList> {
                                         Row(
                                           children: [
                                             InkWell(
-                                              overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                              overlayColor: WidgetStateProperty
+                                                  .all<Color>(Colors.grey),
                                               hoverColor: Colors.grey,
-                                              onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                              onTap: _currentPage > 1
+                                                  ? () => setState(
+                                                      () => _currentPage--)
+                                                  : null,
                                               child: Container(
                                                 height: 32,
                                                 width: 90,
                                                 decoration: BoxDecoration(
-                                                  border: Border.all(color: kBorderColorTextField),
-                                                  borderRadius: const BorderRadius.only(
-                                                    bottomLeft: Radius.circular(4.0),
-                                                    topLeft: Radius.circular(4.0),
+                                                  border: Border.all(
+                                                      color:
+                                                          kBorderColorTextField),
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                    bottomLeft:
+                                                        Radius.circular(4.0),
+                                                    topLeft:
+                                                        Radius.circular(4.0),
                                                   ),
                                                 ),
                                                 child: Center(
-                                                  child: Text(lang.S.of(context).previous),
+                                                  child: Text(lang.S
+                                                      .of(context)
+                                                      .previous),
                                                 ),
                                               ),
                                             ),
@@ -816,13 +1085,16 @@ class _WareHouseListState extends State<WareHouseList> {
                                               height: 32,
                                               width: 32,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
                                                 color: kMainColor,
                                               ),
                                               child: Center(
                                                 child: Text(
                                                   '$_currentPage',
-                                                  style: const TextStyle(color: Colors.white),
+                                                  style: const TextStyle(
+                                                      color: Colors.white),
                                                 ),
                                               ),
                                             ),
@@ -830,7 +1102,9 @@ class _WareHouseListState extends State<WareHouseList> {
                                               height: 32,
                                               width: 32,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
                                                 color: Colors.transparent,
                                               ),
                                               child: Center(
@@ -840,20 +1114,34 @@ class _WareHouseListState extends State<WareHouseList> {
                                               ),
                                             ),
                                             InkWell(
-                                              hoverColor: Colors.blue.withOpacity(0.1),
-                                              overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                              onTap: _currentPage * _productPerPage < showAbleProducts.length ? () => setState(() => _currentPage++) : null,
+                                              hoverColor:
+                                                  Colors.blue.withOpacity(0.1),
+                                              overlayColor:
+                                                  MaterialStateProperty.all<
+                                                      Color>(Colors.blue),
+                                              onTap: _currentPage *
+                                                          _productPerPage <
+                                                      showAbleProducts.length
+                                                  ? () => setState(
+                                                      () => _currentPage++)
+                                                  : null,
                                               child: Container(
                                                 height: 32,
                                                 width: 90,
                                                 decoration: BoxDecoration(
-                                                  border: Border.all(color: kBorderColorTextField),
-                                                  borderRadius: const BorderRadius.only(
-                                                    bottomRight: Radius.circular(4.0),
-                                                    topRight: Radius.circular(4.0),
+                                                  border: Border.all(
+                                                      color:
+                                                          kBorderColorTextField),
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                    bottomRight:
+                                                        Radius.circular(4.0),
+                                                    topRight:
+                                                        Radius.circular(4.0),
                                                   ),
                                                 ),
-                                                child: const Center(child: Text('Next')),
+                                                child: const Center(
+                                                    child: Text('Next')),
                                               ),
                                             ),
                                           ],

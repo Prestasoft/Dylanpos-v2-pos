@@ -1,5 +1,3 @@
-// ignore_for_file: unused_result, use_build_context_synchronously
-
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -13,7 +11,6 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/product_provider.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/category_model.dart';
-
 import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
@@ -69,31 +66,38 @@ class _CategoryListState extends State<CategoryList> {
       child: Scaffold(
           backgroundColor: kDarkWhite,
           body: Consumer(builder: (_, ref, watch) {
-            AsyncValue<List<CategoryModel>> categories = ref.watch(categoryProvider);
+            AsyncValue<List<CategoryModel>> categories =
+                ref.watch(categoryProvider);
             return categories.when(data: (list) {
-              List<CategoryModel> categoryLists = [];
               List<CategoryModel> showAbleCategories = [];
               List<String> categoryNames = [];
               for (var element in list) {
-                if (element.categoryName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase())) {
+                if (element.categoryName
+                    .removeAllWhiteSpace()
+                    .toLowerCase()
+                    .contains(searchItem.toLowerCase())) {
                   showAbleCategories.add(element);
                 } else if (searchItem == '') {
                   showAbleCategories.add(element);
-                  categoryNames.add(element.categoryName.removeAllWhiteSpace().toLowerCase());
+                  categoryNames.add(
+                      element.categoryName.removeAllWhiteSpace().toLowerCase());
                 }
               }
-              final pages = (showAbleCategories.length / _categoryPerPage).ceil();
+              final pages =
+                  (showAbleCategories.length / _categoryPerPage).ceil();
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Container(
                   // padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 10.0),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.0), color: kWhite),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
+                        padding:
+                            const EdgeInsets.only(left: 12, right: 12, top: 12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -113,46 +117,63 @@ class _CategoryListState extends State<CategoryList> {
                                     barrierDismissible: false,
                                     context: context,
                                     builder: (BuildContext context) {
-                                      return StatefulBuilder(builder: (context, setState1) {
+                                      return StatefulBuilder(
+                                          builder: (context, setState1) {
                                         return Dialog(
                                           surfaceTintColor: kWhite,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10.0)),
                                           child: SizedBox(
                                             width: 600,
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Padding(
-                                                  padding: const EdgeInsets.all(12.0),
+                                                  padding: const EdgeInsets.all(
+                                                      12.0),
                                                   child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
                                                     children: [
                                                       Flexible(
                                                         child: Text(
-                                                          lang.S.of(context).addItemCategory,
+                                                          lang.S
+                                                              .of(context)
+                                                              .addItemCategory,
                                                           maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: theme.textTheme.titleLarge?.copyWith(
-                                                            fontWeight: FontWeight.w600,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: theme.textTheme
+                                                              .titleLarge
+                                                              ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.w600,
                                                           ),
                                                         ),
                                                       ),
                                                       Flexible(
                                                         child: IconButton(
                                                             onPressed: () {
-                                                              itemCategoryController.clear();
+                                                              itemCategoryController
+                                                                  .clear();
                                                               isSize = false;
                                                               isColor = false;
                                                               isWeight = false;
-                                                              isCapacity = false;
+                                                              isCapacity =
+                                                                  false;
                                                               isType = false;
-                                                              isWarranty = false;
+                                                              isWarranty =
+                                                                  false;
                                                               finish(context);
                                                             },
                                                             icon: const Icon(
                                                               FeatherIcons.x,
-                                                              color: kTitleColor,
+                                                              color:
+                                                                  kTitleColor,
                                                               size: 21.0,
                                                             )),
                                                       )
@@ -165,262 +186,426 @@ class _CategoryListState extends State<CategoryList> {
                                                   color: kNeutral300,
                                                 ),
                                                 Padding(
-                                                  padding: const EdgeInsets.all(12.0),
+                                                  padding: const EdgeInsets.all(
+                                                      12.0),
                                                   child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
-                                                      ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                                        ResponsiveGridCol(
-                                                          xs: 12,
-                                                          md: 6,
-                                                          lg: 6,
-                                                          child: Padding(
-                                                            padding: EdgeInsets.only(bottom: screenWidth < 570 ? 10 : 0),
-                                                            child: Text(
-                                                              lang.S.of(context).categoryName,
-                                                              style: theme.textTheme.bodyLarge,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ResponsiveGridCol(
-                                                          xs: 12,
-                                                          md: 6,
-                                                          lg: 6,
-                                                          child: Form(
-                                                            key: categoryNameKey,
-                                                            child: TextFormField(
-                                                              controller: itemCategoryController,
-                                                              validator: (value) {
-                                                                if (value.isEmptyOrNull) {
-                                                                  //return 'Category name is required.';
-                                                                  return '${lang.S.of(context).categoryNameIsRequired}.';
-                                                                } else if (categoryNames.contains(value.removeAllWhiteSpace().toLowerCase())) {
-                                                                  //return 'Category name is already exist.';
-                                                                  return '${lang.S.of(context).categoryNameIsAlreadyExist}.';
-                                                                } else {
-                                                                  return null;
-                                                                }
-                                                              },
-                                                              showCursor: true,
-                                                              cursorColor: kTitleColor,
-                                                              decoration: InputDecoration(
-                                                                hintText: lang.S.of(context).enterCategoryName,
+                                                      ResponsiveGridRow(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            ResponsiveGridCol(
+                                                              xs: 12,
+                                                              md: 6,
+                                                              lg: 6,
+                                                              child: Padding(
+                                                                padding: EdgeInsets.only(
+                                                                    bottom: screenWidth <
+                                                                            570
+                                                                        ? 10
+                                                                        : 0),
+                                                                child: Text(
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .categoryName,
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge,
+                                                                ),
                                                               ),
                                                             ),
-                                                          ),
-                                                        )
-                                                      ]),
-                                                      const SizedBox(height: 20.0),
+                                                            ResponsiveGridCol(
+                                                              xs: 12,
+                                                              md: 6,
+                                                              lg: 6,
+                                                              child: Form(
+                                                                key:
+                                                                    categoryNameKey,
+                                                                child:
+                                                                    TextFormField(
+                                                                  controller:
+                                                                      itemCategoryController,
+                                                                  validator:
+                                                                      (value) {
+                                                                    if (value
+                                                                        .isEmptyOrNull) {
+                                                                      //return 'Category name is required.';
+                                                                      return '${lang.S.of(context).categoryNameIsRequired}.';
+                                                                    } else if (categoryNames.contains(value
+                                                                        .removeAllWhiteSpace()
+                                                                        .toLowerCase())) {
+                                                                      //return 'Category name is already exist.';
+                                                                      return '${lang.S.of(context).categoryNameIsAlreadyExist}.';
+                                                                    } else {
+                                                                      return null;
+                                                                    }
+                                                                  },
+                                                                  showCursor:
+                                                                      true,
+                                                                  cursorColor:
+                                                                      kTitleColor,
+                                                                  decoration:
+                                                                      InputDecoration(
+                                                                    hintText: lang
+                                                                        .S
+                                                                        .of(context)
+                                                                        .enterCategoryName,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            )
+                                                          ]),
+                                                      const SizedBox(
+                                                          height: 20.0),
                                                       Text(
-                                                        lang.S.of(context).selectVariations,
-                                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                                        lang.S
+                                                            .of(context)
+                                                            .selectVariations,
+                                                        style: theme.textTheme
+                                                            .titleMedium
+                                                            ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600),
                                                       ),
-                                                      ResponsiveGridRow(children: [
-                                                        ResponsiveGridCol(
-                                                          xs: 12,
-                                                          md: 6,
-                                                          lg: 6,
-                                                          child: ListTile(
-                                                            leading: Checkbox(
-                                                              activeColor: kMainColor,
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius: BorderRadius.circular(30.0),
-                                                              ),
-                                                              value: isSize,
-                                                              onChanged: (val) {
-                                                                setState1(
-                                                                  () {
-                                                                    isSize = val!;
+                                                      ResponsiveGridRow(
+                                                          children: [
+                                                            ResponsiveGridCol(
+                                                              xs: 12,
+                                                              md: 6,
+                                                              lg: 6,
+                                                              child: ListTile(
+                                                                leading:
+                                                                    Checkbox(
+                                                                  activeColor:
+                                                                      kMainColor,
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            30.0),
+                                                                  ),
+                                                                  value: isSize,
+                                                                  onChanged:
+                                                                      (val) {
+                                                                    setState1(
+                                                                      () {
+                                                                        isSize =
+                                                                            val!;
+                                                                      },
+                                                                    );
                                                                   },
-                                                                );
-                                                              },
-                                                            ),
-                                                            title: Text(
-                                                              lang.S.of(context).size,
-                                                              style: theme.textTheme.bodyLarge,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ResponsiveGridCol(
-                                                            xs: 12,
-                                                            md: 6,
-                                                            lg: 6,
-                                                            child: ListTile(
-                                                              leading: Checkbox(
-                                                                activeColor: kMainColor,
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius: BorderRadius.circular(30.0),
                                                                 ),
-                                                                value: isColor,
-                                                                onChanged: (val) {
-                                                                  setState1(() {
-                                                                    isColor = val!;
-                                                                  });
-                                                                },
-                                                              ),
-                                                              title: Text(
-                                                                lang.S.of(context).color,
-                                                                style: theme.textTheme.bodyLarge,
-                                                              ),
-                                                            )),
-                                                      ]),
-                                                      ResponsiveGridRow(children: [
-                                                        ResponsiveGridCol(
-                                                            xs: 12,
-                                                            md: 6,
-                                                            lg: 6,
-                                                            child: ListTile(
-                                                              leading: Checkbox(
-                                                                activeColor: kMainColor,
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius: BorderRadius.circular(30.0),
+                                                                title: Text(
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .size,
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge,
                                                                 ),
-                                                                value: isWeight,
-                                                                onChanged: (val) {
-                                                                  setState1(() {
-                                                                    isWeight = val!;
-                                                                  });
-                                                                },
                                                               ),
-                                                              title: Text(
-                                                                lang.S.of(context).wight,
-                                                                style: theme.textTheme.bodyLarge,
-                                                              ),
-                                                            )),
-                                                        ResponsiveGridCol(
-                                                          xs: 12,
-                                                          md: 6,
-                                                          lg: 6,
-                                                          child: ListTile(
-                                                            leading: Checkbox(
-                                                              activeColor: kMainColor,
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius: BorderRadius.circular(30.0),
-                                                              ),
-                                                              value: isCapacity,
-                                                              onChanged: (val) {
-                                                                setState1(
-                                                                  () {
-                                                                    isCapacity = val!;
+                                                            ),
+                                                            ResponsiveGridCol(
+                                                                xs: 12,
+                                                                md: 6,
+                                                                lg: 6,
+                                                                child: ListTile(
+                                                                  leading:
+                                                                      Checkbox(
+                                                                    activeColor:
+                                                                        kMainColor,
+                                                                    shape:
+                                                                        RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              30.0),
+                                                                    ),
+                                                                    value:
+                                                                        isColor,
+                                                                    onChanged:
+                                                                        (val) {
+                                                                      setState1(
+                                                                          () {
+                                                                        isColor =
+                                                                            val!;
+                                                                      });
+                                                                    },
+                                                                  ),
+                                                                  title: Text(
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .color,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge,
+                                                                  ),
+                                                                )),
+                                                          ]),
+                                                      ResponsiveGridRow(
+                                                          children: [
+                                                            ResponsiveGridCol(
+                                                                xs: 12,
+                                                                md: 6,
+                                                                lg: 6,
+                                                                child: ListTile(
+                                                                  leading:
+                                                                      Checkbox(
+                                                                    activeColor:
+                                                                        kMainColor,
+                                                                    shape:
+                                                                        RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              30.0),
+                                                                    ),
+                                                                    value:
+                                                                        isWeight,
+                                                                    onChanged:
+                                                                        (val) {
+                                                                      setState1(
+                                                                          () {
+                                                                        isWeight =
+                                                                            val!;
+                                                                      });
+                                                                    },
+                                                                  ),
+                                                                  title: Text(
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .wight,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge,
+                                                                  ),
+                                                                )),
+                                                            ResponsiveGridCol(
+                                                              xs: 12,
+                                                              md: 6,
+                                                              lg: 6,
+                                                              child: ListTile(
+                                                                leading:
+                                                                    Checkbox(
+                                                                  activeColor:
+                                                                      kMainColor,
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            30.0),
+                                                                  ),
+                                                                  value:
+                                                                      isCapacity,
+                                                                  onChanged:
+                                                                      (val) {
+                                                                    setState1(
+                                                                      () {
+                                                                        isCapacity =
+                                                                            val!;
+                                                                      },
+                                                                    );
                                                                   },
-                                                                );
-                                                              },
-                                                            ),
-                                                            title: Text(
-                                                              lang.S.of(context).capacity,
-                                                              style: theme.textTheme.bodyLarge,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ]),
-                                                      ResponsiveGridRow(children: [
-                                                        ResponsiveGridCol(
-                                                            xs: 12,
-                                                            md: 6,
-                                                            lg: 6,
-                                                            child: ListTile(
-                                                              leading: Checkbox(
-                                                                activeColor: kMainColor,
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius: BorderRadius.circular(30.0),
                                                                 ),
-                                                                value: isType,
-                                                                onChanged: (val) {
-                                                                  setState1(
-                                                                    () {
-                                                                      isType = val!;
-                                                                    },
-                                                                  );
-                                                                },
-                                                              ),
-                                                              title: Text(
-                                                                lang.S.of(context).type,
-                                                                style: theme.textTheme.bodyLarge,
-                                                              ),
-                                                            )),
-                                                        ResponsiveGridCol(
-                                                            xs: 12,
-                                                            md: 6,
-                                                            lg: 6,
-                                                            child: ListTile(
-                                                              leading: Checkbox(
-                                                                activeColor: kMainColor,
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius: BorderRadius.circular(30.0),
+                                                                title: Text(
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .capacity,
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge,
                                                                 ),
-                                                                value: isWarranty,
-                                                                onChanged: (val) {
-                                                                  setState1(
-                                                                    () {
-                                                                      isWarranty = val!;
+                                                              ),
+                                                            ),
+                                                          ]),
+                                                      ResponsiveGridRow(
+                                                          children: [
+                                                            ResponsiveGridCol(
+                                                                xs: 12,
+                                                                md: 6,
+                                                                lg: 6,
+                                                                child: ListTile(
+                                                                  leading:
+                                                                      Checkbox(
+                                                                    activeColor:
+                                                                        kMainColor,
+                                                                    shape:
+                                                                        RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              30.0),
+                                                                    ),
+                                                                    value:
+                                                                        isType,
+                                                                    onChanged:
+                                                                        (val) {
+                                                                      setState1(
+                                                                        () {
+                                                                          isType =
+                                                                              val!;
+                                                                        },
+                                                                      );
                                                                     },
-                                                                  );
-                                                                },
-                                                              ),
-                                                              title: Text(
-                                                                lang.S.of(context).warranty,
-                                                                style: theme.textTheme.bodyLarge,
-                                                              ),
-                                                            )),
-                                                      ]),
+                                                                  ),
+                                                                  title: Text(
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .type,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge,
+                                                                  ),
+                                                                )),
+                                                            ResponsiveGridCol(
+                                                                xs: 12,
+                                                                md: 6,
+                                                                lg: 6,
+                                                                child: ListTile(
+                                                                  leading:
+                                                                      Checkbox(
+                                                                    activeColor:
+                                                                        kMainColor,
+                                                                    shape:
+                                                                        RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              30.0),
+                                                                    ),
+                                                                    value:
+                                                                        isWarranty,
+                                                                    onChanged:
+                                                                        (val) {
+                                                                      setState1(
+                                                                        () {
+                                                                          isWarranty =
+                                                                              val!;
+                                                                        },
+                                                                      );
+                                                                    },
+                                                                  ),
+                                                                  title: Text(
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .warranty,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge,
+                                                                  ),
+                                                                )),
+                                                          ]),
                                                       const SizedBox(
                                                         height: 20,
                                                       ),
                                                       Row(
-                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
                                                         children: [
                                                           ElevatedButton(
-                                                            style: ElevatedButton.styleFrom(
-                                                              backgroundColor: Colors.red,
+                                                            style:
+                                                                ElevatedButton
+                                                                    .styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.red,
                                                             ),
                                                             onPressed: () {
-                                                              itemCategoryController.clear();
+                                                              itemCategoryController
+                                                                  .clear();
                                                               isSize = false;
                                                               isColor = false;
                                                               isWeight = false;
-                                                              isCapacity = false;
+                                                              isCapacity =
+                                                                  false;
                                                               isType = false;
-                                                              isWarranty = false;
+                                                              isWarranty =
+                                                                  false;
 
                                                               finish(context);
                                                             },
                                                             child: Text(
-                                                              lang.S.of(context).cancel,
+                                                              lang.S
+                                                                  .of(context)
+                                                                  .cancel,
                                                             ),
                                                           ),
-                                                          SizedBox(width: screenWidth <= 570 ? 10 : 30.0),
+                                                          SizedBox(
+                                                              width:
+                                                                  screenWidth <=
+                                                                          570
+                                                                      ? 10
+                                                                      : 30.0),
                                                           ElevatedButton(
-                                                            onPressed: () async {
+                                                            onPressed:
+                                                                () async {
                                                               if (categoryValidateAndSave()) {
-                                                                EasyLoading.show(status: lang.S.of(context).addingCategory);
-                                                                final DatabaseReference categoryInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories');
-                                                                CategoryModel categoryModel = CategoryModel(
-                                                                  categoryName: itemCategoryController.text,
+                                                                EasyLoading.show(
+                                                                    status: lang
+                                                                        .S
+                                                                        .of(context)
+                                                                        .addingCategory);
+                                                                final DatabaseReference
+                                                                    categoryInformationRef =
+                                                                    FirebaseDatabase
+                                                                        .instance
+                                                                        .ref()
+                                                                        .child(
+                                                                            await getUserID())
+                                                                        .child(
+                                                                            'Categories');
+                                                                CategoryModel
+                                                                    categoryModel =
+                                                                    CategoryModel(
+                                                                  categoryName:
+                                                                      itemCategoryController
+                                                                          .text,
                                                                   size: isSize,
-                                                                  color: isColor,
-                                                                  capacity: isCapacity,
+                                                                  color:
+                                                                      isColor,
+                                                                  capacity:
+                                                                      isCapacity,
                                                                   type: isType,
-                                                                  weight: isWeight,
-                                                                  warranty: isWarranty,
+                                                                  weight:
+                                                                      isWeight,
+                                                                  warranty:
+                                                                      isWarranty,
                                                                 );
-                                                                await categoryInformationRef.push().set(categoryModel.toJson());
-                                                                ref.refresh(categoryProvider);
-                                                                itemCategoryController.clear();
+                                                                await categoryInformationRef
+                                                                    .push()
+                                                                    .set(categoryModel
+                                                                        .toJson());
+                                                                // ignore: unused_result
+                                                                ref.refresh(
+                                                                    categoryProvider);
+                                                                itemCategoryController
+                                                                    .clear();
                                                                 isSize = false;
                                                                 isColor = false;
-                                                                isWeight = false;
-                                                                isCapacity = false;
+                                                                isWeight =
+                                                                    false;
+                                                                isCapacity =
+                                                                    false;
                                                                 isType = false;
-                                                                isWarranty = false;
+                                                                isWarranty =
+                                                                    false;
                                                                 //EasyLoading.showSuccess("Successfully Added");
-                                                                EasyLoading.showSuccess(lang.S.of(context).successfullyAdded);
+                                                                EasyLoading.showSuccess(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .successfullyAdded);
                                                                 finish(context);
-
                                                               }
                                                             },
                                                             child: Text(
-                                                              lang.S.of(context).submit,
-                                                              style: kTextStyle.copyWith(color: kWhite),
+                                                              lang.S
+                                                                  .of(context)
+                                                                  .submit,
+                                                              style: kTextStyle
+                                                                  .copyWith(
+                                                                      color:
+                                                                          kWhite),
                                                             ),
                                                           )
                                                         ],
@@ -436,7 +621,8 @@ class _CategoryListState extends State<CategoryList> {
                                       });
                                     });
                               },
-                              icon: const Icon(FeatherIcons.plus, color: kWhite, size: 18.0),
+                              icon: const Icon(FeatherIcons.plus,
+                                  color: kWhite, size: 18.0),
                               label: Text(
                                 lang.S.of(context).addCategory,
                                 style: kTextStyle.copyWith(color: kWhite),
@@ -497,11 +683,19 @@ class _CategoryListState extends State<CategoryList> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                    items: [
+                                      10,
+                                      20,
+                                      50,
+                                      100,
+                                      -1
+                                    ].map<DropdownMenuItem<int>>((int value) {
                                       return DropdownMenuItem<int>(
                                         value: value,
                                         child: Text(
-                                          value == -1 ? "All" : value.toString(),
+                                          value == -1
+                                              ? "All"
+                                              : value.toString(),
                                           style: theme.textTheme.bodyLarge,
                                         ),
                                       );
@@ -509,7 +703,8 @@ class _CategoryListState extends State<CategoryList> {
                                     onChanged: (int? newValue) {
                                       setState(() {
                                         if (newValue == -1) {
-                                          _categoryPerPage = -1; // Set to -1 for "All"
+                                          _categoryPerPage =
+                                              -1; // Set to -1 for "All"
                                         } else {
                                           _categoryPerPage = newValue ?? 10;
                                         }
@@ -539,7 +734,8 @@ class _CategoryListState extends State<CategoryList> {
                                 keyboardType: TextInputType.name,
                                 decoration: kInputDecoration.copyWith(
                                   contentPadding: const EdgeInsets.all(10.0),
-                                  hintText: (lang.S.of(context).searchByNameOrPhone),
+                                  hintText:
+                                      (lang.S.of(context).searchByNameOrPhone),
                                   suffixIcon: const Icon(
                                     FeatherIcons.search,
                                     color: kNeutral400,
@@ -556,7 +752,8 @@ class _CategoryListState extends State<CategoryList> {
                           ? Column(
                               children: [
                                 LayoutBuilder(
-                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  builder: (BuildContext context,
+                                      BoxConstraints constraints) {
                                     final kWidth = constraints.maxWidth;
                                     return Scrollbar(
                                       controller: _horizontalScroll,
@@ -573,7 +770,10 @@ class _CategoryListState extends State<CategoryList> {
                                           child: Theme(
                                             data: theme.copyWith(
                                               dividerColor: Colors.transparent,
-                                              dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                              dividerTheme:
+                                                  const DividerThemeData(
+                                                      color:
+                                                          Colors.transparent),
                                             ),
                                             child: DataTable(
                                                 border: const TableBorder(
@@ -582,58 +782,95 @@ class _CategoryListState extends State<CategoryList> {
                                                     color: kNeutral300,
                                                   ),
                                                 ),
-                                                dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                dataRowColor:
+                                                    const WidgetStatePropertyAll(
+                                                        Colors.white),
+                                                headingRowColor:
+                                                    WidgetStateProperty.all(
+                                                        const Color(
+                                                            0xFFF8F3FF)),
                                                 showBottomBorder: false,
                                                 dividerThickness: 0.0,
-                                                headingTextStyle: theme.textTheme.titleMedium,
+                                                headingTextStyle:
+                                                    theme.textTheme.titleMedium,
                                                 columns: [
-                                                  DataColumn(label: Text(_lang.SL)),
-                                                  DataColumn(label: Text(_lang.categoryName)),
-                                                  DataColumn(label: Text(_lang.type)),
-                                                  DataColumn(label: Text(_lang.size)),
-                                                  DataColumn(label: Text(_lang.color)),
-                                                  DataColumn(label: Text(_lang.capacity)),
-                                                  const DataColumn(label: Icon(FeatherIcons.settings)),
+                                                  DataColumn(
+                                                      label: Text(_lang.SL)),
+                                                  DataColumn(
+                                                      label: Text(
+                                                          _lang.categoryName)),
+                                                  DataColumn(
+                                                      label: Text(_lang.type)),
+                                                  DataColumn(
+                                                      label: Text(_lang.size)),
+                                                  DataColumn(
+                                                      label: Text(_lang.color)),
+                                                  DataColumn(
+                                                      label:
+                                                          Text(_lang.capacity)),
+                                                  const DataColumn(
+                                                      label: Icon(FeatherIcons
+                                                          .settings)),
                                                 ],
                                                 rows: List.generate(
                                                     _categoryPerPage == -1
-                                                        ? showAbleCategories.length
-                                                        : (_currentPage - 1) * _categoryPerPage + _categoryPerPage <= showAbleCategories.length
+                                                        ? showAbleCategories
+                                                            .length
+                                                        : (_currentPage - 1) *
+                                                                        _categoryPerPage +
+                                                                    _categoryPerPage <=
+                                                                showAbleCategories
+                                                                    .length
                                                             ? _categoryPerPage
-                                                            : showAbleCategories.length - (_currentPage - 1) * _categoryPerPage, (index) {
-                                                  final dataIndex = (_currentPage - 1) * _categoryPerPage + index;
+                                                            : showAbleCategories
+                                                                    .length -
+                                                                (_currentPage -
+                                                                        1) *
+                                                                    _categoryPerPage,
+                                                    (index) {
                                                   return DataRow(cells: [
                                                     ///______________S.L__________________________________________________
                                                     DataCell(
-                                                      Text('${(_currentPage - 1) * _categoryPerPage + index + 1}'),
+                                                      Text(
+                                                          '${(_currentPage - 1) * _categoryPerPage + index + 1}'),
                                                     ),
 
                                                     ///______________name__________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        showAbleCategories[index].categoryName,
+                                                        showAbleCategories[
+                                                                index]
+                                                            .categoryName,
                                                       ),
                                                     ),
 
                                                     ///____________type_________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        showAbleCategories[index].type.toString(),
+                                                        showAbleCategories[
+                                                                index]
+                                                            .type
+                                                            .toString(),
                                                       ),
                                                     ),
 
                                                     ///______Phone___________________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        showAbleCategories[index].size.toString(),
+                                                        showAbleCategories[
+                                                                index]
+                                                            .size
+                                                            .toString(),
                                                       ),
                                                     ),
 
                                                     ///___________Email____________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        showAbleCategories[index].color.toString(),
+                                                        showAbleCategories[
+                                                                index]
+                                                            .color
+                                                            .toString(),
                                                       ),
                                                     ),
 
@@ -641,38 +878,74 @@ class _CategoryListState extends State<CategoryList> {
 
                                                     DataCell(
                                                       Text(
-                                                        showAbleCategories[index].capacity.toString(),
+                                                        showAbleCategories[
+                                                                index]
+                                                            .capacity
+                                                            .toString(),
                                                       ),
                                                     ),
 
                                                     ///_______________actions_________________________________________________
                                                     DataCell(
                                                       Theme(
-                                                        data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                                        data: ThemeData(
+                                                            highlightColor:
+                                                                dropdownItemColor,
+                                                            focusColor:
+                                                                dropdownItemColor,
+                                                            hoverColor:
+                                                                dropdownItemColor),
                                                         child: SizedBox(
                                                           width: 20,
-                                                          child: PopupMenuButton(
-                                                            surfaceTintColor: Colors.white,
-                                                            padding: EdgeInsets.zero,
-                                                            itemBuilder: (BuildContext bc) => [
+                                                          child:
+                                                              PopupMenuButton(
+                                                            surfaceTintColor:
+                                                                Colors.white,
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            itemBuilder:
+                                                                (BuildContext
+                                                                        bc) =>
+                                                                    [
                                                               ///____________Edit____________________________________________________
                                                               PopupMenuItem(
                                                                   onTap: () {
-                                                                    itemCategoryController.text = showAbleCategories[index].categoryName;
-                                                                    setState(() {
-                                                                      isSize = showAbleCategories[index].size;
-                                                                      isColor = showAbleCategories[index].color;
-                                                                      isWeight = showAbleCategories[index].weight;
-                                                                      isCapacity = showAbleCategories[index].capacity;
-                                                                      isType = showAbleCategories[index].type;
-                                                                      isWarranty = showAbleCategories[index].warranty;
+                                                                    itemCategoryController
+                                                                        .text = showAbleCategories[
+                                                                            index]
+                                                                        .categoryName;
+                                                                    setState(
+                                                                        () {
+                                                                      isSize = showAbleCategories[
+                                                                              index]
+                                                                          .size;
+                                                                      isColor =
+                                                                          showAbleCategories[index]
+                                                                              .color;
+                                                                      isWeight =
+                                                                          showAbleCategories[index]
+                                                                              .weight;
+                                                                      isCapacity =
+                                                                          showAbleCategories[index]
+                                                                              .capacity;
+                                                                      isType = showAbleCategories[
+                                                                              index]
+                                                                          .type;
+                                                                      isWarranty =
+                                                                          showAbleCategories[index]
+                                                                              .warranty;
                                                                     });
 
                                                                     showDialog(
-                                                                        barrierDismissible: false,
-                                                                        context: context,
-                                                                        builder: (BuildContext dialogContext) {
-                                                                          return StatefulBuilder(builder: (context, setState1) {
+                                                                        barrierDismissible:
+                                                                            false,
+                                                                        context:
+                                                                            context,
+                                                                        builder:
+                                                                            (BuildContext
+                                                                                dialogContext) {
+                                                                          return StatefulBuilder(builder:
+                                                                              (context, setState1) {
                                                                             return Dialog(
                                                                               surfaceTintColor: kWhite,
                                                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
@@ -968,6 +1241,7 @@ class _CategoryListState extends State<CategoryList> {
                                                                                                         }
                                                                                                       });
 
+                                                                                                      // ignore: unused_result
                                                                                                       ref.refresh(categoryProvider);
                                                                                                       EasyLoading.showSuccess('Updated Successfully');
 
@@ -1047,12 +1321,26 @@ class _CategoryListState extends State<CategoryList> {
                                                                   },
                                                                   child: Row(
                                                                     children: [
-                                                                      const Icon(IconlyLight.edit, size: 20.0, color: kNeutral500),
-                                                                      const SizedBox(width: 4.0),
+                                                                      const Icon(
+                                                                          IconlyLight
+                                                                              .edit,
+                                                                          size:
+                                                                              20.0,
+                                                                          color:
+                                                                              kNeutral500),
+                                                                      const SizedBox(
+                                                                          width:
+                                                                              4.0),
                                                                       Text(
-                                                                        lang.S.of(context).edit,
-                                                                        style: theme.textTheme.bodyLarge?.copyWith(
-                                                                          color: kNeutral500,
+                                                                        lang.S
+                                                                            .of(context)
+                                                                            .edit,
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge
+                                                                            ?.copyWith(
+                                                                          color:
+                                                                              kNeutral500,
                                                                         ),
                                                                       ),
                                                                     ],
@@ -1063,11 +1351,16 @@ class _CategoryListState extends State<CategoryList> {
                                                                 onTap: () {
                                                                   if (true) {
                                                                     showDialog(
-                                                                        barrierDismissible: false,
-                                                                        context: context,
-                                                                        builder: (BuildContext dialogContext) {
+                                                                        barrierDismissible:
+                                                                            false,
+                                                                        context:
+                                                                            context,
+                                                                        builder:
+                                                                            (BuildContext
+                                                                                dialogContext) {
                                                                           return Center(
-                                                                            child: Container(
+                                                                            child:
+                                                                                Container(
                                                                               decoration: const BoxDecoration(
                                                                                 color: Colors.white,
                                                                                 borderRadius: BorderRadius.all(
@@ -1116,6 +1409,7 @@ class _CategoryListState extends State<CategoryList> {
                                                                                                     // Delete the category from Firebase
                                                                                                     await FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories').child(key).remove();
 
+                                                                                                    // ignore: unused_result
                                                                                                     ref.refresh(categoryProvider);
 
                                                                                                     // Show success message
@@ -1150,31 +1444,48 @@ class _CategoryListState extends State<CategoryList> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                     HugeIcon(
-                                                                      icon: HugeIcons.strokeRoundedDelete02,
-                                                                      color: kNeutral500,
-                                                                      size: 20.0,
+                                                                    HugeIcon(
+                                                                      icon: HugeIcons
+                                                                          .strokeRoundedDelete02,
+                                                                      color:
+                                                                          kNeutral500,
+                                                                      size:
+                                                                          20.0,
                                                                     ),
-                                                                    const SizedBox(width: 4.0),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).delete,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .delete,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                              color: kNeutral500),
                                                                     ),
                                                                   ],
                                                                 ),
                                                               ),
                                                             ],
-                                                            onSelected: (value) {
+                                                            onSelected:
+                                                                (value) {
                                                               // Navigator.pushNamed(context, '$value');
-                                                              context.go('/$value');
+                                                              context.go(
+                                                                  '/$value');
                                                             },
                                                             child: Center(
                                                               child: Container(
                                                                   height: 18,
                                                                   width: 18,
-                                                                  alignment: Alignment.centerRight,
-                                                                  child: const Icon(
-                                                                    Icons.more_vert_sharp,
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerRight,
+                                                                  child:
+                                                                      const Icon(
+                                                                    Icons
+                                                                        .more_vert_sharp,
                                                                     size: 18,
                                                                   )),
                                                             ),
@@ -1193,7 +1504,8 @@ class _CategoryListState extends State<CategoryList> {
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Flexible(
                                         child: Text(
@@ -1205,16 +1517,25 @@ class _CategoryListState extends State<CategoryList> {
                                       Row(
                                         children: [
                                           InkWell(
-                                            overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                            overlayColor:
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.grey),
                                             hoverColor: Colors.grey,
-                                            onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                            onTap: _currentPage > 1
+                                                ? () => setState(
+                                                    () => _currentPage--)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomLeft: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(4.0),
                                                   topLeft: Radius.circular(4.0),
                                                 ),
                                               ),
@@ -1227,13 +1548,15 @@ class _CategoryListState extends State<CategoryList> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: kMainColor,
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$_currentPage',
-                                                style: const TextStyle(color: Colors.white),
+                                                style: const TextStyle(
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           ),
@@ -1241,7 +1564,8 @@ class _CategoryListState extends State<CategoryList> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: Colors.transparent,
                                             ),
                                             child: Center(
@@ -1251,20 +1575,33 @@ class _CategoryListState extends State<CategoryList> {
                                             ),
                                           ),
                                           InkWell(
-                                            hoverColor: Colors.blue.withOpacity(0.1),
-                                            overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                            onTap: _currentPage * _categoryPerPage < showAbleCategories.length ? () => setState(() => _currentPage++) : null,
+                                            hoverColor:
+                                                Colors.blue.withOpacity(0.1),
+                                            overlayColor: MaterialStateProperty
+                                                .all<Color>(Colors.blue),
+                                            onTap: _currentPage *
+                                                        _categoryPerPage <
+                                                    showAbleCategories.length
+                                                ? () => setState(
+                                                    () => _currentPage++)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomRight: Radius.circular(4.0),
-                                                  topRight: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomRight:
+                                                      Radius.circular(4.0),
+                                                  topRight:
+                                                      Radius.circular(4.0),
                                                 ),
                                               ),
-                                              child: const Center(child: Text('Next')),
+                                              child: const Center(
+                                                  child: Text('Next')),
                                             ),
                                           ),
                                         ],
@@ -1274,7 +1611,8 @@ class _CategoryListState extends State<CategoryList> {
                                 ),
                               ],
                             )
-                          : EmptyWidget(title: lang.S.of(context).noCustomerFound)
+                          : EmptyWidget(
+                              title: lang.S.of(context).noCustomerFound)
                     ],
                   ),
                 ),

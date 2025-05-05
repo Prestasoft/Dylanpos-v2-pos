@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -9,17 +7,12 @@ import 'package:salespro_admin/PDF/print_pdf.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
-import 'package:salespro_admin/model/reservation_model.dart';
-import 'package:table_calendar/table_calendar.dart';
-
 import '../const.dart';
 import '../model/general_setting_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
-import 'package:intl/intl.dart';
 
 ///___________Sales_PDF_Formats____________________________________________________________________________________________________________________________
 FutureOr<Uint8List> generateSaleDocument(
@@ -1108,8 +1101,10 @@ Future<Uint8List> generateThermalDocument({
 
             ...transactions.productList!.map((item) {
 //
-              final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
-              final serviceDescription = fullReservation?.service?['description'] ?? '';
+              final fullReservation =
+                  ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+              final serviceDescription =
+                  fullReservation?.service?['description'] ?? '';
 
               return pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 3),

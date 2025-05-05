@@ -55,7 +55,8 @@ class _NewIncomeState extends State<NewIncome> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(4.0),
-                            decoration: const BoxDecoration(shape: BoxShape.rectangle),
+                            decoration:
+                                const BoxDecoration(shape: BoxShape.rectangle),
                             child: const Icon(
                               FeatherIcons.plus,
                               color: kTitleColor,
@@ -64,7 +65,10 @@ class _NewIncomeState extends State<NewIncome> {
                           const SizedBox(width: 4.0),
                           Text(
                             lang.S.of(context).addCategory,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0, fontWeight: FontWeight.bold),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold),
                           ),
                           const Spacer(),
                           const Icon(
@@ -86,7 +90,8 @@ class _NewIncomeState extends State<NewIncome> {
                         children: [
                           Text(
                             lang.S.of(context).nam,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor, fontSize: 18.0),
                           ),
                           const SizedBox(width: 50),
                           SizedBox(
@@ -98,7 +103,8 @@ class _NewIncomeState extends State<NewIncome> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   hintText: lang.S.of(context).name,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -116,7 +122,9 @@ class _NewIncomeState extends State<NewIncome> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kRedTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kRedTextColor),
                             child: Text(
                               lang.S.of(context).cancel,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -129,7 +137,9 @@ class _NewIncomeState extends State<NewIncome> {
                           ),
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kGreenTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kGreenTextColor),
                             child: Text(
                               lang.S.of(context).submit,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -151,7 +161,11 @@ class _NewIncomeState extends State<NewIncome> {
   DateTime selectedDate = DateTime.now();
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -225,9 +239,15 @@ class _NewIncomeState extends State<NewIncome> {
   Future<void> category() async {
     final userId = await getUserID();
 
-    await FirebaseDatabase.instance.ref(userId).child('Income Category').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Income Category')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        var data = ExpenseCategoryModel.fromJson(jsonDecode(jsonEncode(element.value)));
+        var data = ExpenseCategoryModel.fromJson(
+            jsonDecode(jsonEncode(element.value)));
         categories.add(data.categoryName);
       }
     });
@@ -271,7 +291,8 @@ class _NewIncomeState extends State<NewIncome> {
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Container(
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.0), color: kWhite),
               child: Form(
                 key: formKey,
                 child: Column(
@@ -290,8 +311,10 @@ class _NewIncomeState extends State<NewIncome> {
                                 ),
                                 children: [
                                   TextSpan(
-                                    text: lang.S.of(context).addUpdateIncomeList,
-                                    style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
+                                    text:
+                                        lang.S.of(context).addUpdateIncomeList,
+                                    style: theme.textTheme.bodyLarge
+                                        ?.copyWith(color: kNeutral500),
                                   )
                                 ])),
                           ),
@@ -324,10 +347,12 @@ class _NewIncomeState extends State<NewIncome> {
                               builder: (FormFieldState<dynamic> field) {
                                 return InputDecorator(
                                   decoration: InputDecoration(
-                                    suffixIcon: const Icon(IconlyLight.calendar, color: kGreyTextColor),
+                                    suffixIcon: const Icon(IconlyLight.calendar,
+                                        color: kGreyTextColor),
                                     contentPadding: const EdgeInsets.all(8.0),
                                     labelText: lang.S.of(context).incomeDate,
-                                    hintText: lang.S.of(context).enterIncomeDate,
+                                    hintText:
+                                        lang.S.of(context).enterIncomeDate,
                                   ),
                                   child: Text(
                                     '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
@@ -352,8 +377,16 @@ class _NewIncomeState extends State<NewIncome> {
                             child: FormField(
                               builder: (FormFieldState<dynamic> field) {
                                 return InputDecorator(
-                                  decoration: InputDecoration(contentPadding: const EdgeInsets.all(8.0), labelText: lang.S.of(context).category),
-                                  child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getCategories())),
+                                  decoration: InputDecoration(
+                                      contentPadding: const EdgeInsets.all(8.0),
+                                      labelText: lang.S.of(context).category),
+                                  child: Theme(
+                                      data: ThemeData(
+                                          highlightColor: dropdownItemColor,
+                                          focusColor: dropdownItemColor,
+                                          hoverColor: dropdownItemColor),
+                                      child: DropdownButtonHideUnderline(
+                                          child: getCategories())),
                                 );
                               },
                             ),
@@ -403,9 +436,17 @@ class _NewIncomeState extends State<NewIncome> {
                             child: FormField(
                               builder: (FormFieldState<dynamic> field) {
                                 return InputDecorator(
-                                  decoration: InputDecoration(contentPadding: const EdgeInsets.all(8.0), floatingLabelBehavior: FloatingLabelBehavior.always, labelText: lang.S.of(context).paymentType),
+                                  decoration: InputDecoration(
+                                      contentPadding: const EdgeInsets.all(8.0),
+                                      floatingLabelBehavior:
+                                          FloatingLabelBehavior.always,
+                                      labelText:
+                                          lang.S.of(context).paymentType),
                                   child: Theme(
-                                    data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                    data: ThemeData(
+                                        highlightColor: dropdownItemColor,
+                                        focusColor: dropdownItemColor,
+                                        hoverColor: dropdownItemColor),
                                     child: DropdownButtonHideUnderline(
                                       child: getPaymentMethods(),
                                     ),
@@ -432,10 +473,13 @@ class _NewIncomeState extends State<NewIncome> {
                             controller: incomeAmountController,
                             onChanged: (value) {
                               incomeText = value.replaceAll(',', '');
-                              var formattedText = myFormat.format(int.parse(incomeText));
-                              incomeAmountController.value = incomeAmountController.value.copyWith(
+                              var formattedText =
+                                  myFormat.format(int.parse(incomeText));
+                              incomeAmountController.value =
+                                  incomeAmountController.value.copyWith(
                                 text: formattedText,
-                                selection: TextSelection.collapsed(offset: formattedText.length),
+                                selection: TextSelection.collapsed(
+                                    offset: formattedText.length),
                               );
                             },
                             validator: (value) {
@@ -514,7 +558,11 @@ class _NewIncomeState extends State<NewIncome> {
                     const SizedBox(height: 10.0),
 
                     ResponsiveGridRow(rowSegments: 100, children: [
-                      ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                      ResponsiveGridCol(
+                          md: screenWidth < 768 ? 15 : 25,
+                          xs: 100,
+                          lg: 30,
+                          child: const SizedBox.shrink()),
                       ResponsiveGridCol(
                         md: screenWidth < 768 ? 35 : 25,
                         xs: 100,
@@ -544,13 +592,17 @@ class _NewIncomeState extends State<NewIncome> {
                               onPressed: saveButtonClicked
                                   ? () async {}
                                   : () async {
-                                      if (validateAndSave() && selectedCategories != null && selectedCategories!.isNotEmpty) {
+                                      if (validateAndSave() &&
+                                          selectedCategories != null &&
+                                          selectedCategories!.isNotEmpty) {
                                         IncomeModel income = IncomeModel(
                                           incomeDate: selectedDate.toString(),
-                                          category: selectedCategories.toString(),
+                                          category:
+                                              selectedCategories.toString(),
                                           account: '',
                                           amount: incomeText,
-                                          incomeFor: incomeForNameController.text,
+                                          incomeFor:
+                                              incomeForNameController.text,
                                           paymentType: selectedPaymentType,
                                           referenceNo: incomeRefController.text,
                                           note: incomeNoteController.text,
@@ -559,31 +611,55 @@ class _NewIncomeState extends State<NewIncome> {
                                           setState(() {
                                             saveButtonClicked = true;
                                           });
-                                          EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                          final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Income');
-                                          await productInformationRef.push().set(income.toJson());
+                                          EasyLoading.show(
+                                              status:
+                                                  '${lang.S.of(context).loading}...',
+                                              dismissOnTap: false);
+                                          final DatabaseReference
+                                              productInformationRef =
+                                              FirebaseDatabase.instance
+                                                  .ref()
+                                                  .child(await getUserID())
+                                                  .child('Income');
+                                          await productInformationRef
+                                              .push()
+                                              .set(income.toJson());
 
                                           ///________daily_transactionModel_________________________________________________________________________
 
-                                          DailyTransactionModel dailyTransaction = DailyTransactionModel(
+                                          DailyTransactionModel
+                                              dailyTransaction =
+                                              DailyTransactionModel(
                                             name: income.incomeFor,
                                             date: income.incomeDate,
                                             type: 'Income',
                                             total: income.amount.toDouble(),
                                             paymentIn: income.amount.toDouble(),
                                             paymentOut: 0,
-                                            remainingBalance: income.amount.toDouble(),
+                                            remainingBalance:
+                                                income.amount.toDouble(),
                                             id: income.incomeDate,
                                             incomeModel: income,
                                           );
-                                          postDailyTransaction(dailyTransactionModel: dailyTransaction);
+                                          postDailyTransaction(
+                                              dailyTransactionModel:
+                                                  dailyTransaction);
 
                                           ///____provider_refresh____________________________________________
+                                          // ignore: unused_result
                                           ref.refresh(incomeProvider);
+                                          // ignore: unused_result
                                           ref.refresh(dailyTransactionProvider);
-                                          EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                          EasyLoading.showSuccess(
+                                              lang.S
+                                                  .of(context)
+                                                  .addedSuccessfully,
+                                              duration: const Duration(
+                                                  milliseconds: 500));
 
-                                          Future.delayed(const Duration(milliseconds: 100), () {
+                                          Future.delayed(
+                                              const Duration(milliseconds: 100),
+                                              () {
                                             // Navigator.pop(context);
                                             // Navigator.of(context).pushReplacementNamed(IncomeList.route);
                                             context.go(IncomeList.route);
@@ -597,7 +673,9 @@ class _NewIncomeState extends State<NewIncome> {
                                         }
                                       } else {
                                         // EasyLoading.showInfo('Please select a category');
-                                        EasyLoading.showInfo(lang.S.of(context).pleaseSelectACategory);
+                                        EasyLoading.showInfo(lang.S
+                                            .of(context)
+                                            .pleaseSelectACategory);
                                       }
                                     },
                               child: Text(
@@ -605,7 +683,11 @@ class _NewIncomeState extends State<NewIncome> {
                               )),
                         ),
                       ),
-                      ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                      ResponsiveGridCol(
+                          md: screenWidth < 768 ? 15 : 25,
+                          xs: 100,
+                          lg: 30,
+                          child: const SizedBox.shrink()),
                     ]),
                     // Row(
                     //   mainAxisSize: MainAxisSize.max,

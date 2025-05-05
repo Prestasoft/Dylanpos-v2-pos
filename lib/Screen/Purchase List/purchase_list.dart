@@ -94,28 +94,41 @@ class _PurchaseListState extends State<PurchaseList> {
 
             List<PurchaseTransactionModel> showAblePurchaseTransactions = [];
             for (var element in allTransaction) {
-              if (searchItem != '' && (element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()) || element.customerName.toLowerCase().contains(searchItem.toLowerCase()))) {
+              if (searchItem != '' &&
+                  (element.invoiceNumber
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase()) ||
+                      element.customerName
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase()))) {
                 showAblePurchaseTransactions.add(element);
               } else if (searchItem == '') {
                 showAblePurchaseTransactions.add(element);
               }
             }
-            final totalPages = (showAblePurchaseTransactions.length / itemsPerPage).ceil();
+            final totalPages =
+                (showAblePurchaseTransactions.length / itemsPerPage).ceil();
             final startIndex = (currentPage - 1) * itemsPerPage;
-            final endIndex = itemsPerPage == -1 ? showAblePurchaseTransactions.length : startIndex + itemsPerPage;
+            final endIndex = itemsPerPage == -1
+                ? showAblePurchaseTransactions.length
+                : startIndex + itemsPerPage;
             final paginatedTransactions = showAblePurchaseTransactions.sublist(
               startIndex,
-              endIndex > showAblePurchaseTransactions.length ? showAblePurchaseTransactions.length : endIndex,
+              endIndex > showAblePurchaseTransactions.length
+                  ? showAblePurchaseTransactions.length
+                  : endIndex,
             );
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 13),
                       child: Text(
                         lang.S.of(context).purchaseList,
                         style: theme.textTheme.titleLarge?.copyWith(
@@ -157,7 +170,9 @@ class _PurchaseListState extends State<PurchaseList> {
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Flexible(child: Text('Show-', style: theme.textTheme.bodyLarge)),
+                                Flexible(
+                                    child: Text('Show-',
+                                        style: theme.textTheme.bodyLarge)),
                                 DropdownButton<int>(
                                   isDense: true,
                                   padding: EdgeInsets.zero,
@@ -167,7 +182,8 @@ class _PurchaseListState extends State<PurchaseList> {
                                     Icons.keyboard_arrow_down,
                                     color: Colors.black,
                                   ),
-                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                  items: [10, 20, 50, 100, -1]
+                                      .map<DropdownMenuItem<int>>((int value) {
                                     return DropdownMenuItem<int>(
                                       value: value,
                                       child: Text(
@@ -179,7 +195,8 @@ class _PurchaseListState extends State<PurchaseList> {
                                   onChanged: (int? newValue) {
                                     setState(() {
                                       if (newValue == -1) {
-                                        itemsPerPage = -1; // Set to -1 for "All"
+                                        itemsPerPage =
+                                            -1; // Set to -1 for "All"
                                       } else {
                                         itemsPerPage = newValue ?? 10;
                                       }
@@ -208,7 +225,8 @@ class _PurchaseListState extends State<PurchaseList> {
                             },
                             textFieldType: TextFieldType.NAME,
                             decoration: InputDecoration(
-                              hintText: lang.S.of(context).searchByInvoiceOrName,
+                              hintText:
+                                  lang.S.of(context).searchByInvoiceOrName,
                               suffixIcon: const Icon(
                                 FeatherIcons.search,
                                 color: kNeutral700,
@@ -231,7 +249,8 @@ class _PurchaseListState extends State<PurchaseList> {
                                 controller: _horizontalScroll,
                                 radius: const Radius.circular(5),
                                 child: LayoutBuilder(
-                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  builder: (BuildContext context,
+                                      BoxConstraints constraints) {
                                     final kWidth = constraints.maxWidth;
                                     return SingleChildScrollView(
                                       controller: _horizontalScroll,
@@ -241,7 +260,12 @@ class _PurchaseListState extends State<PurchaseList> {
                                           minWidth: kWidth,
                                         ),
                                         child: Theme(
-                                          data: theme.copyWith(dividerColor: Colors.transparent, dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                          data: theme.copyWith(
+                                              dividerColor: Colors.transparent,
+                                              dividerTheme:
+                                                  const DividerThemeData(
+                                                      color:
+                                                          Colors.transparent)),
                                           child: DataTable(
                                               border: const TableBorder(
                                                 horizontalInside: BorderSide(
@@ -249,67 +273,124 @@ class _PurchaseListState extends State<PurchaseList> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      whiteColor),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle: theme.textTheme.titleMedium,
-                                              dataTextStyle: theme.textTheme.bodyLarge,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
+                                              dataTextStyle:
+                                                  theme.textTheme.bodyLarge,
                                               columns: [
-                                                DataColumn(label: Text(lang.S.of(context).SL)),
-                                                DataColumn(label: Text(lang.S.of(context).date)),
-                                                DataColumn(label: Text(lang.S.of(context).invoice)),
-                                                DataColumn(label: Text(lang.S.of(context).partyName)),
-                                                DataColumn(label: Text(lang.S.of(context).partyType)),
-                                                DataColumn(label: Text(lang.S.of(context).amount)),
-                                                DataColumn(label: Text(lang.S.of(context).due)),
-                                                DataColumn(label: Text(lang.S.of(context).status)),
-                                                DataColumn(label: Text(lang.S.of(context).setting)),
+                                                DataColumn(
+                                                    label: Text(
+                                                        lang.S.of(context).SL)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .date)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .invoice)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .partyName)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .partyType)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .amount)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .due)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .status)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .setting)),
                                               ],
-                                              rows: List.generate(paginatedTransactions.length, (index) {
+                                              rows: List.generate(
+                                                  paginatedTransactions.length,
+                                                  (index) {
                                                 return DataRow(cells: [
                                                   ///______________S.L__________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      (index + 1 + (currentPage - 1) * itemsPerPage).toString(),
+                                                      (index +
+                                                              1 +
+                                                              (currentPage -
+                                                                      1) *
+                                                                  itemsPerPage)
+                                                          .toString(),
                                                     ),
                                                   ),
 
                                                   ///______________Date__________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].purchaseDate.substring(0, 10),
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .purchaseDate
+                                                          .substring(0, 10),
                                                     ),
                                                   ),
 
                                                   ///____________Invoice_________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].invoiceNumber,
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .invoiceNumber,
                                                     ),
                                                   ),
 
                                                   ///______Party Name___________________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].customerName,
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .customerName,
                                                     ),
                                                   ),
 
                                                   ///___________Party Type______________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].paymentType.toString(),
-                                                      style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                      paginatedTransactions[
+                                                              index]
+                                                          .paymentType
+                                                          .toString(),
+                                                      style: kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
                                                       maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
 
                                                   ///___________Amount____________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      myFormat.format(double.tryParse(paginatedTransactions[index].totalAmount.toString()) ?? 0),
+                                                      myFormat.format(double.tryParse(
+                                                              paginatedTransactions[
+                                                                      index]
+                                                                  .totalAmount
+                                                                  .toString()) ??
+                                                          0),
                                                     ),
                                                   ),
 
@@ -317,7 +398,12 @@ class _PurchaseListState extends State<PurchaseList> {
 
                                                   DataCell(
                                                     Text(
-                                                      myFormat.format(double.tryParse(paginatedTransactions[index].dueAmount.toString()) ?? 0),
+                                                      myFormat.format(double.tryParse(
+                                                              paginatedTransactions[
+                                                                      index]
+                                                                  .dueAmount
+                                                                  .toString()) ??
+                                                          0),
                                                     ),
                                                   ),
 
@@ -325,41 +411,86 @@ class _PurchaseListState extends State<PurchaseList> {
 
                                                   DataCell(
                                                     Text(
-                                                      paginatedTransactions[index].isPaid! ? lang.S.of(context).paid : lang.S.of(context).due,
-                                                      style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                      paginatedTransactions[
+                                                                  index]
+                                                              .isPaid!
+                                                          ? lang.S
+                                                              .of(context)
+                                                              .paid
+                                                          : lang.S
+                                                              .of(context)
+                                                              .due,
+                                                      style: kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
                                                       maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
 
                                                   ///_______________actions_________________________________________________
                                                   DataCell(
-                                                    settingProver.when(data: (setting) {
+                                                    settingProver.when(
+                                                        data: (setting) {
                                                       return SizedBox(
                                                         width: 30,
                                                         child: Theme(
-                                                          data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                          child: PopupMenuButton(
-                                                            surfaceTintColor: Colors.white,
+                                                          data: ThemeData(
+                                                              highlightColor:
+                                                                  dropdownItemColor,
+                                                              focusColor:
+                                                                  dropdownItemColor,
+                                                              hoverColor:
+                                                                  dropdownItemColor),
+                                                          child:
+                                                              PopupMenuButton(
+                                                            surfaceTintColor:
+                                                                Colors.white,
                                                             color: Colors.white,
-                                                            padding: EdgeInsets.zero,
-                                                            offset: Offset(0, 40),
-                                                            itemBuilder: (BuildContext bc) => [
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            offset:
+                                                                Offset(0, 40),
+                                                            itemBuilder:
+                                                                (BuildContext
+                                                                        bc) =>
+                                                                    [
                                                               PopupMenuItem(
-                                                                onTap: () async {
-                                                                  await GeneratePdfAndPrint().printPurchaseInvoice(setting: setting, personalInformationModel: profile.value!, purchaseTransactionModel: paginatedTransactions[index]);
+                                                                onTap:
+                                                                    () async {
+                                                                  await GeneratePdfAndPrint().printPurchaseInvoice(
+                                                                      setting:
+                                                                          setting,
+                                                                      personalInformationModel:
+                                                                          profile
+                                                                              .value!,
+                                                                      purchaseTransactionModel:
+                                                                          paginatedTransactions[
+                                                                              index]);
                                                                 },
                                                                 child: Row(
                                                                   children: [
                                                                     HugeIcon(
-                                                                      icon: HugeIcons.strokeRoundedPrinter,
-                                                                      color: kGreyTextColor,
-                                                                      size: 22.0,
+                                                                      icon: HugeIcons
+                                                                          .strokeRoundedPrinter,
+                                                                      color:
+                                                                          kGreyTextColor,
+                                                                      size:
+                                                                          22.0,
                                                                     ),
-                                                                    const SizedBox(width: 4.0),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).print,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .print,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                              color: kGreyTextColor),
                                                                     )
                                                                   ],
                                                                 ),
@@ -371,10 +502,16 @@ class _PurchaseListState extends State<PurchaseList> {
                                                                   context.push(
                                                                     '/purchase/purchase-edit',
                                                                     extra: {
-                                                                      'personalInformationModel': profile.value,
-                                                                      'isPosScreen': false,
-                                                                      'purchaseTransitionModel': paginatedTransactions[index],
-                                                                      'popupContext': bc,
+                                                                      'personalInformationModel':
+                                                                          profile
+                                                                              .value,
+                                                                      'isPosScreen':
+                                                                          false,
+                                                                      'purchaseTransitionModel':
+                                                                          paginatedTransactions[
+                                                                              index],
+                                                                      'popupContext':
+                                                                          bc,
                                                                     },
                                                                   );
                                                                   // PurchaseEdit(
@@ -386,11 +523,25 @@ class _PurchaseListState extends State<PurchaseList> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    Icon(IconlyLight.edit, size: 22.0, color: kGreyTextColor),
-                                                                    const SizedBox(width: 4.0),
+                                                                    Icon(
+                                                                        IconlyLight
+                                                                            .edit,
+                                                                        size:
+                                                                            22.0,
+                                                                        color:
+                                                                            kGreyTextColor),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).edit,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .edit,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                              color: kGreyTextColor),
                                                                     ),
                                                                   ],
                                                                 ),
@@ -398,66 +549,83 @@ class _PurchaseListState extends State<PurchaseList> {
 
                                                               ///________Purchase Delete_______________________________
                                                               PopupMenuItem(
-                                                                onTap: () => showDialog(
-                                                                    context: context,
-                                                                    builder: (context2) => AlertDialog(
-                                                                          title: Text('${lang.S.of(context).areYouSureToDeleteThisPurchase}?'),
-                                                                          content: Text(
-                                                                            lang.S.of(context).theSaleWillBeDeletedAndAllTheDataWillBeDeletedAboutThisPurchaseAreYouSureToDeleteThis,
-                                                                            //'The sale will be deleted and all the data will be deleted about this Purchase .Are you sure to delete this?',
-                                                                            maxLines: 5,
-                                                                          ),
-                                                                          actions: [
-                                                                            Text(lang.S.of(context).cancel).onTap(() => Navigator.pop(context2)),
-                                                                            Padding(
-                                                                              padding: const EdgeInsets.all(20.0),
-                                                                              child: Text(lang.S.of(context).yesDeleteForever).onTap(() async {
-                                                                                EasyLoading.show();
+                                                                onTap: () =>
+                                                                    showDialog(
+                                                                        context:
+                                                                            context,
+                                                                        builder: (context2) =>
+                                                                            AlertDialog(
+                                                                              title: Text('${lang.S.of(context).areYouSureToDeleteThisPurchase}?'),
+                                                                              content: Text(
+                                                                                lang.S.of(context).theSaleWillBeDeletedAndAllTheDataWillBeDeletedAboutThisPurchaseAreYouSureToDeleteThis,
+                                                                                //'The sale will be deleted and all the data will be deleted about this Purchase .Are you sure to delete this?',
+                                                                                maxLines: 5,
+                                                                              ),
+                                                                              actions: [
+                                                                                Text(lang.S.of(context).cancel).onTap(() => Navigator.pop(context2)),
+                                                                                Padding(
+                                                                                  padding: const EdgeInsets.all(20.0),
+                                                                                  child: Text(lang.S.of(context).yesDeleteForever).onTap(() async {
+                                                                                    EasyLoading.show();
 
-                                                                                DeleteInvoice delete = DeleteInvoice();
+                                                                                    DeleteInvoice delete = DeleteInvoice();
 
-                                                                                await delete.editStockAndSerialForPurchase(saleTransactionModel: paginatedTransactions[index]);
+                                                                                    await delete.editStockAndSerialForPurchase(saleTransactionModel: paginatedTransactions[index]);
 
-                                                                                await delete.customerDueUpdate(
-                                                                                  due: paginatedTransactions[index].dueAmount ?? 0,
-                                                                                  phone: paginatedTransactions[index].customerPhone,
-                                                                                );
-                                                                                await delete.updateFromShopRemainBalance(
-                                                                                  paidAmount: (paginatedTransactions[index].totalAmount ?? 0) - (paginatedTransactions[index].dueAmount ?? 0),
-                                                                                  isFromPurchase: true,
-                                                                                );
-                                                                                await delete.deleteDailyTransaction(invoice: paginatedTransactions[index].invoiceNumber, status: 'Purchase', field: 'purchaseTransactionModel');
-                                                                                DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Transition/${paginatedTransactions[index].key}");
+                                                                                    await delete.customerDueUpdate(
+                                                                                      due: paginatedTransactions[index].dueAmount ?? 0,
+                                                                                      phone: paginatedTransactions[index].customerPhone,
+                                                                                    );
+                                                                                    await delete.updateFromShopRemainBalance(
+                                                                                      paidAmount: (paginatedTransactions[index].totalAmount ?? 0) - (paginatedTransactions[index].dueAmount ?? 0),
+                                                                                      isFromPurchase: true,
+                                                                                    );
+                                                                                    await delete.deleteDailyTransaction(invoice: paginatedTransactions[index].invoiceNumber, status: 'Purchase', field: 'purchaseTransactionModel');
+                                                                                    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Transition/${paginatedTransactions[index].key}");
 
-                                                                                await ref.remove();
-                                                                                consuearRef.refresh(purchaseTransitionProvider);
-                                                                                consuearRef.refresh(productProvider);
-                                                                                consuearRef.refresh(supplierProvider);
-                                                                                consuearRef.refresh(profileDetailsProvider);
-                                                                                consuearRef.refresh(dailyTransactionProvider);
-                                                                                EasyLoading.showSuccess(lang.S.of(context).done);
-                                                                                // ignore: use_build_context_synchronously
-                                                                                GoRouter.of(context2).pop();
-                                                                                GoRouter.of(bc).pop();
-                                                                              }),
-                                                                            ),
-                                                                          ],
-                                                                        )),
+                                                                                    await ref.remove();
+                                                                                    // ignore: unused_result
+                                                                                    consuearRef.refresh(purchaseTransitionProvider);
+                                                                                    // ignore: unused_result
+                                                                                    consuearRef.refresh(productProvider);
+                                                                                    // ignore: unused_result
+                                                                                    consuearRef.refresh(supplierProvider);
+                                                                                    // ignore: unused_result
+                                                                                    consuearRef.refresh(profileDetailsProvider);
+                                                                                    // ignore: unused_result
+                                                                                    consuearRef.refresh(dailyTransactionProvider);
+                                                                                    EasyLoading.showSuccess(lang.S.of(context).done);
+                                                                                    // ignore: use_build_context_synchronously
+                                                                                    GoRouter.of(context2).pop();
+                                                                                    GoRouter.of(bc).pop();
+                                                                                  }),
+                                                                                ),
+                                                                              ],
+                                                                            )),
                                                                 child: Row(
                                                                   children: [
                                                                     HugeIcon(
-                                                                      icon: HugeIcons.strokeRoundedDelete02,
-                                                                      color: kGreyTextColor,
+                                                                      icon: HugeIcons
+                                                                          .strokeRoundedDelete02,
+                                                                      color:
+                                                                          kGreyTextColor,
                                                                       size: 22,
                                                                     ),
                                                                     const SizedBox(
-                                                                      width: 4.0,
+                                                                      width:
+                                                                          4.0,
                                                                     ),
                                                                     Text(
-                                                                      lang.S.of(context).delete,
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .delete,
                                                                       //'Delete',
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                                                        color: kGreyTextColor,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kGreyTextColor,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -470,20 +638,38 @@ class _PurchaseListState extends State<PurchaseList> {
                                                                   context.push(
                                                                     '/purchase/purchase-returns',
                                                                     extra: {
-                                                                      'purchaseTransactionModel': paginatedTransactions[index],
-                                                                      'personalInformationModel': profile.value,
+                                                                      'purchaseTransactionModel':
+                                                                          paginatedTransactions[
+                                                                              index],
+                                                                      'personalInformationModel':
+                                                                          profile
+                                                                              .value,
                                                                     },
                                                                   );
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const Icon(Icons.assignment_return, size: 22.0, color: kGreyTextColor),
-                                                                    const SizedBox(width: 4.0),
+                                                                    const Icon(
+                                                                        Icons
+                                                                            .assignment_return,
+                                                                        size:
+                                                                            22.0,
+                                                                        color:
+                                                                            kGreyTextColor),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).purchaseReturn,
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .purchaseReturn,
                                                                       //'Purchase Return',
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                                                        color: kGreyTextColor,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kGreyTextColor,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -494,9 +680,13 @@ class _PurchaseListState extends State<PurchaseList> {
                                                               child: Container(
                                                                   height: 18,
                                                                   width: 18,
-                                                                  alignment: Alignment.centerRight,
-                                                                  child: const Icon(
-                                                                    Icons.more_vert_sharp,
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerRight,
+                                                                  child:
+                                                                      const Icon(
+                                                                    Icons
+                                                                        .more_vert_sharp,
                                                                     size: 18,
                                                                   )),
                                                             ),
@@ -506,7 +696,9 @@ class _PurchaseListState extends State<PurchaseList> {
                                                     }, error: (e, stack) {
                                                       return Text(e.toString());
                                                     }, loading: () {
-                                                      return Center(child: CircularProgressIndicator());
+                                                      return Center(
+                                                          child:
+                                                              CircularProgressIndicator());
                                                     }),
                                                   ),
                                                 ]);
@@ -518,14 +710,17 @@ class _PurchaseListState extends State<PurchaseList> {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 10, 20, 24),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
                                         'Showing ${startIndex + 1} to ${endIndex > paginatedTransactions.length ? paginatedTransactions.length : endIndex} of ${paginatedTransactions.length} entries',
-                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
                                           color: kNeutral700,
                                         ),
                                         maxLines: 2,
@@ -542,7 +737,8 @@ class _PurchaseListState extends State<PurchaseList> {
                                       child: Row(
                                         children: [
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
                                             child: GestureDetector(
                                               onTap: () {
                                                 if (currentPage > 1) {
@@ -553,7 +749,8 @@ class _PurchaseListState extends State<PurchaseList> {
                                               },
                                               child: Text(
                                                 'Previous',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
@@ -568,10 +765,13 @@ class _PurchaseListState extends State<PurchaseList> {
                                                   color: kNeutral300,
                                                 ))),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                               child: Text(
                                                 '$currentPage',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: Colors.white,
                                                 ),
                                               ),
@@ -585,17 +785,21 @@ class _PurchaseListState extends State<PurchaseList> {
                                               color: kNeutral300,
                                             ))),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                               child: Text(
                                                 '$totalPages',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
                                             ),
                                           ),
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
                                             child: GestureDetector(
                                               onTap: () {
                                                 if (currentPage < totalPages) {
@@ -606,7 +810,8 @@ class _PurchaseListState extends State<PurchaseList> {
                                               },
                                               child: Text(
                                                 'Next',
-                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
                                                   color: kNeutral700,
                                                 ),
                                               ),
@@ -620,7 +825,9 @@ class _PurchaseListState extends State<PurchaseList> {
                               )
                             ],
                           )
-                        : EmptyWidget(title: lang.S.of(context).noPurchaseTransactionFound)
+                        : EmptyWidget(
+                            title:
+                                lang.S.of(context).noPurchaseTransactionFound)
                   ],
                 ),
               ),

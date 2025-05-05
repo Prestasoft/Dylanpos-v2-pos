@@ -12,7 +12,8 @@ import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditGroupTaxPopUP extends StatefulWidget {
-  const EditGroupTaxPopUP({super.key, required this.listOfGroupTax, required this.groupTaxModel});
+  const EditGroupTaxPopUP(
+      {super.key, required this.listOfGroupTax, required this.groupTaxModel});
 
   final List<GroupTaxModel> listOfGroupTax;
   final GroupTaxModel groupTaxModel;
@@ -31,7 +32,7 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
   num calculateTotalRate(List<TaxModel> subTaxList) {
     rate = 0.0;
     for (var taxModel in subTaxList) {
-      rate += taxModel.taxRate!;
+      rate += taxModel.taxRate;
     }
     return rate;
   }
@@ -40,7 +41,12 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
 
   void getTaxKey() async {
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Group Tax List').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Group Tax List')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['name'].toString() == widget.groupTaxModel.name) {
@@ -78,7 +84,8 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
         return tax.when(data: (taxList) {
           if (i == 0) {
             for (var tex in widget.groupTaxModel.subTaxes!) {
-              TaxModel newTex = taxList.firstWhere((element) => element.id == tex.id);
+              TaxModel newTex =
+                  taxList.firstWhere((element) => element.id == tex.id);
               subTaxList.add(newTex);
             }
           }
@@ -99,12 +106,14 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                         child: Text(
                           // lang.S.of(context).addNewTaxWithSingleMultipleTaxType,
                           'Edit New Tax with single/multiple Tax type',
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                       IconButton(
                         padding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                        visualDensity:
+                            const VisualDensity(horizontal: -4, vertical: -4),
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.close),
                       )
@@ -121,7 +130,8 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${lang.S.of(context).name}*', style: theme.textTheme.titleMedium),
+                      Text('${lang.S.of(context).name}*',
+                          style: theme.textTheme.titleMedium),
                       const SizedBox(height: 8.0),
                       TextFormField(
                         initialValue: name,
@@ -144,7 +154,10 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                       //_______________________________________________Tax_List______________________
                       Container(
                         padding: const EdgeInsets.only(left: 10),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(4.0), color: Colors.transparent, border: Border.all(color: kBorderColorTextField)),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4.0),
+                            color: Colors.transparent,
+                            border: Border.all(color: kBorderColorTextField)),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -158,19 +171,28 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                                           (index) {
                                             final category = subTaxList[index];
                                             return Padding(
-                                              padding: const EdgeInsets.only(right: 5.0),
+                                              padding: const EdgeInsets.only(
+                                                  right: 5.0),
                                               child: Container(
                                                 height: 30,
-                                                decoration: BoxDecoration(borderRadius: BorderRadius.circular(4.0), color: kMainColor),
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4.0),
+                                                    color: kMainColor),
                                                 child: Row(
                                                   children: [
                                                     IconButton(
-                                                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                                      visualDensity:
+                                                          const VisualDensity(
+                                                              horizontal: -4,
+                                                              vertical: -4),
                                                       padding: EdgeInsets.zero,
                                                       onPressed: () {
                                                         setState(() {
                                                           // selectedCategories.removeAt(index);
-                                                          subTaxList.removeAt(index);
+                                                          subTaxList
+                                                              .removeAt(index);
                                                         });
                                                       },
                                                       icon: const Icon(
@@ -181,7 +203,9 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                                                     ),
                                                     Text(
                                                       category.name,
-                                                      style: kTextStyle.copyWith(color: kWhite),
+                                                      style:
+                                                          kTextStyle.copyWith(
+                                                              color: kWhite),
                                                     ),
                                                     const SizedBox(width: 8)
                                                   ],
@@ -196,12 +220,14 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                                 : Text(
                                     lang.S.of(context).noSubTaxSelected,
                                     //'No Sub Tax selected',
-                                    style: kTextStyle.copyWith(color: kTitleColor),
+                                    style:
+                                        kTextStyle.copyWith(color: kTitleColor),
                                   ),
                             IconButton(
                               onPressed: () {
                                 setState(() {
-                                  isListVisible = !isListVisible; // Toggle the flag
+                                  isListVisible =
+                                      !isListVisible; // Toggle the flag
                                 });
                               },
                               icon: const Icon(
@@ -215,9 +241,18 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
 
                       //_______________________________________________Selected_Tax_List_____________
                       AnimatedContainer(
-                        decoration: const BoxDecoration(color: kWhite, boxShadow: [BoxShadow(color: kDarkWhite, blurRadius: 4.0, offset: Offset(1, -1), spreadRadius: 2)]),
+                        decoration:
+                            const BoxDecoration(color: kWhite, boxShadow: [
+                          BoxShadow(
+                              color: kDarkWhite,
+                              blurRadius: 4.0,
+                              offset: Offset(1, -1),
+                              spreadRadius: 2)
+                        ]),
                         duration: const Duration(milliseconds: 300),
-                        height: isListVisible ? MediaQuery.of(context).size.height * 0.5 : 0,
+                        height: isListVisible
+                            ? MediaQuery.of(context).size.height * 0.5
+                            : 0,
                         child: SingleChildScrollView(
                           physics: const ScrollPhysics(),
                           child: ListView.builder(
@@ -230,23 +265,32 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                                 children: [
                                   CheckboxListTile(
                                     contentPadding: EdgeInsets.zero,
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                     checkboxShape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(50.0),
                                     ),
                                     checkColor: kWhite,
                                     activeColor: kMainColor,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0)),
-                                    fillColor: MaterialStateProperty.all(subTaxList.contains(category) ? kMainColor : Colors.transparent),
-                                    visualDensity: const VisualDensity(horizontal: -4),
-                                    side: const BorderSide(color: kBorderColorTextField),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(6.0)),
+                                    fillColor: MaterialStateProperty.all(
+                                        subTaxList.contains(category)
+                                            ? kMainColor
+                                            : Colors.transparent),
+                                    visualDensity:
+                                        const VisualDensity(horizontal: -4),
+                                    side: const BorderSide(
+                                        color: kBorderColorTextField),
                                     title: Text(category.name.toString()),
                                     value: subTaxList.contains(category),
                                     onChanged: (isChecked) {
                                       setState(() {
                                         if (isChecked!) {
                                           if (!subTaxList.contains(category)) {
-                                            subTaxList.add(category); // Add only the TaxModel instance
+                                            subTaxList.add(
+                                                category); // Add only the TaxModel instance
                                           }
                                         } else {
                                           subTaxList.remove(category);
@@ -271,28 +315,52 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                         ),
                         onPressed: () async {
                           num totalRate = calculateTotalRate(subTaxList);
-                          GroupTaxModel groupTax = GroupTaxModel(name: name, taxRate: totalRate, id: widget.groupTaxModel.id.toString(), subTaxes: subTaxList);
-                          if (name != '' && name == widget.groupTaxModel.name ? true : !names.contains(name.toLowerCase().removeAllWhiteSpace())) {
+                          GroupTaxModel groupTax = GroupTaxModel(
+                              name: name,
+                              taxRate: totalRate,
+                              id: widget.groupTaxModel.id.toString(),
+                              subTaxes: subTaxList);
+                          if (name != '' && name == widget.groupTaxModel.name
+                              ? true
+                              : !names.contains(
+                                  name.toLowerCase().removeAllWhiteSpace())) {
                             try {
-                              EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                              final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Group Tax List').child(taxKey);
-                              await productInformationRef.set(groupTax.toJson());
-                              EasyLoading.showSuccess('${lang.S.of(context).addedSuccessfully}', duration: const Duration(milliseconds: 500));
+                              EasyLoading.show(
+                                  status: '${lang.S.of(context).loading}...',
+                                  dismissOnTap: false);
+                              final DatabaseReference productInformationRef =
+                                  FirebaseDatabase.instance
+                                      .ref()
+                                      .child(await getUserID())
+                                      .child('Group Tax List')
+                                      .child(taxKey);
+                              await productInformationRef
+                                  .set(groupTax.toJson());
+                              EasyLoading.showSuccess(
+                                  '${lang.S.of(context).addedSuccessfully}',
+                                  duration: const Duration(milliseconds: 500));
+                              // ignore: unused_result
                               ref.refresh(groupTaxProvider);
 
-                              Future.delayed(const Duration(milliseconds: 100)).then((value) => Navigator.pop(context));
+                              Future.delayed(const Duration(milliseconds: 100))
+                                  .then((value) => Navigator.pop(context));
                             } catch (e) {
                               EasyLoading.dismiss();
                               //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                             }
                           } else {
-                            EasyLoading.showError(name == '' ? lang.S.of(context).enterName : lang.S.of(context).alreadyExists);
+                            EasyLoading.showError(name == ''
+                                ? lang.S.of(context).enterName
+                                : lang.S.of(context).alreadyExists);
                           }
                         },
                         child: Text(
                           lang.S.of(context).save,
                           //'Save',
-                          style: kTextStyle.copyWith(color: kWhite, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: kTextStyle.copyWith(
+                              color: kWhite,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(height: 10),

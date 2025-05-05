@@ -1,4 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -59,12 +58,16 @@ class _ServicePackageListState extends State<ServicePackageList> {
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          AsyncValue<List<ServicePackageModel>> packages = ref.watch(servicePackagesProvider);
+          AsyncValue<List<ServicePackageModel>> packages =
+              ref.watch(servicePackagesProvider);
           return packages.when(data: (list) {
             List<ServicePackageModel> showAblePackages = [];
 
             for (var element in list) {
-              if (element.name.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase())) {
+              if (element.name
+                  .removeAllWhiteSpace()
+                  .toLowerCase()
+                  .contains(searchItem.toLowerCase())) {
                 showAblePackages.add(element);
               } else if (searchItem == '') {
                 showAblePackages.add(element);
@@ -82,7 +85,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
+                      padding:
+                          const EdgeInsets.only(left: 12, right: 12, top: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -100,7 +104,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             onPressed: () async {
                               _showAddPackageDialog(context, ref);
                             },
-                            icon: const Icon(FeatherIcons.plus, color: kWhite, size: 18.0),
+                            icon: const Icon(FeatherIcons.plus,
+                                color: kWhite, size: 18.0),
                             label: Text(
                               _lang.addServicePackage,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -120,8 +125,16 @@ class _ServicePackageListState extends State<ServicePackageList> {
                     // Search and pagination controls
                     ResponsiveGridRow(rowSegments: 100, children: [
                       ResponsiveGridCol(
-                        xs: screenWidth < 360 ? 50 : screenWidth > 430 ? 33 : 40,
-                        md: screenWidth < 768 ? 24 : screenWidth < 950 ? 20 : 15,
+                        xs: screenWidth < 360
+                            ? 50
+                            : screenWidth > 430
+                                ? 33
+                                : 40,
+                        md: screenWidth < 768
+                            ? 24
+                            : screenWidth < 950
+                                ? 20
+                                : 15,
                         lg: screenWidth < 1700 ? 15 : 10,
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
@@ -139,11 +152,11 @@ class _ServicePackageListState extends State<ServicePackageList> {
                               children: [
                                 Flexible(
                                     child: Text(
-                                      'Show-',
-                                      style: theme.textTheme.bodyLarge,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    )),
+                                  'Show-',
+                                  style: theme.textTheme.bodyLarge,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )),
                                 DropdownButton<int>(
                                   isDense: true,
                                   padding: EdgeInsets.zero,
@@ -153,7 +166,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     Icons.keyboard_arrow_down,
                                     color: Colors.black,
                                   ),
-                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                  items: [10, 20, 50, 100, -1]
+                                      .map<DropdownMenuItem<int>>((int value) {
                                     return DropdownMenuItem<int>(
                                       value: value,
                                       child: Text(
@@ -208,237 +222,338 @@ class _ServicePackageListState extends State<ServicePackageList> {
                     const SizedBox(height: 20.0),
                     showAblePackages.isNotEmpty
                         ? Column(
-                      children: [
-                        LayoutBuilder(
-                          builder: (BuildContext context, BoxConstraints constraints) {
-                            final kWidth = constraints.maxWidth;
-                            return Scrollbar(
-                              controller: _horizontalScroll,
-                              thumbVisibility: true,
-                              radius: const Radius.circular(8),
-                              thickness: 8,
-                              child: SingleChildScrollView(
-                                controller: _horizontalScroll,
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    minWidth: kWidth,
-                                  ),
-                                  child: Theme(
-                                    data: theme.copyWith(
-                                      dividerColor: Colors.transparent,
-                                      dividerTheme: const DividerThemeData(color: Colors.transparent),
-                                    ),
-                                    child: DataTable(
-                                        border: const TableBorder(
-                                          horizontalInside: BorderSide(
-                                            width: 1,
-                                            color: kNeutral300,
-                                          ),
+                            children: [
+                              LayoutBuilder(
+                                builder: (BuildContext context,
+                                    BoxConstraints constraints) {
+                                  final kWidth = constraints.maxWidth;
+                                  return Scrollbar(
+                                    controller: _horizontalScroll,
+                                    thumbVisibility: true,
+                                    radius: const Radius.circular(8),
+                                    thickness: 8,
+                                    child: SingleChildScrollView(
+                                      controller: _horizontalScroll,
+                                      scrollDirection: Axis.horizontal,
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minWidth: kWidth,
                                         ),
-                                        dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                        headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
-                                        showBottomBorder: false,
-                                        dividerThickness: 0.0,
-                                        headingTextStyle: theme.textTheme.titleMedium,
-                                        columns: [
-                                          DataColumn(label: Text(_lang.SL)),
-                                          DataColumn(label: Text(_lang.name)),
-                                          DataColumn(label: Text(_lang.category)),
-                                          DataColumn(label: Text(_lang.subcategory)),
-                                          DataColumn(label: Text(_lang.price)),
-                                          DataColumn(label: Text(_lang.duration)),
-                                          const DataColumn(label: Icon(FeatherIcons.settings)),
-                                        ],
-                                        rows: List.generate(
-                                            _itemsPerPage == -1
-                                                ? showAblePackages.length
-                                                : (_currentPage - 1) * _itemsPerPage + _itemsPerPage <= showAblePackages.length
-                                                ? _itemsPerPage
-                                                : showAblePackages.length - (_currentPage - 1) * _itemsPerPage, (index) {
-                                          final dataIndex = (_currentPage - 1) * _itemsPerPage + index;
-                                          final package = showAblePackages[dataIndex];
-                                          return DataRow(cells: [
-                                            // SL Number
-                                            DataCell(Text('${(_currentPage - 1) * _itemsPerPage + index + 1}')),
-
-                                            // Name
-                                            DataCell(Text(package.name)),
-
-                                            // Category
-                                            DataCell(Text(package.category)),
-
-                                            // Subcategory
-                                            DataCell(Text(package.subcategory)),
-
-                                            // Price
-                                            DataCell(Text('\$${package.price.toStringAsFixed(2)}')),
-
-                                            // Duration
-                                            DataCell(Text('${package.duration['value']} ${package.duration['unit']}')),
-
-                                            // Actions
-                                            DataCell(
-                                              Theme(
-                                                data: ThemeData(
-                                                    highlightColor: dropdownItemColor,
-                                                    focusColor: dropdownItemColor,
-                                                    hoverColor: dropdownItemColor),
-                                                child: SizedBox(
-                                                  width: 20,
-                                                  child: PopupMenuButton(
-                                                    surfaceTintColor: Colors.white,
-                                                    padding: EdgeInsets.zero,
-                                                    itemBuilder: (BuildContext bc) => [
-                                                      // Edit
-                                                      PopupMenuItem(
-                                                          onTap: () {
-                                                            _showEditPackageDialog(context, ref, package);
-                                                          },
-                                                          child: Row(
-                                                            children: [
-                                                              const Icon(IconlyLight.edit, size: 20.0, color: kNeutral500),
-                                                              const SizedBox(width: 4.0),
-                                                              Text(
-                                                                _lang.edit,
-                                                                style: theme.textTheme.bodyLarge?.copyWith(
-                                                                  color: kNeutral500,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          )),
-
-                                                      // Delete
-                                                      PopupMenuItem(
-                                                        onTap: () {
-                                                          _showDeleteConfirmation(context, ref, package);
-                                                        },
-                                                        child: Row(
-                                                          children: [
-                                                            HugeIcon(
-                                                              icon: HugeIcons.strokeRoundedDelete02,
-                                                              color: kNeutral500,
-                                                              size: 20.0,
-                                                            ),
-                                                            const SizedBox(width: 4.0),
-                                                            Text(
-                                                              _lang.delete,
-                                                              style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                    onSelected: (value) {
-                                                      context.go('/$value');
-                                                    },
-                                                    child: Center(
-                                                      child: Container(
-                                                          height: 18,
-                                                          width: 18,
-                                                          alignment: Alignment.centerRight,
-                                                          child: const Icon(
-                                                            Icons.more_vert_sharp,
-                                                            size: 18,
-                                                          )),
-                                                    ),
-                                                  ),
+                                        child: Theme(
+                                          data: theme.copyWith(
+                                            dividerColor: Colors.transparent,
+                                            dividerTheme:
+                                                const DividerThemeData(
+                                                    color: Colors.transparent),
+                                          ),
+                                          child: DataTable(
+                                              border: const TableBorder(
+                                                horizontalInside: BorderSide(
+                                                  width: 1,
+                                                  color: kNeutral300,
                                                 ),
                                               ),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      Colors.white),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
+                                              showBottomBorder: false,
+                                              dividerThickness: 0.0,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
+                                              columns: [
+                                                DataColumn(
+                                                    label: Text(_lang.SL)),
+                                                DataColumn(
+                                                    label: Text(_lang.name)),
+                                                DataColumn(
+                                                    label:
+                                                        Text(_lang.category)),
+                                                DataColumn(
+                                                    label: Text(
+                                                        _lang.subcategory)),
+                                                DataColumn(
+                                                    label: Text(_lang.price)),
+                                                DataColumn(
+                                                    label:
+                                                        Text(_lang.duration)),
+                                                const DataColumn(
+                                                    label: Icon(
+                                                        FeatherIcons.settings)),
+                                              ],
+                                              rows: List.generate(
+                                                  _itemsPerPage == -1
+                                                      ? showAblePackages.length
+                                                      : (_currentPage - 1) *
+                                                                      _itemsPerPage +
+                                                                  _itemsPerPage <=
+                                                              showAblePackages
+                                                                  .length
+                                                          ? _itemsPerPage
+                                                          : showAblePackages
+                                                                  .length -
+                                                              (_currentPage -
+                                                                      1) *
+                                                                  _itemsPerPage,
+                                                  (index) {
+                                                final dataIndex =
+                                                    (_currentPage - 1) *
+                                                            _itemsPerPage +
+                                                        index;
+                                                final package =
+                                                    showAblePackages[dataIndex];
+                                                return DataRow(cells: [
+                                                  // SL Number
+                                                  DataCell(Text(
+                                                      '${(_currentPage - 1) * _itemsPerPage + index + 1}')),
+
+                                                  // Name
+                                                  DataCell(Text(package.name)),
+
+                                                  // Category
+                                                  DataCell(
+                                                      Text(package.category)),
+
+                                                  // Subcategory
+                                                  DataCell(Text(
+                                                      package.subcategory)),
+
+                                                  // Price
+                                                  DataCell(Text(
+                                                      '\$${package.price.toStringAsFixed(2)}')),
+
+                                                  // Duration
+                                                  DataCell(Text(
+                                                      '${package.duration['value']} ${package.duration['unit']}')),
+
+                                                  // Actions
+                                                  DataCell(
+                                                    Theme(
+                                                      data: ThemeData(
+                                                          highlightColor:
+                                                              dropdownItemColor,
+                                                          focusColor:
+                                                              dropdownItemColor,
+                                                          hoverColor:
+                                                              dropdownItemColor),
+                                                      child: SizedBox(
+                                                        width: 20,
+                                                        child: PopupMenuButton(
+                                                          surfaceTintColor:
+                                                              Colors.white,
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          itemBuilder:
+                                                              (BuildContext
+                                                                      bc) =>
+                                                                  [
+                                                            // Edit
+                                                            PopupMenuItem(
+                                                                onTap: () {
+                                                                  _showEditPackageDialog(
+                                                                      context,
+                                                                      ref,
+                                                                      package);
+                                                                },
+                                                                child: Row(
+                                                                  children: [
+                                                                    const Icon(
+                                                                        IconlyLight
+                                                                            .edit,
+                                                                        size:
+                                                                            20.0,
+                                                                        color:
+                                                                            kNeutral500),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
+                                                                    Text(
+                                                                      _lang
+                                                                          .edit,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kNeutral500,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                )),
+
+                                                            // Delete
+                                                            PopupMenuItem(
+                                                              onTap: () {
+                                                                _showDeleteConfirmation(
+                                                                    context,
+                                                                    ref,
+                                                                    package);
+                                                              },
+                                                              child: Row(
+                                                                children: [
+                                                                  HugeIcon(
+                                                                    icon: HugeIcons
+                                                                        .strokeRoundedDelete02,
+                                                                    color:
+                                                                        kNeutral500,
+                                                                    size: 20.0,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          4.0),
+                                                                  Text(
+                                                                    _lang
+                                                                        .delete,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                            color:
+                                                                                kNeutral500),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                          onSelected: (value) {
+                                                            context
+                                                                .go('/$value');
+                                                          },
+                                                          child: Center(
+                                                            child: Container(
+                                                                height: 18,
+                                                                width: 18,
+                                                                alignment: Alignment
+                                                                    .centerRight,
+                                                                child:
+                                                                    const Icon(
+                                                                  Icons
+                                                                      .more_vert_sharp,
+                                                                  size: 18,
+                                                                )),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ]);
+                                              })),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Pagination controls
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        '${_lang.showing} ${((_currentPage - 1) * _itemsPerPage + 1).toString()} to ${((_currentPage - 1) * _itemsPerPage + _itemsPerPage).clamp(0, showAblePackages.length)} of ${showAblePackages.length} entries',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        InkWell(
+                                          overlayColor:
+                                              WidgetStateProperty.all<Color>(
+                                                  Colors.grey),
+                                          hoverColor: Colors.grey,
+                                          onTap: _currentPage > 1
+                                              ? () =>
+                                                  setState(() => _currentPage--)
+                                              : null,
+                                          child: Container(
+                                            height: 32,
+                                            width: 90,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomLeft:
+                                                    Radius.circular(4.0),
+                                                topLeft: Radius.circular(4.0),
+                                              ),
                                             ),
-                                          ]);
-                                        })),
-                                  ),
+                                            child: Center(
+                                              child: Text(_lang.previous),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 32,
+                                          width: 32,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            color: kMainColor,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '$_currentPage',
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 32,
+                                          width: 32,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            color: Colors.transparent,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '$pages',
+                                            ),
+                                          ),
+                                        ),
+                                        InkWell(
+                                          hoverColor:
+                                              Colors.blue.withOpacity(0.1),
+                                          overlayColor:
+                                              MaterialStateProperty.all<Color>(
+                                                  Colors.blue),
+                                          onTap: _currentPage * _itemsPerPage <
+                                                  showAblePackages.length
+                                              ? () =>
+                                                  setState(() => _currentPage++)
+                                              : null,
+                                          child: Container(
+                                            height: 32,
+                                            width: 90,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomRight:
+                                                    Radius.circular(4.0),
+                                                topRight: Radius.circular(4.0),
+                                              ),
+                                            ),
+                                            child: const Center(
+                                                child: Text('Next')),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                        // Pagination controls
-                        Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  '${_lang.showing} ${((_currentPage - 1) * _itemsPerPage + 1).toString()} to ${((_currentPage - 1) * _itemsPerPage + _itemsPerPage).clamp(0, showAblePackages.length)} of ${showAblePackages.length} entries',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  InkWell(
-                                    overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
-                                    hoverColor: Colors.grey,
-                                    onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
-                                    child: Container(
-                                      height: 32,
-                                      width: 90,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: kBorderColorTextField),
-                                        borderRadius: const BorderRadius.only(
-                                          bottomLeft: Radius.circular(4.0),
-                                          topLeft: Radius.circular(4.0),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text(_lang.previous),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 32,
-                                    width: 32,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: kBorderColorTextField),
-                                      color: kMainColor,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '$_currentPage',
-                                        style: const TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 32,
-                                    width: 32,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: kBorderColorTextField),
-                                      color: Colors.transparent,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '$pages',
-                                      ),
-                                    ),
-                                  ),
-                                  InkWell(
-                                    hoverColor: Colors.blue.withOpacity(0.1),
-                                    overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                    onTap: _currentPage * _itemsPerPage < showAblePackages.length ? () => setState(() => _currentPage++) : null,
-                                    child: Container(
-                                      height: 32,
-                                      width: 90,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: kBorderColorTextField),
-                                        borderRadius: const BorderRadius.only(
-                                          bottomRight: Radius.circular(4.0),
-                                          topRight: Radius.circular(4.0),
-                                        ),
-                                      ),
-                                      child: const Center(child: Text('Next')),
-                                    ),
-                                  ),
-                                ],
-                              )
                             ],
-                          ),
-                        ),
-                      ],
-                    )
+                          )
                         : EmptyWidget(title: _lang.noServicePackagesFound)
                   ],
                 ),
@@ -466,7 +581,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
         return StatefulBuilder(builder: (context, setState1) {
           return Dialog(
             surfaceTintColor: kWhite,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0)),
             child: SizedBox(
               width: 600,
               child: Column(
@@ -483,9 +599,12 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             lang.S.of(context).addServicePackage,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ),
                         Flexible(
@@ -534,7 +653,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                           // Category - Changed to DropdownButtonFormField
                           Consumer(
                             builder: (context, ref, child) {
-                              final categoriesAsync = ref.watch(categoryProvider);
+                              final categoriesAsync =
+                                  ref.watch(categoryProvider);
                               return categoriesAsync.when(
                                 data: (categories) {
                                   if (categories.isEmpty) {
@@ -559,7 +679,9 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return lang.S.of(context).categoryRequired;
+                                        return lang.S
+                                            .of(context)
+                                            .categoryRequired;
                                       }
                                       return null;
                                     },
@@ -584,7 +706,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                           const SizedBox(height: 16),
 
                           // Description
-                          AdjustableDescriptionField(controller: _descriptionController),
+                          AdjustableDescriptionField(
+                              controller: _descriptionController),
                           const SizedBox(height: 16),
 
                           // Price
@@ -622,7 +745,9 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                   keyboardType: TextInputType.number,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return lang.S.of(context).durationRequired;
+                                      return lang.S
+                                          .of(context)
+                                          .durationRequired;
                                     }
                                     if (int.tryParse(value) == null) {
                                       return lang.S.of(context).invalidInteger;
@@ -642,9 +767,11 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                   ),
                                   items: [
                                     DropdownMenuItem(
-                                        value: 'hours', child: Text(lang.S.of(context).hours)),
+                                        value: 'hours',
+                                        child: Text(lang.S.of(context).hours)),
                                     DropdownMenuItem(
-                                        value: 'days', child: Text(lang.S.of(context).days)),
+                                        value: 'days',
+                                        child: Text(lang.S.of(context).days)),
                                   ],
                                   onChanged: (value) {
                                     setState1(() {
@@ -671,11 +798,17 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                   lang.S.of(context).cancel,
                                 ),
                               ),
-                              SizedBox(width: MediaQuery.of(context).size.width <= 570 ? 10 : 30.0),
+                              SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width <= 570
+                                          ? 10
+                                          : 30.0),
                               ElevatedButton(
                                 onPressed: () async {
                                   if (_formKey.currentState!.validate()) {
-                                    EasyLoading.show(status: lang.S.of(context).addingPackage);
+                                    EasyLoading.show(
+                                        status:
+                                            lang.S.of(context).addingPackage);
                                     final newPackage = ServicePackageModel(
                                       id: '', // Will be assigned by Firebase
                                       type: 'service',
@@ -683,9 +816,14 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                       category: _selectedCategory ?? '',
                                       subcategory: _subcategoryController.text,
                                       description: _descriptionController.text,
-                                      price: double.tryParse(_priceController.text) ?? 0.0,
+                                      price: double.tryParse(
+                                              _priceController.text) ??
+                                          0.0,
                                       duration: {
-                                        'value': int.tryParse(_durationValueController.text) ?? 0,
+                                        'value': int.tryParse(
+                                                _durationValueController
+                                                    .text) ??
+                                            0,
                                         'unit': _durationUnit,
                                       },
                                       components: [],
@@ -695,16 +833,24 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     );
 
                                     try {
-                                      final result = await ref.read(servicePackagesProvider.notifier).addPackage(newPackage);
+                                      final result = await ref
+                                          .read(
+                                              servicePackagesProvider.notifier)
+                                          .addPackage(newPackage);
                                       if (result) {
-                                        EasyLoading.showSuccess(lang.S.of(context).packageAddedSuccess);
+                                        EasyLoading.showSuccess(lang.S
+                                            .of(context)
+                                            .packageAddedSuccess);
                                         _clearForm();
                                         Navigator.pop(context);
                                       } else {
-                                        EasyLoading.showError(lang.S.of(context).failedToAddPackage);
+                                        EasyLoading.showError(lang.S
+                                            .of(context)
+                                            .failedToAddPackage);
                                       }
                                     } catch (e) {
-                                      EasyLoading.showError('${lang.S.of(context).error}: $e');
+                                      EasyLoading.showError(
+                                          '${lang.S.of(context).error}: $e');
                                     }
                                   }
                                 },
@@ -716,7 +862,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             ],
                           ),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.02, // Ajusta el tamaño según el alto de la pantalla
+                            height: MediaQuery.of(context).size.height *
+                                0.02, // Ajusta el tamaño según el alto de la pantalla
                           )
                         ],
                       ),
@@ -731,7 +878,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
     );
   }
 
-  void _showEditPackageDialog(BuildContext context, WidgetRef ref, ServicePackageModel package) {
+  void _showEditPackageDialog(
+      BuildContext context, WidgetRef ref, ServicePackageModel package) {
     // Fill form with existing package data
     _nameController.text = package.name;
     _selectedCategory = package.category;
@@ -748,7 +896,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
         return StatefulBuilder(builder: (context, setState1) {
           return Dialog(
             surfaceTintColor: kWhite,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0)),
             child: SizedBox(
               width: 600,
               child: Column(
@@ -763,9 +912,12 @@ class _ServicePackageListState extends State<ServicePackageList> {
                         Flexible(
                           child: Text(
                             lang.S.of(context).editPackage,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ),
                         Flexible(
@@ -814,7 +966,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                           // Category - Changed to DropdownButtonFormField
                           Consumer(
                             builder: (context, ref, child) {
-                              final categoriesAsync = ref.watch(categoryProvider);
+                              final categoriesAsync =
+                                  ref.watch(categoryProvider);
                               return categoriesAsync.when(
                                 data: (categories) {
                                   if (categories.isEmpty) {
@@ -839,7 +992,9 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return lang.S.of(context).categoryRequired;
+                                        return lang.S
+                                            .of(context)
+                                            .categoryRequired;
                                       }
                                       return null;
                                     },
@@ -863,7 +1018,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                           const SizedBox(height: 16),
 
                           // Description
-                          AdjustableDescriptionField(controller: _descriptionController),
+                          AdjustableDescriptionField(
+                              controller: _descriptionController),
                           const SizedBox(height: 16),
 
                           // Price
@@ -901,7 +1057,9 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                   keyboardType: TextInputType.number,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return lang.S.of(context).durationRequired;
+                                      return lang.S
+                                          .of(context)
+                                          .durationRequired;
                                     }
                                     if (int.tryParse(value) == null) {
                                       return lang.S.of(context).invalidInteger;
@@ -921,9 +1079,11 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                   ),
                                   items: [
                                     DropdownMenuItem(
-                                        value: 'hours', child: Text(lang.S.of(context).hours)),
+                                        value: 'hours',
+                                        child: Text(lang.S.of(context).hours)),
                                     DropdownMenuItem(
-                                        value: 'days', child: Text(lang.S.of(context).days)),
+                                        value: 'days',
+                                        child: Text(lang.S.of(context).days)),
                                   ],
                                   onChanged: (value) {
                                     setState1(() {
@@ -950,35 +1110,54 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                   lang.S.of(context).cancel,
                                 ),
                               ),
-                              SizedBox(width: MediaQuery.of(context).size.width <= 570 ? 10 : 30.0),
+                              SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width <= 570
+                                          ? 10
+                                          : 30.0),
                               ElevatedButton(
                                 onPressed: () async {
                                   if (_formKey.currentState!.validate()) {
-                                    EasyLoading.show(status: lang.S.of(context).updatingPackage);
+                                    EasyLoading.show(
+                                        status:
+                                            lang.S.of(context).updatingPackage);
                                     final updatedPackage = package.copyWith(
                                       name: _nameController.text,
                                       category: _selectedCategory ?? '',
                                       subcategory: _subcategoryController.text,
                                       description: _descriptionController.text,
-                                      price: double.tryParse(_priceController.text) ?? 0.0,
+                                      price: double.tryParse(
+                                              _priceController.text) ??
+                                          0.0,
                                       duration: {
-                                        'value': int.tryParse(_durationValueController.text) ?? 0,
+                                        'value': int.tryParse(
+                                                _durationValueController
+                                                    .text) ??
+                                            0,
                                         'unit': _durationUnit,
                                       },
                                       updatedAt: DateTime.now(),
                                     );
 
                                     try {
-                                      final result = await ref.read(servicePackagesProvider.notifier).updatePackage(updatedPackage);
+                                      final result = await ref
+                                          .read(
+                                              servicePackagesProvider.notifier)
+                                          .updatePackage(updatedPackage);
                                       if (result) {
-                                        EasyLoading.showSuccess(lang.S.of(context).packageUpdatedSuccess);
+                                        EasyLoading.showSuccess(lang.S
+                                            .of(context)
+                                            .packageUpdatedSuccess);
                                         _clearForm();
                                         Navigator.pop(context);
                                       } else {
-                                        EasyLoading.showError(lang.S.of(context).failedToUpdatePackage);
+                                        EasyLoading.showError(lang.S
+                                            .of(context)
+                                            .failedToUpdatePackage);
                                       }
                                     } catch (e) {
-                                      EasyLoading.showError('${lang.S.of(context).error}: $e');
+                                      EasyLoading.showError(
+                                          '${lang.S.of(context).error}: $e');
                                     }
                                   }
                                 },
@@ -990,7 +1169,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             ],
                           ),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.02, // Ajusta el tamaño según el alto de la pantalla
+                            height: MediaQuery.of(context).size.height *
+                                0.02, // Ajusta el tamaño según el alto de la pantalla
                           )
                         ],
                       ),
@@ -1005,7 +1185,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref, ServicePackageModel package) {
+  void _showDeleteConfirmation(
+      BuildContext context, WidgetRef ref, ServicePackageModel package) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1022,17 +1203,22 @@ class _ServicePackageListState extends State<ServicePackageList> {
                 Navigator.pop(context);
                 EasyLoading.show(status: lang.S.of(context).deleting);
                 try {
-                  final result = await ref.read(servicePackagesProvider.notifier).deletePackage(package.id);
+                  final result = await ref
+                      .read(servicePackagesProvider.notifier)
+                      .deletePackage(package.id);
                   if (result) {
-                    EasyLoading.showSuccess(lang.S.of(context).packageDeletedSuccess);
+                    EasyLoading.showSuccess(
+                        lang.S.of(context).packageDeletedSuccess);
                   } else {
-                    EasyLoading.showError(lang.S.of(context).failedToDeletePackage);
+                    EasyLoading.showError(
+                        lang.S.of(context).failedToDeletePackage);
                   }
                 } catch (e) {
                   EasyLoading.showError('${lang.S.of(context).error}: $e');
                 }
               },
-              child: Text(lang.S.of(context).delete, style: TextStyle(color: Colors.red)),
+              child: Text(lang.S.of(context).delete,
+                  style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -1049,22 +1235,6 @@ class _ServicePackageListState extends State<ServicePackageList> {
     _durationValueController.clear();
     _durationUnit = 'hours';
   }
-
-  String _formatDescription(String input) {
-    // Divide el texto en líneas y elimina espacios innecesarios
-    List<String> lines = input.split(RegExp(r'\n|\r')).map((line) => line.trim()).toList();
-
-    // Agrega viñetas con el símbolo '•' a cada línea no vacía
-    List<String> formattedLines = lines.map((line) {
-      if (line.isNotEmpty) {
-        return '• ' + line;
-      }
-      return '';
-    }).toList();
-
-    // Une las líneas formateadas con saltos de línea
-    return formattedLines.join('\n');
-  }
 }
 
 // Agregar funcionalidad para ajustar manualmente el tamaño del campo de descripción
@@ -1074,10 +1244,12 @@ class AdjustableDescriptionField extends StatefulWidget {
   AdjustableDescriptionField({required this.controller});
 
   @override
-  _AdjustableDescriptionFieldState createState() => _AdjustableDescriptionFieldState();
+  _AdjustableDescriptionFieldState createState() =>
+      _AdjustableDescriptionFieldState();
 }
 
-class _AdjustableDescriptionFieldState extends State<AdjustableDescriptionField> {
+class _AdjustableDescriptionFieldState
+    extends State<AdjustableDescriptionField> {
   double _fieldHeight = 100.0; // Altura inicial del campo de descripción
 
   @override
@@ -1112,7 +1284,8 @@ class _AdjustableDescriptionFieldState extends State<AdjustableDescriptionField>
         ElevatedButton(
           onPressed: () {
             setState(() {
-              widget.controller.text = _formatDescription(widget.controller.text);
+              widget.controller.text =
+                  _formatDescription(widget.controller.text);
             });
           },
           child: Text('Formatear Descripción'),
@@ -1123,7 +1296,8 @@ class _AdjustableDescriptionFieldState extends State<AdjustableDescriptionField>
 
   String _formatDescription(String input) {
     // Divide el texto en líneas y elimina espacios innecesarios
-    List<String> lines = input.split(RegExp(r'\n|\r')).map((line) => line.trim()).toList();
+    List<String> lines =
+        input.split(RegExp(r'\n|\r')).map((line) => line.trim()).toList();
 
     // Agrega viñetas con el símbolo '•' a cada línea no vacía
     List<String> formattedLines = lines.map((line) {

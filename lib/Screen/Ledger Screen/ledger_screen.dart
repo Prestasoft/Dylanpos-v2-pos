@@ -36,7 +36,9 @@ class LedgerScreen extends StatefulWidget {
 }
 
 class _LedgerScreenState extends State<LedgerScreen> {
-  double singleCustomersTotalSaleAmount({required List<SaleTransactionModel> allTransitions, required String customerPhoneNumber}) {
+  double singleCustomersTotalSaleAmount(
+      {required List<SaleTransactionModel> allTransitions,
+      required String customerPhoneNumber}) {
     double totalSale = 0;
     for (var transition in allTransitions) {
       if (transition.customerPhone == customerPhoneNumber) {
@@ -46,7 +48,9 @@ class _LedgerScreenState extends State<LedgerScreen> {
     return totalSale;
   }
 
-  double singleSupplierTotalSaleAmount({required List<dynamic> allTransitions, required String customerPhoneNumber}) {
+  double singleSupplierTotalSaleAmount(
+      {required List<dynamic> allTransitions,
+      required String customerPhoneNumber}) {
     double totalSale = 0;
     for (var transition in allTransitions) {
       if (transition.customerPhone == customerPhoneNumber) {
@@ -56,7 +60,9 @@ class _LedgerScreenState extends State<LedgerScreen> {
     return totalSale;
   }
 
-  double totalSale({required List<SaleTransactionModel> allTransitions, required String selectedCustomerType}) {
+  double totalSale(
+      {required List<SaleTransactionModel> allTransitions,
+      required String selectedCustomerType}) {
     double totalSale = 0;
 
     if (selectedCustomerType != 'All') {
@@ -137,18 +143,22 @@ class _LedgerScreenState extends State<LedgerScreen> {
     return totalDue;
   }
 
-  double totalCustomerReceivedAmount({required List<SaleTransactionModel> allTransitions, required String selectedCustomerType}) {
+  double totalCustomerReceivedAmount(
+      {required List<SaleTransactionModel> allTransitions,
+      required String selectedCustomerType}) {
     double totalReceived = 0;
 
     if (selectedCustomerType != 'All') {
       for (var transition in allTransitions) {
         if (transition.customerType == selectedCustomerType) {
-          totalReceived += transition.totalAmount!.toDouble() - transition.dueAmount!.toDouble();
+          totalReceived += transition.totalAmount!.toDouble() -
+              transition.dueAmount!.toDouble();
         }
       }
     } else {
       for (var transition in allTransitions) {
-        totalReceived += transition.totalAmount!.toDouble() - transition.dueAmount!.toDouble();
+        totalReceived += transition.totalAmount!.toDouble() -
+            transition.dueAmount!.toDouble();
       }
     }
     return totalReceived;
@@ -205,7 +215,12 @@ class _LedgerScreenState extends State<LedgerScreen> {
       return customers;
     } else {
       return customers.where((customer) {
-        return customer.customerName.toLowerCase().contains(searchItem.toLowerCase()) || customer.phoneNumber.toLowerCase().contains(searchItem.toLowerCase());
+        return customer.customerName
+                .toLowerCase()
+                .contains(searchItem.toLowerCase()) ||
+            customer.phoneNumber
+                .toLowerCase()
+                .contains(searchItem.toLowerCase());
       }).toList();
     }
   }
@@ -222,17 +237,21 @@ class _LedgerScreenState extends State<LedgerScreen> {
         padding: const EdgeInsets.all(16),
         child: Consumer(builder: (_, ref, watch) {
           final saleTransactionReport = ref.watch(transitionProvider);
-          final purchaseTransactionReport = ref.watch(purchaseTransitionProviderSIngle);
+          final purchaseTransactionReport =
+              ref.watch(purchaseTransitionProviderSIngle);
           final allCustomers = ref.watch(allCustomerProvider);
           final personalDetails = ref.watch(profileDetailsProvider);
-          final settingProvider = ref.watch(generalSettingProvider);
+          ref.watch(generalSettingProvider);
 
           return allCustomers.when(data: (allCustomers) {
-            counter == 0 ? listOfSelectedCustomers = List.from(allCustomers) : null;
+            counter == 0
+                ? listOfSelectedCustomers = List.from(allCustomers)
+                : null;
             counter++;
 
             // Apply the filter to the list of selected customers
-            final filteredCustomers = getFilteredCustomers(listOfSelectedCustomers);
+            final filteredCustomers =
+                getFilteredCustomers(listOfSelectedCustomers);
 
             // Use the filtered list for pagination
             final paginatedCustomers = getPaginatedCustomers(filteredCustomers);
@@ -257,7 +276,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: Container(
-                            padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                            padding: const EdgeInsets.only(
+                                left: 10.0,
+                                right: 20.0,
+                                top: 10.0,
+                                bottom: 10.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8.0),
                               color: const Color(0xFFCFF4E3),
@@ -266,8 +289,10 @@ class _LedgerScreenState extends State<LedgerScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$globalCurrency ${myFormat.format(double.parse(totalSale(allTransitions: saleTransactionReport.value ?? [], selectedCustomerType: selectedLedgerItems).toStringAsFixed(2)) ?? '0') ?? 0}',
-                                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18.0),
+                                  '$globalCurrency ${myFormat.format(double.parse(totalSale(allTransitions: saleTransactionReport.value ?? [], selectedCustomerType: selectedLedgerItems).toStringAsFixed(2)))}',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18.0),
                                 ),
                                 Text(
                                   lang.S.of(context).totalSale,
@@ -287,17 +312,24 @@ class _LedgerScreenState extends State<LedgerScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: Container(
-                            padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                            padding: const EdgeInsets.only(
+                                left: 10.0,
+                                right: 20.0,
+                                top: 10.0,
+                                bottom: 10.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10.0),
-                              color: const Color(0xFF2DB0F6).withValues(alpha: 0.5),
+                              color: const Color(0xFF2DB0F6)
+                                  .withValues(alpha: 0.5),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$globalCurrency ${myFormat.format(double.tryParse(totalPurchase(allTransitions: purchaseTransactionReport.value ?? []).toStringAsFixed(2) ?? '0') ?? 0)}',
-                                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18.0),
+                                  '$globalCurrency ${myFormat.format(double.tryParse(totalPurchase(allTransitions: purchaseTransactionReport.value ?? []).toStringAsFixed(2)) ?? 0)}',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18.0),
                                 ),
                                 Text(
                                   lang.S.of(context).totalPurchase,
@@ -305,7 +337,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                 ),
                               ],
                             ),
-                          ).visible(selectedLedgerItems == 'Supplier' || selectedLedgerItems == 'All'),
+                          ).visible(selectedLedgerItems == 'Supplier' ||
+                              selectedLedgerItems == 'All'),
                         ),
                       ),
 
@@ -317,17 +350,24 @@ class _LedgerScreenState extends State<LedgerScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: Container(
-                            padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                            padding: const EdgeInsets.only(
+                                left: 10.0,
+                                right: 20.0,
+                                top: 10.0,
+                                bottom: 10.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10.0),
-                              color: const Color(0xFF15CD75).withValues(alpha: 0.5),
+                              color: const Color(0xFF15CD75)
+                                  .withValues(alpha: 0.5),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerReceivedAmount(allTransitions: saleTransactionReport.value ?? [], selectedCustomerType: selectedLedgerItems).toStringAsFixed(2) ?? '0') ?? 0)}',
-                                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18.0),
+                                  '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerReceivedAmount(allTransitions: saleTransactionReport.value ?? [], selectedCustomerType: selectedLedgerItems).toStringAsFixed(2)) ?? 0)}',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18.0),
                                 ),
                                 Text(
                                   lang.S.of(context).recivedAmount,
@@ -347,7 +387,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: Container(
-                            padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                            padding: const EdgeInsets.only(
+                                left: 10.0,
+                                right: 20.0,
+                                top: 10.0,
+                                bottom: 10.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10.0),
                               color: const Color(0xFFFEE7CB),
@@ -356,8 +400,10 @@ class _LedgerScreenState extends State<LedgerScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerDue(customers: allCustomers, selectedCustomerType: selectedLedgerItems).toStringAsFixed(2) ?? '0') ?? 0)}',
-                                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18.0),
+                                  '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerDue(customers: allCustomers, selectedCustomerType: selectedLedgerItems).toStringAsFixed(2)) ?? 0)}',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18.0),
                                 ),
                                 Text(
                                   lang.S.of(context).customerDue,
@@ -377,7 +423,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: Container(
-                            padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                            padding: const EdgeInsets.only(
+                                left: 10.0,
+                                right: 20.0,
+                                top: 10.0,
+                                bottom: 10.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10.0),
                               color: const Color(0xFFFEE7CB),
@@ -386,8 +436,10 @@ class _LedgerScreenState extends State<LedgerScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$globalCurrency ${myFormat.format(double.tryParse(totalSupplierDue(customers: allCustomers).toStringAsFixed(2) ?? '0') ?? 0)}',
-                                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18.0),
+                                  '$globalCurrency ${myFormat.format(double.tryParse(totalSupplierDue(customers: allCustomers).toStringAsFixed(2)) ?? 0)}',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18.0),
                                 ),
                                 Text(
                                   lang.S.of(context).supplierDue,
@@ -395,7 +447,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                 ),
                               ],
                             ),
-                          ).visible(selectedLedgerItems == "Supplier" || selectedLedgerItems == "All"),
+                          ).visible(selectedLedgerItems == "Supplier" ||
+                              selectedLedgerItems == "All"),
                         ),
                       ),
                     ],
@@ -458,11 +511,19 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                    items: [
+                                      10,
+                                      20,
+                                      50,
+                                      100,
+                                      -1
+                                    ].map<DropdownMenuItem<int>>((int value) {
                                       return DropdownMenuItem<int>(
                                         value: value,
                                         child: Text(
-                                          value == -1 ? "All" : value.toString(),
+                                          value == -1
+                                              ? "All"
+                                              : value.toString(),
                                           style: theme.textTheme.bodyLarge,
                                         ),
                                       );
@@ -470,7 +531,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                     onChanged: (int? newValue) {
                                       setState(() {
                                         if (newValue == -1) {
-                                          _categoryPerPage = -1; // Set to -1 for "All"
+                                          _categoryPerPage =
+                                              -1; // Set to -1 for "All"
                                         } else {
                                           _categoryPerPage = newValue ?? 10;
                                         }
@@ -493,10 +555,14 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
                                     decoration: InputDecoration(
-                                      labelText: lang.S.of(context).selectParties,
+                                      labelText:
+                                          lang.S.of(context).selectParties,
                                     ),
                                     child: Theme(
-                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                      data: ThemeData(
+                                          highlightColor: dropdownItemColor,
+                                          focusColor: dropdownItemColor,
+                                          hoverColor: dropdownItemColor),
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
                                           onChanged: (String? value) {
@@ -504,12 +570,17 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                             setState(() {
                                               selectedLedgerItems = value!;
 
-                                              for (var element in allCustomers) {
-                                                if (selectedLedgerItems == 'All') {
-                                                  listOfSelectedCustomers.add(element);
+                                              for (var element
+                                                  in allCustomers) {
+                                                if (selectedLedgerItems ==
+                                                    'All') {
+                                                  listOfSelectedCustomers
+                                                      .add(element);
                                                 } else {
-                                                  if (element.type == selectedLedgerItems) {
-                                                    listOfSelectedCustomers.add(element);
+                                                  if (element.type ==
+                                                      selectedLedgerItems) {
+                                                    listOfSelectedCustomers
+                                                        .add(element);
                                                   }
                                                 }
                                               }
@@ -549,12 +620,14 @@ class _LedgerScreenState extends State<LedgerScreen> {
                               onChanged: (value) {
                                 setState(() {
                                   searchItem = value;
-                                  _currentPage = 1; // Reset to the first page when searching
+                                  _currentPage =
+                                      1; // Reset to the first page when searching
                                 });
                               },
                               keyboardType: TextInputType.name,
                               decoration: InputDecoration(
-                                hintText: (lang.S.of(context).searchByNameOrPhone),
+                                hintText:
+                                    (lang.S.of(context).searchByNameOrPhone),
                                 suffixIcon: const Icon(
                                   FeatherIcons.search,
                                   color: kTitleColor,
@@ -587,8 +660,12 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                             ),
                                             child: Theme(
                                               data: theme.copyWith(
-                                                dividerColor: Colors.transparent,
-                                                dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                                dividerColor:
+                                                    Colors.transparent,
+                                                dividerTheme:
+                                                    const DividerThemeData(
+                                                        color:
+                                                            Colors.transparent),
                                               ),
                                               child: DataTable(
                                                 border: const TableBorder(
@@ -597,44 +674,88 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                                     color: kNeutral300,
                                                   ),
                                                 ),
-                                                dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                dataRowColor:
+                                                    const WidgetStatePropertyAll(
+                                                        Colors.white),
+                                                headingRowColor:
+                                                    WidgetStateProperty.all(
+                                                        const Color(
+                                                            0xFFF8F3FF)),
                                                 showBottomBorder: false,
                                                 dividerThickness: 0.0,
-                                                headingTextStyle: theme.textTheme.titleMedium,
+                                                headingTextStyle:
+                                                    theme.textTheme.titleMedium,
                                                 columns: [
-                                                  DataColumn(label: Text(lang.S.of(context).SL)),
-                                                  DataColumn(label: Text(lang.S.of(context).partyName)),
-                                                  DataColumn(label: Text(lang.S.of(context).partyType)),
-                                                  DataColumn(label: Text(lang.S.of(context).totalAmount)),
-                                                  DataColumn(label: Text(lang.S.of(context).dueAmount)),
-                                                  DataColumn(label: Text(lang.S.of(context).details)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .SL)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .partyName)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .partyType)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .totalAmount)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .dueAmount)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .details)),
                                                 ],
-                                                rows: List.generate(paginatedCustomers.length, (index) {
+                                                rows: List.generate(
+                                                    paginatedCustomers.length,
+                                                    (index) {
                                                   return DataRow(cells: [
                                                     ///______________S.L__________________________________________________
                                                     DataCell(
-                                                      Text('${(_currentPage - 1) * _categoryPerPage + index + 1}'),
+                                                      Text(
+                                                          '${(_currentPage - 1) * _categoryPerPage + index + 1}'),
                                                     ),
 
                                                     ///______________name__________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        paginatedCustomers[index].customerName,
+                                                        paginatedCustomers[
+                                                                index]
+                                                            .customerName,
                                                       ),
                                                     ),
 
                                                     ///____________type_________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        paginatedCustomers[index].type,
+                                                        paginatedCustomers[
+                                                                index]
+                                                            .type,
                                                       ),
                                                     ),
 
                                                     ///______Amount___________________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        paginatedCustomers[index].type == 'Supplier' ? (purchaseTransactionReport.value != null ? '$globalCurrency${singleSupplierTotalSaleAmount(allTransitions: purchaseTransactionReport.value!, customerPhoneNumber: paginatedCustomers[index].phoneNumber).toString()}' : 'N/A') : (saleTransactionReport.value != null ? '$globalCurrency${singleCustomersTotalSaleAmount(allTransitions: saleTransactionReport.value!, customerPhoneNumber: paginatedCustomers[index].phoneNumber!).toStringAsFixed(2)}' : 'N/A'),
+                                                        paginatedCustomers[
+                                                                        index]
+                                                                    .type ==
+                                                                'Supplier'
+                                                            ? (purchaseTransactionReport
+                                                                        .value !=
+                                                                    null
+                                                                ? '$globalCurrency${singleSupplierTotalSaleAmount(allTransitions: purchaseTransactionReport.value!, customerPhoneNumber: paginatedCustomers[index].phoneNumber).toString()}'
+                                                                : 'N/A')
+                                                            : (saleTransactionReport
+                                                                        .value !=
+                                                                    null
+                                                                ? '$globalCurrency${singleCustomersTotalSaleAmount(allTransitions: saleTransactionReport.value!, customerPhoneNumber: paginatedCustomers[index].phoneNumber).toStringAsFixed(2)}'
+                                                                : 'N/A'),
                                                       ),
                                                     ),
 
@@ -651,15 +772,30 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                                       GestureDetector(
                                                         onTap: () {
                                                           ledgerDetails(
-                                                            transitionModel: saleTransactionReport.value!,
-                                                            customer: paginatedCustomers[index],
-                                                            personalInformationModel: personalDetails.value!,
-                                                            purchaseTransactionReport: purchaseTransactionReport.value ?? [],
+                                                            transitionModel:
+                                                                saleTransactionReport
+                                                                    .value!,
+                                                            customer:
+                                                                paginatedCustomers[
+                                                                    index],
+                                                            personalInformationModel:
+                                                                personalDetails
+                                                                    .value!,
+                                                            purchaseTransactionReport:
+                                                                purchaseTransactionReport
+                                                                        .value ??
+                                                                    [],
                                                           );
                                                         },
                                                         child: Text(
-                                                          lang.S.of(context).show,
-                                                          style: theme.textTheme.bodyLarge?.copyWith(color: Colors.blue),
+                                                          lang.S
+                                                              .of(context)
+                                                              .show,
+                                                          style: theme.textTheme
+                                                              .bodyLarge
+                                                              ?.copyWith(
+                                                                  color: Colors
+                                                                      .blue),
                                                         ),
                                                       ),
                                                     ),
@@ -674,7 +810,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Flexible(
                                         child: Text(
@@ -686,21 +823,32 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                       Row(
                                         children: [
                                           InkWell(
-                                            overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                            overlayColor:
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.grey),
                                             hoverColor: Colors.grey,
-                                            onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                            onTap: _currentPage > 1
+                                                ? () => setState(
+                                                    () => _currentPage--)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomLeft: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(4.0),
                                                   topLeft: Radius.circular(4.0),
                                                 ),
                                               ),
                                               child: Center(
-                                                child: Text(lang.S.of(context).previous),
+                                                child: Text(lang.S
+                                                    .of(context)
+                                                    .previous),
                                               ),
                                             ),
                                           ),
@@ -708,13 +856,15 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: kMainColor,
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$_currentPage',
-                                                style: const TextStyle(color: Colors.white),
+                                                style: const TextStyle(
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           ),
@@ -722,7 +872,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: Colors.transparent,
                                             ),
                                             child: Center(
@@ -732,20 +883,34 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                             ),
                                           ),
                                           InkWell(
-                                            hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                            overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                            onTap: _currentPage * _categoryPerPage < filteredCustomers.length ? () => setState(() => _currentPage++) : null,
+                                            hoverColor: Colors.blue
+                                                .withValues(alpha: 0.1),
+                                            overlayColor:
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.blue),
+                                            onTap: _currentPage *
+                                                        _categoryPerPage <
+                                                    filteredCustomers.length
+                                                ? () => setState(
+                                                    () => _currentPage++)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomRight: Radius.circular(4.0),
-                                                  topRight: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomRight:
+                                                      Radius.circular(4.0),
+                                                  topRight:
+                                                      Radius.circular(4.0),
                                                 ),
                                               ),
-                                              child: const Center(child: Text('Next')),
+                                              child: const Center(
+                                                  child: Text('Next')),
                                             ),
                                           ),
                                         ],
@@ -755,7 +920,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                 ),
                               ],
                             )
-                          : EmptyWidget(title: lang.S.of(context).noTransactionFound),
+                          : EmptyWidget(
+                              title: lang.S.of(context).noTransactionFound),
                     ],
                   ),
                 )
@@ -787,35 +953,20 @@ class _LedgerScreenState extends State<LedgerScreen> {
     double totalPaid = 0;
     List<SaleTransactionModel> transitions = [];
     List<PurchaseTransactionModel> purchaseTransitions = [];
-    List<String> dayLimits = [
-      'All',
-      '7',
-      '15',
-      '30',
-    ];
-    String selectedDate = 'All';
     for (var element in transitionModel) {
       if (element.customerPhone == customer.phoneNumber) {
         transitions.add(element);
         totalSale += element.totalAmount!.toDouble();
-        totalReceive += element.totalAmount!.toDouble() - element.dueAmount!.toDouble();
+        totalReceive +=
+            element.totalAmount!.toDouble() - element.dueAmount!.toDouble();
       }
     }
     for (var element in purchaseTransactionReport) {
       if (element.customerPhone == customer.phoneNumber) {
         purchaseTransitions.add(element);
         totalPurchase += element.totalAmount!.toDouble();
-        totalPaid += element.totalAmount!.toDouble() - element.dueAmount!.toDouble();
-      }
-    }
-
-    bool isInTime({required int day, required String date}) {
-      if (DateTime.parse(date).isAfter(DateTime.now().subtract(Duration(days: day)))) {
-        return true;
-      } else if (date == 'All') {
-        return true;
-      } else {
-        return false;
+        totalPaid +=
+            element.totalAmount!.toDouble() - element.dueAmount!.toDouble();
       }
     }
 
@@ -824,13 +975,13 @@ class _LedgerScreenState extends State<LedgerScreen> {
       context: context,
       builder: (BuildContext context) {
         final theme = Theme.of(context);
-        final kWidth = MediaQuery.of(context).size.width;
         return Consumer(
           builder: (_, ref, watch) {
             final settingProver = ref.watch(generalSettingProvider);
             return StatefulBuilder(
               builder: (context, setState) {
-                final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
+                final currencyProvider =
+                    pro.Provider.of<CurrencyProvider>(context);
                 final globalCurrency = currencyProvider.currency ?? '\$';
                 return Dialog(
                   surfaceTintColor: kWhite,
@@ -863,7 +1014,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                   onPressed: () {
                                     GoRouter.of(context).pop();
                                   },
-                                  icon: const Icon(FeatherIcons.x, color: kNeutral500, size: 20.0))
+                                  icon: const Icon(FeatherIcons.x,
+                                      color: kNeutral500, size: 20.0))
                             ],
                           ),
                         ),
@@ -881,7 +1033,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
-                                padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.only(
+                                    left: 10.0,
+                                    right: 20.0,
+                                    top: 10.0,
+                                    bottom: 10.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
                                   color: const Color(0xFFCFF4E3),
@@ -891,11 +1047,17 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                   children: [
                                     Text(
                                       '$globalCurrency ${myFormat.format(double.tryParse(customer.type == 'Supplier' ? totalPurchase.toString() : totalSale.toString()) ?? 0)}',
-                                      style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18.0),
                                     ),
                                     Text(
-                                      customer.type == 'Supplier' ? lang.S.of(context).totalPurchase : lang.S.of(context).totalSale,
-                                      style: kTextStyle.copyWith(color: kTitleColor),
+                                      customer.type == 'Supplier'
+                                          ? lang.S.of(context).totalPurchase
+                                          : lang.S.of(context).totalSale,
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor),
                                     ),
                                   ],
                                 ),
@@ -911,21 +1073,32 @@ class _LedgerScreenState extends State<LedgerScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
-                                padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.only(
+                                    left: 10.0,
+                                    right: 20.0,
+                                    top: 10.0,
+                                    bottom: 10.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFF15CD75).withOpacity(0.5),
+                                  color:
+                                      const Color(0xFF15CD75).withOpacity(0.5),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       '$globalCurrency ${myFormat.format(double.tryParse(customer.type == 'Supplier' ? totalPaid.toString() : totalReceive.toString()) ?? 0)}',
-                                      style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18.0),
                                     ),
                                     Text(
-                                      customer.type == 'Supplier' ? lang.S.of(context).paidAmount : lang.S.of(context).receivedAmount,
-                                      style: kTextStyle.copyWith(color: kTitleColor),
+                                      customer.type == 'Supplier'
+                                          ? lang.S.of(context).paidAmount
+                                          : lang.S.of(context).receivedAmount,
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor),
                                     ),
                                   ],
                                 ),
@@ -941,7 +1114,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
-                                padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.only(
+                                    left: 10.0,
+                                    right: 20.0,
+                                    top: 10.0,
+                                    bottom: 10.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
                                   color: const Color(0xFFFEE7CB),
@@ -951,12 +1128,16 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                   children: [
                                     Text(
                                       '$globalCurrency ${myFormat.format(double.tryParse(customer.dueAmount) ?? 0)}',
-                                      style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18.0),
                                     ),
                                     Text(
                                       lang.S.of(context).totalDue,
                                       //'Total Due',
-                                      style: kTextStyle.copyWith(color: kTitleColor),
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor),
                                     ),
                                   ],
                                 ),
@@ -972,7 +1153,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
-                                padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.only(
+                                    left: 10.0,
+                                    right: 20.0,
+                                    top: 10.0,
+                                    bottom: 10.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
                                   color: const Color(0xFFFEE7CB),
@@ -982,11 +1167,15 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                   children: [
                                     Text(
                                       '$globalCurrency ${myFormat.format(double.tryParse(customer.remainedBalance) ?? 0)}',
-                                      style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18.0),
                                     ),
                                     Text(
                                       lang.S.of(context).openingBalance,
-                                      style: kTextStyle.copyWith(color: kTitleColor),
+                                      style: kTextStyle.copyWith(
+                                          color: kTitleColor),
                                     ),
                                   ],
                                 ),
@@ -1018,20 +1207,36 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                 return ElevatedButton(
                                   onPressed: () async {
                                     if (customer.type != 'Supplier') {
-                                      await GeneratePdfAndPrint().printSaleLedger(personalInformationModel: personalInformationModel, saleTransactionModel: transitions, customer: customer, setting: setting);
+                                      await GeneratePdfAndPrint()
+                                          .printSaleLedger(
+                                              personalInformationModel:
+                                                  personalInformationModel,
+                                              saleTransactionModel: transitions,
+                                              customer: customer,
+                                              setting: setting);
                                     } else {
-                                      await GeneratePdfAndPrint().printPurchaseLedger(setting: setting, personalInformationModel: personalInformationModel, purchaseTransactionModel: purchaseTransitions, customer: customer);
+                                      await GeneratePdfAndPrint()
+                                          .printPurchaseLedger(
+                                              setting: setting,
+                                              personalInformationModel:
+                                                  personalInformationModel,
+                                              purchaseTransactionModel:
+                                                  purchaseTransitions,
+                                              customer: customer);
                                     }
                                   },
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Icon(Icons.print, color: Colors.white, size: 16),
+                                      const Icon(Icons.print,
+                                          color: Colors.white, size: 16),
                                       const SizedBox(width: 5.0),
                                       Text(
                                         lang.S.of(context).print,
                                         // 'Print',
-                                        style: kTextStyle.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                                        style: kTextStyle.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ],
                                   ),
@@ -1039,14 +1244,16 @@ class _LedgerScreenState extends State<LedgerScreen> {
                               }, error: (e, stack) {
                                 return Text(e.toString());
                               }, loading: () {
-                                return Center(child: CircularProgressIndicator());
+                                return Center(
+                                    child: CircularProgressIndicator());
                               }),
                             ],
                           ),
                         ),
                         const SizedBox(height: 20),
                         LayoutBuilder(
-                          builder: (BuildContext context, BoxConstraints constraints) {
+                          builder: (BuildContext context,
+                              BoxConstraints constraints) {
                             return RawScrollbar(
                               thickness: 10,
                               thumbVisibility: true,
@@ -1060,7 +1267,9 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                     minWidth: constraints.maxWidth,
                                   ),
                                   child: Theme(
-                                    data: theme.copyWith(dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                    data: theme.copyWith(
+                                        dividerTheme: const DividerThemeData(
+                                            color: Colors.transparent)),
                                     child: DataTable(
                                       border: const TableBorder(
                                         horizontalInside: BorderSide(
@@ -1068,36 +1277,48 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                           color: kNeutral300,
                                         ),
                                       ),
-                                      dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                      headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                      dataRowColor:
+                                          const WidgetStatePropertyAll(
+                                              Colors.white),
+                                      headingRowColor: WidgetStateProperty.all(
+                                          const Color(0xFFF8F3FF)),
                                       showBottomBorder: false,
                                       dividerThickness: 0.0,
-                                      headingTextStyle: theme.textTheme.titleMedium,
+                                      headingTextStyle:
+                                          theme.textTheme.titleMedium,
                                       columns: [
                                         DataColumn(
                                           label: Text(
                                             lang.S.of(context).SL,
                                             //'S.L',
-                                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                            style: kTextStyle.copyWith(
+                                                color: kTitleColor,
+                                                fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                         DataColumn(
                                           label: Text(lang.S.of(context).date,
                                               //'Date',
-                                              style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold)),
+                                              style: kTextStyle.copyWith(
+                                                  color: kTitleColor,
+                                                  fontWeight: FontWeight.bold)),
                                         ),
                                         DataColumn(
                                           label: Text(
                                             lang.S.of(context).invoice,
                                             //'Invoice',
-                                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                            style: kTextStyle.copyWith(
+                                                color: kTitleColor,
+                                                fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                         DataColumn(
                                           label: Text(
                                             lang.S.of(context).partyName,
                                             //'Party Name',
-                                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                            style: kTextStyle.copyWith(
+                                                color: kTitleColor,
+                                                fontWeight: FontWeight.bold),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -1105,21 +1326,33 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                           label: Text(
                                             lang.S.of(context).paymentType,
                                             //'Payment Type',
-                                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                            style: kTextStyle.copyWith(
+                                                color: kTitleColor,
+                                                fontWeight: FontWeight.bold),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                         DataColumn(
-                                          label: Text(lang.S.of(context).amount, style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold)),
+                                          label: Text(lang.S.of(context).amount,
+                                              style: kTextStyle.copyWith(
+                                                  color: kTitleColor,
+                                                  fontWeight: FontWeight.bold)),
                                         ),
                                         DataColumn(
-                                          label: Text(lang.S.of(context).due, style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold)),
+                                          label: Text(lang.S.of(context).due,
+                                              style: kTextStyle.copyWith(
+                                                  color: kTitleColor,
+                                                  fontWeight: FontWeight.bold)),
                                         ),
                                         DataColumn(
-                                          label: Text(lang.S.of(context).status, style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold)),
+                                          label: Text(lang.S.of(context).status,
+                                              style: kTextStyle.copyWith(
+                                                  color: kTitleColor,
+                                                  fontWeight: FontWeight.bold)),
                                         ),
                                         const DataColumn(
-                                          label: Icon(FeatherIcons.settings, color: kGreyTextColor),
+                                          label: Icon(FeatherIcons.settings,
+                                              color: kGreyTextColor),
                                         ),
                                       ],
                                       rows: customer.type == 'Supplier'
@@ -1128,41 +1361,116 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                               (index) {
                                                 return DataRow(cells: [
                                                   DataCell(
-                                                    Text((index + 1).toString()),
+                                                    Text(
+                                                        (index + 1).toString()),
                                                   ),
                                                   DataCell(
-                                                    Text(purchaseTransitions[index].purchaseDate.substring(0, 10), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        purchaseTransitions[
+                                                                index]
+                                                            .purchaseDate
+                                                            .substring(0, 10),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(purchaseTransitions[index].invoiceNumber, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        purchaseTransitions[
+                                                                index]
+                                                            .invoiceNumber,
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(purchaseTransitions[index].customerName, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        purchaseTransitions[
+                                                                index]
+                                                            .customerName,
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(purchaseTransitions[index].paymentType.toString(), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        purchaseTransitions[
+                                                                index]
+                                                            .paymentType
+                                                            .toString(),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(myFormat.format(double.tryParse(purchaseTransitions[index].totalAmount.toString()) ?? 0), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        myFormat.format(double.tryParse(
+                                                                purchaseTransitions[
+                                                                        index]
+                                                                    .totalAmount
+                                                                    .toString()) ??
+                                                            0),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(myFormat.format(double.tryParse(purchaseTransitions[index].dueAmount!.abs().toString()) ?? 0), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        myFormat.format(double.tryParse(
+                                                                purchaseTransitions[
+                                                                        index]
+                                                                    .dueAmount!
+                                                                    .abs()
+                                                                    .toString()) ??
+                                                            0),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(purchaseTransitions[index].isPaid! ? lang.S.of(context).paid : lang.S.of(context).due, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        purchaseTransitions[
+                                                                    index]
+                                                                .isPaid!
+                                                            ? lang.S
+                                                                .of(context)
+                                                                .paid
+                                                            : lang.S
+                                                                .of(context)
+                                                                .due,
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    settingProver.when(data: (setting) {
+                                                    settingProver.when(
+                                                        data: (setting) {
                                                       return SizedBox(
                                                         width: 30,
                                                         child: PopupMenuButton(
-                                                          icon: const Icon(FeatherIcons.moreVertical, size: 18.0),
-                                                          padding: EdgeInsets.zero,
-                                                          itemBuilder: (BuildContext bc) => [
+                                                          icon: const Icon(
+                                                              FeatherIcons
+                                                                  .moreVertical,
+                                                              size: 18.0),
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          itemBuilder:
+                                                              (BuildContext
+                                                                      bc) =>
+                                                                  [
                                                             PopupMenuItem(
-                                                              child: GestureDetector(
-                                                                onTap: () async {
-                                                                  await GeneratePdfAndPrint().printPurchaseInvoice(setting: setting, personalInformationModel: personalInformationModel, purchaseTransactionModel: purchaseTransitions[index]);
+                                                              child:
+                                                                  GestureDetector(
+                                                                onTap:
+                                                                    () async {
+                                                                  await GeneratePdfAndPrint().printPurchaseInvoice(
+                                                                      setting:
+                                                                          setting,
+                                                                      personalInformationModel:
+                                                                          personalInformationModel,
+                                                                      purchaseTransactionModel:
+                                                                          purchaseTransitions[
+                                                                              index]);
                                                                   // SaleInvoice(
                                                                   //   isPosScreen: false,
                                                                   //   transitionModel: transitions[index],
@@ -1171,11 +1479,23 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    Icon(MdiIcons.printer, size: 18.0, color: kTitleColor),
-                                                                    const SizedBox(width: 4.0),
+                                                                    Icon(
+                                                                        MdiIcons
+                                                                            .printer,
+                                                                        size:
+                                                                            18.0,
+                                                                        color:
+                                                                            kTitleColor),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).print,
-                                                                      style: kTextStyle.copyWith(color: kTitleColor),
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .print,
+                                                                      style: kTextStyle.copyWith(
+                                                                          color:
+                                                                              kTitleColor),
                                                                     ),
                                                                   ],
                                                                 ),
@@ -1183,7 +1503,8 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                                             ),
                                                           ],
                                                           onSelected: (value) {
-                                                            context.go('$value');
+                                                            context
+                                                                .go('$value');
                                                             // Navigator.pushNamed(context, '$value');
                                                           },
                                                         ),
@@ -1191,7 +1512,9 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                                     }, error: (e, stack) {
                                                       return Text(e.toString());
                                                     }, loading: () {
-                                                      return Center(child: CircularProgressIndicator());
+                                                      return Center(
+                                                          child:
+                                                              CircularProgressIndicator());
                                                     }),
                                                   ),
                                                 ]);
@@ -1202,39 +1525,108 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                               (index) {
                                                 return DataRow(cells: [
                                                   DataCell(
-                                                    Text((index + 1).toString()),
+                                                    Text(
+                                                        (index + 1).toString()),
                                                   ),
                                                   DataCell(
-                                                    Text(transitions[index].purchaseDate.substring(0, 10), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        transitions[index]
+                                                            .purchaseDate
+                                                            .substring(0, 10),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(transitions[index].invoiceNumber, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        transitions[index]
+                                                            .invoiceNumber,
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(transitions[index].customerName, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        transitions[index]
+                                                            .customerName,
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(transitions[index].paymentType.toString(), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        transitions[index]
+                                                            .paymentType
+                                                            .toString(),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(myFormat.format(double.tryParse(transitions[index].totalAmount.toString()) ?? 0), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        myFormat.format(double
+                                                                .tryParse(transitions[
+                                                                        index]
+                                                                    .totalAmount
+                                                                    .toString()) ??
+                                                            0),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(myFormat.format(double.tryParse(transitions[index].dueAmount.toString()) ?? 0), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        myFormat.format(double
+                                                                .tryParse(transitions[
+                                                                        index]
+                                                                    .dueAmount
+                                                                    .toString()) ??
+                                                            0),
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
-                                                    Text(transitions[index].isPaid! ? lang.S.of(context).paid : lang.S.of(context).due, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                                    Text(
+                                                        transitions[index]
+                                                                .isPaid!
+                                                            ? lang.S
+                                                                .of(context)
+                                                                .paid
+                                                            : lang.S
+                                                                .of(context)
+                                                                .due,
+                                                        style: kTextStyle.copyWith(
+                                                            color:
+                                                                kGreyTextColor)),
                                                   ),
                                                   DataCell(
                                                     PopupMenuButton(
-                                                      icon: Icon(FeatherIcons.moreVertical, size: 18.0),
+                                                      icon: Icon(
+                                                          FeatherIcons
+                                                              .moreVertical,
+                                                          size: 18.0),
                                                       padding: EdgeInsets.zero,
-                                                      itemBuilder: (BuildContext bc) => [
+                                                      itemBuilder:
+                                                          (BuildContext bc) => [
                                                         PopupMenuItem(
-                                                          child: settingProver.when(data: (setting) {
+                                                          child: settingProver
+                                                              .when(data:
+                                                                  (setting) {
                                                             return GestureDetector(
                                                               onTap: () async {
-                                                                await GeneratePdfAndPrint().printSaleInvoice(fromLedger: true, personalInformationModel: personalInformationModel, saleTransactionModel: transitions[index], setting: setting, context: context);
+                                                                await GeneratePdfAndPrint().printSaleInvoice(
+                                                                    fromLedger:
+                                                                        true,
+                                                                    personalInformationModel:
+                                                                        personalInformationModel,
+                                                                    saleTransactionModel:
+                                                                        transitions[
+                                                                            index],
+                                                                    setting:
+                                                                        setting,
+                                                                    context:
+                                                                        context);
                                                                 // SaleInvoice(
                                                                 //   isPosScreen: false,
                                                                 //   transitionModel: transitions[index],
@@ -1243,26 +1635,42 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                                               },
                                                               child: Row(
                                                                 children: [
-                                                                  Icon(MdiIcons.printer, size: 18.0, color: kTitleColor),
-                                                                  const SizedBox(width: 4.0),
+                                                                  Icon(
+                                                                      MdiIcons
+                                                                          .printer,
+                                                                      size:
+                                                                          18.0,
+                                                                      color:
+                                                                          kTitleColor),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          4.0),
                                                                   Text(
-                                                                    lang.S.of(context).print,
-                                                                    style: kTextStyle.copyWith(color: kTitleColor),
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .print,
+                                                                    style: kTextStyle
+                                                                        .copyWith(
+                                                                            color:
+                                                                                kTitleColor),
                                                                   ),
                                                                 ],
                                                               ),
                                                             );
                                                           }, error: (e, stack) {
-                                                            return Text(e.toString());
+                                                            return Text(
+                                                                e.toString());
                                                           }, loading: () {
                                                             return Center(
-                                                              child: CircularProgressIndicator(),
+                                                              child:
+                                                                  CircularProgressIndicator(),
                                                             );
                                                           }),
                                                         ),
                                                       ],
                                                       onSelected: (value) {
-                                                        Navigator.pushNamed(context, '$value');
+                                                        Navigator.pushNamed(
+                                                            context, '$value');
                                                       },
                                                     ),
                                                   ),

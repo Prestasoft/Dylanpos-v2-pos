@@ -7,7 +7,13 @@ import '../currency/currency_provider.dart';
 import 'Constant Data/constant.dart';
 
 class ReportTableWidget extends StatelessWidget {
-  const ReportTableWidget({Key? key, required this.report, required this.color, required this.title, required this.icon}) : super(key: key);
+  const ReportTableWidget(
+      {Key? key,
+      required this.report,
+      required this.color,
+      required this.title,
+      required this.icon})
+      : super(key: key);
 
   final IconData icon;
   final String title;
@@ -22,7 +28,8 @@ class ReportTableWidget extends StatelessWidget {
       flex: 1,
       child: Container(
         padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10.0), color: kWhite),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -32,7 +39,8 @@ class ReportTableWidget extends StatelessWidget {
                 const SizedBox(width: 10.0),
                 Text(
                   title,
-                  style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                  style: kTextStyle.copyWith(
+                      color: kTitleColor, fontWeight: FontWeight.bold),
                 ),
                 // const Spacer(),
                 // Text(
@@ -47,7 +55,8 @@ class ReportTableWidget extends StatelessWidget {
                   800 ~/ 10,
                   (index) => Expanded(
                         child: Container(
-                          color: index % 2 == 0 ? Colors.transparent : Colors.grey,
+                          color:
+                              index % 2 == 0 ? Colors.transparent : Colors.grey,
                           height: 1,
                         ),
                       )),
@@ -69,7 +78,7 @@ class ReportTableWidget extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        '$globalCurrency ${myFormat.format(double.parse(report[i].amount ?? '') ?? 0)}',
+                        '$globalCurrency ${myFormat.format(double.parse(report[i].amount ?? ''))}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: kTextStyle.copyWith(color: color),

@@ -21,7 +21,7 @@ class PaySalaryScreen extends StatefulWidget {
   });
 
   final List<EmployeeModel> listOfEmployees;
-  PaySalaryModel? payedSalary;
+  final PaySalaryModel? payedSalary;
   final WidgetRef ref;
 
   @override
@@ -29,11 +29,25 @@ class PaySalaryScreen extends StatefulWidget {
 }
 
 class _PaySalaryScreenState extends State<PaySalaryScreen> {
-  List<String> yearList = List.generate(111, (index) => (1990 + index).toString());
+  List<String> yearList =
+      List.generate(111, (index) => (1990 + index).toString());
   List<String> paymentItem = ['Efectivo', 'Banco', 'Pago Móvil'];
   String? selectedPaymentOption = 'Efectivo';
 
-  List<String> monthList = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  List<String> monthList = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre'
+  ];
 
   final TextEditingController paySalaryController = TextEditingController();
   final TextEditingController notesController = TextEditingController();
@@ -78,7 +92,6 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     return Consumer(
       builder: (context, ref, child) {
         return SingleChildScrollView(
@@ -109,7 +122,10 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                               ),
                             ),
                             const Spacer(),
-                            IconButton(onPressed: () => GoRouter.of(context).pop(), icon: const Icon(FeatherIcons.x, color: kTitleColor, size: 22.0))
+                            IconButton(
+                                onPressed: () => GoRouter.of(context).pop(),
+                                icon: const Icon(FeatherIcons.x,
+                                    color: kTitleColor, size: 22.0))
                           ],
                         ),
                       ),
@@ -162,7 +178,8 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                                   selectedEmployee = value;
                                 });
                               },
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
                               dropdownColor: Colors.white,
                               style: theme.textTheme.bodyLarge,
                             ),
@@ -276,7 +293,8 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                                   selectedYear = value!;
                                 });
                               },
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
                               dropdownColor: Colors.white,
                               style: theme.textTheme.bodyLarge,
                             ),
@@ -320,7 +338,8 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                                   selectedMonth = value!;
                                 });
                               },
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
                               dropdownColor: Colors.white,
                               style: theme.textTheme.bodyLarge,
                             ),
@@ -368,7 +387,8 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                                   selectedPaymentOption = value!;
                                 });
                               },
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
                               dropdownColor: Colors.white,
                               style: theme.textTheme.bodyLarge,
                             ),
@@ -469,25 +489,38 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                               color: kGreenTextColor,
                               onTap: widget.payedSalary != null
                                   ? () async {
-                                      if (formKey.currentState?.validate() ?? false) {
+                                      if (formKey.currentState?.validate() ??
+                                          false) {
                                         final data = PaySalaryModel(
                                           id: widget.payedSalary!.id,
-                                          designation: selectedEmployee?.designation ?? '',
-                                          designationId: selectedEmployee?.designationId ?? 0,
-                                          employeeName: selectedEmployee?.name ?? '',
-                                          employmentId: selectedEmployee?.id ?? 0,
+                                          designation:
+                                              selectedEmployee?.designation ??
+                                                  '',
+                                          designationId:
+                                              selectedEmployee?.designationId ??
+                                                  0,
+                                          employeeName:
+                                              selectedEmployee?.name ?? '',
+                                          employmentId:
+                                              selectedEmployee?.id ?? 0,
                                           month: selectedMonth ?? '',
                                           year: selectedYear ?? '',
-                                          netSalary: selectedEmployee?.salary ?? 0,
-                                          paySalary: num.tryParse(paySalaryController.text) ?? 0,
+                                          netSalary:
+                                              selectedEmployee?.salary ?? 0,
+                                          paySalary: num.tryParse(
+                                                  paySalaryController.text) ??
+                                              0,
                                           payingDate: DateTime.now(),
-                                          paymentType: selectedPaymentOption ?? '',
+                                          paymentType:
+                                              selectedPaymentOption ?? '',
                                           note: notesController.text,
                                         );
 
-                                        bool result = await SalaryRepository().updateSalary(salary: data);
+                                        bool result = await SalaryRepository()
+                                            .updateSalary(salary: data);
 
                                         if (result) {
+                                          // ignore: unused_result
                                           ref.refresh(salaryProvider);
                                           // context.pop();
                                           GoRouter.of(context).pop();
@@ -495,27 +528,41 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                                       }
                                     }
                                   : () async {
-                                      if (formKey.currentState?.validate() ?? false) {
-                                        num id = DateTime.now().millisecondsSinceEpoch;
+                                      if (formKey.currentState?.validate() ??
+                                          false) {
+                                        num id = DateTime.now()
+                                            .millisecondsSinceEpoch;
 
-                                        bool result = await SalaryRepository().paySalary(
+                                        bool result =
+                                            await SalaryRepository().paySalary(
                                           salary: PaySalaryModel(
                                             id: id,
-                                            designation: selectedEmployee?.designation ?? '',
-                                            designationId: selectedEmployee?.designationId ?? 0,
-                                            employeeName: selectedEmployee?.name ?? '',
-                                            employmentId: selectedEmployee?.id ?? 0,
+                                            designation:
+                                                selectedEmployee?.designation ??
+                                                    '',
+                                            designationId: selectedEmployee
+                                                    ?.designationId ??
+                                                0,
+                                            employeeName:
+                                                selectedEmployee?.name ?? '',
+                                            employmentId:
+                                                selectedEmployee?.id ?? 0,
                                             month: selectedMonth ?? '',
                                             year: selectedYear ?? '',
-                                            netSalary: selectedEmployee?.salary ?? 0,
-                                            paySalary: num.tryParse(paySalaryController.text ?? '0') ?? 0,
+                                            netSalary:
+                                                selectedEmployee?.salary ?? 0,
+                                            paySalary: num.tryParse(
+                                                    paySalaryController.text) ??
+                                                0,
                                             payingDate: DateTime.now(),
-                                            paymentType: selectedPaymentOption ?? '',
+                                            paymentType:
+                                                selectedPaymentOption ?? '',
                                             note: notesController.text,
                                           ),
                                         );
 
                                         if (result) {
+                                          // ignore: unused_result
                                           ref.refresh(salaryProvider);
                                           GoRouter.of(context).pop();
                                           // context.pop();
@@ -626,7 +673,10 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
     );
   }
 
-  Widget _buildButton({required String label, required Color color, required VoidCallback onTap}) {
+  Widget _buildButton(
+      {required String label,
+      required Color color,
+      required VoidCallback onTap}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
@@ -634,57 +684,6 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
       onPressed: onTap,
       child: Text(
         label,
-      ),
-    );
-  }
-
-  Widget _buildDatePickerField({
-    required BuildContext context,
-    required String label,
-    required DateTime selectedDate,
-    required Function(DateTime) onChanged,
-  }) {
-    return SizedBox(
-      width: 270,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 5.0),
-            child: Text(
-              label,
-              style: kTextStyle.copyWith(color: kTitleColor),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: selectedDate,
-                firstDate: DateTime(1950),
-                lastDate: DateTime.now(),
-              );
-
-              if (pickedDate != null) {
-                onChanged(pickedDate);
-              }
-            },
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                  style: kTextStyle.copyWith(color: kGreenTextColor),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.calendar_month,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

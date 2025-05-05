@@ -1,27 +1,11 @@
-import 'dart:async';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutter_feather_icons/flutter_feather_icons.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
-import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:nb_utils/nb_utils.dart';
-import 'package:provider/provider.dart' as pro;
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
 import 'package:salespro_admin/Screen/tax%20rates/tax_model.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-
-
-
-
-
 
 class PriceSummarySection extends StatelessWidget {
   final int itemCount;
@@ -101,7 +85,8 @@ class PriceSummarySection extends StatelessWidget {
                         onPressed: () {},
                         child: Text(
                           '$currency ${myFormat.format((totalAmount + serviceCharge - discountAmount))}',
-                          style: theme.textTheme.titleMedium?.copyWith(color: Colors.white),
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(color: Colors.white),
                         ),
                       ),
                     )
@@ -150,20 +135,42 @@ class PriceSummarySection extends StatelessWidget {
                                   readOnly: true,
                                   textAlign: TextAlign.right,
                                   decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.only(right: 6.0),
+                                    contentPadding:
+                                        const EdgeInsets.only(right: 6.0),
                                     hintText: '0',
-                                    border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                    enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                    disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                    focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                    prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
+                                    border: const OutlineInputBorder(
+                                        gapPadding: 0.0,
+                                        borderSide: BorderSide(
+                                            color: Color(0xFFff5f00))),
+                                    enabledBorder: const OutlineInputBorder(
+                                        gapPadding: 0.0,
+                                        borderSide: BorderSide(
+                                            color: Color(0xFFff5f00))),
+                                    disabledBorder: const OutlineInputBorder(
+                                        gapPadding: 0.0,
+                                        borderSide: BorderSide(
+                                            color: Color(0xFFff5f00))),
+                                    focusedBorder: const OutlineInputBorder(
+                                        gapPadding: 0.0,
+                                        borderSide: BorderSide(
+                                            color: Color(0xFFff5f00))),
+                                    prefixIconConstraints: const BoxConstraints(
+                                        maxWidth: 30.0, minWidth: 30.0),
                                     prefixIcon: Container(
-                                      padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                      padding: const EdgeInsets.only(
+                                          top: 8.0, left: 8.0),
                                       height: 40,
-                                      decoration: const BoxDecoration(color: Color(0xFFff5f00), borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
+                                      decoration: const BoxDecoration(
+                                          color: Color(0xFFff5f00),
+                                          borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(4.0),
+                                              bottomLeft:
+                                                  Radius.circular(4.0))),
                                       child: const Text(
                                         '%',
-                                        style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                        style: TextStyle(
+                                            fontSize: 20.0,
+                                            color: Colors.white),
                                       ),
                                     ),
                                   ),
@@ -212,7 +219,8 @@ class PriceSummarySection extends StatelessWidget {
                         height: 40,
                         child: TextFormField(
                           initialValue: serviceCharge.toString(),
-                          onChanged: (value) => onServiceChargeChanged(value.toDouble()),
+                          onChanged: (value) =>
+                              onServiceChargeChanged(value.toDouble()),
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                             hintText: 'Enter Amount',
@@ -260,23 +268,44 @@ class PriceSummarySection extends StatelessWidget {
                           child: SizedBox(
                             height: 40.0,
                             child: AppTextField(
-                              onChanged: (value) => onDiscountPercentageChanged(value.toDouble()),
+                              onChanged: (value) =>
+                                  onDiscountPercentageChanged(value.toDouble()),
                               textAlign: TextAlign.right,
                               decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.only(right: 6.0),
+                                contentPadding:
+                                    const EdgeInsets.only(right: 6.0),
                                 hintText: '0',
-                                border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
+                                border: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide:
+                                        BorderSide(color: Color(0xFFff5f00))),
+                                enabledBorder: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide:
+                                        BorderSide(color: Color(0xFFff5f00))),
+                                disabledBorder: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide:
+                                        BorderSide(color: Color(0xFFff5f00))),
+                                focusedBorder: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide:
+                                        BorderSide(color: Color(0xFFff5f00))),
+                                prefixIconConstraints: const BoxConstraints(
+                                    maxWidth: 30.0, minWidth: 30.0),
                                 prefixIcon: Container(
-                                  padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                  padding: const EdgeInsets.only(
+                                      top: 8.0, left: 8.0),
                                   height: 40,
-                                  decoration: const BoxDecoration(color: Color(0xFFff5f00), borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
+                                  decoration: const BoxDecoration(
+                                      color: Color(0xFFff5f00),
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(4.0),
+                                          bottomLeft: Radius.circular(4.0))),
                                   child: const Text(
                                     '%',
-                                    style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                    style: TextStyle(
+                                        fontSize: 20.0, color: Colors.white),
                                   ),
                                 ),
                               ),
@@ -290,23 +319,40 @@ class PriceSummarySection extends StatelessWidget {
                             height: 40.0,
                             child: AppTextField(
                               initialValue: discountAmount.toString(),
-                              onChanged: (value) => onDiscountAmountChanged(value.toDouble()),
+                              onChanged: (value) =>
+                                  onDiscountAmountChanged(value.toDouble()),
                               textAlign: TextAlign.right,
                               decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.only(right: 6.0),
+                                contentPadding:
+                                    const EdgeInsets.only(right: 6.0),
                                 hintText: '0',
-                                border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
+                                border: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide: BorderSide(color: kMainColor)),
+                                enabledBorder: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide: BorderSide(color: kMainColor)),
+                                disabledBorder: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide: BorderSide(color: kMainColor)),
+                                focusedBorder: const OutlineInputBorder(
+                                    gapPadding: 0.0,
+                                    borderSide: BorderSide(color: kMainColor)),
+                                prefixIconConstraints: const BoxConstraints(
+                                    maxWidth: 30.0, minWidth: 30.0),
                                 prefixIcon: Container(
-                                  padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                  padding: const EdgeInsets.only(
+                                      top: 8.0, left: 8.0),
                                   height: 40,
-                                  decoration: const BoxDecoration(color: kMainColor, borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
+                                  decoration: const BoxDecoration(
+                                      color: kMainColor,
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(4.0),
+                                          bottomLeft: Radius.circular(4.0))),
                                   child: Text(
                                     currency,
-                                    style: const TextStyle(fontSize: 20.0, color: Colors.white),
+                                    style: const TextStyle(
+                                        fontSize: 20.0, color: Colors.white),
                                   ),
                                 ),
                               ),
@@ -330,9 +376,11 @@ class PriceSummarySection extends StatelessWidget {
                 md: 4,
                 lg: 4,
                 child: Padding(
-                  padding: EdgeInsets.only(right: 12, bottom: screenWidth < 577 ? 12 : 0),
+                  padding: EdgeInsets.only(
+                      right: 12, bottom: screenWidth < 577 ? 12 : 0),
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.red),
                     onPressed: onCancel,
                     child: Text(lang.S.of(context).cancel),
                   ),
@@ -342,9 +390,12 @@ class PriceSummarySection extends StatelessWidget {
                 md: 4,
                 lg: 4,
                 child: Padding(
-                  padding: EdgeInsets.only(right: screenWidth < 577 ? 0 : 12, bottom: screenWidth < 577 ? 12 : 0),
+                  padding: EdgeInsets.only(
+                      right: screenWidth < 577 ? 0 : 12,
+                      bottom: screenWidth < 577 ? 12 : 0),
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.black),
                     onPressed: onCreateQuotation,
                     child: Text(lang.S.of(context).quotation),
                   ),
@@ -354,9 +405,12 @@ class PriceSummarySection extends StatelessWidget {
                 md: 4,
                 lg: 4,
                 child: Padding(
-                  padding: EdgeInsets.only(right: screenWidth < 577 ? 0 : 12, bottom: screenWidth < 577 ? 12 : 0),
+                  padding: EdgeInsets.only(
+                      right: screenWidth < 577 ? 0 : 12,
+                      bottom: screenWidth < 577 ? 12 : 0),
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: kMainColor),
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: kMainColor),
                     onPressed: onProceedToPayment,
                     child: Text(lang.S.of(context).payment),
                   ),

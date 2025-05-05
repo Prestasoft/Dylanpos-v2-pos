@@ -61,26 +61,40 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                   //_______________________________top_bar____________________________
 
                   employee.when(data: (designationList) {
-                    List<EmployeeModel> reverseAllIncomeCategory = designationList.reversed.toList();
+                    List<EmployeeModel> reverseAllIncomeCategory =
+                        designationList.reversed.toList();
                     List<EmployeeModel> showIncomeCategory = [];
                     for (var element in reverseAllIncomeCategory) {
-                      if (searchItem != '' && (element.name.toLowerCase().contains(searchItem.toLowerCase()) || element.designation.toLowerCase().contains(searchItem.toLowerCase()))) {
+                      if (searchItem != '' &&
+                          (element.name
+                                  .toLowerCase()
+                                  .contains(searchItem.toLowerCase()) ||
+                              element.designation
+                                  .toLowerCase()
+                                  .contains(searchItem.toLowerCase()))) {
                         showIncomeCategory.add(element);
                       } else if (searchItem == '') {
                         showIncomeCategory.add(element);
                       }
                     }
-                    final pages = (showIncomeCategory.length / _salaryPerPage).ceil();
+                    final pages =
+                        (showIncomeCategory.length / _salaryPerPage).ceil();
 
                     final startIndex = (_currentPage - 1) * _salaryPerPage;
-                    final endIndex = _salaryPerPage == -1 ? showIncomeCategory.length : startIndex + _salaryPerPage;
-                    final paginatedList = showIncomeCategory.sublist(
+                    final endIndex = _salaryPerPage == -1
+                        ? showIncomeCategory.length
+                        : startIndex + _salaryPerPage;
+                    showIncomeCategory.sublist(
                       startIndex,
-                      endIndex > showIncomeCategory.length ? showIncomeCategory.length : endIndex,
+                      endIndex > showIncomeCategory.length
+                          ? showIncomeCategory.length
+                          : endIndex,
                     );
 
                     return Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.0),
+                          color: kWhite),
                       child: Column(
                         children: [
                           Padding(
@@ -100,10 +114,12 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                 ElevatedButton(
                                     onPressed: () async {
                                       if (finalUserRoleModel.hrmEdit == false) {
-                                        EasyLoading.showError(userPermissionErrorText);
+                                        EasyLoading.showError(
+                                            userPermissionErrorText);
                                         return;
                                       }
-                                      final data = await DesignationRepository().getAllDesignation();
+                                      final data = await DesignationRepository()
+                                          .getAllDesignation();
                                       showDialog(
                                         barrierDismissible: false,
                                         context: context,
@@ -112,10 +128,13 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                             builder: (context, setStates) {
                                               return Dialog(
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(20.0),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          20.0),
                                                 ),
                                                 child: AddEmployeeScreen(
-                                                  listOfEmployees: designationList,
+                                                  listOfEmployees:
+                                                      designationList,
                                                   ref: ref,
                                                   designations: data,
                                                 ),
@@ -179,11 +198,15 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                           Icons.keyboard_arrow_down,
                                           color: Colors.black,
                                         ),
-                                        items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                        items: [10, 20, 50, 100, -1]
+                                            .map<DropdownMenuItem<int>>(
+                                                (int value) {
                                           return DropdownMenuItem<int>(
                                             value: value,
                                             child: Text(
-                                              value == -1 ? "Todos" : value.toString(),
+                                              value == -1
+                                                  ? "Todos"
+                                                  : value.toString(),
                                               style: theme.textTheme.bodyLarge,
                                             ),
                                           );
@@ -191,7 +214,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                         onChanged: (int? newValue) {
                                           setState(() {
                                             if (newValue == -1) {
-                                              _salaryPerPage = -1; // Set to -1 for "All"
+                                              _salaryPerPage =
+                                                  -1; // Set to -1 for "All"
                                             } else {
                                               _salaryPerPage = newValue ?? 10;
                                             }
@@ -237,7 +261,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                               ? Column(
                                   children: [
                                     LayoutBuilder(
-                                      builder: (BuildContext context, BoxConstraints constraints) {
+                                      builder: (BuildContext context,
+                                          BoxConstraints constraints) {
                                         return Scrollbar(
                                           controller: _horizontalScroll,
                                           thumbVisibility: true,
@@ -252,21 +277,32 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                               ),
                                               child: Theme(
                                                 data: theme.copyWith(
-                                                  dividerColor: Colors.transparent,
-                                                  dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                                  dividerColor:
+                                                      Colors.transparent,
+                                                  dividerTheme:
+                                                      const DividerThemeData(
+                                                          color: Colors
+                                                              .transparent),
                                                 ),
                                                 child: DataTable(
                                                   border: const TableBorder(
-                                                    horizontalInside: BorderSide(
+                                                    horizontalInside:
+                                                        BorderSide(
                                                       width: 1,
                                                       color: kNeutral300,
                                                     ),
                                                   ),
-                                                  dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                  dataRowColor:
+                                                      const WidgetStatePropertyAll(
+                                                          Colors.white),
+                                                  headingRowColor:
+                                                      WidgetStateProperty.all(
+                                                          const Color(
+                                                              0xFFF8F3FF)),
                                                   showBottomBorder: false,
                                                   dividerThickness: 0.0,
-                                                  headingTextStyle: theme.textTheme.titleMedium,
+                                                  headingTextStyle: theme
+                                                      .textTheme.titleMedium,
                                                   columns: [
                                                     const DataColumn(
                                                       label: Text(
@@ -295,7 +331,9 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                     ),
                                                     DataColumn(
                                                       label: Text(
-                                                        lang.S.of(context).action,
+                                                        lang.S
+                                                            .of(context)
+                                                            .action,
                                                       ),
                                                     ),
                                                   ],
@@ -303,53 +341,92 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                     showIncomeCategory.length,
                                                     (index) => DataRow(cells: [
                                                       DataCell(
-                                                        Text((index + 1).toString()),
+                                                        Text((index + 1)
+                                                            .toString()),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          showIncomeCategory[index].name,
+                                                          showIncomeCategory[
+                                                                  index]
+                                                              .name,
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          showIncomeCategory[index].phoneNumber,
+                                                          showIncomeCategory[
+                                                                  index]
+                                                              .phoneNumber,
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          showIncomeCategory[index].designation,
+                                                          showIncomeCategory[
+                                                                  index]
+                                                              .designation,
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          showIncomeCategory[index].salary.toStringAsFixed(2),
+                                                          showIncomeCategory[
+                                                                  index]
+                                                              .salary
+                                                              .toStringAsFixed(
+                                                                  2),
                                                         ),
                                                       ),
 
                                                       ///__________action_menu__________________________________________________________
                                                       DataCell(
                                                         Theme(
-                                                          data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                          child: PopupMenuButton(
-                                                            surfaceTintColor: Colors.white,
-                                                            icon: const Icon(FeatherIcons.moreVertical, size: 18.0),
-                                                            padding: EdgeInsets.zero,
-                                                            itemBuilder: (BuildContext bc) => [
+                                                          data: ThemeData(
+                                                              highlightColor:
+                                                                  dropdownItemColor,
+                                                              focusColor:
+                                                                  dropdownItemColor,
+                                                              hoverColor:
+                                                                  dropdownItemColor),
+                                                          child:
+                                                              PopupMenuButton(
+                                                            surfaceTintColor:
+                                                                Colors.white,
+                                                            icon: const Icon(
+                                                                FeatherIcons
+                                                                    .moreVertical,
+                                                                size: 18.0),
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            itemBuilder:
+                                                                (BuildContext
+                                                                        bc) =>
+                                                                    [
                                                               ///_________Edit___________________________________________
                                                               PopupMenuItem(
-                                                                child: GestureDetector(
-                                                                  onTap: () async {
-                                                                    if (finalUserRoleModel.hrmEdit == false) {
-                                                                      EasyLoading.showError(userPermissionErrorText);
+                                                                child:
+                                                                    GestureDetector(
+                                                                  onTap:
+                                                                      () async {
+                                                                    if (finalUserRoleModel
+                                                                            .hrmEdit ==
+                                                                        false) {
+                                                                      EasyLoading
+                                                                          .showError(
+                                                                              userPermissionErrorText);
                                                                       return;
                                                                     }
-                                                                    final data = await DesignationRepository().getAllDesignation();
+                                                                    final data =
+                                                                        await DesignationRepository()
+                                                                            .getAllDesignation();
                                                                     await showDialog(
-                                                                      barrierDismissible: false,
-                                                                      context: context,
-                                                                      builder: (BuildContext context) {
+                                                                      barrierDismissible:
+                                                                          false,
+                                                                      context:
+                                                                          context,
+                                                                      builder:
+                                                                          (BuildContext
+                                                                              context) {
                                                                         return StatefulBuilder(
-                                                                          builder: (context, setStates) {
+                                                                          builder:
+                                                                              (context, setStates) {
                                                                             return Dialog(
                                                                               shape: RoundedRectangleBorder(
                                                                                 borderRadius: BorderRadius.circular(20.0),
@@ -365,16 +442,30 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                                         );
                                                                       },
                                                                     );
-                                                                    GoRouter.of(context).pop();
+                                                                    GoRouter.of(
+                                                                            context)
+                                                                        .pop();
                                                                     // Navigator.pop(bc);
                                                                   },
                                                                   child: Row(
                                                                     children: [
-                                                                      const Icon(IconlyLight.edit, size: 22.0, color: kSuccessColor),
-                                                                      const SizedBox(width: 4.0),
+                                                                      const Icon(
+                                                                          IconlyLight
+                                                                              .edit,
+                                                                          size:
+                                                                              22.0,
+                                                                          color:
+                                                                              kSuccessColor),
+                                                                      const SizedBox(
+                                                                          width:
+                                                                              4.0),
                                                                       Text(
-                                                                        lang.S.of(context).edit,
-                                                                        style: theme.textTheme.bodyLarge,
+                                                                        lang.S
+                                                                            .of(context)
+                                                                            .edit,
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge,
                                                                       ),
                                                                     ],
                                                                   ),
@@ -383,28 +474,57 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
 
                                                               ///____________Delete___________________________________________
                                                               PopupMenuItem(
-                                                                child: GestureDetector(
-                                                                  onTap: () async {
-                                                                    if (finalUserRoleModel.hrmDelete == false) {
-                                                                      EasyLoading.showError(userPermissionErrorText);
+                                                                child:
+                                                                    GestureDetector(
+                                                                  onTap:
+                                                                      () async {
+                                                                    if (finalUserRoleModel
+                                                                            .hrmDelete ==
+                                                                        false) {
+                                                                      EasyLoading
+                                                                          .showError(
+                                                                              userPermissionErrorText);
                                                                       return;
                                                                     }
-                                                                    if (await showDeleteConfirmationDialog(context: context, itemName: 'employee')) {
-                                                                      bool result = await EmployeeRepository().deleteEmployee(id: showIncomeCategory[index].id);
+                                                                    if (await showDeleteConfirmationDialog(
+                                                                        context:
+                                                                            context,
+                                                                        itemName:
+                                                                            'employee')) {
+                                                                      bool
+                                                                          result =
+                                                                          await EmployeeRepository()
+                                                                              .deleteEmployee(id: showIncomeCategory[index].id);
                                                                       if (result) {
-                                                                        ref.refresh(employeeProvider);
+                                                                        // ignore: unused_result
+                                                                        ref.refresh(
+                                                                            employeeProvider);
                                                                       }
                                                                     }
                                                                     // Navigator.pop(bc);
-                                                                    GoRouter.of(context).pop();
+                                                                    GoRouter.of(
+                                                                            context)
+                                                                        .pop();
                                                                   },
                                                                   child: Row(
                                                                     children: [
-                                                                       HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 22.0, color: kErrorColor),
-                                                                      const SizedBox(width: 4.0),
+                                                                      HugeIcon(
+                                                                          icon: HugeIcons
+                                                                              .strokeRoundedDelete02,
+                                                                          size:
+                                                                              22.0,
+                                                                          color:
+                                                                              kErrorColor),
+                                                                      const SizedBox(
+                                                                          width:
+                                                                              4.0),
                                                                       Text(
-                                                                        lang.S.of(context).delete,
-                                                                        style: theme.textTheme.bodyLarge,
+                                                                        lang.S
+                                                                            .of(context)
+                                                                            .delete,
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge,
                                                                       ),
                                                                     ],
                                                                   ),
@@ -426,7 +546,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                     Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Flexible(
                                             child: Text(
@@ -438,21 +559,33 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                           Row(
                                             children: [
                                               InkWell(
-                                                overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                                overlayColor:
+                                                    WidgetStateProperty.all<
+                                                        Color>(Colors.grey),
                                                 hoverColor: Colors.grey,
-                                                onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                                onTap: _currentPage > 1
+                                                    ? () => setState(
+                                                        () => _currentPage--)
+                                                    : null,
                                                 child: Container(
                                                   height: 32,
                                                   width: 90,
                                                   decoration: BoxDecoration(
-                                                    border: Border.all(color: kBorderColorTextField),
-                                                    borderRadius: const BorderRadius.only(
-                                                      bottomLeft: Radius.circular(4.0),
-                                                      topLeft: Radius.circular(4.0),
+                                                    border: Border.all(
+                                                        color:
+                                                            kBorderColorTextField),
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                      bottomLeft:
+                                                          Radius.circular(4.0),
+                                                      topLeft:
+                                                          Radius.circular(4.0),
                                                     ),
                                                   ),
                                                   child: Center(
-                                                    child: Text(lang.S.of(context).previous),
+                                                    child: Text(lang.S
+                                                        .of(context)
+                                                        .previous),
                                                   ),
                                                 ),
                                               ),
@@ -460,13 +593,16 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                 height: 32,
                                                 width: 32,
                                                 decoration: BoxDecoration(
-                                                  border: Border.all(color: kBorderColorTextField),
+                                                  border: Border.all(
+                                                      color:
+                                                          kBorderColorTextField),
                                                   color: kMainColor,
                                                 ),
                                                 child: Center(
                                                   child: Text(
                                                     '$_currentPage',
-                                                    style: const TextStyle(color: Colors.white),
+                                                    style: const TextStyle(
+                                                        color: Colors.white),
                                                   ),
                                                 ),
                                               ),
@@ -474,7 +610,9 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                 height: 32,
                                                 width: 32,
                                                 decoration: BoxDecoration(
-                                                  border: Border.all(color: kBorderColorTextField),
+                                                  border: Border.all(
+                                                      color:
+                                                          kBorderColorTextField),
                                                   color: Colors.transparent,
                                                 ),
                                                 child: Center(
@@ -484,20 +622,35 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                 ),
                                               ),
                                               InkWell(
-                                                hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                                overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                                onTap: _currentPage * _salaryPerPage < showIncomeCategory.length ? () => setState(() => _currentPage++) : null,
+                                                hoverColor: Colors.blue
+                                                    .withValues(alpha: 0.1),
+                                                overlayColor:
+                                                    WidgetStateProperty.all<
+                                                        Color>(Colors.blue),
+                                                onTap: _currentPage *
+                                                            _salaryPerPage <
+                                                        showIncomeCategory
+                                                            .length
+                                                    ? () => setState(
+                                                        () => _currentPage++)
+                                                    : null,
                                                 child: Container(
                                                   height: 32,
                                                   width: 90,
                                                   decoration: BoxDecoration(
-                                                    border: Border.all(color: kBorderColorTextField),
-                                                    borderRadius: const BorderRadius.only(
-                                                      bottomRight: Radius.circular(4.0),
-                                                      topRight: Radius.circular(4.0),
+                                                    border: Border.all(
+                                                        color:
+                                                            kBorderColorTextField),
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                      bottomRight:
+                                                          Radius.circular(4.0),
+                                                      topRight:
+                                                          Radius.circular(4.0),
                                                     ),
                                                   ),
-                                                  child: const Center(child: Text('Siguiente')),
+                                                  child: const Center(
+                                                      child: Text('Siguiente')),
                                                 ),
                                               ),
                                             ],
@@ -507,7 +660,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                     ),
                                   ],
                                 )
-                              : const EmptyWidget(title: 'No se encontraron datos'),
+                              : const EmptyWidget(
+                                  title: 'No se encontraron datos'),
                         ],
                       ),
                     );

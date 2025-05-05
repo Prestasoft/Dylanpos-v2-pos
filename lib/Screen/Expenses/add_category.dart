@@ -9,12 +9,12 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/expense_category_proivder.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/expense_category_model.dart';
-
 import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class AddCategory extends StatefulWidget {
-  const AddCategory({Key? key, required this.listOfExpanseCategory}) : super(key: key);
+  const AddCategory({Key? key, required this.listOfExpanseCategory})
+      : super(key: key);
 
   final List<ExpenseCategoryModel> listOfExpanseCategory;
 
@@ -36,7 +36,6 @@ class _AddCategoryState extends State<AddCategory> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     List<String> names = [];
     for (var element in widget.listOfExpanseCategory) {
       names.add(element.categoryName.removeAllWhiteSpace().toLowerCase());
@@ -151,30 +150,57 @@ class _AddCategoryState extends State<AddCategory> {
                           padding: const EdgeInsets.all(10.0),
                           child: ElevatedButton(
                             onPressed: () async {
-                              if (categoryName != '' && !names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
-                                ExpenseCategoryModel expenseCategory = ExpenseCategoryModel(categoryName: categoryName, categoryDescription: categoryDescription);
+                              if (categoryName != '' &&
+                                  !names.contains(categoryName
+                                      .toLowerCase()
+                                      .removeAllWhiteSpace())) {
+                                ExpenseCategoryModel expenseCategory =
+                                    ExpenseCategoryModel(
+                                        categoryName: categoryName,
+                                        categoryDescription:
+                                            categoryDescription);
                                 try {
-                                  EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                  final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Expense Category');
-                                  await productInformationRef.push().set(expenseCategory.toJson());
-                                  EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                  EasyLoading.show(
+                                      status:
+                                          '${lang.S.of(context).loading}...',
+                                      dismissOnTap: false);
+                                  final DatabaseReference
+                                      productInformationRef = FirebaseDatabase
+                                          .instance
+                                          .ref()
+                                          .child(await getUserID())
+                                          .child('Expense Category');
+                                  await productInformationRef
+                                      .push()
+                                      .set(expenseCategory.toJson());
+                                  EasyLoading.showSuccess(
+                                      lang.S.of(context).addedSuccessfully,
+                                      duration:
+                                          const Duration(milliseconds: 500));
 
                                   ///____provider_refresh____________________________________________
+                                  // ignore: unused_result
                                   ref.refresh(expenseCategoryProvider);
 
-                                  Future.delayed(const Duration(milliseconds: 100), () {
+                                  Future.delayed(
+                                      const Duration(milliseconds: 100), () {
                                     GoRouter.of(context).pop();
                                   });
                                 } catch (e) {
                                   EasyLoading.dismiss();
                                   //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                 }
-                              } else if (names.contains(categoryName.toLowerCase().removeAllWhiteSpace())) {
+                              } else if (names.contains(categoryName
+                                  .toLowerCase()
+                                  .removeAllWhiteSpace())) {
                                 //EasyLoading.showError('Category Name Already Exists');
-                                EasyLoading.showError(lang.S.of(context).categoryNameAlreadyExists);
+                                EasyLoading.showError(lang.S
+                                    .of(context)
+                                    .categoryNameAlreadyExists);
                               } else {
                                 //EasyLoading.showError('Enter Category Name');
-                                EasyLoading.showError(lang.S.of(context).enterCategoryName);
+                                EasyLoading.showError(
+                                    lang.S.of(context).enterCategoryName);
                               }
                             },
                             child: Text(

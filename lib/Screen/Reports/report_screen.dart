@@ -41,25 +41,30 @@ class SaleReports extends StatefulWidget {
 
 class _SaleReportsState extends State<SaleReports> {
   List<String> categoryList = [
-    'Sale',
-    'Sales Return',
-    'Purchase',
-    'Purchase Return',
-    'Due',
-    'Current Stock',
-    'Daily Transaction',
-    'Quotation Sale History',
-    'Loss/Profit report',
+    'Ventas',
+    'Devolucion',
+    'Compra',
+    'Devolucion de compra',
+    'Pendiente',
+    'Stock actual',
+    'Transaccion Diaria',
+    'Historial de ventas de cotizaciones',
+    'Informe de perdidas y ganancias',
   ];
 
-  String selected = 'Sale';
+  String selected = 'Ventas';
 
-  String selectedMonth = 'This Month';
+  String selectedMonth = 'Este mes';
 
-  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime selectedDate =
+      DateTime(DateTime.now().year, DateTime.now().month, 1);
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -69,16 +74,13 @@ class _SaleReportsState extends State<SaleReports> {
 
   DateTime selected2ndDate = DateTime.now();
 
-  Future<void> _selectedDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selected2ndDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
-    if (picked != null && picked != selected2ndDate) {
-      setState(() {
-        selected2ndDate = picked;
-      });
-    }
-  }
-
-  List<String> month = ['This Month', 'Last Month', 'Last 6 Month', 'This Year', 'View All'];
+  List<String> month = [
+    'Este mes',
+    'Ultimo mes',
+    'Ultimos 6 meses',
+    'Este año',
+    'Ver todo',
+  ];
 
   DropdownButton<String> getMonth() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -100,33 +102,54 @@ class _SaleReportsState extends State<SaleReports> {
         setState(() {
           selectedMonth = value!;
           switch (selectedMonth) {
-            case 'This Month':
+            case 'Este mes':
               {
-                var date = DateTime(DateTime.now().year, DateTime.now().month, 1).toString();
+                var date =
+                    DateTime(DateTime.now().year, DateTime.now().month, 1)
+                        .toString();
+
+                selectedDate = DateTime.parse(date);
+                selected2ndDate = DateTime.now();
+              }
+              {
+                var date =
+                    DateTime(DateTime.now().year, DateTime.now().month, 1)
+                        .toString();
 
                 selectedDate = DateTime.parse(date);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'Last Month':
+            case 'Ultimo mes':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
+                selected2ndDate =
+                    DateTime(DateTime.now().year, DateTime.now().month, 0);
               }
               break;
-            case 'Last 6 Month':
+            case 'Ultimos 6 meses':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'This Year':
+            case 'Este año':
+              {
+                selectedDate = DateTime(DateTime.now().year, 1, 1);
+                selected2ndDate = DateTime.now();
+              }
               {
                 selectedDate = DateTime(DateTime.now().year, 1, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'View All':
+            case 'Ver todo':
+              {
+                selectedDate = DateTime(1900, 01, 01);
+                selected2ndDate = DateTime.now();
+              }
               {
                 selectedDate = DateTime(1900, 01, 01);
                 selected2ndDate = DateTime.now();
@@ -232,7 +255,9 @@ class _SaleReportsState extends State<SaleReports> {
                                   return Container(
                                     padding: const EdgeInsets.all(5.0),
                                     decoration: BoxDecoration(
-                                      color: selected == categoryList[i] ? Colors.grey.shade100 : null,
+                                      color: selected == categoryList[i]
+                                          ? Colors.grey.shade100
+                                          : null,
                                       shape: BoxShape.rectangle,
                                     ),
                                     child: Padding(
@@ -244,7 +269,8 @@ class _SaleReportsState extends State<SaleReports> {
                                     ),
                                   ).onTap(() async {
                                     if (categoryList[i] == 'Current Stock') {
-                                      if (await checkUserRolePermission(type: '/stock-list')) {
+                                      if (await checkUserRolePermission(
+                                          type: '/stock-list')) {
                                         setState(() {
                                           selected = categoryList[i];
                                         });
@@ -265,18 +291,31 @@ class _SaleReportsState extends State<SaleReports> {
               ),
               //-----------------sale reports-----------------------
               ResponsiveGridCol(
-                xs: selected == 'Sale' ? 12 : 0,
-                md: selected == 'Sale' ? 9 : 0,
-                lg: selected == 'Sale' ? 9 : 0,
+                xs: selected == 'Ventas' ? 12 : 0,
+                md: selected == 'Ventas' ? 9 : 0,
+                lg: selected == 'Ventas' ? 9 : 0,
                 child: Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: Consumer(builder: (_, ref, watch) {
-                    AsyncValue<List<SaleTransactionModel>> transactionReport = ref.watch(transitionProvider);
-                    final settingProvider = ref.watch(generalSettingProvider);
+                    AsyncValue<List<SaleTransactionModel>> transactionReport =
+                        ref.watch(transitionProvider);
                     return transactionReport.when(data: (transaction) {
                       List<SaleTransactionModel> reTransaction = [];
                       for (var element in transaction.reversed.toList()) {
-                        if ((element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()) || element.customerName.toLowerCase().contains(searchItem.toLowerCase())) && (selectedDate.isBefore(DateTime.parse(element.purchaseDate)) || DateTime.parse(element.purchaseDate).isAtSameMomentAs(selectedDate)) && (selected2ndDate.isAfter(DateTime.parse(element.purchaseDate)) || DateTime.parse(element.purchaseDate).isAtSameMomentAs(selected2ndDate))) {
+                        if ((element.invoiceNumber
+                                    .toLowerCase()
+                                    .contains(searchItem.toLowerCase()) ||
+                                element.customerName
+                                    .toLowerCase()
+                                    .contains(searchItem.toLowerCase())) &&
+                            (selectedDate.isBefore(
+                                    DateTime.parse(element.purchaseDate)) ||
+                                DateTime.parse(element.purchaseDate)
+                                    .isAtSameMomentAs(selectedDate)) &&
+                            (selected2ndDate.isAfter(
+                                    DateTime.parse(element.purchaseDate)) ||
+                                DateTime.parse(element.purchaseDate)
+                                    .isAtSameMomentAs(selected2ndDate))) {
                           reTransaction.add(element);
                         }
                       }
@@ -290,11 +329,19 @@ class _SaleReportsState extends State<SaleReports> {
                       //   endIndex > reTransaction.length ? reTransaction.length : endIndex,
                       // );
                       // Calculate pagination
-                      final pages = _saleReportPerPage == -1 ? 1 : (reTransaction.length / _saleReportPerPage).ceil();
-                      final startIndex = _saleReportPerPage == -1 ? 0 : (_currentPage - 1) * _saleReportPerPage;
-                      final endIndex = _saleReportPerPage == -1 ? reTransaction.length : (startIndex + _saleReportPerPage).clamp(0, reTransaction.length);
+                      final pages = _saleReportPerPage == -1
+                          ? 1
+                          : (reTransaction.length / _saleReportPerPage).ceil();
+                      final startIndex = _saleReportPerPage == -1
+                          ? 0
+                          : (_currentPage - 1) * _saleReportPerPage;
+                      final endIndex = _saleReportPerPage == -1
+                          ? reTransaction.length
+                          : (startIndex + _saleReportPerPage)
+                              .clamp(0, reTransaction.length);
                       // Get paginated transactions
-                      final paginatedList = reTransaction.sublist(startIndex, endIndex);
+                      final paginatedList =
+                          reTransaction.sublist(startIndex, endIndex);
                       final profile = ref.watch(profileDetailsProvider);
                       final settingProvider = ref.watch(generalSettingProvider);
                       return Column(
@@ -320,10 +367,22 @@ class _SaleReportsState extends State<SaleReports> {
                                       child: SizedBox(
                                         height: 48,
                                         child: FormField(
-                                          builder: (FormFieldState<dynamic> field) {
+                                          builder:
+                                              (FormFieldState<dynamic> field) {
                                             return InputDecorator(
-                                              decoration: const InputDecoration(),
-                                              child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getMonth())),
+                                              decoration:
+                                                  const InputDecoration(),
+                                              child: Theme(
+                                                  data: ThemeData(
+                                                      highlightColor:
+                                                          dropdownItemColor,
+                                                      focusColor:
+                                                          dropdownItemColor,
+                                                      hoverColor:
+                                                          dropdownItemColor),
+                                                  child:
+                                                      DropdownButtonHideUnderline(
+                                                          child: getMonth())),
                                             );
                                           },
                                         ),
@@ -338,7 +397,11 @@ class _SaleReportsState extends State<SaleReports> {
                                       padding: const EdgeInsets.all(10.0),
                                       child: Container(
                                           height: 48,
-                                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), border: Border.all(color: kThemeOutlineColor)),
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(5.0),
+                                              border: Border.all(
+                                                  color: kThemeOutlineColor)),
                                           child: Row(
                                             children: [
                                               Container(
@@ -347,35 +410,52 @@ class _SaleReportsState extends State<SaleReports> {
                                                 decoration: const BoxDecoration(
                                                     shape: BoxShape.rectangle,
                                                     color: kGreyTextColor,
-                                                    borderRadius: BorderRadius.only(
-                                                      topLeft: Radius.circular(5),
-                                                      bottomLeft: Radius.circular(5),
+                                                    borderRadius:
+                                                        BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(5),
+                                                      bottomLeft:
+                                                          Radius.circular(5),
                                                     )),
                                                 child: Center(
                                                   child: Text(
                                                     lang.S.of(context).between,
-                                                    style: kTextStyle.copyWith(color: kWhite),
+                                                    style: kTextStyle.copyWith(
+                                                        color: kWhite),
                                                   ),
                                                 ),
                                               ),
                                               const SizedBox(width: 10.0),
                                               Flexible(
                                                 child: GestureDetector(
-                                                  onTap: () => _selectDate(context),
-                                                  child: Text.rich(TextSpan(text: '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}', style: theme.textTheme.titleSmall, children: [
-                                                    TextSpan(
-                                                      text: lang.S.of(context).to,
-                                                      style: theme.textTheme.titleSmall,
-                                                    ),
-                                                    TextSpan(
-                                                      text: ' ${lang.S.of(context).to} ',
-                                                      style: theme.textTheme.titleSmall,
-                                                    ),
-                                                    TextSpan(
-                                                      text: '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
-                                                      style: theme.textTheme.titleSmall,
-                                                    )
-                                                  ])),
+                                                  onTap: () =>
+                                                      _selectDate(context),
+                                                  child: Text.rich(TextSpan(
+                                                      text:
+                                                          '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                                                      style: theme
+                                                          .textTheme.titleSmall,
+                                                      children: [
+                                                        TextSpan(
+                                                          text: lang.S
+                                                              .of(context)
+                                                              .to,
+                                                          style: theme.textTheme
+                                                              .titleSmall,
+                                                        ),
+                                                        TextSpan(
+                                                          text:
+                                                              ' ${lang.S.of(context).to} ',
+                                                          style: theme.textTheme
+                                                              .titleSmall,
+                                                        ),
+                                                        TextSpan(
+                                                          text:
+                                                              '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                                          style: theme.textTheme
+                                                              .titleSmall,
+                                                        )
+                                                      ])),
                                                 ),
                                               ),
                                             ],
@@ -391,17 +471,27 @@ class _SaleReportsState extends State<SaleReports> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Container(
-                                        padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(10.0),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
                                           color: const Color(0xFFCFF4E3),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               reTransaction.length.toString(),
-                                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18.0),
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 18.0),
                                             ),
                                             Text(
                                               lang.S.of(context).totalSale,
@@ -419,17 +509,28 @@ class _SaleReportsState extends State<SaleReports> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Container(
-                                        padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(10.0),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
                                           color: const Color(0xFFFEE7CB),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               '$globalCurrency${myFormat.format(double.tryParse(getTotalDue(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleMedium?.copyWith(color: kTitleColor, fontWeight: FontWeight.w600, fontSize: 18.0),
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 18.0),
                                             ),
                                             Text(
                                               lang.S.of(context).unPaid,
@@ -447,17 +548,27 @@ class _SaleReportsState extends State<SaleReports> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Container(
-                                        padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(10.0),
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
                                           color: const Color(0xFFFED3D3),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               '$globalCurrency${myFormat.format(double.tryParse(calculateTotalSale(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18.0),
+                                              style: theme.textTheme.titleLarge
+                                                  ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 18.0),
                                             ),
                                             Text(
                                               lang.S.of(context).totalAmount,
@@ -519,16 +630,19 @@ class _SaleReportsState extends State<SaleReports> {
                                         height: 48,
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8.0),
-                                          border: Border.all(color: kThemeOutlineColor),
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          border: Border.all(
+                                              color: kThemeOutlineColor),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Flexible(
                                                 child: Text(
-                                              'Show-',
+                                              'Mostrar-',
                                               style: theme.textTheme.bodyLarge,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -542,21 +656,28 @@ class _SaleReportsState extends State<SaleReports> {
                                                 Icons.keyboard_arrow_down,
                                                 color: Colors.black,
                                               ),
-                                              items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                              items: [10, 20, 50, 100, -1]
+                                                  .map<DropdownMenuItem<int>>(
+                                                      (int value) {
                                                 return DropdownMenuItem<int>(
                                                   value: value,
                                                   child: Text(
-                                                    value == -1 ? "All" : value.toString(),
-                                                    style: theme.textTheme.bodyLarge,
+                                                    value == -1
+                                                        ? "All"
+                                                        : value.toString(),
+                                                    style: theme
+                                                        .textTheme.bodyLarge,
                                                   ),
                                                 );
                                               }).toList(),
                                               onChanged: (int? newValue) {
                                                 setState(() {
                                                   if (newValue == -1) {
-                                                    _saleReportPerPage = -1; // Set to -1 for "All"
+                                                    _saleReportPerPage =
+                                                        -1; // Set to -1 for "All"
                                                   } else {
-                                                    _saleReportPerPage = newValue ?? 10;
+                                                    _saleReportPerPage =
+                                                        newValue ?? 10;
                                                   }
                                                   _currentPage = 1;
                                                 });
@@ -583,8 +704,11 @@ class _SaleReportsState extends State<SaleReports> {
                                         },
                                         keyboardType: TextInputType.name,
                                         decoration: InputDecoration(
-                                          contentPadding: const EdgeInsets.all(10.0),
-                                          hintText: (lang.S.of(context).searchByInvoiceOrName),
+                                          contentPadding:
+                                              const EdgeInsets.all(10.0),
+                                          hintText: (lang.S
+                                              .of(context)
+                                              .searchByInvoiceOrName),
                                           border: InputBorder.none,
                                           suffixIcon: const Icon(
                                             FeatherIcons.search,
@@ -600,31 +724,50 @@ class _SaleReportsState extends State<SaleReports> {
                                     Container(
                                       height: 40.0,
                                       width: 300,
-                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), border: Border.all(color: kGreyTextColor.withOpacity(0.1))),
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          border: Border.all(
+                                              color: kGreyTextColor
+                                                  .withOpacity(0.1))),
                                       child: AppTextField(
                                         showCursor: true,
                                         cursorColor: kTitleColor,
                                         textFieldType: TextFieldType.NAME,
                                         decoration: kInputDecoration.copyWith(
-                                          contentPadding: const EdgeInsets.all(0.0),
+                                          contentPadding:
+                                              const EdgeInsets.all(0.0),
                                           hintText: (lang.S.of(context).search),
-                                          hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                          hintStyle: kTextStyle.copyWith(
+                                              color: kGreyTextColor),
                                           border: InputBorder.none,
-                                          enabledBorder: const OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                                            borderSide: BorderSide(color: kBorderColorTextField, width: 1),
+                                          enabledBorder:
+                                              const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(30.0)),
+                                            borderSide: BorderSide(
+                                                color: kBorderColorTextField,
+                                                width: 1),
                                           ),
-                                          focusedBorder: const OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                                            borderSide: BorderSide(color: kBorderColorTextField, width: 1),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(30.0)),
+                                            borderSide: BorderSide(
+                                                color: kBorderColorTextField,
+                                                width: 1),
                                           ),
                                           suffixIcon: Padding(
                                             padding: const EdgeInsets.all(4.0),
                                             child: Container(
-                                                padding: const EdgeInsets.all(2.0),
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
                                                 decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(8.0),
-                                                  color: kGreyTextColor.withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          8.0),
+                                                  color: kGreyTextColor
+                                                      .withOpacity(0.1),
                                                 ),
                                                 child: const Icon(
                                                   FeatherIcons.search,
@@ -640,13 +783,17 @@ class _SaleReportsState extends State<SaleReports> {
                                       color: kTitleColor,
                                     ),
                                     const SizedBox(width: 5.0),
-                                    Icon(MdiIcons.microsoftExcel, color: kTitleColor),
+                                    Icon(MdiIcons.microsoftExcel,
+                                        color: kTitleColor),
                                     const SizedBox(width: 5.0),
-                                    Icon(MdiIcons.fileDelimited, color: kTitleColor),
+                                    Icon(MdiIcons.fileDelimited,
+                                        color: kTitleColor),
                                     const SizedBox(width: 5.0),
-                                    Icon(MdiIcons.filePdfBox, color: kTitleColor),
+                                    Icon(MdiIcons.filePdfBox,
+                                        color: kTitleColor),
                                     const SizedBox(width: 5.0),
-                                    const Icon(FeatherIcons.printer, color: kTitleColor),
+                                    const Icon(FeatherIcons.printer,
+                                        color: kTitleColor),
                                   ],
                                 ).visible(false),
 
@@ -659,186 +806,274 @@ class _SaleReportsState extends State<SaleReports> {
                                               return Scrollbar(
                                                 controller: _horizontalScroll,
                                                 thumbVisibility: true,
-                                                radius: const Radius.circular(8),
+                                                radius:
+                                                    const Radius.circular(8),
                                                 thickness: 8,
                                                 child: SingleChildScrollView(
-                                                  scrollDirection: Axis.horizontal,
+                                                  scrollDirection:
+                                                      Axis.horizontal,
                                                   controller: _horizontalScroll,
                                                   child: ConstrainedBox(
                                                     constraints: BoxConstraints(
-                                                      minWidth: constrains.maxWidth,
+                                                      minWidth:
+                                                          constrains.maxWidth,
                                                     ),
                                                     child: Theme(
                                                       data: theme.copyWith(
-                                                        dividerTheme: const DividerThemeData(
-                                                          color: Colors.transparent,
+                                                        dividerTheme:
+                                                            const DividerThemeData(
+                                                          color: Colors
+                                                              .transparent,
                                                         ),
                                                       ),
                                                       child: DataTable(
-                                                          border: const TableBorder(
-                                                            horizontalInside: BorderSide(
+                                                          border:
+                                                              const TableBorder(
+                                                            horizontalInside:
+                                                                BorderSide(
                                                               width: 1,
-                                                              color: kNeutral300,
+                                                              color:
+                                                                  kNeutral300,
                                                             ),
                                                           ),
-                                                          dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                          headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
-                                                          showBottomBorder: false,
+                                                          dataRowColor:
+                                                              const WidgetStatePropertyAll(
+                                                                  Colors.white),
+                                                          headingRowColor:
+                                                              WidgetStateProperty
+                                                                  .all(const Color(
+                                                                      0xFFF8F3FF)),
+                                                          showBottomBorder:
+                                                              false,
                                                           dividerThickness: 0.0,
-                                                          headingTextStyle: theme.textTheme.titleMedium,
+                                                          headingTextStyle:
+                                                              theme.textTheme
+                                                                  .titleMedium,
                                                           columns: [
-                                                            DataColumn(label: Text(lang.S.of(context).SL)),
-                                                            DataColumn(label: Text(lang.S.of(context).date)),
-                                                            DataColumn(label: Text(lang.S.of(context).invoice)),
-                                                            DataColumn(label: Text(lang.S.of(context).partyName)),
-                                                            DataColumn(label: Text(lang.S.of(context).partyType)),
-                                                            DataColumn(label: Text(lang.S.of(context).amount)),
-                                                            DataColumn(label: Text(lang.S.of(context).due)),
-                                                            DataColumn(label: Text(lang.S.of(context).status)),
-                                                            DataColumn(label: Text(lang.S.of(context).setting)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .SL)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .date)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .invoice)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .partyName)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .partyType)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .amount)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .due)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .status)),
+                                                            DataColumn(
+                                                                label: Text(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .setting)),
                                                           ],
-                                                          rows: List.generate(paginatedList.length, (index) {
-                                                            return DataRow(cells: [
-                                                              ///______________S.L__________________________________________________
-                                                              DataCell(
-                                                                Text('${startIndex + index + 1}'),
-                                                              ),
+                                                          rows: List.generate(
+                                                              paginatedList
+                                                                  .length,
+                                                              (index) {
+                                                            return DataRow(
+                                                                cells: [
+                                                                  ///______________S.L__________________________________________________
+                                                                  DataCell(
+                                                                    Text(
+                                                                        '${startIndex + index + 1}'),
+                                                                  ),
 
-                                                              ///______________Date__________________________________________________
-                                                              DataCell(
-                                                                Text(
-                                                                  paginatedList[index].purchaseDate.substring(0, 10),
-                                                                ),
-                                                              ),
+                                                                  ///______________Date__________________________________________________
+                                                                  DataCell(
+                                                                    Text(
+                                                                      paginatedList[
+                                                                              index]
+                                                                          .purchaseDate
+                                                                          .substring(
+                                                                              0,
+                                                                              10),
+                                                                    ),
+                                                                  ),
 
-                                                              ///____________Invoice_________________________________________________
-                                                              DataCell(
-                                                                Text(
-                                                                  paginatedList[index].invoiceNumber,
-                                                                ),
-                                                              ),
+                                                                  ///____________Invoice_________________________________________________
+                                                                  DataCell(
+                                                                    Text(
+                                                                      paginatedList[
+                                                                              index]
+                                                                          .invoiceNumber,
+                                                                    ),
+                                                                  ),
 
-                                                              ///______Party Name___________________________________________________________
-                                                              DataCell(
-                                                                Text(
-                                                                  paginatedList[index].customerName,
-                                                                ),
-                                                              ),
+                                                                  ///______Party Name___________________________________________________________
+                                                                  DataCell(
+                                                                    Text(
+                                                                      paginatedList[
+                                                                              index]
+                                                                          .customerName,
+                                                                    ),
+                                                                  ),
 
-                                                              ///___________Party Type______________________________________________
+                                                                  ///___________Party Type______________________________________________
 
-                                                              DataCell(
-                                                                Text(
-                                                                  paginatedList[index].paymentType.toString(),
-                                                                ),
-                                                              ),
+                                                                  DataCell(
+                                                                    Text(
+                                                                      paginatedList[
+                                                                              index]
+                                                                          .paymentType
+                                                                          .toString(),
+                                                                    ),
+                                                                  ),
 
-                                                              ///___________Amount____________________________________________________
-                                                              DataCell(
-                                                                Text(
-                                                                  '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].totalAmount.toString()) ?? 0)}',
-                                                                ),
-                                                              ),
+                                                                  ///___________Amount____________________________________________________
+                                                                  DataCell(
+                                                                    Text(
+                                                                      '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].totalAmount.toString()) ?? 0)}',
+                                                                    ),
+                                                                  ),
 
-                                                              ///___________Due____________________________________________________
-                                                              DataCell(
-                                                                Text(
-                                                                  '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].dueAmount.toString()) ?? 0)}',
-                                                                ),
-                                                              ),
+                                                                  ///___________Due____________________________________________________
+                                                                  DataCell(
+                                                                    Text(
+                                                                      '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].dueAmount.toString()) ?? 0)}',
+                                                                    ),
+                                                                  ),
 
-                                                              ///___________Due____________________________________________________
+                                                                  ///___________Due____________________________________________________
 
-                                                              DataCell(
-                                                                Text(
-                                                                  paginatedList[index].isPaid! ? 'Paid' : "Due",
-                                                                ),
-                                                              ),
+                                                                  DataCell(
+                                                                    Text(
+                                                                      paginatedList[index]
+                                                                              .isPaid!
+                                                                          ? 'Pagado'
+                                                                          : "Pendiente",
+                                                                    ),
+                                                                  ),
 
-                                                              ///_______________actions_________________________________________________
-                                                              DataCell(
-                                                                settingProvider.when(data: (setting) {
-                                                                  return Theme(
-                                                                    data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                                    child: PopupMenuButton(
-                                                                      surfaceTintColor: Colors.white,
-                                                                      padding: EdgeInsets.zero,
-                                                                      itemBuilder: (BuildContext bc) => [
-                                                                        PopupMenuItem(
-                                                                          child: GestureDetector(
-                                                                            onTap: () async {
-                                                                              await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: profile.value!, fromSaleReports: true, setting: setting, saleTransactionModel: paginatedList[index], context: context);
-                                                                              // await Printing.layoutPdf(
-                                                                              //   onLayout: (PdfPageFormat format) async =>
-                                                                              //   await GeneratePdfAndPrint().generateSaleDocument(personalInformation: profile.value!, transactions: reTransaction[index]),
-                                                                              // );
-                                                                              // SaleInvoice(
-                                                                              //   isPosScreen: false,
-                                                                              //   transitionModel: reTransaction[index],
-                                                                              //   personalInformationModel: profile.value!,
-                                                                              // ).launch(context);
-                                                                            },
-                                                                            child: Row(
-                                                                              children: [
-                                                                                Icon(MdiIcons.printer, size: 18.0, color: kTitleColor),
-                                                                                const SizedBox(width: 4.0),
-                                                                                Text(
-                                                                                  lang.S.of(context).print,
-                                                                                  style: kTextStyle.copyWith(color: kTitleColor),
+                                                                  ///_______________actions_________________________________________________
+                                                                  DataCell(
+                                                                    settingProvider.when(data:
+                                                                        (setting) {
+                                                                      return Theme(
+                                                                        data: ThemeData(
+                                                                            highlightColor:
+                                                                                dropdownItemColor,
+                                                                            focusColor:
+                                                                                dropdownItemColor,
+                                                                            hoverColor:
+                                                                                dropdownItemColor),
+                                                                        child:
+                                                                            PopupMenuButton(
+                                                                          surfaceTintColor:
+                                                                              Colors.white,
+                                                                          padding:
+                                                                              EdgeInsets.zero,
+                                                                          itemBuilder:
+                                                                              (BuildContext bc) => [
+                                                                            PopupMenuItem(
+                                                                              child: GestureDetector(
+                                                                                onTap: () async {
+                                                                                  await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: profile.value!, fromSaleReports: true, setting: setting, saleTransactionModel: paginatedList[index], context: context);
+                                                                                  // await Printing.layoutPdf(
+                                                                                  //   onLayout: (PdfPageFormat format) async =>
+                                                                                  //   await GeneratePdfAndPrint().generateSaleDocument(personalInformation: profile.value!, transactions: reTransaction[index]),
+                                                                                  // );
+                                                                                  // SaleInvoice(
+                                                                                  //   isPosScreen: false,
+                                                                                  //   transitionModel: reTransaction[index],
+                                                                                  //   personalInformationModel: profile.value!,
+                                                                                  // ).launch(context);
+                                                                                },
+                                                                                child: Row(
+                                                                                  children: [
+                                                                                    Icon(MdiIcons.printer, size: 18.0, color: kTitleColor),
+                                                                                    const SizedBox(width: 4.0),
+                                                                                    Text(
+                                                                                      lang.S.of(context).print,
+                                                                                      style: kTextStyle.copyWith(color: kTitleColor),
+                                                                                    ),
+                                                                                  ],
                                                                                 ),
-                                                                              ],
+                                                                              ),
                                                                             ),
+                                                                            PopupMenuItem(
+                                                                              child: settingProvider.when(data: (setting) {
+                                                                                final dynamicInvoice = setting.companyName.isNotEmpty == true ? setting.companyName : invoiceFileName;
+                                                                                // final pdfFotter = setting.companyName.isNotEmpty == true ? setting.companyName : appsName;
+                                                                                return GestureDetector(
+                                                                                  onTap: () async {
+                                                                                    AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(await generateSaleDocument(personalInformation: profile.value!, transactions: paginatedList[index], generalSetting: setting))}")
+                                                                                      ..setAttribute("download", "${dynamicInvoice}_S-${reTransaction[index].invoiceNumber}.pdf")
+                                                                                      ..click();
+                                                                                  },
+                                                                                  child: Row(
+                                                                                    children: [
+                                                                                      Icon(MdiIcons.filePdfBox, size: 18.0, color: kTitleColor),
+                                                                                      const SizedBox(width: 4.0),
+                                                                                      Text(
+                                                                                        lang.S.of(context).downloadPDF,
+                                                                                        style: kTextStyle.copyWith(color: kTitleColor),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                );
+                                                                              }, error: (e, string) {
+                                                                                return Text(e.toString());
+                                                                              }, loading: () {
+                                                                                return Center(child: CircularProgressIndicator());
+                                                                              }),
+                                                                            ),
+                                                                          ],
+                                                                          child:
+                                                                              Center(
+                                                                            child: Container(
+                                                                                height: 18,
+                                                                                width: 18,
+                                                                                alignment: Alignment.centerRight,
+                                                                                child: const Icon(
+                                                                                  Icons.more_vert_sharp,
+                                                                                  size: 18,
+                                                                                )),
                                                                           ),
                                                                         ),
-                                                                        PopupMenuItem(
-                                                                          child: settingProvider.when(data: (setting) {
-                                                                            final dynamicInvoice = setting.companyName.isNotEmpty == true ? setting.companyName : invoiceFileName;
-                                                                            // final pdfFotter = setting.companyName.isNotEmpty == true ? setting.companyName : appsName;
-                                                                            return GestureDetector(
-                                                                              onTap: () async {
-                                                                                AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(await generateSaleDocument(personalInformation: profile.value!, transactions: paginatedList[index], generalSetting: setting))}")
-                                                                                  ..setAttribute("download", "${dynamicInvoice}_S-${reTransaction[index].invoiceNumber}.pdf")
-                                                                                  ..click();
-                                                                              },
-                                                                              child: Row(
-                                                                                children: [
-                                                                                  Icon(MdiIcons.filePdfBox, size: 18.0, color: kTitleColor),
-                                                                                  const SizedBox(width: 4.0),
-                                                                                  Text(
-                                                                                    lang.S.of(context).downloadPDF,
-                                                                                    style: kTextStyle.copyWith(color: kTitleColor),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            );
-                                                                          }, error: (e, string) {
-                                                                            return Text(e.toString());
-                                                                          }, loading: () {
-                                                                            return Center(child: CircularProgressIndicator());
-                                                                          }),
-                                                                        ),
-                                                                      ],
-                                                                      child: Center(
-                                                                        child: Container(
-                                                                            height: 18,
-                                                                            width: 18,
-                                                                            alignment: Alignment.centerRight,
-                                                                            child: const Icon(
-                                                                              Icons.more_vert_sharp,
-                                                                              size: 18,
-                                                                            )),
-                                                                      ),
-                                                                    ),
-                                                                  );
-                                                                }, error: (e, stack) {
-                                                                  return Text(e.toString());
-                                                                }, loading: () {
-                                                                  return Center(
-                                                                    child: CircularProgressIndicator(),
-                                                                  );
-                                                                }),
-                                                              ),
-                                                            ]);
+                                                                      );
+                                                                    }, error: (e,
+                                                                        stack) {
+                                                                      return Text(
+                                                                          e.toString());
+                                                                    }, loading:
+                                                                        () {
+                                                                      return Center(
+                                                                        child:
+                                                                            CircularProgressIndicator(),
+                                                                      );
+                                                                    }),
+                                                                  ),
+                                                                ]);
                                                           })),
                                                     ),
                                                   ),
@@ -849,33 +1084,53 @@ class _SaleReportsState extends State<SaleReports> {
                                           Padding(
                                             padding: const EdgeInsets.all(10.0),
                                             child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Flexible(
                                                   child: Text(
-                                                    '${lang.S.of(context).showing} ${((_currentPage - 1) * _saleReportPerPage + 1).toString()} to ${((_currentPage - 1) * _saleReportPerPage + _saleReportPerPage).clamp(0, reTransaction.length)} of ${reTransaction.length} entries',
+                                                    '${lang.S.of(context).showing} ${((_currentPage - 1) * _saleReportPerPage + 1).toString()} hasta ${((_currentPage - 1) * _saleReportPerPage + _saleReportPerPage).clamp(0, reTransaction.length)} de ${reTransaction.length} entradas',
                                                     maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                                 Row(
                                                   children: [
                                                     InkWell(
-                                                      overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                                      overlayColor:
+                                                          WidgetStateProperty
+                                                              .all<Color>(
+                                                                  Colors.grey),
                                                       hoverColor: Colors.grey,
-                                                      onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                                      onTap: _currentPage > 1
+                                                          ? () => setState(() =>
+                                                              _currentPage--)
+                                                          : null,
                                                       child: Container(
                                                         height: 32,
                                                         width: 90,
-                                                        decoration: BoxDecoration(
-                                                          border: Border.all(color: kBorderColorTextField),
-                                                          borderRadius: const BorderRadius.only(
-                                                            bottomLeft: Radius.circular(4.0),
-                                                            topLeft: Radius.circular(4.0),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          border: Border.all(
+                                                              color:
+                                                                  kBorderColorTextField),
+                                                          borderRadius:
+                                                              const BorderRadius
+                                                                  .only(
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                    4.0),
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                    4.0),
                                                           ),
                                                         ),
                                                         child: Center(
-                                                          child: Text(lang.S.of(context).previous),
+                                                          child: Text(lang.S
+                                                              .of(context)
+                                                              .previous),
                                                         ),
                                                       ),
                                                     ),
@@ -883,13 +1138,18 @@ class _SaleReportsState extends State<SaleReports> {
                                                       height: 32,
                                                       width: 32,
                                                       decoration: BoxDecoration(
-                                                        border: Border.all(color: kBorderColorTextField),
+                                                        border: Border.all(
+                                                            color:
+                                                                kBorderColorTextField),
                                                         color: kMainColor,
                                                       ),
                                                       child: Center(
                                                         child: Text(
                                                           '$_currentPage',
-                                                          style: const TextStyle(color: Colors.white),
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: Colors
+                                                                      .white),
                                                         ),
                                                       ),
                                                     ),
@@ -897,8 +1157,11 @@ class _SaleReportsState extends State<SaleReports> {
                                                       height: 32,
                                                       width: 32,
                                                       decoration: BoxDecoration(
-                                                        border: Border.all(color: kBorderColorTextField),
-                                                        color: Colors.transparent,
+                                                        border: Border.all(
+                                                            color:
+                                                                kBorderColorTextField),
+                                                        color:
+                                                            Colors.transparent,
                                                       ),
                                                       child: Center(
                                                         child: Text(
@@ -907,20 +1170,42 @@ class _SaleReportsState extends State<SaleReports> {
                                                       ),
                                                     ),
                                                     InkWell(
-                                                      hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                                      overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                                      onTap: _currentPage * _saleReportPerPage < reTransaction.length ? () => setState(() => _currentPage++) : null,
+                                                      hoverColor: Colors.blue
+                                                          .withValues(
+                                                              alpha: 0.1),
+                                                      overlayColor:
+                                                          WidgetStateProperty
+                                                              .all<Color>(
+                                                                  Colors.blue),
+                                                      onTap: _currentPage *
+                                                                  _saleReportPerPage <
+                                                              reTransaction
+                                                                  .length
+                                                          ? () => setState(() =>
+                                                              _currentPage++)
+                                                          : null,
                                                       child: Container(
                                                         height: 32,
                                                         width: 90,
-                                                        decoration: BoxDecoration(
-                                                          border: Border.all(color: kBorderColorTextField),
-                                                          borderRadius: const BorderRadius.only(
-                                                            bottomRight: Radius.circular(4.0),
-                                                            topRight: Radius.circular(4.0),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          border: Border.all(
+                                                              color:
+                                                                  kBorderColorTextField),
+                                                          borderRadius:
+                                                              const BorderRadius
+                                                                  .only(
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                    4.0),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    4.0),
                                                           ),
                                                         ),
-                                                        child: const Center(child: Text('Next')),
+                                                        child: const Center(
+                                                            child: Text(
+                                                                'Siguiente')),
                                                       ),
                                                     ),
                                                   ],
@@ -930,7 +1215,8 @@ class _SaleReportsState extends State<SaleReports> {
                                           ),
                                         ],
                                       )
-                                    : noDataFoundImage(text: lang.S.of(context).noReportFound),
+                                    : noDataFoundImage(
+                                        text: lang.S.of(context).noReportFound),
                               ],
                             ),
                           ),
@@ -945,80 +1231,94 @@ class _SaleReportsState extends State<SaleReports> {
                         child: CircularProgressIndicator(),
                       );
                     });
-                  }).visible(selected == 'Sale'),
+                  }).visible(selected == 'Ventas'),
                 ),
               ),
 
               ///____________Sales_return_report_________________________________________________
               ResponsiveGridCol(
-                  xs: selected == 'Sales Return' ? 12 : 0,
-                  md: selected == 'Sales Return' ? 9 : 0,
-                  lg: selected == 'Sales Return' ? 9 : 0,
+                  xs: selected == 'Devolucion' ? 12 : 0,
+                  md: selected == 'Devolucion' ? 9 : 0,
+                  lg: selected == 'Devolucion' ? 9 : 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: const SalesReturnWidget().visible(selected == 'Sales Return'),
+                    child: const SalesReturnWidget()
+                        .visible(selected == 'Devolucion'),
                   )),
 
               ///____________Purchase_report_________________________________________________
               ResponsiveGridCol(
-                  xs: selected == 'Purchase' ? 12 : 0,
-                  md: selected == 'Purchase' ? 9 : 0,
-                  lg: selected == 'Purchase' ? 9 : 0,
+                  xs: selected == 'Compra' ? 12 : 0,
+                  md: selected == 'Compra' ? 9 : 0,
+                  lg: selected == 'Compra' ? 9 : 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: const PurchaseReportWidget().visible(selected == 'Purchase'),
+                    child: const PurchaseReportWidget()
+                        .visible(selected == 'Compra'),
                   )),
 
               ///____________Purchase_Return_report_________________________________________________
               ResponsiveGridCol(
-                  xs: selected == 'Purchase Return' ? 12 : 0,
-                  md: selected == 'Purchase Return' ? 9 : 0,
-                  lg: selected == 'Purchase Return' ? 9 : 0,
+                  xs: selected == 'Devolucion de compra' ? 12 : 0,
+                  md: selected == 'Devolucion de compra' ? 9 : 0,
+                  lg: selected == 'Devolucion de compra' ? 9 : 0,
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
-                    child: const PurchaseReturnWidget().visible(selected == 'Purchase Return'),
+                    child: const PurchaseReturnWidget()
+                        .visible(selected == 'Devolucion de compra'),
                   )),
 
               ///___________Due_report_______________________________________________________
               ResponsiveGridCol(
-                  xs: selected == 'Due' ? 12 : 0,
-                  md: selected == 'Due' ? 9 : 0,
-                  lg: selected == 'Due' ? 9 : 0,
+                  xs: selected == 'Pendiente' ? 12 : 0,
+                  md: selected == 'Pendiente' ? 9 : 0,
+                  lg: selected == 'Pendiente' ? 9 : 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: const DueReportWidget().visible(selected == 'Due'),
+                    child: const DueReportWidget()
+                        .visible(selected == 'Pendiente'),
                   )),
 
               ///__________Product_current_stocks_____________________________________________
-              ResponsiveGridCol(xs: selected == 'Current Stock' ? 12 : 0, md: selected == 'Current Stock' ? 9 : 0, lg: selected == 'Current Stock' ? 9 : 0, child: const CurrentStockWidget().visible(selected == 'Current Stock')),
+              ResponsiveGridCol(
+                  xs: selected == 'Stock actual' ? 12 : 0,
+                  md: selected == 'Stock actual' ? 9 : 0,
+                  lg: selected == 'Stock actual' ? 9 : 0,
+                  child: const CurrentStockWidget()
+                      .visible(selected == 'Stock actual')),
 
               ///___________Due_report_________________________________________________________
               ResponsiveGridCol(
-                  xs: selected == 'Daily Transaction' ? 12 : 0,
-                  md: selected == 'Daily Transaction' ? 9 : 0,
-                  lg: selected == 'Daily Transaction' ? 9 : 0,
+                  xs: selected == 'Transaccion Diaria' ? 12 : 0,
+                  md: selected == 'Transaccion Diaria' ? 9 : 0,
+                  lg: selected == 'Transaccion Diaria' ? 9 : 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: const DailyTransaction().visible(selected == 'Daily Transaction'),
+                    child: const DailyTransaction()
+                        .visible(selected == 'Transaccion Diaria'),
                   )),
 
               ///___________Quotation_report___________________________________________________
               ResponsiveGridCol(
-                  xs: selected == 'Quotation Sale History' ? 12 : 0,
-                  md: selected == 'Quotation Sale History' ? 9 : 0,
-                  lg: selected == 'Quotation Sale History' ? 9 : 0,
+                  xs: selected == 'Historial de ventas de cotizaciones'
+                      ? 12
+                      : 0,
+                  md: selected == 'Historial de ventas de cotizaciones' ? 9 : 0,
+                  lg: selected == 'Historial de ventas de cotizaciones' ? 9 : 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: const QuotationReportWidget().visible(selected == 'Quotation Sale History'),
+                    child: const QuotationReportWidget().visible(
+                        selected == 'Historial de ventas de cotizaciones'),
                   )),
 
               ResponsiveGridCol(
-                  xs: selected == 'Loss/Profit report' ? 12 : 0,
-                  md: selected == 'Loss/Profit report' ? 9 : 0,
-                  lg: selected == 'Loss/Profit report' ? 9 : 0,
+                  xs: selected == 'Informe de perdidas y ganancias' ? 12 : 0,
+                  md: selected == 'Informe de perdidas y ganancias' ? 9 : 0,
+                  lg: selected == 'Informe de perdidas y ganancias' ? 9 : 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: const LossProfitReport().visible(selected == 'Loss/Profit report'),
+                    child: const LossProfitReport()
+                        .visible(selected == 'Informe de perdidas y ganancias'),
                   )),
             ]),
             // Visibility(visible: MediaQuery.of(context).size.height != 0, child: ),

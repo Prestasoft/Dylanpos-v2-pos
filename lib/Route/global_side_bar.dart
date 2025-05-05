@@ -4,18 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:salespro_admin/Route/sidebar_item_model.dart';
 import 'package:salespro_admin/Route/static_string.dart';
 import 'package:salespro_admin/const.dart';
-import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/global_language.dart';
-
 import '../Provider/general_setting_provider.dart';
 import '../Provider/subacription_plan_provider.dart';
 import '../Screen/Widgets/Constant Data/constant.dart';
@@ -48,7 +44,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
     products: 0,
   );
   void checkSubscriptionData() async {
-    subscriptionModel = await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
+    subscriptionModel =
+        await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
 
     setState(() {
       subscriptionModel;
@@ -105,9 +102,15 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                       ? const SizedBox.shrink()
                       : Row(
                           children: [
-                            screenWidth > 1260 ? const SizedBox.shrink() : const GlobalLanguage(isDrawer: true),
-                            screenWidth > 1430 ? const SizedBox.shrink() : const SizedBox(width: 10.0),
-                            screenWidth > 1430 ? const SizedBox.shrink() : const GlobalCurrency(isDrawer: true),
+                            screenWidth > 1260
+                                ? const SizedBox.shrink()
+                                : const GlobalLanguage(isDrawer: true),
+                            screenWidth > 1430
+                                ? const SizedBox.shrink()
+                                : const SizedBox(width: 10.0),
+                            screenWidth > 1430
+                                ? const SizedBox.shrink()
+                                : const GlobalCurrency(isDrawer: true),
                             // GlobalCurrency(),
                           ],
                         ),
@@ -126,14 +129,22 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                     height: 40,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
-                                        backgroundColor: kMainColor.withValues(alpha: 0.05),
-                                        side: const BorderSide(color: kMainColor, width: 1),
-                                        textStyle: kTextStyle.copyWith(color: const Color(0xFFFF2525)),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            15, 8, 15, 8),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(30.0)),
+                                        backgroundColor:
+                                            kMainColor.withValues(alpha: 0.05),
+                                        side: const BorderSide(
+                                            color: kMainColor, width: 1),
+                                        textStyle: kTextStyle.copyWith(
+                                            color: const Color(0xFFFF2525)),
                                         surfaceTintColor: kWhite,
-                                        shadowColor: kMainColor.withValues(alpha: 0.1),
-                                        foregroundColor: kMainColor.withValues(alpha: 0.1),
+                                        shadowColor:
+                                            kMainColor.withValues(alpha: 0.1),
+                                        foregroundColor:
+                                            kMainColor.withValues(alpha: 0.1),
                                       ),
                                       onPressed: () {
                                         // Navigator.pushNamed(context, Product.route);
@@ -141,10 +152,17 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       },
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.add_rounded, color: kMainColor),
+                                          const Icon(Icons.add_rounded,
+                                              color: kMainColor),
                                           Text(
                                             'Product',
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: kMainColor, fontWeight: FontWeight.w600),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                    color: kMainColor,
+                                                    fontWeight:
+                                                        FontWeight.w600),
                                           ),
                                         ],
                                       ),
@@ -161,14 +179,22 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                     height: 40,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
-                                        padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                                        backgroundColor: const Color(0xFF15CD75).withValues(alpha: 0.05),
-                                        side: const BorderSide(color: Color(0xFF15CD75), width: 1),
-                                        textStyle: kTextStyle.copyWith(color: const Color(0xFF15CD75)),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(30.0)),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            15, 8, 15, 8),
+                                        backgroundColor: const Color(0xFF15CD75)
+                                            .withValues(alpha: 0.05),
+                                        side: const BorderSide(
+                                            color: Color(0xFF15CD75), width: 1),
+                                        textStyle: kTextStyle.copyWith(
+                                            color: const Color(0xFF15CD75)),
                                         surfaceTintColor: kWhite,
-                                        shadowColor: const Color(0xFF15CD75).withOpacity(0.1),
-                                        foregroundColor: const Color(0xFF15CD75).withOpacity(0.1),
+                                        shadowColor: const Color(0xFF15CD75)
+                                            .withOpacity(0.1),
+                                        foregroundColor: const Color(0xFF15CD75)
+                                            .withOpacity(0.1),
                                       ),
                                       onPressed: () {
                                         // Navigator.pushNamed(context, PurchaseList.route);
@@ -177,11 +203,16 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       },
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.add_rounded, color: Color(0xFF15CD75)),
+                                          const Icon(Icons.add_rounded,
+                                              color: Color(0xFF15CD75)),
                                           Text(
                                             'Compra',
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                  color: const Color(0xFF15CD75),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  color:
+                                                      const Color(0xFF15CD75),
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                           ),
@@ -206,14 +237,22 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                     height: 40,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
-                                        padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(30.0)),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            15, 8, 15, 8),
 
-                                        backgroundColor: const Color(0xFF8424FF),
+                                        backgroundColor:
+                                            const Color(0xFF8424FF),
                                         // side: const BorderSide(color: kBorderColorTextField, width: 1),
-                                        textStyle: kTextStyle.copyWith(color: kWhite),
-                                        surfaceTintColor: const Color(0xFF8424FF).withOpacity(0.5),
-                                        shadowColor: const Color(0xFF8424FF).withOpacity(0.1),
+                                        textStyle:
+                                            kTextStyle.copyWith(color: kWhite),
+                                        surfaceTintColor:
+                                            const Color(0xFF8424FF)
+                                                .withOpacity(0.5),
+                                        shadowColor: const Color(0xFF8424FF)
+                                            .withOpacity(0.1),
                                       ),
                                       onPressed: () {
                                         // Navigator.pushNamed(context, PosSale.route);
@@ -221,10 +260,14 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       },
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.add_rounded, color: kWhite),
+                                          const Icon(Icons.add_rounded,
+                                              color: kWhite),
                                           Text(
                                             'Pos',
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
                                                   fontWeight: FontWeight.w600,
                                                   color: Colors.white,
                                                 ),
@@ -233,20 +276,29 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       ),
                                     ),
                                   ),
-                            screenWidth > 670 ? const SizedBox.shrink() : const SizedBox(width: 16.0),
+                            screenWidth > 670
+                                ? const SizedBox.shrink()
+                                : const SizedBox(width: 16.0),
                             screenWidth > 590
                                 ? const SizedBox.shrink()
                                 : SizedBox(
                                     height: 40,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
-                                        backgroundColor: kMainColor.withValues(alpha: 0.1),
-                                        side: const BorderSide(color: kMainColor, width: 1),
-                                        textStyle: kTextStyle.copyWith(color: kWhite),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            15, 8, 15, 8),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(30.0)),
+                                        backgroundColor:
+                                            kMainColor.withValues(alpha: 0.1),
+                                        side: const BorderSide(
+                                            color: kMainColor, width: 1),
+                                        textStyle:
+                                            kTextStyle.copyWith(color: kWhite),
                                         surfaceTintColor: lightGreyColor,
-                                        shadowColor: lightGreyColor.withOpacity(0.1),
+                                        shadowColor:
+                                            lightGreyColor.withOpacity(0.1),
                                       ),
                                       onPressed: () {
                                         // Navigator.pushNamed(context, InventorySales.route);
@@ -254,10 +306,14 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       },
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.add_rounded, color: kMainColor),
+                                          const Icon(Icons.add_rounded,
+                                              color: kMainColor),
                                           Text(
                                             'Inventario',
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
                                                   fontWeight: FontWeight.w600,
                                                   color: kMainColor,
                                                 ),
@@ -315,94 +371,99 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                 padding: const EdgeInsets.all(10.0),
                 child: Container(
                   width: MediaQuery.of(context).size.width * .50,
-                  padding: widget.iconOnly ? EdgeInsets.all(6) : const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), color: kMainColor),
+                  padding: widget.iconOnly
+                      ? EdgeInsets.all(6)
+                      : const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.0),
+                      color: kMainColor),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                  //  children: [
+                    //  children: [
                     //  Row(
-                     //   crossAxisAlignment: CrossAxisAlignment.start,
-                      //  children: [
-                       //   SvgPicture.asset(
-                       //     'images/dashboard_icon/crown.svg',
-                       //     height: 35,
-                       //     width: 35,
-                      //    ),
-                      //    if (!widget.iconOnly) const SizedBox(width: 10),
-                      //    if (!widget.iconOnly)
-                          //  Expanded(
-                          //    child: Column(
-                            //    crossAxisAlignment: CrossAxisAlignment.start,
-                              //  children: [
-                              //    Text(
-                                 //   subscriptionModel.subscriptionName,
-                                 //   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      //    color: kWhite,
-                                      //    fontWeight: FontWeight.w600,
-                                      //    fontSize: 18,
-                                    //    ),
-                                 //   maxLines: 3,
-                                //  ),
-                                //  Text(
-                                 //   'Expires in: ${(DateTime.parse(subscriptionModel.subscriptionDate).difference(DateTime.now()).inDays.abs() - subscriptionModel.duration).abs()} Days',
-                                 //   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                   //       color: kWhite,
-                                   //       fontWeight: FontWeight.w500,
-                                 //       ),
-                                 //   maxLines: 3,
-                             //     ).visible(subscriptionModel.subscriptionName != 'Lifetime'),
-                             //    SizedBox(height: 10),
-                            //      ElevatedButton(style: ElevatedButton.styleFrom(side: BorderSide(color: Colors.white.withValues(alpha: 0.3)), backgroundColor: Colors.white.withValues(alpha: 0.2)), onPressed: () => context.go('/subscription'), child: Text('Actualizar Plan'))
-                            //    ],
-                           //   ),
-                        //    ),
-                       // ],
-                     // ),
+                    //   crossAxisAlignment: CrossAxisAlignment.start,
+                    //  children: [
+                    //   SvgPicture.asset(
+                    //     'images/dashboard_icon/crown.svg',
+                    //     height: 35,
+                    //     width: 35,
+                    //    ),
+                    //    if (!widget.iconOnly) const SizedBox(width: 10),
+                    //    if (!widget.iconOnly)
+                    //  Expanded(
+                    //    child: Column(
+                    //    crossAxisAlignment: CrossAxisAlignment.start,
+                    //  children: [
+                    //    Text(
+                    //   subscriptionModel.subscriptionName,
+                    //   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    //    color: kWhite,
+                    //    fontWeight: FontWeight.w600,
+                    //    fontSize: 18,
+                    //    ),
+                    //   maxLines: 3,
+                    //  ),
+                    //  Text(
+                    //   'Expires in: ${(DateTime.parse(subscriptionModel.subscriptionDate).difference(DateTime.now()).inDays.abs() - subscriptionModel.duration).abs()} Days',
+                    //   style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    //       color: kWhite,
+                    //       fontWeight: FontWeight.w500,
+                    //       ),
+                    //   maxLines: 3,
+                    //     ).visible(subscriptionModel.subscriptionName != 'Lifetime'),
+                    //    SizedBox(height: 10),
+                    //      ElevatedButton(style: ElevatedButton.styleFrom(side: BorderSide(color: Colors.white.withValues(alpha: 0.3)), backgroundColor: Colors.white.withValues(alpha: 0.2)), onPressed: () => context.go('/subscription'), child: Text('Actualizar Plan'))
+                    //    ],
+                    //   ),
+                    //    ),
+                    // ],
+                    // ),
 
-                      // Wrap(
-                      //   direction: Axis.horizontal,
-                      //   crossAxisAlignment: WrapCrossAlignment.start,
-                      //   // alignment: WrapAlignment.spaceAround,
-                      //   children: [
-                      //     SvgPicture.asset('images/dashboard_icon/crown.svg'),
-                      //     if (!widget.iconOnly) const SizedBox(width: 10),
-                      //     if (!widget.iconOnly)
-                      //       Column(
-                      //         crossAxisAlignment: CrossAxisAlignment.start,
-                      //         children: [
-                      //           Text(
-                      //             'Your are using ${subscriptionModel.subscriptionName} package',
-                      //             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      //                   color: kWhite,
-                      //                   fontWeight: FontWeight.w600,
-                      //                 ),
-                      //             maxLines: 3,
-                      //           ),
-                      //           Text(
-                      //             'Expires in ${(DateTime.parse(subscriptionModel.subscriptionDate).difference(DateTime.now()).inDays.abs() - subscriptionModel.duration).abs()} Days',
-                      //             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      //                   color: kWhite,
-                      //                   fontWeight: FontWeight.w600,
-                      //                 ),
-                      //             maxLines: 3,
-                      //           ).visible(subscriptionModel.subscriptionName != 'Lifetime'),
-                      //         ],
-                      //       ),
-                      //   ],
-                      // ),
-                     // Row(
-                      //  mainAxisAlignment: MainAxisAlignment.end,
-                       // children: [
-                         // Text(
-                           // lang.S.of(context).upgradeOnMobileApp,
-                          //  style: kTextStyle.copyWith(color: kYellowColor, fontWeight: FontWeight.bold),
-                         // ),
-                         // const Icon(
-                          //  FontAwesomeIcons.arrowRight,
-                          //  color: kYellowColor,
-                         // ),
-                       // ],
-                     // ).visible(false),
+                    // Wrap(
+                    //   direction: Axis.horizontal,
+                    //   crossAxisAlignment: WrapCrossAlignment.start,
+                    //   // alignment: WrapAlignment.spaceAround,
+                    //   children: [
+                    //     SvgPicture.asset('images/dashboard_icon/crown.svg'),
+                    //     if (!widget.iconOnly) const SizedBox(width: 10),
+                    //     if (!widget.iconOnly)
+                    //       Column(
+                    //         crossAxisAlignment: CrossAxisAlignment.start,
+                    //         children: [
+                    //           Text(
+                    //             'Your are using ${subscriptionModel.subscriptionName} package',
+                    //             style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    //                   color: kWhite,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //             maxLines: 3,
+                    //           ),
+                    //           Text(
+                    //             'Expires in ${(DateTime.parse(subscriptionModel.subscriptionDate).difference(DateTime.now()).inDays.abs() - subscriptionModel.duration).abs()} Days',
+                    //             style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    //                   color: kWhite,
+                    //                   fontWeight: FontWeight.w600,
+                    //                 ),
+                    //             maxLines: 3,
+                    //           ).visible(subscriptionModel.subscriptionName != 'Lifetime'),
+                    //         ],
+                    //       ),
+                    //   ],
+                    // ),
+                    // Row(
+                    //  mainAxisAlignment: MainAxisAlignment.end,
+                    // children: [
+                    // Text(
+                    // lang.S.of(context).upgradeOnMobileApp,
+                    //  style: kTextStyle.copyWith(color: kYellowColor, fontWeight: FontWeight.bold),
+                    // ),
+                    // const Icon(
+                    //  FontAwesomeIcons.arrowRight,
+                    //  color: kYellowColor,
+                    // ),
+                    // ],
+                    // ).visible(false),
                     //],
                   ),
                 ),
@@ -415,13 +476,16 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
   }
 
   Widget _buildHeader(BuildContext context, {bool iconOnly = false}) {
-    final _theme = Theme.of(context);
+    Theme.of(context);
     return Consumer(
       builder: (_, ref, watch) {
         final settingProvider = ref.watch(generalSettingProvider);
         return settingProvider.when(data: (setting) {
-          final logo = setting.mainLogo.isNotEmpty == true ? setting.mainLogo : appLogo;
-          final nameLogo = setting.commonHeaderLogo.isNotEmpty == true ? setting.sidebarLogo : 'images/sideLogo.png';
+          final logo =
+              setting.mainLogo.isNotEmpty == true ? setting.mainLogo : appLogo;
+          final nameLogo = setting.commonHeaderLogo.isNotEmpty == true
+              ? setting.sidebarLogo
+              : 'images/sideLogo.png';
           return Container(
             padding: const EdgeInsets.all(16),
             height: ResponsiveValue<double?>(
@@ -443,7 +507,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
             ),
             alignment: Alignment.center,
             child: Row(
-              mainAxisAlignment: iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 if (iconOnly)
                   Image.network(
@@ -473,16 +538,27 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
 
   _SelectionInfo _isSelected(BuildContext context, SidebarItemModel menu) {
     final isSubmenu = menu.sidebarItemType == SidebarItemType.submenu;
-    final currentRoute = GoRouter.of(context).routeInformationProvider.value.uri.toString().toLowerCase().trim();
+    final currentRoute = GoRouter.of(context)
+        .routeInformationProvider
+        .value
+        .uri
+        .toString()
+        .toLowerCase()
+        .trim();
 
-    final isSelectedMenu = currentRoute == menu.navigationPath?.toLowerCase().trim();
+    final isSelectedMenu =
+        currentRoute == menu.navigationPath?.toLowerCase().trim();
 
     if (isSubmenu) {
-      final routeSegments = currentRoute.split('/').where((segment) => segment.isNotEmpty).toList();
+      final routeSegments = currentRoute
+          .split('/')
+          .where((segment) => segment.isNotEmpty)
+          .toList();
 
       if (routeSegments.length > 1) {
         final selectedSubMenu = menu.submenus?.firstWhereOrNull(
-          (submenu) => submenu.navigationPath?.split('/').last == routeSegments.last,
+          (submenu) =>
+              submenu.navigationPath?.split('/').last == routeSegments.last,
         );
         if (selectedSubMenu != null) {
           return _SelectionInfo(true, selectedSubMenu);
@@ -571,7 +647,8 @@ class SidebarMenuItem extends StatelessWidget {
                 _CustomIconOnlySubmenu(
                   enabled: false,
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -666,7 +743,8 @@ class SidebarMenuItem extends StatelessWidget {
         ),
         padding: EdgeInsets.only(left: iconOnly ? 8 : 16, right: 8),
         child: Row(
-          mainAxisAlignment: iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
+          mainAxisAlignment:
+              iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
           children: [
             // Icon
             SvgPicture.asset(
@@ -694,7 +772,8 @@ class SidebarMenuItem extends StatelessWidget {
                       Text(
                         menuTile.name,
                         style: _theme.textTheme.titleMedium?.copyWith(
-                          color: isSelected ? _selectedPrimaryColor : Colors.white,
+                          color:
+                              isSelected ? _selectedPrimaryColor : Colors.white,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -730,7 +809,9 @@ class SidebarMenuItem extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        tileColor: _isSelectedSubmenu ? _selectedPrimaryColor.withValues(alpha: 0.20) : null,
+        tileColor: _isSelectedSubmenu
+            ? _selectedPrimaryColor.withValues(alpha: 0.20)
+            : null,
         title: Text(submenu.name),
         leading: Radio<SidebarSubmenuModel?>(
             value: submenu,
@@ -763,7 +844,8 @@ class SidebarMenuItem extends StatelessWidget {
   }
 }
 
-class _CustomIconOnlySubmenu<T> extends StatefulWidget implements PopupMenuEntry<T> {
+class _CustomIconOnlySubmenu<T> extends StatefulWidget
+    implements PopupMenuEntry<T> {
   const _CustomIconOnlySubmenu({
     super.key,
     this.enabled = true,

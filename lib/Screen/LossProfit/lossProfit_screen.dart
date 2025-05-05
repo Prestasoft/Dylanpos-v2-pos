@@ -34,37 +34,98 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
     }
 
     String formatDouble(double value) {
-      return myFormat.format(value ?? 0.0);
+      return myFormat.format(value);
     }
 
     double profit({required AddToCartModel productModel}) {
       if (productModel.taxType == 'Exclusive') {
-        return (parseDouble(productModel.subTotal.toString()) - (parseDouble(productModel.productPurchasePrice.toString()) + calculateAmountFromPercentage(parseDouble(productModel.groupTaxRate.toString()), parseDouble(productModel.productPurchasePrice.toString())))) * productModel.quantity.toDouble();
+        return (parseDouble(productModel.subTotal.toString()) -
+                (parseDouble(productModel.productPurchasePrice.toString()) +
+                    calculateAmountFromPercentage(
+                        parseDouble(productModel.groupTaxRate.toString()),
+                        parseDouble(
+                            productModel.productPurchasePrice.toString())))) *
+            productModel.quantity.toDouble();
       } else {
-        return (parseDouble(productModel.subTotal.toString()) - parseDouble(productModel.productPurchasePrice.toString())) * productModel.quantity.toDouble();
+        return (parseDouble(productModel.subTotal.toString()) -
+                parseDouble(productModel.productPurchasePrice.toString())) *
+            productModel.quantity.toDouble();
       }
     }
 
-    double allProductTotalProfit({required SaleTransactionModel transitionModel}) {
+    double allProductTotalProfit(
+        {required SaleTransactionModel transitionModel}) {
       double profit = 0;
       for (var element in transitionModel.productList!) {
         if (element.taxType == 'Exclusive') {
-          ((parseDouble(element.subTotal.toString()) - (parseDouble(element.productPurchasePrice.toString()) + calculateAmountFromPercentage(parseDouble(element.groupTaxRate.toString()), parseDouble(element.productPurchasePrice.toString())))) * element.quantity.toDouble()).isNegative ? null : profit += (parseDouble(element.subTotal.toString()) - (parseDouble(element.productPurchasePrice.toString()) + calculateAmountFromPercentage(parseDouble(element.groupTaxRate.toString()), parseDouble(element.productPurchasePrice.toString())))) * element.quantity.toDouble();
+          ((parseDouble(element.subTotal.toString()) -
+                          (parseDouble(
+                                  element.productPurchasePrice.toString()) +
+                              calculateAmountFromPercentage(
+                                  parseDouble(element.groupTaxRate.toString()),
+                                  parseDouble(element.productPurchasePrice
+                                      .toString())))) *
+                      element.quantity.toDouble())
+                  .isNegative
+              ? null
+              : profit += (parseDouble(element.subTotal.toString()) -
+                      (parseDouble(element.productPurchasePrice.toString()) +
+                          calculateAmountFromPercentage(
+                              parseDouble(element.groupTaxRate.toString()),
+                              parseDouble(
+                                  element.productPurchasePrice.toString())))) *
+                  element.quantity.toDouble();
         } else {
-          ((parseDouble(element.subTotal.toString()) - parseDouble(element.productPurchasePrice.toString())) * element.quantity.toDouble()).isNegative ? null : profit += (parseDouble(element.subTotal.toString()) - parseDouble(element.productPurchasePrice.toString())) * element.quantity.toDouble();
+          ((parseDouble(element.subTotal.toString()) -
+                          parseDouble(
+                              element.productPurchasePrice.toString())) *
+                      element.quantity.toDouble())
+                  .isNegative
+              ? null
+              : profit += (parseDouble(element.subTotal.toString()) -
+                      parseDouble(element.productPurchasePrice.toString())) *
+                  element.quantity.toDouble();
         }
       }
       return profit;
     }
 
-    double allProductTotalLoss({required SaleTransactionModel transitionModel}) {
+    double allProductTotalLoss(
+        {required SaleTransactionModel transitionModel}) {
       double loss = 0;
 
       for (var element in transitionModel.productList!) {
         if (element.taxType == 'Exclusive') {
-          ((parseDouble(element.subTotal.toString()) - parseDouble(element.productPurchasePrice.toString()) + calculateAmountFromPercentage(parseDouble(element.groupTaxRate.toString()), parseDouble(element.productPurchasePrice.toString()))) * element.quantity.toDouble()).isNegative ? loss += ((parseDouble(element.subTotal.toString()) - (parseDouble(element.productPurchasePrice.toString()) + calculateAmountFromPercentage(parseDouble(element.groupTaxRate.toString()), parseDouble(element.productPurchasePrice.toString())))) * element.quantity.toDouble()).abs() : null;
+          ((parseDouble(element.subTotal.toString()) -
+                          parseDouble(element.productPurchasePrice.toString()) +
+                          calculateAmountFromPercentage(
+                              parseDouble(element.groupTaxRate.toString()),
+                              parseDouble(
+                                  element.productPurchasePrice.toString()))) *
+                      element.quantity.toDouble())
+                  .isNegative
+              ? loss += ((parseDouble(element.subTotal.toString()) -
+                          (parseDouble(
+                                  element.productPurchasePrice.toString()) +
+                              calculateAmountFromPercentage(
+                                  parseDouble(element.groupTaxRate.toString()),
+                                  parseDouble(element.productPurchasePrice
+                                      .toString())))) *
+                      element.quantity.toDouble())
+                  .abs()
+              : null;
         } else {
-          ((parseDouble(element.subTotal.toString()) - parseDouble(element.productPurchasePrice.toString())) * element.quantity.toDouble()).isNegative ? loss += ((parseDouble(element.subTotal.toString()) - parseDouble(element.productPurchasePrice.toString())) * element.quantity.toDouble()).abs() : null;
+          ((parseDouble(element.subTotal.toString()) -
+                          parseDouble(
+                              element.productPurchasePrice.toString())) *
+                      element.quantity.toDouble())
+                  .isNegative
+              ? loss += ((parseDouble(element.subTotal.toString()) -
+                          parseDouble(
+                              element.productPurchasePrice.toString())) *
+                      element.quantity.toDouble())
+                  .abs()
+              : null;
         }
       }
       return loss;
@@ -96,7 +157,10 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                         children: [
                           Text(
                             '${lang.S.of(context).invoice}: ${transitionModel.invoiceNumber} - ${transitionModel.customerName}',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -131,7 +195,8 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                               child: Theme(
                                 data: Theme.of(context).copyWith(
                                   dividerColor: Colors.transparent,
-                                  dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                  dividerTheme: const DividerThemeData(
+                                      color: Colors.transparent),
                                 ),
                                 child: DataTable(
                                   border: const TableBorder(
@@ -140,11 +205,14 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                       color: kNeutral300,
                                     ),
                                   ),
-                                  dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                  dataRowColor: const WidgetStatePropertyAll(
+                                      Colors.white),
+                                  headingRowColor: WidgetStateProperty.all(
+                                      const Color(0xFFF8F3FF)),
                                   showBottomBorder: false,
                                   dividerThickness: 0.0,
-                                  headingTextStyle: Theme.of(context).textTheme.titleMedium,
+                                  headingTextStyle:
+                                      Theme.of(context).textTheme.titleMedium,
                                   columns: [
                                     DataColumn(
                                       label: Text(
@@ -177,51 +245,84 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                     transitionModel.productList!.length + 1,
                                     (index) => DataRow(cells: [
                                       DataCell(
-                                        index == transitionModel.productList!.length
+                                        index ==
+                                                transitionModel
+                                                    .productList!.length
                                             ? Text(
                                                 lang.S.of(context).total,
                                               )
                                             : Text(
-                                                transitionModel.productList![index].productName.toString(),
+                                                transitionModel
+                                                    .productList![index]
+                                                    .productName
+                                                    .toString(),
                                               ),
                                       ),
                                       DataCell(
-                                        index == transitionModel.productList!.length
-                                            ? Text(transitionModel.totalQuantity.toString())
+                                        index ==
+                                                transitionModel
+                                                    .productList!.length
+                                            ? Text(transitionModel.totalQuantity
+                                                .toString())
                                             : Text(
-                                                transitionModel.productList![index].quantity.toString(),
+                                                transitionModel
+                                                    .productList![index]
+                                                    .quantity
+                                                    .toString(),
                                               ),
                                       ),
                                       DataCell(
-                                        index == transitionModel.productList!.length
+                                        index ==
+                                                transitionModel
+                                                    .productList!.length
                                             ? const Text('')
                                             : Text(
                                                 "$globalCurrency${formatDouble(parseDouble(transitionModel.productList![index].productPurchasePrice.toString()))}",
                                               ),
                                       ),
                                       DataCell(
-                                        index == transitionModel.productList!.length
+                                        index ==
+                                                transitionModel
+                                                    .productList!.length
                                             ? const Text('')
                                             : Text(
                                                 "$globalCurrency${formatDouble(parseDouble(transitionModel.productList![index].subTotal.toString()))}",
                                               ),
                                       ),
                                       DataCell(
-                                        index == transitionModel.productList!.length
+                                        index ==
+                                                transitionModel
+                                                    .productList!.length
                                             ? Text(
                                                 "$globalCurrency${formatDouble(allProductTotalProfit(transitionModel: transitionModel))}",
                                               )
                                             : Text(
-                                                profit(productModel: transitionModel.productList![index]).isNegative ? '' : "$globalCurrency${formatDouble(profit(productModel: transitionModel.productList![index]))}",
+                                                profit(
+                                                            productModel:
+                                                                transitionModel
+                                                                        .productList![
+                                                                    index])
+                                                        .isNegative
+                                                    ? ''
+                                                    : "$globalCurrency${formatDouble(profit(productModel: transitionModel.productList![index]))}",
                                               ),
                                       ),
                                       DataCell(
-                                        index == transitionModel.productList!.length
+                                        index ==
+                                                transitionModel
+                                                    .productList!.length
                                             ? Text(
                                                 "$globalCurrency${formatDouble(allProductTotalLoss(transitionModel: transitionModel))}",
                                               )
                                             : Text(
-                                                profit(productModel: transitionModel.productList![index]).isNegative ? "$globalCurrency${formatDouble(profit(productModel: transitionModel.productList![index]).abs())}" : '',
+                                                profit(
+                                                            productModel:
+                                                                transitionModel
+                                                                        .productList![
+                                                                    index])
+                                                        .isNegative
+                                                    ? "$globalCurrency${formatDouble(profit(productModel: transitionModel.productList![index]).abs())}"
+                                                    : '',
                                               ),
                                       ),
                                     ]),
@@ -286,7 +387,9 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         // border: Border.all(width: 1, color: Colors.green),
-                        color: transitionModel.lossProfit!.isNegative ? Colors.redAccent.withValues(alpha: 0.2) : kMainColor.withValues(alpha: 0.1),
+                        color: transitionModel.lossProfit!.isNegative
+                            ? Colors.redAccent.withValues(alpha: 0.2)
+                            : kMainColor.withValues(alpha: 0.1),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
@@ -294,7 +397,9 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              transitionModel.lossProfit!.isNegative ? lang.S.of(context).totalLoss : lang.S.of(context).totalProfit,
+                              transitionModel.lossProfit!.isNegative
+                                  ? lang.S.of(context).totalLoss
+                                  : lang.S.of(context).totalProfit,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             Text(
@@ -347,10 +452,15 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
     return total.abs();
   }
 
-  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime selectedDate =
+      DateTime(DateTime.now().year, DateTime.now().month, 1);
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -361,7 +471,11 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
   DateTime selected2ndDate = DateTime.now();
 
   Future<void> _selectedDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selected2ndDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selected2ndDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selected2ndDate) {
       setState(() {
         selected2ndDate = picked;
@@ -410,7 +524,9 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
           switch (selectedMonth) {
             case 'This Month':
               {
-                var date = DateTime(DateTime.now().year, DateTime.now().month, 1).toString();
+                var date =
+                    DateTime(DateTime.now().year, DateTime.now().month, 1)
+                        .toString();
 
                 selectedDate = DateTime.parse(date);
                 selected2ndDate = DateTime.now();
@@ -418,13 +534,16 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
               break;
             case 'Last Month':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
+                selected2ndDate =
+                    DateTime(DateTime.now().year, DateTime.now().month, 0);
               }
               break;
             case 'Last 6 Month':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
@@ -467,7 +586,8 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
     return Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          AsyncValue<List<SaleTransactionModel>> transactionReport = ref.watch(transitionProvider);
+          AsyncValue<List<SaleTransactionModel>> transactionReport =
+              ref.watch(transitionProvider);
           return transactionReport.when(data: (transaction) {
             final reTransaction = transaction.reversed.toList();
             List<SaleTransactionModel> showAbleSaleTransactions = [];
@@ -479,16 +599,30 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                 continue;
               }
 
-              if ((element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()) || element.customerName.toLowerCase().contains(searchItem.toLowerCase())) && (selectedDate.isBefore(parsedDate) || parsedDate.isAtSameMomentAs(selectedDate)) && (selected2ndDate.isAfter(parsedDate) || parsedDate.isAtSameMomentAs(selected2ndDate))) {
+              if ((element.invoiceNumber
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase()) ||
+                      element.customerName
+                          .toLowerCase()
+                          .contains(searchItem.toLowerCase())) &&
+                  (selectedDate.isBefore(parsedDate) ||
+                      parsedDate.isAtSameMomentAs(selectedDate)) &&
+                  (selected2ndDate.isAfter(parsedDate) ||
+                      parsedDate.isAtSameMomentAs(selected2ndDate))) {
                 showAbleSaleTransactions.add(element);
               }
             }
 
-            final pages = (showAbleSaleTransactions.length / _lossProfitPerPage).ceil();
+            final pages =
+                (showAbleSaleTransactions.length / _lossProfitPerPage).ceil();
 
             final startIndex = (_currentPage - 1) * _lossProfitPerPage;
             final endIndex = startIndex + _lossProfitPerPage;
-            final paginatedList = showAbleSaleTransactions.sublist(startIndex, endIndex > showAbleSaleTransactions.length ? showAbleSaleTransactions.length : endIndex);
+            final paginatedList = showAbleSaleTransactions.sublist(
+                startIndex,
+                endIndex > showAbleSaleTransactions.length
+                    ? showAbleSaleTransactions.length
+                    : endIndex);
 
             // for (var element in reTransaction) {
             //   if ((element.invoiceNumber
@@ -538,7 +672,14 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                     builder: (FormFieldState<dynamic> field) {
                                       return InputDecorator(
                                         decoration: const InputDecoration(),
-                                        child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getMonth())),
+                                        child: Theme(
+                                            data: ThemeData(
+                                                highlightColor:
+                                                    dropdownItemColor,
+                                                focusColor: dropdownItemColor,
+                                                hoverColor: dropdownItemColor),
+                                            child: DropdownButtonHideUnderline(
+                                                child: getMonth())),
                                       );
                                     },
                                   ),
@@ -552,17 +693,22 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
                                   height: 48,
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), border: Border.all(color: kNeutral400)),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5.0),
+                                      border: Border.all(color: kNeutral400)),
                                   child: Row(
                                     children: [
                                       Container(
                                         width: 70,
                                         height: 48,
-                                        decoration: const BoxDecoration(shape: BoxShape.rectangle, color: kGreyTextColor),
+                                        decoration: const BoxDecoration(
+                                            shape: BoxShape.rectangle,
+                                            color: kGreyTextColor),
                                         child: Center(
                                           child: Text(
                                             lang.S.of(context).between,
-                                            style: theme.textTheme.titleSmall?.copyWith(color: Colors.white),
+                                            style: theme.textTheme.titleSmall
+                                                ?.copyWith(color: Colors.white),
                                           ),
                                         ),
                                       ),
@@ -656,16 +802,22 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Container(
-                                  padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0,
+                                      right: 20.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8.0),
                                     color: const Color(0xFFCFF4E3),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(transaction.length.toString(),
-                                          style: theme.textTheme.titleLarge?.copyWith(
+                                          style: theme.textTheme.titleLarge
+                                              ?.copyWith(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w600,
                                           )),
@@ -685,21 +837,30 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Container(
-                                  padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0,
+                                      right: 20.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
                                     color: const Color(0xFFFEE7CB),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '$globalCurrency ${myFormat.format(double.tryParse(getTotalDue(transaction).toString()) ?? 0)}',
-                                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18.0),
                                       ),
                                       Text(
                                         lang.S.of(context).unPaid,
-                                        style: kTextStyle.copyWith(color: kTitleColor),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ],
                                   ),
@@ -713,21 +874,31 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Container(
-                                  padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0,
+                                      right: 20.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
-                                    color: const Color(0xFF2DB0F6).withOpacity(0.5),
+                                    color: const Color(0xFF2DB0F6)
+                                        .withOpacity(0.5),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalSale(transaction).toStringAsFixed(2)) ?? 0)}',
-                                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18.0),
                                       ),
                                       Text(
                                         lang.S.of(context).totalAmount,
-                                        style: kTextStyle.copyWith(color: kTitleColor),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ],
                                   ),
@@ -741,21 +912,31 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Container(
-                                  padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0,
+                                      right: 20.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
-                                    color: const Color(0xFF15CD75).withOpacity(0.5),
+                                    color: const Color(0xFF15CD75)
+                                        .withOpacity(0.5),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalProfit(transaction).toStringAsFixed(2)) ?? 0)}',
-                                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18.0),
                                       ),
                                       Text(
                                         lang.S.of(context).totalProfit,
-                                        style: kTextStyle.copyWith(color: kTitleColor),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ],
                                   ),
@@ -769,21 +950,31 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Container(
-                                  padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0,
+                                      right: 20.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
-                                    color: const Color(0xFFFF2525).withOpacity(.5),
+                                    color:
+                                        const Color(0xFFFF2525).withOpacity(.5),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalLoss(transaction).toStringAsFixed(2)) ?? 0)}',
-                                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18.0),
                                       ),
                                       Text(
                                         lang.S.of(context).totalLoss,
-                                        style: kTextStyle.copyWith(color: kTitleColor),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ],
                                   ),
@@ -865,11 +1056,19 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                         Icons.keyboard_arrow_down,
                                         color: Colors.black,
                                       ),
-                                      items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                      items: [
+                                        10,
+                                        20,
+                                        50,
+                                        100,
+                                        -1
+                                      ].map<DropdownMenuItem<int>>((int value) {
                                         return DropdownMenuItem<int>(
                                           value: value,
                                           child: Text(
-                                            value == -1 ? "All" : value.toString(),
+                                            value == -1
+                                                ? "All"
+                                                : value.toString(),
                                             style: theme.textTheme.bodyLarge,
                                           ),
                                         );
@@ -877,7 +1076,8 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                       onChanged: (int? newValue) {
                                         setState(() {
                                           if (newValue == -1) {
-                                            _lossProfitPerPage = -1; // Set to -1 for "All"
+                                            _lossProfitPerPage =
+                                                -1; // Set to -1 for "All"
                                           } else {
                                             _lossProfitPerPage = newValue ?? 10;
                                           }
@@ -907,7 +1107,9 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                 keyboardType: TextInputType.name,
                                 decoration: kInputDecoration.copyWith(
                                   contentPadding: const EdgeInsets.all(10.0),
-                                  hintText: (lang.S.of(context).searchByInvoiceOrName),
+                                  hintText: (lang.S
+                                      .of(context)
+                                      .searchByInvoiceOrName),
                                   border: InputBorder.none,
                                   suffixIcon: const Icon(
                                     FeatherIcons.search,
@@ -938,58 +1140,106 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                             ),
                                             child: Theme(
                                               data: theme.copyWith(
-                                                dividerColor: Colors.transparent,
-                                                dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                                dividerColor:
+                                                    Colors.transparent,
+                                                dividerTheme:
+                                                    const DividerThemeData(
+                                                        color:
+                                                            Colors.transparent),
                                               ),
                                               child: DataTable(
                                                   border: const TableBorder(
-                                                    horizontalInside: BorderSide(
+                                                    horizontalInside:
+                                                        BorderSide(
                                                       width: 1,
                                                       color: kNeutral300,
                                                     ),
                                                   ),
-                                                  dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                  dataRowColor:
+                                                      const WidgetStatePropertyAll(
+                                                          Colors.white),
+                                                  headingRowColor:
+                                                      WidgetStateProperty.all(
+                                                          const Color(
+                                                              0xFFF8F3FF)),
                                                   showBottomBorder: false,
                                                   dividerThickness: 0.0,
-                                                  headingTextStyle: theme.textTheme.titleMedium,
+                                                  headingTextStyle: theme
+                                                      .textTheme.titleMedium,
                                                   columns: [
-                                                    DataColumn(label: Text(lang.S.of(context).SL)),
-                                                    DataColumn(label: Text(lang.S.of(context).date)),
-                                                    DataColumn(label: Text(lang.S.of(context).invoice)),
-                                                    DataColumn(label: Text(lang.S.of(context).partyName)),
-                                                    DataColumn(label: Text(lang.S.of(context).saleAmount)),
-                                                    DataColumn(label: Text(lang.S.of(context).payingAmount)),
-                                                    DataColumn(label: Text(lang.S.of(context).dueAmount)),
-                                                    DataColumn(label: Text(lang.S.of(context).profitPlus)),
-                                                    DataColumn(label: Text(lang.S.of(context).lossminus)),
-                                                    DataColumn(label: Text(lang.S.of(context).action)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .SL)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .date)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .invoice)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .partyName)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .saleAmount)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .payingAmount)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .dueAmount)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .profitPlus)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .lossminus)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .action)),
                                                   ],
-                                                  rows: List.generate(paginatedList.length, (index) {
+                                                  rows: List.generate(
+                                                      paginatedList.length,
+                                                      (index) {
                                                     return DataRow(cells: [
                                                       ///______________S.L__________________________________________________
                                                       DataCell(
-                                                        Text('${startIndex + index + 1}'),
+                                                        Text(
+                                                            '${startIndex + index + 1}'),
                                                       ),
 
                                                       ///______________Date__________________________________________________
                                                       DataCell(
                                                         Text(
-                                                          paginatedList[index].purchaseDate.substring(0, 10),
+                                                          paginatedList[index]
+                                                              .purchaseDate
+                                                              .substring(0, 10),
                                                         ),
                                                       ),
 
                                                       ///____________Invoice_________________________________________________
                                                       DataCell(
                                                         Text(
-                                                          paginatedList[index].invoiceNumber,
+                                                          paginatedList[index]
+                                                              .invoiceNumber,
                                                         ),
                                                       ),
 
                                                       ///______Party Name___________________________________________________________
                                                       DataCell(
                                                         Text(
-                                                          paginatedList[index].customerName,
+                                                          paginatedList[index]
+                                                              .customerName,
                                                         ),
                                                       ),
 
@@ -1020,7 +1270,11 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
 
                                                       DataCell(
                                                         Text(
-                                                          paginatedList[index].lossProfit!.isNegative ? '' : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}',
+                                                          paginatedList[index]
+                                                                  .lossProfit!
+                                                                  .isNegative
+                                                              ? ''
+                                                              : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}',
                                                         ),
                                                       ),
 
@@ -1028,7 +1282,11 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
 
                                                       DataCell(
                                                         Text(
-                                                          paginatedList[index].lossProfit!.isNegative ? '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}' : '',
+                                                          paginatedList[index]
+                                                                  .lossProfit!
+                                                                  .isNegative
+                                                              ? '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}'
+                                                              : '',
                                                         ),
                                                       ),
 
@@ -1036,11 +1294,19 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                                       DataCell(
                                                         GestureDetector(
                                                           onTap: () {
-                                                            showLossProfitDetails(transitionModel: showAbleSaleTransactions[index]);
+                                                            showLossProfitDetails(
+                                                                transitionModel:
+                                                                    showAbleSaleTransactions[
+                                                                        index]);
                                                           },
                                                           child: Text(
-                                                            lang.S.of(context).show,
-                                                            style: const TextStyle(color: Colors.blue),
+                                                            lang.S
+                                                                .of(context)
+                                                                .show,
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: Colors
+                                                                        .blue),
                                                           ),
                                                         ),
                                                       ),
@@ -1055,7 +1321,8 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                   Padding(
                                     padding: const EdgeInsets.all(10.0),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Flexible(
                                           child: Text(
@@ -1067,21 +1334,32 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                         Row(
                                           children: [
                                             InkWell(
-                                              overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                              overlayColor: WidgetStateProperty
+                                                  .all<Color>(Colors.grey),
                                               hoverColor: Colors.grey,
-                                              onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                              onTap: _currentPage > 1
+                                                  ? () => setState(
+                                                      () => _currentPage--)
+                                                  : null,
                                               child: Container(
                                                 height: 32,
                                                 width: 90,
                                                 decoration: BoxDecoration(
-                                                  border: Border.all(color: kBorderColorTextField),
-                                                  borderRadius: const BorderRadius.only(
-                                                    bottomLeft: Radius.circular(4.0),
-                                                    topLeft: Radius.circular(4.0),
+                                                  border: Border.all(
+                                                      color:
+                                                          kBorderColorTextField),
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                    bottomLeft:
+                                                        Radius.circular(4.0),
+                                                    topLeft:
+                                                        Radius.circular(4.0),
                                                   ),
                                                 ),
                                                 child: Center(
-                                                  child: Text(lang.S.of(context).previous),
+                                                  child: Text(lang.S
+                                                      .of(context)
+                                                      .previous),
                                                 ),
                                               ),
                                             ),
@@ -1089,13 +1367,16 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                               height: 32,
                                               width: 32,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
                                                 color: kMainColor,
                                               ),
                                               child: Center(
                                                 child: Text(
                                                   '$_currentPage',
-                                                  style: const TextStyle(color: Colors.white),
+                                                  style: const TextStyle(
+                                                      color: Colors.white),
                                                 ),
                                               ),
                                             ),
@@ -1103,7 +1384,9 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                               height: 32,
                                               width: 32,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
                                                 color: Colors.transparent,
                                               ),
                                               child: Center(
@@ -1113,20 +1396,34 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                               ),
                                             ),
                                             InkWell(
-                                              hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                              overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                              onTap: _currentPage * _lossProfitPerPage < showAbleSaleTransactions.length ? () => setState(() => _currentPage++) : null,
+                                              hoverColor: Colors.blue
+                                                  .withValues(alpha: 0.1),
+                                              overlayColor: WidgetStateProperty
+                                                  .all<Color>(Colors.blue),
+                                              onTap: _currentPage *
+                                                          _lossProfitPerPage <
+                                                      showAbleSaleTransactions
+                                                          .length
+                                                  ? () => setState(
+                                                      () => _currentPage++)
+                                                  : null,
                                               child: Container(
                                                 height: 32,
                                                 width: 90,
                                                 decoration: BoxDecoration(
-                                                  border: Border.all(color: kBorderColorTextField),
-                                                  borderRadius: const BorderRadius.only(
-                                                    bottomRight: Radius.circular(4.0),
-                                                    topRight: Radius.circular(4.0),
+                                                  border: Border.all(
+                                                      color:
+                                                          kBorderColorTextField),
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                    bottomRight:
+                                                        Radius.circular(4.0),
+                                                    topRight:
+                                                        Radius.circular(4.0),
                                                   ),
                                                 ),
-                                                child: const Center(child: Text('Next')),
+                                                child: const Center(
+                                                    child: Text('Next')),
                                               ),
                                             ),
                                           ],
@@ -1136,7 +1433,8 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                   ),
                                 ],
                               )
-                            : EmptyWidget(title: lang.S.of(context).noTransactionFound),
+                            : EmptyWidget(
+                                title: lang.S.of(context).noTransactionFound),
                       ],
                     ),
                   ),

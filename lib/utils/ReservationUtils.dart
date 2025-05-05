@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
 
@@ -11,7 +10,8 @@ class ReservationUtils {
 
     final buffer = StringBuffer();
 
-    buffer.writeln('📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}');
+    buffer.writeln(
+        '📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}');
     buffer.writeln('🏬 Sucursal: ${reservation['branch_id']}');
     buffer.writeln('👗 Vestido: ${dress?['name'] ?? '-'}');
     buffer.writeln('🔖 Categoría: ${dress?['category'] ?? '-'}');
@@ -23,16 +23,17 @@ class ReservationUtils {
     // Nuevos campos útiles
     buffer.writeln('🔢 Código Vestido: ${dress?['code'] ?? '-'}');
     buffer.writeln('📦 Código Paquete: ${service?['package_code'] ?? '-'}');
-    buffer.writeln('📆 Fecha de Reserva: ${reservation['reservation_date'] ?? '-'}');
+    buffer.writeln(
+        '📆 Fecha de Reserva: ${reservation['reservation_date'] ?? '-'}');
 
     return buffer.toString();
   }
 
-
   /// Imprime la reserva con formato en consola
   static void debugPrintFullReservation(FullReservation full) {
     final formatted = formatFullReservation(full);
-    debugPrint('=== FULL RESERVATION ===\n$formatted\n=========================');
+    debugPrint(
+        '=== FULL RESERVATION ===\n$formatted\n=========================');
   }
 
   static String formatPrice(dynamic price) {
@@ -42,7 +43,9 @@ class ReservationUtils {
   }
 
   static String formatDuration(dynamic duration) {
-    if (duration is Map && duration.containsKey('unit') && duration.containsKey('value')) {
+    if (duration is Map &&
+        duration.containsKey('unit') &&
+        duration.containsKey('value')) {
       return '${duration['value']} ${duration['unit']}';
     }
     return '-';

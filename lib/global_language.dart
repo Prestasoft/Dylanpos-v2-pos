@@ -50,11 +50,13 @@ class _GlobalLanguageState extends State<GlobalLanguage> {
     }
   }
 
-
-Future<void> changeLanguage(String country) async {
+  Future<void> changeLanguage(String country) async {
     final prefs = await SharedPreferences.getInstance();
     final userId = await getUserID();
-    final personalInformationRef = FirebaseDatabase.instance.ref().child(userId).child('Personal Information');
+    final personalInformationRef = FirebaseDatabase.instance
+        .ref()
+        .child(userId)
+        .child('Personal Information');
 
     selectedCountry = country;
     countryCode = getLanguageCode(country);
@@ -107,7 +109,7 @@ Future<void> changeLanguage(String country) async {
           value: selectedCountry,
           items: List.generate(
             countryList.length,
-                (index) => DropdownMenuItem<String>(
+            (index) => DropdownMenuItem<String>(
               value: countryList[index],
               child: Row(
                 children: [
@@ -121,9 +123,10 @@ Future<void> changeLanguage(String country) async {
                     child: Text(
                       countryList[index],
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        overflow: TextOverflow.ellipsis,
-                        color: widget.isDrawer ? Colors.white : Colors.black,
-                      ),
+                            overflow: TextOverflow.ellipsis,
+                            color:
+                                widget.isDrawer ? Colors.white : Colors.black,
+                          ),
                     ),
                   ),
                 ],
@@ -133,7 +136,7 @@ Future<void> changeLanguage(String country) async {
           onChanged: (value) async {
             if (value != null) {
               await changeLanguage(value);
-              ref.refresh(profileDetailsProvider);
+              final _ = ref.refresh(profileDetailsProvider);
             }
           },
           icon: Icon(
@@ -147,9 +150,6 @@ Future<void> changeLanguage(String country) async {
     });
   }
 }
-
-
-
 
 // import 'package:firebase_database/firebase_database.dart';
 // import 'package:flag/flag_widget.dart';

@@ -1,18 +1,18 @@
-
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show CircularProgressIndicator, Colors, DropdownButton, DropdownButtonHideUnderline, DropdownMenuItem, Icons, Theme;
-import 'package:flutter_feather_icons/flutter_feather_icons.dart';
+import 'package:flutter/material.dart'
+    show CircularProgressIndicator, Colors, Icons, Theme;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:nb_utils/nb_utils.dart';
-import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/product_provider.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-import 'package:salespro_admin/model/customer_model.dart';
-
-import '../Provider/customer_provider.dart' show allCustomerProvider;
-import '../Screen/Widgets/Constant Data/constant.dart' show kBlueTextColor, kDarkGreyColor, kGreyTextColor, kNeutral400, kTextStyle, kTitleColor, kWhite;
-
+import '../Screen/Widgets/Constant Data/constant.dart'
+    show
+        kBlueTextColor,
+        kDarkGreyColor,
+        kGreyTextColor,
+        kTextStyle,
+        kTitleColor,
+        kWhite;
 
 class CategorySidebar extends ConsumerWidget {
   final String selectedCategory;
@@ -38,12 +38,13 @@ class CategorySidebar extends ConsumerWidget {
           height: screenWidth < 1240
               ? 110
               : context.height() < 720
-              ? 720 - 142
-              : context.height() - 160,
+                  ? 720 - 142
+                  : context.height() - 160,
           padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
               color: kWhite,
-              border: Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)),
+              border:
+                  Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)),
               borderRadius: const BorderRadius.all(Radius.circular(15))),
           child: SingleChildScrollView(
             child: Column(
@@ -56,8 +57,8 @@ class CategorySidebar extends ConsumerWidget {
                         color: screenWidth < 1240
                             ? Colors.transparent
                             : isSelected == 'Categories'
-                            ? kBlueTextColor
-                            : kBlueTextColor.withOpacity(0.1)),
+                                ? kBlueTextColor
+                                : kBlueTextColor.withOpacity(0.1)),
                     padding: EdgeInsets.only(
                         left: screenWidth < 1240 ? 0 : 15,
                         right: 8,
@@ -76,15 +77,17 @@ class CategorySidebar extends ConsumerWidget {
                             style: theme.textTheme.titleSmall?.copyWith(
                                 color: isSelected == 'Categories'
                                     ? screenWidth < 1240
-                                    ? kTitleColor
-                                    : Colors.white
+                                        ? kTitleColor
+                                        : Colors.white
                                     : kDarkGreyColor,
                                 fontSize: screenWidth < 1240 ? 20 : 14),
                           ),
                         ),
                         Icon(
                           Icons.keyboard_arrow_right,
-                          color: isSelected == 'Categories' ? Colors.white : kDarkGreyColor,
+                          color: isSelected == 'Categories'
+                              ? Colors.white
+                              : kDarkGreyColor,
                           size: 16,
                         )
                       ],
@@ -96,15 +99,19 @@ class CategorySidebar extends ConsumerWidget {
                 SizedBox(
                   height: screenWidth < 1240 ? 50 : null,
                   child: ListView.builder(
-                    scrollDirection: screenWidth < 1240 ? Axis.horizontal : Axis.vertical,
+                    scrollDirection:
+                        screenWidth < 1240 ? Axis.horizontal : Axis.vertical,
                     itemCount: category.length,
                     shrinkWrap: true,
                     itemBuilder: (_, i) {
                       return GestureDetector(
-                        onTap: () => onCategorySelected(category[i].categoryName),
+                        onTap: () =>
+                            onCategorySelected(category[i].categoryName),
                         child: Padding(
                           padding: EdgeInsets.only(
-                              top: 5, bottom: 4, right: screenWidth < 1240 ? 10 : 0),
+                              top: 5,
+                              bottom: 4,
+                              right: screenWidth < 1240 ? 10 : 0),
                           child: Container(
                             padding: const EdgeInsets.only(
                                 left: 15.0, right: 8.0, top: 8.0, bottom: 8.0),
@@ -118,26 +125,29 @@ class CategorySidebar extends ConsumerWidget {
                               children: [
                                 screenWidth < 1240
                                     ? Text(
-                                  category[i].categoryName,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                      color: isSelected == category[i].categoryName
-                                          ? Colors.white
-                                          : kDarkGreyColor),
-                                )
+                                        category[i].categoryName,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                                color: isSelected ==
+                                                        category[i].categoryName
+                                                    ? Colors.white
+                                                    : kDarkGreyColor),
+                                      )
                                     : Flexible(
-                                  child: Text(
-                                    category[i].categoryName,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: kTextStyle.copyWith(
-                                        color: isSelected == category[i].categoryName
-                                            ? Colors.white
-                                            : kDarkGreyColor,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ),
+                                        child: Text(
+                                          category[i].categoryName,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: kTextStyle.copyWith(
+                                              color: isSelected ==
+                                                      category[i].categoryName
+                                                  ? Colors.white
+                                                  : kDarkGreyColor,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
                                 Icon(
                                   Icons.keyboard_arrow_right,
                                   color: isSelected == category[i].categoryName

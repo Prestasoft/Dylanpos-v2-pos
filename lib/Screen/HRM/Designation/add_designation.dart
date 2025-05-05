@@ -13,10 +13,11 @@ import '../../Widgets/Constant Data/constant.dart';
 import 'model/designation_model.dart';
 
 class AddDesignationScreen extends StatefulWidget {
-  AddDesignationScreen({super.key, required this.listOfIncomeCategory, this.designationModel});
+  AddDesignationScreen(
+      {super.key, required this.listOfIncomeCategory, this.designationModel});
 
   final List<DesignationModel> listOfIncomeCategory;
-  DesignationModel? designationModel;
+  final DesignationModel? designationModel;
 
   @override
   State<AddDesignationScreen> createState() => _AddDesignationScreenState();
@@ -34,7 +35,8 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
 
     if (widget.designationModel != null) {
       _designationController.text = widget.designationModel?.designation ?? '';
-      _descriptionController.text = widget.designationModel?.designationDescription ?? '';
+      _descriptionController.text =
+          widget.designationModel?.designationDescription ?? '';
     }
   }
 
@@ -51,7 +53,10 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
 
-    List<String> names = widget.listOfIncomeCategory.map((element) => element.designation.removeAllWhiteSpace().toLowerCase()).toList();
+    List<String> names = widget.listOfIncomeCategory
+        .map((element) =>
+            element.designation.removeAllWhiteSpace().toLowerCase())
+        .toList();
 
     return Consumer(
       builder: (context, ref, child) {
@@ -77,7 +82,9 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                         children: [
                           Flexible(
                             child: Text(
-                              widget.designationModel != null ? 'Edit Designation' : lang.S.of(context).addDesignation,
+                              widget.designationModel != null
+                                  ? 'Edit Designation'
+                                  : lang.S.of(context).addDesignation,
                               // 'Add Designation',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w600,
@@ -86,7 +93,10 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          IconButton(onPressed: () => GoRouter.of(context).pop(), icon: const Icon(FeatherIcons.x, color: kTitleColor, size: 30.0))
+                          IconButton(
+                              onPressed: () => GoRouter.of(context).pop(),
+                              icon: const Icon(FeatherIcons.x,
+                                  color: kTitleColor, size: 30.0))
                         ],
                       ),
                     ),
@@ -111,9 +121,21 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                                 //return 'Enter Designation Name';
                                 return lang.S.of(context).enterDesignationName;
                               }
-                              if (widget.designationModel != null ? (names.contains(value.removeAllWhiteSpace().toLowerCase()) && value.removeAllWhiteSpace().toLowerCase() != widget.designationModel!.designation) : (names.contains(value.removeAllWhiteSpace().toLowerCase()))) {
+                              if (widget.designationModel != null
+                                  ? (names.contains(value
+                                          .removeAllWhiteSpace()
+                                          .toLowerCase()) &&
+                                      value
+                                              .removeAllWhiteSpace()
+                                              .toLowerCase() !=
+                                          widget.designationModel!.designation)
+                                  : (names.contains(value
+                                      .removeAllWhiteSpace()
+                                      .toLowerCase()))) {
                                 //return 'Designation Name Already Exists';
-                                return lang.S.of(context).designationNameAlreadyExists;
+                                return lang.S
+                                    .of(context)
+                                    .designationNameAlreadyExists;
                               }
                               return null;
                             },
@@ -155,31 +177,54 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: _buildButton(
-                            label: widget.designationModel != null ? lang.S.of(context).update : lang.S.of(context).saveAndPublish,
+                            label: widget.designationModel != null
+                                ? lang.S.of(context).update
+                                : lang.S.of(context).saveAndPublish,
                             color: kGreenTextColor,
                             onTap: widget.designationModel != null
                                 ? () async {
-                                    if (_formKey.currentState?.validate() ?? false) {
-                                      widget.designationModel!.designation = _designationController.text;
-                                      widget.designationModel!.designationDescription = _descriptionController.text;
+                                    if (_formKey.currentState?.validate() ??
+                                        false) {
+                                      widget.designationModel!.designation =
+                                          _designationController.text;
+                                      widget.designationModel!
+                                              .designationDescription =
+                                          _descriptionController.text;
 
-                                      bool result = await DesignationRepository().updateDesignation(designation: widget.designationModel!);
+                                      bool result =
+                                          await DesignationRepository()
+                                              .updateDesignation(
+                                                  designation:
+                                                      widget.designationModel!);
 
                                       if (result) {
+                                        // ignore: unused_result
                                         ref.refresh(designationProvider);
                                         GoRouter.of(context).pop();
                                       }
                                     }
                                   }
                                 : () async {
-                                    if (_formKey.currentState?.validate() ?? false) {
-                                      num id = DateTime.now().millisecondsSinceEpoch;
+                                    if (_formKey.currentState?.validate() ??
+                                        false) {
+                                      num id =
+                                          DateTime.now().millisecondsSinceEpoch;
 
-                                      bool result = await DesignationRepository().addDesignation(
-                                        designation: DesignationModel(id: id, designation: _designationController.text.trim(), designationDescription: _descriptionController.text.trim()),
+                                      bool result =
+                                          await DesignationRepository()
+                                              .addDesignation(
+                                        designation: DesignationModel(
+                                            id: id,
+                                            designation: _designationController
+                                                .text
+                                                .trim(),
+                                            designationDescription:
+                                                _descriptionController.text
+                                                    .trim()),
                                       );
 
                                       if (result) {
+                                        // ignore: unused_result
                                         ref.refresh(designationProvider);
                                         GoRouter.of(context).pop();
                                       }
@@ -219,7 +264,10 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
     );
   }
 
-  Widget _buildButton({required String label, required Color color, required VoidCallback onTap}) {
+  Widget _buildButton(
+      {required String label,
+      required Color color,
+      required VoidCallback onTap}) {
     return ElevatedButton(
       onPressed: onTap,
       style: ElevatedButton.styleFrom(backgroundColor: color),

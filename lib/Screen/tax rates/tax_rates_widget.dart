@@ -26,11 +26,19 @@ class TaxRatesWidget extends StatefulWidget {
 }
 
 class _TaxRatesWidgetState extends State<TaxRatesWidget> {
-  Future<void> deleteTax({required String name, required WidgetRef updateRef, required BuildContext context}) async {
+  Future<void> deleteTax(
+      {required String name,
+      required WidgetRef updateRef,
+      required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
     String expenseKey = '';
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Tax List').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Tax List')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['name'].toString() == name) {
@@ -38,20 +46,30 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
         }
       }
     });
-    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Tax List/$expenseKey");
+    DatabaseReference ref = FirebaseDatabase.instance
+        .ref("${await getUserID()}/Tax List/$expenseKey");
     if (expenseKey != '') {
       await ref.remove();
+      // ignore: unused_result
       updateRef.refresh(taxProvider);
       EasyLoading.showSuccess(lang.S.of(context).done);
       // Navigator.pop(context),
     }
   }
 
-  Future<void> deleteTaxReport({required String name, required WidgetRef updateRef, required BuildContext context}) async {
+  Future<void> deleteTaxReport(
+      {required String name,
+      required WidgetRef updateRef,
+      required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
     String expenseKey = '';
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Group Tax List').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Group Tax List')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['name'].toString() == name) {
@@ -59,9 +77,11 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
         }
       }
     });
-    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Group Tax List/$expenseKey");
+    DatabaseReference ref = FirebaseDatabase.instance
+        .ref("${await getUserID()}/Group Tax List/$expenseKey");
     if (expenseKey != '') {
       await ref.remove();
+      // ignore: unused_result
       updateRef.refresh(groupTaxProvider);
       EasyLoading.showSuccess(lang.S.of(context).done);
     }
@@ -143,7 +163,8 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                   Text(
                                     lang.S.of(context).add,
                                     // 'Add',
-                                    style: theme.textTheme.titleSmall?.copyWith(color: Colors.white),
+                                    style: theme.textTheme.titleSmall
+                                        ?.copyWith(color: Colors.white),
                                   ),
                                 ],
                               ),
@@ -153,7 +174,8 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                       ),
                       const SizedBox(height: 10.0),
                       LayoutBuilder(
-                        builder: (BuildContext context, BoxConstraints constraints) {
+                        builder:
+                            (BuildContext context, BoxConstraints constraints) {
                           return Scrollbar(
                             controller: _horizontalScroll,
                             thumbVisibility: true,
@@ -167,7 +189,9 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                   minWidth: constraints.maxWidth,
                                 ),
                                 child: Theme(
-                                  data: theme.copyWith(dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                  data: theme.copyWith(
+                                      dividerTheme: const DividerThemeData(
+                                          color: Colors.transparent)),
                                   child: DataTable(
                                     border: const TableBorder(
                                       horizontalInside: BorderSide(
@@ -175,11 +199,14 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                         color: kNeutral300,
                                       ),
                                     ),
-                                    dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                    headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                    dataRowColor: const WidgetStatePropertyAll(
+                                        Colors.white),
+                                    headingRowColor: WidgetStateProperty.all(
+                                        const Color(0xFFF8F3FF)),
                                     showBottomBorder: false,
                                     dividerThickness: 0.0,
-                                    headingTextStyle: theme.textTheme.titleMedium,
+                                    headingTextStyle:
+                                        theme.textTheme.titleMedium,
                                     columns: <DataColumn>[
                                       DataColumn(
                                         label: Text(
@@ -223,23 +250,39 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                 return [
                                                   PopupMenuItem(
                                                       onTap: () => showDialog(
-                                                          barrierDismissible: false,
+                                                          barrierDismissible:
+                                                              false,
                                                           context: context,
-                                                          builder: (BuildContext dialogContext) {
+                                                          builder: (BuildContext
+                                                              dialogContext) {
                                                             return Dialog(
-                                                              insetPadding: const EdgeInsets.all(20.0),
+                                                              insetPadding:
+                                                                  const EdgeInsets
+                                                                      .all(
+                                                                      20.0),
                                                               child: Container(
                                                                 width: 450,
-                                                                decoration: const BoxDecoration(
-                                                                  color: Colors.white,
-                                                                  borderRadius: BorderRadius.all(
-                                                                    Radius.circular(15),
+                                                                decoration:
+                                                                    const BoxDecoration(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .all(
+                                                                    Radius
+                                                                        .circular(
+                                                                            15),
                                                                   ),
                                                                 ),
-                                                                child: EditSingleTaxPopUp(
-                                                                  taxList: taxData,
-                                                                  taxModel: taxData[index],
-                                                                  groupTaxList: groupTaxSnap,
+                                                                child:
+                                                                    EditSingleTaxPopUp(
+                                                                  taxList:
+                                                                      taxData,
+                                                                  taxModel:
+                                                                      taxData[
+                                                                          index],
+                                                                  groupTaxList:
+                                                                      groupTaxSnap,
                                                                 ),
                                                               ),
                                                             );
@@ -253,9 +296,15 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                             size: 22,
                                                           ),
                                                           Text(
-                                                            lang.S.of(context).edit,
-                                                            style: theme.textTheme.bodyLarge?.copyWith(
-                                                              color: kNeutral500,
+                                                            lang.S
+                                                                .of(context)
+                                                                .edit,
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyLarge
+                                                                ?.copyWith(
+                                                              color:
+                                                                  kNeutral500,
                                                             ),
                                                           )
                                                         ],
@@ -263,84 +312,108 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                   PopupMenuItem(
                                                       onTap: () {
                                                         showDialog(
-                                                            barrierDismissible: false,
+                                                            barrierDismissible:
+                                                                false,
                                                             context: context,
-                                                            builder: (BuildContext dialogContext) {
+                                                            builder: (BuildContext
+                                                                dialogContext) {
                                                               return Padding(
-                                                                padding: const EdgeInsets.all(20.0),
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        20.0),
                                                                 child: Center(
-                                                                  child: Container(
+                                                                  child:
+                                                                      Container(
                                                                     width: 450,
-                                                                    decoration: const BoxDecoration(
-                                                                      color: Colors.white,
-                                                                      borderRadius: BorderRadius.all(
-                                                                        Radius.circular(15),
+                                                                    decoration:
+                                                                        const BoxDecoration(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      borderRadius:
+                                                                          BorderRadius
+                                                                              .all(
+                                                                        Radius.circular(
+                                                                            15),
                                                                       ),
                                                                     ),
-                                                                    child: Column(
-                                                                      mainAxisSize: MainAxisSize.min,
-                                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                    child:
+                                                                        Column(
+                                                                      mainAxisSize:
+                                                                          MainAxisSize
+                                                                              .min,
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .center,
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .center,
                                                                       children: [
                                                                         Padding(
-                                                                          padding: const EdgeInsets.all(16.0),
-                                                                          child: Text(
+                                                                          padding: const EdgeInsets
+                                                                              .all(
+                                                                              16.0),
+                                                                          child:
+                                                                              Text(
                                                                             '${lang.S.of(context).areYouSureWantToDeleteThisTax} ?',
-                                                                            textAlign: TextAlign.center,
-                                                                            style: theme.textTheme.titleLarge?.copyWith(
+                                                                            textAlign:
+                                                                                TextAlign.center,
+                                                                            style:
+                                                                                theme.textTheme.titleLarge?.copyWith(
                                                                               fontWeight: FontWeight.w600,
                                                                             ),
                                                                           ),
                                                                         ),
-                                                                        ResponsiveGridRow(children: [
-                                                                          ResponsiveGridCol(
-                                                                            lg: 6,
-                                                                            md: 6,
-                                                                            xs: 6,
-                                                                            child: Padding(
-                                                                              padding: const EdgeInsets.all(12.0),
-                                                                              child: OutlinedButton(
-                                                                                style: OutlinedButton.styleFrom(
-                                                                                  minimumSize: Size(screenWidth, 48),
-                                                                                  side: const BorderSide(color: kMainColor),
-                                                                                  foregroundColor: kMainColor,
-                                                                                ),
-                                                                                onPressed: () {
-                                                                                  Navigator.pop(dialogContext);
-                                                                                },
-                                                                                child: Text(
-                                                                                  lang.S.of(context).cancel,
-                                                                                  //'Cancel',
-                                                                                  style: theme.textTheme.titleMedium?.copyWith(
-                                                                                    color: kMainColor,
-                                                                                    fontWeight: FontWeight.w600,
+                                                                        ResponsiveGridRow(
+                                                                            children: [
+                                                                              ResponsiveGridCol(
+                                                                                lg: 6,
+                                                                                md: 6,
+                                                                                xs: 6,
+                                                                                child: Padding(
+                                                                                  padding: const EdgeInsets.all(12.0),
+                                                                                  child: OutlinedButton(
+                                                                                    style: OutlinedButton.styleFrom(
+                                                                                      minimumSize: Size(screenWidth, 48),
+                                                                                      side: const BorderSide(color: kMainColor),
+                                                                                      foregroundColor: kMainColor,
+                                                                                    ),
+                                                                                    onPressed: () {
+                                                                                      Navigator.pop(dialogContext);
+                                                                                    },
+                                                                                    child: Text(
+                                                                                      lang.S.of(context).cancel,
+                                                                                      //'Cancel',
+                                                                                      style: theme.textTheme.titleMedium?.copyWith(
+                                                                                        color: kMainColor,
+                                                                                        fontWeight: FontWeight.w600,
+                                                                                      ),
+                                                                                    ),
                                                                                   ),
                                                                                 ),
                                                                               ),
-                                                                            ),
-                                                                          ),
-                                                                          ResponsiveGridCol(
-                                                                            lg: 6,
-                                                                            md: 6,
-                                                                            xs: 6,
-                                                                            child: Padding(
-                                                                              padding: const EdgeInsets.all(12.0),
-                                                                              child: ElevatedButton(
-                                                                                onPressed: () async {
-                                                                                  await deleteTax(
-                                                                                    name: taxData[index].name,
-                                                                                    updateRef: ref,
-                                                                                    context: dialogContext,
-                                                                                  );
-                                                                                  Navigator.pop(dialogContext);
-                                                                                },
-                                                                                child: Text(
-                                                                                  lang.S.of(context).delete,
+                                                                              ResponsiveGridCol(
+                                                                                lg: 6,
+                                                                                md: 6,
+                                                                                xs: 6,
+                                                                                child: Padding(
+                                                                                  padding: const EdgeInsets.all(12.0),
+                                                                                  child: ElevatedButton(
+                                                                                    onPressed: () async {
+                                                                                      await deleteTax(
+                                                                                        name: taxData[index].name,
+                                                                                        updateRef: ref,
+                                                                                        context: dialogContext,
+                                                                                      );
+                                                                                      Navigator.pop(dialogContext);
+                                                                                    },
+                                                                                    child: Text(
+                                                                                      lang.S.of(context).delete,
+                                                                                    ),
+                                                                                  ),
                                                                                 ),
                                                                               ),
-                                                                            ),
-                                                                          ),
-                                                                        ]),
+                                                                            ]),
                                                                       ],
                                                                     ),
                                                                   ),
@@ -351,15 +424,22 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                       child: Row(
                                                         spacing: 4,
                                                         children: [
-                                                           HugeIcon(
-                                                            icon: HugeIcons.strokeRoundedDelete02,
+                                                          HugeIcon(
+                                                            icon: HugeIcons
+                                                                .strokeRoundedDelete02,
                                                             color: Colors.red,
                                                             size: 22,
                                                           ),
                                                           Text(
-                                                            lang.S.of(context).delete,
-                                                            style: theme.textTheme.bodyLarge?.copyWith(
-                                                              color: kNeutral500,
+                                                            lang.S
+                                                                .of(context)
+                                                                .delete,
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyLarge
+                                                                ?.copyWith(
+                                                              color:
+                                                                  kNeutral500,
                                                             ),
                                                           )
                                                         ],
@@ -651,7 +731,8 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                   ),
                                   Text(lang.S.of(context).add,
                                       //'Add',
-                                      style: theme.textTheme.titleSmall?.copyWith(
+                                      style:
+                                          theme.textTheme.titleSmall?.copyWith(
                                         color: Colors.white,
                                       )),
                                 ],
@@ -663,7 +744,8 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                       const SizedBox(height: 10.0),
                       groupTaxSnap.isNotEmpty
                           ? LayoutBuilder(
-                              builder: (BuildContext context, BoxConstraints constraints) {
+                              builder: (BuildContext context,
+                                  BoxConstraints constraints) {
                                 return Scrollbar(
                                   controller: _groupScrollData,
                                   thumbVisibility: true,
@@ -677,7 +759,10 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                         minWidth: constraints.maxWidth,
                                       ),
                                       child: Theme(
-                                        data: theme.copyWith(dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                        data: theme.copyWith(
+                                            dividerTheme:
+                                                const DividerThemeData(
+                                                    color: Colors.transparent)),
                                         child: DataTable(
                                           border: const TableBorder(
                                             horizontalInside: BorderSide(
@@ -685,11 +770,16 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                               color: kNeutral300,
                                             ),
                                           ),
-                                          dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                          headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                          dataRowColor:
+                                              const WidgetStatePropertyAll(
+                                                  Colors.white),
+                                          headingRowColor:
+                                              WidgetStateProperty.all(
+                                                  const Color(0xFFF8F3FF)),
                                           showBottomBorder: false,
                                           dividerThickness: 0.0,
-                                          headingTextStyle: theme.textTheme.titleMedium,
+                                          headingTextStyle:
+                                              theme.textTheme.titleMedium,
                                           columns: <DataColumn>[
                                             DataColumn(
                                               label: Text(
@@ -728,20 +818,37 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                    groupTaxSnap[index].taxRate.toString(),
+                                                    groupTaxSnap[index]
+                                                        .taxRate
+                                                        .toString(),
                                                   ),
                                                 ),
                                                 DataCell(
                                                   Wrap(
                                                     children: List.generate(
-                                                      groupTaxSnap[index].subTaxes?.length ?? 0,
+                                                      groupTaxSnap[index]
+                                                              .subTaxes
+                                                              ?.length ??
+                                                          0,
                                                       (i) {
                                                         return Text(
-                                                          (i > 0 ? ', ' : '') + (groupTaxSnap[index].subTaxes?[i].name.toString() ?? ''), // Join with comma if not the first item
+                                                          (i > 0 ? ', ' : '') +
+                                                              (groupTaxSnap[
+                                                                          index]
+                                                                      .subTaxes?[
+                                                                          i]
+                                                                      .name
+                                                                      .toString() ??
+                                                                  ''), // Join with comma if not the first item
                                                           maxLines: 1,
-                                                          textAlign: TextAlign.start,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                          textAlign:
+                                                              TextAlign.start,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: kTextStyle
+                                                              .copyWith(
+                                                                  color:
+                                                                      kGreyTextColor),
                                                         );
                                                       },
                                                     ),
@@ -753,40 +860,60 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                     itemBuilder: (bc) {
                                                       return [
                                                         PopupMenuItem(
-                                                            onTap: () => showDialog(
-                                                                  barrierDismissible: false,
-                                                                  context: context,
-                                                                  builder: (BuildContext dialogContext) {
-                                                                    return Dialog(
-                                                                      insetPadding: const EdgeInsets.all(20.0),
-                                                                      child: Container(
-                                                                        width: 600,
-                                                                        decoration: const BoxDecoration(
-                                                                          color: Colors.white,
-                                                                          borderRadius: BorderRadius.all(
-                                                                            Radius.circular(15),
+                                                            onTap:
+                                                                () =>
+                                                                    showDialog(
+                                                                      barrierDismissible:
+                                                                          false,
+                                                                      context:
+                                                                          context,
+                                                                      builder:
+                                                                          (BuildContext
+                                                                              dialogContext) {
+                                                                        return Dialog(
+                                                                          insetPadding: const EdgeInsets
+                                                                              .all(
+                                                                              20.0),
+                                                                          child:
+                                                                              Container(
+                                                                            width:
+                                                                                600,
+                                                                            decoration:
+                                                                                const BoxDecoration(
+                                                                              color: Colors.white,
+                                                                              borderRadius: BorderRadius.all(
+                                                                                Radius.circular(15),
+                                                                              ),
+                                                                            ),
+                                                                            child:
+                                                                                EditGroupTaxPopUP(
+                                                                              listOfGroupTax: groupTaxSnap,
+                                                                              groupTaxModel: groupTaxSnap[index],
+                                                                            ),
                                                                           ),
-                                                                        ),
-                                                                        child: EditGroupTaxPopUP(
-                                                                          listOfGroupTax: groupTaxSnap,
-                                                                          groupTaxModel: groupTaxSnap[index],
-                                                                        ),
-                                                                      ),
-                                                                    );
-                                                                  },
-                                                                ),
+                                                                        );
+                                                                      },
+                                                                    ),
                                                             child: Row(
                                                               spacing: 4,
                                                               children: [
                                                                 const Icon(
-                                                                  IconlyBold.edit,
-                                                                  color: Colors.green,
+                                                                  IconlyBold
+                                                                      .edit,
+                                                                  color: Colors
+                                                                      .green,
                                                                   size: 22,
                                                                 ),
                                                                 Text(
-                                                                  lang.S.of(context).edit,
-                                                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                                                    color: kNeutral500,
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .edit,
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge
+                                                                      ?.copyWith(
+                                                                    color:
+                                                                        kNeutral500,
                                                                   ),
                                                                 )
                                                               ],
@@ -794,23 +921,38 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                         PopupMenuItem(
                                                             onTap: () {
                                                               showDialog(
-                                                                  barrierDismissible: false,
-                                                                  context: context,
-                                                                  builder: (BuildContext dialogContext) {
+                                                                  barrierDismissible:
+                                                                      false,
+                                                                  context:
+                                                                      context,
+                                                                  builder:
+                                                                      (BuildContext
+                                                                          dialogContext) {
                                                                     return Padding(
-                                                                      padding: const EdgeInsets.all(20.0),
-                                                                      child: Center(
-                                                                        child: Container(
-                                                                          width: 450,
-                                                                          decoration: const BoxDecoration(
-                                                                            color: Colors.white,
-                                                                            borderRadius: BorderRadius.all(
+                                                                      padding: const EdgeInsets
+                                                                          .all(
+                                                                          20.0),
+                                                                      child:
+                                                                          Center(
+                                                                        child:
+                                                                            Container(
+                                                                          width:
+                                                                              450,
+                                                                          decoration:
+                                                                              const BoxDecoration(
+                                                                            color:
+                                                                                Colors.white,
+                                                                            borderRadius:
+                                                                                BorderRadius.all(
                                                                               Radius.circular(15),
                                                                             ),
                                                                           ),
-                                                                          child: Padding(
-                                                                            padding: const EdgeInsets.all(20.0),
-                                                                            child: Column(
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(20.0),
+                                                                            child:
+                                                                                Column(
                                                                               mainAxisSize: MainAxisSize.min,
                                                                               crossAxisAlignment: CrossAxisAlignment.center,
                                                                               mainAxisAlignment: MainAxisAlignment.center,
@@ -876,15 +1018,23 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                                             child: Row(
                                                               spacing: 4,
                                                               children: [
-                                                                 HugeIcon(
-                                                                  icon: HugeIcons.strokeRoundedDelete02,
-                                                                  color: Colors.red,
+                                                                HugeIcon(
+                                                                  icon: HugeIcons
+                                                                      .strokeRoundedDelete02,
+                                                                  color: Colors
+                                                                      .red,
                                                                   size: 22,
                                                                 ),
                                                                 Text(
-                                                                  lang.S.of(context).delete,
-                                                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                                                    color: kNeutral500,
+                                                                  lang.S
+                                                                      .of(context)
+                                                                      .delete,
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodyLarge
+                                                                      ?.copyWith(
+                                                                    color:
+                                                                        kNeutral500,
                                                                   ),
                                                                 )
                                                               ],

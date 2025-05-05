@@ -60,10 +60,15 @@ class _LossProfitReportState extends State<LossProfitReport> {
     return total.abs();
   }
 
-  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime selectedDate =
+      DateTime(DateTime.now().year, DateTime.now().month, 1);
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -83,9 +88,14 @@ class _LossProfitReportState extends State<LossProfitReport> {
   // }
 
   ScrollController mainScroll = ScrollController();
-  List<String> month = ['This Month', 'Last Month', 'Last 6 Month', 'This Year'];
+  List<String> month = [
+    'Este mes',
+    'Ultimo mes',
+    'Ultimos 6 meses',
+    'Este año'
+  ];
 
-  String selectedMonth = 'This Month';
+  String selectedMonth = 'Este mes';
 
   DropdownButton<String> getMonth() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -107,27 +117,32 @@ class _LossProfitReportState extends State<LossProfitReport> {
         setState(() {
           selectedMonth = value!;
           switch (selectedMonth) {
-            case 'This Month':
+            case 'Este mes':
               {
-                var date = DateTime(DateTime.now().year, DateTime.now().month, 1).toString();
+                var date =
+                    DateTime(DateTime.now().year, DateTime.now().month, 1)
+                        .toString();
 
                 selectedDate = DateTime.parse(date);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'Last Month':
+            case 'Ultimo mes':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
+                selected2ndDate =
+                    DateTime(DateTime.now().year, DateTime.now().month, 0);
               }
               break;
-            case 'Last 6 Month':
+            case 'Ultimos 6 meses':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'This Year':
+            case 'Este año':
               {
                 selectedDate = DateTime(DateTime.now().year, 1, 1);
                 selected2ndDate = DateTime.now();
@@ -161,23 +176,43 @@ class _LossProfitReportState extends State<LossProfitReport> {
     return Consumer(builder: (_, ref, watch) {
       final personalData = ref.watch(profileDetailsProvider);
       final settingProvider = ref.watch(generalSettingProvider);
-      AsyncValue<List<SaleTransactionModel>> transactionReport = ref.watch(transitionProvider);
+      AsyncValue<List<SaleTransactionModel>> transactionReport =
+          ref.watch(transitionProvider);
       return transactionReport.when(data: (transaction) {
         final reTransaction = transaction.reversed.toList();
         List<SaleTransactionModel> showAbleSaleTransactions = [];
         for (var element in reTransaction) {
-          if ((element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()) || element.customerName.toLowerCase().contains(searchItem.toLowerCase())) && (selectedDate.isBefore(DateTime.parse(element.purchaseDate)) || DateTime.parse(element.purchaseDate).isAtSameMomentAs(selectedDate)) && (selected2ndDate.isAfter(DateTime.parse(element.purchaseDate)) || DateTime.parse(element.purchaseDate).isAtSameMomentAs(selected2ndDate))) {
+          if ((element.invoiceNumber
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) ||
+                  element.customerName
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase())) &&
+              (selectedDate.isBefore(DateTime.parse(element.purchaseDate)) ||
+                  DateTime.parse(element.purchaseDate)
+                      .isAtSameMomentAs(selectedDate)) &&
+              (selected2ndDate.isAfter(DateTime.parse(element.purchaseDate)) ||
+                  DateTime.parse(element.purchaseDate)
+                      .isAtSameMomentAs(selected2ndDate))) {
             showAbleSaleTransactions.add(element);
           }
         }
 
         // Calculate pagination
-        final pages = _purchaseReportPerPage == -1 ? 1 : (showAbleSaleTransactions.length / _purchaseReportPerPage).ceil();
-        final startIndex = _purchaseReportPerPage == -1 ? 0 : (_currentPage - 1) * _purchaseReportPerPage;
-        final endIndex = _purchaseReportPerPage == -1 ? showAbleSaleTransactions.length : (startIndex + _purchaseReportPerPage).clamp(0, showAbleSaleTransactions.length);
+        final pages = _purchaseReportPerPage == -1
+            ? 1
+            : (showAbleSaleTransactions.length / _purchaseReportPerPage).ceil();
+        final startIndex = _purchaseReportPerPage == -1
+            ? 0
+            : (_currentPage - 1) * _purchaseReportPerPage;
+        final endIndex = _purchaseReportPerPage == -1
+            ? showAbleSaleTransactions.length
+            : (startIndex + _purchaseReportPerPage)
+                .clamp(0, showAbleSaleTransactions.length);
 
         // Get paginated transactions
-        final paginatedList = showAbleSaleTransactions.sublist(startIndex, endIndex);
+        final paginatedList =
+            showAbleSaleTransactions.sublist(startIndex, endIndex);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +241,13 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             builder: (FormFieldState<dynamic> field) {
                               return InputDecorator(
                                 decoration: const InputDecoration(),
-                                child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getMonth())),
+                                child: Theme(
+                                    data: ThemeData(
+                                        highlightColor: dropdownItemColor,
+                                        focusColor: dropdownItemColor,
+                                        hoverColor: dropdownItemColor),
+                                    child: DropdownButtonHideUnderline(
+                                        child: getMonth())),
                               );
                             },
                           ),
@@ -221,7 +262,9 @@ class _LossProfitReportState extends State<LossProfitReport> {
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
                             height: 48,
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), border: Border.all(color: kThemeOutlineColor)),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                border: Border.all(color: kThemeOutlineColor)),
                             child: Row(
                               children: [
                                 Container(
@@ -245,20 +288,25 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                 Flexible(
                                   child: GestureDetector(
                                     onTap: () => _selectDate(context),
-                                    child: Text.rich(TextSpan(text: '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}', style: theme.textTheme.titleSmall, children: [
-                                      TextSpan(
-                                        text: lang.S.of(context).to,
+                                    child: Text.rich(TextSpan(
+                                        text:
+                                            '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                                         style: theme.textTheme.titleSmall,
-                                      ),
-                                      TextSpan(
-                                        text: ' ${lang.S.of(context).to} ',
-                                        style: theme.textTheme.titleSmall,
-                                      ),
-                                      TextSpan(
-                                        text: '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
-                                        style: theme.textTheme.titleSmall,
-                                      )
-                                    ])),
+                                        children: [
+                                          TextSpan(
+                                            text: lang.S.of(context).to,
+                                            style: theme.textTheme.titleSmall,
+                                          ),
+                                          TextSpan(
+                                            text: ' ${lang.S.of(context).to} ',
+                                            style: theme.textTheme.titleSmall,
+                                          ),
+                                          TextSpan(
+                                            text:
+                                                '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                            style: theme.textTheme.titleSmall,
+                                          )
+                                        ])),
                                   ),
                                 ),
                                 // Text(
@@ -289,7 +337,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFCFF4E3),
@@ -299,7 +348,10 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             children: [
                               Text(
                                 transaction.length.toString(),
-                                style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18.0),
                               ),
                               Text(
                                 lang.S.of(context).totalSale,
@@ -317,7 +369,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFFEE7CB),
@@ -327,7 +380,10 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             children: [
                               Text(
                                 '$globalCurrency ${myFormat.format(double.tryParse(getTotalDue(transaction).toString()) ?? 0)}',
-                                style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18.0),
                               ),
                               Text(
                                 lang.S.of(context).unPaid,
@@ -345,17 +401,22 @@ class _LossProfitReportState extends State<LossProfitReport> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
-                            color: const Color(0xFF2DB0F6).withValues(alpha: 0.5),
+                            color:
+                                const Color(0xFF2DB0F6).withValues(alpha: 0.5),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalSale(transaction).toStringAsFixed(2)) ?? 0)}',
-                                style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18.0),
                               ),
                               Text(
                                 lang.S.of(context).totalAmount,
@@ -373,17 +434,22 @@ class _LossProfitReportState extends State<LossProfitReport> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
-                            color: const Color(0xFF15CD75).withValues(alpha: 0.5),
+                            color:
+                                const Color(0xFF15CD75).withValues(alpha: 0.5),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalProfit(transaction).toStringAsFixed(2)) ?? 0)}',
-                                style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18.0),
                               ),
                               Text(
                                 lang.S.of(context).totalProfit,
@@ -401,17 +467,22 @@ class _LossProfitReportState extends State<LossProfitReport> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
-                            color: const Color(0xFFFF2525).withValues(alpha: .5),
+                            color:
+                                const Color(0xFFFF2525).withValues(alpha: .5),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalLoss(transaction).toStringAsFixed(2)) ?? 0)}',
-                                style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18.0),
                               ),
                               Text(
                                 lang.S.of(context).totalLoss,
@@ -460,31 +531,44 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                 Container(
                                   height: 35,
                                   width: 35,
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(6.0), border: Border.all(color: kMainColor), color: kWhite),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(6.0),
+                                      border: Border.all(color: kMainColor),
+                                      color: kWhite),
                                   child: IconButton(
                                     padding: EdgeInsets.zero,
-                                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                    visualDensity: const VisualDensity(
+                                        horizontal: -4, vertical: -4),
                                     onPressed: () async {
-                                      await GenerateLossProfitReport().printLossProfitReport(
+                                      await GenerateLossProfitReport()
+                                          .printLossProfitReport(
                                         setting: setting,
                                         personalInformationModel: snapShot,
-                                        saleTransactionModel: showAbleSaleTransactions,
+                                        saleTransactionModel:
+                                            showAbleSaleTransactions,
                                         fromDate: selectedDate.toString(),
                                         toDate: selected2ndDate.toString(),
-                                        saleAmount: calculateTotalSale(transaction).toStringAsFixed(2),
-                                        profit: calculateTotalProfit(transaction).toStringAsFixed(2),
-                                        loss: calculateTotalLoss(transaction).toStringAsFixed(2),
+                                        saleAmount:
+                                            calculateTotalSale(transaction)
+                                                .toStringAsFixed(2),
+                                        profit:
+                                            calculateTotalProfit(transaction)
+                                                .toStringAsFixed(2),
+                                        loss: calculateTotalLoss(transaction)
+                                            .toStringAsFixed(2),
                                       );
                                     },
                                     icon: const Icon(
                                       Icons.picture_as_pdf_outlined,
                                       color: kMainColor,
                                     ),
-                                    hoverColor: kMainColor.withValues(alpha: 0.1),
+                                    hoverColor:
+                                        kMainColor.withValues(alpha: 0.1),
                                     style: ButtonStyle(
                                         shape: WidgetStatePropertyAll(
                                       RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(6.0),
+                                        borderRadius:
+                                            BorderRadius.circular(6.0),
                                       ),
                                     )),
                                     color: kMainColor,
@@ -494,31 +578,44 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                 Container(
                                   height: 35,
                                   width: 35,
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(6.0), border: Border.all(color: kMainColor), color: kWhite),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(6.0),
+                                      border: Border.all(color: kMainColor),
+                                      color: kWhite),
                                   child: IconButton(
                                     padding: EdgeInsets.zero,
-                                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                    visualDensity: const VisualDensity(
+                                        horizontal: -4, vertical: -4),
                                     onPressed: () async {
-                                      await DownloadLossProfitReport().printLossProfitReport(
+                                      await DownloadLossProfitReport()
+                                          .printLossProfitReport(
                                         setting: setting,
                                         personalInformationModel: snapShot,
-                                        saleTransactionModel: showAbleSaleTransactions,
+                                        saleTransactionModel:
+                                            showAbleSaleTransactions,
                                         fromDate: selectedDate.toString(),
                                         toDate: selected2ndDate.toString(),
-                                        saleAmount: calculateTotalSale(transaction).toStringAsFixed(2),
-                                        profit: calculateTotalProfit(transaction).toStringAsFixed(2),
-                                        loss: calculateTotalLoss(transaction).toStringAsFixed(2),
+                                        saleAmount:
+                                            calculateTotalSale(transaction)
+                                                .toStringAsFixed(2),
+                                        profit:
+                                            calculateTotalProfit(transaction)
+                                                .toStringAsFixed(2),
+                                        loss: calculateTotalLoss(transaction)
+                                            .toStringAsFixed(2),
                                       );
                                     },
                                     icon: const Icon(
                                       Icons.download_outlined,
                                       color: kMainColor,
                                     ),
-                                    hoverColor: kMainColor.withValues(alpha: 0.1),
+                                    hoverColor:
+                                        kMainColor.withValues(alpha: 0.1),
                                     style: ButtonStyle(
                                         shape: WidgetStatePropertyAll(
                                       RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(6.0),
+                                        borderRadius:
+                                            BorderRadius.circular(6.0),
                                       ),
                                     )),
                                     color: kMainColor,
@@ -579,7 +676,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             children: [
                               Flexible(
                                   child: Text(
-                                'Show-',
+                                'Mostrar-',
                                 style: theme.textTheme.bodyLarge,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -593,7 +690,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                   Icons.keyboard_arrow_down,
                                   color: Colors.black,
                                 ),
-                                items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                items: [10, 20, 50, 100, -1]
+                                    .map<DropdownMenuItem<int>>((int value) {
                                   return DropdownMenuItem<int>(
                                     value: value,
                                     child: Text(
@@ -605,7 +703,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                 onChanged: (int? newValue) {
                                   setState(() {
                                     if (newValue == -1) {
-                                      _purchaseReportPerPage = -1; // Set to -1 for "All"
+                                      _purchaseReportPerPage =
+                                          -1; // Set to -1 for "All"
                                     } else {
                                       _purchaseReportPerPage = newValue ?? 10;
                                     }
@@ -635,7 +734,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                           keyboardType: TextInputType.name,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.all(10.0),
-                            hintText: (lang.S.of(context).searchByInvoiceOrName),
+                            hintText:
+                                (lang.S.of(context).searchByInvoiceOrName),
                             border: InputBorder.none,
                             suffixIcon: const Icon(
                               FeatherIcons.search,
@@ -651,7 +751,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                       ? Column(
                           children: [
                             LayoutBuilder(
-                              builder: (BuildContext context, BoxConstraints constraints) {
+                              builder: (BuildContext context,
+                                  BoxConstraints constraints) {
                                 return Scrollbar(
                                   controller: _horizontalScroll,
                                   thumbVisibility: true,
@@ -677,45 +778,75 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                                 color: kNeutral300,
                                               ),
                                             ),
-                                            dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                            dataRowColor:
+                                                const WidgetStatePropertyAll(
+                                                    Colors.white),
+                                            headingRowColor:
+                                                WidgetStateProperty.all(
+                                                    const Color(0xFFF8F3FF)),
                                             showBottomBorder: false,
                                             dividerThickness: 0.0,
-                                            headingTextStyle: theme.textTheme.titleMedium,
+                                            headingTextStyle:
+                                                theme.textTheme.titleMedium,
                                             columns: [
-                                              DataColumn(label: Text(lang.S.of(context).SL)),
-                                              DataColumn(label: Text(lang.S.of(context).date)),
-                                              DataColumn(label: Text(lang.S.of(context).invoice)),
-                                              DataColumn(label: Text(lang.S.of(context).partyName)),
-                                              DataColumn(label: Text(lang.S.of(context).saleAmount)),
-                                              DataColumn(label: Text(lang.S.of(context).profitPlus)),
-                                              DataColumn(label: Text(lang.S.of(context).lossminus)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).SL)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).date)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .invoice)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .partyName)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .saleAmount)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .profitPlus)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .lossminus)),
                                             ],
-                                            rows: List.generate(paginatedList.length, (index) {
+                                            rows: List.generate(
+                                                paginatedList.length, (index) {
                                               return DataRow(cells: [
                                                 ///______________S.L__________________________________________________
                                                 DataCell(
-                                                  Text("${startIndex + index + 1}"),
+                                                  Text(
+                                                      "${startIndex + index + 1}"),
                                                 ),
 
                                                 ///______________Date__________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].purchaseDate.substring(0, 10),
+                                                    paginatedList[index]
+                                                        .purchaseDate
+                                                        .substring(0, 10),
                                                   ),
                                                 ),
 
                                                 ///____________Invoice_________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].invoiceNumber,
+                                                    paginatedList[index]
+                                                        .invoiceNumber,
                                                   ),
                                                 ),
 
                                                 ///______Party Name___________________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].customerName,
+                                                    paginatedList[index]
+                                                        .customerName,
                                                   ),
                                                 ),
 
@@ -730,7 +861,11 @@ class _LossProfitReportState extends State<LossProfitReport> {
 
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].lossProfit!.isNegative ? '0' : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}',
+                                                    paginatedList[index]
+                                                            .lossProfit!
+                                                            .isNegative
+                                                        ? '0'
+                                                        : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}',
                                                   ),
                                                 ),
 
@@ -738,7 +873,11 @@ class _LossProfitReportState extends State<LossProfitReport> {
 
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].lossProfit!.isNegative ? '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}' : '0',
+                                                    paginatedList[index]
+                                                            .lossProfit!
+                                                            .isNegative
+                                                        ? '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].lossProfit!.toStringAsFixed(2)) ?? 0)}'
+                                                        : '0',
                                                   ),
                                                 ),
                                               ]);
@@ -752,7 +891,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Flexible(
                                     child: Text(
@@ -764,21 +904,29 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                   Row(
                                     children: [
                                       InkWell(
-                                        overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                        overlayColor:
+                                            WidgetStateProperty.all<Color>(
+                                                Colors.grey),
                                         hoverColor: Colors.grey,
-                                        onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                        onTap: _currentPage > 1
+                                            ? () =>
+                                                setState(() => _currentPage--)
+                                            : null,
                                         child: Container(
                                           height: 32,
                                           width: 90,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
-                                            borderRadius: const BorderRadius.only(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            borderRadius:
+                                                const BorderRadius.only(
                                               bottomLeft: Radius.circular(4.0),
                                               topLeft: Radius.circular(4.0),
                                             ),
                                           ),
                                           child: Center(
-                                            child: Text(lang.S.of(context).previous),
+                                            child: Text(
+                                                lang.S.of(context).previous),
                                           ),
                                         ),
                                       ),
@@ -786,13 +934,15 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                         height: 32,
                                         width: 32,
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: kBorderColorTextField),
+                                          border: Border.all(
+                                              color: kBorderColorTextField),
                                           color: kMainColor,
                                         ),
                                         child: Center(
                                           child: Text(
                                             '$_currentPage',
-                                            style: const TextStyle(color: Colors.white),
+                                            style: const TextStyle(
+                                                color: Colors.white),
                                           ),
                                         ),
                                       ),
@@ -800,7 +950,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                         height: 32,
                                         width: 32,
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: kBorderColorTextField),
+                                          border: Border.all(
+                                              color: kBorderColorTextField),
                                           color: Colors.transparent,
                                         ),
                                         child: Center(
@@ -810,20 +961,31 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                         ),
                                       ),
                                       InkWell(
-                                        hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                        overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                        onTap: _currentPage * _purchaseReportPerPage < reTransaction.length ? () => setState(() => _currentPage++) : null,
+                                        hoverColor:
+                                            Colors.blue.withValues(alpha: 0.1),
+                                        overlayColor:
+                                            WidgetStateProperty.all<Color>(
+                                                Colors.blue),
+                                        onTap: _currentPage *
+                                                    _purchaseReportPerPage <
+                                                reTransaction.length
+                                            ? () =>
+                                                setState(() => _currentPage++)
+                                            : null,
                                         child: Container(
                                           height: 32,
                                           width: 90,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
-                                            borderRadius: const BorderRadius.only(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            borderRadius:
+                                                const BorderRadius.only(
                                               bottomRight: Radius.circular(4.0),
                                               topRight: Radius.circular(4.0),
                                             ),
                                           ),
-                                          child: const Center(child: Text('Next')),
+                                          child:
+                                              const Center(child: Text('Next')),
                                         ),
                                       ),
                                     ],
@@ -833,7 +995,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             ),
                           ],
                         )
-                      : EmptyWidget(title: lang.S.of(context).noTransactionFound),
+                      : EmptyWidget(
+                          title: lang.S.of(context).noTransactionFound),
                 ],
               ),
             ),

@@ -50,7 +50,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(4.0),
-                            decoration: const BoxDecoration(shape: BoxShape.rectangle),
+                            decoration:
+                                const BoxDecoration(shape: BoxShape.rectangle),
                             child: const Icon(
                               FeatherIcons.plus,
                               color: kTitleColor,
@@ -59,7 +60,10 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                           const SizedBox(width: 4.0),
                           Text(
                             lang.S.of(context).addCategory,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0, fontWeight: FontWeight.bold),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold),
                           ),
                           const Spacer(),
                           const Icon(
@@ -81,7 +85,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                         children: [
                           Text(
                             lang.S.of(context).nam,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontSize: 18.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor, fontSize: 18.0),
                           ),
                           const SizedBox(width: 50),
                           SizedBox(
@@ -93,7 +98,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
                                   hintText: lang.S.of(context).name,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
                                 ),
                               ),
                             ),
@@ -111,7 +117,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kRedTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kRedTextColor),
                             child: Text(
                               lang.S.of(context).cancel,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -124,7 +132,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                           ),
                           Container(
                             padding: const EdgeInsets.all(10.0),
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kGreenTextColor),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: kGreenTextColor),
                             child: Text(
                               lang.S.of(context).submit,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -146,7 +156,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   DateTime selectedDate = DateTime.now();
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -175,10 +189,18 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   String expenseKey = '';
 
   void getExpenseKey() async {
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Expense').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Expense')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
-        if (data['expanseFor'].toString() == widget.expenseModel.expanseFor && data['amount'].toString() == widget.expenseModel.amount && data['expenseDate'].toString() == widget.expenseModel.expenseDate && data['paymentType'].toString() == widget.expenseModel.paymentType) {
+        if (data['expanseFor'].toString() == widget.expenseModel.expanseFor &&
+            data['amount'].toString() == widget.expenseModel.amount &&
+            data['expenseDate'].toString() == widget.expenseModel.expenseDate &&
+            data['paymentType'].toString() == widget.expenseModel.paymentType) {
           expenseKey = element.key.toString();
         }
       }
@@ -226,9 +248,15 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   Future<void> category() async {
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Expense Category').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Expense Category')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        var data = ExpenseCategoryModel.fromJson(jsonDecode(jsonEncode(element.value)));
+        var data = ExpenseCategoryModel.fromJson(
+            jsonDecode(jsonEncode(element.value)));
         categories.add(data.categoryName);
       }
     });
@@ -282,7 +310,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Container(
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.0), color: kWhite),
               child: Form(
                 key: formKey,
                 child: Column(
@@ -328,10 +357,13 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
                                     decoration: InputDecoration(
-                                      suffixIcon: const Icon(IconlyLight.calendar, color: kGreyTextColor),
+                                      suffixIcon: const Icon(
+                                          IconlyLight.calendar,
+                                          color: kGreyTextColor),
                                       contentPadding: const EdgeInsets.all(8.0),
                                       labelText: lang.S.of(context).expenseDate,
-                                      hintText: lang.S.of(context).enterExpenseDate,
+                                      hintText:
+                                          lang.S.of(context).enterExpenseDate,
                                     ),
                                     child: Text(
                                       '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
@@ -354,8 +386,23 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                               child: FormField(
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
-                                    decoration: InputDecoration(suffixIcon: const Icon(FeatherIcons.plus, color: kTitleColor).onTap(() => showCategoryPopUp()), contentPadding: const EdgeInsets.all(8.0), floatingLabelBehavior: FloatingLabelBehavior.always, labelText: lang.S.of(context).category),
-                                    child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getCategories())),
+                                    decoration: InputDecoration(
+                                        suffixIcon: const Icon(
+                                                FeatherIcons.plus,
+                                                color: kTitleColor)
+                                            .onTap(() => showCategoryPopUp()),
+                                        contentPadding:
+                                            const EdgeInsets.all(8.0),
+                                        floatingLabelBehavior:
+                                            FloatingLabelBehavior.always,
+                                        labelText: lang.S.of(context).category),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getCategories())),
                                   );
                                 },
                               ),
@@ -406,8 +453,22 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                             child: FormField(
                               builder: (FormFieldState<dynamic> field) {
                                 return InputDecorator(
-                                  decoration: InputDecoration(suffixIcon: const Icon(FeatherIcons.plus, color: kTitleColor).onTap(() => showCategoryPopUp()), contentPadding: const EdgeInsets.all(8.0), floatingLabelBehavior: FloatingLabelBehavior.always, labelText: lang.S.of(context).paymentType),
-                                  child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getPaymentMethods())),
+                                  decoration: InputDecoration(
+                                      suffixIcon: const Icon(FeatherIcons.plus,
+                                              color: kTitleColor)
+                                          .onTap(() => showCategoryPopUp()),
+                                      contentPadding: const EdgeInsets.all(8.0),
+                                      floatingLabelBehavior:
+                                          FloatingLabelBehavior.always,
+                                      labelText:
+                                          lang.S.of(context).paymentType),
+                                  child: Theme(
+                                      data: ThemeData(
+                                          highlightColor: dropdownItemColor,
+                                          focusColor: dropdownItemColor,
+                                          hoverColor: dropdownItemColor),
+                                      child: DropdownButtonHideUnderline(
+                                          child: getPaymentMethods())),
                                 );
                               },
                             ),
@@ -557,7 +618,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                     ///___________buttons___________________________________________
                     const SizedBox(height: 10.0),
                     ResponsiveGridRow(rowSegments: 100, children: [
-                      ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                      ResponsiveGridCol(
+                          md: screenWidth < 768 ? 15 : 25,
+                          xs: 100,
+                          lg: 30,
+                          child: const SizedBox.shrink()),
                       ResponsiveGridCol(
                         md: screenWidth < 768 ? 35 : 25,
                         xs: 100,
@@ -597,15 +662,30 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                                     note: expanseNoteController.text,
                                   );
                                   try {
-                                    EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                    final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Expense').child(expenseKey);
-                                    await productInformationRef.set(expense.toJson());
-                                    EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
+                                    EasyLoading.show(
+                                        status:
+                                            '${lang.S.of(context).loading}...',
+                                        dismissOnTap: false);
+                                    final DatabaseReference
+                                        productInformationRef = FirebaseDatabase
+                                            .instance
+                                            .ref()
+                                            .child(await getUserID())
+                                            .child('Expense')
+                                            .child(expenseKey);
+                                    await productInformationRef
+                                        .set(expense.toJson());
+                                    EasyLoading.showSuccess(
+                                        lang.S.of(context).addedSuccessfully,
+                                        duration:
+                                            const Duration(milliseconds: 500));
 
                                     ///____provider_refresh____________________________________________
+                                    // ignore: unused_result
                                     ref.refresh(expenseProvider);
 
-                                    Future.delayed(const Duration(milliseconds: 100), () {
+                                    Future.delayed(
+                                        const Duration(milliseconds: 100), () {
                                       // const Product().launch(context, isNewTask: true);
                                       GoRouter.of(context).pop();
                                     });
@@ -620,7 +700,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                               )),
                         ),
                       ),
-                      ResponsiveGridCol(md: screenWidth < 768 ? 15 : 25, xs: 100, lg: 30, child: const SizedBox.shrink()),
+                      ResponsiveGridCol(
+                          md: screenWidth < 768 ? 15 : 25,
+                          xs: 100,
+                          lg: 30,
+                          child: const SizedBox.shrink()),
                     ]),
                     // Row(
                     //   mainAxisSize: MainAxisSize.max,

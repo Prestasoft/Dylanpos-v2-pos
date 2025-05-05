@@ -31,12 +31,17 @@ class PurchaseReportWidget extends StatefulWidget {
 }
 
 class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
-  String selectedMonth = 'This Month';
+  String selectedMonth = 'Este mes';
 
-  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime selectedDate =
+      DateTime(DateTime.now().year, DateTime.now().month, 1);
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -46,16 +51,13 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
 
   DateTime selected2ndDate = DateTime.now();
 
-  Future<void> _selectedDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selected2ndDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
-    if (picked != null && picked != selected2ndDate) {
-      setState(() {
-        selected2ndDate = picked;
-      });
-    }
-  }
-
-  List<String> month = ['This Month', 'Last Month', 'Last 6 Month', 'This Year', 'View All'];
+  List<String> month = [
+    'Este mes',
+    'Ultimo mes',
+    'Ultimos 6 meses',
+    'Este año',
+    'Ver todo'
+  ];
 
   DropdownButton<String> getMonth() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -74,33 +76,38 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
         setState(() {
           selectedMonth = value!;
           switch (selectedMonth) {
-            case 'This Month':
+            case 'Este mes':
               {
-                var date = DateTime(DateTime.now().year, DateTime.now().month, 1).toString();
+                var date =
+                    DateTime(DateTime.now().year, DateTime.now().month, 1)
+                        .toString();
 
                 selectedDate = DateTime.parse(date);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'Last Month':
+            case 'Ultimo mes':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
+                selected2ndDate =
+                    DateTime(DateTime.now().year, DateTime.now().month, 0);
               }
               break;
-            case 'Last 6 Month':
+            case 'Ultimos 6 meses':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'This Year':
+            case 'Este año':
               {
                 selectedDate = DateTime(DateTime.now().year, 1, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'View All':
+            case 'Ver todo':
               {
                 selectedDate = DateTime(1900, 01, 01);
                 selected2ndDate = DateTime.now();
@@ -147,7 +154,18 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
       return purchaseReports.when(data: (purchaseReport) {
         List<PurchaseTransactionModel> reTransaction = [];
         for (var element in purchaseReport.reversed.toList()) {
-          if ((element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()) || element.customerName.toLowerCase().contains(searchItem.toLowerCase())) && (selectedDate.isBefore(DateTime.parse(element.purchaseDate)) || DateTime.parse(element.purchaseDate).isAtSameMomentAs(selectedDate)) && (selected2ndDate.isAfter(DateTime.parse(element.purchaseDate)) || DateTime.parse(element.purchaseDate).isAtSameMomentAs(selected2ndDate))) {
+          if ((element.invoiceNumber
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) ||
+                  element.customerName
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase())) &&
+              (selectedDate.isBefore(DateTime.parse(element.purchaseDate)) ||
+                  DateTime.parse(element.purchaseDate)
+                      .isAtSameMomentAs(selectedDate)) &&
+              (selected2ndDate.isAfter(DateTime.parse(element.purchaseDate)) ||
+                  DateTime.parse(element.purchaseDate)
+                      .isAtSameMomentAs(selected2ndDate))) {
             reTransaction.add(element);
           }
         }
@@ -163,9 +181,16 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
         // );
 
         // Calculate pagination
-        final pages = _purchaseReportPerPage == -1 ? 1 : (reTransaction.length / _purchaseReportPerPage).ceil();
-        final startIndex = _purchaseReportPerPage == -1 ? 0 : (_currentPage - 1) * _purchaseReportPerPage;
-        final endIndex = _purchaseReportPerPage == -1 ? reTransaction.length : (startIndex + _purchaseReportPerPage).clamp(0, reTransaction.length);
+        final pages = _purchaseReportPerPage == -1
+            ? 1
+            : (reTransaction.length / _purchaseReportPerPage).ceil();
+        final startIndex = _purchaseReportPerPage == -1
+            ? 0
+            : (_currentPage - 1) * _purchaseReportPerPage;
+        final endIndex = _purchaseReportPerPage == -1
+            ? reTransaction.length
+            : (startIndex + _purchaseReportPerPage)
+                .clamp(0, reTransaction.length);
 
         // Get paginated transactions
         final paginatedList = reTransaction.sublist(startIndex, endIndex);
@@ -197,7 +222,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                             builder: (FormFieldState<dynamic> field) {
                               return InputDecorator(
                                 decoration: const InputDecoration(),
-                                child: DropdownButtonHideUnderline(child: getMonth()),
+                                child: DropdownButtonHideUnderline(
+                                    child: getMonth()),
                               );
                             },
                           ),
@@ -212,13 +238,17 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
                             height: 48,
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), border: Border.all(color: kGreyTextColor)),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                border: Border.all(color: kGreyTextColor)),
                             child: Row(
                               children: [
                                 Container(
                                   width: 70,
                                   height: 48,
-                                  decoration: const BoxDecoration(shape: BoxShape.rectangle, color: kGreyTextColor),
+                                  decoration: const BoxDecoration(
+                                      shape: BoxShape.rectangle,
+                                      color: kGreyTextColor),
                                   child: Center(
                                     child: Text(
                                       lang.S.of(context).between,
@@ -230,20 +260,25 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                 Flexible(
                                   child: GestureDetector(
                                     onTap: () => _selectDate(context),
-                                    child: Text.rich(TextSpan(text: '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}', style: theme.textTheme.titleSmall, children: [
-                                      TextSpan(
-                                        text: lang.S.of(context).to,
+                                    child: Text.rich(TextSpan(
+                                        text:
+                                            '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                                         style: theme.textTheme.titleSmall,
-                                      ),
-                                      TextSpan(
-                                        text: ' ${lang.S.of(context).to} ',
-                                        style: theme.textTheme.titleSmall,
-                                      ),
-                                      TextSpan(
-                                        text: '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
-                                        style: theme.textTheme.titleSmall,
-                                      )
-                                    ])),
+                                        children: [
+                                          TextSpan(
+                                            text: lang.S.of(context).to,
+                                            style: theme.textTheme.titleSmall,
+                                          ),
+                                          TextSpan(
+                                            text: ' ${lang.S.of(context).to} ',
+                                            style: theme.textTheme.titleSmall,
+                                          ),
+                                          TextSpan(
+                                            text:
+                                                '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                            style: theme.textTheme.titleSmall,
+                                          )
+                                        ])),
                                   ),
                                 ),
                                 // Text(
@@ -274,7 +309,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFCFF4E3),
@@ -283,7 +319,9 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                myFormat.format(double.tryParse(reTransaction.length.toString()) ?? 0),
+                                myFormat.format(double.tryParse(
+                                        reTransaction.length.toString()) ??
+                                    0),
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 18,
@@ -305,7 +343,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFFEE7CB),
@@ -336,7 +375,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFFED3D3),
@@ -346,7 +386,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                             children: [
                               Text(
                                 '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalPurchase(reTransaction).toString()) ?? 0)}',
-                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w600, fontSize: 18),
                               ),
                               Text(
                                 lang.S.of(context).totalAmount,
@@ -418,7 +459,7 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                             children: [
                               Flexible(
                                   child: Text(
-                                'Show-',
+                                'Mostrar-',
                                 style: theme.textTheme.bodyLarge,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -432,7 +473,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                   Icons.keyboard_arrow_down,
                                   color: Colors.black,
                                 ),
-                                items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                items: [10, 20, 50, 100, -1]
+                                    .map<DropdownMenuItem<int>>((int value) {
                                   return DropdownMenuItem<int>(
                                     value: value,
                                     child: Text(
@@ -444,7 +486,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                 onChanged: (int? newValue) {
                                   setState(() {
                                     if (newValue == -1) {
-                                      _purchaseReportPerPage = -1; // Set to -1 for "All"
+                                      _purchaseReportPerPage =
+                                          -1; // Set to -1 for "All"
                                     } else {
                                       _purchaseReportPerPage = newValue ?? 10;
                                     }
@@ -474,7 +517,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                           keyboardType: TextInputType.name,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.all(10.0),
-                            hintText: (lang.S.of(context).searchByInvoiceOrName),
+                            hintText:
+                                (lang.S.of(context).searchByInvoiceOrName),
                             border: InputBorder.none,
                             suffixIcon: const Icon(
                               FeatherIcons.search,
@@ -492,7 +536,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                       ? Column(
                           children: [
                             LayoutBuilder(
-                              builder: (BuildContext context, BoxConstraints constraints) {
+                              builder: (BuildContext context,
+                                  BoxConstraints constraints) {
                                 return Scrollbar(
                                   controller: _horizontalScroll,
                                   thumbVisibility: true,
@@ -518,47 +563,82 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                                 color: kNeutral300,
                                               ),
                                             ),
-                                            dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                            dataRowColor:
+                                                const WidgetStatePropertyAll(
+                                                    Colors.white),
+                                            headingRowColor:
+                                                WidgetStateProperty.all(
+                                                    const Color(0xFFF8F3FF)),
                                             showBottomBorder: false,
                                             dividerThickness: 0.0,
-                                            headingTextStyle: theme.textTheme.titleMedium,
+                                            headingTextStyle:
+                                                theme.textTheme.titleMedium,
                                             columns: [
-                                              DataColumn(label: Text(lang.S.of(context).SL)),
-                                              DataColumn(label: Text(lang.S.of(context).date)),
-                                              DataColumn(label: Text(lang.S.of(context).invoice)),
-                                              DataColumn(label: Text(lang.S.of(context).partyName)),
-                                              DataColumn(label: Text(lang.S.of(context).partyType)),
-                                              DataColumn(label: Text(lang.S.of(context).amount)),
-                                              DataColumn(label: Text(lang.S.of(context).due)),
-                                              DataColumn(label: Text(lang.S.of(context).status)),
-                                              DataColumn(label: Text(lang.S.of(context).setting)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).SL)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).date)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .invoice)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .partyName)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .partyType)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .amount)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).due)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .status)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .setting)),
                                             ],
-                                            rows: List.generate(paginatedList.length, (index) {
+                                            rows: List.generate(
+                                                paginatedList.length, (index) {
                                               return DataRow(cells: [
                                                 ///______________S.L__________________________________________________
                                                 DataCell(
-                                                  Text('${startIndex + index + 1}'),
+                                                  Text(
+                                                      '${startIndex + index + 1}'),
                                                 ),
 
                                                 ///______________Date__________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].purchaseDate.substring(0, 10),
+                                                    paginatedList[index]
+                                                        .purchaseDate
+                                                        .substring(0, 10),
                                                   ),
                                                 ),
 
                                                 ///____________Invoice_________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].invoiceNumber,
+                                                    paginatedList[index]
+                                                        .invoiceNumber,
                                                   ),
                                                 ),
 
                                                 ///______Party Name___________________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].customerName,
+                                                    paginatedList[index]
+                                                        .customerName,
                                                   ),
                                                 ),
 
@@ -566,7 +646,9 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
 
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].paymentType.toString(),
+                                                    paginatedList[index]
+                                                        .paymentType
+                                                        .toString(),
                                                   ),
                                                 ),
 
@@ -589,24 +671,55 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
 
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].isPaid! ? lang.S.of(context).paid : lang.S.of(context).due,
+                                                    paginatedList[index].isPaid!
+                                                        ? lang.S
+                                                            .of(context)
+                                                            .paid
+                                                        : lang.S
+                                                            .of(context)
+                                                            .due,
                                                   ),
                                                 ),
 
                                                 ///_______________actions_________________________________________________
                                                 DataCell(
-                                                  settingProvider.when(data: (setting) {
-                                                    final dynamicInvoice = setting.companyName.isNotEmpty == true ? setting.companyName : invoiceFileName;
+                                                  settingProvider.when(
+                                                      data: (setting) {
+                                                    final dynamicInvoice = setting
+                                                                .companyName
+                                                                .isNotEmpty ==
+                                                            true
+                                                        ? setting.companyName
+                                                        : invoiceFileName;
                                                     return Theme(
-                                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                                      data: ThemeData(
+                                                          highlightColor:
+                                                              dropdownItemColor,
+                                                          focusColor:
+                                                              dropdownItemColor,
+                                                          hoverColor:
+                                                              dropdownItemColor),
                                                       child: PopupMenuButton(
-                                                        surfaceTintColor: Colors.white,
-                                                        padding: EdgeInsets.zero,
-                                                        itemBuilder: (BuildContext bc) => [
+                                                        surfaceTintColor:
+                                                            Colors.white,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        itemBuilder:
+                                                            (BuildContext bc) =>
+                                                                [
                                                           PopupMenuItem(
-                                                            child: GestureDetector(
+                                                            child:
+                                                                GestureDetector(
                                                               onTap: () async {
-                                                                await GeneratePdfAndPrint().printPurchaseInvoice(personalInformationModel: profile.value!, purchaseTransactionModel: paginatedList[index], setting: setting);
+                                                                await GeneratePdfAndPrint().printPurchaseInvoice(
+                                                                    personalInformationModel:
+                                                                        profile
+                                                                            .value!,
+                                                                    purchaseTransactionModel:
+                                                                        paginatedList[
+                                                                            index],
+                                                                    setting:
+                                                                        setting);
                                                                 // await Printing.layoutPdf(
                                                                 //   onLayout: (PdfPageFormat format) async =>
                                                                 //       await GeneratePdfAndPrint().generatePurchaseDocument(personalInformation: profile.value!, transactions: reTransaction[index]),
@@ -614,30 +727,61 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                                               },
                                                               child: Row(
                                                                 children: [
-                                                                  Icon(MdiIcons.printer, size: 18.0, color: kTitleColor),
-                                                                  const SizedBox(width: 4.0),
+                                                                  Icon(
+                                                                      MdiIcons
+                                                                          .printer,
+                                                                      size:
+                                                                          18.0,
+                                                                      color:
+                                                                          kTitleColor),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          4.0),
                                                                   Text(
-                                                                    lang.S.of(context).printPdf,
-                                                                    style: kTextStyle.copyWith(color: kTitleColor),
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .printPdf,
+                                                                    style: kTextStyle
+                                                                        .copyWith(
+                                                                            color:
+                                                                                kTitleColor),
                                                                   ),
                                                                 ],
                                                               ),
                                                             ),
                                                           ),
                                                           PopupMenuItem(
-                                                            child: GestureDetector(
+                                                            child:
+                                                                GestureDetector(
                                                               onTap: () async {
-                                                                AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(await generatePurchaseDocument(personalInformation: profile.value!, setting: setting, transactions: reTransaction[index]))}")
-                                                                  ..setAttribute("download", "${dynamicInvoice}_P-${reTransaction[index].invoiceNumber}.pdf")
+                                                                AnchorElement(
+                                                                    href:
+                                                                        "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(await generatePurchaseDocument(personalInformation: profile.value!, setting: setting, transactions: reTransaction[index]))}")
+                                                                  ..setAttribute(
+                                                                      "download",
+                                                                      "${dynamicInvoice}_P-${reTransaction[index].invoiceNumber}.pdf")
                                                                   ..click();
                                                               },
                                                               child: Row(
                                                                 children: [
-                                                                  Icon(MdiIcons.filePdfBox, size: 18.0, color: kTitleColor),
-                                                                  const SizedBox(width: 4.0),
+                                                                  Icon(
+                                                                      MdiIcons
+                                                                          .filePdfBox,
+                                                                      size:
+                                                                          18.0,
+                                                                      color:
+                                                                          kTitleColor),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          4.0),
                                                                   Text(
-                                                                    lang.S.of(context).downloadPDF,
-                                                                    style: kTextStyle.copyWith(color: kTitleColor),
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .downloadPDF,
+                                                                    style: kTextStyle
+                                                                        .copyWith(
+                                                                            color:
+                                                                                kTitleColor),
                                                                   ),
                                                                 ],
                                                               ),
@@ -648,9 +792,11 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                                           child: Container(
                                                               height: 18,
                                                               width: 18,
-                                                              alignment: Alignment.centerRight,
+                                                              alignment: Alignment
+                                                                  .centerRight,
                                                               child: const Icon(
-                                                                Icons.more_vert_sharp,
+                                                                Icons
+                                                                    .more_vert_sharp,
                                                                 size: 18,
                                                               )),
                                                         ),
@@ -659,7 +805,9 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                                   }, error: (e, stack) {
                                                     return Text(e.toString());
                                                   }, loading: () {
-                                                    return Center(child: CircularProgressIndicator());
+                                                    return Center(
+                                                        child:
+                                                            CircularProgressIndicator());
                                                   }),
                                                 ),
                                               ]);
@@ -673,7 +821,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                             Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Flexible(
                                     child: Text(
@@ -685,21 +834,29 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                   Row(
                                     children: [
                                       InkWell(
-                                        overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                        overlayColor:
+                                            WidgetStateProperty.all<Color>(
+                                                Colors.grey),
                                         hoverColor: Colors.grey,
-                                        onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                        onTap: _currentPage > 1
+                                            ? () =>
+                                                setState(() => _currentPage--)
+                                            : null,
                                         child: Container(
                                           height: 32,
                                           width: 90,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
-                                            borderRadius: const BorderRadius.only(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            borderRadius:
+                                                const BorderRadius.only(
                                               bottomLeft: Radius.circular(4.0),
                                               topLeft: Radius.circular(4.0),
                                             ),
                                           ),
                                           child: Center(
-                                            child: Text(lang.S.of(context).previous),
+                                            child: Text(
+                                                lang.S.of(context).previous),
                                           ),
                                         ),
                                       ),
@@ -707,13 +864,15 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                         height: 32,
                                         width: 32,
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: kBorderColorTextField),
+                                          border: Border.all(
+                                              color: kBorderColorTextField),
                                           color: kMainColor,
                                         ),
                                         child: Center(
                                           child: Text(
                                             '$_currentPage',
-                                            style: const TextStyle(color: Colors.white),
+                                            style: const TextStyle(
+                                                color: Colors.white),
                                           ),
                                         ),
                                       ),
@@ -721,7 +880,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                         height: 32,
                                         width: 32,
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: kBorderColorTextField),
+                                          border: Border.all(
+                                              color: kBorderColorTextField),
                                           color: Colors.transparent,
                                         ),
                                         child: Center(
@@ -731,20 +891,31 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                                         ),
                                       ),
                                       InkWell(
-                                        hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                        overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                        onTap: _currentPage * _purchaseReportPerPage < reTransaction.length ? () => setState(() => _currentPage++) : null,
+                                        hoverColor:
+                                            Colors.blue.withValues(alpha: 0.1),
+                                        overlayColor:
+                                            WidgetStateProperty.all<Color>(
+                                                Colors.blue),
+                                        onTap: _currentPage *
+                                                    _purchaseReportPerPage <
+                                                reTransaction.length
+                                            ? () =>
+                                                setState(() => _currentPage++)
+                                            : null,
                                         child: Container(
                                           height: 32,
                                           width: 90,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
-                                            borderRadius: const BorderRadius.only(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            borderRadius:
+                                                const BorderRadius.only(
                                               bottomRight: Radius.circular(4.0),
                                               topRight: Radius.circular(4.0),
                                             ),
                                           ),
-                                          child: const Center(child: Text('Next')),
+                                          child:
+                                              const Center(child: Text('Next')),
                                         ),
                                       ),
                                     ],
@@ -944,7 +1115,8 @@ class _PurchaseReportWidgetState extends State<PurchaseReportWidget> {
                             // ),
                           ],
                         )
-                      : noDataFoundImage(text: lang.S.of(context).noReportFound),
+                      : noDataFoundImage(
+                          text: lang.S.of(context).noReportFound),
                 ],
               ),
             )

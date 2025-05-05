@@ -61,9 +61,15 @@ class _IncomeListState extends State<IncomeList> {
     );
   }
 
-  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime selectedDate =
+      DateTime(DateTime.now().year, DateTime.now().month, 1);
 
-  List<String> month = ['This Month', 'Last Month', 'Last 6 Month', 'This Year'];
+  List<String> month = [
+    'This Month',
+    'Last Month',
+    'Last 6 Month',
+    'This Year'
+  ];
 
   String selectedMonth = 'This Month';
 
@@ -86,7 +92,9 @@ class _IncomeListState extends State<IncomeList> {
           switch (selectedMonth) {
             case 'This Month':
               {
-                var date = DateTime(DateTime.now().year, DateTime.now().month, 1).toString();
+                var date =
+                    DateTime(DateTime.now().year, DateTime.now().month, 1)
+                        .toString();
 
                 selectedDate = DateTime.parse(date);
                 selected2ndDate = DateTime.now();
@@ -94,13 +102,16 @@ class _IncomeListState extends State<IncomeList> {
               break;
             case 'Last Month':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
+                selected2ndDate =
+                    DateTime(DateTime.now().year, DateTime.now().month, 0);
               }
               break;
             case 'Last 6 Month':
               {
-                selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
+                selectedDate =
+                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
@@ -116,25 +127,7 @@ class _IncomeListState extends State<IncomeList> {
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
   DateTime selected2ndDate = DateTime.now();
-
-  Future<void> _selectedDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selected2ndDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
-    if (picked != null && picked != selected2ndDate) {
-      setState(() {
-        selected2ndDate = picked;
-      });
-    }
-  }
 
   double calculateAllExpense({required List<IncomeModel> allExpense}) {
     double totalExpense = 0;
@@ -175,19 +168,34 @@ class _IncomeListState extends State<IncomeList> {
             for (var element in reverseAllIncome) {
               DateTime incomeDate = DateTime.parse(element.incomeDate);
 
-              DateTime incomeDateOnly = DateTime(incomeDate.year, incomeDate.month, incomeDate.day);
-              DateTime selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-              DateTime selected2ndDateOnly = DateTime(selected2ndDate.year, selected2ndDate.month, selected2ndDate.day);
+              DateTime incomeDateOnly =
+                  DateTime(incomeDate.year, incomeDate.month, incomeDate.day);
+              DateTime selectedDateOnly = DateTime(
+                  selectedDate.year, selectedDate.month, selectedDate.day);
+              DateTime selected2ndDateOnly = DateTime(selected2ndDate.year,
+                  selected2ndDate.month, selected2ndDate.day);
 
-              if (element.incomeFor.toLowerCase().contains(searchItem.toLowerCase()) && (selectedDateOnly.isBefore(incomeDateOnly) || selectedDateOnly.isAtSameMomentAs(incomeDateOnly)) && (selected2ndDateOnly.isAfter(incomeDateOnly) || selected2ndDateOnly.isAtSameMomentAs(incomeDateOnly))) {
+              if (element.incomeFor
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) &&
+                  (selectedDateOnly.isBefore(incomeDateOnly) ||
+                      selectedDateOnly.isAtSameMomentAs(incomeDateOnly)) &&
+                  (selected2ndDateOnly.isAfter(incomeDateOnly) ||
+                      selected2ndDateOnly.isAtSameMomentAs(incomeDateOnly))) {
                 showIncome.add(element);
               }
             }
 
             // Calculate pagination
-            final totalPages = _incomeDataPerPage == -1 ? 1 : (showIncome.length / _incomeDataPerPage).ceil();
-            final startIndex = _incomeDataPerPage == -1 ? 0 : (_currentPage - 1) * _incomeDataPerPage;
-            final endIndex = _incomeDataPerPage == -1 ? showIncome.length : (startIndex + _incomeDataPerPage).clamp(0, showIncome.length);
+            final totalPages = _incomeDataPerPage == -1
+                ? 1
+                : (showIncome.length / _incomeDataPerPage).ceil();
+            final startIndex = _incomeDataPerPage == -1
+                ? 0
+                : (_currentPage - 1) * _incomeDataPerPage;
+            final endIndex = _incomeDataPerPage == -1
+                ? showIncome.length
+                : (startIndex + _incomeDataPerPage).clamp(0, showIncome.length);
 
             // Get paginated transactions
             final paginatedList = showIncome.sublist(startIndex, endIndex);
@@ -218,10 +226,21 @@ class _IncomeListState extends State<IncomeList> {
                                     child: SizedBox(
                                       height: 48,
                                       child: FormField(
-                                        builder: (FormFieldState<dynamic> field) {
+                                        builder:
+                                            (FormFieldState<dynamic> field) {
                                           return InputDecorator(
                                             decoration: const InputDecoration(),
-                                            child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getMonth())),
+                                            child: Theme(
+                                                data: ThemeData(
+                                                    highlightColor:
+                                                        dropdownItemColor,
+                                                    focusColor:
+                                                        dropdownItemColor,
+                                                    hoverColor:
+                                                        dropdownItemColor),
+                                                child:
+                                                    DropdownButtonHideUnderline(
+                                                        child: getMonth())),
                                           );
                                         },
                                       ),
@@ -235,34 +254,51 @@ class _IncomeListState extends State<IncomeList> {
                                   padding: const EdgeInsets.all(10.0),
                                   child: Container(
                                       height: 48,
-                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), border: Border.all(color: kGreyTextColor)),
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(5.0),
+                                          border: Border.all(
+                                              color: kGreyTextColor)),
                                       child: Row(
                                         children: [
                                           Container(
-                                            decoration: const BoxDecoration(shape: BoxShape.rectangle, color: kGreyTextColor),
+                                            decoration: const BoxDecoration(
+                                                shape: BoxShape.rectangle,
+                                                color: kGreyTextColor),
                                             height: 48,
                                             child: Center(
                                               child: Padding(
-                                                padding: const EdgeInsets.all(4.0),
+                                                padding:
+                                                    const EdgeInsets.all(4.0),
                                                 child: Text(
                                                   lang.S.of(context).between,
-                                                  style: kTextStyle.copyWith(color: kWhite),
+                                                  style: kTextStyle.copyWith(
+                                                      color: kWhite),
                                                 ),
                                               ),
                                             ),
                                           ),
                                           const SizedBox(width: 10.0),
                                           Flexible(
-                                            child: Text.rich(TextSpan(text: '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}', style: theme.textTheme.bodyLarge, children: [
-                                              TextSpan(
-                                                text: ' ${lang.S.of(context).to} ',
-                                                style: theme.textTheme.bodyLarge,
-                                              ),
-                                              TextSpan(
-                                                text: '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
-                                                style: theme.textTheme.bodyLarge,
-                                              )
-                                            ])),
+                                            child: Text.rich(TextSpan(
+                                                text:
+                                                    '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                                                style:
+                                                    theme.textTheme.bodyLarge,
+                                                children: [
+                                                  TextSpan(
+                                                    text:
+                                                        ' ${lang.S.of(context).to} ',
+                                                    style: theme
+                                                        .textTheme.bodyLarge,
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                                    style: theme
+                                                        .textTheme.bodyLarge,
+                                                  )
+                                                ])),
                                           ),
                                         ],
                                       )),
@@ -270,9 +306,14 @@ class _IncomeListState extends State<IncomeList> {
                               ),
                             ]),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
                               child: Container(
-                                padding: const EdgeInsetsDirectional.only(start: 10.0, end: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsetsDirectional.only(
+                                    start: 10.0,
+                                    end: 20.0,
+                                    top: 10.0,
+                                    bottom: 10.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
                                   color: const Color(0xFFCFF4E3),
@@ -282,7 +323,8 @@ class _IncomeListState extends State<IncomeList> {
                                   children: [
                                     Text(
                                       '$globalCurrency ${myFormat.format(double.tryParse(calculateAllExpense(allExpense: incomes.value ?? []).toString()) ?? 0)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
+                                      style:
+                                          theme.textTheme.titleLarge?.copyWith(
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -302,56 +344,65 @@ class _IncomeListState extends State<IncomeList> {
                       ),
                       const SizedBox(height: 20),
                       Container(
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20.0),
+                            color: kWhite),
                         child: Column(
                           children: [
-                            ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                              ResponsiveGridCol(
-                                xs: 12,
-                                md: screenWidth < 850 ? 4 : 6,
-                                lg: screenWidth < 1500 ? 6 : 8,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Text(
-                                    lang.S.of(context).incomeList,
-                                    //'Expenses List',
-                                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ),
-                              ResponsiveGridCol(
-                                xs: 6,
-                                md: screenWidth < 850 ? 4 : 3,
-                                lg: screenWidth < 1500 ? 3 : 2,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: ElevatedButton(
-                                    onPressed: () => context.go('/income/income-category'),
-                                    child: Text(
-                                      lang.S.of(context).incomeCategory,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                            ResponsiveGridRow(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  ResponsiveGridCol(
+                                    xs: 12,
+                                    md: screenWidth < 850 ? 4 : 6,
+                                    lg: screenWidth < 1500 ? 6 : 8,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Text(
+                                        lang.S.of(context).incomeList,
+                                        //'Expenses List',
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w600),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              ResponsiveGridCol(
-                                xs: 6,
-                                md: screenWidth < 850 ? 4 : 3,
-                                lg: screenWidth < 1500 ? 3 : 2,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: ElevatedButton.icon(
-                                      onPressed: () => context.go('/income/new-income'),
-                                      icon: const Icon(FeatherIcons.plus, color: kWhite, size: 18.0),
-                                      label: Text(
-                                        lang.S.of(context).newIncome,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      )),
-                                ),
-                              ),
-                            ]),
+                                  ResponsiveGridCol(
+                                    xs: 6,
+                                    md: screenWidth < 850 ? 4 : 3,
+                                    lg: screenWidth < 1500 ? 3 : 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: ElevatedButton(
+                                        onPressed: () => context
+                                            .go('/income/income-category'),
+                                        child: Text(
+                                          lang.S.of(context).incomeCategory,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  ResponsiveGridCol(
+                                    xs: 6,
+                                    md: screenWidth < 850 ? 4 : 3,
+                                    lg: screenWidth < 1500 ? 3 : 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: ElevatedButton.icon(
+                                          onPressed: () =>
+                                              context.go('/income/new-income'),
+                                          icon: const Icon(FeatherIcons.plus,
+                                              color: kWhite, size: 18.0),
+                                          label: Text(
+                                            lang.S.of(context).newIncome,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          )),
+                                    ),
+                                  ),
+                                ]),
                             const Divider(
                               thickness: 1.0,
                               color: kNeutral300,
@@ -385,9 +436,13 @@ class _IncomeListState extends State<IncomeList> {
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Flexible(child: Text('Show-', style: theme.textTheme.bodyLarge)),
+                                        Flexible(
+                                            child: Text('Show-',
+                                                style:
+                                                    theme.textTheme.bodyLarge)),
                                         DropdownButton<int>(
                                           isDense: true,
                                           padding: EdgeInsets.zero,
@@ -397,19 +452,26 @@ class _IncomeListState extends State<IncomeList> {
                                             Icons.keyboard_arrow_down,
                                             color: Colors.black,
                                           ),
-                                          items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                          items: [10, 20, 50, 100, -1]
+                                              .map<DropdownMenuItem<int>>(
+                                                  (int value) {
                                             return DropdownMenuItem<int>(
                                               value: value,
                                               child: Text(
-                                                value == -1 ? "All" : value.toString(),
-                                                style: theme.textTheme.bodyLarge,
+                                                value == -1
+                                                    ? "All"
+                                                    : value.toString(),
+                                                style:
+                                                    theme.textTheme.bodyLarge,
                                               ),
                                             );
                                           }).toList(),
                                           onChanged: (int? newValue) {
                                             setState(() {
-                                              _incomeDataPerPage = newValue ?? 10;
-                                              _currentPage = 1; // Always reset to page 1 when changing items per page
+                                              _incomeDataPerPage =
+                                                  newValue ?? 10;
+                                              _currentPage =
+                                                  1; // Always reset to page 1 when changing items per page
                                             });
                                           },
                                         ),
@@ -434,9 +496,11 @@ class _IncomeListState extends State<IncomeList> {
                                     },
                                     keyboardType: TextInputType.name,
                                     decoration: kInputDecoration.copyWith(
-                                      contentPadding: const EdgeInsets.all(10.0),
+                                      contentPadding:
+                                          const EdgeInsets.all(10.0),
                                       //hintText: ('Search by Invoice...'),
-                                      hintText: ('${lang.S.of(context).searchByInvoice}...'),
+                                      hintText:
+                                          ('${lang.S.of(context).searchByInvoice}...'),
                                       suffixIcon: const Icon(
                                         FeatherIcons.search,
                                         color: kTitleColor,
@@ -467,7 +531,10 @@ class _IncomeListState extends State<IncomeList> {
                                           child: Theme(
                                             data: theme.copyWith(
                                               dividerColor: Colors.transparent,
-                                              dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                              dividerTheme:
+                                                  const DividerThemeData(
+                                                      color:
+                                                          Colors.transparent),
                                             ),
                                             child: DataTable(
                                                 border: const TableBorder(
@@ -476,22 +543,54 @@ class _IncomeListState extends State<IncomeList> {
                                                     color: kNeutral300,
                                                   ),
                                                 ),
-                                                dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                dataRowColor:
+                                                    const WidgetStatePropertyAll(
+                                                        Colors.white),
+                                                headingRowColor:
+                                                    WidgetStateProperty.all(
+                                                        const Color(
+                                                            0xFFF8F3FF)),
                                                 showBottomBorder: false,
                                                 dividerThickness: 0.0,
-                                                headingTextStyle: theme.textTheme.titleMedium,
+                                                headingTextStyle:
+                                                    theme.textTheme.titleMedium,
                                                 columns: [
-                                                  DataColumn(label: Text(lang.S.of(context).SL)),
-                                                  DataColumn(label: Text(lang.S.of(context).date)),
-                                                  DataColumn(label: Text(lang.S.of(context).createdBy)),
-                                                  DataColumn(label: Text(lang.S.of(context).category)),
-                                                  DataColumn(label: Text(lang.S.of(context).note)),
-                                                  DataColumn(label: Text(lang.S.of(context).paymentType)),
-                                                  DataColumn(label: Text(lang.S.of(context).amount)),
-                                                  DataColumn(label: Text(lang.S.of(context).setting)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .SL)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .date)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .createdBy)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .category)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .note)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .paymentType)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .amount)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .setting)),
                                                 ],
-                                                rows: List.generate(paginatedList.length, (index) {
+                                                rows: List.generate(
+                                                    paginatedList.length,
+                                                    (index) {
                                                   return DataRow(cells: [
                                                     ///______________S.L__________________________________________________
                                                     DataCell(
@@ -503,21 +602,25 @@ class _IncomeListState extends State<IncomeList> {
                                                     ///______________Date__________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].incomeDate.substring(0, 10),
+                                                        paginatedList[index]
+                                                            .incomeDate
+                                                            .substring(0, 10),
                                                       ),
                                                     ),
 
                                                     ///____________Created By_________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].incomeFor,
+                                                        paginatedList[index]
+                                                            .incomeFor,
                                                       ),
                                                     ),
 
                                                     ///______Category___________________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].category,
+                                                        paginatedList[index]
+                                                            .category,
                                                       ),
                                                     ),
 
@@ -525,14 +628,18 @@ class _IncomeListState extends State<IncomeList> {
 
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].note.toString(),
+                                                        paginatedList[index]
+                                                            .note
+                                                            .toString(),
                                                       ),
                                                     ),
 
                                                     ///___________Payment tYpe____________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].paymentType.toString(),
+                                                        paginatedList[index]
+                                                            .paymentType
+                                                            .toString(),
                                                       ),
                                                     ),
 
@@ -540,7 +647,12 @@ class _IncomeListState extends State<IncomeList> {
 
                                                     DataCell(
                                                       Text(
-                                                        myFormat.format(double.tryParse(paginatedList[index].amount.toString()) ?? 0),
+                                                        myFormat.format(double.tryParse(
+                                                                paginatedList[
+                                                                        index]
+                                                                    .amount
+                                                                    .toString()) ??
+                                                            0),
                                                       ),
                                                     ),
 
@@ -549,25 +661,46 @@ class _IncomeListState extends State<IncomeList> {
                                                       SizedBox(
                                                         width: 30,
                                                         child: Theme(
-                                                          data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                          child: PopupMenuButton(
-                                                            surfaceTintColor: Colors.white,
-                                                            padding: EdgeInsets.zero,
-                                                            itemBuilder: (BuildContext bc) => [
+                                                          data: ThemeData(
+                                                              highlightColor:
+                                                                  dropdownItemColor,
+                                                              focusColor:
+                                                                  dropdownItemColor,
+                                                              hoverColor:
+                                                                  dropdownItemColor),
+                                                          child:
+                                                              PopupMenuButton(
+                                                            surfaceTintColor:
+                                                                Colors.white,
+                                                            padding:
+                                                                EdgeInsets.zero,
+                                                            itemBuilder:
+                                                                (BuildContext
+                                                                        bc) =>
+                                                                    [
                                                               PopupMenuItem(
                                                                 onTap: () {
                                                                   showDialog(
-                                                                    barrierDismissible: false,
-                                                                    context: context,
-                                                                    builder: (BuildContext context) {
+                                                                    barrierDismissible:
+                                                                        false,
+                                                                    context:
+                                                                        context,
+                                                                    builder:
+                                                                        (BuildContext
+                                                                            context) {
                                                                       return StatefulBuilder(
-                                                                        builder: (context, setStates) {
+                                                                        builder:
+                                                                            (context,
+                                                                                setStates) {
                                                                           return Dialog(
-                                                                            surfaceTintColor: Colors.white,
-                                                                            shape: RoundedRectangleBorder(
+                                                                            surfaceTintColor:
+                                                                                Colors.white,
+                                                                            shape:
+                                                                                RoundedRectangleBorder(
                                                                               borderRadius: BorderRadius.circular(20.0),
                                                                             ),
-                                                                            child: IncomeDetails(income: showIncome[index], manuContext: bc),
+                                                                            child:
+                                                                                IncomeDetails(income: showIncome[index], manuContext: bc),
                                                                           );
                                                                         },
                                                                       );
@@ -576,11 +709,25 @@ class _IncomeListState extends State<IncomeList> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const Icon(Icons.remove_red_eye_outlined, size: 22.0, color: kGreyTextColor),
-                                                                    const SizedBox(width: 4.0),
+                                                                    const Icon(
+                                                                        Icons
+                                                                            .remove_red_eye_outlined,
+                                                                        size:
+                                                                            22.0,
+                                                                        color:
+                                                                            kGreyTextColor),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).view,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .view,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                              color: kGreyTextColor),
                                                                     ),
                                                                   ],
                                                                 ),
@@ -591,17 +738,34 @@ class _IncomeListState extends State<IncomeList> {
                                                                 onTap: () {
                                                                   IncomeEdit(
                                                                     // menuContext: bc,
-                                                                    incomeModel: showIncome[index],
-                                                                  ).launch(context);
+                                                                    incomeModel:
+                                                                        showIncome[
+                                                                            index],
+                                                                  ).launch(
+                                                                      context);
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    Icon(IconlyLight.edit, size: 22.0, color: kGreyTextColor),
-                                                                    const SizedBox(width: 4.0),
+                                                                    Icon(
+                                                                        IconlyLight
+                                                                            .edit,
+                                                                        size:
+                                                                            22.0,
+                                                                        color:
+                                                                            kGreyTextColor),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).edit,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                                                        color: kGreyTextColor,
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .edit,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kGreyTextColor,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -612,9 +776,13 @@ class _IncomeListState extends State<IncomeList> {
                                                               child: Container(
                                                                   height: 18,
                                                                   width: 18,
-                                                                  alignment: Alignment.centerRight,
-                                                                  child: const Icon(
-                                                                    Icons.more_vert_sharp,
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerRight,
+                                                                  child:
+                                                                      const Icon(
+                                                                    Icons
+                                                                        .more_vert_sharp,
                                                                     size: 18,
                                                                   )),
                                                             ),
@@ -631,32 +799,42 @@ class _IncomeListState extends State<IncomeList> {
                                   },
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(20, 10, 20, 24),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          _incomeDataPerPage == -1 ? 'Showing all ${showIncome.length} entries' : 'Showing ${startIndex + 1} to $endIndex of ${showIncome.length} entries',
-                                          style: theme.textTheme.bodyLarge?.copyWith(
+                                          _incomeDataPerPage == -1
+                                              ? 'Showing all ${showIncome.length} entries'
+                                              : 'Showing ${startIndex + 1} to $endIndex of ${showIncome.length} entries',
+                                          style: theme.textTheme.bodyLarge
+                                              ?.copyWith(
                                             color: kNeutral700,
                                           ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                      if (_incomeDataPerPage != -1) // Only show pagination controls when not showing "All"
+                                      if (_incomeDataPerPage !=
+                                          -1) // Only show pagination controls when not showing "All"
                                         Container(
                                           alignment: Alignment.center,
                                           height: 32,
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(4),
-                                            border: Border.all(color: kNeutral300),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            border:
+                                                Border.all(color: kNeutral300),
                                           ),
                                           child: Row(
                                             children: [
                                               Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 10),
                                                 child: GestureDetector(
                                                   onTap: () {
                                                     if (_currentPage > 1) {
@@ -667,7 +845,9 @@ class _IncomeListState extends State<IncomeList> {
                                                   },
                                                   child: Text(
                                                     'Previous',
-                                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                                    style: theme
+                                                        .textTheme.bodyLarge
+                                                        ?.copyWith(
                                                       color: kNeutral700,
                                                     ),
                                                   ),
@@ -678,14 +858,19 @@ class _IncomeListState extends State<IncomeList> {
                                                 decoration: const BoxDecoration(
                                                   color: kMainColor,
                                                   border: Border.symmetric(
-                                                    vertical: BorderSide(color: kNeutral300),
+                                                    vertical: BorderSide(
+                                                        color: kNeutral300),
                                                   ),
                                                 ),
                                                 child: Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 10),
                                                   child: Text(
                                                     '$_currentPage',
-                                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                                    style: theme
+                                                        .textTheme.bodyLarge
+                                                        ?.copyWith(
                                                       color: Colors.white,
                                                     ),
                                                   ),
@@ -695,24 +880,32 @@ class _IncomeListState extends State<IncomeList> {
                                                 alignment: Alignment.center,
                                                 decoration: const BoxDecoration(
                                                   border: Border.symmetric(
-                                                    vertical: BorderSide(color: kNeutral300),
+                                                    vertical: BorderSide(
+                                                        color: kNeutral300),
                                                   ),
                                                 ),
                                                 child: Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 10),
                                                   child: Text(
                                                     '$totalPages',
-                                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                                    style: theme
+                                                        .textTheme.bodyLarge
+                                                        ?.copyWith(
                                                       color: kNeutral700,
                                                     ),
                                                   ),
                                                 ),
                                               ),
                                               Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 10),
                                                 child: GestureDetector(
                                                   onTap: () {
-                                                    if (_currentPage < totalPages) {
+                                                    if (_currentPage <
+                                                        totalPages) {
                                                       setState(() {
                                                         _currentPage++;
                                                       });
@@ -720,7 +913,9 @@ class _IncomeListState extends State<IncomeList> {
                                                   },
                                                   child: Text(
                                                     'Next',
-                                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                                    style: theme
+                                                        .textTheme.bodyLarge
+                                                        ?.copyWith(
                                                       color: kNeutral700,
                                                     ),
                                                   ),

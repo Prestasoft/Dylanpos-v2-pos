@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -141,7 +142,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   List<HomeReport> getLastCustomerName(List<SaleTransactionModel> model) {
     List<HomeReport> customers = [];
     model.reversed.toList().forEach((element) {
-      HomeReport report = HomeReport(element.customerName, element.totalAmount.toString());
+      HomeReport report =
+          HomeReport(element.customerName, element.totalAmount.toString());
       customers.add(report);
     });
     return customers;
@@ -150,7 +152,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   List<HomeReport> getLastPurchaserName(List<dynamic> model) {
     List<HomeReport> customers = [];
     model.reversed.toList().forEach((element) {
-      HomeReport report = HomeReport(element.customerName, element.totalAmount.toString());
+      HomeReport report =
+          HomeReport(element.customerName, element.totalAmount.toString());
       customers.add(report);
     });
     return customers;
@@ -159,7 +162,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   List<HomeReport> getLastDueName(List<DueTransactionModel> model) {
     List<HomeReport> customers = [];
     model.reversed.toList().forEach((element) {
-      HomeReport report = HomeReport(element.customerName, element.payDueAmount.toString());
+      HomeReport report =
+          HomeReport(element.customerName, element.payDueAmount.toString());
       customers.add(report);
     });
     return customers;
@@ -197,7 +201,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
         .map(
           (element) => TopCustomer(
             element.customerName,
-            element.openingBalance.toString() ?? '',
+            element.openingBalance.toString(),
             element.phoneNumber,
             element.profilePicture.toString(),
           ),
@@ -364,7 +368,10 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
     setState(() {});
   }
 
-  Future<void> saveDataOnLocal({required String key, required String type, required dynamic value}) async {
+  Future<void> saveDataOnLocal(
+      {required String key,
+      required String type,
+      required dynamic value}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     if (type == 'bool') prefs.setBool(key, value);
     if (type == 'string') prefs.setString(key, value);
@@ -409,7 +416,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
       //     });
     } else {
       //EasyLoading.showError('Update your plan first\nAdd Customer limit is over.');
-      EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstAddCustomerLimitIsOver}.');
+      EasyLoading.showError(
+          '${lang.S.of(context).updateYourPlanFirstAddCustomerLimitIsOver}.');
     }
   }
 
@@ -434,7 +442,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
       //     });
     } else {
       // EasyLoading.showError('Update your plan first\nAdd Customer limit is over.');
-      EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstAddCustomerLimitIsOver}.');
+      EasyLoading.showError(
+          '${lang.S.of(context).updateYourPlanFirstAddCustomerLimitIsOver}.');
     }
   }
 
@@ -474,15 +483,6 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   double totalProfitCurrentMonth = 0;
   double totalProfitPreviousMonth = 0;
   double totalLoss = 0;
-  static DateTime fromDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-  static DateTime toDate = DateTime.now();
-  static String selectedIndex = 'Today';
-
-  Future<void> _refresh() {
-    return getUserID().then((user) {
-      setState(() => user = user);
-    });
-  }
 
   bool isFirstTime = true;
 
@@ -547,16 +547,24 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Subscription.getUserLimitsData(context: context, wannaShowMsg: true);
     });
-    for (int i = 0; i < DateTime(currentDate.year, currentDate.month + 1, 0).day; i++) {
+    for (int i = 0;
+        i < DateTime(currentDate.year, currentDate.month + 1, 0).day;
+        i++) {
       dailySaleOfCurrentMonth.add(0);
     }
-    for (int i = 0; i < DateTime(currentDate.year, currentDate.month + 1, 0).day; i++) {
+    for (int i = 0;
+        i < DateTime(currentDate.year, currentDate.month + 1, 0).day;
+        i++) {
       dailySale.add(0);
     }
-    for (int i = 0; i < DateTime(currentDate.year, currentDate.month + 1, 0).day; i++) {
+    for (int i = 0;
+        i < DateTime(currentDate.year, currentDate.month + 1, 0).day;
+        i++) {
       dailyExpenseOfCurrentMonth.add(0);
     }
-    for (int i = 0; i < DateTime(currentDate.year, currentDate.month + 1, 0).day; i++) {
+    for (int i = 0;
+        i < DateTime(currentDate.year, currentDate.month + 1, 0).day;
+        i++) {
       dailyExpense.add(0);
     }
     super.initState();
@@ -572,7 +580,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
         .map(
           (element) => TopPurchaseReport(
             element.productName,
-            element.productPurchasePrice.toString() ?? '',
+            element.productPurchasePrice.toString(),
             element.productCategory,
             element.productPicture,
             element.productStock,
@@ -584,7 +592,9 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   @override
   void dispose() {
     // TODO: implement dispose
-    print('---------confirm---------------');
+    if (kDebugMode) {
+      print('---------confirm---------------');
+    }
     super.dispose();
   }
 
@@ -601,10 +611,12 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
         backgroundColor: kBackgroundColor,
         body: Consumer(
           builder: (_, ref, watch) {
-            AsyncValue<List<SaleTransactionModel>> transactionReport = ref.watch(transitionProvider);
+            AsyncValue<List<SaleTransactionModel>> transactionReport =
+                ref.watch(transitionProvider);
             final incomes = ref.watch(incomeProvider);
             final expenses = ref.watch(expenseProvider);
-            final purchaseTransactionReport = ref.watch(purchaseTransitionProviderSIngle);
+            final purchaseTransactionReport =
+                ref.watch(purchaseTransitionProviderSIngle);
             return SingleChildScrollView(
               controller: _verticalScroll,
               child: Column(
@@ -624,25 +636,35 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                       totalExpenseOfLastMonth = 0;
                       expenseList = [];
                       for (var element in allExpenses) {
-                        final expenseDate = DateTime.tryParse(element.expenseDate.toString()) ?? DateTime.now();
+                        final expenseDate =
+                            DateTime.tryParse(element.expenseDate.toString()) ??
+                                DateTime.now();
                         if (expenseDate.isAfter(firstDayOfCurrentYear)) {
-                          totalExpenseOfCurrentYear += double.parse(element.amount.toString());
-                          monthlyExpense[expenseDate.month - 1] += double.parse(element.amount.toString());
-                          dailyExpense[expenseDate.day - 1] += int.parse(element.amount);
+                          totalExpenseOfCurrentYear +=
+                              double.parse(element.amount.toString());
+                          monthlyExpense[expenseDate.month - 1] +=
+                              double.parse(element.amount.toString());
+                          dailyExpense[expenseDate.day - 1] +=
+                              int.parse(element.amount);
                           totalExpenseOfYear.add(element);
 
                           if (expenseDate.isAfter(firstDayOfCurrentMonth)) {
-                            totalExpenseOfCurrentMonth += double.parse(element.amount.toString());
+                            totalExpenseOfCurrentMonth +=
+                                double.parse(element.amount.toString());
                             expenseCountOfCurrentMonth.add(element);
                             dailyExpenseOfCurrentMonth[expenseDate.day - 1]++;
                           }
 
-                          if (expenseDate.isAfter(firstDayOfPreviousMonth) && expenseDate.isBefore(firstDayOfCurrentMonth)) {
-                            totalExpenseOfLastMonth += double.parse(element.amount.toString());
+                          if (expenseDate.isAfter(firstDayOfPreviousMonth) &&
+                              expenseDate.isBefore(firstDayOfCurrentMonth)) {
+                            totalExpenseOfLastMonth +=
+                                double.parse(element.amount.toString());
                             expenseCountOfLastMonth.add(element);
                           }
-                          if (expenseDate.isAfter(firstDayOfPreviousYear) && expenseDate.isBefore(firstDayOfCurrentYear)) {
-                            totalExpenseOfPreviousYear += double.parse(element.amount.toString());
+                          if (expenseDate.isAfter(firstDayOfPreviousYear) &&
+                              expenseDate.isBefore(firstDayOfCurrentYear)) {
+                            totalExpenseOfPreviousYear +=
+                                double.parse(element.amount.toString());
                             expenseCountOfLastYear.add(element);
                           }
                         }
@@ -665,12 +687,18 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                       totalProfitPreviousMonth = 0;
 
                       for (var element in transaction) {
-                        final saleDate = DateTime.tryParse(element.purchaseDate.toString()) ?? DateTime.now();
+                        final saleDate = DateTime.tryParse(
+                                element.purchaseDate.toString()) ??
+                            DateTime.now();
                         if (saleDate.isAfter(firstDayOfCurrentYear)) {
-                          totalSaleOfCurrentYear += double.parse(element.totalAmount.toString());
-                          monthlySale[saleDate.month - 1] += double.parse(element.totalAmount.toString());
-                          if (saleDate.day >= 1 && saleDate.day <= dailySale.length) {
-                            dailySale[saleDate.day - 1] += element.totalAmount!.round();
+                          totalSaleOfCurrentYear +=
+                              double.parse(element.totalAmount.toString());
+                          monthlySale[saleDate.month - 1] +=
+                              double.parse(element.totalAmount.toString());
+                          if (saleDate.day >= 1 &&
+                              saleDate.day <= dailySale.length) {
+                            dailySale[saleDate.day - 1] +=
+                                element.totalAmount!.round();
                           } else {
                             print("Invalid day: ${saleDate.day}");
                           }
@@ -678,69 +706,122 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                           totalSaleOfYear.add(element);
 
                           if (saleDate.isAfter(firstDayOfCurrentMonth)) {
-                            totalSaleOfCurrentMonth += double.parse(element.totalAmount.toString());
+                            totalSaleOfCurrentMonth +=
+                                double.parse(element.totalAmount.toString());
                             saleCountOfcurrentMonth.add(element);
                             dailySaleOfCurrentMonth[saleDate.day - 1]++;
-                            element.lossProfit!.isNegative ? totalLoss = totalLoss + element.lossProfit!.abs() : totalProfitCurrentMonth = double.parse(totalProfitCurrentMonth.toString()) + double.parse(element.lossProfit!.toString());
+                            element.lossProfit!.isNegative
+                                ? totalLoss =
+                                    totalLoss + element.lossProfit!.abs()
+                                : totalProfitCurrentMonth = double.parse(
+                                        totalProfitCurrentMonth.toString()) +
+                                    double.parse(
+                                        element.lossProfit!.toString());
                           }
 
-                          if (saleDate.isAfter(firstDayOfPreviousMonth) && saleDate.isBefore(firstDayOfCurrentMonth)) {
-                            totalSaleOfLastMonth += double.parse(element.totalAmount.toString());
+                          if (saleDate.isAfter(firstDayOfPreviousMonth) &&
+                              saleDate.isBefore(firstDayOfCurrentMonth)) {
+                            totalSaleOfLastMonth +=
+                                double.parse(element.totalAmount.toString());
                             saleCountOfLastMonth.add(element);
-                            element.lossProfit!.isNegative ? totalLoss = totalLoss + element.lossProfit!.abs() : totalProfitCurrentMonth = double.parse(totalProfitCurrentMonth.toString()) + double.parse(element.lossProfit!.toString());
+                            element.lossProfit!.isNegative
+                                ? totalLoss =
+                                    totalLoss + element.lossProfit!.abs()
+                                : totalProfitCurrentMonth = double.parse(
+                                        totalProfitCurrentMonth.toString()) +
+                                    double.parse(
+                                        element.lossProfit!.toString());
                           }
-                          if (saleDate.isAfter(firstDayOfPreviousYear) && saleDate.isBefore(firstDayOfCurrentYear)) {
-                            totalSaleOfPreviousYear += double.parse(element.totalAmount.toString());
+                          if (saleDate.isAfter(firstDayOfPreviousYear) &&
+                              saleDate.isBefore(firstDayOfCurrentYear)) {
+                            totalSaleOfPreviousYear +=
+                                double.parse(element.totalAmount.toString());
                             saleCountOfLastYear.add(element);
                           }
                         }
                       }
                       //_______________________________________total_sale_count_____________
-                      int currentMonthUserCount = saleCountOfcurrentMonth.length;
+                      int currentMonthUserCount =
+                          saleCountOfcurrentMonth.length;
                       int previousMonthSale = saleCountOfLastMonth.length;
                       double percentageChange = 0.0;
                       if (previousMonthSale > 0) {
-                        percentageChange = ((currentMonthUserCount - previousMonthSale) / previousMonthSale) * 100;
+                        percentageChange =
+                            ((currentMonthUserCount - previousMonthSale) /
+                                    previousMonthSale) *
+                                100;
                       } else if (previousMonthSale == 0) {
-                        percentageChange = (currentMonthUserCount - previousMonthSale) * 100;
+                        percentageChange =
+                            (currentMonthUserCount - previousMonthSale) * 100;
                       } else {
-                        percentageChange = ((currentMonthUserCount - previousMonthSale).abs() / previousMonthSale.abs()) * 100;
+                        percentageChange =
+                            ((currentMonthUserCount - previousMonthSale).abs() /
+                                    previousMonthSale.abs()) *
+                                100;
                       }
 
                       //_______________________________________total_sale_amount_____________
-                      int currentMonthSaleAmount = saleCountOfcurrentMonth.length;
+                      int currentMonthSaleAmount =
+                          saleCountOfcurrentMonth.length;
                       int previousMonthSaleAmount = saleCountOfLastMonth.length;
                       double salePercentage = 0.0;
                       if (previousMonthSaleAmount > 0) {
-                        salePercentage = ((currentMonthSaleAmount - previousMonthSaleAmount) / previousMonthSaleAmount) * 100;
+                        salePercentage = ((currentMonthSaleAmount -
+                                    previousMonthSaleAmount) /
+                                previousMonthSaleAmount) *
+                            100;
                       } else if (previousMonthSaleAmount == 0) {
-                        salePercentage = (currentMonthSaleAmount - previousMonthSaleAmount) * 100;
+                        salePercentage =
+                            (currentMonthSaleAmount - previousMonthSaleAmount) *
+                                100;
                       } else {
-                        salePercentage = ((currentMonthSaleAmount - previousMonthSaleAmount).abs() / previousMonthSaleAmount.abs()) * 100;
+                        salePercentage =
+                            ((currentMonthSaleAmount - previousMonthSaleAmount)
+                                        .abs() /
+                                    previousMonthSaleAmount.abs()) *
+                                100;
                       }
 
                       // _______________________________________total_profit_amount_____________
                       int currentMonthProfit = totalProfitCurrentMonth.round();
-                      int previousMonthProfit = totalProfitPreviousMonth.round();
+                      int previousMonthProfit =
+                          totalProfitPreviousMonth.round();
                       double profitPercentage = 0.0;
                       if (previousMonthProfit > 0) {
-                        profitPercentage = ((currentMonthProfit - previousMonthProfit) / previousMonthProfit) * 100;
+                        profitPercentage =
+                            ((currentMonthProfit - previousMonthProfit) /
+                                    previousMonthProfit) *
+                                100;
                       } else if (previousMonthProfit == 0) {
-                        profitPercentage = (currentMonthProfit - previousMonthProfit) * 100;
+                        profitPercentage =
+                            (currentMonthProfit - previousMonthProfit) * 100;
                       } else {
-                        profitPercentage = ((currentMonthProfit - previousMonthProfit).abs() / previousMonthProfit.abs()) * 100;
+                        profitPercentage =
+                            ((currentMonthProfit - previousMonthProfit).abs() /
+                                    previousMonthProfit.abs()) *
+                                100;
                       }
 
                       // _______________________________________total_income_amount_____________
-                      int currentMonthExpense = totalExpenseOfCurrentMonth.round();
-                      int previousMonthExpense = totalExpenseOfLastMonth.round();
+                      int currentMonthExpense =
+                          totalExpenseOfCurrentMonth.round();
+                      int previousMonthExpense =
+                          totalExpenseOfLastMonth.round();
                       double expensePercentage = 0.0;
                       if (previousMonthExpense > 0) {
-                        expensePercentage = ((currentMonthExpense - previousMonthExpense) / previousMonthExpense) * 100;
+                        expensePercentage =
+                            ((currentMonthExpense - previousMonthExpense) /
+                                    previousMonthExpense) *
+                                100;
                       } else if (previousMonthExpense == 0) {
-                        expensePercentage = (currentMonthExpense - previousMonthExpense) * 100;
+                        expensePercentage =
+                            (currentMonthExpense - previousMonthExpense) * 100;
                       } else {
-                        expensePercentage = ((currentMonthExpense - previousMonthExpense).abs() / previousMonthExpense.abs()) * 100;
+                        expensePercentage =
+                            ((currentMonthExpense - previousMonthExpense)
+                                        .abs() /
+                                    previousMonthExpense.abs()) *
+                                100;
                       }
 
                       return Column(
@@ -764,9 +845,14 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFB9FDEC),
                                   icon: 'images/cust.svg',
-                                  predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
-                                  predictIconColor: percentageChange >= 0 ? Colors.green : Colors.red,
-                                  monthlyDifferent: '${percentageChange.toStringAsFixed(2)}%',
+                                  predictIcon: percentageChange >= 0
+                                      ? FontAwesomeIcons.arrowUpLong
+                                      : FontAwesomeIcons.arrowDownLong,
+                                  predictIconColor: percentageChange >= 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                  monthlyDifferent:
+                                      '${percentageChange.toStringAsFixed(2)}%',
                                   difWithoutCurrency: true,
                                 ),
                               ),
@@ -788,9 +874,14 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFDFDAFF),
                                   icon: 'images/sale.svg',
-                                  predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
-                                  predictIconColor: percentageChange >= 0 ? Colors.green : Colors.red,
-                                  monthlyDifferent: '${salePercentage.toStringAsFixed(2)}%',
+                                  predictIcon: percentageChange >= 0
+                                      ? FontAwesomeIcons.arrowUpLong
+                                      : FontAwesomeIcons.arrowDownLong,
+                                  predictIconColor: percentageChange >= 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                  monthlyDifferent:
+                                      '${salePercentage.toStringAsFixed(2)}%',
                                   difWithoutCurrency: false,
                                 ),
                               ),
@@ -812,9 +903,14 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFC8E6FE),
                                   icon: 'images/pur.svg',
-                                  predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
-                                  predictIconColor: percentageChange >= 0 ? Colors.green : Colors.red,
-                                  monthlyDifferent: '${profitPercentage.toStringAsFixed(2)}%',
+                                  predictIcon: percentageChange >= 0
+                                      ? FontAwesomeIcons.arrowUpLong
+                                      : FontAwesomeIcons.arrowDownLong,
+                                  predictIconColor: percentageChange >= 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                  monthlyDifferent:
+                                      '${profitPercentage.toStringAsFixed(2)}%',
                                   difWithoutCurrency: false,
                                 ),
                               ),
@@ -836,9 +932,14 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                   footerTitle: 'Este Mes',
                                   backgroundColor: const Color(0xFFFFD6E2),
                                   icon: 'images/ex.svg',
-                                  predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
-                                  predictIconColor: percentageChange >= 0 ? Colors.green : Colors.red,
-                                  monthlyDifferent: '${expensePercentage.toStringAsFixed(2)}%',
+                                  predictIcon: percentageChange >= 0
+                                      ? FontAwesomeIcons.arrowUpLong
+                                      : FontAwesomeIcons.arrowDownLong,
+                                  predictIconColor: percentageChange >= 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                  monthlyDifferent:
+                                      '${expensePercentage.toStringAsFixed(2)}%',
                                   difWithoutCurrency: false,
                                 ),
                               ),
@@ -858,39 +959,74 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                 totalIncomeOfCurrentYear = 0;
                                 totalIncomeOfPreviousYear = 0;
                                 totalIncomeOfCurrentMonth = 0;
-                                monthlyIncome = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                                monthlyIncome = [
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0
+                                ];
                                 totalIncomeOfLastMonth = 0;
                                 incomeList = [];
 
                                 for (var element in allIncome) {
-                                  final incomeDate = DateTime.tryParse(element.incomeDate.toString()) ?? DateTime.now();
-                                  if (incomeDate.isAfter(firstDayOfCurrentYear)) {
-                                    totalIncomeOfCurrentYear += double.parse(element.amount.toString());
-                                    monthlyIncome[incomeDate.month - 1] += double.parse(element.amount.toString());
+                                  final incomeDate = DateTime.tryParse(
+                                          element.incomeDate.toString()) ??
+                                      DateTime.now();
+                                  if (incomeDate
+                                      .isAfter(firstDayOfCurrentYear)) {
+                                    totalIncomeOfCurrentYear +=
+                                        double.parse(element.amount.toString());
+                                    monthlyIncome[incomeDate.month - 1] +=
+                                        double.parse(element.amount.toString());
                                     totalIncomeOfYear.add(element);
 
-                                    if (incomeDate.isAfter(firstDayOfCurrentMonth)) {
-                                      totalIncomeOfCurrentMonth += double.parse(element.amount.toString());
+                                    if (incomeDate
+                                        .isAfter(firstDayOfCurrentMonth)) {
+                                      totalIncomeOfCurrentMonth += double.parse(
+                                          element.amount.toString());
                                       incomeCountOfCurrentMonth.add(element);
                                     }
 
-                                    if (incomeDate.isAfter(firstDayOfPreviousMonth) && incomeDate.isBefore(firstDayOfCurrentMonth)) {
-                                      totalIncomeOfLastMonth += double.parse(element.amount.toString());
+                                    if (incomeDate
+                                            .isAfter(firstDayOfPreviousMonth) &&
+                                        incomeDate
+                                            .isBefore(firstDayOfCurrentMonth)) {
+                                      totalIncomeOfLastMonth += double.parse(
+                                          element.amount.toString());
                                       incomeCountOfLastMonth.add(element);
                                     }
                                   }
                                 }
 
                                 // _______________________________________total_expense_amount_____________
-                                int currentMonthIncome = totalIncomeOfCurrentMonth.round();
-                                int previousMonthIncome = totalIncomeOfLastMonth.round();
+                                int currentMonthIncome =
+                                    totalIncomeOfCurrentMonth.round();
+                                int previousMonthIncome =
+                                    totalIncomeOfLastMonth.round();
                                 double incomePercentage = 0.0;
                                 if (previousMonthIncome > 0) {
-                                  incomePercentage = ((currentMonthIncome - previousMonthIncome) / previousMonthIncome) * 100;
+                                  incomePercentage = ((currentMonthIncome -
+                                              previousMonthIncome) /
+                                          previousMonthIncome) *
+                                      100;
                                 } else if (previousMonthIncome == 0) {
-                                  incomePercentage = (currentMonthIncome - previousMonthIncome) * 100;
+                                  incomePercentage = (currentMonthIncome -
+                                          previousMonthIncome) *
+                                      100;
                                 } else {
-                                  incomePercentage = ((currentMonthIncome - previousMonthIncome).abs() / previousMonthIncome.abs()) * 100;
+                                  incomePercentage = ((currentMonthIncome -
+                                                  previousMonthIncome)
+                                              .abs() /
+                                          previousMonthIncome.abs()) *
+                                      100;
                                 }
 
                                 return Padding(
@@ -902,9 +1038,14 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                     footerTitle: 'Este Mes',
                                     backgroundColor: const Color(0xFFC5FDBF),
                                     icon: 'images/in.svg',
-                                    predictIcon: percentageChange >= 0 ? FontAwesomeIcons.arrowUpLong : FontAwesomeIcons.arrowDownLong,
-                                    predictIconColor: percentageChange >= 0 ? Colors.green : Colors.red,
-                                    monthlyDifferent: '${incomePercentage.toStringAsFixed(2)}%',
+                                    predictIcon: percentageChange >= 0
+                                        ? FontAwesomeIcons.arrowUpLong
+                                        : FontAwesomeIcons.arrowDownLong,
+                                    predictIconColor: percentageChange >= 0
+                                        ? Colors.green
+                                        : Colors.red,
+                                    monthlyDifferent:
+                                        '${incomePercentage.toStringAsFixed(2)}%',
                                     difWithoutCurrency: false,
                                   ),
                                 );
@@ -928,16 +1069,21 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: IncomeExpenseLineChart(
-                                    totalSaleCurrentMonths: totalSaleOfCurrentMonth,
+                                    totalSaleCurrentMonths:
+                                        totalSaleOfCurrentMonth,
                                     totalSaleLastMonth: totalSaleOfLastMonth,
-                                    totalSaleCurrentYear: totalSaleOfCurrentYear,
+                                    totalSaleCurrentYear:
+                                        totalSaleOfCurrentYear,
                                     monthlySale: monthlySale,
                                     dailySale: dailySale,
                                     totalSaleCount: 0.0,
                                     freeUser: 0.0,
-                                    totalExpenseCurrentYear: totalExpenseOfCurrentYear,
-                                    totalExpenseCurrentMonths: totalExpenseOfCurrentMonth,
-                                    totalExpenseLastMonth: totalExpenseOfLastMonth,
+                                    totalExpenseCurrentYear:
+                                        totalExpenseOfCurrentYear,
+                                    totalExpenseCurrentMonths:
+                                        totalExpenseOfCurrentMonth,
+                                    totalExpenseLastMonth:
+                                        totalExpenseOfLastMonth,
                                     monthlyExpense: monthlyExpense,
                                     dailyExpense: dailyExpense,
                                   ),
@@ -959,7 +1105,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                               lg: 40,
                               child: TopReportWidget(
                                 transactionReport: transactionReport,
-                                purchaseTransactionReport: purchaseTransactionReport,
+                                purchaseTransactionReport:
+                                    purchaseTransactionReport,
                                 reportType: "TopSelling",
                               ),
                             ),
@@ -970,7 +1117,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                               lg: 40,
                               child: TopReportWidget(
                                 transactionReport: transactionReport,
-                                purchaseTransactionReport: purchaseTransactionReport,
+                                purchaseTransactionReport:
+                                    purchaseTransactionReport,
                                 reportType: "TopCustomer",
                               ),
                             ),
@@ -981,7 +1129,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                               lg: 40,
                               child: TopReportWidget(
                                 transactionReport: transactionReport,
-                                purchaseTransactionReport: purchaseTransactionReport,
+                                purchaseTransactionReport:
+                                    purchaseTransactionReport,
                                 reportType: "TopPurchasing",
                               ),
                             ),
@@ -1033,7 +1182,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                       child: Text(
                                         lang.S.of(context).recentSale,
                                         maxLines: 1,
-                                        style: theme.textTheme.titleLarge?.copyWith(
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 18,
                                         ),
@@ -1062,7 +1212,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                         Text(
                                           lang.S.of(context).viewAll,
                                           //'View All',
-                                          style: kTextStyle.copyWith(color: kMainColor),
+                                          style: kTextStyle.copyWith(
+                                              color: kMainColor),
                                         ),
                                         const Icon(
                                           Icons.keyboard_arrow_right,
@@ -1078,7 +1229,10 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                         ),
                         transactionReport.when(data: (sellerSnap) {
                           shopList = sellerSnap;
-                          List<SaleTransactionModel> recentSaleList = shopList.length > 5 ? shopList.sublist(shopList.length - 5) : shopList;
+                          List<SaleTransactionModel> recentSaleList =
+                              shopList.length > 5
+                                  ? shopList.sublist(shopList.length - 5)
+                                  : shopList;
                           recentSaleList = recentSaleList.reversed.toList();
                           totalSaleList = shopList;
                           recentFive = recentSaleList;
@@ -1087,7 +1241,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                             controller: _horizontalScroll,
                             thickness: 8.0,
                             child: LayoutBuilder(
-                              builder: (BuildContext context, BoxConstraints constraints) {
+                              builder: (BuildContext context,
+                                  BoxConstraints constraints) {
                                 double kWidth = constraints.maxWidth;
                                 return Scrollbar(
                                   controller: _horizontalScroll,
@@ -1104,7 +1259,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                       child: Theme(
                                         data: theme.copyWith(
                                           dividerColor: Colors.transparent,
-                                          dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                          dividerTheme: const DividerThemeData(
+                                              color: Colors.transparent),
                                         ),
                                         child: DataTable(
                                           border: const TableBorder(
@@ -1113,11 +1269,16 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                               color: kNeutral300,
                                             ),
                                           ),
-                                          dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                          headingRowColor: WidgetStateProperty.all(const Color(0xffF5F5F5)),
+                                          dataRowColor:
+                                              const WidgetStatePropertyAll(
+                                                  Colors.white),
+                                          headingRowColor:
+                                              WidgetStateProperty.all(
+                                                  const Color(0xffF5F5F5)),
                                           showBottomBorder: false,
                                           dividerThickness: 0.0,
-                                          headingTextStyle: theme.textTheme.titleMedium,
+                                          headingTextStyle:
+                                              theme.textTheme.titleMedium,
                                           columns: [
                                             DataColumn(
                                               label: Text(
@@ -1164,7 +1325,9 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                             //         Text('Action', style: kTextStyle.copyWith(color: kTitleColor, overflow: TextOverflow.ellipsis))),
                                           ],
                                           rows: List.generate(
-                                            recentSaleList.reversed.toList().length,
+                                            recentSaleList.reversed
+                                                .toList()
+                                                .length,
                                             (index) => DataRow(
                                               cells: [
                                                 DataCell(
@@ -1176,32 +1339,49 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                                                 DataCell(
                                                   Text(dataTypeFormat.format(
                                                     DateTime.parse(
-                                                      recentSaleList[index].purchaseDate.toString(),
+                                                      recentSaleList[index]
+                                                          .purchaseDate
+                                                          .toString(),
                                                     ),
                                                   )),
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                    recentSaleList[index].invoiceNumber.toString(),
+                                                    recentSaleList[index]
+                                                        .invoiceNumber
+                                                        .toString(),
                                                   ),
                                                 ),
                                                 DataCell(
-                                                  Text(recentSaleList[index].customerName.toString()),
+                                                  Text(recentSaleList[index]
+                                                      .customerName
+                                                      .toString()),
                                                 ),
                                                 DataCell(
-                                                  Text(recentSaleList[index].paymentType.toString()),
+                                                  Text(recentSaleList[index]
+                                                      .paymentType
+                                                      .toString()),
                                                 ),
                                                 DataCell(
-                                                  Text('$globalCurrency${recentSaleList[index].totalAmount.toString()}'),
+                                                  Text(
+                                                      '$globalCurrency${recentSaleList[index].totalAmount.toString()}'),
                                                 ),
                                                 DataCell(
-                                                  Text('$globalCurrency${((recentSaleList[index].totalAmount!) - (double.parse(recentSaleList[index].dueAmount.toString())))}'),
+                                                  Text(
+                                                      '$globalCurrency${((recentSaleList[index].totalAmount!) - (double.parse(recentSaleList[index].dueAmount.toString())))}'),
                                                 ),
                                                 DataCell(
-                                                  Text('$globalCurrency${recentSaleList[index].dueAmount.toString()}'),
+                                                  Text(
+                                                      '$globalCurrency${recentSaleList[index].dueAmount.toString()}'),
                                                 ),
                                                 DataCell(
-                                                  Text(recentSaleList[index].isPaid == true ? lang.S.of(context).paid : lang.S.of(context).unpaid),
+                                                  Text(recentSaleList[index]
+                                                              .isPaid ==
+                                                          true
+                                                      ? lang.S.of(context).paid
+                                                      : lang.S
+                                                          .of(context)
+                                                          .unpaid),
                                                 ),
                                                 // DataCell(
                                                 //   PopupMenuButton(
@@ -1266,12 +1446,21 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   void getAllTotal() async {
     // ignore: unused_local_variable
     List<ProductModel> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Productos').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Productos')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         totalStock = totalStock + (int.tryParse(data['productStock']) ?? 0);
-        totalSalePrice = totalSalePrice + (num.parse(data['productSalePrice']) * num.parse(data['productStock']));
-        totalParPrice = totalParPrice + (num.parse(data['productPurchasePrice']) * num.parse(data['productStock']));
+        totalSalePrice = totalSalePrice +
+            (num.parse(data['productSalePrice']) *
+                num.parse(data['productStock']));
+        totalParPrice = totalParPrice +
+            (num.parse(data['productPurchasePrice']) *
+                num.parse(data['productStock']));
 
         // productList.add(ProductModel.fromJson(jsonDecode(jsonEncode(element.value))));
       }

@@ -12,7 +12,6 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/subacription_plan_provider.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-
 import '../../Provider/customer_provider.dart';
 import '../../commas.dart';
 import '../../const.dart';
@@ -22,7 +21,10 @@ import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/dotted_border/dotted_border.dart';
 
 class AddCustomer extends StatefulWidget {
-  const AddCustomer({super.key, required this.typeOfCustomerAdd, required this.listOfPhoneNumber});
+  const AddCustomer(
+      {super.key,
+      required this.typeOfCustomerAdd,
+      required this.listOfPhoneNumber});
 
   final String typeOfCustomerAdd;
   final List<String> listOfPhoneNumber;
@@ -33,7 +35,8 @@ class AddCustomer extends StatefulWidget {
 
 class _AddCustomerState extends State<AddCustomer> {
   bool saleButtonClicked = false;
-  String profilePicture = 'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Profile%20Picture%2Fblank-profile-picture-973460_1280.webp?alt=media&token=3578c1e0-7278-4c03-8b56-dd007a9befd3';
+  String profilePicture =
+      'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Profile%20Picture%2Fblank-profile-picture-973460_1280.webp?alt=media&token=3578c1e0-7278-4c03-8b56-dd007a9befd3';
 
   bool receiveWhatsappUpdates = false;
   Uint8List? image;
@@ -43,10 +46,14 @@ class _AddCustomerState extends State<AddCustomer> {
       try {
         Uint8List? bytesFromPicker = await ImagePickerWeb.getImageAsBytes();
         if (bytesFromPicker!.isNotEmpty) {
-          EasyLoading.show(status: '${lang.S.of(context).uploading}... ', dismissOnTap: false);
+          EasyLoading.show(
+              status: '${lang.S.of(context).uploading}... ',
+              dismissOnTap: false);
         }
 
-        var snapshot = await FirebaseStorage.instance.ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}').putData(bytesFromPicker);
+        var snapshot = await FirebaseStorage.instance
+            .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+            .putData(bytesFromPicker);
         var url = await snapshot.ref.getDownloadURL();
         //EasyLoading.showSuccess('Upload Successful!');
         EasyLoading.showSuccess('${lang.S.of(context).uploadSuccessful}!');
@@ -56,7 +63,8 @@ class _AddCustomerState extends State<AddCustomer> {
         });
       } on firebase_core.FirebaseException catch (e) {
         EasyLoading.dismiss();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.code.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.code.toString())));
       }
     }
   }
@@ -97,7 +105,8 @@ class _AddCustomerState extends State<AddCustomer> {
         value: des,
         child: Text(
           des,
-          style: kTextStyle.copyWith(fontWeight: FontWeight.normal, color: kTitleColor),
+          style: kTextStyle.copyWith(
+              fontWeight: FontWeight.normal, color: kTitleColor),
         ),
       );
       dropDownItems.add(item);
@@ -144,7 +153,8 @@ class _AddCustomerState extends State<AddCustomer> {
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (context, ref, _) {
-          final currentSubcription = ref.watch(singleUserSubscriptionPlanProvider);
+          final currentSubcription =
+              ref.watch(singleUserSubscriptionPlanProvider);
           return currentSubcription.when(data: (data) {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(10),
@@ -159,7 +169,8 @@ class _AddCustomerState extends State<AddCustomer> {
                       children: [
                         Text(
                           pageName,
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         )
                       ],
                     ),
@@ -203,14 +214,19 @@ class _AddCustomerState extends State<AddCustomer> {
                                               }
                                             },
                                             onSaved: (value) {
-                                              customerNameController.text = value!;
+                                              customerNameController.text =
+                                                  value!;
                                             },
                                             controller: customerNameController,
                                             showCursor: true,
                                             cursorColor: kTitleColor,
                                             decoration: InputDecoration(
-                                              labelText: lang.S.of(context).customerName,
-                                              hintText: lang.S.of(context).enterCustomerName,
+                                              labelText: lang.S
+                                                  .of(context)
+                                                  .customerName,
+                                              hintText: lang.S
+                                                  .of(context)
+                                                  .enterCustomerName,
                                             ),
                                           ),
                                         )),
@@ -225,10 +241,19 @@ class _AddCustomerState extends State<AddCustomer> {
                                               if (value.isEmptyOrNull) {
                                                 // return 'Phone Number is required.';
                                                 return '${lang.S.of(context).phoneNumberIsRequired}.';
-                                              } else if (widget.listOfPhoneNumber.contains(value.removeAllWhiteSpace().toLowerCase())) {
+                                              } else if (widget
+                                                  .listOfPhoneNumber
+                                                  .contains(value
+                                                      .removeAllWhiteSpace()
+                                                      .toLowerCase())) {
                                                 //return 'Phone Number already exists';
-                                                return lang.S.of(context).phoneNumberAlreadyExists;
-                                              } else if (double.tryParse(value!) == null && value.isNotEmpty) {
+                                                return lang.S
+                                                    .of(context)
+                                                    .phoneNumberAlreadyExists;
+                                              } else if (double.tryParse(
+                                                          value!) ==
+                                                      null &&
+                                                  value.isNotEmpty) {
                                                 // return 'Please Enter valid phone number.';
                                                 return '${lang.S.of(context).pleaseEnterValidPhoneNumber}.';
                                               } else {
@@ -236,14 +261,19 @@ class _AddCustomerState extends State<AddCustomer> {
                                               }
                                             },
                                             onSaved: (value) {
-                                              customerPhoneController.text = value!;
+                                              customerPhoneController.text =
+                                                  value!;
                                             },
                                             controller: customerPhoneController,
                                             showCursor: true,
                                             cursorColor: kTitleColor,
                                             decoration: InputDecoration(
-                                              labelText: lang.S.of(context).phoneNumber,
-                                              hintText: lang.S.of(context).enterYourPhoneNumber,
+                                              labelText: lang.S
+                                                  .of(context)
+                                                  .phoneNumber,
+                                              hintText: lang.S
+                                                  .of(context)
+                                                  .enterYourPhoneNumber,
                                             ),
                                           ),
                                         )),
@@ -262,14 +292,18 @@ class _AddCustomerState extends State<AddCustomer> {
                                               return null;
                                             },
                                             onSaved: (value) {
-                                              customerEmailController.text = value!;
+                                              customerEmailController.text =
+                                                  value!;
                                             },
                                             controller: customerEmailController,
                                             showCursor: true,
                                             cursorColor: kTitleColor,
                                             decoration: InputDecoration(
-                                              labelText: lang.S.of(context).email,
-                                              hintText: lang.S.of(context).enterYourEmailAddress,
+                                              labelText:
+                                                  lang.S.of(context).email,
+                                              hintText: lang.S
+                                                  .of(context)
+                                                  .enterYourEmailAddress,
                                             ),
                                           ),
                                         )),
@@ -284,14 +318,18 @@ class _AddCustomerState extends State<AddCustomer> {
                                             return null;
                                           },
                                           onSaved: (value) {
-                                            customerAddressController.text = value!;
+                                            customerAddressController.text =
+                                                value!;
                                           },
                                           controller: customerAddressController,
                                           showCursor: true,
                                           cursorColor: kTitleColor,
                                           decoration: InputDecoration(
-                                            labelText: lang.S.of(context).address,
-                                            hintText: lang.S.of(context).enterYourAddress,
+                                            labelText:
+                                                lang.S.of(context).address,
+                                            hintText: lang.S
+                                                .of(context)
+                                                .enterYourAddress,
                                           ),
                                         ),
                                       ),
@@ -308,15 +346,28 @@ class _AddCustomerState extends State<AddCustomer> {
                                           padding: const EdgeInsets.all(10.0),
                                           child: TextFormField(
                                             onChanged: (value) {
-                                              openingBalance = value.replaceAll(',', '');
-                                              var formattedText = myFormat.format(int.parse(openingBalance));
-                                              customerPreviousDueController.value = customerPreviousDueController.value.copyWith(
+                                              openingBalance =
+                                                  value.replaceAll(',', '');
+                                              var formattedText =
+                                                  myFormat.format(int.parse(
+                                                      openingBalance));
+                                              customerPreviousDueController
+                                                      .value =
+                                                  customerPreviousDueController
+                                                      .value
+                                                      .copyWith(
                                                 text: formattedText,
-                                                selection: TextSelection.collapsed(offset: formattedText.length),
+                                                selection:
+                                                    TextSelection.collapsed(
+                                                        offset: formattedText
+                                                            .length),
                                               );
                                             },
                                             validator: (value) {
-                                              if (double.tryParse(openingBalance) == null && openingBalance.isNotEmpty) {
+                                              if (double.tryParse(
+                                                          openingBalance) ==
+                                                      null &&
+                                                  openingBalance.isNotEmpty) {
                                                 //return 'Please Enter valid balance.';
                                                 return '${lang.S.of(context).pleaseEnterValidBalance}.';
                                               } else {
@@ -324,14 +375,20 @@ class _AddCustomerState extends State<AddCustomer> {
                                               }
                                             },
                                             onSaved: (value) {
-                                              customerPreviousDueController.text = value!;
+                                              customerPreviousDueController
+                                                  .text = value!;
                                             },
-                                            controller: customerPreviousDueController,
+                                            controller:
+                                                customerPreviousDueController,
                                             showCursor: true,
                                             cursorColor: kTitleColor,
                                             decoration: InputDecoration(
-                                              labelText: lang.S.of(context).openingBalance,
-                                              hintText: lang.S.of(context).enterOpeningBalance,
+                                              labelText: lang.S
+                                                  .of(context)
+                                                  .openingBalance,
+                                              hintText: lang.S
+                                                  .of(context)
+                                                  .enterOpeningBalance,
                                             ),
                                           ),
                                         )),
@@ -344,10 +401,30 @@ class _AddCustomerState extends State<AddCustomer> {
                                           child: SizedBox(
                                             height: 48,
                                             child: FormField(
-                                              builder: (FormFieldState<dynamic> field) {
+                                              builder: (FormFieldState<dynamic>
+                                                  field) {
                                                 return InputDecorator(
-                                                  decoration: InputDecoration(contentPadding: const EdgeInsets.all(6.0), floatingLabelBehavior: FloatingLabelBehavior.always, labelText: lang.S.of(context).type),
-                                                  child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getCategories())),
+                                                  decoration: InputDecoration(
+                                                      contentPadding:
+                                                          const EdgeInsets.all(
+                                                              6.0),
+                                                      floatingLabelBehavior:
+                                                          FloatingLabelBehavior
+                                                              .always,
+                                                      labelText: lang.S
+                                                          .of(context)
+                                                          .type),
+                                                  child: Theme(
+                                                      data: ThemeData(
+                                                          highlightColor:
+                                                              dropdownItemColor,
+                                                          focusColor:
+                                                              dropdownItemColor,
+                                                          hoverColor:
+                                                              dropdownItemColor),
+                                                      child: DropdownButtonHideUnderline(
+                                                          child:
+                                                              getCategories())),
                                                 );
                                               },
                                             ),
@@ -370,11 +447,16 @@ class _AddCustomerState extends State<AddCustomer> {
                                       cursorColor: kTitleColor,
                                       decoration: InputDecoration(
                                         //labelText: 'Customer GST',
-                                        labelText: lang.S.of(context).customerGST,
-                                        labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                        labelText:
+                                            lang.S.of(context).customerGST,
+                                        labelStyle: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                         // hintText: 'Enter customer GST number',
-                                        hintText: lang.S.of(context).enterCustomerGSTNumber,
-                                        hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                        hintText: lang.S
+                                            .of(context)
+                                            .enterCustomerGSTNumber,
+                                        hintStyle: kTextStyle.copyWith(
+                                            color: kGreyTextColor),
                                       ),
                                     ),
                                   ),
@@ -390,7 +472,8 @@ class _AddCustomerState extends State<AddCustomer> {
                                           title: Text(
                                             "${lang.S.of(context).receiveWhatsappUpdates}?",
                                             // 'Receive Whatsapp Updates?',
-                                            style: kTextStyle.copyWith(color: kTitleColor),
+                                            style: kTextStyle.copyWith(
+                                                color: kTitleColor),
                                           ),
                                         )
                                       : Container(),
@@ -417,7 +500,8 @@ class _AddCustomerState extends State<AddCustomer> {
                                   padding: const EdgeInsets.all(10.0),
                                   child: Text(
                                     lang.S.of(context).saveAndPublished,
-                                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                                    style: theme.textTheme.titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ),
                                 const Divider(
@@ -452,44 +536,108 @@ class _AddCustomerState extends State<AddCustomer> {
                                               ? () {}
                                               : () async {
                                                   if (!isDemo) {
-                                                    if (await checkUserRolePermission(type: 'parties') && await Subscription.subscriptionChecker(item: 'Parties')) {
+                                                    if (await checkUserRolePermission(
+                                                            type: 'parties') &&
+                                                        await Subscription
+                                                            .subscriptionChecker(
+                                                                item:
+                                                                    'Parties')) {
                                                       if (validateAndSave()) {
                                                         try {
                                                           setState(() {
-                                                            saleButtonClicked = true;
+                                                            saleButtonClicked =
+                                                                true;
                                                           });
-                                                          EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                          final DatabaseReference customerInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Customers');
-                                                          CustomerModel customerModel = CustomerModel(
-                                                            customerName: customerNameController.text,
-                                                            phoneNumber: customerPhoneController.text,
-                                                            type: selectedCategories,
-                                                            profilePicture: profilePicture,
-                                                            emailAddress: customerEmailController.text,
-                                                            customerAddress: customerAddressController.text,
-                                                            dueAmount: openingBalance.isEmpty ? '0' : openingBalance,
-                                                            openingBalance: openingBalance.isEmpty ? '0' : openingBalance,
-                                                            remainedBalance: openingBalance.isEmpty ? '0' : openingBalance,
-                                                            gst: gstController.text,
-                                                            receiveWhatsappUpdates: receiveWhatsappUpdates,
+                                                          EasyLoading.show(
+                                                              status:
+                                                                  '${lang.S.of(context).loading}...',
+                                                              dismissOnTap:
+                                                                  false);
+                                                          final DatabaseReference
+                                                              customerInformationRef =
+                                                              FirebaseDatabase
+                                                                  .instance
+                                                                  .ref()
+                                                                  .child(
+                                                                      await getUserID())
+                                                                  .child(
+                                                                      'Customers');
+                                                          CustomerModel
+                                                              customerModel =
+                                                              CustomerModel(
+                                                            customerName:
+                                                                customerNameController
+                                                                    .text,
+                                                            phoneNumber:
+                                                                customerPhoneController
+                                                                    .text,
+                                                            type:
+                                                                selectedCategories,
+                                                            profilePicture:
+                                                                profilePicture,
+                                                            emailAddress:
+                                                                customerEmailController
+                                                                    .text,
+                                                            customerAddress:
+                                                                customerAddressController
+                                                                    .text,
+                                                            dueAmount:
+                                                                openingBalance
+                                                                        .isEmpty
+                                                                    ? '0'
+                                                                    : openingBalance,
+                                                            openingBalance:
+                                                                openingBalance
+                                                                        .isEmpty
+                                                                    ? '0'
+                                                                    : openingBalance,
+                                                            remainedBalance:
+                                                                openingBalance
+                                                                        .isEmpty
+                                                                    ? '0'
+                                                                    : openingBalance,
+                                                            gst: gstController
+                                                                .text,
+                                                            receiveWhatsappUpdates:
+                                                                receiveWhatsappUpdates,
                                                           );
-                                                          await customerInformationRef.push().set(customerModel.toJson());
+                                                          await customerInformationRef
+                                                              .push()
+                                                              .set(customerModel
+                                                                  .toJson());
 
                                                           ///________subscription_plan_update_________________________________________________
-                                                          Subscription.decreaseSubscriptionLimits(itemType: 'partiesNumber', context: context);
+                                                          Subscription
+                                                              .decreaseSubscriptionLimits(
+                                                                  itemType:
+                                                                      'partiesNumber',
+                                                                  context:
+                                                                      context);
 
                                                           //EasyLoading.showSuccess('Added Successfully!');
-                                                          EasyLoading.showSuccess('${lang.S.of(context).addedSuccessfully}!');
-                                                          ref.refresh(buyerCustomerProvider);
-                                                          ref.refresh(supplierProvider);
-                                                          ref.refresh(allCustomerProvider);
-                                                          Future.delayed(const Duration(milliseconds: 100), () {
+                                                          EasyLoading.showSuccess(
+                                                              '${lang.S.of(context).addedSuccessfully}!');
+                                                          // ignore: unused_result
+                                                          ref.refresh(
+                                                              buyerCustomerProvider);
+                                                          // ignore: unused_result
+                                                          ref.refresh(
+                                                              supplierProvider);
+                                                          // ignore: unused_result
+                                                          ref.refresh(
+                                                              allCustomerProvider);
+                                                          Future.delayed(
+                                                              const Duration(
+                                                                  milliseconds:
+                                                                      100), () {
                                                             // Navigator.pop(context);
-                                                            GoRouter.of(context).pop();
+                                                            GoRouter.of(context)
+                                                                .pop();
                                                           });
                                                         } catch (e) {
                                                           setState(() {
-                                                            saleButtonClicked = false;
+                                                            saleButtonClicked =
+                                                                false;
                                                           });
                                                           EasyLoading.dismiss();
                                                           //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -497,10 +645,14 @@ class _AddCustomerState extends State<AddCustomer> {
                                                       }
                                                     } else {
                                                       //EasyLoading.showInfo("You don't have permission to add customer");
-                                                      EasyLoading.showInfo(lang.S.of(context).youDonNotHavePermissionToAddCustomer);
+                                                      EasyLoading.showInfo(lang
+                                                          .S
+                                                          .of(context)
+                                                          .youDonNotHavePermissionToAddCustomer);
                                                     }
                                                   } else {
-                                                    EasyLoading.showInfo(demoText);
+                                                    EasyLoading.showInfo(
+                                                        demoText);
                                                   }
                                                 },
                                           child: Text(lang.S.of(context).save),
@@ -511,15 +663,19 @@ class _AddCustomerState extends State<AddCustomer> {
                                 ///____Image__________________
                                 Container(
                                   padding: const EdgeInsets.all(20.0),
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: kWhite),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       CustomDottedBorder(
                                         // padding: const EdgeInsets.all(6),
                                         color: kLitGreyColor,
                                         child: ClipRRect(
-                                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(12)),
                                           child: image != null
                                               ? Image.memory(
                                                   fit: BoxFit.cover,
@@ -532,32 +688,63 @@ class _AddCustomerState extends State<AddCustomer> {
                                                   height: 130,
                                                   alignment: Alignment.center,
                                                   width: context.width(),
-                                                  padding: const EdgeInsets.all(10.0),
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
                                                   decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(20.0),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20.0),
                                                   ),
                                                   child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
                                                     children: [
                                                       Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .center,
                                                         children: [
-                                                          SvgPicture.asset('images/blank_image.svg').onTap(
+                                                          SvgPicture.asset(
+                                                                  'images/blank_image.svg')
+                                                              .onTap(
                                                             () => uploadFile(),
                                                           ),
                                                           // Icon(MdiIcons.cloudUpload, size: 50.0, color: kLitGreyColor).onTap(() => uploadFile()),
                                                         ],
                                                       ),
-                                                      const SizedBox(height: 5.0),
+                                                      const SizedBox(
+                                                          height: 5.0),
                                                       RichText(
-                                                          textAlign: TextAlign.center,
+                                                          textAlign:
+                                                              TextAlign.center,
                                                           text: TextSpan(
-                                                              text: lang.S.of(context).uploadAImage,
-                                                              style: theme.textTheme.titleMedium?.copyWith(
-                                                                color: kGreenTextColor,
+                                                              text: lang.S
+                                                                  .of(context)
+                                                                  .uploadAImage,
+                                                              style: theme
+                                                                  .textTheme
+                                                                  .titleMedium
+                                                                  ?.copyWith(
+                                                                color:
+                                                                    kGreenTextColor,
                                                               ),
-                                                              children: [TextSpan(text: lang.S.of(context).orDragAndDropPng, style: theme.textTheme.titleMedium?.copyWith(color: kGreyTextColor))]))
+                                                              children: [
+                                                                TextSpan(
+                                                                    text: lang.S
+                                                                        .of(
+                                                                            context)
+                                                                        .orDragAndDropPng,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .titleMedium
+                                                                        ?.copyWith(
+                                                                            color:
+                                                                                kGreyTextColor))
+                                                              ]))
                                                     ],
                                                   ),
                                                 ),

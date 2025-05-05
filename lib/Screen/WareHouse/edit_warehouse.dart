@@ -15,7 +15,12 @@ import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditWarehouse extends StatefulWidget {
-  const EditWarehouse({Key? key, required this.listOfWarehouse, required this.warehouseModel, required this.menuContext}) : super(key: key);
+  const EditWarehouse(
+      {Key? key,
+      required this.listOfWarehouse,
+      required this.warehouseModel,
+      required this.menuContext})
+      : super(key: key);
 
   final List<WareHouseModel> listOfWarehouse;
   final WareHouseModel warehouseModel;
@@ -33,10 +38,16 @@ class _EditWarehouseState extends State<EditWarehouse> {
 
   void getExpenseKey() async {
     final userId = await getUserID();
-    await FirebaseDatabase.instance.ref(userId).child('Warehouse List').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(userId)
+        .child('Warehouse List')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
-        if (data['warehouseName'].toString() == widget.warehouseModel.warehouseName) {
+        if (data['warehouseName'].toString() ==
+            widget.warehouseModel.warehouseName) {
           expenseKey = element.key.toString();
         }
       }
@@ -62,7 +73,6 @@ class _EditWarehouseState extends State<EditWarehouse> {
     return Consumer(
       builder: (context, ref, child) {
         final theme = Theme.of(context);
-        final screenWidth = MediaQuery.of(context).size.width;
         return Container(
           decoration: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -84,7 +94,8 @@ class _EditWarehouseState extends State<EditWarehouse> {
                         Flexible(
                           child: Text(
                             lang.S.of(context).entercategoryName,
-                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w600),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -115,7 +126,8 @@ class _EditWarehouseState extends State<EditWarehouse> {
                       children: [
                         Text(
                           lang.S.of(context).pleaseEnterValidData,
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 20.0),
                         TextFormField(
@@ -182,19 +194,41 @@ class _EditWarehouseState extends State<EditWarehouse> {
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
                           onPressed: () {
-                            WareHouseModel warehouse = WareHouseModel(warehouseName: houseName, warehouseAddress: warehouseAddress, id: widget.warehouseModel.id);
-                            if (houseName != '' && houseName == widget.warehouseModel.warehouseName ? true : !names.contains(houseName.toLowerCase().removeAllWhiteSpace())) {
+                            WareHouseModel warehouse = WareHouseModel(
+                                warehouseName: houseName,
+                                warehouseAddress: warehouseAddress,
+                                id: widget.warehouseModel.id);
+                            if (houseName != '' &&
+                                    houseName ==
+                                        widget.warehouseModel.warehouseName
+                                ? true
+                                : !names.contains(houseName
+                                    .toLowerCase()
+                                    .removeAllWhiteSpace())) {
                               setState(() async {
                                 try {
-                                  EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                  final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Warehouse List').child(expenseKey);
-                                  await productInformationRef.set(warehouse.toJson());
-                                  EasyLoading.showSuccess(lang.S.of(context).editSuccessfully, duration: const Duration(milliseconds: 500));
+                                  EasyLoading.show(
+                                      status:
+                                          '${lang.S.of(context).loading}...',
+                                      dismissOnTap: false);
+                                  final DatabaseReference
+                                      productInformationRef = FirebaseDatabase
+                                          .instance
+                                          .ref()
+                                          .child(await getUserID())
+                                          .child('Warehouse List')
+                                          .child(expenseKey);
+                                  await productInformationRef
+                                      .set(warehouse.toJson());
+                                  EasyLoading.showSuccess(
+                                      lang.S.of(context).editSuccessfully,
+                                      duration:
+                                          const Duration(milliseconds: 500));
 
                                   ///____provider_refresh____________________________________________
-                                  ref.refresh(warehouseProvider);
-
-                                  Future.delayed(const Duration(milliseconds: 100), () {
+                                  final _ = ref.refresh(warehouseProvider);
+                                  Future.delayed(
+                                      const Duration(milliseconds: 100), () {
                                     GoRouter.of(context).pop();
                                     // Navigator.pop(widget.menuContext);
                                   });
@@ -203,12 +237,16 @@ class _EditWarehouseState extends State<EditWarehouse> {
                                   //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                 }
                               });
-                            } else if (names.contains(houseName.toLowerCase().removeAllWhiteSpace())) {
+                            } else if (names.contains(houseName
+                                .toLowerCase()
+                                .removeAllWhiteSpace())) {
                               // EasyLoading.showError('Warehouse  Already Exists');
-                              EasyLoading.showError(lang.S.of(context).warehouseAlreadyExists);
+                              EasyLoading.showError(
+                                  lang.S.of(context).warehouseAlreadyExists);
                             } else {
                               //EasyLoading.showError('Name can\'t be empty');
-                              EasyLoading.showError(lang.S.of(context).nameCantBeEmpty);
+                              EasyLoading.showError(
+                                  lang.S.of(context).nameCantBeEmpty);
                             }
                           },
                           child: Column(

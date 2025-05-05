@@ -47,12 +47,18 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
   int _currentPage = 1;
   String searchItem = '';
 
-  List<SaleTransactionModel> filterTransactions(List<SaleTransactionModel> transactions, String searchTerm) {
+  List<SaleTransactionModel> filterTransactions(
+      List<SaleTransactionModel> transactions, String searchTerm) {
     if (searchTerm.isEmpty) {
       return transactions;
     }
     return transactions.where((transaction) {
-      return transaction.invoiceNumber.toLowerCase().contains(searchTerm.toLowerCase()) || transaction.customerName.toLowerCase().contains(searchTerm.toLowerCase());
+      return transaction.invoiceNumber
+              .toLowerCase()
+              .contains(searchTerm.toLowerCase()) ||
+          transaction.customerName
+              .toLowerCase()
+              .contains(searchTerm.toLowerCase());
     }).toList();
   }
 
@@ -63,17 +69,27 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     return Consumer(builder: (_, ref, watch) {
-      AsyncValue<List<SaleTransactionModel>> transactionReport = ref.watch(quotationHistoryProvider);
+      AsyncValue<List<SaleTransactionModel>> transactionReport =
+          ref.watch(quotationHistoryProvider);
       return transactionReport.when(data: (transaction) {
         final reTransaction = transaction.reversed.toList();
-        final filteredTransactions = filterTransactions(reTransaction, searchItem);
+        final filteredTransactions =
+            filterTransactions(reTransaction, searchItem);
         final settingProvder = ref.watch(generalSettingProvider);
         // Calculate pagination
-        final pages = _purchaseReportPerPage == -1 ? 1 : (filteredTransactions.length / _purchaseReportPerPage).ceil();
-        final startIndex = _purchaseReportPerPage == -1 ? 0 : (_currentPage - 1) * _purchaseReportPerPage;
-        final endIndex = _purchaseReportPerPage == -1 ? filteredTransactions.length : (startIndex + _purchaseReportPerPage).clamp(0, filteredTransactions.length);
+        final pages = _purchaseReportPerPage == -1
+            ? 1
+            : (filteredTransactions.length / _purchaseReportPerPage).ceil();
+        final startIndex = _purchaseReportPerPage == -1
+            ? 0
+            : (_currentPage - 1) * _purchaseReportPerPage;
+        final endIndex = _purchaseReportPerPage == -1
+            ? filteredTransactions.length
+            : (startIndex + _purchaseReportPerPage)
+                .clamp(0, filteredTransactions.length);
 
-        final paginatedList = filteredTransactions.sublist(startIndex, endIndex);
+        final paginatedList =
+            filteredTransactions.sublist(startIndex, endIndex);
 
         final profile = ref.watch(profileDetailsProvider);
         return Column(
@@ -96,7 +112,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFCFF4E3),
@@ -128,7 +145,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFFEE7CB),
@@ -160,7 +178,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Container(
-                          padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                          padding: const EdgeInsets.only(
+                              left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             color: const Color(0xFFFED3D3),
@@ -220,7 +239,10 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                       Container(
                         height: 40.0,
                         width: 300,
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), border: Border.all(color: kGreyTextColor.withValues(alpha: 0.1))),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8.0),
+                            border: Border.all(
+                                color: kGreyTextColor.withValues(alpha: 0.1))),
                         child: AppTextField(
                           showCursor: true,
                           cursorColor: kTitleColor,
@@ -228,15 +250,20 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                           decoration: kInputDecoration.copyWith(
                             contentPadding: const EdgeInsets.all(10.0),
                             hintText: (lang.S.of(context).search),
-                            hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                            hintStyle:
+                                kTextStyle.copyWith(color: kGreyTextColor),
                             border: InputBorder.none,
                             enabledBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                              borderSide: BorderSide(color: kBorderColorTextField, width: 1),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30.0)),
+                              borderSide: BorderSide(
+                                  color: kBorderColorTextField, width: 1),
                             ),
                             focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                              borderSide: BorderSide(color: kBorderColorTextField, width: 1),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30.0)),
+                              borderSide: BorderSide(
+                                  color: kBorderColorTextField, width: 1),
                             ),
                             suffixIcon: Padding(
                               padding: const EdgeInsets.all(4.0),
@@ -244,7 +271,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                   padding: const EdgeInsets.all(2.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8.0),
-                                    color: kGreyTextColor.withValues(alpha: 0.1),
+                                    color:
+                                        kGreyTextColor.withValues(alpha: 0.1),
                                   ),
                                   child: const Icon(
                                     FeatherIcons.search,
@@ -300,7 +328,7 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                             children: [
                               Flexible(
                                   child: Text(
-                                'Show-',
+                                'Mostrar-',
                                 style: theme.textTheme.bodyLarge,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -314,7 +342,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                   Icons.keyboard_arrow_down,
                                   color: Colors.black,
                                 ),
-                                items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                items: [10, 20, 50, 100, -1]
+                                    .map<DropdownMenuItem<int>>((int value) {
                                   return DropdownMenuItem<int>(
                                     value: value,
                                     child: Text(
@@ -326,7 +355,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                 onChanged: (int? newValue) {
                                   setState(() {
                                     if (newValue == -1) {
-                                      _purchaseReportPerPage = -1; // Set to -1 for "All"
+                                      _purchaseReportPerPage =
+                                          -1; // Set to -1 for "All"
                                     } else {
                                       _purchaseReportPerPage = newValue ?? 10;
                                     }
@@ -356,7 +386,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                           keyboardType: TextInputType.name,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.all(10.0),
-                            hintText: (lang.S.of(context).searchByInvoiceOrName),
+                            hintText:
+                                (lang.S.of(context).searchByInvoiceOrName),
                             border: InputBorder.none,
                             suffixIcon: const Icon(
                               FeatherIcons.search,
@@ -373,7 +404,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                       ? Column(
                           children: [
                             LayoutBuilder(
-                              builder: (BuildContext context, BoxConstraints constraints) {
+                              builder: (BuildContext context,
+                                  BoxConstraints constraints) {
                                 return Scrollbar(
                                   controller: _horizontalScroll,
                                   thumbVisibility: true,
@@ -399,47 +431,82 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                                 color: kNeutral300,
                                               ),
                                             ),
-                                            dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                            dataRowColor:
+                                                const WidgetStatePropertyAll(
+                                                    Colors.white),
+                                            headingRowColor:
+                                                WidgetStateProperty.all(
+                                                    const Color(0xFFF8F3FF)),
                                             showBottomBorder: false,
                                             dividerThickness: 0.0,
-                                            headingTextStyle: theme.textTheme.titleMedium,
+                                            headingTextStyle:
+                                                theme.textTheme.titleMedium,
                                             columns: [
-                                              DataColumn(label: Text(lang.S.of(context).SL)),
-                                              DataColumn(label: Text(lang.S.of(context).date)),
-                                              DataColumn(label: Text(lang.S.of(context).invoice)),
-                                              DataColumn(label: Text(lang.S.of(context).partyName)),
-                                              DataColumn(label: Text(lang.S.of(context).partyType)),
-                                              DataColumn(label: Text(lang.S.of(context).amount)),
-                                              DataColumn(label: Text(lang.S.of(context).due)),
-                                              DataColumn(label: Text(lang.S.of(context).status)),
-                                              DataColumn(label: Text(lang.S.of(context).setting)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).SL)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).date)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .invoice)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .partyName)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .partyType)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .amount)),
+                                              DataColumn(
+                                                  label: Text(
+                                                      lang.S.of(context).due)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .status)),
+                                              DataColumn(
+                                                  label: Text(lang.S
+                                                      .of(context)
+                                                      .setting)),
                                             ],
-                                            rows: List.generate(paginatedList.length, (index) {
+                                            rows: List.generate(
+                                                paginatedList.length, (index) {
                                               return DataRow(cells: [
                                                 ///______________S.L__________________________________________________
                                                 DataCell(
-                                                  Text("${startIndex + index + 1}"),
+                                                  Text(
+                                                      "${startIndex + index + 1}"),
                                                 ),
 
                                                 ///______________Date__________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].purchaseDate.substring(0, 10),
+                                                    paginatedList[index]
+                                                        .purchaseDate
+                                                        .substring(0, 10),
                                                   ),
                                                 ),
 
                                                 ///____________Invoice_________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].invoiceNumber,
+                                                    paginatedList[index]
+                                                        .invoiceNumber,
                                                   ),
                                                 ),
 
                                                 ///______Party Name___________________________________________________________
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].customerName,
+                                                    paginatedList[index]
+                                                        .customerName,
                                                   ),
                                                 ),
 
@@ -447,7 +514,9 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
 
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].paymentType.toString(),
+                                                    paginatedList[index]
+                                                        .paymentType
+                                                        .toString(),
                                                   ),
                                                 ),
 
@@ -470,31 +539,74 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
 
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index].isPaid! ? lang.S.of(context).paid : lang.S.of(context).due,
+                                                    paginatedList[index].isPaid!
+                                                        ? lang.S
+                                                            .of(context)
+                                                            .paid
+                                                        : lang.S
+                                                            .of(context)
+                                                            .due,
                                                   ),
                                                 ),
 
                                                 ///_______________actions_________________________________________________
                                                 DataCell(
-                                                  settingProvder.when(data: (setting) {
+                                                  settingProvder.when(
+                                                      data: (setting) {
                                                     return Theme(
-                                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                                      data: ThemeData(
+                                                          highlightColor:
+                                                              dropdownItemColor,
+                                                          focusColor:
+                                                              dropdownItemColor,
+                                                          hoverColor:
+                                                              dropdownItemColor),
                                                       child: PopupMenuButton(
-                                                        surfaceTintColor: Colors.white,
-                                                        padding: EdgeInsets.zero,
-                                                        itemBuilder: (BuildContext bc) => [
+                                                        surfaceTintColor:
+                                                            Colors.white,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        itemBuilder:
+                                                            (BuildContext bc) =>
+                                                                [
                                                           PopupMenuItem(
-                                                            child: GestureDetector(
+                                                            child:
+                                                                GestureDetector(
                                                               onTap: () async {
-                                                                await GeneratePdfAndPrint().printSaleInvoice(fromSaleReports: true, personalInformationModel: profile.value!, setting: setting, saleTransactionModel: paginatedList[index], context: context);
+                                                                await GeneratePdfAndPrint().printSaleInvoice(
+                                                                    fromSaleReports:
+                                                                        true,
+                                                                    personalInformationModel:
+                                                                        profile
+                                                                            .value!,
+                                                                    setting:
+                                                                        setting,
+                                                                    saleTransactionModel:
+                                                                        paginatedList[
+                                                                            index],
+                                                                    context:
+                                                                        context);
                                                               },
                                                               child: Row(
                                                                 children: [
-                                                                  Icon(MdiIcons.printer, size: 18.0, color: kTitleColor),
-                                                                  const SizedBox(width: 4.0),
+                                                                  Icon(
+                                                                      MdiIcons
+                                                                          .printer,
+                                                                      size:
+                                                                          18.0,
+                                                                      color:
+                                                                          kTitleColor),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          4.0),
                                                                   Text(
-                                                                    lang.S.of(context).print,
-                                                                    style: kTextStyle.copyWith(color: kTitleColor),
+                                                                    lang.S
+                                                                        .of(context)
+                                                                        .print,
+                                                                    style: kTextStyle
+                                                                        .copyWith(
+                                                                            color:
+                                                                                kTitleColor),
                                                                   ),
                                                                 ],
                                                               ),
@@ -505,9 +617,11 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                                           child: Container(
                                                               height: 18,
                                                               width: 18,
-                                                              alignment: Alignment.centerRight,
+                                                              alignment: Alignment
+                                                                  .centerRight,
                                                               child: const Icon(
-                                                                Icons.more_vert_sharp,
+                                                                Icons
+                                                                    .more_vert_sharp,
                                                                 size: 18,
                                                               )),
                                                         ),
@@ -517,7 +631,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                                     return Text(e.toString());
                                                   }, loading: () {
                                                     return Center(
-                                                      child: CircularProgressIndicator(),
+                                                      child:
+                                                          CircularProgressIndicator(),
                                                     );
                                                   }),
                                                 ),
@@ -532,7 +647,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                             Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Flexible(
                                     child: Text(
@@ -544,21 +660,29 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                   Row(
                                     children: [
                                       InkWell(
-                                        overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                        overlayColor:
+                                            WidgetStateProperty.all<Color>(
+                                                Colors.grey),
                                         hoverColor: Colors.grey,
-                                        onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                        onTap: _currentPage > 1
+                                            ? () =>
+                                                setState(() => _currentPage--)
+                                            : null,
                                         child: Container(
                                           height: 32,
                                           width: 90,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
-                                            borderRadius: const BorderRadius.only(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            borderRadius:
+                                                const BorderRadius.only(
                                               bottomLeft: Radius.circular(4.0),
                                               topLeft: Radius.circular(4.0),
                                             ),
                                           ),
                                           child: Center(
-                                            child: Text(lang.S.of(context).previous),
+                                            child: Text(
+                                                lang.S.of(context).previous),
                                           ),
                                         ),
                                       ),
@@ -566,13 +690,15 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                         height: 32,
                                         width: 32,
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: kBorderColorTextField),
+                                          border: Border.all(
+                                              color: kBorderColorTextField),
                                           color: kMainColor,
                                         ),
                                         child: Center(
                                           child: Text(
                                             '$_currentPage',
-                                            style: const TextStyle(color: Colors.white),
+                                            style: const TextStyle(
+                                                color: Colors.white),
                                           ),
                                         ),
                                       ),
@@ -580,7 +706,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                         height: 32,
                                         width: 32,
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: kBorderColorTextField),
+                                          border: Border.all(
+                                              color: kBorderColorTextField),
                                           color: Colors.transparent,
                                         ),
                                         child: Center(
@@ -590,20 +717,31 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                                         ),
                                       ),
                                       InkWell(
-                                        hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                        overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                        onTap: _currentPage * _purchaseReportPerPage < reTransaction.length ? () => setState(() => _currentPage++) : null,
+                                        hoverColor:
+                                            Colors.blue.withValues(alpha: 0.1),
+                                        overlayColor:
+                                            WidgetStateProperty.all<Color>(
+                                                Colors.blue),
+                                        onTap: _currentPage *
+                                                    _purchaseReportPerPage <
+                                                reTransaction.length
+                                            ? () =>
+                                                setState(() => _currentPage++)
+                                            : null,
                                         child: Container(
                                           height: 32,
                                           width: 90,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
-                                            borderRadius: const BorderRadius.only(
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
+                                            borderRadius:
+                                                const BorderRadius.only(
                                               bottomRight: Radius.circular(4.0),
                                               topRight: Radius.circular(4.0),
                                             ),
                                           ),
-                                          child: const Center(child: Text('Next')),
+                                          child:
+                                              const Center(child: Text('Next')),
                                         ),
                                       ),
                                     ],
@@ -778,7 +916,8 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                             // ),
                           ],
                         )
-                      : noDataFoundImage(text: lang.S.of(context).noReportFound),
+                      : noDataFoundImage(
+                          text: lang.S.of(context).noReportFound),
                 ],
               ),
             )

@@ -26,7 +26,13 @@ import '../Widgets/Calculator/calculator.dart';
 import '../currency/currency_provider.dart';
 
 class SaleEdit extends StatefulWidget {
-  const SaleEdit({Key? key, required this.transitionModel, required this.personalInformationModel, required this.isPosScreen, required this.popUpContext}) : super(key: key);
+  const SaleEdit(
+      {Key? key,
+      required this.transitionModel,
+      required this.personalInformationModel,
+      required this.isPosScreen,
+      required this.popUpContext})
+      : super(key: key);
 
   final SaleTransactionModel transitionModel;
   final PersonalInformationModel personalInformationModel;
@@ -71,7 +77,11 @@ class _SaleEditState extends State<SaleEdit> {
   DateTime selectedDueDate = DateTime.now();
 
   Future<void> _selectedDueDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDueDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDueDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDueDate) {
       setState(() {
         selectedDueDate = picked;
@@ -79,19 +89,25 @@ class _SaleEditState extends State<SaleEdit> {
     }
   }
 
-  dynamic productPriceChecker({required ProductModel product, required String customerType}) {
+  dynamic productPriceChecker(
+      {required ProductModel product, required String customerType}) {
     if (customerType == "Retailer") {
       return product.productSalePrice;
     } else if (customerType == "Wholesaler") {
-      return product.productWholeSalePrice == '' ? '0' : product.productWholeSalePrice;
+      return product.productWholeSalePrice == ''
+          ? '0'
+          : product.productWholeSalePrice;
     } else if (customerType == "Dealer") {
-      return product.productDealerPrice == '' ? '0' : product.productDealerPrice;
+      return product.productDealerPrice == ''
+          ? '0'
+          : product.productDealerPrice;
     } else if (customerType == "Guest") {
       return product.productSalePrice;
     }
   }
 
-  bool uniqueCheckForSerial({required String code, required List<dynamic> newSerialNumbers}) {
+  bool uniqueCheckForSerial(
+      {required String code, required List<dynamic> newSerialNumbers}) {
     for (var item in cartList) {
       if (item.productId == code) {
         item.serialNumber = item.serialNumber! + newSerialNumbers;
@@ -125,16 +141,22 @@ class _SaleEditState extends State<SaleEdit> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                      padding: const EdgeInsets.only(
+                          top: 10.0, left: 10.0, right: 10.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Text(
                             lang.S.of(context).selectSerialNumber,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20.0),
                           ),
                           const Spacer(),
-                          const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                          const Icon(FeatherIcons.x,
+                                  color: kTitleColor, size: 25.0)
+                              .onTap(() => {finish(context)})
                         ],
                       ),
                     ),
@@ -172,10 +194,14 @@ class _SaleEditState extends State<SaleEdit> {
                             textFieldType: TextFieldType.NAME,
                             suffix: const Icon(Icons.search),
                             decoration: kInputDecoration.copyWith(
-                              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
+                              border: const OutlineInputBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(30))),
                               labelText: lang.S.of(context).searchSerialNumber,
-                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                              hintStyle:
+                                  kTextStyle.copyWith(color: kGreyTextColor),
+                              labelStyle:
+                                  kTextStyle.copyWith(color: kTitleColor),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -184,7 +210,11 @@ class _SaleEditState extends State<SaleEdit> {
                           Container(
                             height: MediaQuery.of(context).size.height / 4,
                             width: 500,
-                            decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                            decoration: BoxDecoration(
+                                border:
+                                    Border.all(width: 1, color: Colors.grey),
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(10))),
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: ListView.builder(
@@ -196,7 +226,8 @@ class _SaleEditState extends State<SaleEdit> {
                                     child: GestureDetector(
                                       onTap: () {
                                         setState1(() {
-                                          selectedSerialNumbers.add(list[index]);
+                                          selectedSerialNumbers
+                                              .add(list[index]);
                                           list.removeAt(index);
                                         });
                                       },
@@ -213,7 +244,11 @@ class _SaleEditState extends State<SaleEdit> {
                           Container(
                             width: 500,
                             height: 100,
-                            decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                            decoration: BoxDecoration(
+                                border:
+                                    Border.all(width: 1, color: Colors.grey),
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(10))),
                             child: GridView.builder(
                                 shrinkWrap: true,
                                 itemCount: selectedSerialNumbers.length,
@@ -222,13 +257,17 @@ class _SaleEditState extends State<SaleEdit> {
                                     return Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           GestureDetector(
                                               onTap: () {
                                                 setState1(() {
-                                                  list.add(selectedSerialNumbers[index]);
-                                                  selectedSerialNumbers.removeAt(index);
+                                                  list.add(
+                                                      selectedSerialNumbers[
+                                                          index]);
+                                                  selectedSerialNumbers
+                                                      .removeAt(index);
                                                 });
                                               },
                                               child: const Icon(
@@ -242,10 +281,12 @@ class _SaleEditState extends State<SaleEdit> {
                                       ),
                                     );
                                   } else {
-                                    return Text(lang.S.of(context).noSerialNumberFound);
+                                    return Text(
+                                        lang.S.of(context).noSerialNumberFound);
                                   }
                                 },
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
                                   childAspectRatio: 4,
                                   crossAxisSpacing: 1,
@@ -260,7 +301,11 @@ class _SaleEditState extends State<SaleEdit> {
                               GestureDetector(
                                 onTap: () => GoRouter.of(context).pop(),
                                 child: Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 30.0,
+                                        right: 30.0,
+                                        top: 10.0,
+                                        bottom: 10.0),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5.0),
                                       color: kRedTextColor,
@@ -274,14 +319,19 @@ class _SaleEditState extends State<SaleEdit> {
                               GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    AddToCartModel addToCartModel = AddToCartModel(
+                                    AddToCartModel addToCartModel =
+                                        AddToCartModel(
                                       productName: productModel.productName,
                                       warehouseName: productModel.warehouseName,
                                       warehouseId: productModel.warehouseId,
                                       productId: productModel.productCode,
                                       productImage: productModel.productPicture,
-                                      productPurchasePrice: productModel.productPurchasePrice,
-                                      subTotal: productPriceChecker(product: productModel, customerType: widget.transitionModel.customerType),
+                                      productPurchasePrice:
+                                          productModel.productPurchasePrice,
+                                      subTotal: productPriceChecker(
+                                          product: productModel,
+                                          customerType: widget
+                                              .transitionModel.customerType),
                                       unitPrice: '100',
                                       serialNumber: selectedSerialNumbers,
                                       subTaxes: productModel.subTaxes,
@@ -292,9 +342,14 @@ class _SaleEditState extends State<SaleEdit> {
                                       margin: productModel.margin,
                                       taxType: productModel.taxType,
                                     );
-                                    if (!uniqueCheckForSerial(code: productModel.productCode, newSerialNumbers: selectedSerialNumbers)) {
+                                    if (!uniqueCheckForSerial(
+                                        code: productModel.productCode,
+                                        newSerialNumbers:
+                                            selectedSerialNumbers)) {
                                       if (productModel.productStock == '0') {
-                                        EasyLoading.showError(lang.S.of(context).productOutOfStock);
+                                        EasyLoading.showError(lang.S
+                                            .of(context)
+                                            .productOutOfStock);
                                       } else {
                                         cartList.add(addToCartModel);
                                       }
@@ -303,7 +358,11 @@ class _SaleEditState extends State<SaleEdit> {
                                   GoRouter.of(context).pop();
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 30.0,
+                                      right: 30.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     color: kBlueTextColor,
@@ -451,10 +510,12 @@ class _SaleEditState extends State<SaleEdit> {
   double serviceCharge = 0;
   double discountAmount = 0;
 
-  TextEditingController discountAmountEditingController = TextEditingController();
+  TextEditingController discountAmountEditingController =
+      TextEditingController();
 
   // TextEditingController vatAmountEditingController = TextEditingController();
-  TextEditingController discountPercentageEditingController = TextEditingController();
+  TextEditingController discountPercentageEditingController =
+      TextEditingController();
 
   // TextEditingController vatPercentageEditingController = TextEditingController();
   double vatGst = 0;
@@ -469,8 +530,11 @@ class _SaleEditState extends State<SaleEdit> {
 
     pastProducts = widget.transitionModel.productList!;
     // vatGst = widget.transitionModel.vat!;
-    discountPercentageEditingController.text = ((discountAmount * 100) / widget.transitionModel.totalAmount!.toDouble()).toStringAsFixed(1);
-    discountAmountEditingController.text = widget.transitionModel.discountAmount.toString();
+    discountPercentageEditingController.text = ((discountAmount * 100) /
+            widget.transitionModel.totalAmount!.toDouble())
+        .toStringAsFixed(1);
+    discountAmountEditingController.text =
+        widget.transitionModel.discountAmount.toString();
     // vatAmountEditingController.text = widget.transitionModel.vat.toString();
     // vatPercentageEditingController.text = vatPercentageEditingController.text = ((vatGst * 100) / widget.transitionModel.totalAmount!.toDouble()).toStringAsFixed(1);
   }
@@ -527,7 +591,8 @@ class _SaleEditState extends State<SaleEdit> {
         final wareHouseList = consumerRef.watch(warehouseProvider);
         final personalData = consumerRef.watch(profileDetailsProvider);
         final productLists = consumerRef.watch(productProvider);
-        AsyncValue<List<ProductModel>> productList = consumerRef.watch(productProvider);
+        AsyncValue<List<ProductModel>> productList =
+            consumerRef.watch(productProvider);
         if (!doNotCheckProducts) {
           List<AddToCartModel> list = [];
           productLists.value?.forEach((products) {
@@ -537,13 +602,17 @@ class _SaleEditState extends State<SaleEdit> {
               if (element.productId == products.productCode) {
                 if (widget.transitionModel.customerType.contains('Retailer')) {
                   sentProductPrice = products.productSalePrice;
-                } else if (widget.transitionModel.customerType.contains('Dealer')) {
+                } else if (widget.transitionModel.customerType
+                    .contains('Dealer')) {
                   sentProductPrice = products.productDealerPrice;
-                } else if (widget.transitionModel.customerType.contains('Wholesaler')) {
+                } else if (widget.transitionModel.customerType
+                    .contains('Wholesaler')) {
                   sentProductPrice = products.productWholeSalePrice;
-                } else if (widget.transitionModel.customerType.contains('Supplier')) {
+                } else if (widget.transitionModel.customerType
+                    .contains('Supplier')) {
                   sentProductPrice = products.productPurchasePrice;
-                } else if (widget.transitionModel.customerType.contains('Guest')) {
+                } else if (widget.transitionModel.customerType
+                    .contains('Guest')) {
                   sentProductPrice = products.productSalePrice;
                   isGuestCustomer = true;
                 }
@@ -608,7 +677,8 @@ class _SaleEditState extends State<SaleEdit> {
                               ),
                               child: Center(
                                 child: Text(
-                                  widget.transitionModel.purchaseDate.substring(0, 10),
+                                  widget.transitionModel.purchaseDate
+                                      .substring(0, 10),
                                   style: theme.textTheme.titleMedium,
                                 ),
                               ),
@@ -638,7 +708,8 @@ class _SaleEditState extends State<SaleEdit> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          widget.transitionModel.dueAmount.toString(),
+                                          widget.transitionModel.dueAmount
+                                              .toString(),
                                           style: theme.textTheme.titleMedium,
                                         ),
                                       ),
@@ -725,15 +796,19 @@ class _SaleEditState extends State<SaleEdit> {
                                 child: Container(
                                   height: 40,
                                   width: screenWidth,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5),
                                     border: Border.all(color: kNeutral400),
                                   ),
                                   child: Theme(
-                                    data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor),
+                                    data: ThemeData(
+                                        highlightColor: dropdownItemColor,
+                                        focusColor: Colors.transparent,
+                                        hoverColor: dropdownItemColor),
                                     child: DropdownButtonHideUnderline(
-                                      child: getWare(list: warehouse ?? []),
+                                      child: getWare(list: warehouse),
                                     ),
                                   ),
                                 ),
@@ -778,7 +853,9 @@ class _SaleEditState extends State<SaleEdit> {
                                       child: Center(
                                           child: Text(
                                         "#${widget.transitionModel.invoiceNumber}",
-                                        style: const TextStyle(color: kTitleColor, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                            color: kTitleColor,
+                                            fontWeight: FontWeight.bold),
                                       )),
                                     ),
                                   ),
@@ -828,37 +905,51 @@ class _SaleEditState extends State<SaleEdit> {
                                   onFieldSubmitted: (value) {
                                     if (value != '') {
                                       if (product.isEmpty) {
-                                        EasyLoading.showError(lang.S.of(context).noProductFound);
+                                        EasyLoading.showError(
+                                            lang.S.of(context).noProductFound);
                                       }
                                       for (int i = 0; i < product.length; i++) {
                                         if (product[i].productCode == value) {
-                                          AddToCartModel addToCartModel = AddToCartModel(
+                                          AddToCartModel addToCartModel =
+                                              AddToCartModel(
                                             productName: product[i].productName,
-                                            warehouseName: product[i].warehouseName,
+                                            warehouseName:
+                                                product[i].warehouseName,
                                             warehouseId: product[i].warehouseId,
                                             productId: product[i].productCode,
-                                            productImage: product[i].productPicture,
+                                            productImage:
+                                                product[i].productPicture,
                                             quantity: 1,
                                             serialNumber: [],
-                                            productPurchasePrice: product[i].productPurchasePrice,
-                                            subTotal: productPriceChecker(product: product[i], customerType: widget.transitionModel.customerType),
+                                            productPurchasePrice:
+                                                product[i].productPurchasePrice,
+                                            subTotal: productPriceChecker(
+                                                product: product[i],
+                                                customerType: widget
+                                                    .transitionModel
+                                                    .customerType),
                                             subTaxes: product[i].subTaxes,
                                             excTax: product[i].excTax,
-                                            groupTaxName: product[i].groupTaxName,
-                                            groupTaxRate: product[i].groupTaxRate,
+                                            groupTaxName:
+                                                product[i].groupTaxName,
+                                            groupTaxRate:
+                                                product[i].groupTaxRate,
                                             incTax: product[i].incTax,
                                             margin: product[i].margin,
                                             taxType: product[i].taxType,
                                           );
 
                                           setState(() {
-                                            if (!uniqueCheck(product[i].productCode)) {
+                                            if (!uniqueCheck(
+                                                product[i].productCode)) {
                                               cartList.add(addToCartModel);
-                                              nameCodeCategoryController.clear();
+                                              nameCodeCategoryController
+                                                  .clear();
                                               nameFocus.requestFocus();
                                               searchProductCode = '';
                                             } else {
-                                              nameCodeCategoryController.clear();
+                                              nameCodeCategoryController
+                                                  .clear();
                                               nameFocus.requestFocus();
                                               searchProductCode = '';
                                             }
@@ -868,7 +959,8 @@ class _SaleEditState extends State<SaleEdit> {
                                         if (i + 1 == product.length) {
                                           nameCodeCategoryController.clear();
                                           nameFocus.requestFocus();
-                                          EasyLoading.showError(lang.S.of(context).notFound);
+                                          EasyLoading.showError(
+                                              lang.S.of(context).notFound);
                                           setState(() {
                                             searchProductCode = '';
                                           });
@@ -878,9 +970,12 @@ class _SaleEditState extends State<SaleEdit> {
                                   },
                                   keyboardType: TextInputType.name,
                                   decoration: InputDecoration(
-                                    prefixIcon: Icon(MdiIcons.barcode, color: kTitleColor, size: 18.0),
-                                    hintText: lang.S.of(context).nameCodeOrCateogry,
-                                    hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                    prefixIcon: Icon(MdiIcons.barcode,
+                                        color: kTitleColor, size: 18.0),
+                                    hintText:
+                                        lang.S.of(context).nameCodeOrCateogry,
+                                    hintStyle: kTextStyle.copyWith(
+                                        color: kGreyTextColor),
                                     border: InputBorder.none,
                                   ),
                                 ),
@@ -913,7 +1008,8 @@ class _SaleEditState extends State<SaleEdit> {
                               ),
                               child: Center(
                                 child: Text(
-                                  widget.transitionModel.customerType.toString(),
+                                  widget.transitionModel.customerType
+                                      .toString(),
                                 ),
                               ),
                             ),
@@ -942,10 +1038,16 @@ class _SaleEditState extends State<SaleEdit> {
                             children: [
                               Scrollbar(
                                 child: Container(
-                                  height: context.height() < 720 ? 720 - 410 : context.height() - 410,
-                                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kNeutral300))),
+                                  height: context.height() < 720
+                                      ? 720 - 410
+                                      : context.height() - 410,
+                                  decoration: const BoxDecoration(
+                                      border: Border(
+                                          bottom: BorderSide(
+                                              width: 1, color: kNeutral300))),
                                   child: LayoutBuilder(
-                                    builder: (BuildContext context, BoxConstraints constraints) {
+                                    builder: (BuildContext context,
+                                        BoxConstraints constraints) {
                                       final kWidth = constraints.maxWidth;
                                       return SingleChildScrollView(
                                         scrollDirection: Axis.horizontal,
@@ -955,7 +1057,13 @@ class _SaleEditState extends State<SaleEdit> {
                                             minWidth: kWidth,
                                           ),
                                           child: Theme(
-                                            data: theme.copyWith(dividerColor: Colors.transparent, dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                            data: theme.copyWith(
+                                                dividerColor:
+                                                    Colors.transparent,
+                                                dividerTheme:
+                                                    const DividerThemeData(
+                                                        color: Colors
+                                                            .transparent)),
                                             child: DataTable(
                                                 border: const TableBorder(
                                                   horizontalInside: BorderSide(
@@ -963,44 +1071,87 @@ class _SaleEditState extends State<SaleEdit> {
                                                     color: kNeutral300,
                                                   ),
                                                 ),
-                                                dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                                headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                dataRowColor:
+                                                    const WidgetStatePropertyAll(
+                                                        whiteColor),
+                                                headingRowColor:
+                                                    WidgetStateProperty.all(
+                                                        const Color(
+                                                            0xFFF8F3FF)),
                                                 showBottomBorder: false,
                                                 dividerThickness: 0.0,
-                                                headingTextStyle: theme.textTheme.titleMedium,
-                                                dataTextStyle: theme.textTheme.bodyLarge,
+                                                headingTextStyle:
+                                                    theme.textTheme.titleMedium,
+                                                dataTextStyle:
+                                                    theme.textTheme.bodyLarge,
                                                 columns: [
-                                                  DataColumn(label: Text(lang.S.of(context).productName)),
-                                                  DataColumn(label: Text(lang.S.of(context).quantity)),
-                                                  DataColumn(label: Text(lang.S.of(context).price)),
-                                                  DataColumn(label: Text(lang.S.of(context).subTotal)),
-                                                  DataColumn(label: Text(lang.S.of(context).action)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .productName)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .quantity)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .price)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .subTotal)),
+                                                  DataColumn(
+                                                      label: Text(lang.S
+                                                          .of(context)
+                                                          .action)),
                                                 ],
-                                                rows: List.generate(cartList.length, (index) {
+                                                rows: List.generate(
+                                                    cartList.length, (index) {
                                                   int i = 0;
-                                                  for (var element in pastProducts) {
-                                                    if (element.productId != cartList[index].productId) {
+                                                  for (var element
+                                                      in pastProducts) {
+                                                    if (element.productId !=
+                                                        cartList[index]
+                                                            .productId) {
                                                       i++;
                                                     }
-                                                    if (i == pastProducts.length) {
+                                                    if (i ==
+                                                        pastProducts.length) {
                                                       bool isInTheList = false;
-                                                      for (var element in decreaseStockList) {
-                                                        if (element.productId == cartList[index].productId) {
-                                                          element.quantity = cartList[index].quantity;
+                                                      for (var element
+                                                          in decreaseStockList) {
+                                                        if (element.productId ==
+                                                            cartList[index]
+                                                                .productId) {
+                                                          element.quantity =
+                                                              cartList[index]
+                                                                  .quantity;
                                                           isInTheList = true;
                                                           break;
                                                         }
                                                       }
 
-                                                      isInTheList ? null : decreaseStockList.add(cartList[index]);
+                                                      isInTheList
+                                                          ? null
+                                                          : decreaseStockList
+                                                              .add(cartList[
+                                                                  index]);
                                                     }
                                                   }
-                                                  TextEditingController quantityController = TextEditingController(text: cartList[index].quantity.toString());
+                                                  TextEditingController
+                                                      quantityController =
+                                                      TextEditingController(
+                                                          text: cartList[index]
+                                                              .quantity
+                                                              .toString());
                                                   return DataRow(cells: [
                                                     ///______________name__________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        cartList[index].productName ?? '',
+                                                        cartList[index]
+                                                                .productName ??
+                                                            '',
                                                       ),
                                                     ),
 
@@ -1009,53 +1160,122 @@ class _SaleEditState extends State<SaleEdit> {
                                                       Center(
                                                         child: Row(
                                                           children: [
-                                                            const Icon(FontAwesomeIcons.solidSquareMinus, color: kBlueTextColor).onTap(() {
+                                                            const Icon(
+                                                                    FontAwesomeIcons
+                                                                        .solidSquareMinus,
+                                                                    color:
+                                                                        kBlueTextColor)
+                                                                .onTap(() {
                                                               setState(() {
-                                                                cartList[index].quantity > 1 ? cartList[index].quantity-- : cartList[index].quantity = 1;
+                                                                cartList[index]
+                                                                            .quantity >
+                                                                        1
+                                                                    ? cartList[
+                                                                            index]
+                                                                        .quantity--
+                                                                    : cartList[
+                                                                            index]
+                                                                        .quantity = 1;
                                                               });
                                                             }),
-                                                            const SizedBox(width: 5),
+                                                            const SizedBox(
+                                                                width: 5),
                                                             SizedBox(
                                                               width: 60,
                                                               height: 35,
-                                                              child: TextFormField(
-                                                                controller: quantityController,
-                                                                textAlign: TextAlign.center,
-                                                                onChanged: (value) {
-                                                                  if (cartList[index].stock!.toInt() < value.toInt()) {
-                                                                    EasyLoading.showError(lang.S.of(context).outOfStock);
-                                                                    quantityController.clear();
-                                                                  } else if (value == '') {
-                                                                    cartList[index].quantity = 1;
-                                                                  } else if (value == '0') {
-                                                                    cartList[index].quantity = 1;
+                                                              child:
+                                                                  TextFormField(
+                                                                controller:
+                                                                    quantityController,
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                onChanged:
+                                                                    (value) {
+                                                                  if (cartList[
+                                                                              index]
+                                                                          .stock!
+                                                                          .toInt() <
+                                                                      value
+                                                                          .toInt()) {
+                                                                    EasyLoading.showError(lang
+                                                                        .S
+                                                                        .of(context)
+                                                                        .outOfStock);
+                                                                    quantityController
+                                                                        .clear();
+                                                                  } else if (value ==
+                                                                      '') {
+                                                                    cartList[
+                                                                            index]
+                                                                        .quantity = 1;
+                                                                  } else if (value ==
+                                                                      '0') {
+                                                                    cartList[
+                                                                            index]
+                                                                        .quantity = 1;
                                                                   } else {
-                                                                    cartList[index].quantity = value.toInt();
+                                                                    cartList[index]
+                                                                            .quantity =
+                                                                        value
+                                                                            .toInt();
                                                                   }
                                                                 },
-                                                                onFieldSubmitted: (value) {
-                                                                  if (value == '') {
-                                                                    setState(() {
-                                                                      cartList[index].quantity = 1;
+                                                                onFieldSubmitted:
+                                                                    (value) {
+                                                                  if (value ==
+                                                                      '') {
+                                                                    setState(
+                                                                        () {
+                                                                      cartList[
+                                                                              index]
+                                                                          .quantity = 1;
                                                                     });
                                                                   } else {
-                                                                    setState(() {
-                                                                      cartList[index].quantity = value.toInt();
+                                                                    setState(
+                                                                        () {
+                                                                      cartList[index]
+                                                                              .quantity =
+                                                                          value
+                                                                              .toInt();
                                                                     });
                                                                   }
                                                                 },
-                                                                decoration: const InputDecoration(border: InputBorder.none),
+                                                                decoration:
+                                                                    const InputDecoration(
+                                                                        border:
+                                                                            InputBorder.none),
                                                               ),
                                                             ),
-                                                            const SizedBox(width: 5),
-                                                            const Icon(FontAwesomeIcons.solidSquarePlus, color: kBlueTextColor).onTap(() {
-                                                              if (cartList[index].quantity < cartList[index].stock!.toInt()) {
+                                                            const SizedBox(
+                                                                width: 5),
+                                                            const Icon(
+                                                                    FontAwesomeIcons
+                                                                        .solidSquarePlus,
+                                                                    color:
+                                                                        kBlueTextColor)
+                                                                .onTap(() {
+                                                              if (cartList[
+                                                                          index]
+                                                                      .quantity <
+                                                                  cartList[
+                                                                          index]
+                                                                      .stock!
+                                                                      .toInt()) {
                                                                 setState(() {
-                                                                  cartList[index].quantity += 1;
-                                                                  toast(cartList[index].quantity.toString());
+                                                                  cartList[
+                                                                          index]
+                                                                      .quantity += 1;
+                                                                  toast(cartList[
+                                                                          index]
+                                                                      .quantity
+                                                                      .toString());
                                                                 });
                                                               } else {
-                                                                EasyLoading.showError(lang.S.of(context).outOfStock);
+                                                                EasyLoading.showError(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .outOfStock);
                                                               }
                                                             }),
                                                           ],
@@ -1069,34 +1289,60 @@ class _SaleEditState extends State<SaleEdit> {
                                                         width: 70,
                                                         height: 35,
                                                         child: TextFormField(
-                                                          initialValue: cartList[index].subTotal,
+                                                          initialValue:
+                                                              cartList[index]
+                                                                  .subTotal,
                                                           onChanged: (value) {
                                                             if (value == '') {
                                                               setState(() {
-                                                                cartList[index].subTotal = 0.toString();
+                                                                cartList[index]
+                                                                        .subTotal =
+                                                                    0.toString();
                                                               });
-                                                            } else if (double.tryParse(value) == null) {
-                                                              EasyLoading.showError(lang.S.of(context).enterAValidPrice);
+                                                            } else if (double
+                                                                    .tryParse(
+                                                                        value) ==
+                                                                null) {
+                                                              EasyLoading
+                                                                  .showError(lang
+                                                                      .S
+                                                                      .of(context)
+                                                                      .enterAValidPrice);
                                                             } else {
                                                               setState(() {
-                                                                cartList[index].subTotal = value;
+                                                                cartList[index]
+                                                                        .subTotal =
+                                                                    value;
                                                               });
                                                             }
                                                           },
-                                                          onFieldSubmitted: (value) {
+                                                          onFieldSubmitted:
+                                                              (value) {
                                                             if (value == '') {
                                                               setState(() {
-                                                                cartList[index].subTotal = 0.toString();
+                                                                cartList[index]
+                                                                        .subTotal =
+                                                                    0.toString();
                                                               });
-                                                            } else if (double.tryParse(value) == null) {
-                                                              EasyLoading.showError(lang.S.of(context).enterAValidPrice);
+                                                            } else if (double
+                                                                    .tryParse(
+                                                                        value) ==
+                                                                null) {
+                                                              EasyLoading
+                                                                  .showError(lang
+                                                                      .S
+                                                                      .of(context)
+                                                                      .enterAValidPrice);
                                                             } else {
                                                               setState(() {
-                                                                cartList[index].subTotal = value;
+                                                                cartList[index]
+                                                                        .subTotal =
+                                                                    value;
                                                               });
                                                             }
                                                           },
-                                                          decoration: const InputDecoration(),
+                                                          decoration:
+                                                              const InputDecoration(),
                                                         ),
                                                       ),
                                                     ),
@@ -1104,8 +1350,16 @@ class _SaleEditState extends State<SaleEdit> {
                                                     ///___________subtotal____________________________________________________
                                                     DataCell(
                                                       Text(
-                                                        (double.parse(cartList[index].subTotal) * cartList[index].quantity).toString(),
-                                                        style: kTextStyle.copyWith(color: kTitleColor),
+                                                        (double.parse(cartList[
+                                                                        index]
+                                                                    .subTotal) *
+                                                                cartList[index]
+                                                                    .quantity)
+                                                            .toString(),
+                                                        style:
+                                                            kTextStyle.copyWith(
+                                                                color:
+                                                                    kTitleColor),
                                                       ),
                                                     ),
 
@@ -1116,7 +1370,8 @@ class _SaleEditState extends State<SaleEdit> {
                                                         color: redColor,
                                                       ).onTap(() {
                                                         setState(() {
-                                                          cartList.removeAt(index);
+                                                          cartList
+                                                              .removeAt(index);
                                                         });
                                                       }),
                                                     ),
@@ -1153,17 +1408,31 @@ class _SaleEditState extends State<SaleEdit> {
                                               Text(
                                                 lang.S.of(context).subTotal,
                                                 textAlign: TextAlign.end,
-                                                style: theme.textTheme.titleMedium,
+                                                style:
+                                                    theme.textTheme.titleMedium,
                                               ),
                                               const SizedBox(width: 12),
                                               Flexible(
                                                   child: Container(
-                                                padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 4.0, bottom: 4.0),
-                                                decoration: const BoxDecoration(color: kGreenTextColor, borderRadius: BorderRadius.all(Radius.circular(8))),
+                                                padding: const EdgeInsets.only(
+                                                    left: 20.0,
+                                                    right: 20.0,
+                                                    top: 4.0,
+                                                    bottom: 4.0),
+                                                decoration: const BoxDecoration(
+                                                    color: kGreenTextColor,
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            Radius.circular(
+                                                                8))),
                                                 child: Center(
                                                   child: Text(
                                                     '$globalCurrency ${(getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)}',
-                                                    style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
+                                                    style: kTextStyle.copyWith(
+                                                        color: kWhite,
+                                                        fontSize: 18.0,
+                                                        fontWeight:
+                                                            FontWeight.bold),
                                                   ),
                                                 ),
                                               )),
@@ -1185,43 +1454,102 @@ class _SaleEditState extends State<SaleEdit> {
                                         md: 6,
                                         lg: 6,
                                         child: ListView.builder(
-                                          itemCount: getAllTaxFromCartList(cart: cartList).length,
+                                          itemCount: getAllTaxFromCartList(
+                                                  cart: cartList)
+                                              .length,
                                           shrinkWrap: true,
                                           itemBuilder: (context, index) {
                                             return Container(
                                               height: 40,
-                                              margin: const EdgeInsets.only(top: 5, bottom: 5),
+                                              margin: const EdgeInsets.only(
+                                                  top: 5, bottom: 5),
                                               child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
                                                   Text(
-                                                    getAllTaxFromCartList(cart: cartList)[index].name,
-                                                    style: theme.textTheme.titleMedium,
+                                                    getAllTaxFromCartList(
+                                                            cart:
+                                                                cartList)[index]
+                                                        .name,
+                                                    style: theme
+                                                        .textTheme.titleMedium,
                                                   ),
                                                   Flexible(
                                                     child: AppTextField(
-                                                      initialValue: getAllTaxFromCartList(cart: cartList)[index].taxRate.toString(),
+                                                      initialValue:
+                                                          getAllTaxFromCartList(
+                                                                      cart:
+                                                                          cartList)[
+                                                                  index]
+                                                              .taxRate
+                                                              .toString(),
                                                       readOnly: true,
-                                                      textAlign: TextAlign.right,
-                                                      decoration: InputDecoration(
-                                                        contentPadding: const EdgeInsets.only(right: 6.0),
+                                                      textAlign:
+                                                          TextAlign.right,
+                                                      decoration:
+                                                          InputDecoration(
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .only(
+                                                                right: 6.0),
                                                         hintText: '0',
-                                                        border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                        enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                        disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                        focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                        prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
+                                                        border: const OutlineInputBorder(
+                                                            gapPadding: 0.0,
+                                                            borderSide: BorderSide(
+                                                                color: Color(
+                                                                    0xFFff5f00))),
+                                                        enabledBorder:
+                                                            const OutlineInputBorder(
+                                                                gapPadding: 0.0,
+                                                                borderSide: BorderSide(
+                                                                    color: Color(
+                                                                        0xFFff5f00))),
+                                                        disabledBorder:
+                                                            const OutlineInputBorder(
+                                                                gapPadding: 0.0,
+                                                                borderSide: BorderSide(
+                                                                    color: Color(
+                                                                        0xFFff5f00))),
+                                                        focusedBorder:
+                                                            const OutlineInputBorder(
+                                                                gapPadding: 0.0,
+                                                                borderSide: BorderSide(
+                                                                    color: Color(
+                                                                        0xFFff5f00))),
+                                                        prefixIconConstraints:
+                                                            const BoxConstraints(
+                                                                maxWidth: 30.0,
+                                                                minWidth: 30.0),
                                                         prefixIcon: Container(
-                                                          padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  top: 8.0,
+                                                                  left: 8.0),
                                                           height: 40,
-                                                          decoration: const BoxDecoration(color: Color(0xFFff5f00), borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
+                                                          decoration: const BoxDecoration(
+                                                              color: Color(
+                                                                  0xFFff5f00),
+                                                              borderRadius: BorderRadius.only(
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          4.0),
+                                                                  bottomLeft: Radius
+                                                                      .circular(
+                                                                          4.0))),
                                                           child: const Text(
                                                             '%',
-                                                            style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                                            style: TextStyle(
+                                                                fontSize: 20.0,
+                                                                color: Colors
+                                                                    .white),
                                                           ),
                                                         ),
                                                       ),
-                                                      textFieldType: TextFieldType.NUMBER,
+                                                      textFieldType:
+                                                          TextFieldType.NUMBER,
                                                     ),
                                                   ),
                                                 ],
@@ -1248,22 +1576,30 @@ class _SaleEditState extends State<SaleEdit> {
                                         child: Row(
                                           children: [
                                             Text(
-                                              lang.S.of(context).shpingOrServices,
+                                              lang.S
+                                                  .of(context)
+                                                  .shpingOrServices,
                                               textAlign: TextAlign.end,
-                                              style: theme.textTheme.titleMedium,
+                                              style:
+                                                  theme.textTheme.titleMedium,
                                             ),
                                             const SizedBox(width: 10),
                                             Flexible(
                                               child: SizedBox(
                                                 height: 40,
                                                 child: TextFormField(
-                                                  initialValue: serviceCharge.toString(),
+                                                  initialValue:
+                                                      serviceCharge.toString(),
                                                   onChanged: (value) {
                                                     setState(() {
-                                                      serviceCharge = value.toDouble();
+                                                      serviceCharge =
+                                                          value.toDouble();
                                                     });
                                                   },
-                                                  decoration: InputDecoration(hintText: lang.S.of(context).enterAmount),
+                                                  decoration: InputDecoration(
+                                                      hintText: lang.S
+                                                          .of(context)
+                                                          .enterAmount),
                                                   textAlign: TextAlign.center,
                                                 ),
                                               ),
@@ -1401,11 +1737,13 @@ class _SaleEditState extends State<SaleEdit> {
                                         md: 6,
                                         lg: 6,
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.end,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
                                           children: [
                                             Text(
                                               lang.S.of(context).discount,
-                                              style: theme.textTheme.titleMedium,
+                                              style:
+                                                  theme.textTheme.titleMedium,
                                             ),
                                             const SizedBox(width: 10),
                                             Flexible(
@@ -1416,48 +1754,117 @@ class _SaleEditState extends State<SaleEdit> {
                                                       height: 40.0,
                                                       child: Center(
                                                         child: AppTextField(
-                                                          controller: discountPercentageEditingController,
+                                                          controller:
+                                                              discountPercentageEditingController,
                                                           onChanged: (value) {
                                                             if (value == '') {
                                                               setState(() {
-                                                                discountAmountEditingController.text = 0.toString();
+                                                                discountAmountEditingController
+                                                                        .text =
+                                                                    0.toString();
                                                               });
                                                             } else {
-                                                              if (value.toInt() <= 100) {
+                                                              if (value
+                                                                      .toInt() <=
+                                                                  100) {
                                                                 setState(() {
-                                                                  discountAmount = double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
-                                                                  discountAmountEditingController.text = discountAmount.toString();
+                                                                  discountAmount = double.parse(((value.toDouble() /
+                                                                              100) *
+                                                                          getTotalAmount()
+                                                                              .toDouble())
+                                                                      .toStringAsFixed(
+                                                                          1));
+                                                                  discountAmountEditingController
+                                                                          .text =
+                                                                      discountAmount
+                                                                          .toString();
                                                                 });
                                                               } else {
                                                                 setState(() {
-                                                                  discountAmount = 0;
-                                                                  discountAmountEditingController.clear();
-                                                                  discountPercentageEditingController.clear();
+                                                                  discountAmount =
+                                                                      0;
+                                                                  discountAmountEditingController
+                                                                      .clear();
+                                                                  discountPercentageEditingController
+                                                                      .clear();
                                                                 });
-                                                                EasyLoading.showError(lang.S.of(context).enterAValidDiscount);
+                                                                EasyLoading.showError(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .enterAValidDiscount);
                                                               }
                                                             }
                                                           },
-                                                          textAlign: TextAlign.right,
-                                                          decoration: InputDecoration(
-                                                            contentPadding: const EdgeInsets.only(right: 6.0),
+                                                          textAlign:
+                                                              TextAlign.right,
+                                                          decoration:
+                                                              InputDecoration(
+                                                            contentPadding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    right: 6.0),
                                                             hintText: '0',
-                                                            border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                            enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                            disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                            focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                            prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                                            prefixIcon: Container(
-                                                              padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                                            border: const OutlineInputBorder(
+                                                                gapPadding: 0.0,
+                                                                borderSide: BorderSide(
+                                                                    color: Color(
+                                                                        0xFFff5f00))),
+                                                            enabledBorder: const OutlineInputBorder(
+                                                                gapPadding: 0.0,
+                                                                borderSide: BorderSide(
+                                                                    color: Color(
+                                                                        0xFFff5f00))),
+                                                            disabledBorder:
+                                                                const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                Color(0xFFff5f00))),
+                                                            focusedBorder: const OutlineInputBorder(
+                                                                gapPadding: 0.0,
+                                                                borderSide: BorderSide(
+                                                                    color: Color(
+                                                                        0xFFff5f00))),
+                                                            prefixIconConstraints:
+                                                                const BoxConstraints(
+                                                                    maxWidth:
+                                                                        30.0,
+                                                                    minWidth:
+                                                                        30.0),
+                                                            prefixIcon:
+                                                                Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      top: 8.0,
+                                                                      left:
+                                                                          8.0),
                                                               height: 40,
-                                                              decoration: const BoxDecoration(color: Color(0xFFff5f00), borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
+                                                              decoration: const BoxDecoration(
+                                                                  color: Color(
+                                                                      0xFFff5f00),
+                                                                  borderRadius: BorderRadius.only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              4.0),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              4.0))),
                                                               child: const Text(
                                                                 '%',
-                                                                style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        20.0,
+                                                                    color: Colors
+                                                                        .white),
                                                               ),
                                                             ),
                                                           ),
-                                                          textFieldType: TextFieldType.PHONE,
+                                                          textFieldType:
+                                                              TextFieldType
+                                                                  .PHONE,
                                                         ),
                                                       ),
                                                     ),
@@ -1471,53 +1878,131 @@ class _SaleEditState extends State<SaleEdit> {
                                                       height: 40.0,
                                                       child: Center(
                                                         child: AppTextField(
-                                                          controller: discountAmountEditingController,
+                                                          controller:
+                                                              discountAmountEditingController,
                                                           onChanged: (value) {
                                                             if (value == '') {
                                                               setState(() {
-                                                                discountAmount = 0;
-                                                                discountPercentageEditingController.text = 0.toString();
+                                                                discountAmount =
+                                                                    0;
+                                                                discountPercentageEditingController
+                                                                        .text =
+                                                                    0.toString();
                                                               });
                                                             } else {
-                                                              if (value.toInt() <= getTotalAmount().toDouble()) {
+                                                              if (value
+                                                                      .toInt() <=
+                                                                  getTotalAmount()
+                                                                      .toDouble()) {
                                                                 setState(
                                                                   () {
-                                                                    discountAmount = double.parse(value);
-                                                                    discountPercentageEditingController.text = ((discountAmount * 100) / getTotalAmount().toDouble()).toStringAsFixed(1);
+                                                                    discountAmount =
+                                                                        double.parse(
+                                                                            value);
+                                                                    discountPercentageEditingController
+                                                                        .text = ((discountAmount *
+                                                                                100) /
+                                                                            getTotalAmount()
+                                                                                .toDouble())
+                                                                        .toStringAsFixed(
+                                                                            1);
                                                                   },
                                                                 );
                                                               } else {
                                                                 setState(
                                                                   () {
-                                                                    discountAmount = 0;
-                                                                    discountPercentageEditingController.clear();
-                                                                    discountAmountEditingController.clear();
+                                                                    discountAmount =
+                                                                        0;
+                                                                    discountPercentageEditingController
+                                                                        .clear();
+                                                                    discountAmountEditingController
+                                                                        .clear();
                                                                   },
                                                                 );
-                                                                EasyLoading.showError(lang.S.of(context).enterAValidDiscount);
+                                                                EasyLoading.showError(lang
+                                                                    .S
+                                                                    .of(context)
+                                                                    .enterAValidDiscount);
                                                               }
                                                             }
                                                           },
-                                                          textAlign: TextAlign.right,
-                                                          decoration: InputDecoration(
-                                                            contentPadding: const EdgeInsets.only(right: 6.0),
+                                                          textAlign:
+                                                              TextAlign.right,
+                                                          decoration:
+                                                              InputDecoration(
+                                                            contentPadding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    right: 6.0),
                                                             hintText: '0',
-                                                            border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                            enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                            disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                            focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                            prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                                            prefixIcon: Container(
-                                                              padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                                            border: const OutlineInputBorder(
+                                                                gapPadding: 0.0,
+                                                                borderSide:
+                                                                    BorderSide(
+                                                                        color:
+                                                                            kMainColor)),
+                                                            enabledBorder:
+                                                                const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                kMainColor)),
+                                                            disabledBorder:
+                                                                const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                kMainColor)),
+                                                            focusedBorder:
+                                                                const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                kMainColor)),
+                                                            prefixIconConstraints:
+                                                                const BoxConstraints(
+                                                                    maxWidth:
+                                                                        30.0,
+                                                                    minWidth:
+                                                                        30.0),
+                                                            prefixIcon:
+                                                                Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      top: 8.0,
+                                                                      left:
+                                                                          8.0),
                                                               height: 40,
-                                                              decoration: const BoxDecoration(color: kMainColor, borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
+                                                              decoration: const BoxDecoration(
+                                                                  color:
+                                                                      kMainColor,
+                                                                  borderRadius: BorderRadius.only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              4.0),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              4.0))),
                                                               child: Text(
                                                                 currency,
-                                                                style: const TextStyle(fontSize: 20.0, color: Colors.white),
+                                                                style: const TextStyle(
+                                                                    fontSize:
+                                                                        20.0,
+                                                                    color: Colors
+                                                                        .white),
                                                               ),
                                                             ),
                                                           ),
-                                                          textFieldType: TextFieldType.PHONE,
+                                                          textFieldType:
+                                                              TextFieldType
+                                                                  .PHONE,
                                                         ),
                                                       ),
                                                     ),
@@ -1546,7 +2031,8 @@ class _SaleEditState extends State<SaleEdit> {
                                                 backgroundColor: Colors.red,
                                               ),
                                               onPressed: () {
-                                                GoRouter.of(context).pop(widget.popUpContext);
+                                                GoRouter.of(context)
+                                                    .pop(widget.popUpContext);
                                               },
                                               child: Text(
                                                 lang.S.of(context).cancel,
@@ -1566,31 +2052,69 @@ class _SaleEditState extends State<SaleEdit> {
                                               ),
                                               onPressed: () {
                                                 if (cartList.isEmpty) {
-                                                  EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
+                                                  EasyLoading.showError(lang.S
+                                                      .of(context)
+                                                      .pleaseAddSomeProductFirst);
                                                 } else {
-                                                  SaleTransactionModel transitionModel = SaleTransactionModel(
-                                                    dueAmount: widget.transitionModel.dueAmount,
-                                                    customerAddress: widget.transitionModel.customerAddress,
-                                                    customerImage: widget.transitionModel.customerImage,
-                                                    customerGst: widget.transitionModel.customerGst,
-                                                    customerName: widget.transitionModel.customerName,
-                                                    customerType: widget.transitionModel.customerType,
-                                                    customerPhone: widget.transitionModel.customerPhone,
-                                                    invoiceNumber: widget.transitionModel.invoiceNumber,
-                                                    purchaseDate: widget.transitionModel.purchaseDate,
+                                                  SaleTransactionModel
+                                                      transitionModel =
+                                                      SaleTransactionModel(
+                                                    dueAmount: widget
+                                                        .transitionModel
+                                                        .dueAmount,
+                                                    customerAddress: widget
+                                                        .transitionModel
+                                                        .customerAddress,
+                                                    customerImage: widget
+                                                        .transitionModel
+                                                        .customerImage,
+                                                    customerGst: widget
+                                                        .transitionModel
+                                                        .customerGst,
+                                                    customerName: widget
+                                                        .transitionModel
+                                                        .customerName,
+                                                    customerType: widget
+                                                        .transitionModel
+                                                        .customerType,
+                                                    customerPhone: widget
+                                                        .transitionModel
+                                                        .customerPhone,
+                                                    invoiceNumber: widget
+                                                        .transitionModel
+                                                        .invoiceNumber,
+                                                    purchaseDate: widget
+                                                        .transitionModel
+                                                        .purchaseDate,
                                                     productList: cartList,
-                                                    discountAmount: discountAmount,
-                                                    serviceCharge: serviceCharge,
+                                                    discountAmount:
+                                                        discountAmount,
+                                                    serviceCharge:
+                                                        serviceCharge,
                                                     vat: vatGst,
-                                                    totalAmount: getTotalAmount().toDouble() + vatGst + serviceCharge - discountAmount,
+                                                    totalAmount:
+                                                        getTotalAmount()
+                                                                .toDouble() +
+                                                            vatGst +
+                                                            serviceCharge -
+                                                            discountAmount,
                                                   );
                                                   ShowEditPaymentPopUp(
-                                                    newTransitionModel: transitionModel,
-                                                    oldTransitionModel: widget.transitionModel,
-                                                    previousPaid: widget.transitionModel.totalAmount! - widget.transitionModel.dueAmount!.toDouble(),
-                                                    decreaseStockList: decreaseStockList,
+                                                    newTransitionModel:
+                                                        transitionModel,
+                                                    oldTransitionModel:
+                                                        widget.transitionModel,
+                                                    previousPaid: widget
+                                                            .transitionModel
+                                                            .totalAmount! -
+                                                        widget.transitionModel
+                                                            .dueAmount!
+                                                            .toDouble(),
+                                                    decreaseStockList:
+                                                        decreaseStockList,
                                                     pastProducts: pastProducts,
-                                                    saleListPopUpContext: widget.popUpContext,
+                                                    saleListPopUpContext:
+                                                        widget.popUpContext,
                                                   ).launch(context);
                                                 }
                                               },
@@ -1613,10 +2137,13 @@ class _SaleEditState extends State<SaleEdit> {
                         md: 100,
                         xs: 100,
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: screenWidth < 1240 ? 0 : 16, vertical: screenWidth > 1240 ? 0 : 12),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth < 1240 ? 0 : 16,
+                              vertical: screenWidth > 1240 ? 0 : 12),
                           child: Consumer(
                             builder: (_, ref, watch) {
-                              AsyncValue<List<CategoryModel>> categoryList = ref.watch(categoryProvider);
+                              AsyncValue<List<CategoryModel>> categoryList =
+                                  ref.watch(categoryProvider);
                               return categoryList.when(data: (category) {
                                 return Container(
                                   // width: 150,
@@ -1626,42 +2153,65 @@ class _SaleEditState extends State<SaleEdit> {
                                           ? 720 - 142
                                           : context.height() - 160,
                                   padding: const EdgeInsets.all(8.0),
-                                  decoration: const BoxDecoration(color: kWhite, borderRadius: BorderRadius.all(Radius.circular(15))),
+                                  decoration: const BoxDecoration(
+                                      color: kWhite,
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(15))),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       GestureDetector(
                                         child: Container(
                                           decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(5.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(5.0),
                                               color: screenWidth < 1240
                                                   ? Colors.transparent
                                                   : isSelected == 'Categories'
                                                       ? kBlueTextColor
-                                                      : kBlueTextColor.withOpacity(0.1)),
-                                          padding: EdgeInsets.only(left: screenWidth < 1240 ? 0 : 15, right: 8, top: screenWidth < 1240 ? 0 : 5, bottom: screenWidth < 1240 ? 0 : 5),
+                                                      : kBlueTextColor
+                                                          .withOpacity(0.1)),
+                                          padding: EdgeInsets.only(
+                                              left: screenWidth < 1240 ? 0 : 15,
+                                              right: 8,
+                                              top: screenWidth < 1240 ? 0 : 5,
+                                              bottom:
+                                                  screenWidth < 1240 ? 0 : 5),
                                           alignment: Alignment.centerLeft,
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
                                               Flexible(
                                                 child: Text(
                                                   'Categories',
                                                   textAlign: TextAlign.start,
                                                   maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: theme.textTheme.titleSmall?.copyWith(
-                                                      color: isSelected == 'Categories'
-                                                          ? screenWidth < 1240
-                                                              ? kTitleColor
-                                                              : Colors.white
-                                                          : kDarkGreyColor,
-                                                      fontSize: screenWidth < 1240 ? 20 : 14),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: theme
+                                                      .textTheme.titleSmall
+                                                      ?.copyWith(
+                                                          color: isSelected ==
+                                                                  'Categories'
+                                                              ? screenWidth <
+                                                                      1240
+                                                                  ? kTitleColor
+                                                                  : Colors.white
+                                                              : kDarkGreyColor,
+                                                          fontSize:
+                                                              screenWidth < 1240
+                                                                  ? 20
+                                                                  : 14),
                                                 ),
                                               ),
                                               Icon(
                                                 Icons.keyboard_arrow_right,
-                                                color: isSelected == 'Categories' ? Colors.white : kDarkGreyColor,
+                                                color:
+                                                    isSelected == 'Categories'
+                                                        ? Colors.white
+                                                        : kDarkGreyColor,
                                                 size: 16,
                                               )
                                             ],
@@ -1678,43 +2228,96 @@ class _SaleEditState extends State<SaleEdit> {
                                       SizedBox(
                                         height: screenWidth < 1240 ? 50 : null,
                                         child: ListView.builder(
-                                          scrollDirection: screenWidth < 1240 ? Axis.horizontal : Axis.vertical,
+                                          scrollDirection: screenWidth < 1240
+                                              ? Axis.horizontal
+                                              : Axis.vertical,
                                           itemCount: category.length,
                                           shrinkWrap: true,
                                           itemBuilder: (_, i) {
                                             return GestureDetector(
                                               onTap: (() {
                                                 setState(() {
-                                                  isSelected = category[i].categoryName;
-                                                  selectedCategory = category[i].categoryName;
+                                                  isSelected =
+                                                      category[i].categoryName;
+                                                  selectedCategory =
+                                                      category[i].categoryName;
                                                 });
                                               }),
                                               child: Padding(
-                                                padding: EdgeInsets.only(top: 5, bottom: 5, right: screenWidth < 1240 ? 10 : 0),
+                                                padding: EdgeInsets.only(
+                                                    top: 5,
+                                                    bottom: 5,
+                                                    right: screenWidth < 1240
+                                                        ? 10
+                                                        : 0),
                                                 child: Container(
-                                                  padding: const EdgeInsets.only(left: 15.0, right: 8.0, top: 8.0, bottom: 8.0),
-                                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: isSelected == category[i].categoryName ? kBlueTextColor : kBlueTextColor.withOpacity(0.1)),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 15.0,
+                                                          right: 8.0,
+                                                          top: 8.0,
+                                                          bottom: 8.0),
+                                                  decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              5.0),
+                                                      color: isSelected ==
+                                                              category[i]
+                                                                  .categoryName
+                                                          ? kBlueTextColor
+                                                          : kBlueTextColor
+                                                              .withOpacity(
+                                                                  0.1)),
                                                   child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
                                                     children: [
                                                       screenWidth < 1240
                                                           ? Text(
-                                                              category[i].categoryName,
+                                                              category[i]
+                                                                  .categoryName,
                                                               maxLines: 2,
-                                                              overflow: TextOverflow.ellipsis,
-                                                              style: theme.textTheme.titleSmall?.copyWith(color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: theme
+                                                                  .textTheme
+                                                                  .titleSmall
+                                                                  ?.copyWith(
+                                                                      color: isSelected ==
+                                                                              category[i].categoryName
+                                                                          ? Colors.white
+                                                                          : kDarkGreyColor),
                                                             )
                                                           : Flexible(
                                                               child: Text(
-                                                                category[i].categoryName,
+                                                                category[i]
+                                                                    .categoryName,
                                                                 maxLines: 2,
-                                                                overflow: TextOverflow.ellipsis,
-                                                                style: kTextStyle.copyWith(color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor, fontWeight: FontWeight.bold),
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: kTextStyle.copyWith(
+                                                                    color: isSelected ==
+                                                                            category[i]
+                                                                                .categoryName
+                                                                        ? Colors
+                                                                            .white
+                                                                        : kDarkGreyColor,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold),
                                                               ),
                                                             ),
                                                       Icon(
-                                                        Icons.keyboard_arrow_right,
-                                                        color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor,
+                                                        Icons
+                                                            .keyboard_arrow_right,
+                                                        color: isSelected ==
+                                                                category[i]
+                                                                    .categoryName
+                                                            ? Colors.white
+                                                            : kDarkGreyColor,
                                                         size: 16,
                                                       )
                                                     ],
@@ -1751,14 +2354,41 @@ class _SaleEditState extends State<SaleEdit> {
                             List<ProductModel> showProductVsCategory = [];
                             if (selectedCategory == 'Categories') {
                               for (var element in products) {
-                                if (element.productCode.toLowerCase().contains(searchProductCode) || element.productCategory.toLowerCase().contains(searchProductCode) || element.productName.toLowerCase().contains(searchProductCode)) {
-                                  productPriceChecker(product: element, customerType: widget.transitionModel.customerType) != '0' && (selectedWareHouse?.id == element.warehouseId) ? showProductVsCategory.add(element) : null;
+                                if (element.productCode
+                                        .toLowerCase()
+                                        .contains(searchProductCode) ||
+                                    element.productCategory
+                                        .toLowerCase()
+                                        .contains(searchProductCode) ||
+                                    element.productName
+                                        .toLowerCase()
+                                        .contains(searchProductCode)) {
+                                  productPriceChecker(
+                                                  product: element,
+                                                  customerType: widget
+                                                      .transitionModel
+                                                      .customerType) !=
+                                              '0' &&
+                                          (selectedWareHouse?.id ==
+                                              element.warehouseId)
+                                      ? showProductVsCategory.add(element)
+                                      : null;
                                 }
                               }
                             } else {
                               for (var element in products) {
-                                if (element.productCategory == selectedCategory) {
-                                  productPriceChecker(product: element, customerType: widget.transitionModel.customerType) != '0' && (selectedWareHouse?.id == element.warehouseId) ? showProductVsCategory.add(element) : null;
+                                if (element.productCategory ==
+                                    selectedCategory) {
+                                  productPriceChecker(
+                                                  product: element,
+                                                  customerType: widget
+                                                      .transitionModel
+                                                      .customerType) !=
+                                              '0' &&
+                                          (selectedWareHouse?.id ==
+                                              element.warehouseId)
+                                      ? showProductVsCategory.add(element)
+                                      : null;
                                 }
                               }
                             }
@@ -1770,7 +2400,8 @@ class _SaleEditState extends State<SaleEdit> {
                                       color: kDarkWhite,
                                     ),
                                     child: GridView.builder(
-                                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      gridDelegate:
+                                          const SliverGridDelegateWithMaxCrossAxisExtent(
                                         maxCrossAxisExtent: 180,
                                         mainAxisExtent: 204,
                                         mainAxisSpacing: 10,
@@ -1782,14 +2413,16 @@ class _SaleEditState extends State<SaleEdit> {
                                           width: 130.0,
                                           height: 170.0,
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(10.0),
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
                                             color: kWhite,
                                             border: Border.all(
                                               color: kLitGreyColor,
                                             ),
                                           ),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               ///__________image________________________________________________
                                               Stack(
@@ -1798,19 +2431,50 @@ class _SaleEditState extends State<SaleEdit> {
                                                   Container(
                                                     height: 120,
                                                     decoration: BoxDecoration(
-                                                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(10.0), topRight: Radius.circular(10.0)),
-                                                      image: DecorationImage(image: NetworkImage(showProductVsCategory[i].productPicture), fit: BoxFit.cover),
+                                                      borderRadius:
+                                                          const BorderRadius
+                                                              .only(
+                                                              topLeft: Radius
+                                                                  .circular(
+                                                                      10.0),
+                                                              topRight: Radius
+                                                                  .circular(
+                                                                      10.0)),
+                                                      image: DecorationImage(
+                                                          image: NetworkImage(
+                                                              showProductVsCategory[
+                                                                      i]
+                                                                  .productPicture),
+                                                          fit: BoxFit.cover),
                                                     ),
                                                   ),
                                                   Positioned(
                                                     left: 5,
                                                     top: 5,
                                                     child: Container(
-                                                      padding: const EdgeInsets.only(left: 5.0, right: 5.0),
-                                                      decoration: BoxDecoration(color: showProductVsCategory[i].productStock == '0' ? kRedTextColor : kGreenTextColor),
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 5.0,
+                                                              right: 5.0),
+                                                      decoration: BoxDecoration(
+                                                          color: showProductVsCategory[
+                                                                          i]
+                                                                      .productStock ==
+                                                                  '0'
+                                                              ? kRedTextColor
+                                                              : kGreenTextColor),
                                                       child: Text(
-                                                        showProductVsCategory[i].productStock != '0' ? '${showProductVsCategory[i].productStock} pc' : lang.S.of(context).outOfStock,
-                                                        style: theme.textTheme.titleSmall?.copyWith(color: kWhite),
+                                                        showProductVsCategory[i]
+                                                                    .productStock !=
+                                                                '0'
+                                                            ? '${showProductVsCategory[i].productStock} pc'
+                                                            : lang.S
+                                                                .of(context)
+                                                                .outOfStock,
+                                                        style: theme.textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
+                                                                color: kWhite),
                                                       ),
                                                     ),
                                                   ),
@@ -1818,29 +2482,50 @@ class _SaleEditState extends State<SaleEdit> {
                                               ),
 
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 10.0, left: 5, right: 3),
+                                                padding: const EdgeInsets.only(
+                                                    top: 10.0,
+                                                    left: 5,
+                                                    right: 3),
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     ///______name_______________________________________________
                                                     Text(
-                                                      showProductVsCategory[i].productName,
+                                                      showProductVsCategory[i]
+                                                          .productName,
                                                       maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: theme.textTheme.bodyLarge,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: theme
+                                                          .textTheme.bodyLarge,
                                                     ),
                                                     const SizedBox(height: 4.0),
 
                                                     ///________Purchase_price______________________________________________________
                                                     Container(
-                                                      padding: const EdgeInsets.only(left: 5.0, right: 5.0),
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 5.0,
+                                                              right: 5.0),
                                                       decoration: BoxDecoration(
                                                         color: kGreenTextColor,
-                                                        borderRadius: BorderRadius.circular(2.0),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(2.0),
                                                       ),
                                                       child: Text(
-                                                        productPriceChecker(product: showProductVsCategory[i], customerType: widget.transitionModel.customerType),
-                                                        style: theme.textTheme.titleSmall?.copyWith(color: kWhite),
+                                                        productPriceChecker(
+                                                            product:
+                                                                showProductVsCategory[
+                                                                    i],
+                                                            customerType: widget
+                                                                .transitionModel
+                                                                .customerType),
+                                                        style: theme.textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
+                                                                color: kWhite),
                                                       ),
                                                     ),
                                                   ],
@@ -1849,35 +2534,85 @@ class _SaleEditState extends State<SaleEdit> {
                                             ],
                                           ),
                                         ).onTap(() {
-                                          if (showProductVsCategory[i].serialNumber.isNotEmpty) {
-                                            showSerialNumberPopUp(productModel: showProductVsCategory[i]);
+                                          if (showProductVsCategory[i]
+                                              .serialNumber
+                                              .isNotEmpty) {
+                                            showSerialNumberPopUp(
+                                                productModel:
+                                                    showProductVsCategory[i]);
                                           } else {
                                             setState(
                                               () {
-                                                AddToCartModel addToCartModel = AddToCartModel(
-                                                  productName: showProductVsCategory[i].productName,
-                                                  warehouseName: showProductVsCategory[i].warehouseName,
-                                                  warehouseId: showProductVsCategory[i].warehouseId,
-                                                  productImage: showProductVsCategory[i].productPicture,
-                                                  productId: showProductVsCategory[i].productCode,
-                                                  productPurchasePrice: showProductVsCategory[i].productPurchasePrice,
-                                                  subTotal: productPriceChecker(product: showProductVsCategory[i], customerType: widget.transitionModel.customerType),
+                                                AddToCartModel addToCartModel =
+                                                    AddToCartModel(
+                                                  productName:
+                                                      showProductVsCategory[i]
+                                                          .productName,
+                                                  warehouseName:
+                                                      showProductVsCategory[i]
+                                                          .warehouseName,
+                                                  warehouseId:
+                                                      showProductVsCategory[i]
+                                                          .warehouseId,
+                                                  productImage:
+                                                      showProductVsCategory[i]
+                                                          .productPicture,
+                                                  productId:
+                                                      showProductVsCategory[i]
+                                                          .productCode,
+                                                  productPurchasePrice:
+                                                      showProductVsCategory[i]
+                                                          .productPurchasePrice,
+                                                  subTotal: productPriceChecker(
+                                                      product:
+                                                          showProductVsCategory[
+                                                              i],
+                                                      customerType: widget
+                                                          .transitionModel
+                                                          .customerType),
                                                   serialNumber: [],
-                                                  unitPrice: productPriceChecker(product: showProductVsCategory[i], customerType: widget.transitionModel.customerType),
-                                                  subTaxes: showProductVsCategory[i].subTaxes,
-                                                  excTax: showProductVsCategory[i].excTax,
-                                                  groupTaxName: showProductVsCategory[i].groupTaxName,
-                                                  groupTaxRate: showProductVsCategory[i].groupTaxRate,
-                                                  incTax: showProductVsCategory[i].incTax,
-                                                  margin: showProductVsCategory[i].margin,
-                                                  taxType: showProductVsCategory[i].taxType,
+                                                  unitPrice: productPriceChecker(
+                                                      product:
+                                                          showProductVsCategory[
+                                                              i],
+                                                      customerType: widget
+                                                          .transitionModel
+                                                          .customerType),
+                                                  subTaxes:
+                                                      showProductVsCategory[i]
+                                                          .subTaxes,
+                                                  excTax:
+                                                      showProductVsCategory[i]
+                                                          .excTax,
+                                                  groupTaxName:
+                                                      showProductVsCategory[i]
+                                                          .groupTaxName,
+                                                  groupTaxRate:
+                                                      showProductVsCategory[i]
+                                                          .groupTaxRate,
+                                                  incTax:
+                                                      showProductVsCategory[i]
+                                                          .incTax,
+                                                  margin:
+                                                      showProductVsCategory[i]
+                                                          .margin,
+                                                  taxType:
+                                                      showProductVsCategory[i]
+                                                          .taxType,
                                                 );
 
-                                                if (!uniqueCheck(showProductVsCategory[i].productCode)) {
-                                                  if (showProductVsCategory[i].productStock == '0') {
-                                                    EasyLoading.showError(lang.S.of(context).productOutOfStock);
+                                                if (!uniqueCheck(
+                                                    showProductVsCategory[i]
+                                                        .productCode)) {
+                                                  if (showProductVsCategory[i]
+                                                          .productStock ==
+                                                      '0') {
+                                                    EasyLoading.showError(lang.S
+                                                        .of(context)
+                                                        .productOutOfStock);
                                                   } else {
-                                                    cartList.add(addToCartModel);
+                                                    cartList
+                                                        .add(addToCartModel);
                                                   }
                                                 } else {}
                                               },
@@ -1888,27 +2623,38 @@ class _SaleEditState extends State<SaleEdit> {
                                     ),
                                   )
                                 : Container(
-                                    height: context.height() < 720 ? 720 - 136 : context.height() - 136,
+                                    height: context.height() < 720
+                                        ? 720 - 136
+                                        : context.height() - 136,
                                     color: Colors.white,
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const SizedBox(height: 80),
                                         const Image(
-                                          image: AssetImage('images/empty_screen.png'),
+                                          image: AssetImage(
+                                              'images/empty_screen.png'),
                                         ),
                                         const SizedBox(height: 20),
                                         GestureDetector(
                                           onTap: () {},
                                           child: Container(
-                                            decoration: const BoxDecoration(color: kBlueTextColor, borderRadius: BorderRadius.all(Radius.circular(15))),
+                                            decoration: const BoxDecoration(
+                                                color: kBlueTextColor,
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(15))),
                                             width: 200,
                                             child: Center(
                                               child: Padding(
-                                                padding: const EdgeInsets.all(20.0),
+                                                padding:
+                                                    const EdgeInsets.all(20.0),
                                                 child: Text(
                                                   lang.S.of(context).addProduct,
-                                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18.0),
                                                 ),
                                               ),
                                             ),

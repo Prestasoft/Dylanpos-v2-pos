@@ -1,7 +1,4 @@
-// ignore_for_file: unused_result, use_build_context_synchronously
-
 import 'dart:convert';
-
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -33,10 +30,18 @@ class CustomerList extends StatefulWidget {
 }
 
 class _CustomerListState extends State<CustomerList> {
-  void deleteCustomer({required String phoneNumber, required WidgetRef updateRef, required BuildContext context}) async {
+  void deleteCustomer(
+      {required String phoneNumber,
+      required WidgetRef updateRef,
+      required BuildContext context}) async {
     EasyLoading.show(status: 'Deleting..');
     String customerKey = '';
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Customers')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['phoneNumber'].toString() == phoneNumber) {
@@ -44,8 +49,10 @@ class _CustomerListState extends State<CustomerList> {
         }
       }
     });
-    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Customers/$customerKey");
+    DatabaseReference ref = FirebaseDatabase.instance
+        .ref("${await getUserID()}/Customers/$customerKey");
     await ref.remove();
+    // ignore: unused_result
     updateRef.refresh(allCustomerProvider);
     // context.pop();
     EasyLoading.showSuccess('Done');
@@ -71,7 +78,8 @@ class _CustomerListState extends State<CustomerList> {
     return Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          AsyncValue<List<CustomerModel>> customers = ref.watch(allCustomerProvider);
+          AsyncValue<List<CustomerModel>> customers =
+              ref.watch(allCustomerProvider);
           final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
           final globalCurrency = currencyProvider.currency ?? '\$';
           return customers.when(data: (list) {
@@ -80,28 +88,40 @@ class _CustomerListState extends State<CustomerList> {
             List<CustomerModel> customerLists = [];
             List<CustomerModel> showAbleCustomer = [];
             for (var value1 in allCustomerList) {
-              listOfPhoneNumber.add(value1.phoneNumber.replaceAll(RegExp(r'\s+'), '').toLowerCase());
+              listOfPhoneNumber.add(value1.phoneNumber
+                  .replaceAll(RegExp(r'\s+'), '')
+                  .toLowerCase());
               if (value1.type != 'Supplier') {
                 customerLists.add(value1);
               }
             }
             for (var element in customerLists) {
-              if (element.customerName.replaceAll(RegExp(r'\s+'), '').toLowerCase().contains(searchItem.toLowerCase()) || element.phoneNumber.contains(searchItem)) {
+              if (element.customerName
+                      .replaceAll(RegExp(r'\s+'), '')
+                      .toLowerCase()
+                      .contains(searchItem.toLowerCase()) ||
+                  element.phoneNumber.contains(searchItem)) {
                 showAbleCustomer.add(element);
               } else if (searchItem == '') {
                 showAbleCustomer.add(element);
               }
             }
-            final totalPages = (showAbleCustomer.length / _customerPerPage).ceil();
+            final totalPages =
+                (showAbleCustomer.length / _customerPerPage).ceil();
 
             final startIndex = ((_currentPage - 1) * _customerPerPage);
             final endIndex = startIndex + _customerPerPage;
-            final paginatedList = showAbleCustomer.sublist(startIndex, endIndex > showAbleCustomer.length ? showAbleCustomer.length : endIndex);
+            final paginatedList = showAbleCustomer.sublist(
+                startIndex,
+                endIndex > showAbleCustomer.length
+                    ? showAbleCustomer.length
+                    : endIndex);
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -116,7 +136,8 @@ class _CustomerListState extends State<CustomerList> {
                               lang.S.of(context).customerList,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                              style: theme.textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
                           ElevatedButton.icon(
@@ -126,7 +147,8 @@ class _CustomerListState extends State<CustomerList> {
                                 EasyLoading.showError(userPermissionErrorText);
                                 return;
                               }
-                              if (await Subscription.subscriptionChecker(item: "Parties")) {
+                              if (await Subscription.subscriptionChecker(
+                                  item: "Parties")) {
                                 // Use context.go or context.push to navigate to the AddCustomer screen
                                 context.push(
                                   '/add-customer',
@@ -355,7 +377,9 @@ class _CustomerListState extends State<CustomerList> {
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Flexible(child: Text('Show-', style: theme.textTheme.bodyLarge)),
+                                Flexible(
+                                    child: Text('Show-',
+                                        style: theme.textTheme.bodyLarge)),
                                 DropdownButton<int>(
                                   isDense: true,
                                   padding: EdgeInsets.zero,
@@ -365,7 +389,8 @@ class _CustomerListState extends State<CustomerList> {
                                     Icons.keyboard_arrow_down,
                                     color: Colors.black,
                                   ),
-                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                  items: [10, 20, 50, 100, -1]
+                                      .map<DropdownMenuItem<int>>((int value) {
                                     return DropdownMenuItem<int>(
                                       value: value,
                                       child: Text(
@@ -377,7 +402,8 @@ class _CustomerListState extends State<CustomerList> {
                                   onChanged: (int? newValue) {
                                     setState(() {
                                       if (newValue == -1) {
-                                        _customerPerPage = -1; // Set to -1 for "All"
+                                        _customerPerPage =
+                                            -1; // Set to -1 for "All"
                                       } else {
                                         _customerPerPage = newValue ?? 10;
                                       }
@@ -407,7 +433,8 @@ class _CustomerListState extends State<CustomerList> {
                               keyboardType: TextInputType.name,
                               decoration: kInputDecoration.copyWith(
                                 contentPadding: const EdgeInsets.all(10.0),
-                                hintText: (lang.S.of(context).searchByNameOrPhone),
+                                hintText:
+                                    (lang.S.of(context).searchByNameOrPhone),
                                 suffixIcon: const Icon(
                                   FeatherIcons.search,
                                   color: kNeutral400,
@@ -423,7 +450,8 @@ class _CustomerListState extends State<CustomerList> {
                         ? Column(
                             children: [
                               LayoutBuilder(
-                                builder: (BuildContext context, BoxConstraints constraints) {
+                                builder: (BuildContext context,
+                                    BoxConstraints constraints) {
                                   final kWidth = constraints.maxWidth;
                                   return Scrollbar(
                                     controller: _horizontalScroll,
@@ -438,7 +466,12 @@ class _CustomerListState extends State<CustomerList> {
                                           minWidth: kWidth,
                                         ),
                                         child: Theme(
-                                          data: theme.copyWith(dividerColor: Colors.transparent, dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                          data: theme.copyWith(
+                                              dividerColor: Colors.transparent,
+                                              dividerTheme:
+                                                  const DividerThemeData(
+                                                      color:
+                                                          Colors.transparent)),
                                           child: DataTable(
                                               border: const TableBorder(
                                                 horizontalInside: BorderSide(
@@ -446,34 +479,69 @@ class _CustomerListState extends State<CustomerList> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      Colors.white),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle: theme.textTheme.titleMedium,
-                                              dataTextStyle: theme.textTheme.bodyLarge,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
+                                              dataTextStyle:
+                                                  theme.textTheme.bodyLarge,
                                               columns: [
-                                                DataColumn(label: Text(lang.S.of(context).SL)),
-                                                DataColumn(label: Text(lang.S.of(context).name)),
-                                                DataColumn(label: Text(lang.S.of(context).paymentType)),
-                                                DataColumn(label: Text(lang.S.of(context).phone)),
-                                                DataColumn(label: Text(lang.S.of(context).email)),
-                                                DataColumn(label: Text(lang.S.of(context).due)),
-                                                DataColumn(label: Text(lang.S.of(context).setting)),
+                                                DataColumn(
+                                                    label: Text(
+                                                        lang.S.of(context).SL)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .name)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .paymentType)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .phone)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .email)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .due)),
+                                                DataColumn(
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .setting)),
                                               ],
-                                              rows: List.generate(paginatedList.length, (index) {
-                                                final dataIndex = (_currentPage - 1) * _customerPerPage + index;
-                                                final customer = showAbleCustomer[dataIndex];
+                                              rows: List.generate(
+                                                  paginatedList.length,
+                                                  (index) {
+                                                final dataIndex =
+                                                    (_currentPage - 1) *
+                                                            _customerPerPage +
+                                                        index;
+                                                // ignore: unused_local_variable
+                                                final customer =
+                                                    showAbleCustomer[dataIndex];
                                                 return DataRow(cells: [
                                                   ///______________S.L__________________________________________________
                                                   DataCell(
-                                                    Text('${startIndex + index + 1}'),
+                                                    Text(
+                                                        '${startIndex + index + 1}'),
                                                   ),
 
                                                   ///______________name__________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedList[index].customerName,
+                                                      paginatedList[index]
+                                                          .customerName,
                                                     ),
                                                   ),
 
@@ -487,14 +555,16 @@ class _CustomerListState extends State<CustomerList> {
                                                   ///______Phone___________________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedList[index].phoneNumber,
+                                                      paginatedList[index]
+                                                          .phoneNumber,
                                                     ),
                                                   ),
 
                                                   ///___________Email____________________________________________________
                                                   DataCell(
                                                     Text(
-                                                      paginatedList[index].emailAddress,
+                                                      paginatedList[index]
+                                                          .emailAddress,
                                                     ),
                                                   ),
 
@@ -511,36 +581,68 @@ class _CustomerListState extends State<CustomerList> {
                                                     SizedBox(
                                                       width: 30,
                                                       child: Theme(
-                                                        data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                                        data: ThemeData(
+                                                            highlightColor:
+                                                                dropdownItemColor,
+                                                            focusColor:
+                                                                dropdownItemColor,
+                                                            hoverColor:
+                                                                dropdownItemColor),
                                                         child: PopupMenuButton(
-                                                          surfaceTintColor: Colors.white,
-                                                          padding: EdgeInsets.zero,
-                                                          itemBuilder: (BuildContext bc) => [
+                                                          surfaceTintColor:
+                                                              Colors.white,
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          itemBuilder:
+                                                              (BuildContext
+                                                                      bc) =>
+                                                                  [
                                                             ///____________Edit____________________________________________________
                                                             PopupMenuItem(
                                                                 onTap: () {
-                                                                  final customerModel = paginatedList[index];
-                                                                  final allPreviousCustomer = allCustomerList;
-                                                                  const typeOfCustomerAdd = 'Buyer';
+                                                                  final customerModel =
+                                                                      paginatedList[
+                                                                          index];
+                                                                  final allPreviousCustomer =
+                                                                      allCustomerList;
+                                                                  const typeOfCustomerAdd =
+                                                                      'Buyer';
 
                                                                   // Use go_router to navigate to the EditCustomer screen
                                                                   context.push(
                                                                     '/edit-customer',
                                                                     extra: {
-                                                                      'customerModel': customerModel,
-                                                                      'allPreviousCustomer': allPreviousCustomer,
-                                                                      'typeOfCustomerAdd': typeOfCustomerAdd,
+                                                                      'customerModel':
+                                                                          customerModel,
+                                                                      'allPreviousCustomer':
+                                                                          allPreviousCustomer,
+                                                                      'typeOfCustomerAdd':
+                                                                          typeOfCustomerAdd,
                                                                     },
                                                                   );
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const Icon(IconlyLight.edit, size: 20.0, color: kNeutral500),
-                                                                    const SizedBox(width: 4.0),
+                                                                    const Icon(
+                                                                        IconlyLight
+                                                                            .edit,
+                                                                        size:
+                                                                            20.0,
+                                                                        color:
+                                                                            kNeutral500),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).edit,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                                                        color: kNeutral500,
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .edit,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kNeutral500,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -549,14 +651,25 @@ class _CustomerListState extends State<CustomerList> {
                                                             ///____________delete___________________________________________________
                                                             PopupMenuItem(
                                                                 onTap: () {
-                                                                  if (double.parse(paginatedList[index].dueAmount.toString()) == 0) {
+                                                                  if (double.parse(paginatedList[
+                                                                              index]
+                                                                          .dueAmount
+                                                                          .toString()) ==
+                                                                      0) {
                                                                     showDialog(
-                                                                        barrierDismissible: false,
-                                                                        context: context,
-                                                                        builder: (BuildContext dialogContext) {
-                                                                          double dialogWidth = 500;
+                                                                        barrierDismissible:
+                                                                            false,
+                                                                        context:
+                                                                            context,
+                                                                        builder:
+                                                                            (BuildContext
+                                                                                dialogContext) {
+                                                                          double
+                                                                              dialogWidth =
+                                                                              500;
                                                                           return Center(
-                                                                            child: Container(
+                                                                            child:
+                                                                                Container(
                                                                               width: dialogWidth,
                                                                               decoration: const BoxDecoration(
                                                                                 color: Colors.white,
@@ -630,37 +743,56 @@ class _CustomerListState extends State<CustomerList> {
                                                                           );
                                                                         });
                                                                   } else {
-                                                                    EasyLoading.showError(lang.S.of(context).thisCustomerHavepreviousDue);
+                                                                    EasyLoading.showError(lang
+                                                                        .S
+                                                                        .of(context)
+                                                                        .thisCustomerHavepreviousDue);
                                                                     // Navigator.pop(bc);
-                                                                    context.pop();
+                                                                    context
+                                                                        .pop();
                                                                   }
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                     HugeIcon(
-                                                                      icon: HugeIcons.strokeRoundedDelete02,
-                                                                      color: kNeutral500,
-                                                                      size: 20.0,
+                                                                    HugeIcon(
+                                                                      icon: HugeIcons
+                                                                          .strokeRoundedDelete02,
+                                                                      color:
+                                                                          kNeutral500,
+                                                                      size:
+                                                                          20.0,
                                                                     ),
-                                                                    const SizedBox(width: 4.0),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
                                                                     Text(
-                                                                      lang.S.of(context).delete,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
+                                                                      lang.S
+                                                                          .of(context)
+                                                                          .delete,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                              color: kNeutral500),
                                                                     ),
                                                                   ],
                                                                 )),
                                                           ],
                                                           onSelected: (value) {
-                                                            context.go('$value');
+                                                            context
+                                                                .go('$value');
                                                             // Navigator.pushNamed(context, '$value');
                                                           },
                                                           child: Center(
                                                             child: Container(
                                                                 height: 18,
                                                                 width: 18,
-                                                                alignment: Alignment.centerRight,
-                                                                child: const Icon(
-                                                                  Icons.more_vert_sharp,
+                                                                alignment: Alignment
+                                                                    .centerRight,
+                                                                child:
+                                                                    const Icon(
+                                                                  Icons
+                                                                      .more_vert_sharp,
                                                                   size: 18,
                                                                 )),
                                                           ),
@@ -679,7 +811,8 @@ class _CustomerListState extends State<CustomerList> {
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
@@ -691,16 +824,24 @@ class _CustomerListState extends State<CustomerList> {
                                     Row(
                                       children: [
                                         InkWell(
-                                          overlayColor: MaterialStateProperty.all<Color>(Colors.grey),
+                                          overlayColor:
+                                              MaterialStateProperty.all<Color>(
+                                                  Colors.grey),
                                           hoverColor: Colors.grey,
-                                          onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                          onTap: _currentPage > 1
+                                              ? () =>
+                                                  setState(() => _currentPage--)
+                                              : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
-                                              borderRadius: const BorderRadius.only(
-                                                bottomLeft: Radius.circular(4.0),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomLeft:
+                                                    Radius.circular(4.0),
                                                 topLeft: Radius.circular(4.0),
                                               ),
                                             ),
@@ -713,13 +854,15 @@ class _CustomerListState extends State<CustomerList> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
                                             color: kMainColor,
                                           ),
                                           child: Center(
                                             child: Text(
                                               '$_currentPage',
-                                              style: const TextStyle(color: Colors.white),
+                                              style: const TextStyle(
+                                                  color: Colors.white),
                                             ),
                                           ),
                                         ),
@@ -727,7 +870,8 @@ class _CustomerListState extends State<CustomerList> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(color: kBorderColorTextField),
+                                            border: Border.all(
+                                                color: kBorderColorTextField),
                                             color: Colors.transparent,
                                           ),
                                           child: Center(
@@ -737,20 +881,32 @@ class _CustomerListState extends State<CustomerList> {
                                           ),
                                         ),
                                         InkWell(
-                                          hoverColor: Colors.blue.withOpacity(0.1),
-                                          overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                          onTap: _currentPage * _customerPerPage < showAbleCustomer.length ? () => setState(() => _currentPage++) : null,
+                                          hoverColor:
+                                              Colors.blue.withOpacity(0.1),
+                                          overlayColor:
+                                              MaterialStateProperty.all<Color>(
+                                                  Colors.blue),
+                                          onTap: _currentPage *
+                                                      _customerPerPage <
+                                                  showAbleCustomer.length
+                                              ? () =>
+                                                  setState(() => _currentPage++)
+                                              : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
-                                              borderRadius: const BorderRadius.only(
-                                                bottomRight: Radius.circular(4.0),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomRight:
+                                                    Radius.circular(4.0),
                                                 topRight: Radius.circular(4.0),
                                               ),
                                             ),
-                                            child: const Center(child: Text('Next')),
+                                            child: const Center(
+                                                child: Text('Next')),
                                           ),
                                         ),
                                       ],

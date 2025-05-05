@@ -61,7 +61,8 @@ class _PurchaseState extends State<Purchase> {
   String getTotalAmount() {
     double total = 0.0;
     for (var item in cartList) {
-      total = total + (double.parse(item.productPurchasePrice) * item.productStock.toInt());
+      total = total +
+          (double.parse(item.productPurchasePrice) * item.productStock.toInt());
     }
     return total.toStringAsFixed(2);
   }
@@ -119,11 +120,15 @@ class _PurchaseState extends State<Purchase> {
   );
 
   DropdownButton<String> getResult(List<CustomerModel> model) {
-    List<DropdownMenuItem<String>> dropDownItems = [const DropdownMenuItem(value: 'Guest', child: Text('Guest'))];
+    List<DropdownMenuItem<String>> dropDownItems = [
+      const DropdownMenuItem(value: 'Guest', child: Text('Guest'))
+    ];
     for (var des in model) {
       var item = DropdownMenuItem(
         value: des.phoneNumber,
-        child: FittedBox(fit: BoxFit.scaleDown, child: Text('${des.customerName} ${des.phoneNumber}')),
+        child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('${des.customerName} ${des.phoneNumber}')),
       );
       dropDownItems.add(item);
     }
@@ -163,7 +168,11 @@ class _PurchaseState extends State<Purchase> {
   DateTime selectedDueDate = DateTime.now();
 
   Future<void> _selectedDueDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDueDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDueDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDueDate) {
       setState(() {
         selectedDueDate = picked;
@@ -269,16 +278,22 @@ class _PurchaseState extends State<Purchase> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                          padding: const EdgeInsets.only(
+                              top: 10.0, left: 10.0, right: 10.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Text(
                                 "${product.productName} (${product.productStock})",
-                                style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                                style: kTextStyle.copyWith(
+                                    color: kTitleColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20.0),
                               ),
                               const Spacer(),
-                              const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                              const Icon(FeatherIcons.x,
+                                      color: kTitleColor, size: 25.0)
+                                  .onTap(() => {finish(context)})
                             ],
                           ),
                         ),
@@ -295,24 +310,34 @@ class _PurchaseState extends State<Purchase> {
                                       validator: (value) {
                                         if (value.isEmptyOrNull) {
                                           return 'Please enter Purchase Price';
-                                        } else if (double.tryParse(value!) == null && !value.isEmptyOrNull) {
+                                        } else if (double.tryParse(value!) ==
+                                                null &&
+                                            !value.isEmptyOrNull) {
                                           return 'Enter Price in number.';
                                         } else {
                                           return null;
                                         }
                                       },
-                                      initialValue: product.productPurchasePrice,
+                                      initialValue:
+                                          product.productPurchasePrice,
                                       showCursor: true,
                                       cursorColor: kTitleColor,
                                       onSaved: (value) {
                                         editedPurchasePrice = value!;
                                       },
                                       decoration: kInputDecoration.copyWith(
-                                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
-                                        labelText: lang.S.of(context).purchasePrice,
-                                        hintText: lang.S.of(context).enterPurchasePrice,
-                                        hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                        labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                        border: const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(30))),
+                                        labelText:
+                                            lang.S.of(context).purchasePrice,
+                                        hintText: lang.S
+                                            .of(context)
+                                            .enterPurchasePrice,
+                                        hintStyle: kTextStyle.copyWith(
+                                            color: kGreyTextColor),
+                                        labelStyle: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ),
                                   ),
@@ -322,7 +347,9 @@ class _PurchaseState extends State<Purchase> {
                                       validator: (value) {
                                         if (value.isEmptyOrNull) {
                                           return 'Please enter Sale Price';
-                                        } else if (double.tryParse(value!) == null && !value.isEmptyOrNull) {
+                                        } else if (double.tryParse(value!) ==
+                                                null &&
+                                            !value.isEmptyOrNull) {
                                           return 'Enter Price in number.';
                                         } else {
                                           return null;
@@ -335,11 +362,17 @@ class _PurchaseState extends State<Purchase> {
                                         editedSalePrice = value!;
                                       },
                                       decoration: kInputDecoration.copyWith(
-                                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
-                                        labelText: lang.S.of(context).salePrices,
-                                        hintText: lang.S.of(context).enterSalePrice,
-                                        hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                        labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                        border: const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(30))),
+                                        labelText:
+                                            lang.S.of(context).salePrices,
+                                        hintText:
+                                            lang.S.of(context).enterSalePrice,
+                                        hintStyle: kTextStyle.copyWith(
+                                            color: kGreyTextColor),
+                                        labelStyle: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ),
                                   ),
@@ -360,11 +393,17 @@ class _PurchaseState extends State<Purchase> {
                                         editDealerPrice = value!;
                                       },
                                       decoration: kInputDecoration.copyWith(
-                                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
-                                        labelText: lang.S.of(context).dealerPrice,
-                                        hintText: lang.S.of(context).enterDealePrice,
-                                        hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                        labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                        border: const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(30))),
+                                        labelText:
+                                            lang.S.of(context).dealerPrice,
+                                        hintText:
+                                            lang.S.of(context).enterDealePrice,
+                                        hintStyle: kTextStyle.copyWith(
+                                            color: kGreyTextColor),
+                                        labelStyle: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ),
                                   ),
@@ -374,18 +413,24 @@ class _PurchaseState extends State<Purchase> {
                                       validator: (value) {
                                         return null;
                                       },
-                                      initialValue: product.productWholeSalePrice,
+                                      initialValue:
+                                          product.productWholeSalePrice,
                                       showCursor: true,
                                       cursorColor: kTitleColor,
                                       onSaved: (value) {
                                         editWholesalerPrice = value!;
                                       },
                                       decoration: kInputDecoration.copyWith(
-                                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
-                                        labelText: lang.S.of(context).wholeSaleprice,
+                                        border: const OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(30))),
+                                        labelText:
+                                            lang.S.of(context).wholeSaleprice,
                                         hintText: lang.S.of(context).enterPrice,
-                                        hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                        labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                        hintStyle: kTextStyle.copyWith(
+                                            color: kGreyTextColor),
+                                        labelStyle: kTextStyle.copyWith(
+                                            color: kTitleColor),
                                       ),
                                     ),
                                   ),
@@ -436,11 +481,16 @@ class _PurchaseState extends State<Purchase> {
                                 },
                                 textFieldType: TextFieldType.NAME,
                                 decoration: kInputDecoration.copyWith(
-                                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
+                                  border: const OutlineInputBorder(
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(30))),
                                   labelText: lang.S.of(context).serialNumber,
-                                  hintText: lang.S.of(context).enterSerialNumber,
-                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                  hintText:
+                                      lang.S.of(context).enterSerialNumber,
+                                  hintStyle: kTextStyle.copyWith(
+                                      color: kGreyTextColor),
+                                  labelStyle:
+                                      kTextStyle.copyWith(color: kTitleColor),
                                 ),
                               ),
                               const SizedBox(height: 20.0),
@@ -449,16 +499,22 @@ class _PurchaseState extends State<Purchase> {
                               Container(
                                 width: 500,
                                 height: 100,
-                                decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                decoration: BoxDecoration(
+                                    border: Border.all(
+                                        width: 1, color: Colors.grey),
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(10))),
                                 child: GridView.builder(
                                     shrinkWrap: true,
                                     itemCount: serialNumberList.length,
-                                    itemBuilder: (BuildContext context, int index) {
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
                                       if (serialNumberList.isNotEmpty) {
                                         return Padding(
                                           padding: const EdgeInsets.all(10.0),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
                                             children: [
                                               Text(
                                                 '${serialNumberList[index]},',
@@ -467,7 +523,8 @@ class _PurchaseState extends State<Purchase> {
                                               GestureDetector(
                                                   onTap: () {
                                                     setState1(() {
-                                                      serialNumberList.removeAt(index);
+                                                      serialNumberList
+                                                          .removeAt(index);
                                                     });
                                                   },
                                                   child: const Icon(
@@ -479,10 +536,13 @@ class _PurchaseState extends State<Purchase> {
                                           ),
                                         );
                                       } else {
-                                        return Text(lang.S.of(context).noSerialNumberFound);
+                                        return Text(lang.S
+                                            .of(context)
+                                            .noSerialNumberFound);
                                       }
                                     },
-                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: 3,
                                       childAspectRatio: 4,
                                       crossAxisSpacing: 1,
@@ -498,7 +558,11 @@ class _PurchaseState extends State<Purchase> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Container(
-                                padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.only(
+                                    left: 30.0,
+                                    right: 30.0,
+                                    top: 10.0,
+                                    bottom: 10.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(5.0),
                                   color: kRedTextColor,
@@ -513,11 +577,20 @@ class _PurchaseState extends State<Purchase> {
                             GestureDetector(
                               onTap: () {
                                 if (validateAndSave()) {
-                                  cartList[index].serialNumber = serialNumberList;
-                                  cartList[index].productPurchasePrice = double.parse(editedPurchasePrice).toStringAsFixed(2);
-                                  cartList[index].productSalePrice = double.parse(editedSalePrice).toStringAsFixed(2);
-                                  cartList[index].productDealerPrice = double.parse(editDealerPrice).toStringAsFixed(2);
-                                  cartList[index].productWholeSalePrice = double.parse(editWholesalerPrice).toStringAsFixed(2);
+                                  cartList[index].serialNumber =
+                                      serialNumberList;
+                                  cartList[index].productPurchasePrice =
+                                      double.parse(editedPurchasePrice)
+                                          .toStringAsFixed(2);
+                                  cartList[index].productSalePrice =
+                                      double.parse(editedSalePrice)
+                                          .toStringAsFixed(2);
+                                  cartList[index].productDealerPrice =
+                                      double.parse(editDealerPrice)
+                                          .toStringAsFixed(2);
+                                  cartList[index].productWholeSalePrice =
+                                      double.parse(editWholesalerPrice)
+                                          .toStringAsFixed(2);
 
                                   setState(() {});
 
@@ -525,7 +598,11 @@ class _PurchaseState extends State<Purchase> {
                                 }
                               },
                               child: Container(
-                                padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.only(
+                                    left: 30.0,
+                                    right: 30.0,
+                                    top: 10.0,
+                                    bottom: 10.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(5.0),
                                   color: kBlueTextColor,
@@ -586,16 +663,22 @@ class _PurchaseState extends State<Purchase> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                      padding: const EdgeInsets.only(
+                          top: 10.0, left: 10.0, right: 10.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Text(
                             lang.S.of(context).hold,
-                            style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                            style: kTextStyle.copyWith(
+                                color: kTitleColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20.0),
                           ),
                           const Spacer(),
-                          const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                          const Icon(FeatherIcons.x,
+                                  color: kTitleColor, size: 25.0)
+                              .onTap(() => {finish(context)})
                         ],
                       ),
                     ),
@@ -612,8 +695,10 @@ class _PurchaseState extends State<Purchase> {
                             decoration: kInputDecoration.copyWith(
                               labelText: lang.S.of(context).holdNumber,
                               hintText: '2090.00',
-                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                              hintStyle:
+                                  kTextStyle.copyWith(color: kGreyTextColor),
+                              labelStyle:
+                                  kTextStyle.copyWith(color: kTitleColor),
                             ),
                           ),
                           const SizedBox(height: 20.0),
@@ -621,7 +706,11 @@ class _PurchaseState extends State<Purchase> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 30.0,
+                                      right: 30.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     color: kRedTextColor,
@@ -632,7 +721,11 @@ class _PurchaseState extends State<Purchase> {
                                   )).onTap(() => {finish(context)}),
                               const SizedBox(width: 10.0),
                               Container(
-                                  padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 30.0,
+                                      right: 30.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     color: kBlueTextColor,
@@ -684,8 +777,10 @@ class _PurchaseState extends State<Purchase> {
   TextEditingController qtyController = TextEditingController();
   TextEditingController priceController = TextEditingController();
   TextEditingController nameCodeCategoryController = TextEditingController();
-  TextEditingController discountPercentageEditingController = TextEditingController();
-  TextEditingController discountAmountEditingController = TextEditingController();
+  TextEditingController discountPercentageEditingController =
+      TextEditingController();
+  TextEditingController discountAmountEditingController =
+      TextEditingController();
   double discountAmount = 0;
   double percentage = 0;
 
@@ -754,7 +849,8 @@ class _PurchaseState extends State<Purchase> {
     return Consumer(
       builder: (context, consumerRef, __) {
         final wareHouseList = consumerRef.watch(warehouseProvider);
-        AsyncValue<List<ProductModel>> productList = consumerRef.watch(productProvider);
+        AsyncValue<List<ProductModel>> productList =
+            consumerRef.watch(productProvider);
         final customers = consumerRef.watch(allCustomerProvider);
         final personalData = consumerRef.watch(profileDetailsProvider);
         return personalData.when(data: (data) {
@@ -827,7 +923,8 @@ class _PurchaseState extends State<Purchase> {
                                       child: Center(
                                         child: Text(
                                           '$globalCurrency${myFormat.format(double.tryParse(previousDue) ?? 0)}',
-                                          style: theme.textTheme.titleMedium?.copyWith(
+                                          style: theme.textTheme.titleMedium
+                                              ?.copyWith(
                                             fontWeight: FontWeight.w500,
                                             color: kNeutral700,
                                           ),
@@ -900,7 +997,9 @@ class _PurchaseState extends State<Purchase> {
                                     Flexible(
                                       child: Text(
                                         lang.S.of(context).dashBoard,
-                                        style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                        style: kTextStyle.copyWith(
+                                            color: kTitleColor,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ],
@@ -923,15 +1022,19 @@ class _PurchaseState extends State<Purchase> {
                                   return Container(
                                     height: 40,
                                     width: screenWidth,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5),
                                       border: Border.all(color: kNeutral400),
                                     ),
                                     child: Theme(
-                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor),
+                                      data: ThemeData(
+                                          highlightColor: dropdownItemColor,
+                                          focusColor: Colors.transparent,
+                                          hoverColor: dropdownItemColor),
                                       child: DropdownButtonHideUnderline(
-                                        child: getWare(list: warehouse ?? []),
+                                        child: getWare(list: warehouse),
                                       ),
                                     ),
                                   );
@@ -979,7 +1082,8 @@ class _PurchaseState extends State<Purchase> {
                                       child: Center(
                                           child: Text(
                                         "#${data.purchaseInvoiceCounter.toString()}",
-                                        style: theme.textTheme.titleMedium?.copyWith(
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
                                           fontWeight: FontWeight.w500,
                                           color: kNeutral700,
                                         ),
@@ -1003,7 +1107,9 @@ class _PurchaseState extends State<Purchase> {
                                 List<CustomerModel> suppliersList = [];
 
                                 for (var value1 in allCustomers) {
-                                  listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
+                                  listOfPhoneNumber.add(value1.phoneNumber
+                                      .removeAllWhiteSpace()
+                                      .toLowerCase());
                                   if (value1.type == 'Supplier') {
                                     suppliersList.add(value1);
                                   }
@@ -1015,12 +1121,29 @@ class _PurchaseState extends State<Purchase> {
                                       child: Container(
                                           height: 40,
                                           width: screenWidth,
-                                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10),
                                           decoration: BoxDecoration(
-                                            borderRadius: const BorderRadius.only(topLeft: Radius.circular(5), bottomLeft: Radius.circular(5)),
-                                            border: Border.all(color: kNeutral400),
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                                    topLeft: Radius.circular(5),
+                                                    bottomLeft:
+                                                        Radius.circular(5)),
+                                            border:
+                                                Border.all(color: kNeutral400),
                                           ),
-                                          child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getResult(suppliersList)))),
+                                          child: Theme(
+                                              data: ThemeData(
+                                                  highlightColor:
+                                                      dropdownItemColor,
+                                                  focusColor:
+                                                      Colors.transparent,
+                                                  hoverColor:
+                                                      dropdownItemColor),
+                                              child:
+                                                  DropdownButtonHideUnderline(
+                                                      child: getResult(
+                                                          suppliersList)))),
                                     ),
                                     GestureDetector(
                                       onTap: () {
@@ -1028,7 +1151,8 @@ class _PurchaseState extends State<Purchase> {
                                           '/add-customer',
                                           extra: {
                                             'typeOfCustomerAdd': 'Supplier',
-                                            'listOfPhoneNumber': listOfPhoneNumber,
+                                            'listOfPhoneNumber':
+                                                listOfPhoneNumber,
                                           },
                                         );
                                       },
@@ -1038,7 +1162,9 @@ class _PurchaseState extends State<Purchase> {
                                         padding: const EdgeInsets.all(10),
                                         decoration: const BoxDecoration(
                                           color: kBlueTextColor,
-                                          borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
+                                          borderRadius: BorderRadius.only(
+                                              topRight: Radius.circular(5),
+                                              bottomRight: Radius.circular(5)),
                                         ),
                                         child: const Icon(
                                           FeatherIcons.userPlus,
@@ -1070,10 +1196,19 @@ class _PurchaseState extends State<Purchase> {
                               padding: const EdgeInsets.all(12.0),
                               child: productList.when(data: (product) {
                                 for (var element in product) {
-                                  allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
-                                  allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
-                                  warehouseIdList.add(element.warehouseId.removeAllWhiteSpace().toLowerCase());
-                                  warehouseBasedProductModel.add(WarehouseBasedProductModel(element.productName, element.warehouseId));
+                                  allProductsNameList.add(element.productName
+                                      .removeAllWhiteSpace()
+                                      .toLowerCase());
+                                  allProductsCodeList.add(element.productCode
+                                      .removeAllWhiteSpace()
+                                      .toLowerCase());
+                                  warehouseIdList.add(element.warehouseId
+                                      .removeAllWhiteSpace()
+                                      .toLowerCase());
+                                  warehouseBasedProductModel.add(
+                                      WarehouseBasedProductModel(
+                                          element.productName,
+                                          element.warehouseId));
                                 }
                                 return SizedBox(
                                   height: 40.0,
@@ -1093,21 +1228,28 @@ class _PurchaseState extends State<Purchase> {
                                     onFieldSubmitted: (value) {
                                       if (value != '') {
                                         if (product.isEmpty) {
-                                          EasyLoading.showError('No Product Found');
+                                          EasyLoading.showError(
+                                              'No Product Found');
                                         }
-                                        for (int i = 0; i < product.length; i++) {
+                                        for (int i = 0;
+                                            i < product.length;
+                                            i++) {
                                           if (product[i].productCode == value) {
-                                            ProductModel cartProduct = product[i];
+                                            ProductModel cartProduct =
+                                                product[i];
                                             cartProduct.serialNumber = [];
                                             cartProduct.productStock = '1';
                                             setState(() {
-                                              if (!uniqueCheck(product[i].productCode)) {
+                                              if (!uniqueCheck(
+                                                  product[i].productCode)) {
                                                 cartList.add(cartProduct);
-                                                nameCodeCategoryController.clear();
+                                                nameCodeCategoryController
+                                                    .clear();
                                                 nameFocus.requestFocus();
                                                 searchProductCode = '';
                                               } else {
-                                                nameCodeCategoryController.clear();
+                                                nameCodeCategoryController
+                                                    .clear();
                                                 nameFocus.requestFocus();
                                                 searchProductCode = '';
                                               }
@@ -1127,23 +1269,33 @@ class _PurchaseState extends State<Purchase> {
                                     },
                                     textFieldType: TextFieldType.NAME,
                                     decoration: InputDecoration(
-                                      prefixIcon: Icon(MdiIcons.barcode, color: kTitleColor, size: 18.0),
+                                      prefixIcon: Icon(MdiIcons.barcode,
+                                          color: kTitleColor, size: 18.0),
                                       suffixIcon: Container(
                                         height: 10,
                                         width: 10,
-                                        decoration: const BoxDecoration(borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)), color: kBlueTextColor),
+                                        decoration: const BoxDecoration(
+                                            borderRadius: BorderRadius.only(
+                                                topRight: Radius.circular(5),
+                                                bottomRight:
+                                                    Radius.circular(5)),
+                                            color: kBlueTextColor),
                                         child: const Center(
-                                          child: Icon(FeatherIcons.plusSquare, color: Colors.white, size: 18.0),
+                                          child: Icon(FeatherIcons.plusSquare,
+                                              color: Colors.white, size: 18.0),
                                         ),
                                       ).onTap(() => context.push(
                                             '/product/add-product',
                                             extra: {
-                                              'allProductsCodeList': allProductsCodeList,
+                                              'allProductsCodeList':
+                                                  allProductsCodeList,
                                               'warehouseBasedProductModel': [],
                                             },
                                           )),
-                                      hintText: lang.S.of(context).nameCodeOrCateogry,
-                                      hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                      hintText:
+                                          lang.S.of(context).nameCodeOrCateogry,
+                                      hintStyle: kTextStyle.copyWith(
+                                          color: kGreyTextColor),
                                       border: InputBorder.none,
                                     ),
                                   ),
@@ -1199,7 +1351,10 @@ class _PurchaseState extends State<Purchase> {
                           xs: 100,
                           child: IntrinsicWidth(
                             child: Container(
-                              decoration: const BoxDecoration(color: kWhite, borderRadius: BorderRadius.all(Radius.circular(15))),
+                              decoration: const BoxDecoration(
+                                  color: kWhite,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(15))),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -1208,75 +1363,157 @@ class _PurchaseState extends State<Purchase> {
                                     thumbVisibility: true,
                                     thickness: 6,
                                     child: LayoutBuilder(
-                                      builder: (BuildContext context, BoxConstraints constraints) {
+                                      builder: (BuildContext context,
+                                          BoxConstraints constraints) {
                                         final kWidth = constraints.maxWidth;
                                         return SingleChildScrollView(
                                           controller: _horizontalController,
                                           scrollDirection: Axis.horizontal,
                                           child: Container(
-                                            height: context.height() < 720 ? 720 - 350 : context.height() - 350,
+                                            height: context.height() < 720
+                                                ? 720 - 350
+                                                : context.height() - 350,
                                             constraints: BoxConstraints(
                                               minWidth: kWidth,
                                             ),
-                                            decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withOpacity(0.3)))),
+                                            decoration: BoxDecoration(
+                                                border: Border(
+                                                    bottom: BorderSide(
+                                                        width: 1,
+                                                        color: kGreyTextColor
+                                                            .withOpacity(
+                                                                0.3)))),
                                             child: Theme(
                                               data: theme.copyWith(
-                                                dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                                dividerTheme:
+                                                    const DividerThemeData(
+                                                        color:
+                                                            Colors.transparent),
                                               ),
                                               child: DataTable(
                                                   border: const TableBorder(
-                                                    horizontalInside: BorderSide(
+                                                    horizontalInside:
+                                                        BorderSide(
                                                       width: 1,
                                                       color: kNeutral300,
                                                     ),
                                                   ),
-                                                  dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                  dataRowColor:
+                                                      const WidgetStatePropertyAll(
+                                                          whiteColor),
+                                                  headingRowColor:
+                                                      WidgetStateProperty.all(
+                                                          const Color(
+                                                              0xFFF8F3FF)),
                                                   showBottomBorder: false,
                                                   dividerThickness: 0.0,
-                                                  headingTextStyle: theme.textTheme.titleMedium,
-                                                  dataTextStyle: theme.textTheme.bodyLarge,
+                                                  headingTextStyle: theme
+                                                      .textTheme.titleMedium,
+                                                  dataTextStyle:
+                                                      theme.textTheme.bodyLarge,
                                                   columns: [
-                                                    DataColumn(label: Text(lang.S.of(context).productName)),
-                                                    DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).quantity)),
-                                                    DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).unit)),
-                                                    DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).purchase)),
-                                                    DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).total)),
-                                                    DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).action)),
+                                                    DataColumn(
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .productName)),
+                                                    DataColumn(
+                                                        headingRowAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .quantity)),
+                                                    DataColumn(
+                                                        headingRowAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .unit)),
+                                                    DataColumn(
+                                                        headingRowAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .purchase)),
+                                                    DataColumn(
+                                                        headingRowAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .total)),
+                                                    DataColumn(
+                                                        headingRowAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        label: Text(lang.S
+                                                            .of(context)
+                                                            .action)),
                                                   ],
-                                                  rows: List.generate(cartList.length, (index) {
-                                                    TextEditingController quantityController = TextEditingController(text: cartList[index].productStock.toString());
+                                                  rows: List.generate(
+                                                      cartList.length, (index) {
+                                                    TextEditingController
+                                                        quantityController =
+                                                        TextEditingController(
+                                                            text: cartList[
+                                                                    index]
+                                                                .productStock
+                                                                .toString());
                                                     return DataRow(cells: [
                                                       //-------------name--------------------
                                                       DataCell(Column(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
                                                         children: [
                                                           Text(
-                                                            cartList[index].productName,
+                                                            cartList[index]
+                                                                .productName,
                                                             maxLines: 1,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
-                                                          const SizedBox(width: 5),
+                                                          const SizedBox(
+                                                              width: 5),
 
                                                           ///_________serial_edit_________________________________________________________
                                                           Row(
                                                             children: [
                                                               Text(
-                                                                lang.S.of(context).editOrAddSerial,
+                                                                lang.S
+                                                                    .of(context)
+                                                                    .editOrAddSerial,
                                                                 maxLines: 1,
-                                                                style: theme.textTheme.bodySmall,
-                                                                overflow: TextOverflow.ellipsis,
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .bodySmall,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
                                                               ),
-                                                              const SizedBox(width: 5),
+                                                              const SizedBox(
+                                                                  width: 5),
                                                               GestureDetector(
                                                                 onTap: () {
-                                                                  productEditPopUp(product: cartList[index], index: index);
+                                                                  productEditPopUp(
+                                                                      product:
+                                                                          cartList[
+                                                                              index],
+                                                                      index:
+                                                                          index);
                                                                 },
-                                                                child: const Icon(
-                                                                  Icons.edit_note,
+                                                                child:
+                                                                    const Icon(
+                                                                  Icons
+                                                                      .edit_note,
                                                                   size: 18,
-                                                                  color: kBlueTextColor,
+                                                                  color:
+                                                                      kBlueTextColor,
                                                                 ),
                                                               ),
                                                             ],
@@ -1286,57 +1523,102 @@ class _PurchaseState extends State<Purchase> {
                                                       //-------------quantity------------------
                                                       DataCell(Center(
                                                         child: Row(
-                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
                                                           children: [
                                                             GestureDetector(
                                                               onTap: () {
                                                                 setState(() {
-                                                                  int stock = int.tryParse(cartList[index].productStock) ?? 1;
-                                                                  if (stock > 1) {
+                                                                  int stock =
+                                                                      int.tryParse(
+                                                                              cartList[index].productStock) ??
+                                                                          1;
+                                                                  if (stock >
+                                                                      1) {
                                                                     stock--;
                                                                   } else {
                                                                     stock = 1;
                                                                   }
-                                                                  cartList[index].productStock = stock.toString();
-                                                                  toast(cartList[index].productStock = stock.toString());
+                                                                  cartList[index]
+                                                                          .productStock =
+                                                                      stock
+                                                                          .toString();
+                                                                  toast(cartList[
+                                                                              index]
+                                                                          .productStock =
+                                                                      stock
+                                                                          .toString());
                                                                 });
                                                               },
                                                               child: Icon(
-                                                                FontAwesomeIcons.solidSquareMinus,
-                                                                color: kBlueTextColor,
+                                                                FontAwesomeIcons
+                                                                    .solidSquareMinus,
+                                                                color:
+                                                                    kBlueTextColor,
                                                               ),
                                                             ),
-                                                            const SizedBox(width: 4),
+                                                            const SizedBox(
+                                                                width: 4),
                                                             SizedBox(
                                                               width: 70,
                                                               height: 32,
-                                                              child: TextFormField(
-                                                                textAlign: TextAlign.center,
-                                                                controller: quantityController,
-                                                                onChanged: (value) {
-                                                                  if (value == '' || value == '0') {
-                                                                    cartList[index].productStock = '1';
+                                                              child:
+                                                                  TextFormField(
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                controller:
+                                                                    quantityController,
+                                                                onChanged:
+                                                                    (value) {
+                                                                  if (value ==
+                                                                          '' ||
+                                                                      value ==
+                                                                          '0') {
+                                                                    cartList[index]
+                                                                            .productStock =
+                                                                        '1';
                                                                   } else {
-                                                                    cartList[index].productStock = value;
+                                                                    cartList[index]
+                                                                            .productStock =
+                                                                        value;
                                                                   }
                                                                 },
-                                                                onFieldSubmitted: (value) {
-                                                                  if (value == '' || value == '0') {
-                                                                    setState(() {
-                                                                      cartList[index].productStock = '1';
+                                                                onFieldSubmitted:
+                                                                    (value) {
+                                                                  if (value ==
+                                                                          '' ||
+                                                                      value ==
+                                                                          '0') {
+                                                                    setState(
+                                                                        () {
+                                                                      cartList[index]
+                                                                              .productStock =
+                                                                          '1';
                                                                     });
                                                                   } else {
-                                                                    setState(() {
-                                                                      cartList[index].productStock = value;
+                                                                    setState(
+                                                                        () {
+                                                                      cartList[index]
+                                                                              .productStock =
+                                                                          value;
                                                                     });
                                                                   }
                                                                 },
-                                                                decoration: kInputDecoration.copyWith(
-                                                                  contentPadding: const EdgeInsets.all(4),
+                                                                decoration:
+                                                                    kInputDecoration
+                                                                        .copyWith(
+                                                                  contentPadding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          4),
                                                                 ),
                                                                 inputFormatters: [
-                                                                  FilteringTextInputFormatter.digitsOnly,
-                                                                  LengthLimitingTextInputFormatter(6),
+                                                                  FilteringTextInputFormatter
+                                                                      .digitsOnly,
+                                                                  LengthLimitingTextInputFormatter(
+                                                                      6),
                                                                 ],
                                                               ),
                                                             ),
@@ -1346,15 +1628,27 @@ class _PurchaseState extends State<Purchase> {
                                                             GestureDetector(
                                                               onTap: () {
                                                                 setState(() {
-                                                                  int stock = int.tryParse(cartList[index].productStock) ?? 1;
+                                                                  int stock =
+                                                                      int.tryParse(
+                                                                              cartList[index].productStock) ??
+                                                                          1;
                                                                   stock++;
-                                                                  cartList[index].productStock = stock.toString();
-                                                                  toast(cartList[index].productStock = stock.toString());
+                                                                  cartList[index]
+                                                                          .productStock =
+                                                                      stock
+                                                                          .toString();
+                                                                  toast(cartList[
+                                                                              index]
+                                                                          .productStock =
+                                                                      stock
+                                                                          .toString());
                                                                 });
                                                               },
                                                               child: Icon(
-                                                                FontAwesomeIcons.solidSquarePlus,
-                                                                color: kBlueTextColor,
+                                                                FontAwesomeIcons
+                                                                    .solidSquarePlus,
+                                                                color:
+                                                                    kBlueTextColor,
                                                               ),
                                                             ),
                                                           ],
@@ -1363,7 +1657,8 @@ class _PurchaseState extends State<Purchase> {
                                                       DataCell(
                                                         Center(
                                                           child: Text(
-                                                            cartList[index].productUnit,
+                                                            cartList[index]
+                                                                .productUnit,
                                                           ),
                                                         ),
                                                       ),
@@ -1391,7 +1686,8 @@ class _PurchaseState extends State<Purchase> {
                                                             color: redColor,
                                                           ).onTap(() {
                                                             setState(() {
-                                                              cartList.removeAt(index);
+                                                              cartList.removeAt(
+                                                                  index);
                                                             });
                                                           }),
                                                         ),
@@ -1417,10 +1713,14 @@ class _PurchaseState extends State<Purchase> {
                                             md: 6,
                                             lg: screenWidth < 1600 ? 4 : 6,
                                             child: Padding(
-                                              padding: EdgeInsets.only(bottom: screenWidth < 577 ? 12 : 0),
+                                              padding: EdgeInsets.only(
+                                                  bottom: screenWidth < 577
+                                                      ? 12
+                                                      : 0),
                                               child: Text(
                                                 'Total Item: ${cartList.length}',
-                                                style: theme.textTheme.titleMedium,
+                                                style:
+                                                    theme.textTheme.titleMedium,
                                               ),
                                             ),
                                           ),
@@ -1432,19 +1732,32 @@ class _PurchaseState extends State<Purchase> {
                                                 children: [
                                                   Text(
                                                     lang.S.of(context).subTotal,
-                                                    style: theme.textTheme.bodyLarge,
+                                                    style: theme
+                                                        .textTheme.bodyLarge,
                                                   ),
                                                   const SizedBox(
                                                     width: 10,
                                                   ),
                                                   Flexible(
                                                     child: Container(
-                                                      padding: const EdgeInsets.all(8),
-                                                      decoration: const BoxDecoration(color: kMainColor, borderRadius: BorderRadius.all(Radius.circular(8))),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8),
+                                                      decoration: const BoxDecoration(
+                                                          color: kMainColor,
+                                                          borderRadius:
+                                                              BorderRadius.all(
+                                                                  Radius
+                                                                      .circular(
+                                                                          8))),
                                                       child: Center(
                                                         child: Text(
                                                           "$globalCurrency ${myFormat.format(double.tryParse((getTotalAmount().toDouble() - discountAmount).toStringAsFixed(2)) ?? 0)}",
-                                                          style: theme.textTheme.titleMedium?.copyWith(color: Colors.white),
+                                                          style: theme.textTheme
+                                                              .titleMedium
+                                                              ?.copyWith(
+                                                                  color: Colors
+                                                                      .white),
                                                         ),
                                                       ),
                                                     ),
@@ -1470,7 +1783,8 @@ class _PurchaseState extends State<Purchase> {
                                                 children: [
                                                   Text(
                                                     lang.S.of(context).discount,
-                                                    style: theme.textTheme.bodyLarge,
+                                                    style: theme
+                                                        .textTheme.bodyLarge,
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Flexible(
@@ -1481,50 +1795,119 @@ class _PurchaseState extends State<Purchase> {
                                                             // width: 100,
                                                             height: 40.0,
                                                             child: Center(
-                                                              child: AppTextField(
-                                                                controller: discountPercentageEditingController,
-                                                                onChanged: (value) {
-                                                                  if (value == '') {
-                                                                    setState(() {
-                                                                      percentage = 0.0;
-                                                                      discountAmountEditingController.text = 0.toString();
+                                                              child:
+                                                                  AppTextField(
+                                                                controller:
+                                                                    discountPercentageEditingController,
+                                                                onChanged:
+                                                                    (value) {
+                                                                  if (value ==
+                                                                      '') {
+                                                                    setState(
+                                                                        () {
+                                                                      percentage =
+                                                                          0.0;
+                                                                      discountAmountEditingController
+                                                                              .text =
+                                                                          0.toString();
                                                                     });
                                                                   } else {
-                                                                    if (value.toInt() <= 100) {
-                                                                      setState(() {
-                                                                        discountAmount = double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
-                                                                        discountAmountEditingController.text = discountAmount.toString();
+                                                                    if (value
+                                                                            .toInt() <=
+                                                                        100) {
+                                                                      setState(
+                                                                          () {
+                                                                        discountAmount =
+                                                                            double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
+                                                                        discountAmountEditingController.text =
+                                                                            discountAmount.toString();
                                                                       });
                                                                     } else {
-                                                                      setState(() {
-                                                                        discountAmount = 0;
-                                                                        discountAmountEditingController.clear();
-                                                                        discountPercentageEditingController.clear();
+                                                                      setState(
+                                                                          () {
+                                                                        discountAmount =
+                                                                            0;
+                                                                        discountAmountEditingController
+                                                                            .clear();
+                                                                        discountPercentageEditingController
+                                                                            .clear();
                                                                       });
-                                                                      EasyLoading.showError('Enter a valid Discount');
+                                                                      EasyLoading
+                                                                          .showError(
+                                                                              'Enter a valid Discount');
                                                                     }
                                                                   }
                                                                 },
-                                                                textAlign: TextAlign.right,
-                                                                decoration: InputDecoration(
-                                                                  contentPadding: const EdgeInsets.only(right: 6.0),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .right,
+                                                                decoration:
+                                                                    InputDecoration(
+                                                                  contentPadding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          right:
+                                                                              6.0),
                                                                   hintText: '0',
-                                                                  border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                  enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                  disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                  focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                  prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                                                  prefixIcon: Container(
-                                                                    padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                                                  border: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: Color(0xFFff5f00))),
+                                                                  enabledBorder: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: Color(0xFFff5f00))),
+                                                                  disabledBorder: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: Color(0xFFff5f00))),
+                                                                  focusedBorder: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: Color(0xFFff5f00))),
+                                                                  prefixIconConstraints: const BoxConstraints(
+                                                                      maxWidth:
+                                                                          30.0,
+                                                                      minWidth:
+                                                                          30.0),
+                                                                  prefixIcon:
+                                                                      Container(
+                                                                    padding: const EdgeInsets
+                                                                        .only(
+                                                                        top:
+                                                                            8.0,
+                                                                        left:
+                                                                            8.0),
                                                                     height: 40,
-                                                                    decoration: const BoxDecoration(color: Color(0xFFff5f00), borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                                                    child: const Text(
+                                                                    decoration: const BoxDecoration(
+                                                                        color: Color(
+                                                                            0xFFff5f00),
+                                                                        borderRadius: BorderRadius.only(
+                                                                            topLeft:
+                                                                                Radius.circular(4.0),
+                                                                            bottomLeft: Radius.circular(4.0))),
+                                                                    child:
+                                                                        const Text(
                                                                       '%',
-                                                                      style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                                                      style: TextStyle(
+                                                                          fontSize:
+                                                                              20.0,
+                                                                          color:
+                                                                              Colors.white),
                                                                     ),
                                                                   ),
                                                                 ),
-                                                                textFieldType: TextFieldType.PHONE,
+                                                                textFieldType:
+                                                                    TextFieldType
+                                                                        .PHONE,
                                                               ),
                                                             ),
                                                           ),
@@ -1537,50 +1920,122 @@ class _PurchaseState extends State<Purchase> {
                                                             // width: 100,
                                                             height: 40.0,
                                                             child: Center(
-                                                              child: AppTextField(
-                                                                controller: discountAmountEditingController,
-                                                                onChanged: (value) {
-                                                                  if (value == '') {
-                                                                    setState(() {
-                                                                      discountAmount = 0;
-                                                                      discountPercentageEditingController.text = 0.toString();
+                                                              child:
+                                                                  AppTextField(
+                                                                controller:
+                                                                    discountAmountEditingController,
+                                                                onChanged:
+                                                                    (value) {
+                                                                  if (value ==
+                                                                      '') {
+                                                                    setState(
+                                                                        () {
+                                                                      discountAmount =
+                                                                          0;
+                                                                      discountPercentageEditingController
+                                                                              .text =
+                                                                          0.toString();
                                                                     });
                                                                   } else {
-                                                                    if (value.toInt() <= getTotalAmount().toDouble()) {
-                                                                      setState(() {
-                                                                        discountAmount = double.parse(value);
-                                                                        discountPercentageEditingController.text = ((discountAmount * 100) / getTotalAmount().toDouble()).toStringAsFixed(1);
+                                                                    if (value
+                                                                            .toInt() <=
+                                                                        getTotalAmount()
+                                                                            .toDouble()) {
+                                                                      setState(
+                                                                          () {
+                                                                        discountAmount =
+                                                                            double.parse(value);
+                                                                        discountPercentageEditingController
+                                                                            .text = ((discountAmount * 100) /
+                                                                                getTotalAmount().toDouble())
+                                                                            .toStringAsFixed(1);
                                                                       });
                                                                     } else {
-                                                                      setState(() {
-                                                                        discountAmount = 0;
-                                                                        discountPercentageEditingController.clear();
-                                                                        discountAmountEditingController.clear();
+                                                                      setState(
+                                                                          () {
+                                                                        discountAmount =
+                                                                            0;
+                                                                        discountPercentageEditingController
+                                                                            .clear();
+                                                                        discountAmountEditingController
+                                                                            .clear();
                                                                       });
-                                                                      EasyLoading.showError('Enter a valid Discount');
+                                                                      EasyLoading
+                                                                          .showError(
+                                                                              'Enter a valid Discount');
                                                                     }
                                                                   }
                                                                 },
-                                                                textAlign: TextAlign.right,
-                                                                decoration: InputDecoration(
-                                                                  contentPadding: const EdgeInsets.only(right: 6.0),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .right,
+                                                                decoration:
+                                                                    InputDecoration(
+                                                                  contentPadding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          right:
+                                                                              6.0),
                                                                   hintText: '0',
-                                                                  border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                  enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                  disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                  focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                  prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                                                  prefixIcon: Container(
-                                                                    padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                                                  border: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: kMainColor)),
+                                                                  enabledBorder: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: kMainColor)),
+                                                                  disabledBorder: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: kMainColor)),
+                                                                  focusedBorder: const OutlineInputBorder(
+                                                                      gapPadding:
+                                                                          0.0,
+                                                                      borderSide:
+                                                                          BorderSide(
+                                                                              color: kMainColor)),
+                                                                  prefixIconConstraints: const BoxConstraints(
+                                                                      maxWidth:
+                                                                          30.0,
+                                                                      minWidth:
+                                                                          30.0),
+                                                                  prefixIcon:
+                                                                      Container(
+                                                                    padding: const EdgeInsets
+                                                                        .only(
+                                                                        top:
+                                                                            8.0,
+                                                                        left:
+                                                                            8.0),
                                                                     height: 40,
-                                                                    decoration: const BoxDecoration(color: kMainColor, borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                                                    child: const Text(
+                                                                    decoration: const BoxDecoration(
+                                                                        color:
+                                                                            kMainColor,
+                                                                        borderRadius: BorderRadius.only(
+                                                                            topLeft:
+                                                                                Radius.circular(4.0),
+                                                                            bottomLeft: Radius.circular(4.0))),
+                                                                    child:
+                                                                        const Text(
                                                                       '\$',
-                                                                      style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                                                      style: TextStyle(
+                                                                          fontSize:
+                                                                              20.0,
+                                                                          color:
+                                                                              Colors.white),
                                                                     ),
                                                                   ),
                                                                 ),
-                                                                textFieldType: TextFieldType.PHONE,
+                                                                textFieldType:
+                                                                    TextFieldType
+                                                                        .PHONE,
                                                               ),
                                                             ),
                                                           ),
@@ -1594,67 +2049,111 @@ class _PurchaseState extends State<Purchase> {
 
                                         ///______________buttons__________________________________________________________
                                         const SizedBox(height: 10),
-                                        ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                          ResponsiveGridCol(
-                                            lg: 6,
-                                            md: 6,
-                                            xs: 12,
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                                onPressed: () {
-                                                  GoRouter.of(context).pop();
-                                                },
-                                                child: Text(
-                                                  lang.S.of(context).cancel,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          ResponsiveGridCol(
-                                              lg: 6,
-                                              md: 6,
-                                              xs: 12,
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(8.0),
-                                                child: ElevatedButton(
-                                                  onPressed: () async {
-                                                    if (await Subscription.subscriptionChecker(item: 'Purchase')) {
-                                                      if (cartList.isEmpty) {
-                                                        EasyLoading.showError('Please Add Some Product first');
-                                                      } else {
-                                                        PurchaseTransactionModel transitionModel = PurchaseTransactionModel(
-                                                          customerAddress: selectedUserName.customerAddress,
-                                                          customerName: selectedUserName.customerName,
-                                                          customerGst: selectedUserName.gst,
-                                                          customerType: selectedUserName.type,
-                                                          customerPhone: selectedUserName.phoneNumber,
-                                                          invoiceNumber: data.purchaseInvoiceCounter.toString(),
-                                                          purchaseDate: DateTime.now().toString(),
-                                                          productList: cartList,
-                                                          discountAmount: double.parse(discountAmount.toStringAsFixed(2)),
-                                                          totalAmount: double.parse((getTotalAmount().toDouble() - discountAmount).toStringAsFixed(2)),
-                                                        );
-                                                        context.push(
-                                                          '/purchase/purchase-payment-popup',
-                                                          extra: {
-                                                            'transitionModel': transitionModel,
-                                                          },
-                                                        );
-                                                      }
-                                                    } else {
-                                                      EasyLoading.showError('Update your plan first\nPurchase Limit is over.');
-                                                    }
-                                                  },
-                                                  child: Text(
-                                                    lang.S.of(context).payment,
+                                        ResponsiveGridRow(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              ResponsiveGridCol(
+                                                lg: 6,
+                                                md: 6,
+                                                xs: 12,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: ElevatedButton(
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    ),
+                                                    onPressed: () {
+                                                      GoRouter.of(context)
+                                                          .pop();
+                                                    },
+                                                    child: Text(
+                                                      lang.S.of(context).cancel,
+                                                    ),
                                                   ),
                                                 ),
-                                              )),
-                                        ]),
+                                              ),
+                                              ResponsiveGridCol(
+                                                  lg: 6,
+                                                  md: 6,
+                                                  xs: 12,
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: ElevatedButton(
+                                                      onPressed: () async {
+                                                        if (await Subscription
+                                                            .subscriptionChecker(
+                                                                item:
+                                                                    'Purchase')) {
+                                                          if (cartList
+                                                              .isEmpty) {
+                                                            EasyLoading.showError(
+                                                                'Please Add Some Product first');
+                                                          } else {
+                                                            PurchaseTransactionModel
+                                                                transitionModel =
+                                                                PurchaseTransactionModel(
+                                                              customerAddress:
+                                                                  selectedUserName
+                                                                      .customerAddress,
+                                                              customerName:
+                                                                  selectedUserName
+                                                                      .customerName,
+                                                              customerGst:
+                                                                  selectedUserName
+                                                                      .gst,
+                                                              customerType:
+                                                                  selectedUserName
+                                                                      .type,
+                                                              customerPhone:
+                                                                  selectedUserName
+                                                                      .phoneNumber,
+                                                              invoiceNumber: data
+                                                                  .purchaseInvoiceCounter
+                                                                  .toString(),
+                                                              purchaseDate:
+                                                                  DateTime.now()
+                                                                      .toString(),
+                                                              productList:
+                                                                  cartList,
+                                                              discountAmount:
+                                                                  double.parse(
+                                                                      discountAmount
+                                                                          .toStringAsFixed(
+                                                                              2)),
+                                                              totalAmount: double.parse(
+                                                                  (getTotalAmount()
+                                                                              .toDouble() -
+                                                                          discountAmount)
+                                                                      .toStringAsFixed(
+                                                                          2)),
+                                                            );
+                                                            context.push(
+                                                              '/purchase/purchase-payment-popup',
+                                                              extra: {
+                                                                'transitionModel':
+                                                                    transitionModel,
+                                                              },
+                                                            );
+                                                          }
+                                                        } else {
+                                                          EasyLoading.showError(
+                                                              'Update your plan first\nPurchase Limit is over.');
+                                                        }
+                                                      },
+                                                      child: Text(
+                                                        lang.S
+                                                            .of(context)
+                                                            .payment,
+                                                      ),
+                                                    ),
+                                                  )),
+                                            ]),
                                         // Row(
                                         //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         //   children: [
@@ -1774,10 +2273,13 @@ class _PurchaseState extends State<Purchase> {
                           md: 100,
                           xs: 100,
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: screenWidth < 1240 ? 0 : 16, vertical: screenWidth > 1240 ? 0 : 12),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: screenWidth < 1240 ? 0 : 16,
+                                vertical: screenWidth > 1240 ? 0 : 12),
                             child: Consumer(
                               builder: (_, ref, watch) {
-                                AsyncValue<List<CategoryModel>> categoryList = ref.watch(categoryProvider);
+                                AsyncValue<List<CategoryModel>> categoryList =
+                                    ref.watch(categoryProvider);
                                 return categoryList.when(data: (category) {
                                   return Container(
                                     // width: 150,
@@ -1787,42 +2289,73 @@ class _PurchaseState extends State<Purchase> {
                                             ? 720 - 142
                                             : context.height() - 160,
                                     padding: const EdgeInsets.all(8.0),
-                                    decoration: BoxDecoration(color: kWhite, border: Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)), borderRadius: const BorderRadius.all(Radius.circular(15))),
+                                    decoration: BoxDecoration(
+                                        color: kWhite,
+                                        border: Border.all(
+                                            width: 1,
+                                            color: kGreyTextColor
+                                                .withOpacity(0.3)),
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(15))),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         GestureDetector(
                                           child: Container(
                                             decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(5.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(5.0),
                                                 color: screenWidth < 1240
                                                     ? Colors.transparent
                                                     : isSelected == 'Categories'
                                                         ? kBlueTextColor
-                                                        : kBlueTextColor.withOpacity(0.1)),
-                                            padding: EdgeInsets.only(left: screenWidth < 1240 ? 0 : 15, right: 8, top: screenWidth < 1240 ? 0 : 5, bottom: screenWidth < 1240 ? 0 : 5),
+                                                        : kBlueTextColor
+                                                            .withOpacity(0.1)),
+                                            padding: EdgeInsets.only(
+                                                left:
+                                                    screenWidth < 1240 ? 0 : 15,
+                                                right: 8,
+                                                top: screenWidth < 1240 ? 0 : 5,
+                                                bottom:
+                                                    screenWidth < 1240 ? 0 : 5),
                                             alignment: Alignment.centerLeft,
                                             child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Flexible(
                                                   child: Text(
                                                     'Categories',
                                                     textAlign: TextAlign.start,
                                                     maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: theme.textTheme.titleSmall?.copyWith(
-                                                        color: isSelected == 'Categories'
-                                                            ? screenWidth < 1240
-                                                                ? kTitleColor
-                                                                : Colors.white
-                                                            : kDarkGreyColor,
-                                                        fontSize: screenWidth < 1240 ? 20 : 14),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: theme
+                                                        .textTheme.titleSmall
+                                                        ?.copyWith(
+                                                            color: isSelected ==
+                                                                    'Categories'
+                                                                ? screenWidth <
+                                                                        1240
+                                                                    ? kTitleColor
+                                                                    : Colors
+                                                                        .white
+                                                                : kDarkGreyColor,
+                                                            fontSize:
+                                                                screenWidth <
+                                                                        1240
+                                                                    ? 20
+                                                                    : 14),
                                                   ),
                                                 ),
                                                 Icon(
                                                   Icons.keyboard_arrow_right,
-                                                  color: isSelected == 'Categories' ? Colors.white : kDarkGreyColor,
+                                                  color:
+                                                      isSelected == 'Categories'
+                                                          ? Colors.white
+                                                          : kDarkGreyColor,
                                                   size: 16,
                                                 )
                                               ],
@@ -1837,45 +2370,100 @@ class _PurchaseState extends State<Purchase> {
                                         ),
                                         const SizedBox(height: 5.0),
                                         SizedBox(
-                                          height: screenWidth < 1240 ? 50 : null,
+                                          height:
+                                              screenWidth < 1240 ? 50 : null,
                                           child: ListView.builder(
-                                            scrollDirection: screenWidth < 1240 ? Axis.horizontal : Axis.vertical,
+                                            scrollDirection: screenWidth < 1240
+                                                ? Axis.horizontal
+                                                : Axis.vertical,
                                             itemCount: category.length,
                                             shrinkWrap: true,
                                             itemBuilder: (_, i) {
                                               return GestureDetector(
                                                 onTap: (() {
                                                   setState(() {
-                                                    isSelected = category[i].categoryName;
-                                                    selectedCategory = category[i].categoryName;
+                                                    isSelected = category[i]
+                                                        .categoryName;
+                                                    selectedCategory =
+                                                        category[i]
+                                                            .categoryName;
                                                   });
                                                 }),
                                                 child: Padding(
-                                                  padding: EdgeInsets.only(top: 5, bottom: 5, right: screenWidth < 1240 ? 10 : 0),
+                                                  padding: EdgeInsets.only(
+                                                      top: 5,
+                                                      bottom: 5,
+                                                      right: screenWidth < 1240
+                                                          ? 10
+                                                          : 0),
                                                   child: Container(
-                                                    padding: const EdgeInsets.only(left: 15.0, right: 8.0, top: 8.0, bottom: 8.0),
-                                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: isSelected == category[i].categoryName ? kBlueTextColor : kBlueTextColor.withOpacity(0.1)),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 15.0,
+                                                            right: 8.0,
+                                                            top: 8.0,
+                                                            bottom: 8.0),
+                                                    decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5.0),
+                                                        color: isSelected ==
+                                                                category[i]
+                                                                    .categoryName
+                                                            ? kBlueTextColor
+                                                            : kBlueTextColor
+                                                                .withOpacity(
+                                                                    0.1)),
                                                     child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
                                                       children: [
                                                         screenWidth < 1240
                                                             ? Text(
-                                                                category[i].categoryName,
+                                                                category[i]
+                                                                    .categoryName,
                                                                 maxLines: 2,
-                                                                overflow: TextOverflow.ellipsis,
-                                                                style: theme.textTheme.titleSmall?.copyWith(color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor),
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .titleSmall
+                                                                    ?.copyWith(
+                                                                        color: isSelected ==
+                                                                                category[i].categoryName
+                                                                            ? Colors.white
+                                                                            : kDarkGreyColor),
                                                               )
                                                             : Flexible(
                                                                 child: Text(
-                                                                  category[i].categoryName,
+                                                                  category[i]
+                                                                      .categoryName,
                                                                   maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  style: kTextStyle.copyWith(color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor, fontWeight: FontWeight.bold),
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  style: kTextStyle.copyWith(
+                                                                      color: isSelected ==
+                                                                              category[i]
+                                                                                  .categoryName
+                                                                          ? Colors
+                                                                              .white
+                                                                          : kDarkGreyColor,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold),
                                                                 ),
                                                               ),
                                                         Icon(
-                                                          Icons.keyboard_arrow_right,
-                                                          color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor,
+                                                          Icons
+                                                              .keyboard_arrow_right,
+                                                          color: isSelected ==
+                                                                  category[i]
+                                                                      .categoryName
+                                                              ? Colors.white
+                                                              : kDarkGreyColor,
                                                           size: 16,
                                                         )
                                                       ],
@@ -1911,13 +2499,26 @@ class _PurchaseState extends State<Purchase> {
                             List<ProductModel> showProductVsCategory = [];
                             if (selectedCategory == 'Categories') {
                               for (var element in products) {
-                                if ((element.productCode.toLowerCase().contains(searchProductCode) || element.productCategory.toLowerCase().contains(searchProductCode) || element.productName.toLowerCase().contains(searchProductCode)) && (selectedWareHouse?.id == element.warehouseId)) {
+                                if ((element.productCode
+                                            .toLowerCase()
+                                            .contains(searchProductCode) ||
+                                        element.productCategory
+                                            .toLowerCase()
+                                            .contains(searchProductCode) ||
+                                        element.productName
+                                            .toLowerCase()
+                                            .contains(searchProductCode)) &&
+                                    (selectedWareHouse?.id ==
+                                        element.warehouseId)) {
                                   showProductVsCategory.add(element);
                                 }
                               }
                             } else {
                               for (var element in products) {
-                                if ((element.productCategory == selectedCategory) && (selectedWareHouse?.id == element.warehouseId)) {
+                                if ((element.productCategory ==
+                                        selectedCategory) &&
+                                    (selectedWareHouse?.id ==
+                                        element.warehouseId)) {
                                   showProductVsCategory.add(element);
                                 }
                               }
@@ -1929,7 +2530,8 @@ class _PurchaseState extends State<Purchase> {
                                       color: kDarkWhite,
                                     ),
                                     child: GridView.builder(
-                                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      gridDelegate:
+                                          const SliverGridDelegateWithMaxCrossAxisExtent(
                                         maxCrossAxisExtent: 180,
                                         mainAxisExtent: 200,
                                         mainAxisSpacing: 10,
@@ -1941,14 +2543,16 @@ class _PurchaseState extends State<Purchase> {
                                           width: 130.0,
                                           height: 170.0,
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(10.0),
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
                                             color: kWhite,
                                             border: Border.all(
                                               color: kLitGreyColor,
                                             ),
                                           ),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               ///_______image_and_stock_____________________________________
                                               Stack(
@@ -1958,8 +2562,21 @@ class _PurchaseState extends State<Purchase> {
                                                   Container(
                                                     height: 120,
                                                     decoration: BoxDecoration(
-                                                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(10.0), topRight: Radius.circular(10.0)),
-                                                      image: DecorationImage(image: NetworkImage(showProductVsCategory[i].productPicture), fit: BoxFit.cover),
+                                                      borderRadius:
+                                                          const BorderRadius
+                                                              .only(
+                                                              topLeft: Radius
+                                                                  .circular(
+                                                                      10.0),
+                                                              topRight: Radius
+                                                                  .circular(
+                                                                      10.0)),
+                                                      image: DecorationImage(
+                                                          image: NetworkImage(
+                                                              showProductVsCategory[
+                                                                      i]
+                                                                  .productPicture),
+                                                          fit: BoxFit.cover),
                                                     ),
                                                   ),
 
@@ -1968,14 +2585,32 @@ class _PurchaseState extends State<Purchase> {
                                                     left: 5,
                                                     top: 5,
                                                     child: Container(
-                                                      padding: const EdgeInsets.only(left: 5.0, right: 5.0, top: 2, bottom: 2),
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 5.0,
+                                                              right: 5.0,
+                                                              top: 2,
+                                                              bottom: 2),
                                                       decoration: BoxDecoration(
-                                                        color: showProductVsCategory[i].productStock == '0' ? kRedTextColor : kGreenTextColor,
-                                                        borderRadius: BorderRadius.circular(3),
+                                                        color: showProductVsCategory[
+                                                                        i]
+                                                                    .productStock ==
+                                                                '0'
+                                                            ? kRedTextColor
+                                                            : kGreenTextColor,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(3),
                                                       ),
                                                       child: Text(
-                                                        showProductVsCategory[i].productStock != '0' ? '${showProductVsCategory[i].productStock} pcs' : 'Out of stock',
-                                                        style: theme.textTheme.titleSmall?.copyWith(
+                                                        showProductVsCategory[i]
+                                                                    .productStock !=
+                                                                '0'
+                                                            ? '${showProductVsCategory[i].productStock} pcs'
+                                                            : 'Out of stock',
+                                                        style: theme.textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
                                                           color: Colors.white,
                                                         ),
                                                       ),
@@ -1985,28 +2620,51 @@ class _PurchaseState extends State<Purchase> {
                                               ),
 
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 10.0, left: 5, right: 3),
+                                                padding: const EdgeInsets.only(
+                                                    top: 10.0,
+                                                    left: 5,
+                                                    right: 3),
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     ///_______________product_name______________________________________________
                                                     Text(
-                                                      showProductVsCategory[i].productName,
+                                                      showProductVsCategory[i]
+                                                          .productName,
                                                       maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: theme
+                                                          .textTheme.titleMedium
+                                                          ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600),
                                                     ),
                                                     const SizedBox(height: 4.0),
 
                                                     ///________Purchase_price_________________________________________________
                                                     Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                                      decoration: BoxDecoration(color: kGreenTextColor, borderRadius: BorderRadius.circular(2.0)),
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 5,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                          color:
+                                                              kGreenTextColor,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      2.0)),
                                                       child: Text(
                                                         '$globalCurrency${myFormat.format(double.tryParse(showProductVsCategory[i].productPurchasePrice) ?? 0)}',
-                                                        style: theme.textTheme.titleSmall?.copyWith(
+                                                        style: theme.textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
                                                           color: kWhite,
-                                                          fontWeight: FontWeight.w600,
+                                                          fontWeight:
+                                                              FontWeight.w600,
                                                         ),
                                                       ),
                                                     ),
@@ -2018,42 +2676,72 @@ class _PurchaseState extends State<Purchase> {
                                         ).onTap(() {
                                           setState(() {
                                             ProductModel product = ProductModel(
-                                              showProductVsCategory[i].productName,
-                                              showProductVsCategory[i].productCategory,
+                                              showProductVsCategory[i]
+                                                  .productName,
+                                              showProductVsCategory[i]
+                                                  .productCategory,
                                               showProductVsCategory[i].size,
                                               showProductVsCategory[i].color,
                                               showProductVsCategory[i].weight,
                                               showProductVsCategory[i].capacity,
                                               showProductVsCategory[i].type,
                                               showProductVsCategory[i].warranty,
-                                              showProductVsCategory[i].brandName,
-                                              showProductVsCategory[i].productCode,
+                                              showProductVsCategory[i]
+                                                  .brandName,
+                                              showProductVsCategory[i]
+                                                  .productCode,
                                               '1',
-                                              showProductVsCategory[i].productUnit,
-                                              showProductVsCategory[i].productSalePrice,
-                                              showProductVsCategory[i].productPurchasePrice,
-                                              showProductVsCategory[i].productDiscount,
-                                              showProductVsCategory[i].productWholeSalePrice,
-                                              showProductVsCategory[i].productDealerPrice,
-                                              showProductVsCategory[i].productManufacturer,
-                                              showProductVsCategory[i].warehouseName,
-                                              showProductVsCategory[i].warehouseId,
-                                              showProductVsCategory[i].productPicture,
+                                              showProductVsCategory[i]
+                                                  .productUnit,
+                                              showProductVsCategory[i]
+                                                  .productSalePrice,
+                                              showProductVsCategory[i]
+                                                  .productPurchasePrice,
+                                              showProductVsCategory[i]
+                                                  .productDiscount,
+                                              showProductVsCategory[i]
+                                                  .productWholeSalePrice,
+                                              showProductVsCategory[i]
+                                                  .productDealerPrice,
+                                              showProductVsCategory[i]
+                                                  .productManufacturer,
+                                              showProductVsCategory[i]
+                                                  .warehouseName,
+                                              showProductVsCategory[i]
+                                                  .warehouseId,
+                                              showProductVsCategory[i]
+                                                  .productPicture,
                                               [],
-                                              manufacturingDate: showProductVsCategory[i].manufacturingDate,
-                                              lowerStockAlert: showProductVsCategory[i].lowerStockAlert,
-                                              expiringDate: showProductVsCategory[i].expiringDate,
-                                              taxType: showProductVsCategory[i].taxType,
-                                              margin: showProductVsCategory[i].margin,
-                                              excTax: showProductVsCategory[i].excTax,
-                                              incTax: showProductVsCategory[i].incTax,
-                                              groupTaxName: showProductVsCategory[i].groupTaxName,
-                                              groupTaxRate: showProductVsCategory[i].groupTaxRate,
-                                              subTaxes: showProductVsCategory[i].subTaxes,
+                                              manufacturingDate:
+                                                  showProductVsCategory[i]
+                                                      .manufacturingDate,
+                                              lowerStockAlert:
+                                                  showProductVsCategory[i]
+                                                      .lowerStockAlert,
+                                              expiringDate:
+                                                  showProductVsCategory[i]
+                                                      .expiringDate,
+                                              taxType: showProductVsCategory[i]
+                                                  .taxType,
+                                              margin: showProductVsCategory[i]
+                                                  .margin,
+                                              excTax: showProductVsCategory[i]
+                                                  .excTax,
+                                              incTax: showProductVsCategory[i]
+                                                  .incTax,
+                                              groupTaxName:
+                                                  showProductVsCategory[i]
+                                                      .groupTaxName,
+                                              groupTaxRate:
+                                                  showProductVsCategory[i]
+                                                      .groupTaxRate,
+                                              subTaxes: showProductVsCategory[i]
+                                                  .subTaxes,
                                               // showProductVsCategory[i].serialNumber.isEmpty ? [] : showProductVsCategory[i].serialNumber,
                                             );
 
-                                            if (!uniqueCheck(product.productCode)) {
+                                            if (!uniqueCheck(
+                                                product.productCode)) {
                                               cartList.add(product);
                                             }
                                           });
@@ -2062,14 +2750,17 @@ class _PurchaseState extends State<Purchase> {
                                     ),
                                   )
                                 : Container(
-                                    height: context.height() < 720 ? 720 - 136 : context.height() - 136,
+                                    height: context.height() < 720
+                                        ? 720 - 136
+                                        : context.height() - 136,
                                     color: Colors.white,
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const SizedBox(height: 80),
                                         const Image(
-                                          image: AssetImage('images/empty_screen.png'),
+                                          image: AssetImage(
+                                              'images/empty_screen.png'),
                                         ),
                                         const SizedBox(height: 20),
                                         ElevatedButton(
@@ -2077,14 +2768,19 @@ class _PurchaseState extends State<Purchase> {
                                             context.push(
                                               '/product/add-product',
                                               extra: {
-                                                'allProductsCodeList': allProductsCodeList,
-                                                'warehouseBasedProductModel': [],
+                                                'allProductsCodeList':
+                                                    allProductsCodeList,
+                                                'warehouseBasedProductModel':
+                                                    [],
                                               },
                                             );
                                           },
                                           child: Text(
                                             lang.S.of(context).addProduct,
-                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 18.0),
                                           ),
                                         ),
                                       ],

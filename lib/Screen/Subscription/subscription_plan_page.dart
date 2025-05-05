@@ -29,7 +29,8 @@ class SubscriptionPage extends StatefulWidget {
 }
 
 class _SubscriptionPageState extends State<SubscriptionPage> {
-  CurrentSubscriptionPlanRepo currentSubscriptionPlanRepo = CurrentSubscriptionPlanRepo();
+  CurrentSubscriptionPlanRepo currentSubscriptionPlanRepo =
+      CurrentSubscriptionPlanRepo();
 
   SubscriptionModel subscriptionModel = SubscriptionModel(
     subscriptionName: '',
@@ -50,18 +51,25 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   void checkSubscriptionData() async {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       EasyLoading.show(status: lang.S.of(context).loading);
-      subscriptionModel = await CurrentSubscriptionPlanRepo().getCurrentSubscriptionPlans();
+      subscriptionModel =
+          await CurrentSubscriptionPlanRepo().getCurrentSubscriptionPlans();
       initialPackageService[0] = subscriptionModel.saleNumber.toString();
       initialPackageService[1] = subscriptionModel.purchaseNumber.toString();
       initialPackageService[2] = subscriptionModel.dueNumber.toString();
       initialPackageService[3] = subscriptionModel.partiesNumber.toString();
       initialPackageService[4] = subscriptionModel.products.toString();
-      subscriptionPlanModel = await CurrentSubscriptionPlanRepo().getSubscriptionPlanByName(subscriptionModel.subscriptionName);
-      originalPackageService[0] = subscriptionPlanModel?.saleNumber.toString() ?? '0';
-      originalPackageService[1] = subscriptionPlanModel?.purchaseNumber.toString() ?? '0';
-      originalPackageService[2] = subscriptionPlanModel?.dueNumber.toString() ?? '0';
-      originalPackageService[3] = subscriptionPlanModel?.partiesNumber.toString() ?? '0';
-      originalPackageService[4] = subscriptionPlanModel?.products.toString() ?? '0';
+      subscriptionPlanModel = await CurrentSubscriptionPlanRepo()
+          .getSubscriptionPlanByName(subscriptionModel.subscriptionName);
+      originalPackageService[0] =
+          subscriptionPlanModel?.saleNumber.toString() ?? '0';
+      originalPackageService[1] =
+          subscriptionPlanModel?.purchaseNumber.toString() ?? '0';
+      originalPackageService[2] =
+          subscriptionPlanModel?.dueNumber.toString() ?? '0';
+      originalPackageService[3] =
+          subscriptionPlanModel?.partiesNumber.toString() ?? '0';
+      originalPackageService[4] =
+          subscriptionPlanModel?.products.toString() ?? '0';
       EasyLoading.dismiss();
       setState(() {});
     });
@@ -80,10 +88,25 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     const Color(0xFFFF7468),
   ];
   PaypalRepo paypalRepo = PaypalRepo();
-  SubscriptionPlanModel selectedPlan = SubscriptionPlanModel(subscriptionName: '', saleNumber: 0, purchaseNumber: 0, partiesNumber: 0, dueNumber: 0, duration: 0, products: 0, subscriptionPrice: 0, offerPrice: 0);
+  SubscriptionPlanModel selectedPlan = SubscriptionPlanModel(
+      subscriptionName: '',
+      saleNumber: 0,
+      purchaseNumber: 0,
+      partiesNumber: 0,
+      dueNumber: 0,
+      duration: 0,
+      products: 0,
+      subscriptionPrice: 0,
+      offerPrice: 0);
   ScrollController mainScroll = ScrollController();
 
-  List<String> nameList = ['Sales', 'Purchase', 'Due collection', 'Parties', 'Products'];
+  List<String> nameList = [
+    'Sales',
+    'Purchase',
+    'Due collection',
+    'Parties',
+    'Products'
+  ];
   List<Color> colorList = [
     const Color(0xffff5722),
     const Color(0xff028a7e),
@@ -112,7 +135,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Container(
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.0), color: kWhite),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -143,39 +167,55 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             child: Container(
                               padding: const EdgeInsets.all(10.0),
                               // height: 80,
-                              decoration: BoxDecoration(color: kMainColor.withOpacity(0.2), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                              decoration: BoxDecoration(
+                                  color: kMainColor.withOpacity(0.2),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10))),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Flexible(
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           '${subscriptionModel.subscriptionName} ${lang.S.of(context).plan}',
-                                          style: theme.textTheme.titleLarge?.copyWith(
+                                          style: theme.textTheme.titleLarge
+                                              ?.copyWith(
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         const SizedBox(height: 8),
-                                        Text.rich(TextSpan(text: lang.S.of(context).yourAreUsing, style: theme.textTheme.bodyLarge, children: [
-                                          TextSpan(
-                                            text: ' ${subscriptionModel.subscriptionName} ',
-                                            style: theme.textTheme.titleMedium?.copyWith(
-                                              color: kMainColor,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text: lang.S.of(context).plan,
-                                            style: theme.textTheme.titleMedium?.copyWith(
-                                              color: kMainColor,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ])),
+                                        Text.rich(TextSpan(
+                                            text:
+                                                lang.S.of(context).yourAreUsing,
+                                            style: theme.textTheme.bodyLarge,
+                                            children: [
+                                              TextSpan(
+                                                text:
+                                                    ' ${subscriptionModel.subscriptionName} ',
+                                                style: theme
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
+                                                  color: kMainColor,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              TextSpan(
+                                                text: lang.S.of(context).plan,
+                                                style: theme
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
+                                                  color: kMainColor,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ])),
                                         // Row(
                                         //   children: [
                                         //     Text(
@@ -205,17 +245,21 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         Text(
                                           '${(DateTime.parse(subscriptionModel.subscriptionDate).difference(DateTime.now()).inDays.abs() - subscriptionModel.duration).abs()}',
                                           textAlign: TextAlign.center,
-                                          style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
+                                          style: theme.textTheme.titleLarge
+                                              ?.copyWith(color: Colors.white),
                                         ),
                                         Text(
                                           'Days Left',
-                                          style: theme.textTheme.titleSmall?.copyWith(
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
                                             color: Colors.white,
                                           ),
                                         )
@@ -258,12 +302,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   color: Colors.white,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.14),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.14),
                                       blurRadius: 15,
                                       spreadRadius: -5,
                                     ),
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.05),
                                       blurRadius: 2,
                                       spreadRadius: 0,
                                       offset: const Offset(0, 2),
@@ -278,17 +324,21 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                         Container(
                                           padding: const EdgeInsets.all(8.0),
                                           decoration: BoxDecoration(
-                                            color: colorList[i].withValues(alpha: 0.1),
+                                            color: colorList[i]
+                                                .withValues(alpha: 0.1),
                                             shape: BoxShape.rectangle,
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
                                           ),
-                                          child: Icon(iconList[i], color: colorList[i]),
+                                          child: Icon(iconList[i],
+                                              color: colorList[i]),
                                         ),
                                         const SizedBox(width: 8),
                                         Flexible(
                                           child: Text(
                                             nameList[i],
-                                            style: theme.textTheme.titleMedium?.copyWith(
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
@@ -300,12 +350,16 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                       children: [
                                         Text(
                                           lang.S.of(context).remaining,
-                                          style: const TextStyle(color: kGreyTextColor),
+                                          style: const TextStyle(
+                                              color: kGreyTextColor),
                                         ),
                                         const SizedBox(width: 5),
                                         Text(
-                                          initialPackageService[i] == '-202' ? lang.S.of(context).unlimited : '(${initialPackageService[i] ?? ''}/${originalPackageService[i]})',
-                                          style: const TextStyle(color: Colors.grey),
+                                          initialPackageService[i] == '-202'
+                                              ? lang.S.of(context).unlimited
+                                              : '(${initialPackageService[i]}/${originalPackageService[i]})',
+                                          style: const TextStyle(
+                                              color: Colors.grey),
                                         ),
                                       ],
                                     )

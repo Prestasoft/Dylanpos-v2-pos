@@ -69,18 +69,33 @@ class _PosSaleState extends State<PosSale> {
   String isSelected = 'Categories';
   String selectedCategory = 'Categories';
   String? selectedUserId = 'Guest';
-  CustomerModel selectedUserName = CustomerModel(customerName: "Guest", phoneNumber: "00", type: "Guest", customerAddress: '', emailAddress: '', profilePicture: '', openingBalance: '0', remainedBalance: '0', dueAmount: '0', gst: '', receiveWhatsappUpdates: false);
+  CustomerModel selectedUserName = CustomerModel(
+      customerName: "Guest",
+      phoneNumber: "00",
+      type: "Guest",
+      customerAddress: '',
+      emailAddress: '',
+      profilePicture: '',
+      openingBalance: '0',
+      remainedBalance: '0',
+      dueAmount: '0',
+      gst: '',
+      receiveWhatsappUpdates: false);
 
   String? invoiceNumber;
   String previousDue = "0";
   FocusNode nameFocus = FocusNode();
 
   DropdownButton<String> getResult(List<CustomerModel> model) {
-    List<DropdownMenuItem<String>> dropDownItems = [const DropdownMenuItem(value: 'Guest', child: Text('Guest'))];
+    List<DropdownMenuItem<String>> dropDownItems = [
+      const DropdownMenuItem(value: 'Guest', child: Text('Guest'))
+    ];
     for (var des in model) {
       var item = DropdownMenuItem(
         value: des.phoneNumber,
-        child: FittedBox(fit: BoxFit.scaleDown, child: Text('${des.customerName} ${des.phoneNumber}')),
+        child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('${des.customerName} ${des.phoneNumber}')),
       );
       dropDownItems.add(item);
     }
@@ -95,7 +110,13 @@ class _PosSaleState extends State<PosSale> {
             if (element.phoneNumber == selectedUserId) {
               selectedUserName = element;
               previousDue = element.dueAmount;
-              selectedCustomerType == element.type ? null : {selectedCustomerType = element.type, cartList.clear(), productFocusNode.clear()};
+              selectedCustomerType == element.type
+                  ? null
+                  : {
+                      selectedCustomerType = element.type,
+                      cartList.clear(),
+                      productFocusNode.clear()
+                    };
             } else if (selectedUserId == 'Guest') {
               previousDue = '0';
               selectedCustomerType = 'Retailer';
@@ -107,13 +128,18 @@ class _PosSaleState extends State<PosSale> {
     );
   }
 
-  dynamic productPriceChecker({required ProductModel product, required String customerType}) {
+  dynamic productPriceChecker(
+      {required ProductModel product, required String customerType}) {
     if (customerType == "Retailer") {
       return product.productSalePrice;
     } else if (customerType == "Wholesaler") {
-      return product.productWholeSalePrice == '' ? '0' : product.productWholeSalePrice;
+      return product.productWholeSalePrice == ''
+          ? '0'
+          : product.productWholeSalePrice;
     } else if (customerType == "Dealer") {
-      return product.productDealerPrice == '' ? '0' : product.productDealerPrice;
+      return product.productDealerPrice == ''
+          ? '0'
+          : product.productDealerPrice;
     } else if (customerType == "Guest") {
       return product.productSalePrice;
     }
@@ -144,7 +170,8 @@ class _PosSaleState extends State<PosSale> {
     return isUnique;
   }
 
-  bool uniqueCheckForSerial({required String code, required List<dynamic> newSerialNumbers}) {
+  bool uniqueCheckForSerial(
+      {required String code, required List<dynamic> newSerialNumbers}) {
     bool isUnique = false;
     for (var item in cartList) {
       if (item.productId == code) {
@@ -174,7 +201,8 @@ class _PosSaleState extends State<PosSale> {
         value: des,
         child: Text(
           des,
-          style: kTextStyle.copyWith(overflow: TextOverflow.ellipsis, color: kTitleColor),
+          style: kTextStyle.copyWith(
+              overflow: TextOverflow.ellipsis, color: kTitleColor),
         ),
       );
       dropDownItems.add(item);
@@ -194,7 +222,11 @@ class _PosSaleState extends State<PosSale> {
   DateTime selectedDueDate = DateTime.now();
 
   Future<void> _selectedDueDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDueDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDueDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDueDate) {
       setState(() {
         selectedDueDate = picked;
@@ -279,16 +311,22 @@ class _PosSaleState extends State<PosSale> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                        padding: const EdgeInsets.only(
+                            top: 10.0, left: 10.0, right: 10.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text(
                               lang.S.of(context).hold,
-                              style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                              style: kTextStyle.copyWith(
+                                  color: kTitleColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20.0),
                             ),
                             const Spacer(),
-                            const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                            const Icon(FeatherIcons.x,
+                                    color: kTitleColor, size: 25.0)
+                                .onTap(() => {finish(context)})
                           ],
                         ),
                       ),
@@ -305,8 +343,10 @@ class _PosSaleState extends State<PosSale> {
                               decoration: kInputDecoration.copyWith(
                                 labelText: lang.S.of(context).holdNumber,
                                 hintText: '2090.00',
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                               ),
                             ),
                             const SizedBox(height: 20.0),
@@ -314,7 +354,11 @@ class _PosSaleState extends State<PosSale> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 30.0,
+                                        right: 30.0,
+                                        top: 10.0,
+                                        bottom: 10.0),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5.0),
                                       color: kRedTextColor,
@@ -325,7 +369,11 @@ class _PosSaleState extends State<PosSale> {
                                     )).onTap(() => {finish(context)}),
                                 const SizedBox(width: 10.0),
                                 Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 30.0,
+                                        right: 30.0,
+                                        top: 10.0,
+                                        bottom: 10.0),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5.0),
                                       color: kBlueTextColor,
@@ -353,10 +401,13 @@ class _PosSaleState extends State<PosSale> {
   double serviceCharge = 0;
   double discountAmount = 0;
 
-  TextEditingController discountAmountEditingController = TextEditingController();
+  TextEditingController discountAmountEditingController =
+      TextEditingController();
   // TextEditingController vatAmountEditingController = TextEditingController();
-  TextEditingController discountPercentageEditingController = TextEditingController();
-  TextEditingController vatPercentageEditingController = TextEditingController();
+  TextEditingController discountPercentageEditingController =
+      TextEditingController();
+  TextEditingController vatPercentageEditingController =
+      TextEditingController();
   // double vatGst = 0;
 
   @override
@@ -371,7 +422,8 @@ class _PosSaleState extends State<PosSale> {
         cartList.add(element);
         addFocus();
       }
-      discountAmountEditingController.text = widget.quotation!.discountAmount!.toStringAsFixed(2);
+      discountAmountEditingController.text =
+          widget.quotation!.discountAmount!.toStringAsFixed(2);
       discountAmount = widget.quotation!.discountAmount!;
       // vatAmountEditingController.text = widget.quotation!.vat!.toStringAsFixed(2);
       // vatGst = widget.quotation!.vat!;
@@ -422,7 +474,19 @@ class _PosSaleState extends State<PosSale> {
   }
 
   void showSerialNumberPopUp({required ProductModel productModel}) {
-    AddToCartModel productInCart = AddToCartModel(productPurchasePrice: 0, serialNumber: [], productImage: '', warehouseName: '', warehouseId: '', subTaxes: [], excTax: 0, groupTaxName: '', groupTaxRate: 0, incTax: 0, margin: 0, taxType: '');
+    AddToCartModel productInCart = AddToCartModel(
+        productPurchasePrice: 0,
+        serialNumber: [],
+        productImage: '',
+        warehouseName: '',
+        warehouseId: '',
+        subTaxes: [],
+        excTax: 0,
+        groupTaxName: '',
+        groupTaxRate: 0,
+        incTax: 0,
+        margin: 0,
+        taxType: '');
     List<dynamic> selectedSerialNumbers = [];
     List<String> list = [];
     for (var element in cartList) {
@@ -459,16 +523,22 @@ class _PosSaleState extends State<PosSale> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                        padding: const EdgeInsets.only(
+                            top: 10.0, left: 10.0, right: 10.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text(
                               lang.S.of(context).selectSerialNumber,
-                              style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold, fontSize: 20.0),
+                              style: kTextStyle.copyWith(
+                                  color: kTitleColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20.0),
                             ),
                             const Spacer(),
-                            const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {finish(context)})
+                            const Icon(FeatherIcons.x,
+                                    color: kTitleColor, size: 25.0)
+                                .onTap(() => {finish(context)})
                           ],
                         ),
                       ),
@@ -506,10 +576,15 @@ class _PosSaleState extends State<PosSale> {
                               textFieldType: TextFieldType.NAME,
                               suffix: const Icon(Icons.search),
                               decoration: kInputDecoration.copyWith(
-                                border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
-                                labelText: lang.S.of(context).searchSerialNumber,
-                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                border: const OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(30))),
+                                labelText:
+                                    lang.S.of(context).searchSerialNumber,
+                                hintStyle:
+                                    kTextStyle.copyWith(color: kGreyTextColor),
+                                labelStyle:
+                                    kTextStyle.copyWith(color: kTitleColor),
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -518,19 +593,26 @@ class _PosSaleState extends State<PosSale> {
                             Container(
                               height: MediaQuery.of(context).size.height / 4,
                               width: 500,
-                              decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                              decoration: BoxDecoration(
+                                  border:
+                                      Border.all(width: 1, color: Colors.grey),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10))),
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: ListView.builder(
                                   shrinkWrap: true,
                                   itemCount: list.length,
-                                  itemBuilder: (BuildContext context, int index) {
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
                                     return Padding(
-                                      padding: const EdgeInsets.only(bottom: 10),
+                                      padding:
+                                          const EdgeInsets.only(bottom: 10),
                                       child: GestureDetector(
                                         onTap: () {
                                           setState1(() {
-                                            selectedSerialNumbers.add(list[index]);
+                                            selectedSerialNumbers
+                                                .add(list[index]);
                                             list.removeAt(index);
                                           });
                                         },
@@ -547,22 +629,31 @@ class _PosSaleState extends State<PosSale> {
                             Container(
                               width: 500,
                               height: 100,
-                              decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.grey), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                              decoration: BoxDecoration(
+                                  border:
+                                      Border.all(width: 1, color: Colors.grey),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10))),
                               child: GridView.builder(
                                   shrinkWrap: true,
                                   itemCount: selectedSerialNumbers.length,
-                                  itemBuilder: (BuildContext context, int index) {
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
                                     if (selectedSerialNumbers.isNotEmpty) {
                                       return Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
                                             GestureDetector(
                                                 onTap: () {
                                                   setState1(() {
-                                                    list.add(selectedSerialNumbers[index]);
-                                                    selectedSerialNumbers.removeAt(index);
+                                                    list.add(
+                                                        selectedSerialNumbers[
+                                                            index]);
+                                                    selectedSerialNumbers
+                                                        .removeAt(index);
                                                   });
                                                 },
                                                 child: const Icon(
@@ -576,10 +667,13 @@ class _PosSaleState extends State<PosSale> {
                                         ),
                                       );
                                     } else {
-                                      return Text(lang.S.of(context).noSerialNumberFound);
+                                      return Text(lang.S
+                                          .of(context)
+                                          .noSerialNumberFound);
                                     }
                                   },
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 3,
                                     childAspectRatio: 4,
                                     crossAxisSpacing: 1,
@@ -592,7 +686,11 @@ class _PosSaleState extends State<PosSale> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 30.0,
+                                        right: 30.0,
+                                        top: 10.0,
+                                        bottom: 10.0),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5.0),
                                       color: kRedTextColor,
@@ -607,17 +705,27 @@ class _PosSaleState extends State<PosSale> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      AddToCartModel addToCartModel = AddToCartModel(
+                                      AddToCartModel addToCartModel =
+                                          AddToCartModel(
                                         productName: productModel.productName,
-                                        warehouseName: productModel.warehouseName,
+                                        warehouseName:
+                                            productModel.warehouseName,
                                         warehouseId: productModel.warehouseId,
                                         productId: productModel.productCode,
-                                        productImage: productModel.productPicture,
-                                        productPurchasePrice: productModel.productPurchasePrice.toDouble(),
-                                        subTotal: productPriceChecker(product: productModel, customerType: selectedCustomerType),
+                                        productImage:
+                                            productModel.productPicture,
+                                        productPurchasePrice: productModel
+                                            .productPurchasePrice
+                                            .toDouble(),
+                                        subTotal: productPriceChecker(
+                                            product: productModel,
+                                            customerType: selectedCustomerType),
                                         serialNumber: selectedSerialNumbers,
-                                        quantity: selectedSerialNumbers.isEmpty ? 1 : selectedSerialNumbers.length,
-                                        stock: num.parse(productModel.productStock),
+                                        quantity: selectedSerialNumbers.isEmpty
+                                            ? 1
+                                            : selectedSerialNumbers.length,
+                                        stock: num.parse(
+                                            productModel.productStock),
                                         productWarranty: productModel.warranty,
                                         subTaxes: productModel.subTaxes,
                                         excTax: productModel.excTax,
@@ -627,9 +735,13 @@ class _PosSaleState extends State<PosSale> {
                                         margin: productModel.margin,
                                         taxType: productModel.taxType,
                                       );
-                                      if (!uniqueCheckForSerial(code: productModel.productCode, newSerialNumbers: selectedSerialNumbers)) {
+                                      if (!uniqueCheckForSerial(
+                                          code: productModel.productCode,
+                                          newSerialNumbers:
+                                              selectedSerialNumbers)) {
                                         if (productModel.productStock == '0') {
-                                          EasyLoading.showError('Product Out Of Stock');
+                                          EasyLoading.showError(
+                                              'Product Out Of Stock');
                                         } else {
                                           cartList.add(addToCartModel);
                                           addFocus();
@@ -639,7 +751,11 @@ class _PosSaleState extends State<PosSale> {
                                     GoRouter.of(context).pop();
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.only(left: 30.0, right: 30.0, top: 10.0, bottom: 10.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 30.0,
+                                        right: 30.0,
+                                        top: 10.0,
+                                        bottom: 10.0),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5.0),
                                       color: kBlueTextColor,
@@ -770,7 +886,8 @@ class _PosSaleState extends State<PosSale> {
         final wareHouseList = consumerRef.watch(warehouseProvider);
         final customerList = consumerRef.watch(allCustomerProvider);
         final personalData = consumerRef.watch(profileDetailsProvider);
-        AsyncValue<List<ProductModel>> productList = consumerRef.watch(productProvider);
+        AsyncValue<List<ProductModel>> productList =
+            consumerRef.watch(productProvider);
 
         return personalData.when(data: (data) {
           return Scaffold(
@@ -810,7 +927,8 @@ class _PosSaleState extends State<PosSale> {
                                     child: Center(
                                       child: Text(
                                         '${selectedDueDate.day}/${selectedDueDate.month}/${selectedDueDate.year}',
-                                        style: theme.textTheme.titleMedium?.copyWith(
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
                                           fontWeight: FontWeight.w500,
                                           color: kNeutral700,
                                         ),
@@ -837,13 +955,17 @@ class _PosSaleState extends State<PosSale> {
                                           child: Container(
                                             height: 40,
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(5),
-                                              border: Border.all(color: kNeutral400),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              border: Border.all(
+                                                  color: kNeutral400),
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$globalCurrency${myFormat.format(double.tryParse(previousDue) ?? 0)}',
-                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                style: theme
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
                                                   fontWeight: FontWeight.w500,
                                                   color: kNeutral700,
                                                 ),
@@ -873,8 +995,10 @@ class _PosSaleState extends State<PosSale> {
                                             width: screenWidth,
                                             height: 40,
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(5),
-                                              border: Border.all(color: kNeutral400),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              border: Border.all(
+                                                  color: kNeutral400),
                                             ),
                                             child: Icon(
                                               MdiIcons.calculator,
@@ -901,7 +1025,8 @@ class _PosSaleState extends State<PosSale> {
                                       border: Border.all(color: kNeutral400),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         const Icon(
                                           Icons.speed,
@@ -914,7 +1039,8 @@ class _PosSaleState extends State<PosSale> {
                                             lang.S.of(context).dashBoard,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.titleMedium?.copyWith(
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
                                               fontWeight: FontWeight.w500,
                                               color: kNeutral700,
                                             ),
@@ -939,15 +1065,21 @@ class _PosSaleState extends State<PosSale> {
                                       child: Container(
                                         height: 40,
                                         width: screenWidth,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(5),
-                                          border: Border.all(color: kNeutral400),
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          border:
+                                              Border.all(color: kNeutral400),
                                         ),
                                         child: Theme(
-                                          data: ThemeData(highlightColor: dropdownItemColor, focusColor: Colors.transparent, hoverColor: dropdownItemColor),
+                                          data: ThemeData(
+                                              highlightColor: dropdownItemColor,
+                                              focusColor: Colors.transparent,
+                                              hoverColor: dropdownItemColor),
                                           child: DropdownButtonHideUnderline(
-                                            child: getWare(list: warehouse ?? []),
+                                            child: getWare(list: warehouse),
                                           ),
                                         ),
                                       ),
@@ -988,13 +1120,16 @@ class _PosSaleState extends State<PosSale> {
                                             height: 40,
                                             width: screenWidth,
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(5),
-                                              border: Border.all(color: kNeutral400),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              border: Border.all(
+                                                  color: kNeutral400),
                                             ),
                                             child: Center(
                                                 child: Text(
                                               "#${widget.quotation == null ? data.saleInvoiceCounter.toString() : widget.quotation!.invoiceNumber}",
-                                              style: theme.textTheme.titleMedium?.copyWith(
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
                                                 fontWeight: FontWeight.w500,
                                                 color: kNeutral700,
                                               ),
@@ -1013,7 +1148,9 @@ class _PosSaleState extends State<PosSale> {
                                   List<String> listOfPhoneNumber = [];
                                   List<CustomerModel> customersList = [];
                                   for (var value1 in allCustomers) {
-                                    listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
+                                    listOfPhoneNumber.add(value1.phoneNumber
+                                        .removeAllWhiteSpace()
+                                        .toLowerCase());
                                     if (value1.type != 'Supplier') {
                                       customersList.add(value1);
                                     }
@@ -1021,25 +1158,40 @@ class _PosSaleState extends State<PosSale> {
                                   return Padding(
                                     padding: const EdgeInsets.all(12.0),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
                                       children: [
                                         Flexible(
                                           child: Container(
                                               height: 40,
                                               width: screenWidth,
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                               decoration: BoxDecoration(
-                                                borderRadius: const BorderRadius.only(topLeft: Radius.circular(5), bottomLeft: Radius.circular(5)),
-                                                border: Border.all(color: kNeutral400),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                        topLeft:
+                                                            Radius.circular(5),
+                                                        bottomLeft:
+                                                            Radius.circular(5)),
+                                                border: Border.all(
+                                                    color: kNeutral400),
                                               ),
                                               // width: context.width() < 1080 ? (1080 * .33) - 50 : (MediaQuery.of(context).size.width * .33) - 50,
                                               child: widget.quotation != null
                                                   ? FittedBox(
                                                       child: Padding(
-                                                      padding: const EdgeInsets.all(10.0),
-                                                      child: Text(widget.quotation!.customerName),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              10.0),
+                                                      child: Text(widget
+                                                          .quotation!
+                                                          .customerName),
                                                     ))
-                                                  : DropdownButtonHideUnderline(child: getResult(customersList))),
+                                                  : DropdownButtonHideUnderline(
+                                                      child: getResult(
+                                                          customersList))),
                                         ),
                                         // const Spacer(),
                                         GestureDetector(
@@ -1048,7 +1200,8 @@ class _PosSaleState extends State<PosSale> {
                                               '/add-customer',
                                               extra: {
                                                 'typeOfCustomerAdd': 'Buyer',
-                                                'listOfPhoneNumber': listOfPhoneNumber,
+                                                'listOfPhoneNumber':
+                                                    listOfPhoneNumber,
                                               },
                                             );
                                           },
@@ -1056,7 +1209,10 @@ class _PosSaleState extends State<PosSale> {
                                             height: 40,
                                             width: 40,
                                             decoration: const BoxDecoration(
-                                              borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
+                                              borderRadius: BorderRadius.only(
+                                                  topRight: Radius.circular(5),
+                                                  bottomRight:
+                                                      Radius.circular(5)),
                                               color: kBlueTextColor,
                                             ),
                                             child: const Center(
@@ -1088,24 +1244,37 @@ class _PosSaleState extends State<PosSale> {
                                   lg: 24,
                                   child: productList.when(data: (product) {
                                     for (var element in product) {
-                                      allProductsNameList.add(element.productName.removeAllWhiteSpace().toLowerCase());
-                                      allProductsCodeList.add(element.productCode.removeAllWhiteSpace().toLowerCase());
-                                      warehouseIdList.add(element.warehouseId.removeAllWhiteSpace().toLowerCase());
-                                      warehouseBasedProductModel.add(WarehouseBasedProductModel(element.productName, element.warehouseId));
+                                      allProductsNameList.add(element
+                                          .productName
+                                          .removeAllWhiteSpace()
+                                          .toLowerCase());
+                                      allProductsCodeList.add(element
+                                          .productCode
+                                          .removeAllWhiteSpace()
+                                          .toLowerCase());
+                                      warehouseIdList.add(element.warehouseId
+                                          .removeAllWhiteSpace()
+                                          .toLowerCase());
+                                      warehouseBasedProductModel.add(
+                                          WarehouseBasedProductModel(
+                                              element.productName,
+                                              element.warehouseId));
                                     }
                                     return Padding(
                                       padding: const EdgeInsets.all(12.0),
                                       child: SizedBox(
                                         height: 40,
                                         child: AppTextField(
-                                          controller: nameCodeCategoryController,
+                                          controller:
+                                              nameCodeCategoryController,
                                           showCursor: true,
                                           focus: nameFocus,
                                           autoFocus: true,
                                           cursorColor: kTitleColor,
                                           onChanged: (value) {
                                             setState(() {
-                                              searchProductCode = value.toLowerCase();
+                                              searchProductCode =
+                                                  value.toLowerCase();
                                               selectedCategory = 'Categories';
                                               isSelected = "Categories";
                                             });
@@ -1113,25 +1282,47 @@ class _PosSaleState extends State<PosSale> {
                                           onFieldSubmitted: (value) {
                                             if (value != '') {
                                               if (product.isEmpty) {
-                                                EasyLoading.showError('No Product Found');
+                                                EasyLoading.showError(
+                                                    'No Product Found');
                                               }
-                                              for (int i = 0; i < product.length; i++) {
-                                                if (product[i].productCode == value) {
-                                                  AddToCartModel addToCartModel = AddToCartModel(
-                                                    productName: product[i].productName,
-                                                    warehouseName: product[i].warehouseName,
-                                                    warehouseId: product[i].warehouseId,
-                                                    productId: product[i].productCode,
-                                                    productImage: product[i].productPicture,
-                                                    productPurchasePrice: product[i].productPurchasePrice.toDouble(),
-                                                    subTotal: productPriceChecker(product: product[i], customerType: selectedCustomerType),
-                                                    stock: num.parse(product[i].productStock),
-                                                    productWarranty: product[i].warranty,
+                                              for (int i = 0;
+                                                  i < product.length;
+                                                  i++) {
+                                                if (product[i].productCode ==
+                                                    value) {
+                                                  AddToCartModel
+                                                      addToCartModel =
+                                                      AddToCartModel(
+                                                    productName:
+                                                        product[i].productName,
+                                                    warehouseName: product[i]
+                                                        .warehouseName,
+                                                    warehouseId:
+                                                        product[i].warehouseId,
+                                                    productId:
+                                                        product[i].productCode,
+                                                    productImage: product[i]
+                                                        .productPicture,
+                                                    productPurchasePrice:
+                                                        product[i]
+                                                            .productPurchasePrice
+                                                            .toDouble(),
+                                                    subTotal: productPriceChecker(
+                                                        product: product[i],
+                                                        customerType:
+                                                            selectedCustomerType),
+                                                    stock: num.parse(product[i]
+                                                        .productStock),
+                                                    productWarranty:
+                                                        product[i].warranty,
                                                     serialNumber: [],
-                                                    subTaxes: product[i].subTaxes,
+                                                    subTaxes:
+                                                        product[i].subTaxes,
                                                     excTax: product[i].excTax,
-                                                    groupTaxName: product[i].groupTaxName,
-                                                    groupTaxRate: product[i].groupTaxRate,
+                                                    groupTaxName:
+                                                        product[i].groupTaxName,
+                                                    groupTaxRate:
+                                                        product[i].groupTaxRate,
                                                     incTax: product[i].incTax,
                                                     margin: product[i].margin,
                                                     taxType: product[i].taxType,
@@ -1146,14 +1337,18 @@ class _PosSaleState extends State<PosSale> {
                                                     // subTotal: productPriceChecker(product: product[i], customerType: selectedCustomerType)
                                                   );
                                                   setState(() {
-                                                    if (!uniqueCheck(product[i].productCode)) {
-                                                      cartList.add(addToCartModel);
+                                                    if (!uniqueCheck(product[i]
+                                                        .productCode)) {
+                                                      cartList
+                                                          .add(addToCartModel);
                                                       addFocus();
-                                                      nameCodeCategoryController.clear();
+                                                      nameCodeCategoryController
+                                                          .clear();
                                                       nameFocus.requestFocus();
                                                       searchProductCode = '';
                                                     } else {
-                                                      nameCodeCategoryController.clear();
+                                                      nameCodeCategoryController
+                                                          .clear();
                                                       nameFocus.requestFocus();
                                                       searchProductCode = '';
                                                     }
@@ -1161,9 +1356,11 @@ class _PosSaleState extends State<PosSale> {
                                                   break;
                                                 }
                                                 if (i + 1 == product.length) {
-                                                  nameCodeCategoryController.clear();
+                                                  nameCodeCategoryController
+                                                      .clear();
                                                   nameFocus.requestFocus();
-                                                  EasyLoading.showError('Not found');
+                                                  EasyLoading.showError(
+                                                      'Not found');
                                                   setState(() {
                                                     searchProductCode = '';
                                                   });
@@ -1173,25 +1370,36 @@ class _PosSaleState extends State<PosSale> {
                                           },
                                           textFieldType: TextFieldType.NAME,
                                           decoration: InputDecoration(
-                                            prefixIcon: Icon(MdiIcons.barcode, color: kTitleColor, size: 18.0),
+                                            prefixIcon: Icon(MdiIcons.barcode,
+                                                color: kTitleColor, size: 18.0),
                                             suffixIcon: Container(
                                               height: 10,
                                               width: 10,
                                               decoration: const BoxDecoration(
-                                                borderRadius: BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5)),
+                                                borderRadius: BorderRadius.only(
+                                                    topRight:
+                                                        Radius.circular(5),
+                                                    bottomRight:
+                                                        Radius.circular(5)),
                                                 color: kBlueTextColor,
                                               ),
                                               child: const Center(
-                                                child: Icon(FeatherIcons.plusSquare, color: Colors.white, size: 18.0),
+                                                child: Icon(
+                                                    FeatherIcons.plusSquare,
+                                                    color: Colors.white,
+                                                    size: 18.0),
                                               ),
                                             ).onTap(() => context.push(
                                                   '/product/add-product',
                                                   extra: {
-                                                    'allProductsCodeList': allProductsCodeList,
-                                                    'warehouseBasedProductModel': [],
+                                                    'allProductsCodeList':
+                                                        allProductsCodeList,
+                                                    'warehouseBasedProductModel':
+                                                        [],
                                                   },
                                                 )),
-                                            hintText: 'Search product name or code',
+                                            hintText:
+                                                'Search product name or code',
                                             border: InputBorder.none,
                                           ),
                                         ),
@@ -1216,12 +1424,14 @@ class _PosSaleState extends State<PosSale> {
                                     child: Container(
                                       height: 40,
                                       width: screenWidth,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(5),
                                         border: Border.all(color: kNeutral400),
                                       ),
-                                      child: DropdownButtonHideUnderline(child: getCategories()),
+                                      child: DropdownButtonHideUnderline(
+                                          child: getCategories()),
                                     ),
                                   ))
                             ],
@@ -1240,7 +1450,9 @@ class _PosSaleState extends State<PosSale> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: kWhite,
-                                  border: Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)),
+                                  border: Border.all(
+                                      width: 1,
+                                      color: kGreyTextColor.withOpacity(0.3)),
                                   borderRadius: const BorderRadius.all(
                                     Radius.circular(15),
                                   ),
@@ -1249,10 +1461,17 @@ class _PosSaleState extends State<PosSale> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
-                                      height: context.height() < 720 ? 720 - 410 : context.height() - 410,
-                                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kNeutral300))),
+                                      height: context.height() < 720
+                                          ? 720 - 410
+                                          : context.height() - 410,
+                                      decoration: const BoxDecoration(
+                                          border: Border(
+                                              bottom: BorderSide(
+                                                  width: 1,
+                                                  color: kNeutral300))),
                                       child: LayoutBuilder(
-                                        builder: (BuildContext context, BoxConstraints constraints) {
+                                        builder: (BuildContext context,
+                                            BoxConstraints constraints) {
                                           final kWidth = constraints.maxWidth;
                                           return RawScrollbar(
                                             thumbVisibility: true,
@@ -1267,96 +1486,209 @@ class _PosSaleState extends State<PosSale> {
                                                   minWidth: kWidth,
                                                 ),
                                                 child: Theme(
-                                                  data: theme.copyWith(dividerColor: Colors.transparent, dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                                                  data: theme.copyWith(
+                                                      dividerColor:
+                                                          Colors.transparent,
+                                                      dividerTheme:
+                                                          const DividerThemeData(
+                                                              color: Colors
+                                                                  .transparent)),
                                                   child: DataTable(
                                                       border: const TableBorder(
-                                                        horizontalInside: BorderSide(
+                                                        horizontalInside:
+                                                            BorderSide(
                                                           width: 1,
                                                           color: kNeutral300,
                                                         ),
                                                       ),
                                                       dividerThickness: 0.0,
-                                                      dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                                      headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                      dataRowColor:
+                                                          const WidgetStatePropertyAll(
+                                                              whiteColor),
+                                                      headingRowColor:
+                                                          WidgetStateProperty.all(
+                                                              const Color(
+                                                                  0xFFF8F3FF)),
                                                       showBottomBorder: false,
-                                                      headingTextStyle: theme.textTheme.titleMedium,
-                                                      dataTextStyle: theme.textTheme.bodyLarge,
+                                                      headingTextStyle: theme
+                                                          .textTheme
+                                                          .titleMedium,
+                                                      dataTextStyle: theme
+                                                          .textTheme.bodyLarge,
                                                       columns: [
-                                                        DataColumn(label: Text(lang.S.of(context).productNam)),
-                                                        DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).quantity)),
-                                                        DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).price)),
-                                                        DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).subTotal)),
                                                         DataColumn(
-                                                            headingRowAlignment: MainAxisAlignment.center,
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .productNam)),
+                                                        DataColumn(
+                                                            headingRowAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .quantity)),
+                                                        DataColumn(
+                                                            headingRowAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .price)),
+                                                        DataColumn(
+                                                            headingRowAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .subTotal)),
+                                                        DataColumn(
+                                                            headingRowAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
                                                             label: Text(
-                                                              lang.S.of(context).action,
-                                                              textAlign: TextAlign.end,
+                                                              lang.S
+                                                                  .of(context)
+                                                                  .action,
+                                                              textAlign:
+                                                                  TextAlign.end,
                                                             )),
                                                       ],
-                                                      rows: List.generate(cartList.length, (index) {
-                                                        TextEditingController quantityController = TextEditingController(text: cartList[index].quantity.toString());
+                                                      rows: List.generate(
+                                                          cartList.length,
+                                                          (index) {
+                                                        TextEditingController
+                                                            quantityController =
+                                                            TextEditingController(
+                                                                text: cartList[
+                                                                        index]
+                                                                    .quantity
+                                                                    .toString());
                                                         return DataRow(cells: [
                                                           //------------product name-----------------
                                                           DataCell(
                                                             Text(
-                                                              cartList[index].productName ?? '',
+                                                              cartList[index]
+                                                                      .productName ??
+                                                                  '',
                                                               maxLines: 2,
-                                                              overflow: TextOverflow.ellipsis,
-                                                              style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: kTextStyle.copyWith(
+                                                                  color:
+                                                                      kTitleColor,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold),
                                                             ),
                                                           ),
                                                           //---------------product quantity---------------------------------
                                                           DataCell(Center(
                                                             child: Row(
-                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
                                                               children: [
-                                                                const Icon(FontAwesomeIcons.solidSquareMinus, color: kBlueTextColor).onTap(() {
+                                                                const Icon(
+                                                                        FontAwesomeIcons
+                                                                            .solidSquareMinus,
+                                                                        color:
+                                                                            kBlueTextColor)
+                                                                    .onTap(() {
                                                                   setState(() {
-                                                                    cartList[index].quantity > 1 ? cartList[index].quantity-- : cartList[index].quantity = 1;
+                                                                    cartList[index].quantity >
+                                                                            1
+                                                                        ? cartList[index]
+                                                                            .quantity--
+                                                                        : cartList[index]
+                                                                            .quantity = 1;
                                                                   });
                                                                 }),
-                                                                const SizedBox(width: 4),
+                                                                const SizedBox(
+                                                                    width: 4),
                                                                 SizedBox(
                                                                   width: 60,
                                                                   height: 32,
-                                                                  child: TextFormField(
-                                                                    controller: quantityController,
-                                                                    textAlign: TextAlign.center,
-                                                                    focusNode: productFocusNode[index],
-                                                                    onChanged: (value) {
-                                                                      if (cartList[index].stock! < num.parse(value)) {
-                                                                        EasyLoading.showError('Out of Stock');
-                                                                        quantityController.clear();
-                                                                      } else if (value == '') {
-                                                                        cartList[index].quantity = 1;
-                                                                      } else if (value == '0') {
-                                                                        cartList[index].quantity = 1;
+                                                                  child:
+                                                                      TextFormField(
+                                                                    controller:
+                                                                        quantityController,
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    focusNode:
+                                                                        productFocusNode[
+                                                                            index],
+                                                                    onChanged:
+                                                                        (value) {
+                                                                      if (cartList[index]
+                                                                              .stock! <
+                                                                          num.parse(
+                                                                              value)) {
+                                                                        EasyLoading.showError(
+                                                                            'Out of Stock');
+                                                                        quantityController
+                                                                            .clear();
+                                                                      } else if (value ==
+                                                                          '') {
+                                                                        cartList[index]
+                                                                            .quantity = 1;
+                                                                      } else if (value ==
+                                                                          '0') {
+                                                                        cartList[index]
+                                                                            .quantity = 1;
                                                                       } else {
-                                                                        cartList[index].quantity = num.parse(value);
+                                                                        cartList[index].quantity =
+                                                                            num.parse(value);
                                                                       }
                                                                     },
-                                                                    onFieldSubmitted: (value) {
-                                                                      if (value == '') {
-                                                                        setState(() {
-                                                                          cartList[index].quantity = 1;
+                                                                    onFieldSubmitted:
+                                                                        (value) {
+                                                                      if (value ==
+                                                                          '') {
+                                                                        setState(
+                                                                            () {
+                                                                          cartList[index].quantity =
+                                                                              1;
                                                                         });
                                                                       } else {
-                                                                        setState(() {
-                                                                          cartList[index].quantity = num.parse(value);
+                                                                        setState(
+                                                                            () {
+                                                                          cartList[index].quantity =
+                                                                              num.parse(value);
                                                                         });
                                                                       }
                                                                     },
                                                                   ),
                                                                 ),
-                                                                const SizedBox(width: 4),
-                                                                const Icon(FontAwesomeIcons.solidSquarePlus, color: kBlueTextColor).onTap(() {
-                                                                  if (cartList[index].quantity < cartList[index].stock!) {
-                                                                    setState(() {
-                                                                      cartList[index].quantity += 1;
-                                                                      toast(cartList[index].quantity.toString());
+                                                                const SizedBox(
+                                                                    width: 4),
+                                                                const Icon(
+                                                                        FontAwesomeIcons
+                                                                            .solidSquarePlus,
+                                                                        color:
+                                                                            kBlueTextColor)
+                                                                    .onTap(() {
+                                                                  if (cartList[
+                                                                              index]
+                                                                          .quantity <
+                                                                      cartList[
+                                                                              index]
+                                                                          .stock!) {
+                                                                    setState(
+                                                                        () {
+                                                                      cartList[
+                                                                              index]
+                                                                          .quantity += 1;
+                                                                      toast(cartList[
+                                                                              index]
+                                                                          .quantity
+                                                                          .toString());
                                                                     });
                                                                   } else {
-                                                                    EasyLoading.showError('Out of Stock');
+                                                                    EasyLoading
+                                                                        .showError(
+                                                                            'Out of Stock');
                                                                   }
                                                                 }),
                                                               ],
@@ -1365,40 +1697,75 @@ class _PosSaleState extends State<PosSale> {
                                                           //-------------------product price---------------------------------
                                                           DataCell(
                                                             Align(
-                                                              alignment: Alignment.center,
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
                                                               child: SizedBox(
                                                                 height: 32,
                                                                 width: 60,
-                                                                child: TextFormField(
-                                                                  initialValue: myFormat.format(double.tryParse(cartList[index].subTotal) ?? 0),
-                                                                  onChanged: (value) {
-                                                                    if (value == '') {
-                                                                      setState(() {
-                                                                        cartList[index].subTotal = 0.toString();
+                                                                child:
+                                                                    TextFormField(
+                                                                  initialValue:
+                                                                      myFormat.format(
+                                                                          double.tryParse(cartList[index].subTotal) ??
+                                                                              0),
+                                                                  onChanged:
+                                                                      (value) {
+                                                                    if (value ==
+                                                                        '') {
+                                                                      setState(
+                                                                          () {
+                                                                        cartList[index].subTotal =
+                                                                            0.toString();
                                                                       });
-                                                                    } else if (double.tryParse(value) == null) {
-                                                                      EasyLoading.showError('Enter a valid Price');
+                                                                    } else if (double.tryParse(
+                                                                            value) ==
+                                                                        null) {
+                                                                      EasyLoading
+                                                                          .showError(
+                                                                              'Enter a valid Price');
                                                                     } else {
-                                                                      setState(() {
-                                                                        cartList[index].subTotal = double.parse(value).toStringAsFixed(2);
+                                                                      setState(
+                                                                          () {
+                                                                        cartList[index]
+                                                                            .subTotal = double.parse(
+                                                                                value)
+                                                                            .toStringAsFixed(2);
                                                                       });
                                                                     }
                                                                   },
-                                                                  onFieldSubmitted: (value) {
-                                                                    if (value == '') {
-                                                                      setState(() {
-                                                                        cartList[index].subTotal = 0.toString();
+                                                                  onFieldSubmitted:
+                                                                      (value) {
+                                                                    if (value ==
+                                                                        '') {
+                                                                      setState(
+                                                                          () {
+                                                                        cartList[index].subTotal =
+                                                                            0.toString();
                                                                       });
-                                                                    } else if (double.tryParse(value) == null) {
-                                                                      EasyLoading.showError('Enter a valid Price');
+                                                                    } else if (double.tryParse(
+                                                                            value) ==
+                                                                        null) {
+                                                                      EasyLoading
+                                                                          .showError(
+                                                                              'Enter a valid Price');
                                                                     } else {
-                                                                      setState(() {
-                                                                        cartList[index].subTotal = double.parse(value).toStringAsFixed(2);
+                                                                      setState(
+                                                                          () {
+                                                                        cartList[index]
+                                                                            .subTotal = double.parse(
+                                                                                value)
+                                                                            .toStringAsFixed(2);
                                                                       });
                                                                     }
                                                                   },
-                                                                  textAlign: TextAlign.center,
-                                                                  decoration: const InputDecoration(contentPadding: EdgeInsets.all(6)),
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                  decoration: const InputDecoration(
+                                                                      contentPadding:
+                                                                          EdgeInsets.all(
+                                                                              6)),
                                                                 ),
                                                               ),
                                                             ),
@@ -1408,22 +1775,34 @@ class _PosSaleState extends State<PosSale> {
                                                             Center(
                                                               child: Text(
                                                                 '$globalCurrency${myFormat.format(double.tryParse((double.parse(cartList[index].subTotal) * cartList[index].quantity).toStringAsFixed(2)) ?? 0)}',
-                                                                style: kTextStyle.copyWith(color: kTitleColor),
-                                                                textAlign: TextAlign.center,
+                                                                style: kTextStyle
+                                                                    .copyWith(
+                                                                        color:
+                                                                            kTitleColor),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
                                                               ),
                                                             ),
                                                           ),
                                                           //-------------------------action----------------------------------
                                                           DataCell(
                                                             Align(
-                                                              alignment: Alignment.center,
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
                                                               child: const Icon(
-                                                                Icons.close_sharp,
+                                                                Icons
+                                                                    .close_sharp,
                                                                 color: redColor,
                                                               ).onTap(() {
                                                                 setState(() {
-                                                                  cartList.removeAt(index);
-                                                                  productFocusNode.removeAt(index);
+                                                                  cartList
+                                                                      .removeAt(
+                                                                          index);
+                                                                  productFocusNode
+                                                                      .removeAt(
+                                                                          index);
                                                                 });
                                                               }),
                                                             ),
@@ -1443,7 +1822,8 @@ class _PosSaleState extends State<PosSale> {
                                       padding: const EdgeInsets.all(10.0),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
                                         children: [
                                           ///__________total__________________________________________
                                           ResponsiveGridRow(children: [
@@ -1452,10 +1832,14 @@ class _PosSaleState extends State<PosSale> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: EdgeInsets.only(bottom: screenWidth < 577 ? 12 : 0),
+                                                padding: EdgeInsets.only(
+                                                    bottom: screenWidth < 577
+                                                        ? 12
+                                                        : 0),
                                                 child: Text(
                                                   'Total Item: ${cartList.length}',
-                                                  style: theme.textTheme.titleMedium,
+                                                  style: theme
+                                                      .textTheme.titleMedium,
                                                 ),
                                               ),
                                             ),
@@ -1466,23 +1850,34 @@ class _PosSaleState extends State<PosSale> {
                                                 child: Row(
                                                   children: [
                                                     Padding(
-                                                      padding: const EdgeInsets.only(right: 12),
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              right: 12),
                                                       child: Text(
                                                         'Sub Total',
-                                                        textAlign: TextAlign.end,
-                                                        style: theme.textTheme.titleMedium,
+                                                        textAlign:
+                                                            TextAlign.end,
+                                                        style: theme.textTheme
+                                                            .titleMedium,
                                                       ),
                                                     ),
                                                     Flexible(
                                                       child: ElevatedButton(
-                                                        style: ElevatedButton.styleFrom(
-                                                          padding: EdgeInsets.zero,
-                                                          fixedSize: Size(screenWidth, 40),
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          fixedSize: Size(
+                                                              screenWidth, 40),
                                                         ),
                                                         onPressed: () {},
                                                         child: Text(
                                                           '$globalCurrency ${myFormat.format(double.tryParse((getTotalAmount().toDouble() + serviceCharge - discountAmount).toStringAsFixed(2)) ?? 0)}',
-                                                          style: theme.textTheme.titleMedium?.copyWith(color: Colors.white),
+                                                          style: theme.textTheme
+                                                              .titleMedium
+                                                              ?.copyWith(
+                                                                  color: Colors
+                                                                      .white),
                                                         ),
                                                       ),
                                                     )
@@ -1507,50 +1902,122 @@ class _PosSaleState extends State<PosSale> {
                                                 // height: 50.00 * getAllTaxFromCartList(cart: cartList).length,
                                                 // width: context.width() < 1080 ? 1080 * .10 : MediaQuery.of(context).size.width * .10 + 204,
                                                 child: ListView.builder(
-                                                  itemCount: getAllTaxFromCartList(cart: cartList).length,
+                                                  itemCount:
+                                                      getAllTaxFromCartList(
+                                                              cart: cartList)
+                                                          .length,
                                                   shrinkWrap: true,
-                                                  itemBuilder: (context, index) {
+                                                  itemBuilder:
+                                                      (context, index) {
                                                     return Container(
                                                       height: 40,
-                                                      margin: const EdgeInsets.only(top: 5, bottom: 5),
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                              top: 5,
+                                                              bottom: 5),
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
                                                           Padding(
-                                                            padding: const EdgeInsets.only(right: 12),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    right: 12),
                                                             child: Text(
-                                                              getAllTaxFromCartList(cart: cartList)[index].name,
-                                                              textAlign: TextAlign.end,
-                                                              style: theme.textTheme.titleMedium,
+                                                              getAllTaxFromCartList(
+                                                                          cart:
+                                                                              cartList)[
+                                                                      index]
+                                                                  .name,
+                                                              textAlign:
+                                                                  TextAlign.end,
+                                                              style: theme
+                                                                  .textTheme
+                                                                  .titleMedium,
                                                             ),
                                                           ),
                                                           Flexible(
                                                             child: SizedBox(
                                                               height: 40.0,
                                                               child: Center(
-                                                                child: AppTextField(
-                                                                  initialValue: getAllTaxFromCartList(cart: cartList)[index].taxRate.toString(),
-                                                                  readOnly: true,
-                                                                  textAlign: TextAlign.right,
-                                                                  decoration: InputDecoration(
-                                                                    contentPadding: const EdgeInsets.only(right: 6.0),
-                                                                    hintText: '0',
-                                                                    border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                    enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                    disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                    focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                    prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                                                    prefixIcon: Container(
-                                                                      padding: const EdgeInsets.only(top: 8.0, left: 8.0),
-                                                                      height: 40,
-                                                                      decoration: const BoxDecoration(color: Color(0xFFff5f00), borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                                                      child: const Text(
+                                                                child:
+                                                                    AppTextField(
+                                                                  initialValue: getAllTaxFromCartList(
+                                                                          cart:
+                                                                              cartList)[index]
+                                                                      .taxRate
+                                                                      .toString(),
+                                                                  readOnly:
+                                                                      true,
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .right,
+                                                                  decoration:
+                                                                      InputDecoration(
+                                                                    contentPadding:
+                                                                        const EdgeInsets
+                                                                            .only(
+                                                                            right:
+                                                                                6.0),
+                                                                    hintText:
+                                                                        '0',
+                                                                    border: const OutlineInputBorder(
+                                                                        gapPadding:
+                                                                            0.0,
+                                                                        borderSide:
+                                                                            BorderSide(color: Color(0xFFff5f00))),
+                                                                    enabledBorder: const OutlineInputBorder(
+                                                                        gapPadding:
+                                                                            0.0,
+                                                                        borderSide:
+                                                                            BorderSide(color: Color(0xFFff5f00))),
+                                                                    disabledBorder: const OutlineInputBorder(
+                                                                        gapPadding:
+                                                                            0.0,
+                                                                        borderSide:
+                                                                            BorderSide(color: Color(0xFFff5f00))),
+                                                                    focusedBorder: const OutlineInputBorder(
+                                                                        gapPadding:
+                                                                            0.0,
+                                                                        borderSide:
+                                                                            BorderSide(color: Color(0xFFff5f00))),
+                                                                    prefixIconConstraints: const BoxConstraints(
+                                                                        maxWidth:
+                                                                            30.0,
+                                                                        minWidth:
+                                                                            30.0),
+                                                                    prefixIcon:
+                                                                        Container(
+                                                                      padding: const EdgeInsets
+                                                                          .only(
+                                                                          top:
+                                                                              8.0,
+                                                                          left:
+                                                                              8.0),
+                                                                      height:
+                                                                          40,
+                                                                      decoration: const BoxDecoration(
+                                                                          color: Color(
+                                                                              0xFFff5f00),
+                                                                          borderRadius: BorderRadius.only(
+                                                                              topLeft: Radius.circular(4.0),
+                                                                              bottomLeft: Radius.circular(4.0))),
+                                                                      child:
+                                                                          const Text(
                                                                         '%',
-                                                                        style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                                20.0,
+                                                                            color:
+                                                                                Colors.white),
                                                                       ),
                                                                     ),
                                                                   ),
-                                                                  textFieldType: TextFieldType.NUMBER,
+                                                                  textFieldType:
+                                                                      TextFieldType
+                                                                          .NUMBER,
                                                                 ),
                                                               ),
                                                             ),
@@ -1580,14 +2047,21 @@ class _PosSaleState extends State<PosSale> {
                                               child: SizedBox(
                                                 // width: screenWidth,
                                                 child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.end,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
                                                   children: [
                                                     Padding(
-                                                      padding: const EdgeInsets.only(right: 12),
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              right: 12),
                                                       child: Text(
-                                                        lang.S.of(context).shpingOrServices,
-                                                        textAlign: TextAlign.end,
-                                                        style: theme.textTheme.titleMedium,
+                                                        lang.S
+                                                            .of(context)
+                                                            .shpingOrServices,
+                                                        textAlign:
+                                                            TextAlign.end,
+                                                        style: theme.textTheme
+                                                            .titleMedium,
                                                       ),
                                                     ),
                                                     Flexible(
@@ -1595,19 +2069,31 @@ class _PosSaleState extends State<PosSale> {
                                                         width: screenWidth,
                                                         height: 40,
                                                         child: TextFormField(
-                                                          initialValue: serviceCharge.toString(),
+                                                          initialValue:
+                                                              serviceCharge
+                                                                  .toString(),
                                                           onChanged: (value) {
                                                             setState(() {
-                                                              serviceCharge = value.toDouble();
+                                                              serviceCharge =
+                                                                  value
+                                                                      .toDouble();
                                                             });
                                                           },
-                                                          decoration: const InputDecoration(
-                                                            border: OutlineInputBorder(),
-                                                            hintText: 'Enter Amount',
-                                                            contentPadding: EdgeInsets.all(7.0),
+                                                          decoration:
+                                                              const InputDecoration(
+                                                            border:
+                                                                OutlineInputBorder(),
+                                                            hintText:
+                                                                'Enter Amount',
+                                                            contentPadding:
+                                                                EdgeInsets.all(
+                                                                    7.0),
                                                           ),
-                                                          textAlign: TextAlign.center,
-                                                          keyboardType: TextInputType.number,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .number,
                                                         ),
                                                       ),
                                                     ),
@@ -1631,14 +2117,20 @@ class _PosSaleState extends State<PosSale> {
                                               md: 6,
                                               lg: 6,
                                               child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.end,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.end,
                                                 children: [
                                                   Padding(
-                                                    padding: const EdgeInsets.only(right: 12),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            right: 12),
                                                     child: Text(
-                                                      lang.S.of(context).discount,
+                                                      lang.S
+                                                          .of(context)
+                                                          .discount,
                                                       textAlign: TextAlign.end,
-                                                      style: theme.textTheme.titleMedium,
+                                                      style: theme.textTheme
+                                                          .titleMedium,
                                                     ),
                                                   ),
                                                   Flexible(
@@ -1648,48 +2140,122 @@ class _PosSaleState extends State<PosSale> {
                                                           child: SizedBox(
                                                             height: 40.0,
                                                             child: AppTextField(
-                                                              controller: discountPercentageEditingController,
-                                                              onChanged: (value) {
-                                                                if (value == '') {
+                                                              controller:
+                                                                  discountPercentageEditingController,
+                                                              onChanged:
+                                                                  (value) {
+                                                                if (value ==
+                                                                    '') {
                                                                   setState(() {
-                                                                    discountAmountEditingController.text = 0.toString();
+                                                                    discountAmountEditingController
+                                                                            .text =
+                                                                        0.toString();
                                                                   });
                                                                 } else {
-                                                                  if (value.toInt() <= 100) {
-                                                                    setState(() {
-                                                                      discountAmount = double.parse(((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
-                                                                      discountAmountEditingController.text = discountAmount.toString();
+                                                                  if (value
+                                                                          .toInt() <=
+                                                                      100) {
+                                                                    setState(
+                                                                        () {
+                                                                      discountAmount =
+                                                                          double.parse(
+                                                                              ((value.toDouble() / 100) * getTotalAmount().toDouble()).toStringAsFixed(1));
+                                                                      discountAmountEditingController
+                                                                              .text =
+                                                                          discountAmount
+                                                                              .toString();
                                                                     });
                                                                   } else {
-                                                                    setState(() {
-                                                                      discountAmount = 0;
-                                                                      discountAmountEditingController.clear();
-                                                                      discountPercentageEditingController.clear();
+                                                                    setState(
+                                                                        () {
+                                                                      discountAmount =
+                                                                          0;
+                                                                      discountAmountEditingController
+                                                                          .clear();
+                                                                      discountPercentageEditingController
+                                                                          .clear();
                                                                     });
-                                                                    EasyLoading.showError('Enter a valid Discount');
+                                                                    EasyLoading
+                                                                        .showError(
+                                                                            'Enter a valid Discount');
                                                                   }
                                                                 }
                                                               },
-                                                              textAlign: TextAlign.right,
-                                                              decoration: InputDecoration(
-                                                                contentPadding: const EdgeInsets.only(right: 6.0),
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .right,
+                                                              decoration:
+                                                                  InputDecoration(
+                                                                contentPadding:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                        right:
+                                                                            6.0),
                                                                 hintText: '0',
-                                                                border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: Color(0xFFff5f00))),
-                                                                prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                                                prefixIcon: Container(
-                                                                  padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                                                border: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                Color(0xFFff5f00))),
+                                                                enabledBorder: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                Color(0xFFff5f00))),
+                                                                disabledBorder: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                Color(0xFFff5f00))),
+                                                                focusedBorder: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                Color(0xFFff5f00))),
+                                                                prefixIconConstraints:
+                                                                    const BoxConstraints(
+                                                                        maxWidth:
+                                                                            30.0,
+                                                                        minWidth:
+                                                                            30.0),
+                                                                prefixIcon:
+                                                                    Container(
+                                                                  padding: const EdgeInsets
+                                                                      .only(
+                                                                      top: 8.0,
+                                                                      left:
+                                                                          8.0),
                                                                   height: 40,
-                                                                  decoration: const BoxDecoration(color: Color(0xFFff5f00), borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
-                                                                  child: const Text(
+                                                                  decoration: const BoxDecoration(
+                                                                      color: Color(
+                                                                          0xFFff5f00),
+                                                                      borderRadius: BorderRadius.only(
+                                                                          topLeft: Radius.circular(
+                                                                              4.0),
+                                                                          bottomLeft:
+                                                                              Radius.circular(4.0))),
+                                                                  child:
+                                                                      const Text(
                                                                     '%',
-                                                                    style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                            20.0,
+                                                                        color: Colors
+                                                                            .white),
                                                                   ),
                                                                 ),
                                                               ),
-                                                              textFieldType: TextFieldType.NUMBER,
+                                                              textFieldType:
+                                                                  TextFieldType
+                                                                      .NUMBER,
                                                             ),
                                                           ),
                                                         ),
@@ -1700,49 +2266,124 @@ class _PosSaleState extends State<PosSale> {
                                                           child: SizedBox(
                                                             height: 40.0,
                                                             child: AppTextField(
-                                                              controller: discountAmountEditingController,
-                                                              onChanged: (value) {
-                                                                if (value == '') {
+                                                              controller:
+                                                                  discountAmountEditingController,
+                                                              onChanged:
+                                                                  (value) {
+                                                                if (value ==
+                                                                    '') {
                                                                   setState(() {
-                                                                    discountAmount = 0;
-                                                                    discountPercentageEditingController.text = 0.toString();
+                                                                    discountAmount =
+                                                                        0;
+                                                                    discountPercentageEditingController
+                                                                            .text =
+                                                                        0.toString();
                                                                   });
                                                                 } else {
-                                                                  if (value.toInt() <= getTotalAmount().toDouble()) {
-                                                                    setState(() {
-                                                                      discountAmount = double.parse(value);
-                                                                      discountPercentageEditingController.text = ((discountAmount * 100) / getTotalAmount().toDouble()).toStringAsFixed(1);
+                                                                  if (value
+                                                                          .toInt() <=
+                                                                      getTotalAmount()
+                                                                          .toDouble()) {
+                                                                    setState(
+                                                                        () {
+                                                                      discountAmount =
+                                                                          double.parse(
+                                                                              value);
+                                                                      discountPercentageEditingController
+                                                                          .text = ((discountAmount * 100) /
+                                                                              getTotalAmount().toDouble())
+                                                                          .toStringAsFixed(1);
                                                                     });
                                                                   } else {
-                                                                    setState(() {
-                                                                      discountAmount = 0;
-                                                                      discountPercentageEditingController.clear();
-                                                                      discountAmountEditingController.clear();
+                                                                    setState(
+                                                                        () {
+                                                                      discountAmount =
+                                                                          0;
+                                                                      discountPercentageEditingController
+                                                                          .clear();
+                                                                      discountAmountEditingController
+                                                                          .clear();
                                                                     });
-                                                                    EasyLoading.showError('Enter a valid Discount');
+                                                                    EasyLoading
+                                                                        .showError(
+                                                                            'Enter a valid Discount');
                                                                   }
                                                                 }
                                                               },
-                                                              textAlign: TextAlign.right,
-                                                              decoration: InputDecoration(
-                                                                contentPadding: const EdgeInsets.only(right: 6.0),
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .right,
+                                                              decoration:
+                                                                  InputDecoration(
+                                                                contentPadding:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                        right:
+                                                                            6.0),
                                                                 hintText: '0',
-                                                                border: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                enabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                disabledBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                focusedBorder: const OutlineInputBorder(gapPadding: 0.0, borderSide: BorderSide(color: kMainColor)),
-                                                                prefixIconConstraints: const BoxConstraints(maxWidth: 30.0, minWidth: 30.0),
-                                                                prefixIcon: Container(
-                                                                  padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                                                                border: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                kMainColor)),
+                                                                enabledBorder: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                kMainColor)),
+                                                                disabledBorder: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                kMainColor)),
+                                                                focusedBorder: const OutlineInputBorder(
+                                                                    gapPadding:
+                                                                        0.0,
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                            color:
+                                                                                kMainColor)),
+                                                                prefixIconConstraints:
+                                                                    const BoxConstraints(
+                                                                        maxWidth:
+                                                                            30.0,
+                                                                        minWidth:
+                                                                            30.0),
+                                                                prefixIcon:
+                                                                    Container(
+                                                                  padding: const EdgeInsets
+                                                                      .only(
+                                                                      top: 8.0,
+                                                                      left:
+                                                                          8.0),
                                                                   height: 40,
-                                                                  decoration: const BoxDecoration(color: kMainColor, borderRadius: BorderRadius.only(topLeft: Radius.circular(4.0), bottomLeft: Radius.circular(4.0))),
+                                                                  decoration: const BoxDecoration(
+                                                                      color:
+                                                                          kMainColor,
+                                                                      borderRadius: BorderRadius.only(
+                                                                          topLeft: Radius.circular(
+                                                                              4.0),
+                                                                          bottomLeft:
+                                                                              Radius.circular(4.0))),
                                                                   child: Text(
                                                                     currency,
-                                                                    style: const TextStyle(fontSize: 20.0, color: Colors.white),
+                                                                    style: const TextStyle(
+                                                                        fontSize:
+                                                                            20.0,
+                                                                        color: Colors
+                                                                            .white),
                                                                   ),
                                                                 ),
                                                               ),
-                                                              textFieldType: TextFieldType.NUMBER,
+                                                              textFieldType:
+                                                                  TextFieldType
+                                                                      .NUMBER,
                                                             ),
                                                           ),
                                                         ),
@@ -1877,13 +2518,20 @@ class _PosSaleState extends State<PosSale> {
                                                 md: 4,
                                                 lg: 4,
                                                 child: Padding(
-                                                  padding: EdgeInsets.only(right: 12, bottom: screenWidth < 577 ? 12 : 0),
+                                                  padding: EdgeInsets.only(
+                                                      right: 12,
+                                                      bottom: screenWidth < 577
+                                                          ? 12
+                                                          : 0),
                                                   child: ElevatedButton(
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: Colors.red,
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.red,
                                                     ),
                                                     onPressed: () {
-                                                      GoRouter.of(context).pop();
+                                                      GoRouter.of(context)
+                                                          .pop();
                                                     },
                                                     child: Text(
                                                       lang.S.of(context).cancel,
@@ -1895,37 +2543,66 @@ class _PosSaleState extends State<PosSale> {
                                                 md: 4,
                                                 lg: 4,
                                                 child: Padding(
-                                                  padding: EdgeInsets.only(right: screenWidth < 577 ? 0 : 12, bottom: screenWidth < 577 ? 12 : 0),
+                                                  padding: EdgeInsets.only(
+                                                      right: screenWidth < 577
+                                                          ? 0
+                                                          : 12,
+                                                      bottom: screenWidth < 577
+                                                          ? 12
+                                                          : 0),
                                                   child: ElevatedButton(
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: Colors.black,
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.black,
                                                     ),
                                                     onPressed: () async {
-                                                      if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                                      if (await Subscription
+                                                          .subscriptionChecker(
+                                                              item: 'Sales')) {
                                                         if (cartList.isEmpty) {
-                                                          EasyLoading.showError('Please Add Some Product first');
+                                                          EasyLoading.showError(
+                                                              'Please Add Some Product first');
                                                         } else {
                                                           showDialog(
-                                                              barrierDismissible: false,
+                                                              barrierDismissible:
+                                                                  false,
                                                               context: context,
-                                                              builder: (BuildContext dialogContext) {
+                                                              builder: (BuildContext
+                                                                  dialogContext) {
                                                                 return Padding(
-                                                                  padding: const EdgeInsets.all(10.0),
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          10.0),
                                                                   child: Center(
-                                                                    child: Container(
-                                                                      width: 500,
-                                                                      decoration: const BoxDecoration(
-                                                                        color: Colors.white,
-                                                                        borderRadius: BorderRadius.all(
-                                                                          Radius.circular(15),
+                                                                    child:
+                                                                        Container(
+                                                                      width:
+                                                                          500,
+                                                                      decoration:
+                                                                          const BoxDecoration(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        borderRadius:
+                                                                            BorderRadius.all(
+                                                                          Radius.circular(
+                                                                              15),
                                                                         ),
                                                                       ),
-                                                                      child: Padding(
-                                                                        padding: const EdgeInsets.all(20.0),
-                                                                        child: Column(
-                                                                          mainAxisSize: MainAxisSize.min,
-                                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                                      child:
+                                                                          Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .all(
+                                                                            20.0),
+                                                                        child:
+                                                                            Column(
+                                                                          mainAxisSize:
+                                                                              MainAxisSize.min,
+                                                                          crossAxisAlignment:
+                                                                              CrossAxisAlignment.center,
+                                                                          mainAxisAlignment:
+                                                                              MainAxisAlignment.center,
                                                                           children: [
                                                                             Text(
                                                                               lang.S.of(context).areYouWantToCreateThisQuation,
@@ -2018,6 +2695,7 @@ class _PosSaleState extends State<PosSale> {
                                                                                         ///_________Invoice Increase____________________________________________________________________________
                                                                                         updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
 
+                                                                                        // ignore: unused_result
                                                                                         consumerRef.refresh(profileDetailsProvider);
 
                                                                                         EasyLoading.showSuccess('Added Successfully');
@@ -2041,11 +2719,14 @@ class _PosSaleState extends State<PosSale> {
                                                               });
                                                         }
                                                       } else {
-                                                        EasyLoading.showError('Update your plan first\nSale Limit is over.');
+                                                        EasyLoading.showError(
+                                                            'Update your plan first\nSale Limit is over.');
                                                       }
                                                     },
                                                     child: Text(
-                                                      lang.S.of(context).quotation,
+                                                      lang.S
+                                                          .of(context)
+                                                          .quotation,
                                                     ),
                                                   ),
                                                 )),
@@ -2054,34 +2735,87 @@ class _PosSaleState extends State<PosSale> {
                                                 md: 4,
                                                 lg: 4,
                                                 child: Padding(
-                                                  padding: EdgeInsets.only(right: screenWidth < 577 ? 0 : 12, bottom: screenWidth < 577 ? 12 : 0),
+                                                  padding: EdgeInsets.only(
+                                                      right: screenWidth < 577
+                                                          ? 0
+                                                          : 12,
+                                                      bottom: screenWidth < 577
+                                                          ? 12
+                                                          : 0),
                                                   child: ElevatedButton(
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: kMainColor,
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          kMainColor,
                                                     ),
                                                     onPressed: () async {
-                                                      if (await checkUserRolePermission(type: 'sale')) {
-                                                        if (await Subscription.subscriptionChecker(item: 'Sales')) {
-                                                          if (cartList.isEmpty) {
-                                                            EasyLoading.showError('Please Add Some Product first');
+                                                      if (await checkUserRolePermission(
+                                                          type: 'sale')) {
+                                                        if (await Subscription
+                                                            .subscriptionChecker(
+                                                                item:
+                                                                    'Sales')) {
+                                                          if (cartList
+                                                              .isEmpty) {
+                                                            EasyLoading.showError(
+                                                                'Please Add Some Product first');
                                                           } else {
-                                                            SaleTransactionModel transitionModel = SaleTransactionModel(
-                                                              customerName: selectedUserName.customerName,
-                                                              customerType: selectedUserName.type,
-                                                              customerGst: selectedUserName.gst,
-                                                              customerImage: selectedUserName.profilePicture,
-                                                              customerAddress: selectedUserName.customerAddress,
-                                                              customerPhone: selectedUserName.phoneNumber,
-                                                              invoiceNumber: widget.quotation == null ? data.saleInvoiceCounter.toString() : widget.quotation!.invoiceNumber,
-                                                              purchaseDate: DateTime.now().toString(),
-                                                              productList: cartList,
-                                                              totalAmount: double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount).toStringAsFixed(1)),
-                                                              discountAmount: double.parse(discountAmount.toStringAsFixed(2)),
-                                                              serviceCharge: double.parse(serviceCharge.toStringAsFixed(2)),
+                                                            SaleTransactionModel
+                                                                transitionModel =
+                                                                SaleTransactionModel(
+                                                              customerName:
+                                                                  selectedUserName
+                                                                      .customerName,
+                                                              customerType:
+                                                                  selectedUserName
+                                                                      .type,
+                                                              customerGst:
+                                                                  selectedUserName
+                                                                      .gst,
+                                                              customerImage:
+                                                                  selectedUserName
+                                                                      .profilePicture,
+                                                              customerAddress:
+                                                                  selectedUserName
+                                                                      .customerAddress,
+                                                              customerPhone:
+                                                                  selectedUserName
+                                                                      .phoneNumber,
+                                                              invoiceNumber: widget
+                                                                          .quotation ==
+                                                                      null
+                                                                  ? data
+                                                                      .saleInvoiceCounter
+                                                                      .toString()
+                                                                  : widget
+                                                                      .quotation!
+                                                                      .invoiceNumber,
+                                                              purchaseDate:
+                                                                  DateTime.now()
+                                                                      .toString(),
+                                                              productList:
+                                                                  cartList,
+                                                              totalAmount: double.parse((getTotalAmount()
+                                                                          .toDouble() +
+                                                                      serviceCharge -
+                                                                      discountAmount)
+                                                                  .toStringAsFixed(
+                                                                      1)),
+                                                              discountAmount:
+                                                                  double.parse(
+                                                                      discountAmount
+                                                                          .toStringAsFixed(
+                                                                              2)),
+                                                              serviceCharge:
+                                                                  double.parse(
+                                                                      serviceCharge
+                                                                          .toStringAsFixed(
+                                                                              2)),
                                                               // vat: double.parse(vatGst.toStringAsFixed(2)),
                                                               vat: 0,
                                                             );
-                                                            print(transitionModel);
+                                                            print(
+                                                                transitionModel);
                                                             // ShowPaymentPopUp(
                                                             //   transitionModel: transitionModel,
                                                             //   isFromQuotation: widget.quotation == null ? false : true,
@@ -2089,18 +2823,24 @@ class _PosSaleState extends State<PosSale> {
                                                             context.push(
                                                               '/sales/show-payment-popup',
                                                               extra: {
-                                                                'transitionModel': transitionModel,
-                                                                'isFromQuotation': widget.quotation != null,
+                                                                'transitionModel':
+                                                                    transitionModel,
+                                                                'isFromQuotation':
+                                                                    widget.quotation !=
+                                                                        null,
                                                               },
                                                             );
                                                           }
                                                         } else {
-                                                          EasyLoading.showError('Update your plan first\nSale Limit is over.');
+                                                          EasyLoading.showError(
+                                                              'Update your plan first\nSale Limit is over.');
                                                         }
                                                       }
                                                     },
                                                     child: Text(
-                                                      lang.S.of(context).payment,
+                                                      lang.S
+                                                          .of(context)
+                                                          .payment,
                                                     ),
                                                   ),
                                                 )),
@@ -2119,10 +2859,13 @@ class _PosSaleState extends State<PosSale> {
                             md: 100,
                             xs: 100,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: screenWidth < 1240 ? 0 : 16, vertical: screenWidth > 1240 ? 0 : 12),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth < 1240 ? 0 : 16,
+                                  vertical: screenWidth > 1240 ? 0 : 12),
                               child: Consumer(
                                 builder: (_, ref, watch) {
-                                  AsyncValue<List<CategoryModel>> categoryList = ref.watch(categoryProvider);
+                                  AsyncValue<List<CategoryModel>> categoryList =
+                                      ref.watch(categoryProvider);
                                   return categoryList.when(data: (category) {
                                     return Container(
                                       // width: 150,
@@ -2132,43 +2875,85 @@ class _PosSaleState extends State<PosSale> {
                                               ? 720 - 142
                                               : context.height() - 160,
                                       padding: const EdgeInsets.all(8.0),
-                                      decoration: BoxDecoration(color: kWhite, border: Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)), borderRadius: const BorderRadius.all(Radius.circular(15))),
+                                      decoration: BoxDecoration(
+                                          color: kWhite,
+                                          border: Border.all(
+                                              width: 1,
+                                              color: kGreyTextColor
+                                                  .withOpacity(0.3)),
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(15))),
                                       child: SingleChildScrollView(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             GestureDetector(
                                               child: Container(
                                                 decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(5.0),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5.0),
                                                     color: screenWidth < 1240
                                                         ? Colors.transparent
-                                                        : isSelected == 'Categories'
+                                                        : isSelected ==
+                                                                'Categories'
                                                             ? kBlueTextColor
-                                                            : kBlueTextColor.withOpacity(0.1)),
-                                                padding: EdgeInsets.only(left: screenWidth < 1240 ? 0 : 15, right: 8, top: screenWidth < 1240 ? 0 : 5, bottom: screenWidth < 1240 ? 0 : 5),
+                                                            : kBlueTextColor
+                                                                .withOpacity(
+                                                                    0.1)),
+                                                padding: EdgeInsets.only(
+                                                    left: screenWidth < 1240
+                                                        ? 0
+                                                        : 15,
+                                                    right: 8,
+                                                    top: screenWidth < 1240
+                                                        ? 0
+                                                        : 5,
+                                                    bottom: screenWidth < 1240
+                                                        ? 0
+                                                        : 5),
                                                 alignment: Alignment.centerLeft,
                                                 child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     Flexible(
                                                       child: Text(
-                                                        lang.S.of(context).categories,
-                                                        textAlign: TextAlign.start,
+                                                        lang.S
+                                                            .of(context)
+                                                            .categories,
+                                                        textAlign:
+                                                            TextAlign.start,
                                                         maxLines: 2,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: theme.textTheme.titleSmall?.copyWith(
-                                                            color: isSelected == 'Categories'
-                                                                ? screenWidth < 1240
-                                                                    ? kTitleColor
-                                                                    : Colors.white
-                                                                : kDarkGreyColor,
-                                                            fontSize: screenWidth < 1240 ? 20 : 14),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: theme.textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
+                                                                color: isSelected ==
+                                                                        'Categories'
+                                                                    ? screenWidth <
+                                                                            1240
+                                                                        ? kTitleColor
+                                                                        : Colors
+                                                                            .white
+                                                                    : kDarkGreyColor,
+                                                                fontSize:
+                                                                    screenWidth <
+                                                                            1240
+                                                                        ? 20
+                                                                        : 14),
                                                       ),
                                                     ),
                                                     Icon(
-                                                      Icons.keyboard_arrow_right,
-                                                      color: isSelected == 'Categories' ? Colors.white : kDarkGreyColor,
+                                                      Icons
+                                                          .keyboard_arrow_right,
+                                                      color: isSelected ==
+                                                              'Categories'
+                                                          ? Colors.white
+                                                          : kDarkGreyColor,
                                                       size: 16,
                                                     )
                                                   ],
@@ -2176,52 +2961,112 @@ class _PosSaleState extends State<PosSale> {
                                               ),
                                               onTap: () {
                                                 setState(() {
-                                                  selectedCategory = 'Categories';
+                                                  selectedCategory =
+                                                      'Categories';
                                                   isSelected = "Categories";
                                                 });
                                               },
                                             ),
                                             const SizedBox(height: 5.0),
                                             SizedBox(
-                                              height: screenWidth < 1240 ? 50 : null,
+                                              height: screenWidth < 1240
+                                                  ? 50
+                                                  : null,
                                               child: ListView.builder(
-                                                scrollDirection: screenWidth < 1240 ? Axis.horizontal : Axis.vertical,
+                                                scrollDirection:
+                                                    screenWidth < 1240
+                                                        ? Axis.horizontal
+                                                        : Axis.vertical,
                                                 itemCount: category.length,
                                                 shrinkWrap: true,
                                                 itemBuilder: (_, i) {
                                                   return GestureDetector(
                                                     onTap: (() {
                                                       setState(() {
-                                                        isSelected = category[i].categoryName;
-                                                        selectedCategory = category[i].categoryName;
+                                                        isSelected = category[i]
+                                                            .categoryName;
+                                                        selectedCategory =
+                                                            category[i]
+                                                                .categoryName;
                                                       });
                                                     }),
                                                     child: Padding(
-                                                      padding: EdgeInsets.only(top: 5, bottom: 4, right: screenWidth < 1240 ? 10 : 0),
+                                                      padding: EdgeInsets.only(
+                                                          top: 5,
+                                                          bottom: 4,
+                                                          right:
+                                                              screenWidth < 1240
+                                                                  ? 10
+                                                                  : 0),
                                                       child: Container(
-                                                        padding: const EdgeInsets.only(left: 15.0, right: 8.0, top: 8.0, bottom: 8.0),
-                                                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: isSelected == category[i].categoryName ? kBlueTextColor : kBlueTextColor.withOpacity(0.1)),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(
+                                                                left: 15.0,
+                                                                right: 8.0,
+                                                                top: 8.0,
+                                                                bottom: 8.0),
+                                                        decoration: BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        5.0),
+                                                            color: isSelected ==
+                                                                    category[i]
+                                                                        .categoryName
+                                                                ? kBlueTextColor
+                                                                : kBlueTextColor
+                                                                    .withOpacity(
+                                                                        0.1)),
                                                         child: Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
                                                           children: [
                                                             screenWidth < 1240
                                                                 ? Text(
-                                                                    category[i].categoryName,
+                                                                    category[i]
+                                                                        .categoryName,
                                                                     maxLines: 2,
-                                                                    overflow: TextOverflow.ellipsis,
-                                                                    style: theme.textTheme.titleSmall?.copyWith(color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor),
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .titleSmall
+                                                                        ?.copyWith(
+                                                                            color: isSelected == category[i].categoryName
+                                                                                ? Colors.white
+                                                                                : kDarkGreyColor),
                                                                   )
                                                                 : Flexible(
                                                                     child: Text(
-                                                                      category[i].categoryName,
-                                                                      maxLines: 2,
-                                                                      overflow: TextOverflow.ellipsis,
-                                                                      style: kTextStyle.copyWith(color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor, fontWeight: FontWeight.bold),
+                                                                      category[
+                                                                              i]
+                                                                          .categoryName,
+                                                                      maxLines:
+                                                                          2,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                      style: kTextStyle.copyWith(
+                                                                          color: isSelected == category[i].categoryName
+                                                                              ? Colors
+                                                                                  .white
+                                                                              : kDarkGreyColor,
+                                                                          fontWeight:
+                                                                              FontWeight.bold),
                                                                     ),
                                                                   ),
                                                             Icon(
-                                                              Icons.keyboard_arrow_right,
-                                                              color: isSelected == category[i].categoryName ? Colors.white : kDarkGreyColor,
+                                                              Icons
+                                                                  .keyboard_arrow_right,
+                                                              color: isSelected ==
+                                                                      category[
+                                                                              i]
+                                                                          .categoryName
+                                                                  ? Colors.white
+                                                                  : kDarkGreyColor,
                                                               size: 16,
                                                             )
                                                           ],
@@ -2258,10 +3103,19 @@ class _PosSaleState extends State<PosSale> {
                               if (widget.quotation != null) {
                                 //Compare the products from cartlist with productlist to see if any product is out of stock
                                 cartList.forEach((element) {
-                                  ProductModel? stockCheck = products.where((element2) => element2.productCode == element.productId).singleOrNull;
-                                  if (stockCheck != null && int.parse(stockCheck?.productStock ?? "0") < element.stock!.toInt()) {
-                                    EasyLoading.showError('Product ${element.productName} is out of stock');
-                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  ProductModel? stockCheck = products
+                                      .where((element2) =>
+                                          element2.productCode ==
+                                          element.productId)
+                                      // ignore: sdk_version_since
+                                      .singleOrNull;
+                                  if (stockCheck != null &&
+                                      int.parse(stockCheck.productStock) <
+                                          element.stock!.toInt()) {
+                                    EasyLoading.showError(
+                                        'Product ${element.productName} is out of stock');
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
                                       setState(() {
                                         cartList.remove(element);
                                       });
@@ -2273,14 +3127,49 @@ class _PosSaleState extends State<PosSale> {
                               List<ProductModel> showProductVsCategory = [];
                               if (selectedCategory == 'Categories') {
                                 for (var element in products) {
-                                  if (element.productCode.toLowerCase().contains(searchProductCode) || element.productCategory.toLowerCase().contains(searchProductCode) || element.productName.toLowerCase().contains(searchProductCode)) {
-                                    productPriceChecker(product: element, customerType: selectedCustomerType) != '0' && ((selectedWareHouse?.warehouseName == 'InHouse' && element.warehouseId == '') ? true : selectedWareHouse?.id == element.warehouseId) ? showProductVsCategory.add(element) : null;
+                                  if (element.productCode
+                                          .toLowerCase()
+                                          .contains(searchProductCode) ||
+                                      element.productCategory
+                                          .toLowerCase()
+                                          .contains(searchProductCode) ||
+                                      element.productName
+                                          .toLowerCase()
+                                          .contains(searchProductCode)) {
+                                    productPriceChecker(
+                                                    product: element,
+                                                    customerType:
+                                                        selectedCustomerType) !=
+                                                '0' &&
+                                            ((selectedWareHouse
+                                                            ?.warehouseName ==
+                                                        'InHouse' &&
+                                                    element.warehouseId == '')
+                                                ? true
+                                                : selectedWareHouse?.id ==
+                                                    element.warehouseId)
+                                        ? showProductVsCategory.add(element)
+                                        : null;
                                   }
                                 }
                               } else {
                                 for (var element in products) {
-                                  if (element.productCategory == selectedCategory) {
-                                    productPriceChecker(product: element, customerType: selectedCustomerType) != '0' && ((selectedWareHouse?.warehouseName == 'InHouse' && element.warehouseId == '') ? true : selectedWareHouse?.id == element.warehouseId) ? showProductVsCategory.add(element) : null;
+                                  if (element.productCategory ==
+                                      selectedCategory) {
+                                    productPriceChecker(
+                                                    product: element,
+                                                    customerType:
+                                                        selectedCustomerType) !=
+                                                '0' &&
+                                            ((selectedWareHouse
+                                                            ?.warehouseName ==
+                                                        'InHouse' &&
+                                                    element.warehouseId == '')
+                                                ? true
+                                                : selectedWareHouse?.id ==
+                                                    element.warehouseId)
+                                        ? showProductVsCategory.add(element)
+                                        : null;
                                   }
                                 }
                               }
@@ -2293,37 +3182,57 @@ class _PosSaleState extends State<PosSale> {
                                           color: kDarkWhite,
                                         ),
                                         child: GridView.builder(
-                                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                          gridDelegate:
+                                              const SliverGridDelegateWithMaxCrossAxisExtent(
                                             maxCrossAxisExtent: 180,
                                             mainAxisExtent: 204,
                                             mainAxisSpacing: 10,
                                             crossAxisSpacing: 10,
                                           ),
-                                          itemCount: showProductVsCategory.length,
+                                          itemCount:
+                                              showProductVsCategory.length,
                                           itemBuilder: (_, i) {
                                             return Container(
                                               width: 130.0,
                                               height: 170.0,
                                               decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(10.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(10.0),
                                                 color: kWhite,
                                                 border: Border.all(
                                                   color: kLitGreyColor,
                                                 ),
                                               ),
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   ///_____image_and_stock_______________________________
                                                   Stack(
-                                                    alignment: Alignment.topLeft,
+                                                    alignment:
+                                                        Alignment.topLeft,
                                                     children: [
                                                       ///_______image______________________________________
                                                       Container(
                                                         height: 120,
-                                                        decoration: BoxDecoration(
-                                                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(10.0), topRight: Radius.circular(10.0)),
-                                                          image: DecorationImage(image: NetworkImage(showProductVsCategory[i].productPicture), fit: BoxFit.cover),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              const BorderRadius
+                                                                  .only(
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          10.0),
+                                                                  topRight: Radius
+                                                                      .circular(
+                                                                          10.0)),
+                                                          image: DecorationImage(
+                                                              image: NetworkImage(
+                                                                  showProductVsCategory[
+                                                                          i]
+                                                                      .productPicture),
+                                                              fit:
+                                                                  BoxFit.cover),
                                                         ),
                                                       ),
 
@@ -2332,14 +3241,40 @@ class _PosSaleState extends State<PosSale> {
                                                         left: 5,
                                                         top: 5,
                                                         child: Container(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                          decoration: BoxDecoration(
-                                                            color: showProductVsCategory[i].productStock == '0' ? kRedTextColor : kBlueTextColor.withValues(alpha: 0.8),
-                                                            borderRadius: BorderRadius.circular(3),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal: 8,
+                                                                  vertical: 2),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: showProductVsCategory[
+                                                                            i]
+                                                                        .productStock ==
+                                                                    '0'
+                                                                ? kRedTextColor
+                                                                : kBlueTextColor
+                                                                    .withValues(
+                                                                        alpha:
+                                                                            0.8),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        3),
                                                           ),
                                                           child: Text(
-                                                            showProductVsCategory[i].productStock != '0' ? '${myFormat.format(double.tryParse(showProductVsCategory[i].productStock) ?? 0)} pc' : 'Out of stock',
-                                                            style: theme.textTheme.titleSmall?.copyWith(color: kWhite),
+                                                            showProductVsCategory[
+                                                                            i]
+                                                                        .productStock !=
+                                                                    '0'
+                                                                ? '${myFormat.format(double.tryParse(showProductVsCategory[i].productStock) ?? 0)} pc'
+                                                                : 'Out of stock',
+                                                            style: theme
+                                                                .textTheme
+                                                                .titleSmall
+                                                                ?.copyWith(
+                                                                    color:
+                                                                        kWhite),
                                                           ),
                                                         ),
                                                       ),
@@ -2347,30 +3282,63 @@ class _PosSaleState extends State<PosSale> {
                                                   ),
 
                                                   Padding(
-                                                    padding: const EdgeInsets.only(top: 10.0, left: 5, right: 3),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            top: 10.0,
+                                                            left: 5,
+                                                            right: 3),
                                                     child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
                                                       children: [
                                                         ///______name_______________________________________________
                                                         Text(
-                                                          showProductVsCategory[i].productName,
+                                                          showProductVsCategory[
+                                                                  i]
+                                                              .productName,
                                                           maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: theme.textTheme.bodyLarge,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: theme.textTheme
+                                                              .bodyLarge,
                                                         ),
-                                                        const SizedBox(height: 4.0),
+                                                        const SizedBox(
+                                                            height: 4.0),
 
                                                         ///________Purchase_price______________________________________________________
                                                         Container(
-                                                          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-                                                          decoration: BoxDecoration(
-                                                            color: kGreenTextColor,
-                                                            borderRadius: BorderRadius.circular(3.0),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  vertical: 2,
+                                                                  horizontal:
+                                                                      8),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color:
+                                                                kGreenTextColor,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        3.0),
                                                           ),
                                                           child: Text(
                                                             // ignore: prefer_interpolation_to_compose_strings
-                                                            'Price: $globalCurrency ' + myFormat.format(double.tryParse(productPriceChecker(product: showProductVsCategory[i], customerType: selectedCustomerType)) ?? 0),
-                                                            style: theme.textTheme.titleSmall?.copyWith(color: kWhite),
+                                                            'Price: $globalCurrency ' +
+                                                                myFormat.format(double.tryParse(productPriceChecker(
+                                                                        product:
+                                                                            showProductVsCategory[
+                                                                                i],
+                                                                        customerType:
+                                                                            selectedCustomerType)) ??
+                                                                    0),
+                                                            style: theme
+                                                                .textTheme
+                                                                .titleSmall
+                                                                ?.copyWith(
+                                                                    color:
+                                                                        kWhite),
                                                           ),
                                                         ),
                                                       ],
@@ -2379,34 +3347,82 @@ class _PosSaleState extends State<PosSale> {
                                                 ],
                                               ),
                                             ).onTap(() {
-                                              if (showProductVsCategory[i].serialNumber.isNotEmpty) {
-                                                showSerialNumberPopUp(productModel: showProductVsCategory[i]);
+                                              if (showProductVsCategory[i]
+                                                  .serialNumber
+                                                  .isNotEmpty) {
+                                                showSerialNumberPopUp(
+                                                    productModel:
+                                                        showProductVsCategory[
+                                                            i]);
                                               } else {
                                                 setState(() {
-                                                  AddToCartModel addToCartModel = AddToCartModel(
-                                                    productName: showProductVsCategory[i].productName,
-                                                    warehouseName: showProductVsCategory[i].warehouseName,
-                                                    warehouseId: showProductVsCategory[i].warehouseId,
-                                                    productId: showProductVsCategory[i].productCode,
-                                                    productImage: showProductVsCategory[i].productPicture,
-                                                    productPurchasePrice: showProductVsCategory[i].productPurchasePrice,
-                                                    subTotal: productPriceChecker(product: showProductVsCategory[i], customerType: selectedCustomerType),
-                                                    stock: num.parse(showProductVsCategory[i].productStock),
-                                                    productWarranty: showProductVsCategory[i].warranty,
+                                                  AddToCartModel
+                                                      addToCartModel =
+                                                      AddToCartModel(
+                                                    productName:
+                                                        showProductVsCategory[i]
+                                                            .productName,
+                                                    warehouseName:
+                                                        showProductVsCategory[i]
+                                                            .warehouseName,
+                                                    warehouseId:
+                                                        showProductVsCategory[i]
+                                                            .warehouseId,
+                                                    productId:
+                                                        showProductVsCategory[i]
+                                                            .productCode,
+                                                    productImage:
+                                                        showProductVsCategory[i]
+                                                            .productPicture,
+                                                    productPurchasePrice:
+                                                        showProductVsCategory[i]
+                                                            .productPurchasePrice,
+                                                    subTotal: productPriceChecker(
+                                                        product:
+                                                            showProductVsCategory[
+                                                                i],
+                                                        customerType:
+                                                            selectedCustomerType),
+                                                    stock: num.parse(
+                                                        showProductVsCategory[i]
+                                                            .productStock),
+                                                    productWarranty:
+                                                        showProductVsCategory[i]
+                                                            .warranty,
                                                     serialNumber: [],
-                                                    subTaxes: showProductVsCategory[i].subTaxes,
-                                                    excTax: showProductVsCategory[i].excTax,
-                                                    groupTaxName: showProductVsCategory[i].groupTaxName,
-                                                    groupTaxRate: showProductVsCategory[i].groupTaxRate,
-                                                    incTax: showProductVsCategory[i].incTax,
-                                                    margin: showProductVsCategory[i].margin,
-                                                    taxType: showProductVsCategory[i].taxType,
+                                                    subTaxes:
+                                                        showProductVsCategory[i]
+                                                            .subTaxes,
+                                                    excTax:
+                                                        showProductVsCategory[i]
+                                                            .excTax,
+                                                    groupTaxName:
+                                                        showProductVsCategory[i]
+                                                            .groupTaxName,
+                                                    groupTaxRate:
+                                                        showProductVsCategory[i]
+                                                            .groupTaxRate,
+                                                    incTax:
+                                                        showProductVsCategory[i]
+                                                            .incTax,
+                                                    margin:
+                                                        showProductVsCategory[i]
+                                                            .margin,
+                                                    taxType:
+                                                        showProductVsCategory[i]
+                                                            .taxType,
                                                   );
-                                                  if (!uniqueCheck(showProductVsCategory[i].productCode)) {
-                                                    if (showProductVsCategory[i].productStock == '0') {
-                                                      EasyLoading.showError('Product Out Of Stock');
+                                                  if (!uniqueCheck(
+                                                      showProductVsCategory[i]
+                                                          .productCode)) {
+                                                    if (showProductVsCategory[i]
+                                                            .productStock ==
+                                                        '0') {
+                                                      EasyLoading.showError(
+                                                          'Product Out Of Stock');
                                                     } else {
-                                                      cartList.add(addToCartModel);
+                                                      cartList
+                                                          .add(addToCartModel);
                                                       addFocus();
                                                     }
                                                   } else {}
@@ -2418,14 +3434,17 @@ class _PosSaleState extends State<PosSale> {
                                       ),
                                     )
                                   : Container(
-                                      height: context.height() < 720 ? 720 - 136 : context.height() - 136,
+                                      height: context.height() < 720
+                                          ? 720 - 136
+                                          : context.height() - 136,
                                       color: Colors.white,
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           const SizedBox(height: 80),
                                           const Image(
-                                            image: AssetImage('images/empty_screen.png'),
+                                            image: AssetImage(
+                                                'images/empty_screen.png'),
                                           ),
                                           const SizedBox(height: 20),
                                           GestureDetector(
@@ -2433,20 +3452,33 @@ class _PosSaleState extends State<PosSale> {
                                               context.push(
                                                 '/product/add-product',
                                                 extra: {
-                                                  'allProductsCodeList': allProductsCodeList,
-                                                  'warehouseBasedProductModel': [],
+                                                  'allProductsCodeList':
+                                                      allProductsCodeList,
+                                                  'warehouseBasedProductModel':
+                                                      [],
                                                 },
                                               );
                                             },
                                             child: Container(
-                                              decoration: const BoxDecoration(color: kBlueTextColor, borderRadius: BorderRadius.all(Radius.circular(15))),
+                                              decoration: const BoxDecoration(
+                                                  color: kBlueTextColor,
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(15))),
                                               width: 200,
                                               child: Center(
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(20.0),
+                                                  padding: const EdgeInsets.all(
+                                                      20.0),
                                                   child: Text(
-                                                    lang.S.of(context).addProduct,
-                                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.0),
+                                                    lang.S
+                                                        .of(context)
+                                                        .addProduct,
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 18.0),
                                                   ),
                                                 ),
                                               ),
@@ -2496,7 +3528,8 @@ class _PosSaleState extends State<PosSale> {
                 // Navigator.pop(context, 'Cancel');
                 GoRouter.of(context).pop();
                 setState(() => isAlertSet = false);
-                isDeviceConnected = await InternetConnection().hasInternetAccess;
+                isDeviceConnected =
+                    await InternetConnection().hasInternetAccess;
                 if (!isDeviceConnected && isAlertSet == false) {
                   showDialogBox();
                   setState(() => isAlertSet = true);

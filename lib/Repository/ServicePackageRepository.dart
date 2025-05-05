@@ -7,7 +7,8 @@ class ServicePackageRepository {
   // Obtener todos los paquetes de servicio
   Future<List<ServicePackageModel>> getAllPackages() async {
     try {
-      final querySnapshot = await _firebaseFirestore.collection('services').get();
+      final querySnapshot =
+          await _firebaseFirestore.collection('services').get();
 
       return querySnapshot.docs
           .map((doc) => ServicePackageModel.fromMap(doc.data(), doc.id))
@@ -21,7 +22,7 @@ class ServicePackageRepository {
   // Agregar un paquete de servicio
   Future<bool> addPackage(ServicePackageModel newPackage) async {
     try {
-      final docRef = await _firebaseFirestore.collection('services').add({
+      await _firebaseFirestore.collection('services').add({
         'name': newPackage.name,
         'category': newPackage.category,
         'subcategory': newPackage.subcategory,
@@ -42,7 +43,10 @@ class ServicePackageRepository {
   // Actualizar un paquete de servicio
   Future<bool> updatePackage(ServicePackageModel updatedPackage) async {
     try {
-      await _firebaseFirestore.collection('services').doc(updatedPackage.id).update({
+      await _firebaseFirestore
+          .collection('services')
+          .doc(updatedPackage.id)
+          .update({
         'name': updatedPackage.name,
         'category': updatedPackage.category,
         'subcategory': updatedPackage.subcategory,

@@ -25,7 +25,11 @@ import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/dotted_border/dotted_border.dart';
 
 class EditProduct extends StatefulWidget {
-  const EditProduct({super.key, required this.productModel, required this.groupTaxModel, required this.allProductsNameList});
+  const EditProduct(
+      {super.key,
+      required this.productModel,
+      required this.groupTaxModel,
+      required this.allProductsNameList});
 
   final ProductModel productModel;
   final List<String> allProductsNameList;
@@ -65,7 +69,9 @@ class _AddProductState extends State<EditProduct> {
             dismissOnTap: false,
           );
         }
-        var snapshot = await FirebaseStorage.instance.ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}').putData(bytesFromPicker);
+        var snapshot = await FirebaseStorage.instance
+            .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+            .putData(bytesFromPicker);
         var url = await snapshot.ref.getDownloadURL();
         EasyLoading.showSuccess('Upload Successful!');
         setState(() {
@@ -74,16 +80,20 @@ class _AddProductState extends State<EditProduct> {
         });
       } on firebase_core.FirebaseException catch (e) {
         EasyLoading.dismiss();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.code.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.code.toString())));
       }
     }
   }
 
   TextEditingController productNameController = TextEditingController();
   TextEditingController productSalePriceController = TextEditingController();
-  TextEditingController productPurchasePriceController = TextEditingController();
-  TextEditingController productDiscountPriceController = TextEditingController();
-  TextEditingController productWholesalePriceController = TextEditingController();
+  TextEditingController productPurchasePriceController =
+      TextEditingController();
+  TextEditingController productDiscountPriceController =
+      TextEditingController();
+  TextEditingController productWholesalePriceController =
+      TextEditingController();
   TextEditingController productDealerPriceController = TextEditingController();
   TextEditingController productManufacturerController = TextEditingController();
 
@@ -93,9 +103,12 @@ class _AddProductState extends State<EditProduct> {
   TextEditingController capacityController = TextEditingController();
   TextEditingController typeController = TextEditingController();
   TextEditingController warrantyController = TextEditingController();
-  TextEditingController productSerialNumberController = TextEditingController(text: '');
-  TextEditingController expireDateTextEditingController = TextEditingController();
-  TextEditingController manufactureDateTextEditingController = TextEditingController();
+  TextEditingController productSerialNumberController =
+      TextEditingController(text: '');
+  TextEditingController expireDateTextEditingController =
+      TextEditingController();
+  TextEditingController manufactureDateTextEditingController =
+      TextEditingController();
 
   TextEditingController totalAmountController = TextEditingController();
   TextEditingController incTaxController = TextEditingController();
@@ -111,7 +124,12 @@ class _AddProductState extends State<EditProduct> {
   void getProductKey(String code) async {
     // ignore: unused_local_variable
     List<ProductModel> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Products')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['productCode'].toString() == code) {
@@ -133,11 +151,14 @@ class _AddProductState extends State<EditProduct> {
     productModel = widget.productModel;
     productNameController.text = widget.productModel.productName;
     productSalePriceController.text = widget.productModel.productSalePrice;
-    productPurchasePriceController.text = widget.productModel.productPurchasePrice;
+    productPurchasePriceController.text =
+        widget.productModel.productPurchasePrice;
     productDiscountPriceController.text = widget.productModel.productDiscount;
-    productWholesalePriceController.text = widget.productModel.productWholeSalePrice;
+    productWholesalePriceController.text =
+        widget.productModel.productWholeSalePrice;
     productDealerPriceController.text = widget.productModel.productDealerPrice;
-    productManufacturerController.text = widget.productModel.productManufacturer;
+    productManufacturerController.text =
+        widget.productModel.productManufacturer;
     sizeController.text = widget.productModel.size;
     colorController.text = widget.productModel.color;
     weightController.text = widget.productModel.weight;
@@ -155,11 +176,13 @@ class _AddProductState extends State<EditProduct> {
       }
     }
     if (widget.productModel.expiringDate != null) {
-      expireDateTextEditingController.text = DateFormat.yMMMd().format(DateTime.parse(widget.productModel.expiringDate!));
+      expireDateTextEditingController.text = DateFormat.yMMMd()
+          .format(DateTime.parse(widget.productModel.expiringDate!));
       expireDate = widget.productModel.expiringDate;
     }
     if (widget.productModel.manufacturingDate != null) {
-      manufactureDateTextEditingController.text = DateFormat.yMMMd().format(DateTime.parse(widget.productModel.manufacturingDate!));
+      manufactureDateTextEditingController.text = DateFormat.yMMMd()
+          .format(DateTime.parse(widget.productModel.manufacturingDate!));
       manufactureDate = widget.productModel.manufacturingDate;
     }
 
@@ -167,13 +190,19 @@ class _AddProductState extends State<EditProduct> {
 
     productPicture = widget.productModel.productPicture;
 
-    widget.productModel.serialNumber.isNotEmpty ? isSerialNumberTaken = true : isSerialNumberTaken = false;
+    widget.productModel.serialNumber.isNotEmpty
+        ? isSerialNumberTaken = true
+        : isSerialNumberTaken = false;
     marginController.text = widget.productModel.margin.toString();
     incTaxController.text = widget.productModel.incTax.toString();
     excTaxController.text = widget.productModel.excTax.toString();
     selectedTaxType = widget.productModel.taxType;
 
-    GroupTaxModel groupTaxModel = GroupTaxModel(name: widget.productModel.groupTaxName, taxRate: widget.productModel.groupTaxRate, id: '', subTaxes: widget.productModel.subTaxes);
+    GroupTaxModel groupTaxModel = GroupTaxModel(
+        name: widget.productModel.groupTaxName,
+        taxRate: widget.productModel.groupTaxRate,
+        id: '',
+        subTaxes: widget.productModel.subTaxes);
     bool isInList = false;
     for (var element in widget.groupTaxModel) {
       if (element.name == groupTaxModel.name) {
@@ -245,7 +274,8 @@ class _AddProductState extends State<EditProduct> {
   //___________________________________calculate_total_with_tax____________________
   double totalAmount = 0.0;
   void calculateTotal() {
-    String saleAmountText = productPurchasePriceController.text.replaceAll(',', '');
+    String saleAmountText =
+        productPurchasePriceController.text.replaceAll(',', '');
     double saleAmount = double.tryParse(saleAmountText) ?? 0.0;
     if (selectedGroupTaxModel != null) {
       double taxRate = double.parse(selectedGroupTaxModel!.taxRate.toString());
@@ -266,13 +296,17 @@ class _AddProductState extends State<EditProduct> {
   void adjustSalesPrices() {
     // double taxAmount = double.tryParse(selectedGroupTaxModel?.taxRate.toString() ?? '') ?? 0.0;
     double margin = double.tryParse(marginController.text) ?? 0;
-    double purchasePrice = double.tryParse(productPurchasePriceController.text) ?? 0;
+    double purchasePrice =
+        double.tryParse(productPurchasePriceController.text) ?? 0;
     double salesPrice = 0;
     double excPrice = 0;
-    double taxAmount = calculateAmountFromPercentage((selectedGroupTaxModel?.taxRate.toString() ?? '').toDouble(), purchasePrice);
+    double taxAmount = calculateAmountFromPercentage(
+        (selectedGroupTaxModel?.taxRate.toString() ?? '').toDouble(),
+        purchasePrice);
 
     if (selectedTaxType == 'Inclusive') {
-      salesPrice = purchasePrice + calculateAmountFromPercentage(margin, purchasePrice);
+      salesPrice =
+          purchasePrice + calculateAmountFromPercentage(margin, purchasePrice);
       // salesPrice -= calculateAmountFromPercentage(double.parse(selectedGroupTaxModel!.taxRate.toString()), purchasePrice);
       productSalePriceController.text = salesPrice.toString();
       productDealerPriceController.text = salesPrice.toString();
@@ -280,7 +314,9 @@ class _AddProductState extends State<EditProduct> {
       incTaxController.text = purchasePrice.toString();
       excTaxController.text = salesPrice.toString();
     } else {
-      salesPrice = purchasePrice + calculateAmountFromPercentage(margin, purchasePrice) + taxAmount;
+      salesPrice = purchasePrice +
+          calculateAmountFromPercentage(margin, purchasePrice) +
+          taxAmount;
       excPrice = purchasePrice + taxAmount;
       productSalePriceController.text = salesPrice.toString();
       productDealerPriceController.text = salesPrice.toString();
@@ -326,7 +362,8 @@ class _AddProductState extends State<EditProduct> {
                       padding: const EdgeInsets.only(left: 10.0),
                       child: Text(
                         lang.S.of(context).addProduct,
-                        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
                     ResponsiveGridRow(children: [
@@ -348,7 +385,8 @@ class _AddProductState extends State<EditProduct> {
                                   child: Form(
                                     key: addProductFormKey,
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const SizedBox(height: 10.0),
 
@@ -359,26 +397,42 @@ class _AddProductState extends State<EditProduct> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
                                                 child: TextFormField(
                                                   validator: (value) {
-                                                    if (value.removeAllWhiteSpace().isEmptyOrNull) {
+                                                    if (value
+                                                        .removeAllWhiteSpace()
+                                                        .isEmptyOrNull) {
                                                       return 'Product name is required.';
-                                                    } else if (widget.allProductsNameList.contains(value.removeAllWhiteSpace().toLowerCase()) && widget.productModel.productName != value) {
+                                                    } else if (widget
+                                                            .allProductsNameList
+                                                            .contains(value
+                                                                .removeAllWhiteSpace()
+                                                                .toLowerCase()) &&
+                                                        widget.productModel
+                                                                .productName !=
+                                                            value) {
                                                       return 'Product Name already exist.';
                                                     } else {
                                                       return null;
                                                     }
                                                   },
                                                   onSaved: (value) {
-                                                    productNameController.text = value!;
+                                                    productNameController.text =
+                                                        value!;
                                                   },
                                                   showCursor: true,
-                                                  controller: productNameController,
+                                                  controller:
+                                                      productNameController,
                                                   cursorColor: kTitleColor,
                                                   decoration: InputDecoration(
-                                                    labelText: lang.S.of(context).productNam,
-                                                    hintText: lang.S.of(context).enterProductName,
+                                                    labelText: lang.S
+                                                        .of(context)
+                                                        .productNam,
+                                                    hintText: lang.S
+                                                        .of(context)
+                                                        .enterProductName,
                                                   ),
                                                 ),
                                               )),
@@ -387,13 +441,18 @@ class _AddProductState extends State<EditProduct> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
                                                 child: TextFormField(
                                                   readOnly: true,
-                                                  initialValue: widget.productModel.productCategory,
+                                                  initialValue: widget
+                                                      .productModel
+                                                      .productCategory,
                                                   cursorColor: kTitleColor,
                                                   decoration: InputDecoration(
-                                                    labelText: lang.S.of(context).productCategory,
+                                                    labelText: lang.S
+                                                        .of(context)
+                                                        .productCategory,
                                                   ),
                                                 ),
                                               ))
@@ -403,12 +462,20 @@ class _AddProductState extends State<EditProduct> {
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
                                               xs: 12,
-                                              md: widget.productModel.color.isNotEmpty ? 6 : 12,
-                                              lg: widget.productModel.color.isNotEmpty ? 6 : 12,
+                                              md: widget.productModel.color
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
+                                              lg: widget.productModel.color
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
                                               child: Visibility(
-                                                visible: widget.productModel.size.isNotEmpty,
+                                                visible: widget.productModel
+                                                    .size.isNotEmpty,
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(10.0),
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
                                                   child: TextFormField(
                                                     validator: (value) {
                                                       return null;
@@ -416,22 +483,35 @@ class _AddProductState extends State<EditProduct> {
                                                     showCursor: true,
                                                     controller: sizeController,
                                                     cursorColor: kTitleColor,
-                                                    keyboardType: TextInputType.name,
+                                                    keyboardType:
+                                                        TextInputType.name,
                                                     decoration: InputDecoration(
-                                                      labelText: lang.S.of(context).productSize,
-                                                      hintText: lang.S.of(context).enterProductSize,
+                                                      labelText: lang.S
+                                                          .of(context)
+                                                          .productSize,
+                                                      hintText: lang.S
+                                                          .of(context)
+                                                          .enterProductSize,
                                                     ),
                                                   ),
                                                 ),
                                               )),
                                           ResponsiveGridCol(
                                               xs: 12,
-                                              md: widget.productModel.size.isNotEmpty ? 6 : 12,
-                                              lg: widget.productModel.size.isNotEmpty ? 6 : 12,
+                                              md: widget.productModel.size
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
+                                              lg: widget.productModel.size
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
                                               child: Visibility(
-                                                visible: widget.productModel.color.isNotEmpty,
+                                                visible: widget.productModel
+                                                    .color.isNotEmpty,
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(10.0),
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
                                                   child: TextFormField(
                                                     validator: (value) {
                                                       return null;
@@ -439,10 +519,15 @@ class _AddProductState extends State<EditProduct> {
                                                     showCursor: true,
                                                     controller: colorController,
                                                     cursorColor: kTitleColor,
-                                                    keyboardType: TextInputType.name,
+                                                    keyboardType:
+                                                        TextInputType.name,
                                                     decoration: InputDecoration(
-                                                      labelText: lang.S.of(context).productColor,
-                                                      hintText: lang.S.of(context).enterProductColor,
+                                                      labelText: lang.S
+                                                          .of(context)
+                                                          .productColor,
+                                                      hintText: lang.S
+                                                          .of(context)
+                                                          .enterProductColor,
                                                     ),
                                                   ),
                                                 ),
@@ -491,46 +576,74 @@ class _AddProductState extends State<EditProduct> {
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
                                               xs: 12,
-                                              md: widget.productModel.capacity.isNotEmpty ? 6 : 12,
-                                              lg: widget.productModel.capacity.isNotEmpty ? 6 : 12,
+                                              md: widget.productModel.capacity
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
+                                              lg: widget.productModel.capacity
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
                                               child: Visibility(
-                                                visible: widget.productModel.weight.isNotEmpty,
+                                                visible: widget.productModel
+                                                    .weight.isNotEmpty,
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(10.0),
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
                                                   child: TextFormField(
                                                     validator: (value) {
                                                       return null;
                                                     },
                                                     showCursor: true,
-                                                    controller: weightController,
+                                                    controller:
+                                                        weightController,
                                                     cursorColor: kTitleColor,
-                                                    keyboardType: TextInputType.name,
+                                                    keyboardType:
+                                                        TextInputType.name,
                                                     decoration: InputDecoration(
-                                                      labelText: lang.S.of(context).productWeight,
-                                                      hintText: lang.S.of(context).enterProductWeight,
+                                                      labelText: lang.S
+                                                          .of(context)
+                                                          .productWeight,
+                                                      hintText: lang.S
+                                                          .of(context)
+                                                          .enterProductWeight,
                                                     ),
                                                   ),
                                                 ),
                                               )),
                                           ResponsiveGridCol(
                                               xs: 12,
-                                              md: widget.productModel.weight.isNotEmpty ? 6 : 12,
-                                              lg: widget.productModel.weight.isNotEmpty ? 6 : 12,
+                                              md: widget.productModel.weight
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
+                                              lg: widget.productModel.weight
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
                                               child: Visibility(
-                                                visible: widget.productModel.capacity.isNotEmpty,
+                                                visible: widget.productModel
+                                                    .capacity.isNotEmpty,
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(10),
+                                                  padding:
+                                                      const EdgeInsets.all(10),
                                                   child: TextFormField(
                                                     validator: (value) {
                                                       return null;
                                                     },
                                                     showCursor: true,
-                                                    controller: capacityController,
+                                                    controller:
+                                                        capacityController,
                                                     cursorColor: kTitleColor,
-                                                    keyboardType: TextInputType.name,
+                                                    keyboardType:
+                                                        TextInputType.name,
                                                     decoration: InputDecoration(
-                                                      labelText: lang.S.of(context).productcapacity,
-                                                      hintText: lang.S.of(context).enterProductCapacity,
+                                                      labelText: lang.S
+                                                          .of(context)
+                                                          .productcapacity,
+                                                      hintText: lang.S
+                                                          .of(context)
+                                                          .enterProductCapacity,
                                                     ),
                                                   ),
                                                 ),
@@ -586,12 +699,20 @@ class _AddProductState extends State<EditProduct> {
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
                                               xs: 12,
-                                              md: widget.productModel.warranty.isNotEmpty ? 6 : 12,
-                                              lg: widget.productModel.warranty.isNotEmpty ? 6 : 12,
+                                              md: widget.productModel.warranty
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
+                                              lg: widget.productModel.warranty
+                                                      .isNotEmpty
+                                                  ? 6
+                                                  : 12,
                                               child: Visibility(
-                                                visible: widget.productModel.type.isNotEmpty,
+                                                visible: widget.productModel
+                                                    .type.isNotEmpty,
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(10),
+                                                  padding:
+                                                      const EdgeInsets.all(10),
                                                   child: TextFormField(
                                                     validator: (value) {
                                                       return null;
@@ -599,10 +720,15 @@ class _AddProductState extends State<EditProduct> {
                                                     showCursor: true,
                                                     controller: typeController,
                                                     cursorColor: kTitleColor,
-                                                    keyboardType: TextInputType.name,
+                                                    keyboardType:
+                                                        TextInputType.name,
                                                     decoration: InputDecoration(
-                                                      labelText: lang.S.of(context).productType,
-                                                      hintText: lang.S.of(context).enterProductType,
+                                                      labelText: lang.S
+                                                          .of(context)
+                                                          .productType,
+                                                      hintText: lang.S
+                                                          .of(context)
+                                                          .enterProductType,
                                                     ),
                                                   ),
                                                 ),
@@ -791,14 +917,20 @@ class _AddProductState extends State<EditProduct> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
                                                 child: TextFormField(
-                                                  initialValue: widget.productModel.brandName,
+                                                  initialValue: widget
+                                                      .productModel.brandName,
                                                   readOnly: true,
                                                   cursorColor: kTitleColor,
                                                   decoration: InputDecoration(
-                                                    labelText: lang.S.of(context).brandName,
-                                                    hintText: lang.S.of(context).enterBrandName,
+                                                    labelText: lang.S
+                                                        .of(context)
+                                                        .brandName,
+                                                    hintText: lang.S
+                                                        .of(context)
+                                                        .enterBrandName,
                                                   ),
                                                 ),
                                               )),
@@ -807,14 +939,20 @@ class _AddProductState extends State<EditProduct> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
                                                 child: TextFormField(
-                                                  initialValue: widget.productModel.productCode,
+                                                  initialValue: widget
+                                                      .productModel.productCode,
                                                   readOnly: true,
                                                   cursorColor: kTitleColor,
                                                   decoration: InputDecoration(
-                                                    labelText: lang.S.of(context).productCod,
-                                                    hintText: lang.S.of(context).enterProductCode,
+                                                    labelText: lang.S
+                                                        .of(context)
+                                                        .productCod,
+                                                    hintText: lang.S
+                                                        .of(context)
+                                                        .enterProductCode,
                                                     suffixIcon: const Icon(
                                                       Icons.scanner,
                                                       color: kTitleColor,
@@ -870,14 +1008,21 @@ class _AddProductState extends State<EditProduct> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
                                                 child: TextFormField(
-                                                  initialValue: widget.productModel.productStock,
+                                                  initialValue: widget
+                                                      .productModel
+                                                      .productStock,
                                                   readOnly: true,
                                                   cursorColor: kTitleColor,
                                                   decoration: InputDecoration(
-                                                    labelText: lang.S.of(context).Quantity,
-                                                    hintText: lang.S.of(context).enterProductQuantity,
+                                                    labelText: lang.S
+                                                        .of(context)
+                                                        .Quantity,
+                                                    hintText: lang.S
+                                                        .of(context)
+                                                        .enterProductQuantity,
                                                   ),
                                                 ),
                                               )),
@@ -885,12 +1030,17 @@ class _AddProductState extends State<EditProduct> {
                                               child: Padding(
                                             padding: const EdgeInsets.all(10.0),
                                             child: TextFormField(
-                                              initialValue: widget.productModel.productUnit,
+                                              initialValue: widget
+                                                  .productModel.productUnit,
                                               readOnly: true,
                                               cursorColor: kTitleColor,
                                               decoration: InputDecoration(
-                                                labelText: lang.S.of(context).productUnit,
-                                                hintText: lang.S.of(context).enterProductUnit,
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .productUnit,
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterProductUnit,
                                               ),
                                             ),
                                           )),
@@ -937,16 +1087,25 @@ class _AddProductState extends State<EditProduct> {
                                               return null;
                                             },
                                             onSaved: (value) {
-                                              productManufacturerController.text = value!;
+                                              productManufacturerController
+                                                  .text = value!;
                                             },
-                                            controller: productManufacturerController,
+                                            controller:
+                                                productManufacturerController,
                                             showCursor: true,
                                             cursorColor: kTitleColor,
-                                            decoration: kInputDecoration.copyWith(
-                                              labelText: lang.S.of(context).manufacturer,
-                                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                              hintText: lang.S.of(context).enterManufacturerName,
-                                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                            decoration:
+                                                kInputDecoration.copyWith(
+                                              labelText: lang.S
+                                                  .of(context)
+                                                  .manufacturer,
+                                              labelStyle: kTextStyle.copyWith(
+                                                  color: kTitleColor),
+                                              hintText: lang.S
+                                                  .of(context)
+                                                  .enterManufacturerName,
+                                              hintStyle: kTextStyle.copyWith(
+                                                  color: kGreyTextColor),
                                             ),
                                           ),
                                         ),
@@ -958,32 +1117,53 @@ class _AddProductState extends State<EditProduct> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
                                                 child: TextFormField(
-                                                  keyboardType: TextInputType.name,
+                                                  keyboardType:
+                                                      TextInputType.name,
                                                   readOnly: true,
                                                   validator: (value) {
                                                     return null;
                                                   },
-                                                  controller: manufactureDateTextEditingController,
+                                                  controller:
+                                                      manufactureDateTextEditingController,
                                                   decoration: InputDecoration(
-                                                    floatingLabelBehavior: FloatingLabelBehavior.always,
-                                                    labelText: "Manufacture Date",
+                                                    floatingLabelBehavior:
+                                                        FloatingLabelBehavior
+                                                            .always,
+                                                    labelText:
+                                                        "Manufacture Date",
                                                     hintText: 'Enter Date',
                                                     suffixIcon: IconButton(
                                                       onPressed: () async {
-                                                        final DateTime? picked = await showDatePicker(
+                                                        final DateTime? picked =
+                                                            await showDatePicker(
                                                           // initialDate: DateTime.now(),
-                                                          firstDate: DateTime(2015, 8),
-                                                          lastDate: DateTime(2101),
+                                                          firstDate:
+                                                              DateTime(2015, 8),
+                                                          lastDate:
+                                                              DateTime(2101),
                                                           context: context,
                                                         );
                                                         setState(() {
-                                                          picked != null ? manufactureDateTextEditingController.text = DateFormat.yMMMd().format(picked) : null;
-                                                          picked != null ? manufactureDate = picked.toString() : null;
+                                                          picked != null
+                                                              ? manufactureDateTextEditingController
+                                                                      .text =
+                                                                  DateFormat
+                                                                          .yMMMd()
+                                                                      .format(
+                                                                          picked)
+                                                              : null;
+                                                          picked != null
+                                                              ? manufactureDate =
+                                                                  picked
+                                                                      .toString()
+                                                              : null;
                                                         });
                                                       },
-                                                      icon: const Icon(IconlyLight.calendar),
+                                                      icon: const Icon(
+                                                          IconlyLight.calendar),
                                                     ),
                                                   ),
                                                 ),
@@ -993,32 +1173,52 @@ class _AddProductState extends State<EditProduct> {
                                               md: 6,
                                               lg: 6,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
                                                 child: TextFormField(
-                                                  keyboardType: TextInputType.name,
+                                                  keyboardType:
+                                                      TextInputType.name,
                                                   readOnly: true,
                                                   validator: (value) {
                                                     return null;
                                                   },
-                                                  controller: expireDateTextEditingController,
+                                                  controller:
+                                                      expireDateTextEditingController,
                                                   decoration: InputDecoration(
-                                                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                                                    floatingLabelBehavior:
+                                                        FloatingLabelBehavior
+                                                            .always,
                                                     labelText: 'Expire Date',
                                                     hintText: 'Enter Date',
                                                     suffixIcon: IconButton(
                                                       onPressed: () async {
-                                                        final DateTime? picked = await showDatePicker(
+                                                        final DateTime? picked =
+                                                            await showDatePicker(
                                                           // initialDate: DateTime.now(),
-                                                          firstDate: DateTime(2015, 8),
-                                                          lastDate: DateTime(2101),
+                                                          firstDate:
+                                                              DateTime(2015, 8),
+                                                          lastDate:
+                                                              DateTime(2101),
                                                           context: context,
                                                         );
                                                         setState(() {
-                                                          picked != null ? expireDateTextEditingController.text = DateFormat.yMMMd().format(picked) : null;
-                                                          picked != null ? expireDate = picked.toString() : null;
+                                                          picked != null
+                                                              ? expireDateTextEditingController
+                                                                      .text =
+                                                                  DateFormat
+                                                                          .yMMMd()
+                                                                      .format(
+                                                                          picked)
+                                                              : null;
+                                                          picked != null
+                                                              ? expireDate =
+                                                                  picked
+                                                                      .toString()
+                                                              : null;
                                                         });
                                                       },
-                                                      icon: const Icon(IconlyLight.calendar),
+                                                      icon: const Icon(
+                                                          IconlyLight.calendar),
                                                     ),
                                                   ),
                                                 ),
@@ -1102,17 +1302,27 @@ class _AddProductState extends State<EditProduct> {
                                         Padding(
                                           padding: const EdgeInsets.all(10.0),
                                           child: TextFormField(
-                                            initialValue: lowerStockAlert.toString(),
+                                            initialValue:
+                                                lowerStockAlert.toString(),
                                             onSaved: (value) {
-                                              lowerStockAlert = int.tryParse(value ?? '') ?? 5;
+                                              lowerStockAlert =
+                                                  int.tryParse(value ?? '') ??
+                                                      5;
                                             },
-                                            decoration: kInputDecoration.copyWith(
-                                              floatingLabelBehavior: FloatingLabelBehavior.always,
+                                            decoration:
+                                                kInputDecoration.copyWith(
+                                              floatingLabelBehavior:
+                                                  FloatingLabelBehavior.always,
                                               labelText: 'Low Stock Alert',
-                                              hintText: 'Enter Low Stock Alert Quantity',
-                                              border: const OutlineInputBorder(),
+                                              hintText:
+                                                  'Enter Low Stock Alert Quantity',
+                                              border:
+                                                  const OutlineInputBorder(),
                                             ),
-                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter
+                                                  .digitsOnly
+                                            ],
                                           ),
                                         ),
                                         // const SizedBox(height: 20.0),
@@ -1137,26 +1347,34 @@ class _AddProductState extends State<EditProduct> {
                                         children: [
                                           Theme(
                                             data: ThemeData(
-                                                checkboxTheme: const CheckboxThemeData(
-                                                    side: BorderSide(
+                                                checkboxTheme:
+                                                    const CheckboxThemeData(
+                                                        side: BorderSide(
                                               color: kNeutral500,
                                             ))),
                                             child: Checkbox(
                                                 value: isSerialNumberTaken,
                                                 onChanged: (value) {
                                                   setState(() {
-                                                    isSerialNumberTaken = value!;
+                                                    isSerialNumberTaken =
+                                                        value!;
                                                   });
                                                 }),
                                           ),
                                           Flexible(
-                                            child: Text.rich(TextSpan(text: 'Do you want to add a ', style: theme.textTheme.bodyLarge, children: [
-                                              TextSpan(
-                                                  text: 'serial number?',
-                                                  style: theme.textTheme.titleMedium?.copyWith(
-                                                    color: kMainColor,
-                                                  ))
-                                            ])),
+                                            child: Text.rich(TextSpan(
+                                                text: 'Do you want to add a ',
+                                                style:
+                                                    theme.textTheme.bodyLarge,
+                                                children: [
+                                                  TextSpan(
+                                                      text: 'serial number?',
+                                                      style: theme
+                                                          .textTheme.titleMedium
+                                                          ?.copyWith(
+                                                        color: kMainColor,
+                                                      ))
+                                                ])),
                                           ),
                                         ],
                                       ),
@@ -1168,28 +1386,43 @@ class _AddProductState extends State<EditProduct> {
                                           child: Visibility(
                                             visible: isSerialNumberTaken,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
                                                 validator: (value) {
                                                   return null;
                                                 },
-                                                controller: productSerialNumberController,
+                                                controller:
+                                                    productSerialNumberController,
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
                                                 onFieldSubmitted: (value) {
-                                                  if (isSerialNumberUnique(allList: widget.productModel.serialNumber, newSerial: value)) {
+                                                  if (isSerialNumberUnique(
+                                                      allList: widget
+                                                          .productModel
+                                                          .serialNumber,
+                                                      newSerial: value)) {
                                                     setState(() {
-                                                      widget.productModel.serialNumber.add(value);
+                                                      widget.productModel
+                                                          .serialNumber
+                                                          .add(value);
                                                     });
-                                                    productSerialNumberController.clear();
+                                                    productSerialNumberController
+                                                        .clear();
                                                   } else {
-                                                    EasyLoading.showError('Serial number already added!');
+                                                    EasyLoading.showError(
+                                                        'Serial number already added!');
                                                   }
                                                 },
-                                                keyboardType: TextInputType.name,
+                                                keyboardType:
+                                                    TextInputType.name,
                                                 decoration: InputDecoration(
-                                                  labelText: lang.S.of(context).serialNumber,
-                                                  hintText: lang.S.of(context).enterSerialNumber,
+                                                  labelText: lang.S
+                                                      .of(context)
+                                                      .serialNumber,
+                                                  hintText: lang.S
+                                                      .of(context)
+                                                      .enterSerialNumber,
                                                 ),
                                               ),
                                             ),
@@ -1202,16 +1435,29 @@ class _AddProductState extends State<EditProduct> {
                                           child: Visibility(
                                             visible: isSerialNumberTaken,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: ElevatedButton(
                                                 onPressed: () {
-                                                  if (isSerialNumberUnique(allList: widget.productModel.serialNumber, newSerial: productSerialNumberController.text)) {
+                                                  if (isSerialNumberUnique(
+                                                      allList: widget
+                                                          .productModel
+                                                          .serialNumber,
+                                                      newSerial:
+                                                          productSerialNumberController
+                                                              .text)) {
                                                     setState(() {
-                                                      widget.productModel.serialNumber.add(productSerialNumberController.text);
+                                                      widget.productModel
+                                                          .serialNumber
+                                                          .add(
+                                                              productSerialNumberController
+                                                                  .text);
                                                     });
-                                                    productSerialNumberController.clear();
+                                                    productSerialNumberController
+                                                        .clear();
                                                   } else {
-                                                    EasyLoading.showError('Serial number already added!');
+                                                    EasyLoading.showError(
+                                                        'Serial number already added!');
                                                   }
                                                 },
                                                 child: Text(
@@ -1228,39 +1474,59 @@ class _AddProductState extends State<EditProduct> {
                                           child: Visibility(
                                             visible: isSerialNumberTaken,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: Container(
                                                 height: 48,
                                                 decoration: BoxDecoration(
-                                                  border: Border.all(width: 1, color: kNeutral400),
-                                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                                  border: Border.all(
+                                                      width: 1,
+                                                      color: kNeutral400),
+                                                  borderRadius:
+                                                      const BorderRadius.all(
+                                                          Radius.circular(8)),
                                                 ),
                                                 child: ListView.builder(
                                                   shrinkWrap: true,
-                                                  itemCount: productModel.serialNumber.length,
-                                                  itemBuilder: (BuildContext context, int index) {
-                                                    if (productModel.serialNumber.isNotEmpty) {
+                                                  itemCount: productModel
+                                                      .serialNumber.length,
+                                                  itemBuilder:
+                                                      (BuildContext context,
+                                                          int index) {
+                                                    if (productModel
+                                                        .serialNumber
+                                                        .isNotEmpty) {
                                                       return Padding(
-                                                        padding: const EdgeInsets.all(5.0),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(5.0),
                                                         child: Row(
                                                           children: [
                                                             SizedBox(
                                                               width: 170,
                                                               child: Text(
-                                                                productModel.serialNumber[index],
+                                                                productModel
+                                                                        .serialNumber[
+                                                                    index],
                                                                 maxLines: 1,
-                                                                overflow: TextOverflow.ellipsis,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
                                                               ),
                                                             ),
                                                             GestureDetector(
                                                               onTap: () {
                                                                 setState(() {
-                                                                  productModel.serialNumber.removeAt(index);
+                                                                  productModel
+                                                                      .serialNumber
+                                                                      .removeAt(
+                                                                          index);
                                                                 });
                                                               },
                                                               child: const Icon(
                                                                 Icons.cancel,
-                                                                color: Colors.red,
+                                                                color:
+                                                                    Colors.red,
                                                                 size: 15,
                                                               ),
                                                             ),
@@ -1268,7 +1534,8 @@ class _AddProductState extends State<EditProduct> {
                                                         ),
                                                       );
                                                     } else {
-                                                      return const Text('No Serial Number Found');
+                                                      return const Text(
+                                                          'No Serial Number Found');
                                                     }
                                                   },
                                                 ),
@@ -1409,37 +1676,57 @@ class _AddProductState extends State<EditProduct> {
                                             md: 6,
                                             xs: 12,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: FormField(
-                                                builder: (FormFieldState<dynamic> field) {
+                                                builder:
+                                                    (FormFieldState<dynamic>
+                                                        field) {
                                                   return InputDecorator(
-                                                    decoration: const InputDecoration(
-                                                      labelText: 'Applicable Tax',
+                                                    decoration:
+                                                        const InputDecoration(
+                                                      labelText:
+                                                          'Applicable Tax',
                                                     ),
-                                                    child: DropdownButtonHideUnderline(
-                                                      child: DropdownButton<GroupTaxModel>(
+                                                    child:
+                                                        DropdownButtonHideUnderline(
+                                                      child: DropdownButton<
+                                                          GroupTaxModel>(
                                                         isExpanded: true,
                                                         icon: const Icon(
-                                                          Icons.keyboard_arrow_down,
+                                                          Icons
+                                                              .keyboard_arrow_down,
                                                           color: kGreyTextColor,
                                                         ),
                                                         hint: const Flexible(
                                                           child: Text(
                                                             'Select Tax',
                                                             maxLines: 1,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
                                                         ),
-                                                        items: widget.groupTaxModel.map((e) {
-                                                          return DropdownMenuItem<GroupTaxModel>(
+                                                        items: widget
+                                                            .groupTaxModel
+                                                            .map((e) {
+                                                          return DropdownMenuItem<
+                                                              GroupTaxModel>(
                                                             value: e,
-                                                            child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(e.name))),
+                                                            child: Expanded(
+                                                                child: FittedBox(
+                                                                    fit: BoxFit
+                                                                        .scaleDown,
+                                                                    child: Text(
+                                                                        e.name))),
                                                           );
                                                         }).toList(),
-                                                        value: selectedGroupTaxModel,
+                                                        value:
+                                                            selectedGroupTaxModel,
                                                         onChanged: (value) {
                                                           setState(() {
-                                                            selectedGroupTaxModel = value;
+                                                            selectedGroupTaxModel =
+                                                                value;
                                                             calculateTotal();
                                                             adjustSalesPrices(); // Update total amount when tax changes
                                                           });
@@ -1455,14 +1742,24 @@ class _AddProductState extends State<EditProduct> {
                                             md: 6,
                                             xs: 12,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: SizedBox(
                                                 height: 48,
                                                 child: FormField(
-                                                  builder: (FormFieldState<dynamic> field) {
+                                                  builder:
+                                                      (FormFieldState<dynamic>
+                                                          field) {
                                                     return InputDecorator(
-                                                      decoration: const InputDecoration(contentPadding: EdgeInsets.all(8.0), labelText: 'Tax Type'),
-                                                      child: DropdownButtonHideUnderline(
+                                                      decoration:
+                                                          const InputDecoration(
+                                                              contentPadding:
+                                                                  EdgeInsets
+                                                                      .all(8.0),
+                                                              labelText:
+                                                                  'Tax Type'),
+                                                      child:
+                                                          DropdownButtonHideUnderline(
                                                         child: getTaxType(),
                                                       ),
                                                     );
@@ -1539,47 +1836,73 @@ class _AddProductState extends State<EditProduct> {
                                             md: 6,
                                             lg: 6,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
-                                                keyboardType: TextInputType.number,
+                                                keyboardType:
+                                                    TextInputType.number,
                                                 controller: marginController,
                                                 onSaved: (value) {
-                                                  marginController.text = value!;
+                                                  marginController.text =
+                                                      value!;
                                                 },
                                                 onChanged: (value) {
                                                   adjustSalesPrices();
                                                 },
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
-                                                decoration: kInputDecoration.copyWith(
+                                                decoration:
+                                                    kInputDecoration.copyWith(
                                                   labelText: 'Margin %',
                                                   hintText: '0',
-                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                                                  labelStyle:
+                                                      kTextStyle.copyWith(
+                                                          color: kTitleColor),
+                                                  hintStyle:
+                                                      kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
+                                                  floatingLabelBehavior:
+                                                      FloatingLabelBehavior
+                                                          .always,
                                                 ),
                                               ),
                                             )),
                                         ResponsiveGridCol(
                                           xs: 12,
-                                          md: selectedTaxType == 'Inclusive' ? 6 : 0,
-                                          lg: selectedTaxType == 'Inclusive' ? 6 : 0,
+                                          md: selectedTaxType == 'Inclusive'
+                                              ? 6
+                                              : 0,
+                                          lg: selectedTaxType == 'Inclusive'
+                                              ? 6
+                                              : 0,
                                           child: Visibility(
-                                            visible: selectedTaxType == 'Inclusive',
+                                            visible:
+                                                selectedTaxType == 'Inclusive',
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
                                                 readOnly: true,
                                                 controller: incTaxController,
-                                                keyboardType: TextInputType.number,
+                                                keyboardType:
+                                                    TextInputType.number,
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
-                                                decoration: kInputDecoration.copyWith(
+                                                decoration:
+                                                    kInputDecoration.copyWith(
                                                   labelText: 'Inc. tax:',
                                                   hintText: '0',
-                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                                                  labelStyle:
+                                                      kTextStyle.copyWith(
+                                                          color: kTitleColor),
+                                                  hintStyle:
+                                                      kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
+                                                  floatingLabelBehavior:
+                                                      FloatingLabelBehavior
+                                                          .always,
                                                 ),
                                               ),
                                             ),
@@ -1587,24 +1910,39 @@ class _AddProductState extends State<EditProduct> {
                                         ),
                                         ResponsiveGridCol(
                                           xs: 12,
-                                          md: selectedTaxType == 'Exclusive' ? 6 : 0,
-                                          lg: selectedTaxType == 'Exclusive' ? 6 : 0,
+                                          md: selectedTaxType == 'Exclusive'
+                                              ? 6
+                                              : 0,
+                                          lg: selectedTaxType == 'Exclusive'
+                                              ? 6
+                                              : 0,
                                           child: Visibility(
-                                            visible: selectedTaxType == 'Exclusive',
+                                            visible:
+                                                selectedTaxType == 'Exclusive',
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
                                                 readOnly: true,
                                                 controller: excTaxController,
-                                                keyboardType: TextInputType.number,
+                                                keyboardType:
+                                                    TextInputType.number,
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
-                                                decoration: kInputDecoration.copyWith(
+                                                decoration:
+                                                    kInputDecoration.copyWith(
                                                   labelText: 'Exc. tax:',
                                                   hintText: '0',
-                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                                                  labelStyle:
+                                                      kTextStyle.copyWith(
+                                                          color: kTitleColor),
+                                                  hintStyle:
+                                                      kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
+                                                  floatingLabelBehavior:
+                                                      FloatingLabelBehavior
+                                                          .always,
                                                 ),
                                               ),
                                             ),
@@ -1683,32 +2021,54 @@ class _AddProductState extends State<EditProduct> {
                                             md: 6,
                                             xs: 12,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
                                                 onChanged: (value) {
                                                   adjustSalesPrices();
                                                 },
                                                 validator: (value) {
-                                                  if (value.removeAllWhiteSpace().isEmptyOrNull) {
+                                                  if (value
+                                                      .removeAllWhiteSpace()
+                                                      .isEmptyOrNull) {
                                                     return 'Product Purchase Price is required.';
-                                                  } else if (double.tryParse(value!) == null) {
+                                                  } else if (double.tryParse(
+                                                          value!) ==
+                                                      null) {
                                                     return 'Enter price in number.';
                                                   } else {
                                                     return null;
                                                   }
                                                 },
                                                 onSaved: (value) {
-                                                  productPurchasePriceController.text = value!;
+                                                  productPurchasePriceController
+                                                      .text = value!;
                                                 },
-                                                controller: productPurchasePriceController,
+                                                controller:
+                                                    productPurchasePriceController,
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
-                                                decoration: kInputDecoration.copyWith(
-                                                  errorBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-                                                  labelText: lang.S.of(context).purchasePrice,
-                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintText: lang.S.of(context).enterPurchasePrice,
-                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                                decoration:
+                                                    kInputDecoration.copyWith(
+                                                  errorBorder:
+                                                      const OutlineInputBorder(
+                                                          borderSide:
+                                                              BorderSide(
+                                                                  color: Colors
+                                                                      .red)),
+                                                  labelText: lang.S
+                                                      .of(context)
+                                                      .purchasePrice,
+                                                  labelStyle:
+                                                      kTextStyle.copyWith(
+                                                          color: kTitleColor),
+                                                  hintText: lang.S
+                                                      .of(context)
+                                                      .enterPurchasePrice,
+                                                  hintStyle:
+                                                      kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
                                                 ),
                                               ),
                                             )),
@@ -1717,29 +2077,51 @@ class _AddProductState extends State<EditProduct> {
                                             md: 6,
                                             xs: 12,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
                                                 validator: (value) {
-                                                  if (value.removeAllWhiteSpace().isEmptyOrNull) {
+                                                  if (value
+                                                      .removeAllWhiteSpace()
+                                                      .isEmptyOrNull) {
                                                     return 'Product Sale Price is required.';
-                                                  } else if (double.tryParse(value!) == null) {
+                                                  } else if (double.tryParse(
+                                                          value!) ==
+                                                      null) {
                                                     return 'Enter price in number.';
                                                   } else {
                                                     return null;
                                                   }
                                                 },
                                                 onSaved: (value) {
-                                                  productSalePriceController.text = value!;
+                                                  productSalePriceController
+                                                      .text = value!;
                                                 },
-                                                controller: productSalePriceController,
+                                                controller:
+                                                    productSalePriceController,
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
-                                                decoration: kInputDecoration.copyWith(
-                                                  errorBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-                                                  labelText: lang.S.of(context).salePrices,
-                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintText: lang.S.of(context).enterSalePrice,
-                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                                decoration:
+                                                    kInputDecoration.copyWith(
+                                                  errorBorder:
+                                                      const OutlineInputBorder(
+                                                          borderSide:
+                                                              BorderSide(
+                                                                  color: Colors
+                                                                      .red)),
+                                                  labelText: lang.S
+                                                      .of(context)
+                                                      .salePrices,
+                                                  labelStyle:
+                                                      kTextStyle.copyWith(
+                                                          color: kTitleColor),
+                                                  hintText: lang.S
+                                                      .of(context)
+                                                      .enterSalePrice,
+                                                  hintStyle:
+                                                      kTextStyle.copyWith(
+                                                          color:
+                                                              kGreyTextColor),
                                                 ),
                                               ),
                                             ))
@@ -1813,24 +2195,33 @@ class _AddProductState extends State<EditProduct> {
                                             md: 6,
                                             lg: 6,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
                                                 validator: (value) {
-                                                  if (double.tryParse(value!) == null && !value.isEmptyOrNull) {
+                                                  if (double.tryParse(value!) ==
+                                                          null &&
+                                                      !value.isEmptyOrNull) {
                                                     return 'Enter price in number.';
                                                   } else {
                                                     return null;
                                                   }
                                                 },
                                                 onSaved: (value) {
-                                                  productDealerPriceController.text = value!;
+                                                  productDealerPriceController
+                                                      .text = value!;
                                                 },
-                                                controller: productDealerPriceController,
+                                                controller:
+                                                    productDealerPriceController,
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
                                                 decoration: InputDecoration(
-                                                  labelText: lang.S.of(context).dealerPrice,
-                                                  hintText: lang.S.of(context).enterDealePrice,
+                                                  labelText: lang.S
+                                                      .of(context)
+                                                      .dealerPrice,
+                                                  hintText: lang.S
+                                                      .of(context)
+                                                      .enterDealePrice,
                                                 ),
                                               ),
                                             )),
@@ -1839,24 +2230,33 @@ class _AddProductState extends State<EditProduct> {
                                             md: 6,
                                             lg: 6,
                                             child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
                                               child: TextFormField(
                                                 validator: (value) {
-                                                  if (double.tryParse(value!) == null && !value.isEmptyOrNull) {
+                                                  if (double.tryParse(value!) ==
+                                                          null &&
+                                                      !value.isEmptyOrNull) {
                                                     return 'Enter price in number.';
                                                   } else {
                                                     return null;
                                                   }
                                                 },
                                                 onSaved: (value) {
-                                                  productWholesalePriceController.text = value!;
+                                                  productWholesalePriceController
+                                                      .text = value!;
                                                 },
-                                                controller: productWholesalePriceController,
+                                                controller:
+                                                    productWholesalePriceController,
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
                                                 decoration: InputDecoration(
-                                                  labelText: lang.S.of(context).wholeSaleprice,
-                                                  hintText: lang.S.of(context).enterPrice,
+                                                  labelText: lang.S
+                                                      .of(context)
+                                                      .wholeSaleprice,
+                                                  hintText: lang.S
+                                                      .of(context)
+                                                      .enterPrice,
                                                 ),
                                               ),
                                             )),
@@ -2003,7 +2403,9 @@ class _AddProductState extends State<EditProduct> {
                                     padding: const EdgeInsets.all(10.0),
                                     child: Text(
                                       'Published product',
-                                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                   const Divider(
@@ -2024,7 +2426,8 @@ class _AddProductState extends State<EditProduct> {
                                           onPressed: () {
                                             GoRouter.of(context).pop();
                                           },
-                                          child: Text(lang.S.of(context).cancel),
+                                          child:
+                                              Text(lang.S.of(context).cancel),
                                         ),
                                       ),
                                     ),
@@ -2036,58 +2439,143 @@ class _AddProductState extends State<EditProduct> {
                                           padding: const EdgeInsets.all(10.0),
                                           child: ElevatedButton(
                                             onPressed: () async {
-                                              if (finalUserRoleModel.productEdit == false) {
-                                                EasyLoading.showError(userPermissionErrorText);
+                                              if (finalUserRoleModel
+                                                      .productEdit ==
+                                                  false) {
+                                                EasyLoading.showError(
+                                                    userPermissionErrorText);
                                                 return;
                                               }
                                               if (!isDemo) {
                                                 if (categoryValidateAndSave()) {
                                                   try {
-                                                    EasyLoading.show(status: 'Loading...', dismissOnTap: false);
-                                                    final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref("${await getUserID()}/Products/$productKey");
-                                                    productModel.productName = productNameController.text;
-                                                    productModel.size = sizeController.text;
-                                                    productModel.color = colorController.text;
-                                                    productModel.weight = weightController.text;
-                                                    productModel.type = typeController.text;
+                                                    EasyLoading.show(
+                                                        status: 'Loading...',
+                                                        dismissOnTap: false);
+                                                    final DatabaseReference
+                                                        productInformationRef =
+                                                        FirebaseDatabase
+                                                            .instance
+                                                            .ref(
+                                                                "${await getUserID()}/Products/$productKey");
+                                                    productModel.productName =
+                                                        productNameController
+                                                            .text;
+                                                    productModel.size =
+                                                        sizeController.text;
+                                                    productModel.color =
+                                                        colorController.text;
+                                                    productModel.weight =
+                                                        weightController.text;
+                                                    productModel.type =
+                                                        typeController.text;
                                                     // productModel.warranty = warrantyController.text;
-                                                    productModel.capacity = capacityController.text;
+                                                    productModel.capacity =
+                                                        capacityController.text;
                                                     //_____price_____________________________________
-                                                    productModel.productSalePrice = productSalePriceController.text;
-                                                    productModel.productPurchasePrice = productPurchasePriceController.text;
-                                                    productModel.productDealerPrice = productDealerPriceController.text;
-                                                    productModel.productWholeSalePrice = productWholesalePriceController.text;
+                                                    productModel
+                                                            .productSalePrice =
+                                                        productSalePriceController
+                                                            .text;
+                                                    productModel
+                                                            .productPurchasePrice =
+                                                        productPurchasePriceController
+                                                            .text;
+                                                    productModel
+                                                            .productDealerPrice =
+                                                        productDealerPriceController
+                                                            .text;
+                                                    productModel
+                                                            .productWholeSalePrice =
+                                                        productWholesalePriceController
+                                                            .text;
 
-                                                    productModel.productManufacturer = productManufacturerController.text;
-                                                    productModel.warranty = warrantyController.text == '' ? '' : '${warrantyController.text} $selectedTime';
-                                                    productModel.productPicture = productPicture;
-                                                    productModel.manufacturingDate = manufactureDate;
-                                                    productModel.expiringDate = expireDate;
-                                                    productModel.lowerStockAlert = lowerStockAlert;
-                                                    productModel.taxType = selectedTaxType;
-                                                    productModel.margin = num.tryParse(marginController.text) ?? 0;
-                                                    productModel.excTax = num.tryParse(excTaxController.text) ?? 0;
-                                                    productModel.incTax = num.tryParse(incTaxController.text) ?? 0;
-                                                    productModel.groupTaxName = selectedGroupTaxModel?.name.toString() ?? '';
-                                                    productModel.groupTaxRate = selectedGroupTaxModel?.taxRate ?? 0;
-                                                    productModel.subTaxes = selectedGroupTaxModel?.subTaxes ?? [];
-                                                    await productInformationRef.set(productModel.toJson());
-                                                    EasyLoading.showSuccess('Added Successfully', duration: const Duration(milliseconds: 500));
-                                                    ref.refresh(productProvider);
-                                                    Future.delayed(const Duration(milliseconds: 100), () {
+                                                    productModel
+                                                            .productManufacturer =
+                                                        productManufacturerController
+                                                            .text;
+                                                    productModel.warranty =
+                                                        warrantyController
+                                                                    .text ==
+                                                                ''
+                                                            ? ''
+                                                            : '${warrantyController.text} $selectedTime';
+                                                    productModel
+                                                            .productPicture =
+                                                        productPicture;
+                                                    productModel
+                                                            .manufacturingDate =
+                                                        manufactureDate;
+                                                    productModel.expiringDate =
+                                                        expireDate;
+                                                    productModel
+                                                            .lowerStockAlert =
+                                                        lowerStockAlert;
+                                                    productModel.taxType =
+                                                        selectedTaxType;
+                                                    productModel.margin =
+                                                        num.tryParse(
+                                                                marginController
+                                                                    .text) ??
+                                                            0;
+                                                    productModel.excTax =
+                                                        num.tryParse(
+                                                                excTaxController
+                                                                    .text) ??
+                                                            0;
+                                                    productModel.incTax =
+                                                        num.tryParse(
+                                                                incTaxController
+                                                                    .text) ??
+                                                            0;
+                                                    productModel.groupTaxName =
+                                                        selectedGroupTaxModel
+                                                                ?.name
+                                                                .toString() ??
+                                                            '';
+                                                    productModel.groupTaxRate =
+                                                        selectedGroupTaxModel
+                                                                ?.taxRate ??
+                                                            0;
+                                                    productModel.subTaxes =
+                                                        selectedGroupTaxModel
+                                                                ?.subTaxes ??
+                                                            [];
+                                                    await productInformationRef
+                                                        .set(productModel
+                                                            .toJson());
+                                                    EasyLoading.showSuccess(
+                                                        'Added Successfully',
+                                                        duration:
+                                                            const Duration(
+                                                                milliseconds:
+                                                                    500));
+                                                    // ignore: unused_result
+                                                    ref.refresh(
+                                                        productProvider);
+                                                    Future.delayed(
+                                                        const Duration(
+                                                            milliseconds: 100),
+                                                        () {
                                                       // const Product().launch(context, isNewTask: true);
-                                                      context.pushReplacement('/product');
+                                                      context.pushReplacement(
+                                                          '/product');
                                                     });
                                                   } catch (e) {
                                                     EasyLoading.dismiss();
-                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(SnackBar(
+                                                            content: Text(
+                                                                e.toString())));
                                                   }
                                                 }
                                               } else {
                                                 EasyLoading.showInfo(demoText);
                                               }
                                             },
-                                            child: Text(lang.S.of(context).save),
+                                            child:
+                                                Text(lang.S.of(context).save),
                                           ),
                                         ))
                                   ]),
@@ -2174,16 +2662,22 @@ class _AddProductState extends State<EditProduct> {
                                   ///____Image__________________
                                   Container(
                                     padding: const EdgeInsets.all(20.0),
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+                                    decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                        color: kWhite),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const SizedBox(height: 10.0),
                                         CustomDottedBorder(
                                           // padding: const EdgeInsets.all(6),
                                           color: kLitGreyColor,
                                           child: ClipRRect(
-                                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(12)),
                                             child: image != null
                                                 ? Image.memory(
                                                     fit: BoxFit.cover,
@@ -2195,32 +2689,65 @@ class _AddProductState extends State<EditProduct> {
                                                     height: 150,
                                                     alignment: Alignment.center,
                                                     width: context.width(),
-                                                    padding: const EdgeInsets.all(10.0),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            10.0),
                                                     decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(20.0),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20.0),
                                                     ),
                                                     child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
                                                       children: [
                                                         Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .center,
                                                           children: [
-                                                            SvgPicture.asset('images/blank_image.svg').onTap(
-                                                              () => uploadFile(),
+                                                            SvgPicture.asset(
+                                                                    'images/blank_image.svg')
+                                                                .onTap(
+                                                              () =>
+                                                                  uploadFile(),
                                                             ),
                                                             // Icon(MdiIcons.cloudUpload, size: 50.0, color: kLitGreyColor).onTap(() => uploadFile()),
                                                           ],
                                                         ),
-                                                        const SizedBox(height: 5.0),
+                                                        const SizedBox(
+                                                            height: 5.0),
                                                         RichText(
-                                                            textAlign: TextAlign.center,
+                                                            textAlign: TextAlign
+                                                                .center,
                                                             text: TextSpan(
-                                                                text: lang.S.of(context).uploadAImage,
-                                                                style: theme.textTheme.titleMedium?.copyWith(
-                                                                  color: kGreenTextColor,
+                                                                text: lang.S
+                                                                    .of(context)
+                                                                    .uploadAImage,
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .titleMedium
+                                                                    ?.copyWith(
+                                                                  color:
+                                                                      kGreenTextColor,
                                                                 ),
-                                                                children: [TextSpan(text: lang.S.of(context).orDragAndDropPng, style: theme.textTheme.titleMedium?.copyWith(color: kGreyTextColor))]))
+                                                                children: [
+                                                                  TextSpan(
+                                                                      text: lang
+                                                                          .S
+                                                                          .of(
+                                                                              context)
+                                                                          .orDragAndDropPng,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .titleMedium
+                                                                          ?.copyWith(
+                                                                              color: kGreyTextColor))
+                                                                ]))
                                                       ],
                                                     ),
                                                   ),
@@ -2412,9 +2939,11 @@ class _AddProductState extends State<EditProduct> {
     );
   }
 
-  bool isSerialNumberUnique({required List<String> allList, required String newSerial}) {
+  bool isSerialNumberUnique(
+      {required List<String> allList, required String newSerial}) {
     for (var element in allList) {
-      if (element.toLowerCase().removeAllWhiteSpace() == newSerial.toLowerCase().removeAllWhiteSpace()) {
+      if (element.toLowerCase().removeAllWhiteSpace() ==
+          newSerial.toLowerCase().removeAllWhiteSpace()) {
         return false;
       }
     }

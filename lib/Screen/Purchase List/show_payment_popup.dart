@@ -39,10 +39,12 @@ class ShowEditPurchasePaymentPopUp extends StatefulWidget {
   final BuildContext saleListPopUpContext;
 
   @override
-  State<ShowEditPurchasePaymentPopUp> createState() => _ShowEditPurchasePaymentPopUpState();
+  State<ShowEditPurchasePaymentPopUp> createState() =>
+      _ShowEditPurchasePaymentPopUpState();
 }
 
-class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPopUp> {
+class _ShowEditPurchasePaymentPopUpState
+    extends State<ShowEditPurchasePaymentPopUp> {
   List<String> paymentItem = ['Cash', 'Bank', 'Mobile Pay'];
   String selectedPaymentOption = 'Cash';
 
@@ -73,7 +75,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
   String getTotalAmount() {
     double total = 0.0;
     for (var item in widget.purchaseTransitionModel.productList!) {
-      total = total + (double.parse(item.productPurchasePrice) * item.productStock.toInt());
+      total = total +
+          (double.parse(item.productPurchasePrice) * item.productStock.toInt());
     }
     return total.toString();
   }
@@ -99,10 +102,15 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
     payingAmountController.text = widget.previousPaid.toString();
     double paidAmount = widget.previousPaid;
     if (paidAmount > widget.purchaseTransitionModel.totalAmount!.toDouble()) {
-      changeAmountController.text = (paidAmount - widget.purchaseTransitionModel.totalAmount!.toDouble()).toString();
+      changeAmountController.text =
+          (paidAmount - widget.purchaseTransitionModel.totalAmount!.toDouble())
+              .toString();
       dueAmountController.text = '0';
     } else {
-      dueAmountController.text = (widget.purchaseTransitionModel.totalAmount!.toDouble() - paidAmount).abs().toString();
+      dueAmountController.text =
+          (widget.purchaseTransitionModel.totalAmount!.toDouble() - paidAmount)
+              .abs()
+              .toString();
 
       changeAmountController.text = '0';
     }
@@ -130,7 +138,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 10.0, left: 10.0, right: 10.0),
+                    padding: const EdgeInsets.only(
+                        top: 10.0, left: 10.0, right: 10.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -142,9 +151,11 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                           ),
                         ),
                         const Spacer(),
-                        const Icon(FeatherIcons.x, color: kTitleColor, size: 25.0).onTap(() => {
-                              finish(context),
-                            })
+                        const Icon(FeatherIcons.x,
+                                color: kTitleColor, size: 25.0)
+                            .onTap(() => {
+                                  finish(context),
+                                })
                       ],
                     ),
                   ),
@@ -185,12 +196,28 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                       controller: payingAmountController,
                                       onChanged: (value) {
                                         setState(() {
-                                          double paidAmount = double.parse(value);
-                                          if (paidAmount > widget.purchaseTransitionModel.totalAmount!.toDouble()) {
-                                            changeAmountController.text = (paidAmount - widget.purchaseTransitionModel.totalAmount!.toDouble()).toString();
+                                          double paidAmount =
+                                              double.parse(value);
+                                          if (paidAmount >
+                                              widget.purchaseTransitionModel
+                                                  .totalAmount!
+                                                  .toDouble()) {
+                                            changeAmountController
+                                                .text = (paidAmount -
+                                                    widget
+                                                        .purchaseTransitionModel
+                                                        .totalAmount!
+                                                        .toDouble())
+                                                .toString();
                                             dueAmountController.text = '0';
                                           } else {
-                                            dueAmountController.text = (widget.purchaseTransitionModel.totalAmount!.toDouble() - paidAmount).abs().toString();
+                                            dueAmountController.text = (widget
+                                                        .purchaseTransitionModel
+                                                        .totalAmount!
+                                                        .toDouble() -
+                                                    paidAmount)
+                                                .abs()
+                                                .toString();
                                             changeAmountController.text = '0';
                                           }
                                         });
@@ -199,7 +226,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                       cursorColor: kTitleColor,
                                       keyboardType: TextInputType.name,
                                       decoration: InputDecoration(
-                                        hintText: lang.S.of(context).enterPaidAmount,
+                                        hintText:
+                                            lang.S.of(context).enterPaidAmount,
                                       ),
                                     ),
                                   ),
@@ -226,7 +254,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                       cursorColor: kTitleColor,
                                       keyboardType: TextInputType.name,
                                       decoration: InputDecoration(
-                                        hintText: lang.S.of(context).changeAmount,
+                                        hintText:
+                                            lang.S.of(context).changeAmount,
                                       ),
                                     ),
                                   )
@@ -327,10 +356,22 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                       child: SizedBox(
                                         height: 48,
                                         child: FormField(
-                                          builder: (FormFieldState<dynamic> field) {
+                                          builder:
+                                              (FormFieldState<dynamic> field) {
                                             return InputDecorator(
-                                              decoration: const InputDecoration(contentPadding: EdgeInsets.only(left: 12.0, right: 10.0, top: 7.0, bottom: 7.0), floatingLabelBehavior: FloatingLabelBehavior.never),
-                                              child: DropdownButtonHideUnderline(child: getOption()),
+                                              decoration: const InputDecoration(
+                                                  contentPadding:
+                                                      EdgeInsets.only(
+                                                          left: 12.0,
+                                                          right: 10.0,
+                                                          top: 7.0,
+                                                          bottom: 7.0),
+                                                  floatingLabelBehavior:
+                                                      FloatingLabelBehavior
+                                                          .never),
+                                              child:
+                                                  DropdownButtonHideUnderline(
+                                                      child: getOption()),
                                             );
                                           },
                                         ),
@@ -374,7 +415,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.red,
                                           ),
-                                          onPressed: () => GoRouter.of(context).pop(),
+                                          onPressed: () =>
+                                              GoRouter.of(context).pop(),
                                           child: Text(
                                             lang.S.of(context).cancel,
                                           )),
@@ -384,72 +426,211 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                       return Flexible(
                                         child: ElevatedButton(
                                           onPressed: () async {
-                                            if (widget.purchaseTransitionModel.productList!.isNotEmpty) {
-                                              if (isGuestCustomer && dueAmountController.text.toDouble() > 0) {
-                                                EasyLoading.showError(lang.S.of(context).dueIsNotForGuestCustomer);
+                                            if (widget.purchaseTransitionModel
+                                                .productList!.isNotEmpty) {
+                                              if (isGuestCustomer &&
+                                                  dueAmountController.text
+                                                          .toDouble() >
+                                                      0) {
+                                                EasyLoading.showError(lang.S
+                                                    .of(context)
+                                                    .dueIsNotForGuestCustomer);
                                               } else {
                                                 try {
-                                                  EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                  List<ProductModel> originalProducts = [];
+                                                  EasyLoading.show(
+                                                      status:
+                                                          '${lang.S.of(context).loading}...',
+                                                      dismissOnTap: false);
+                                                  List<ProductModel>
+                                                      originalProducts = [];
                                                   int originalDue = 0;
 
-                                                  myTransitionModel = PurchaseTransactionModel(
-                                                    customerName: widget.purchaseTransitionModel.customerName,
-                                                    customerPhone: widget.purchaseTransitionModel.customerPhone,
-                                                    customerGst: widget.purchaseTransitionModel.customerGst,
-                                                    customerAddress: widget.purchaseTransitionModel.customerAddress,
-                                                    customerType: widget.purchaseTransitionModel.customerType,
-                                                    invoiceNumber: widget.purchaseTransitionModel.invoiceNumber,
-                                                    purchaseDate: widget.purchaseTransitionModel.purchaseDate,
-                                                    discountAmount: widget.purchaseTransitionModel.discountAmount,
+                                                  myTransitionModel =
+                                                      PurchaseTransactionModel(
+                                                    customerName: widget
+                                                        .purchaseTransitionModel
+                                                        .customerName,
+                                                    customerPhone: widget
+                                                        .purchaseTransitionModel
+                                                        .customerPhone,
+                                                    customerGst: widget
+                                                        .purchaseTransitionModel
+                                                        .customerGst,
+                                                    customerAddress: widget
+                                                        .purchaseTransitionModel
+                                                        .customerAddress,
+                                                    customerType: widget
+                                                        .purchaseTransitionModel
+                                                        .customerType,
+                                                    invoiceNumber: widget
+                                                        .purchaseTransitionModel
+                                                        .invoiceNumber,
+                                                    purchaseDate: widget
+                                                        .purchaseTransitionModel
+                                                        .purchaseDate,
+                                                    discountAmount: widget
+                                                        .purchaseTransitionModel
+                                                        .discountAmount,
                                                   );
-                                                  final userId = await getUserID();
+                                                  final userId =
+                                                      await getUserID();
 
-                                                  dueAmountController.text.toDouble() <= 0 ? myTransitionModel.isPaid = true : myTransitionModel.isPaid = false;
-                                                  dueAmountController.text.toDouble() <= 0 ? myTransitionModel.dueAmount = 0 : myTransitionModel.dueAmount = dueAmountController.text.toDouble();
-                                                  returnAmount < 0 ? myTransitionModel.returnAmount = returnAmount.abs() : myTransitionModel.returnAmount = 0;
-                                                  myTransitionModel.productList = widget.purchaseTransitionModel.productList;
+                                                  dueAmountController.text
+                                                              .toDouble() <=
+                                                          0
+                                                      ? myTransitionModel
+                                                          .isPaid = true
+                                                      : myTransitionModel
+                                                          .isPaid = false;
+                                                  dueAmountController.text
+                                                              .toDouble() <=
+                                                          0
+                                                      ? myTransitionModel
+                                                          .dueAmount = 0
+                                                      : myTransitionModel
+                                                              .dueAmount =
+                                                          dueAmountController
+                                                              .text
+                                                              .toDouble();
+                                                  returnAmount < 0
+                                                      ? myTransitionModel
+                                                              .returnAmount =
+                                                          returnAmount.abs()
+                                                      : myTransitionModel
+                                                          .returnAmount = 0;
+                                                  myTransitionModel
+                                                          .productList =
+                                                      widget
+                                                          .purchaseTransitionModel
+                                                          .productList;
 
-                                                  myTransitionModel.totalAmount = widget.purchaseTransitionModel.totalAmount!.toDouble();
-                                                  myTransitionModel.paymentType = selectedPaymentOption;
+                                                  myTransitionModel
+                                                          .totalAmount =
+                                                      widget
+                                                          .purchaseTransitionModel
+                                                          .totalAmount!
+                                                          .toDouble();
+                                                  myTransitionModel
+                                                          .paymentType =
+                                                      selectedPaymentOption;
 
                                                   ///________________updateInvoice___________________________________________________________ok
                                                   String? key;
-                                                  await FirebaseDatabase.instance.ref(userId).child('Purchase Transition').orderByKey().get().then((value) {
-                                                    for (var element in value.children) {
-                                                      final t = PurchaseTransactionModel.fromJson(jsonDecode(jsonEncode(element.value)));
-                                                      if (widget.purchaseTransitionModel.invoiceNumber == t.invoiceNumber) {
+                                                  await FirebaseDatabase
+                                                      .instance
+                                                      .ref(userId)
+                                                      .child(
+                                                          'Purchase Transition')
+                                                      .orderByKey()
+                                                      .get()
+                                                      .then((value) {
+                                                    for (var element
+                                                        in value.children) {
+                                                      final t = PurchaseTransactionModel
+                                                          .fromJson(jsonDecode(
+                                                              jsonEncode(element
+                                                                  .value)));
+                                                      if (widget
+                                                              .purchaseTransitionModel
+                                                              .invoiceNumber ==
+                                                          t.invoiceNumber) {
                                                         key = element.key;
-                                                        originalProducts = t.productList ?? [];
-                                                        originalDue = t.dueAmount!.toInt();
+                                                        originalProducts =
+                                                            t.productList ?? [];
+                                                        originalDue = t
+                                                            .dueAmount!
+                                                            .toInt();
                                                       }
                                                     }
                                                   });
-                                                  await FirebaseDatabase.instance.ref(userId).child('Purchase Transition').child(key!).update(myTransitionModel.toJson());
+                                                  await FirebaseDatabase
+                                                      .instance
+                                                      .ref(userId)
+                                                      .child(
+                                                          'Purchase Transition')
+                                                      .child(key!)
+                                                      .update(myTransitionModel
+                                                          .toJson());
 
                                                   ///__________StockMange_________________________________________________ok
 
-                                                  for (var pastElement in originalProducts) {
+                                                  for (var pastElement
+                                                      in originalProducts) {
                                                     int i = 0;
-                                                    for (var futureElement in presentProducts) {
-                                                      if (pastElement.productCode == futureElement.productCode) {
-                                                        if (pastElement.productStock.toInt() < futureElement.productStock.toInt() && pastElement.productStock != futureElement.productStock) {
-                                                          ProductModel m = pastElement;
-                                                          m.productStock = (futureElement.productStock.toInt() - pastElement.productStock.toInt()).toString();
+                                                    for (var futureElement
+                                                        in presentProducts) {
+                                                      if (pastElement
+                                                              .productCode ==
+                                                          futureElement
+                                                              .productCode) {
+                                                        if (pastElement
+                                                                    .productStock
+                                                                    .toInt() <
+                                                                futureElement
+                                                                    .productStock
+                                                                    .toInt() &&
+                                                            pastElement
+                                                                    .productStock !=
+                                                                futureElement
+                                                                    .productStock) {
+                                                          ProductModel m =
+                                                              pastElement;
+                                                          m.productStock = (futureElement
+                                                                      .productStock
+                                                                      .toInt() -
+                                                                  pastElement
+                                                                      .productStock
+                                                                      .toInt())
+                                                              .toString();
                                                           // ignore: iterable_contains_unrelated_type
-                                                          widget.increaseStockList.contains(pastElement.productCode) ? null : widget.increaseStockList.add(m);
-                                                        } else if (pastElement.productStock.toInt() > futureElement.productStock.toInt() && pastElement.productStock.toInt() != futureElement.productStock.toInt()) {
-                                                          ProductModel n = pastElement;
-                                                          n.productStock = (pastElement.productStock.toInt() - futureElement.productStock.toInt()).toString();
+                                                          widget.increaseStockList
+                                                                  .contains(
+                                                                      pastElement
+                                                                          .productCode)
+                                                              ? null
+                                                              : widget
+                                                                  .increaseStockList
+                                                                  .add(m);
+                                                        } else if (pastElement
+                                                                    .productStock
+                                                                    .toInt() >
+                                                                futureElement
+                                                                    .productStock
+                                                                    .toInt() &&
+                                                            pastElement
+                                                                    .productStock
+                                                                    .toInt() !=
+                                                                futureElement
+                                                                    .productStock
+                                                                    .toInt()) {
+                                                          ProductModel n =
+                                                              pastElement;
+                                                          n.productStock = (pastElement
+                                                                      .productStock
+                                                                      .toInt() -
+                                                                  futureElement
+                                                                      .productStock
+                                                                      .toInt())
+                                                              .toString();
                                                           // ignore: iterable_contains_unrelated_type
-                                                          decreaseStockList2.contains(pastElement.productCode) ? null : decreaseStockList2.add(n);
+                                                          decreaseStockList2
+                                                                  .contains(
+                                                                      pastElement
+                                                                          .productCode)
+                                                              ? null
+                                                              : decreaseStockList2
+                                                                  .add(n);
                                                         }
                                                         break;
                                                       } else {
                                                         i++;
-                                                        if (i == presentProducts.length) {
-                                                          ProductModel n = pastElement;
-                                                          decreaseStockList2.add(n);
+                                                        if (i ==
+                                                            presentProducts
+                                                                .length) {
+                                                          ProductModel n =
+                                                              pastElement;
+                                                          decreaseStockList2
+                                                              .add(n);
                                                         }
                                                       }
                                                     }
@@ -457,98 +638,230 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
 
                                                   ///_____________StockUpdate_______________________________________________________ok
 
-                                                  for (var element in decreaseStockList2) {
-                                                    final ref = FirebaseDatabase.instance.ref('$userId/Products');
+                                                  for (var element
+                                                      in decreaseStockList2) {
+                                                    final ref = FirebaseDatabase
+                                                        .instance
+                                                        .ref(
+                                                            '$userId/Products');
 
-                                                    var data = await ref.orderByChild('productCode').equalTo(element.productCode).once();
-                                                    String productPath = data.snapshot.value.toString().substring(1, 21);
+                                                    var data = await ref
+                                                        .orderByChild(
+                                                            'productCode')
+                                                        .equalTo(
+                                                            element.productCode)
+                                                        .once();
+                                                    String productPath = data
+                                                        .snapshot.value
+                                                        .toString()
+                                                        .substring(1, 21);
 
-                                                    var data1 = await ref.child('$productPath/productStock').get();
-                                                    int stock = int.parse(data1.value.toString());
-                                                    int remainStock = stock - element.productStock.toInt();
+                                                    var data1 = await ref
+                                                        .child(
+                                                            '$productPath/productStock')
+                                                        .get();
+                                                    int stock = int.parse(
+                                                        data1.value.toString());
+                                                    int remainStock = stock -
+                                                        element.productStock
+                                                            .toInt();
 
-                                                    ref.child(productPath).update({'productStock': '$remainStock'});
+                                                    ref
+                                                        .child(productPath)
+                                                        .update({
+                                                      'productStock':
+                                                          '$remainStock'
+                                                    });
                                                   }
 
-                                                  for (var element in widget.increaseStockList) {
-                                                    final ref = FirebaseDatabase.instance.ref('$userId/Products');
+                                                  for (var element in widget
+                                                      .increaseStockList) {
+                                                    final ref = FirebaseDatabase
+                                                        .instance
+                                                        .ref(
+                                                            '$userId/Products');
 
-                                                    var data = await ref.orderByChild('productCode').equalTo(element.productCode).once();
-                                                    String productPath = data.snapshot.value.toString().substring(1, 21);
+                                                    var data = await ref
+                                                        .orderByChild(
+                                                            'productCode')
+                                                        .equalTo(
+                                                            element.productCode)
+                                                        .once();
+                                                    String productPath = data
+                                                        .snapshot.value
+                                                        .toString()
+                                                        .substring(1, 21);
 
-                                                    var data1 = await ref.child('$productPath/productStock').get();
-                                                    int stock = int.parse(data1.value.toString());
-                                                    int remainStock = stock + element.productStock.toInt();
+                                                    var data1 = await ref
+                                                        .child(
+                                                            '$productPath/productStock')
+                                                        .get();
+                                                    int stock = int.parse(
+                                                        data1.value.toString());
+                                                    int remainStock = stock +
+                                                        element.productStock
+                                                            .toInt();
 
-                                                    ref.child(productPath).update({'productStock': '$remainStock'});
+                                                    ref
+                                                        .child(productPath)
+                                                        .update({
+                                                      'productStock':
+                                                          '$remainStock'
+                                                    });
                                                   }
 
                                                   ///_________DueUpdate______________________________________________________OK
-                                                  if (myTransitionModel.dueAmount!.toDouble() < widget.purchaseTransitionModel.dueAmount!) {
-                                                    double due = originalDue - myTransitionModel.dueAmount!;
+                                                  if (myTransitionModel
+                                                          .dueAmount!
+                                                          .toDouble() <
+                                                      widget
+                                                          .purchaseTransitionModel
+                                                          .dueAmount!) {
+                                                    double due = originalDue -
+                                                        myTransitionModel
+                                                            .dueAmount!;
 
-                                                    final ref = FirebaseDatabase.instance.ref('$userId/Customers/');
+                                                    final ref = FirebaseDatabase
+                                                        .instance
+                                                        .ref(
+                                                            '$userId/Customers/');
                                                     String? key;
 
-                                                    await FirebaseDatabase.instance.ref(userId).child('Customers').orderByKey().get().then((value) {
-                                                      for (var element in value.children) {
-                                                        var data = jsonDecode(jsonEncode(element.value));
-                                                        if (data['phoneNumber'] == widget.purchaseTransitionModel.customerPhone) {
+                                                    await FirebaseDatabase
+                                                        .instance
+                                                        .ref(userId)
+                                                        .child('Customers')
+                                                        .orderByKey()
+                                                        .get()
+                                                        .then((value) {
+                                                      for (var element
+                                                          in value.children) {
+                                                        var data = jsonDecode(
+                                                            jsonEncode(
+                                                                element.value));
+                                                        if (data[
+                                                                'phoneNumber'] ==
+                                                            widget
+                                                                .purchaseTransitionModel
+                                                                .customerPhone) {
                                                           key = element.key;
                                                         }
                                                       }
                                                     });
-                                                    var data1 = await ref.child('$key/due').get();
-                                                    int previousDue = data1.value.toString().toInt();
+                                                    var data1 = await ref
+                                                        .child('$key/due')
+                                                        .get();
+                                                    int previousDue = data1
+                                                        .value
+                                                        .toString()
+                                                        .toInt();
 
                                                     int totalDue;
 
-                                                    totalDue = previousDue - due.toInt();
-                                                    ref.child(key!).update({'due': '$totalDue'});
-                                                  } else if (myTransitionModel.dueAmount!.toDouble() > widget.purchaseTransitionModel.dueAmount!) {
-                                                    double due = myTransitionModel.dueAmount! - originalDue;
-                                                    final ref = FirebaseDatabase.instance.ref('$userId/Customers/');
+                                                    totalDue = previousDue -
+                                                        due.toInt();
+                                                    ref.child(key!).update(
+                                                        {'due': '$totalDue'});
+                                                  } else if (myTransitionModel
+                                                          .dueAmount!
+                                                          .toDouble() >
+                                                      widget
+                                                          .purchaseTransitionModel
+                                                          .dueAmount!) {
+                                                    double due =
+                                                        myTransitionModel
+                                                                .dueAmount! -
+                                                            originalDue;
+                                                    final ref = FirebaseDatabase
+                                                        .instance
+                                                        .ref(
+                                                            '$userId/Customers/');
                                                     String? key;
 
-                                                    await FirebaseDatabase.instance.ref(userId).child('Customers').orderByKey().get().then((value) {
-                                                      for (var element in value.children) {
-                                                        var data = jsonDecode(jsonEncode(element.value));
-                                                        if (data['phoneNumber'] == widget.purchaseTransitionModel.customerPhone) {
+                                                    await FirebaseDatabase
+                                                        .instance
+                                                        .ref(userId)
+                                                        .child('Customers')
+                                                        .orderByKey()
+                                                        .get()
+                                                        .then((value) {
+                                                      for (var element
+                                                          in value.children) {
+                                                        var data = jsonDecode(
+                                                            jsonEncode(
+                                                                element.value));
+                                                        if (data[
+                                                                'phoneNumber'] ==
+                                                            widget
+                                                                .purchaseTransitionModel
+                                                                .customerPhone) {
                                                           key = element.key;
                                                         }
                                                       }
                                                     });
-                                                    var data1 = await ref.child('$key/due').get();
-                                                    int previousDue = data1.value.toString().toInt();
+                                                    var data1 = await ref
+                                                        .child('$key/due')
+                                                        .get();
+                                                    int previousDue = data1
+                                                        .value
+                                                        .toString()
+                                                        .toInt();
 
                                                     int totalDue;
 
-                                                    totalDue = previousDue + due.toInt();
-                                                    ref.child(key!).update({'due': '$totalDue'});
+                                                    totalDue = previousDue +
+                                                        due.toInt();
+                                                    ref.child(key!).update(
+                                                        {'due': '$totalDue'});
                                                   }
-                                                  await GeneratePdfAndPrint().uploadPurchaseInvoice(personalInformationModel: data, purchaseTransactionModel: myTransitionModel, setting: setting);
+                                                  await GeneratePdfAndPrint()
+                                                      .uploadPurchaseInvoice(
+                                                          personalInformationModel:
+                                                              data,
+                                                          purchaseTransactionModel:
+                                                              myTransitionModel,
+                                                          setting: setting);
 
-                                                  consumerRef.refresh(allCustomerProvider);
+                                                  // ignore: unused_result
+                                                  consumerRef.refresh(
+                                                      allCustomerProvider);
 
-                                                  consumerRef.refresh(buyerCustomerProvider);
-                                                  consumerRef.refresh(transitionProvider);
-                                                  consumerRef.refresh(productProvider);
-                                                  consumerRef.refresh(purchaseTransitionProvider);
-                                                  consumerRef.refresh(dueTransactionProvider);
-                                                  consumerRef.refresh(profileDetailsProvider);
+                                                  // ignore: unused_result
+                                                  consumerRef.refresh(
+                                                      buyerCustomerProvider);
+                                                  // ignore: unused_result
+                                                  consumerRef.refresh(
+                                                      transitionProvider);
+                                                  // ignore: unused_result
+                                                  consumerRef
+                                                      // ignore: unused_result
+                                                      .refresh(productProvider);
+                                                  // ignore: unused_result
+                                                  consumerRef.refresh(
+                                                      purchaseTransitionProvider);
+                                                  // ignore: unused_result
+                                                  consumerRef.refresh(
+                                                      dueTransactionProvider);
+                                                  // ignore: unused_result
+                                                  consumerRef.refresh(
+                                                      profileDetailsProvider);
 
                                                   EasyLoading.dismiss();
 
                                                   // ignore: use_build_context_synchronously
                                                   int count = 0;
                                                   // ignore: use_build_context_synchronously
-                                                  while (count < 2 && GoRouter.of(context).canPop()) {
+                                                  while (count < 2 &&
+                                                      GoRouter.of(context)
+                                                          .canPop()) {
                                                     GoRouter.of(context).pop();
                                                     count++;
                                                   }
                                                   // ignore: use_build_context_synchronously
-                                                  if (GoRouter.of(context).canPop()) {
-                                                    GoRouter.of(context).pop(widget.saleListPopUpContext);
+                                                  if (GoRouter.of(context)
+                                                      .canPop()) {
+                                                    GoRouter.of(context).pop(widget
+                                                        .saleListPopUpContext);
                                                   }
                                                 } catch (e) {
                                                   EasyLoading.dismiss();
@@ -556,7 +869,9 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                                 }
                                               }
                                             } else {
-                                              EasyLoading.showError(lang.S.of(context).addProductFirst);
+                                              EasyLoading.showError(lang.S
+                                                  .of(context)
+                                                  .addProductFirst);
                                             }
                                           },
                                           child: Text(
@@ -567,7 +882,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                     }, error: (e, stack) {
                                       return Text(e.toString());
                                     }, loading: () {
-                                      return Center(child: CircularProgressIndicator());
+                                      return Center(
+                                          child: CircularProgressIndicator());
                                     }),
                                   ],
                                 ),
@@ -587,9 +903,12 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                               Container(
                                 padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(topLeft: radiusCircular(5.0), topRight: radiusCircular(1.0)),
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: radiusCircular(5.0),
+                                      topRight: radiusCircular(1.0)),
                                   color: kWhite,
-                                  border: Border.all(color: kOutlineColor, width: 1),
+                                  border: Border.all(
+                                      color: kOutlineColor, width: 1),
                                 ),
                                 child: Row(
                                   children: [
@@ -611,7 +930,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                 padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
                                   color: kWhite,
-                                  border: Border.all(color: kOutlineColor, width: 0.5),
+                                  border: Border.all(
+                                      color: kOutlineColor, width: 0.5),
                                 ),
                                 child: Row(
                                   children: [
@@ -633,7 +953,8 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                                 padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
                                   color: kWhite,
-                                  border: Border.all(color: kOutlineColor, width: 0.5),
+                                  border: Border.all(
+                                      color: kOutlineColor, width: 0.5),
                                 ),
                                 child: Row(
                                   children: [
@@ -654,7 +975,9 @@ class _ShowEditPurchasePaymentPopUpState extends State<ShowEditPurchasePaymentPo
                               Container(
                                 padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(bottomLeft: radiusCircular(5.0), bottomRight: radiusCircular(5.0)),
+                                  borderRadius: BorderRadius.only(
+                                      bottomLeft: radiusCircular(5.0),
+                                      bottomRight: radiusCircular(5.0)),
                                   color: kBackgroundColor,
                                   border: Border.all(color: kOutlineColor),
                                 ),

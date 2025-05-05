@@ -33,7 +33,10 @@ import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
 
 class SalesReturnScreen extends StatefulWidget {
-  const SalesReturnScreen({super.key, required this.saleTransactionModel, required this.personalInformationModel});
+  const SalesReturnScreen(
+      {super.key,
+      required this.saleTransactionModel,
+      required this.personalInformationModel});
 
   final SaleTransactionModel saleTransactionModel;
   final PersonalInformationModel personalInformationModel;
@@ -42,7 +45,8 @@ class SalesReturnScreen extends StatefulWidget {
   State<SalesReturnScreen> createState() => _SalesReturnScreenState();
 }
 
-class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindingObserver {
+class _SalesReturnScreenState extends State<SalesReturnScreen>
+    with WidgetsBindingObserver {
   double calculateAmountFromPercentage(double percentage, double price) {
     return (percentage * price) / 100;
   }
@@ -51,7 +55,8 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
     num returnAmount = 0;
     for (var element in returnList) {
       if (element.quantity > 0) {
-        returnAmount += element.quantity * (num.tryParse(element.subTotal.toString()) ?? 0);
+        returnAmount +=
+            element.quantity * (num.tryParse(element.subTotal.toString()) ?? 0);
       }
     }
     return returnAmount;
@@ -70,7 +75,8 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
       EasyLoading.show(status: 'Loading...', dismissOnTap: false);
 
       // Push sales return data to Firebase
-      final DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Return");
+      final DatabaseReference ref =
+          FirebaseDatabase.instance.ref("${await getUserID()}/Sales Return");
       await ref.push().set(salesModel.toJson());
 
       // Print the invoice
@@ -86,9 +92,13 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
       }
 
       // Update stock
-      final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+      final stockRef =
+          FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
       for (var element in salesModel.productList!) {
-        var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
+        var data = await stockRef
+            .orderByChild('productCode')
+            .equalTo(element.productId)
+            .once();
         final data2 = jsonDecode(jsonEncode(data.snapshot.value));
 
         String productPath = data.snapshot.value.toString().substring(1, 21);
@@ -100,7 +110,8 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
         stockRef.child(productPath).update({'productStock': '$remainStock'});
 
         if (element.serialNumber != null && element.serialNumber!.isNotEmpty) {
-          var productOldSerialList = data2[productPath]['serialNumber'] + element.serialNumber;
+          var productOldSerialList =
+              data2[productPath]['serialNumber'] + element.serialNumber;
           stockRef.child(productPath).update({
             'serialNumber': productOldSerialList.map((e) => e).toList(),
           });
@@ -114,8 +125,15 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
         type: 'Sale Return',
         total: salesModel.totalAmount!.toDouble(),
         paymentIn: 0,
-        paymentOut: ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)) > (salesModel.totalAmount ?? 0) ? (salesModel.totalAmount ?? 0) : ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)),
-        remainingBalance: ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)) > (salesModel.totalAmount ?? 0) ? (salesModel.totalAmount ?? 0) : ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)),
+        paymentOut: ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)) >
+                (salesModel.totalAmount ?? 0)
+            ? (salesModel.totalAmount ?? 0)
+            : ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)),
+        remainingBalance:
+            ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)) >
+                    (salesModel.totalAmount ?? 0)
+                ? (salesModel.totalAmount ?? 0)
+                : ((original.totalAmount ?? 0) - (original.dueAmount ?? 0)),
         id: salesModel.invoiceNumber,
         saleTransactionModel: salesModel,
       );
@@ -124,10 +142,16 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
 
       // Update due amount
       if (salesModel.customerName != 'Guest' && (original.dueAmount ?? 0) > 0) {
-        final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
+        final dueUpdateRef =
+            FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
         String? key;
 
-        await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+        await FirebaseDatabase.instance
+            .ref(await getUserID())
+            .child('Customers')
+            .orderByKey()
+            .get()
+            .then((value) {
           for (var element in value.children) {
             var data = jsonDecode(jsonEncode(element.value));
             if (data['phoneNumber'] == salesModel.customerPhone) {
@@ -140,7 +164,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
         int previousDue = data1.value.toString().toInt();
 
         num dueNow = (original.dueAmount ?? 0) - (salesModel.totalAmount ?? 0);
-        int totalDue = dueNow.isNegative ? 0 : previousDue - salesModel.totalAmount!.toInt();
+        int totalDue = dueNow.isNegative
+            ? 0
+            : previousDue - salesModel.totalAmount!.toInt();
         dueUpdateRef.child(key!).update({'due': '$totalDue'});
       }
 
@@ -163,7 +189,8 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
     } catch (e) {
       if (!mounted) return;
       EasyLoading.dismiss();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -275,7 +302,11 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
   DateTime selectedDueDate = DateTime.now();
 
   Future<void> _selectedDueDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: selectedDueDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: selectedDueDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101));
     if (picked != null && picked != selectedDueDate) {
       setState(() {
         selectedDueDate = picked;
@@ -351,7 +382,8 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Container(
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20.0), color: kWhite),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -429,7 +461,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                             Container(
                               alignment: Alignment.center,
                               height: 48.0,
-                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(5), border: Border.all(color: kNeutral400)),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(color: kNeutral400)),
                               child: Text(
                                 "#${widget.saleTransactionModel.invoiceNumber}",
                                 style: theme.textTheme.bodyLarge,
@@ -459,7 +493,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                             Container(
                               height: 48.0,
                               alignment: Alignment.center,
-                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(5), border: Border.all(color: kNeutral400)),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(color: kNeutral400)),
                               child: Text(
                                 '${selectedDueDate.day}/${selectedDueDate.month}/${selectedDueDate.year}',
                                 style: theme.textTheme.bodyLarge,
@@ -474,7 +510,8 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
 
                   ///___________Cart_List_Show _and buttons__________________________________
                   LayoutBuilder(
-                    builder: (BuildContext context, BoxConstraints constraints) {
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
                       final kWidth = constraints.maxWidth;
                       return Scrollbar(
                         thickness: 8.0,
@@ -489,7 +526,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                               minWidth: kWidth,
                             ),
                             child: Theme(
-                              data: theme.copyWith(dividerTheme: const DividerThemeData(color: Colors.transparent)),
+                              data: theme.copyWith(
+                                  dividerTheme: const DividerThemeData(
+                                      color: Colors.transparent)),
                               child: DataTable(
                                   border: const TableBorder(
                                     horizontalInside: BorderSide(
@@ -497,21 +536,37 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                                       color: kNeutral300,
                                     ),
                                   ),
-                                  dataRowColor: const WidgetStatePropertyAll(whiteColor),
-                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                  dataRowColor:
+                                      const WidgetStatePropertyAll(whiteColor),
+                                  headingRowColor: WidgetStateProperty.all(
+                                      const Color(0xFFF8F3FF)),
                                   showBottomBorder: false,
                                   dividerThickness: 0.0,
                                   headingTextStyle: theme.textTheme.titleMedium,
                                   dataTextStyle: theme.textTheme.bodyLarge,
                                   columns: [
-                                    DataColumn(label: Text(lang.S.of(context).productNam)),
-                                    DataColumn(label: Text(lang.S.of(context).saleQuantity)),
-                                    DataColumn(label: Text(lang.S.of(context).returnQuantity)),
-                                    DataColumn(label: Text(lang.S.of(context).price)),
-                                    DataColumn(label: Text(lang.S.of(context).subTotal)),
+                                    DataColumn(
+                                        label: Text(
+                                            lang.S.of(context).productNam)),
+                                    DataColumn(
+                                        label: Text(
+                                            lang.S.of(context).saleQuantity)),
+                                    DataColumn(
+                                        label: Text(
+                                            lang.S.of(context).returnQuantity)),
+                                    DataColumn(
+                                        label: Text(lang.S.of(context).price)),
+                                    DataColumn(
+                                        label:
+                                            Text(lang.S.of(context).subTotal)),
                                   ],
-                                  rows: List.generate(returnList.length, (index) {
-                                    TextEditingController quantityController = TextEditingController(text: returnList[index].quantity.toString());
+                                  rows:
+                                      List.generate(returnList.length, (index) {
+                                    TextEditingController quantityController =
+                                        TextEditingController(
+                                            text: returnList[index]
+                                                .quantity
+                                                .toString());
                                     return DataRow(cells: [
                                       ///______________name__________________________________________________
                                       DataCell(
@@ -522,16 +577,25 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
 
                                       ///____________quantity_________________________________________________
                                       DataCell(
-                                        Text(returnList[index].stock.toString()),
+                                        Text(
+                                            returnList[index].stock.toString()),
                                       ),
 
                                       ///____________return_quantity_________________________________________________
                                       DataCell(
                                         Row(
                                           children: [
-                                            const Icon(FontAwesomeIcons.solidSquareMinus, color: kBlueTextColor).onTap(() {
+                                            const Icon(
+                                                    FontAwesomeIcons
+                                                        .solidSquareMinus,
+                                                    color: kBlueTextColor)
+                                                .onTap(() {
                                               setState(() {
-                                                returnList[index].quantity > 0 ? returnList[index].quantity-- : returnList[index].quantity = 0;
+                                                returnList[index].quantity > 0
+                                                    ? returnList[index]
+                                                        .quantity--
+                                                    : returnList[index]
+                                                        .quantity = 0;
                                               });
                                             }),
                                             const SizedBox(width: 10),
@@ -542,40 +606,66 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                                                 controller: quantityController,
                                                 textAlign: TextAlign.center,
                                                 onChanged: (value) {
-                                                  if (returnList[index].stock!.toInt() < value.toInt()) {
-                                                    EasyLoading.showError(lang.S.of(context).outOfStock);
+                                                  if (returnList[index]
+                                                          .stock!
+                                                          .toInt() <
+                                                      value.toInt()) {
+                                                    EasyLoading.showError(lang.S
+                                                        .of(context)
+                                                        .outOfStock);
                                                     quantityController.clear();
                                                   } else if (value == '') {
-                                                    returnList[index].quantity = 1;
+                                                    returnList[index].quantity =
+                                                        1;
                                                   } else if (value == '0') {
-                                                    returnList[index].quantity = 1;
+                                                    returnList[index].quantity =
+                                                        1;
                                                   } else {
-                                                    returnList[index].quantity = value.toInt();
+                                                    returnList[index].quantity =
+                                                        value.toInt();
                                                   }
                                                 },
                                                 onFieldSubmitted: (value) {
                                                   if (value == '') {
                                                     setState(() {
-                                                      returnList[index].quantity = 1;
+                                                      returnList[index]
+                                                          .quantity = 1;
                                                     });
                                                   } else {
                                                     setState(() {
-                                                      returnList[index].quantity = value.toInt();
+                                                      returnList[index]
+                                                              .quantity =
+                                                          value.toInt();
                                                     });
                                                   }
                                                 },
-                                                decoration: const InputDecoration(border: InputBorder.none),
+                                                decoration:
+                                                    const InputDecoration(
+                                                        border:
+                                                            InputBorder.none),
                                               ),
                                             ),
                                             const SizedBox(width: 10),
-                                            const Icon(FontAwesomeIcons.solidSquarePlus, color: kBlueTextColor).onTap(() {
-                                              if (returnList[index].quantity < returnList[index].stock!.toInt()) {
+                                            const Icon(
+                                                    FontAwesomeIcons
+                                                        .solidSquarePlus,
+                                                    color: kBlueTextColor)
+                                                .onTap(() {
+                                              if (returnList[index].quantity <
+                                                  returnList[index]
+                                                      .stock!
+                                                      .toInt()) {
                                                 setState(() {
-                                                  returnList[index].quantity += 1;
-                                                  toast(returnList[index].quantity.toString());
+                                                  returnList[index].quantity +=
+                                                      1;
+                                                  toast(returnList[index]
+                                                      .quantity
+                                                      .toString());
                                                 });
                                               } else {
-                                                EasyLoading.showError(lang.S.of(context).outOfStock);
+                                                EasyLoading.showError(lang.S
+                                                    .of(context)
+                                                    .outOfStock);
                                               }
                                             }),
                                           ],
@@ -587,34 +677,53 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                                         SizedBox(
                                           height: 35,
                                           child: TextFormField(
-                                            initialValue: myFormat.format(double.tryParse(returnList[index].subTotal) ?? 0),
+                                            initialValue: myFormat.format(
+                                                double.tryParse(
+                                                        returnList[index]
+                                                            .subTotal) ??
+                                                    0),
                                             onChanged: (value) {
                                               if (value == '') {
                                                 setState(() {
-                                                  returnList[index].subTotal = 0.toString();
+                                                  returnList[index].subTotal =
+                                                      0.toString();
                                                 });
-                                              } else if (double.tryParse(value) == null) {
-                                                EasyLoading.showError(lang.S.of(context).enterAValidPrice);
+                                              } else if (double.tryParse(
+                                                      value) ==
+                                                  null) {
+                                                EasyLoading.showError(lang.S
+                                                    .of(context)
+                                                    .enterAValidPrice);
                                               } else {
                                                 setState(() {
-                                                  returnList[index].subTotal = double.parse(value).toStringAsFixed(2);
+                                                  returnList[index].subTotal =
+                                                      double.parse(value)
+                                                          .toStringAsFixed(2);
                                                 });
                                               }
                                             },
                                             onFieldSubmitted: (value) {
                                               if (value == '') {
                                                 setState(() {
-                                                  returnList[index].subTotal = 0.toString();
+                                                  returnList[index].subTotal =
+                                                      0.toString();
                                                 });
-                                              } else if (double.tryParse(value) == null) {
-                                                EasyLoading.showError(lang.S.of(context).enterAValidPrice);
+                                              } else if (double.tryParse(
+                                                      value) ==
+                                                  null) {
+                                                EasyLoading.showError(lang.S
+                                                    .of(context)
+                                                    .enterAValidPrice);
                                               } else {
                                                 setState(() {
-                                                  returnList[index].subTotal = double.parse(value).toStringAsFixed(2);
+                                                  returnList[index].subTotal =
+                                                      double.parse(value)
+                                                          .toStringAsFixed(2);
                                                 });
                                               }
                                             },
-                                            decoration: const InputDecoration(border: InputBorder.none),
+                                            decoration: const InputDecoration(
+                                                border: InputBorder.none),
                                           ),
                                         ),
                                       ),
@@ -622,8 +731,19 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                                       ///___________subtotal____________________________________________________
                                       DataCell(
                                         Text(
-                                          myFormat.format(double.tryParse((double.parse(returnList[index].subTotal) * ((returnList[index].stock ?? 0) - returnList[index].quantity)).toStringAsFixed(2)) ?? 0),
-                                          style: kTextStyle.copyWith(color: kTitleColor),
+                                          myFormat.format(double.tryParse(
+                                                  (double.parse(
+                                                              returnList[index]
+                                                                  .subTotal) *
+                                                          ((returnList[index]
+                                                                      .stock ??
+                                                                  0) -
+                                                              returnList[index]
+                                                                  .quantity))
+                                                      .toStringAsFixed(2)) ??
+                                              0),
+                                          style: kTextStyle.copyWith(
+                                              color: kTitleColor),
                                         ),
                                       ),
                                     ]);
@@ -877,39 +997,45 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                             xs: 12,
                             md: 6,
                             lg: 6,
-                            child: ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                              ResponsiveGridCol(
-                                xs: 12,
-                                md: 6,
-                                lg: 6,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4.0),
-                                  child: Text(
-                                    lang.S.of(context).totalReturnAmount,
-                                    // 'Total Return Amount',
-                                    style: theme.textTheme.titleMedium,
-                                  ),
-                                ),
-                              ),
-                              ResponsiveGridCol(
-                                xs: 12,
-                                md: 6,
-                                lg: 6,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4.0),
-                                  child: Container(
-                                    height: 48,
-                                    alignment: Alignment.center,
-                                    // padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 4.0, bottom: 4.0),
-                                    decoration: const BoxDecoration(color: kGreenTextColor, borderRadius: BorderRadius.all(Radius.circular(8))),
-                                    child: Text(
-                                      '$globalCurrency ${myFormat.format(getTotalReturnAmount())}',
-                                      style: theme.textTheme.titleMedium?.copyWith(color: Colors.white),
+                            child: ResponsiveGridRow(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 6,
+                                    lg: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: Text(
+                                        lang.S.of(context).totalReturnAmount,
+                                        // 'Total Return Amount',
+                                        style: theme.textTheme.titleMedium,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ]),
+                                  ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 6,
+                                    lg: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: Container(
+                                        height: 48,
+                                        alignment: Alignment.center,
+                                        // padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 4.0, bottom: 4.0),
+                                        decoration: const BoxDecoration(
+                                            color: kGreenTextColor,
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(8))),
+                                        child: Text(
+                                          '$globalCurrency ${myFormat.format(getTotalReturnAmount())}',
+                                          style: theme.textTheme.titleMedium
+                                              ?.copyWith(color: Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ]),
                           )
                         ]),
                         const SizedBox(height: 10.0),
@@ -917,13 +1043,19 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                         ///____________buttons____________________________________________________
                         ResponsiveGridRow(children: [
                           //-----------------cancel button-----------------------
-                          ResponsiveGridCol(xs: 12, md: 1, lg: 3, child: const SizedBox.shrink()),
+                          ResponsiveGridCol(
+                              xs: 12,
+                              md: 1,
+                              lg: 3,
+                              child: const SizedBox.shrink()),
                           ResponsiveGridCol(
                               xs: 12,
                               md: 5,
                               lg: 3,
                               child: Padding(
-                                padding: screenWidth < 577 ? const EdgeInsets.only(bottom: 10) : const EdgeInsets.all(10.0),
+                                padding: screenWidth < 577
+                                    ? const EdgeInsets.only(bottom: 10)
+                                    : const EdgeInsets.all(10.0),
                                 child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.red,
@@ -937,86 +1069,213 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                               md: 5,
                               lg: 3,
                               child: Padding(
-                                padding: screenWidth < 577 ? const EdgeInsets.only(bottom: 10) : const EdgeInsets.all(10.0),
+                                padding: screenWidth < 577
+                                    ? const EdgeInsets.only(bottom: 10)
+                                    : const EdgeInsets.all(10.0),
                                 child: settingProvider.when(data: (setting) {
                                   return ElevatedButton(
                                       onPressed: () async {
-                                        if (!returnList.any((element) => element.quantity > 0)) {
-                                          EasyLoading.showError(lang.S.of(context).selectAProductForReturn);
+                                        if (!returnList.any((element) =>
+                                            element.quantity > 0)) {
+                                          EasyLoading.showError(lang.S
+                                              .of(context)
+                                              .selectAProductForReturn);
                                         } else {
-                                          returnList.removeWhere((element) => (element.quantity) <= 0);
-                                          SaleTransactionModel editedTransitionModel = widget.saleTransactionModel;
-                                          (num.tryParse(getTotalReturnAmount().toString()) ?? 0) > (widget.saleTransactionModel.dueAmount ?? 0) ? editedTransitionModel.isPaid = true : editedTransitionModel.isPaid = false;
-                                          if ((widget.saleTransactionModel.dueAmount ?? 0) > 0) {
-                                            (num.tryParse(getTotalReturnAmount().toString()) ?? 0) >= (widget.saleTransactionModel.dueAmount ?? 0) ? editedTransitionModel.dueAmount = 0 : editedTransitionModel.dueAmount = (widget.saleTransactionModel.dueAmount ?? 0) - (num.tryParse(getTotalReturnAmount().toString()) ?? 0);
+                                          returnList.removeWhere((element) =>
+                                              (element.quantity) <= 0);
+                                          SaleTransactionModel
+                                              editedTransitionModel =
+                                              widget.saleTransactionModel;
+                                          (num.tryParse(getTotalReturnAmount()
+                                                          .toString()) ??
+                                                      0) >
+                                                  (widget.saleTransactionModel
+                                                          .dueAmount ??
+                                                      0)
+                                              ? editedTransitionModel.isPaid =
+                                                  true
+                                              : editedTransitionModel.isPaid =
+                                                  false;
+                                          if ((widget.saleTransactionModel
+                                                      .dueAmount ??
+                                                  0) >
+                                              0) {
+                                            (num.tryParse(getTotalReturnAmount()
+                                                            .toString()) ??
+                                                        0) >=
+                                                    (widget.saleTransactionModel
+                                                            .dueAmount ??
+                                                        0)
+                                                ? editedTransitionModel
+                                                    .dueAmount = 0
+                                                : editedTransitionModel
+                                                    .dueAmount = (widget
+                                                            .saleTransactionModel
+                                                            .dueAmount ??
+                                                        0) -
+                                                    (num.tryParse(
+                                                            getTotalReturnAmount()
+                                                                .toString()) ??
+                                                        0);
                                           }
-                                          List<AddToCartModel> newProductList = [];
-                                          List<AddToCartModel> oldProduct = widget.saleTransactionModel.productList!;
+                                          List<AddToCartModel> newProductList =
+                                              [];
 
-                                          for (var p in widget.saleTransactionModel.productList!) {
-                                            if (returnList.any((element) => element.productId == p.productId)) {
-                                              int index = returnList.indexWhere((element) => element.productId == p.productId);
-                                              p.quantity = p.quantity - returnList[index].quantity;
+                                          for (var p in widget
+                                              .saleTransactionModel
+                                              .productList!) {
+                                            if (returnList.any((element) =>
+                                                element.productId ==
+                                                p.productId)) {
+                                              int index = returnList.indexWhere(
+                                                  (element) =>
+                                                      element.productId ==
+                                                      p.productId);
+                                              p.quantity = p.quantity -
+                                                  returnList[index].quantity;
                                             }
 
-                                            if (p.quantity > 0) newProductList.add(p);
+                                            if (p.quantity > 0)
+                                              newProductList.add(p);
                                           }
 
-                                          editedTransitionModel.productList = newProductList;
-                                          editedTransitionModel.totalAmount = (editedTransitionModel.totalAmount ?? 0) - (double.tryParse(getTotalReturnAmount().toString()) ?? 0);
+                                          editedTransitionModel.productList =
+                                              newProductList;
+                                          editedTransitionModel.totalAmount =
+                                              (editedTransitionModel
+                                                          .totalAmount ??
+                                                      0) -
+                                                  (double.tryParse(
+                                                          getTotalReturnAmount()
+                                                              .toString()) ??
+                                                      0);
 
                                           // myTransitionModel.totalAmount = widget.newTransitionModel.totalAmount!.toDouble();
                                           ///________________updateInvoice___________________________________________________________OK
                                           String? key;
                                           final userId = await getUserID();
-                                          await FirebaseDatabase.instance.ref(userId).child('Sales Transition').orderByKey().get().then((value) {
-                                            for (var element in value.children) {
-                                              final t = SaleTransactionModel.fromJson(jsonDecode(jsonEncode(element.value)));
-                                              if (editedTransitionModel.invoiceNumber == t.invoiceNumber) {
+                                          await FirebaseDatabase.instance
+                                              .ref(userId)
+                                              .child('Sales Transition')
+                                              .orderByKey()
+                                              .get()
+                                              .then((value) {
+                                            for (var element
+                                                in value.children) {
+                                              final t =
+                                                  SaleTransactionModel.fromJson(
+                                                      jsonDecode(jsonEncode(
+                                                          element.value)));
+                                              if (editedTransitionModel
+                                                      .invoiceNumber ==
+                                                  t.invoiceNumber) {
                                                 key = element.key;
                                               }
                                             }
                                           });
 
                                           if (newProductList.isEmpty) {
-                                            await FirebaseDatabase.instance.ref(userId).child('Sales Transition').child(key!).remove();
+                                            await FirebaseDatabase.instance
+                                                .ref(userId)
+                                                .child('Sales Transition')
+                                                .child(key!)
+                                                .remove();
                                           } else {
                                             num totalQuantity = 0;
                                             double lossProfit = 0;
                                             double totalPurchasePrice = 0;
                                             double totalSalePrice = 0;
-                                            for (var element in newProductList) {
-                                              if (element.taxType == 'Exclusive') {
-                                                double tax = calculateAmountFromPercentage(element.groupTaxRate.toDouble(), double.tryParse(element.productPurchasePrice.toString()) ?? 0);
-                                                totalPurchasePrice = totalPurchasePrice + ((double.parse(element.productPurchasePrice.toString()) + tax) * element.quantity);
+                                            for (var element
+                                                in newProductList) {
+                                              if (element.taxType ==
+                                                  'Exclusive') {
+                                                double tax =
+                                                    calculateAmountFromPercentage(
+                                                        element.groupTaxRate
+                                                            .toDouble(),
+                                                        double.tryParse(element
+                                                                .productPurchasePrice
+                                                                .toString()) ??
+                                                            0);
+                                                totalPurchasePrice =
+                                                    totalPurchasePrice +
+                                                        ((double.parse(element
+                                                                    .productPurchasePrice
+                                                                    .toString()) +
+                                                                tax) *
+                                                            element.quantity);
                                               } else {
-                                                totalPurchasePrice = totalPurchasePrice + (double.parse(element.productPurchasePrice.toString()) * element.quantity);
+                                                totalPurchasePrice =
+                                                    totalPurchasePrice +
+                                                        (double.parse(element
+                                                                .productPurchasePrice
+                                                                .toString()) *
+                                                            element.quantity);
                                               }
 
-                                              totalSalePrice = totalSalePrice + (double.parse(element.subTotal.toString()) * element.quantity);
+                                              totalSalePrice = totalSalePrice +
+                                                  (double.parse(element.subTotal
+                                                          .toString()) *
+                                                      element.quantity);
 
-                                              totalQuantity = totalQuantity + element.quantity;
+                                              totalQuantity = totalQuantity +
+                                                  element.quantity;
                                             }
-                                            lossProfit = ((totalSalePrice - totalPurchasePrice.toDouble()) - double.parse(editedTransitionModel.discountAmount.toString()));
-                                            editedTransitionModel.totalQuantity = totalQuantity;
-                                            editedTransitionModel.lossProfit = lossProfit;
+                                            lossProfit = ((totalSalePrice -
+                                                    totalPurchasePrice
+                                                        .toDouble()) -
+                                                double.parse(
+                                                    editedTransitionModel
+                                                        .discountAmount
+                                                        .toString()));
+                                            editedTransitionModel
+                                                .totalQuantity = totalQuantity;
+                                            editedTransitionModel.lossProfit =
+                                                lossProfit;
 
                                             ///__________total LossProfit & quantity________________________________________________________________
                                             // final postEditedTransitionModel = ShowEditPaymentPopUp.checkLossProfit(transitionModel: editedTransitionModel);
-                                            await FirebaseDatabase.instance.ref(userId).child('Sales Transition').child(key!).update(editedTransitionModel.toJson());
+                                            await FirebaseDatabase.instance
+                                                .ref(userId)
+                                                .child('Sales Transition')
+                                                .child(key!)
+                                                .update(editedTransitionModel
+                                                    .toJson());
                                           }
-                                          SaleTransactionModel invoice = SaleTransactionModel(
-                                            customerName: widget.saleTransactionModel.customerName,
-                                            customerType: widget.saleTransactionModel.customerType,
-                                            customerGst: widget.saleTransactionModel.customerGst,
-                                            customerPhone: widget.saleTransactionModel.customerPhone,
-                                            invoiceNumber: widget.saleTransactionModel.invoiceNumber,
-                                            purchaseDate: widget.saleTransactionModel.purchaseDate,
-                                            customerAddress: widget.saleTransactionModel.customerAddress,
-                                            customerImage: widget.saleTransactionModel.customerImage,
-                                            sendWhatsappMessage: widget.saleTransactionModel.sendWhatsappMessage ?? false,
+                                          SaleTransactionModel invoice =
+                                              SaleTransactionModel(
+                                            customerName: widget
+                                                .saleTransactionModel
+                                                .customerName,
+                                            customerType: widget
+                                                .saleTransactionModel
+                                                .customerType,
+                                            customerGst: widget
+                                                .saleTransactionModel
+                                                .customerGst,
+                                            customerPhone: widget
+                                                .saleTransactionModel
+                                                .customerPhone,
+                                            invoiceNumber: widget
+                                                .saleTransactionModel
+                                                .invoiceNumber,
+                                            purchaseDate: widget
+                                                .saleTransactionModel
+                                                .purchaseDate,
+                                            customerAddress: widget
+                                                .saleTransactionModel
+                                                .customerAddress,
+                                            customerImage: widget
+                                                .saleTransactionModel
+                                                .customerImage,
+                                            sendWhatsappMessage: widget
+                                                    .saleTransactionModel
+                                                    .sendWhatsappMessage ??
+                                                false,
                                             productList: returnList,
-                                            totalAmount: double.tryParse(getTotalReturnAmount().toString()),
+                                            totalAmount: double.tryParse(
+                                                getTotalReturnAmount()
+                                                    .toString()),
                                             discountAmount: 0,
                                             dueAmount: 0,
                                             isPaid: false,
@@ -1031,20 +1290,27 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> with WidgetsBindi
                                           await saleReturn(
                                             salesModel: invoice,
                                             setting: setting,
-                                            original: widget.saleTransactionModel,
+                                            original:
+                                                widget.saleTransactionModel,
                                             consumerRef: ref,
                                             context: context,
                                           );
                                         }
                                       },
-                                      child: Text(lang.S.of(context).conformReturn));
+                                      child: Text(
+                                          lang.S.of(context).conformReturn));
                                 }, error: (e, stack) {
                                   return Text(e.toString());
                                 }, loading: () {
-                                  return Center(child: CircularProgressIndicator());
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }),
                               )),
-                          ResponsiveGridCol(xs: 12, md: 1, lg: 3, child: const SizedBox.shrink()),
+                          ResponsiveGridCol(
+                              xs: 12,
+                              md: 1,
+                              lg: 3,
+                              child: const SizedBox.shrink()),
                         ]),
                         // Row(
                         //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

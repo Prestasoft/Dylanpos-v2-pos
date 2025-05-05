@@ -34,7 +34,10 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
         return stockData.when(data: (report) {
           List<ProductModel> reTransaction = [];
           for (var element in report) {
-            if (element.productName.removeAllWhiteSpace().toLowerCase().contains(searchItem.removeAllWhiteSpace().toLowerCase())) {
+            if (element.productName
+                .removeAllWhiteSpace()
+                .toLowerCase()
+                .contains(searchItem.removeAllWhiteSpace().toLowerCase())) {
               reTransaction.add(element);
             }
           }
@@ -42,7 +45,9 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
 
           final startIndex = (_currentPage - 1) * _stockReportPerPage;
           // final endIndex = startIndex + _saleReportPerPage;
-          final endIndex = _stockReportPerPage == -1 ? reTransaction.length : startIndex + _stockReportPerPage;
+          final endIndex = _stockReportPerPage == -1
+              ? reTransaction.length
+              : startIndex + _stockReportPerPage;
           final paginatedList = reTransaction.sublist(
             startIndex,
             endIndex > reTransaction.length ? reTransaction.length : endIndex,
@@ -151,7 +156,7 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                 children: [
                                   Flexible(
                                       child: Text(
-                                    'Show-',
+                                    'Mostrar-',
                                     style: theme.textTheme.bodyLarge,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -165,11 +170,19 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                    items: [
+                                      10,
+                                      20,
+                                      50,
+                                      100,
+                                      -1
+                                    ].map<DropdownMenuItem<int>>((int value) {
                                       return DropdownMenuItem<int>(
                                         value: value,
                                         child: Text(
-                                          value == -1 ? "All" : value.toString(),
+                                          value == -1
+                                              ? "All"
+                                              : value.toString(),
                                           style: theme.textTheme.bodyLarge,
                                         ),
                                       );
@@ -177,7 +190,8 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                     onChanged: (int? newValue) {
                                       setState(() {
                                         if (newValue == -1) {
-                                          _stockReportPerPage = -1; // Set to -1 for "All"
+                                          _stockReportPerPage =
+                                              -1; // Set to -1 for "All"
                                         } else {
                                           _stockReportPerPage = newValue ?? 10;
                                         }
@@ -222,7 +236,8 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                           ? Column(
                               children: [
                                 LayoutBuilder(
-                                  builder: (BuildContext context, BoxConstraints constraints) {
+                                  builder: (BuildContext context,
+                                      BoxConstraints constraints) {
                                     return Scrollbar(
                                       controller: _horizontalScroll,
                                       thumbVisibility: true,
@@ -233,7 +248,9 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                         controller: _horizontalScroll,
                                         child: Theme(
                                           data: theme.copyWith(
-                                            dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                            dividerTheme:
+                                                const DividerThemeData(
+                                                    color: Colors.transparent),
                                           ),
                                           child: ConstrainedBox(
                                             constraints: BoxConstraints(
@@ -246,11 +263,16 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                              dataRowColor:
+                                                  const WidgetStatePropertyAll(
+                                                      Colors.white),
+                                              headingRowColor:
+                                                  WidgetStateProperty.all(
+                                                      const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle: theme.textTheme.titleMedium,
+                                              headingTextStyle:
+                                                  theme.textTheme.titleMedium,
                                               columns: [
                                                 DataColumn(
                                                   label: Text(
@@ -260,7 +282,9 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                                 ),
                                                 DataColumn(
                                                   label: Text(
-                                                    lang.S.of(context).PRODUCTNAME,
+                                                    lang.S
+                                                        .of(context)
+                                                        .PRODUCTNAME,
                                                   ),
                                                 ),
                                                 DataColumn(
@@ -280,7 +304,9 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                                 ),
                                                 DataColumn(
                                                   label: Text(
-                                                    lang.S.of(context).warehouse,
+                                                    lang.S
+                                                        .of(context)
+                                                        .warehouse,
                                                   ),
                                                 ),
                                                 DataColumn(
@@ -290,7 +316,9 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                                 ),
                                                 DataColumn(
                                                   label: Text(
-                                                    lang.S.of(context).TOTALVALUE,
+                                                    lang.S
+                                                        .of(context)
+                                                        .TOTALVALUE,
                                                   ),
                                                 ),
                                                 // const DataColumn(
@@ -302,41 +330,69 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                                 (index) => DataRow(
                                                   cells: [
                                                     DataCell(
-                                                      Text("${startIndex + index + 1}"),
+                                                      Text(
+                                                          "${startIndex + index + 1}"),
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].productName,
+                                                        paginatedList[index]
+                                                            .productName,
                                                       ),
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].productCategory,
+                                                        paginatedList[index]
+                                                            .productCategory,
                                                       ),
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        myFormat.format(double.tryParse(paginatedList[index].productSalePrice) ?? 0),
+                                                        myFormat.format(double.tryParse(
+                                                                paginatedList[
+                                                                        index]
+                                                                    .productSalePrice) ??
+                                                            0),
                                                       ),
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].productStock,
+                                                        paginatedList[index]
+                                                            .productStock,
                                                       ),
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].warehouseName,
+                                                        paginatedList[index]
+                                                            .warehouseName,
                                                       ),
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        paginatedList[index].productStock.toString().toInt() < 50 ? lang.S.of(context).low : lang.S.of(context).high,
+                                                        paginatedList[index]
+                                                                    .productStock
+                                                                    .toString()
+                                                                    .toInt() <
+                                                                50
+                                                            ? lang.S
+                                                                .of(context)
+                                                                .low
+                                                            : lang.S
+                                                                .of(context)
+                                                                .high,
                                                       ),
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        myFormat.format(double.tryParse((paginatedList[index].productSalePrice.toInt() * paginatedList[index].productStock.toInt()).toString()) ?? 0),
+                                                        myFormat.format(double.tryParse((paginatedList[
+                                                                            index]
+                                                                        .productSalePrice
+                                                                        .toInt() *
+                                                                    paginatedList[
+                                                                            index]
+                                                                        .productStock
+                                                                        .toInt())
+                                                                .toString()) ??
+                                                            0),
                                                       ),
                                                     ),
                                                     // DataCell(
@@ -378,7 +434,8 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Flexible(
                                         child: Text(
@@ -390,21 +447,32 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                       Row(
                                         children: [
                                           InkWell(
-                                            overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                            overlayColor:
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.grey),
                                             hoverColor: Colors.grey,
-                                            onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                            onTap: _currentPage > 1
+                                                ? () => setState(
+                                                    () => _currentPage--)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomLeft: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(4.0),
                                                   topLeft: Radius.circular(4.0),
                                                 ),
                                               ),
                                               child: Center(
-                                                child: Text(lang.S.of(context).previous),
+                                                child: Text(lang.S
+                                                    .of(context)
+                                                    .previous),
                                               ),
                                             ),
                                           ),
@@ -412,13 +480,15 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: kMainColor,
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '$_currentPage',
-                                                style: const TextStyle(color: Colors.white),
+                                                style: const TextStyle(
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           ),
@@ -426,7 +496,8 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                             height: 32,
                                             width: 32,
                                             decoration: BoxDecoration(
-                                              border: Border.all(color: kBorderColorTextField),
+                                              border: Border.all(
+                                                  color: kBorderColorTextField),
                                               color: Colors.transparent,
                                             ),
                                             child: Center(
@@ -436,20 +507,34 @@ class _CurrentStockWidgetState extends State<CurrentStockWidget> {
                                             ),
                                           ),
                                           InkWell(
-                                            hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                            overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                            onTap: _currentPage * _stockReportPerPage < reTransaction.length ? () => setState(() => _currentPage++) : null,
+                                            hoverColor: Colors.blue
+                                                .withValues(alpha: 0.1),
+                                            overlayColor:
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.blue),
+                                            onTap: _currentPage *
+                                                        _stockReportPerPage <
+                                                    reTransaction.length
+                                                ? () => setState(
+                                                    () => _currentPage++)
+                                                : null,
                                             child: Container(
                                               height: 32,
                                               width: 90,
                                               decoration: BoxDecoration(
-                                                border: Border.all(color: kBorderColorTextField),
-                                                borderRadius: const BorderRadius.only(
-                                                  bottomRight: Radius.circular(4.0),
-                                                  topRight: Radius.circular(4.0),
+                                                border: Border.all(
+                                                    color:
+                                                        kBorderColorTextField),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  bottomRight:
+                                                      Radius.circular(4.0),
+                                                  topRight:
+                                                      Radius.circular(4.0),
                                                 ),
                                               ),
-                                              child: const Center(child: Text('Next')),
+                                              child: const Center(
+                                                  child: Text('Next')),
                                             ),
                                           ),
                                         ],

@@ -24,13 +24,16 @@ class _ShellRouteWrapperState extends State<ShellRouteWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isLaptop = rf.ResponsiveBreakpoints.of(context).largerThan(BreakpointName.MD.name);
-    final ThemeData theme = Theme.of(context);
+    final bool isLaptop =
+        rf.ResponsiveBreakpoints.of(context).largerThan(BreakpointName.MD.name);
+    Theme.of(context);
 
     return Scaffold(
       key: scaffoldKey,
       // backgroundColor: isDark ? AcnooAppColors.kDark1 : AcnooAppColors.kPrimary50,
-      drawer: isLaptop ? null : buildSidebar(isLargeSidebarExpanded), // Drawer for mobile
+      drawer: isLaptop
+          ? null
+          : buildSidebar(isLargeSidebarExpanded), // Drawer for mobile
       bottomNavigationBar: isLaptop ? null : const FooterWidget(),
       body: rf.ResponsiveRowColumn(
         layout: rf.ResponsiveRowColumnType.ROW,
@@ -83,7 +86,8 @@ class _ShellRouteWrapperState extends State<ShellRouteWrapper> {
           });
         } else {
           // Open drawer for mobile
-          if (scaffoldKey.currentState != null && scaffoldKey.currentState!.isDrawerOpen == false) {
+          if (scaffoldKey.currentState != null &&
+              scaffoldKey.currentState!.isDrawerOpen == false) {
             scaffoldKey.currentState!.openDrawer();
           }
         }

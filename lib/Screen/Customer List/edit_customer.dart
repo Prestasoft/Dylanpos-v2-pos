@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -12,7 +11,6 @@ import 'package:image_picker_web/image_picker_web.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-
 import '../../Provider/customer_provider.dart';
 import '../../const.dart';
 import '../../model/customer_model.dart';
@@ -20,7 +18,11 @@ import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/dotted_border/dotted_border.dart';
 
 class EditCustomer extends StatefulWidget {
-  const EditCustomer({super.key, required this.customerModel, required this.typeOfCustomerAdd, required this.allPreviousCustomer});
+  const EditCustomer(
+      {super.key,
+      required this.customerModel,
+      required this.typeOfCustomerAdd,
+      required this.allPreviousCustomer});
 
   final List<CustomerModel> allPreviousCustomer;
   final CustomerModel customerModel;
@@ -36,7 +38,12 @@ class _EditCustomerState extends State<EditCustomer> {
   late String customerKey;
 
   void getCustomerKey(String phoneNumber) async {
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Customers')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         var data = jsonDecode(jsonEncode(element.value));
         if (data['phoneNumber'].toString() == phoneNumber) {
@@ -60,7 +67,9 @@ class _EditCustomerState extends State<EditCustomer> {
             dismissOnTap: false,
           );
         }
-        var snapshot = await FirebaseStorage.instance.ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}').putData(bytesFromPicker);
+        var snapshot = await FirebaseStorage.instance
+            .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+            .putData(bytesFromPicker);
         var url = await snapshot.ref.getDownloadURL();
         EasyLoading.showSuccess('${lang.S.of(context).uploadSuccessful}!');
         setState(() {
@@ -69,7 +78,8 @@ class _EditCustomerState extends State<EditCustomer> {
         });
       } on firebase_core.FirebaseException catch (e) {
         EasyLoading.dismiss();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.code.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.code.toString())));
       }
     }
   }
@@ -191,7 +201,8 @@ class _EditCustomerState extends State<EditCustomer> {
                         children: [
                           Text(
                             pageName,
-                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           )
                         ],
                       ),
@@ -235,14 +246,20 @@ class _EditCustomerState extends State<EditCustomer> {
                                                 }
                                               },
                                               onSaved: (value) {
-                                                customerNameController.text = value!;
+                                                customerNameController.text =
+                                                    value!;
                                               },
-                                              controller: customerNameController,
+                                              controller:
+                                                  customerNameController,
                                               showCursor: true,
                                               cursorColor: kTitleColor,
                                               decoration: InputDecoration(
-                                                labelText: lang.S.of(context).customerName,
-                                                hintText: lang.S.of(context).enterCustomerName,
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .customerName,
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterCustomerName,
                                               ),
                                             ),
                                           )),
@@ -257,22 +274,35 @@ class _EditCustomerState extends State<EditCustomer> {
                                                 if (value.isEmptyOrNull) {
                                                   //return 'Please enter a phone number.';
                                                   return '${lang.S.of(context).pleaseEnterAPhoneNumber}.';
-                                                } else if (double.tryParse(value!) == null) {
+                                                } else if (double.tryParse(
+                                                        value!) ==
+                                                    null) {
                                                   // return 'Enter a valid Phone Number';
-                                                  return lang.S.of(context).enterAValidPhoneNumber;
-                                                } else if (isPhoneNumberAlreadyUsed(value) && value != widget.customerModel.phoneNumber) {
+                                                  return lang.S
+                                                      .of(context)
+                                                      .enterAValidPhoneNumber;
+                                                } else if (isPhoneNumberAlreadyUsed(
+                                                        value) &&
+                                                    value !=
+                                                        widget.customerModel
+                                                            .phoneNumber) {
                                                   // return 'Phone number already Used';
-                                                  return lang.S.of(context).phoneNumberAlreadyUsed;
+                                                  return lang.S
+                                                      .of(context)
+                                                      .phoneNumberAlreadyUsed;
                                                 }
                                                 return null;
                                               },
                                               onSaved: (value) {
-                                                customerPhoneController.text = value!;
+                                                customerPhoneController.text =
+                                                    value!;
                                               },
-                                              controller: customerPhoneController,
+                                              controller:
+                                                  customerPhoneController,
                                               cursorColor: kTitleColor,
                                               decoration: InputDecoration(
-                                                labelText: lang.S.of(context).phone,
+                                                labelText:
+                                                    lang.S.of(context).phone,
                                               ),
                                             ),
                                           )),
@@ -291,16 +321,24 @@ class _EditCustomerState extends State<EditCustomer> {
                                                 return null;
                                               },
                                               onSaved: (value) {
-                                                customerEmailController.text = value!;
+                                                customerEmailController.text =
+                                                    value!;
                                               },
-                                              controller: customerEmailController,
+                                              controller:
+                                                  customerEmailController,
                                               showCursor: true,
                                               cursorColor: kTitleColor,
-                                              decoration: kInputDecoration.copyWith(
-                                                labelText: lang.S.of(context).email,
-                                                labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                hintText: lang.S.of(context).enterYourEmailAddress,
-                                                hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                              decoration:
+                                                  kInputDecoration.copyWith(
+                                                labelText:
+                                                    lang.S.of(context).email,
+                                                labelStyle: kTextStyle.copyWith(
+                                                    color: kTitleColor),
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterYourEmailAddress,
+                                                hintStyle: kTextStyle.copyWith(
+                                                    color: kGreyTextColor),
                                               ),
                                             ),
                                           )),
@@ -315,14 +353,19 @@ class _EditCustomerState extends State<EditCustomer> {
                                                 return null;
                                               },
                                               onSaved: (value) {
-                                                customerAddressController.text = value!;
+                                                customerAddressController.text =
+                                                    value!;
                                               },
-                                              controller: customerAddressController,
+                                              controller:
+                                                  customerAddressController,
                                               showCursor: true,
                                               cursorColor: kTitleColor,
                                               decoration: InputDecoration(
-                                                labelText: lang.S.of(context).address,
-                                                hintText: lang.S.of(context).enterYourAddress,
+                                                labelText:
+                                                    lang.S.of(context).address,
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterYourAddress,
                                               ),
                                             ),
                                           )),
@@ -341,11 +384,16 @@ class _EditCustomerState extends State<EditCustomer> {
                                                 return null;
                                               },
                                               readOnly: true,
-                                              initialValue: widget.customerModel.dueAmount,
+                                              initialValue: widget
+                                                  .customerModel.dueAmount,
                                               cursorColor: kTitleColor,
                                               decoration: InputDecoration(
-                                                labelText: lang.S.of(context).openingBalance,
-                                                hintText: lang.S.of(context).enterOpeningBalance,
+                                                labelText: lang.S
+                                                    .of(context)
+                                                    .openingBalance,
+                                                hintText: lang.S
+                                                    .of(context)
+                                                    .enterOpeningBalance,
                                               ),
                                             ),
                                           )),
@@ -358,10 +406,28 @@ class _EditCustomerState extends State<EditCustomer> {
                                             child: SizedBox(
                                               height: 48,
                                               child: FormField(
-                                                builder: (FormFieldState<dynamic> field) {
+                                                builder:
+                                                    (FormFieldState<dynamic>
+                                                        field) {
                                                   return InputDecorator(
-                                                    decoration: InputDecoration(contentPadding: const EdgeInsets.all(6.0), labelText: lang.S.of(context).type),
-                                                    child: Theme(data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor), child: DropdownButtonHideUnderline(child: getCategories())),
+                                                    decoration: InputDecoration(
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .all(6.0),
+                                                        labelText: lang.S
+                                                            .of(context)
+                                                            .type),
+                                                    child: Theme(
+                                                        data: ThemeData(
+                                                            highlightColor:
+                                                                dropdownItemColor,
+                                                            focusColor:
+                                                                dropdownItemColor,
+                                                            hoverColor:
+                                                                dropdownItemColor),
+                                                        child: DropdownButtonHideUnderline(
+                                                            child:
+                                                                getCategories())),
                                                   );
                                                 },
                                               ),
@@ -410,53 +476,71 @@ class _EditCustomerState extends State<EditCustomer> {
                                     // ),
 
                                     ///_________GST___________________________________
-                                    ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                      ResponsiveGridCol(
-                                          xs: 12,
-                                          md: 6,
-                                          lg: 6,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: TextFormField(
-                                              validator: (value) {
-                                                return null;
-                                              },
-                                              onSaved: (value) {
-                                                gstController.text = value!;
-                                              },
-                                              controller: gstController,
-                                              showCursor: true,
-                                              cursorColor: kTitleColor,
-                                              decoration: InputDecoration(
-                                                //labelText: 'Customer GST',
-                                                labelText: lang.S.of(context).customerGST,
-                                                // hintText: 'Enter customer GST number',
-                                                hintText: lang.S.of(context).enterCustomerGSTNumber,
-                                              ),
-                                            ),
-                                          )),
-                                      ResponsiveGridCol(
-                                          xs: 12,
-                                          md: 6,
-                                          lg: 6,
-                                          child: Theme(
-                                            data: theme.copyWith(checkboxTheme: const CheckboxThemeData(side: BorderSide(color: kNeutral500))),
-                                            child: CheckboxListTile(
-                                              visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                                              value: receiveWhatsappUpdates,
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  receiveWhatsappUpdates = value!;
-                                                });
-                                                // }, title: Text('Receive Whatsapp Updates?', style: kTextStyle.copyWith(color: kTitleColor),),),
-                                              },
-                                              title: Text(
-                                                '${lang.S.of(context).receiveWhatsappUpdates}?',
-                                                style: kTextStyle.copyWith(color: kTitleColor),
-                                              ),
-                                            ),
-                                          ))
-                                    ]),
+                                    ResponsiveGridRow(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          ResponsiveGridCol(
+                                              xs: 12,
+                                              md: 6,
+                                              lg: 6,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
+                                                child: TextFormField(
+                                                  validator: (value) {
+                                                    return null;
+                                                  },
+                                                  onSaved: (value) {
+                                                    gstController.text = value!;
+                                                  },
+                                                  controller: gstController,
+                                                  showCursor: true,
+                                                  cursorColor: kTitleColor,
+                                                  decoration: InputDecoration(
+                                                    //labelText: 'Customer GST',
+                                                    labelText: lang.S
+                                                        .of(context)
+                                                        .customerGST,
+                                                    // hintText: 'Enter customer GST number',
+                                                    hintText: lang.S
+                                                        .of(context)
+                                                        .enterCustomerGSTNumber,
+                                                  ),
+                                                ),
+                                              )),
+                                          ResponsiveGridCol(
+                                              xs: 12,
+                                              md: 6,
+                                              lg: 6,
+                                              child: Theme(
+                                                data: theme.copyWith(
+                                                    checkboxTheme:
+                                                        const CheckboxThemeData(
+                                                            side: BorderSide(
+                                                                color:
+                                                                    kNeutral500))),
+                                                child: CheckboxListTile(
+                                                  visualDensity:
+                                                      const VisualDensity(
+                                                          horizontal: -4,
+                                                          vertical: -4),
+                                                  value: receiveWhatsappUpdates,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      receiveWhatsappUpdates =
+                                                          value!;
+                                                    });
+                                                    // }, title: Text('Receive Whatsapp Updates?', style: kTextStyle.copyWith(color: kTitleColor),),),
+                                                  },
+                                                  title: Text(
+                                                    '${lang.S.of(context).receiveWhatsappUpdates}?',
+                                                    style: kTextStyle.copyWith(
+                                                        color: kTitleColor),
+                                                  ),
+                                                ),
+                                              ))
+                                        ]),
                                     // Row(
                                     //   children: [
                                     //     Expanded(
@@ -628,7 +712,9 @@ class _EditCustomerState extends State<EditCustomer> {
                                     padding: const EdgeInsets.all(10.0),
                                     child: Text(
                                       lang.S.of(context).saveAndPublished,
-                                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                   const Divider(
@@ -663,60 +749,166 @@ class _EditCustomerState extends State<EditCustomer> {
                                               if (!isDemo) {
                                                 if (validateAndSave()) {
                                                   try {
-                                                    EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                    DatabaseReference reference = FirebaseDatabase.instance.ref("${await getUserID()}/Customers/$customerKey");
+                                                    EasyLoading.show(
+                                                        status:
+                                                            '${lang.S.of(context).loading}...',
+                                                        dismissOnTap: false);
+                                                    DatabaseReference
+                                                        reference =
+                                                        FirebaseDatabase
+                                                            .instance
+                                                            .ref(
+                                                                "${await getUserID()}/Customers/$customerKey");
 
-                                                    CustomerModel customerModel = CustomerModel(
-                                                      customerName: customerNameController.text,
-                                                      phoneNumber: customerPhoneController.text,
+                                                    CustomerModel
+                                                        customerModel =
+                                                        CustomerModel(
+                                                      customerName:
+                                                          customerNameController
+                                                              .text,
+                                                      phoneNumber:
+                                                          customerPhoneController
+                                                              .text,
                                                       type: selectedCategories,
-                                                      profilePicture: profilePicture,
-                                                      emailAddress: customerEmailController.text,
-                                                      customerAddress: customerAddressController.text,
-                                                      dueAmount: widget.customerModel.dueAmount,
-                                                      remainedBalance: widget.customerModel.remainedBalance,
-                                                      openingBalance: widget.customerModel.openingBalance,
+                                                      profilePicture:
+                                                          profilePicture,
+                                                      emailAddress:
+                                                          customerEmailController
+                                                              .text,
+                                                      customerAddress:
+                                                          customerAddressController
+                                                              .text,
+                                                      dueAmount: widget
+                                                          .customerModel
+                                                          .dueAmount,
+                                                      remainedBalance: widget
+                                                          .customerModel
+                                                          .remainedBalance,
+                                                      openingBalance: widget
+                                                          .customerModel
+                                                          .openingBalance,
                                                       gst: gstController.text,
-                                                      receiveWhatsappUpdates: receiveWhatsappUpdates,
+                                                      receiveWhatsappUpdates:
+                                                          receiveWhatsappUpdates,
                                                     );
 
                                                     ///___________update_customer_________________________________________________________
-                                                    await reference.set(customerModel.toJson());
+                                                    await reference.set(
+                                                        customerModel.toJson());
 
                                                     ///_________chanePhone in All invoice_________________________________________________
                                                     String key = '';
-                                                    widget.customerModel.phoneNumber != customerModel.phoneNumber || widget.customerModel.customerName != customerModel.customerName
-                                                        ? widget.customerModel.type != 'Supplier'
-                                                            ? await FirebaseDatabase.instance.ref(await getUserID()).child('Sales Transition').orderByKey().get().then((value) async {
-                                                                for (var element in value.children) {
-                                                                  var data = jsonDecode(jsonEncode(element.value));
-                                                                  if (data['customerPhone'].toString() == widget.customerModel.phoneNumber) {
-                                                                    key = element.key.toString();
-                                                                    DatabaseReference reference = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/$key");
-                                                                    await reference.update({'customerName': customerModel.customerName, 'customerPhone': customerModel.phoneNumber});
+                                                    widget.customerModel
+                                                                    .phoneNumber !=
+                                                                customerModel
+                                                                    .phoneNumber ||
+                                                            widget.customerModel
+                                                                    .customerName !=
+                                                                customerModel
+                                                                    .customerName
+                                                        ? widget.customerModel
+                                                                    .type !=
+                                                                'Supplier'
+                                                            ? await FirebaseDatabase
+                                                                .instance
+                                                                .ref(
+                                                                    await getUserID())
+                                                                .child(
+                                                                    'Sales Transition')
+                                                                .orderByKey()
+                                                                .get()
+                                                                .then(
+                                                                    (value) async {
+                                                                for (var element
+                                                                    in value
+                                                                        .children) {
+                                                                  var data = jsonDecode(
+                                                                      jsonEncode(
+                                                                          element
+                                                                              .value));
+                                                                  if (data['customerPhone']
+                                                                          .toString() ==
+                                                                      widget
+                                                                          .customerModel
+                                                                          .phoneNumber) {
+                                                                    key = element
+                                                                        .key
+                                                                        .toString();
+                                                                    DatabaseReference
+                                                                        reference =
+                                                                        FirebaseDatabase
+                                                                            .instance
+                                                                            .ref("${await getUserID()}/Sales Transition/$key");
+                                                                    await reference
+                                                                        .update({
+                                                                      'customerName':
+                                                                          customerModel
+                                                                              .customerName,
+                                                                      'customerPhone':
+                                                                          customerModel
+                                                                              .phoneNumber
+                                                                    });
                                                                   }
                                                                 }
                                                               })
-                                                            : await FirebaseDatabase.instance.ref(await getUserID()).child('Purchase Transition').orderByKey().get().then((value) async {
-                                                                for (var element in value.children) {
-                                                                  var data = jsonDecode(jsonEncode(element.value));
-                                                                  if (data['customerPhone'].toString() == widget.customerModel.phoneNumber) {
-                                                                    key = element.key.toString();
-                                                                    DatabaseReference reference = FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Transition/$key");
-                                                                    await reference.update({'customerName': customerModel.customerName, 'customerPhone': customerModel.phoneNumber});
+                                                            : await FirebaseDatabase
+                                                                .instance
+                                                                .ref(
+                                                                    await getUserID())
+                                                                .child(
+                                                                    'Purchase Transition')
+                                                                .orderByKey()
+                                                                .get()
+                                                                .then(
+                                                                    (value) async {
+                                                                for (var element
+                                                                    in value
+                                                                        .children) {
+                                                                  var data = jsonDecode(
+                                                                      jsonEncode(
+                                                                          element
+                                                                              .value));
+                                                                  if (data['customerPhone']
+                                                                          .toString() ==
+                                                                      widget
+                                                                          .customerModel
+                                                                          .phoneNumber) {
+                                                                    key = element
+                                                                        .key
+                                                                        .toString();
+                                                                    DatabaseReference
+                                                                        reference =
+                                                                        FirebaseDatabase
+                                                                            .instance
+                                                                            .ref("${await getUserID()}/Purchase Transition/$key");
+                                                                    await reference
+                                                                        .update({
+                                                                      'customerName':
+                                                                          customerModel
+                                                                              .customerName,
+                                                                      'customerPhone':
+                                                                          customerModel
+                                                                              .phoneNumber
+                                                                    });
                                                                   }
                                                                 }
                                                               })
                                                         : null;
 
                                                     //EasyLoading.showSuccess('Added Successfully!');
-                                                    EasyLoading.showSuccess('${lang.S.of(context).addedSuccessfully}!');
+                                                    EasyLoading.showSuccess(
+                                                        '${lang.S.of(context).addedSuccessfully}!');
 
-                                                    ref.refresh(allCustomerProvider);
+                                                    // ignore: unused_result
+                                                    ref.refresh(
+                                                        allCustomerProvider);
                                                     // ignore: use_build_context_synchronously
                                                     // Navigator.pop(widget.popupContext);
 
-                                                    Future.delayed(const Duration(milliseconds: 100), () {
+                                                    Future.delayed(
+                                                        const Duration(
+                                                            milliseconds: 100),
+                                                        () {
                                                       Navigator.pop(context);
                                                     });
                                                   } catch (e) {
@@ -728,7 +920,8 @@ class _EditCustomerState extends State<EditCustomer> {
                                                 EasyLoading.showInfo(demoText);
                                               }
                                             },
-                                            child: Text(lang.S.of(context).update),
+                                            child:
+                                                Text(lang.S.of(context).update),
                                           ),
                                         ))
                                   ]),
@@ -736,15 +929,21 @@ class _EditCustomerState extends State<EditCustomer> {
                                   ///____Image__________________
                                   Container(
                                     padding: const EdgeInsets.all(20.0),
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: kWhite),
+                                    decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                        color: kWhite),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         CustomDottedBorder(
                                           // padding: const EdgeInsets.all(6),
                                           color: kLitGreyColor,
                                           child: ClipRRect(
-                                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(12)),
                                             child: image != null
                                                 ? Image.memory(
                                                     fit: BoxFit.cover,
@@ -757,32 +956,65 @@ class _EditCustomerState extends State<EditCustomer> {
                                                     height: 130,
                                                     alignment: Alignment.center,
                                                     width: context.width(),
-                                                    padding: const EdgeInsets.all(10.0),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            10.0),
                                                     decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(20.0),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20.0),
                                                     ),
                                                     child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
                                                       children: [
                                                         Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .center,
                                                           children: [
-                                                            SvgPicture.asset('images/blank_image.svg').onTap(
-                                                              () => uploadFile(),
+                                                            SvgPicture.asset(
+                                                                    'images/blank_image.svg')
+                                                                .onTap(
+                                                              () =>
+                                                                  uploadFile(),
                                                             ),
                                                             // Icon(MdiIcons.cloudUpload, size: 50.0, color: kLitGreyColor).onTap(() => uploadFile()),
                                                           ],
                                                         ),
-                                                        const SizedBox(height: 5.0),
+                                                        const SizedBox(
+                                                            height: 5.0),
                                                         RichText(
-                                                            textAlign: TextAlign.center,
+                                                            textAlign: TextAlign
+                                                                .center,
                                                             text: TextSpan(
-                                                                text: lang.S.of(context).uploadAImage,
-                                                                style: theme.textTheme.titleMedium?.copyWith(
-                                                                  color: kGreenTextColor,
+                                                                text: lang.S
+                                                                    .of(context)
+                                                                    .uploadAImage,
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .titleMedium
+                                                                    ?.copyWith(
+                                                                  color:
+                                                                      kGreenTextColor,
                                                                 ),
-                                                                children: [TextSpan(text: lang.S.of(context).orDragAndDropPng, style: theme.textTheme.titleMedium?.copyWith(color: kGreyTextColor))]))
+                                                                children: [
+                                                                  TextSpan(
+                                                                      text: lang
+                                                                          .S
+                                                                          .of(
+                                                                              context)
+                                                                          .orDragAndDropPng,
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .titleMedium
+                                                                          ?.copyWith(
+                                                                              color: kGreyTextColor))
+                                                                ]))
                                                       ],
                                                     ),
                                                   ),

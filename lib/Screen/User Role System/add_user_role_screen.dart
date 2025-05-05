@@ -17,7 +17,7 @@ import '../Widgets/Constant Data/constant.dart';
 
 class AddUserRole extends StatefulWidget {
   AddUserRole({Key? key, this.userRoleModel}) : super(key: key);
-  UserRoleModel? userRoleModel;
+  final UserRoleModel? userRoleModel;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -57,7 +57,21 @@ class _AddUserRoleState extends State<AddUserRole> {
   TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController titleController = TextEditingController();
   TextEditingController userRoleName = TextEditingController();
-  List<Permission> permissions = [Permission(title: 'Sale'), Permission(title: 'Parties'), Permission(title: 'Purchase'), Permission(title: 'Product'), Permission(title: 'Profile Edit'), Permission(title: 'Add Expense'), Permission(title: 'Loss Profit'), Permission(title: 'Due List'), Permission(title: 'Stock'), Permission(title: 'Reports'), Permission(title: 'Sales List'), Permission(title: 'Purchase List'), Permission(title: 'HRM')];
+  List<Permission> permissions = [
+    Permission(title: 'Sale'),
+    Permission(title: 'Parties'),
+    Permission(title: 'Purchase'),
+    Permission(title: 'Product'),
+    Permission(title: 'Profile Edit'),
+    Permission(title: 'Add Expense'),
+    Permission(title: 'Loss Profit'),
+    Permission(title: 'Due List'),
+    Permission(title: 'Stock'),
+    Permission(title: 'Reports'),
+    Permission(title: 'Sales List'),
+    Permission(title: 'Purchase List'),
+    Permission(title: 'HRM')
+  ];
 
   @override
   void initState() {
@@ -496,7 +510,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                           children: [
                             Theme(
                               data: theme.copyWith(
-                                checkboxTheme: const CheckboxThemeData(side: BorderSide(color: kNeutral500)),
+                                checkboxTheme: const CheckboxThemeData(
+                                    side: BorderSide(color: kNeutral500)),
                               ),
                               child: Checkbox(
                                 value: permissions[index].view,
@@ -509,7 +524,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                             ),
                             Theme(
                               data: theme.copyWith(
-                                checkboxTheme: const CheckboxThemeData(side: BorderSide(color: kNeutral500)),
+                                checkboxTheme: const CheckboxThemeData(
+                                    side: BorderSide(color: kNeutral500)),
                               ),
                               child: Checkbox(
                                 value: permissions[index].edit,
@@ -599,7 +615,9 @@ class _AddUserRoleState extends State<AddUserRole> {
                                 hidePassword = !hidePassword;
                               });
                             },
-                            icon: Icon(hidePassword ? Icons.visibility : Icons.visibility_off))),
+                            icon: Icon(hidePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off))),
                     keyboardType: TextInputType.visiblePassword,
                   ),
 
@@ -612,7 +630,9 @@ class _AddUserRoleState extends State<AddUserRole> {
                         return lang.S.of(context).passwordCanNotBeEmpty;
                       } else if (value != passwordController.text) {
                         // return 'Password and confirm password does not match';
-                        return lang.S.of(context).passwordAndConfirmPasswordDoesNotMatch;
+                        return lang.S
+                            .of(context)
+                            .passwordAndConfirmPasswordDoesNotMatch;
                       } else if (value.length < 4) {
                         // return 'Please enter a bigger password';
                         return lang.S.of(context).pleaseEnterABiggerPassword;
@@ -633,7 +653,9 @@ class _AddUserRoleState extends State<AddUserRole> {
                               confirmHidePassword = !confirmHidePassword;
                             });
                           },
-                          icon: Icon(confirmHidePassword ? Icons.visibility : Icons.visibility_off)),
+                          icon: Icon(confirmHidePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off)),
                     ),
                     keyboardType: TextInputType.visiblePassword,
                   ),
@@ -678,7 +700,8 @@ class _AddUserRoleState extends State<AddUserRole> {
 
             ///_________button__________________________________________________
             ElevatedButton(
-                style: ElevatedButton.styleFrom(minimumSize: Size(screenWidth, 48)),
+                style: ElevatedButton.styleFrom(
+                    minimumSize: Size(screenWidth, 48)),
                 onPressed: (() async {
                   UserRoleModel userRolePermissionModel = UserRoleModel();
 
@@ -740,48 +763,63 @@ class _AddUserRoleState extends State<AddUserRole> {
                   print(userRolePermissionModel.toJson());
 
                   //Check if no true in is permission array
-                  if (permissions.every((element) => element.view == false && element.edit == false && element.delete == false)) {
-                    EasyLoading.showError(lang.S.of(context).youHaveToGivePermission);
+                  if (permissions.every((element) =>
+                      element.view == false &&
+                      element.edit == false &&
+                      element.delete == false)) {
+                    EasyLoading.showError(
+                        lang.S.of(context).youHaveToGivePermission);
                     return;
                   }
                   if (widget.userRoleModel != null) {
                     try {
-                      EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                      EasyLoading.show(
+                          status: '${lang.S.of(context).loading}...',
+                          dismissOnTap: false);
                       UserRoleRepo repo = UserRoleRepo();
                       String adminRoleKey = '';
                       String userRoleKey = '';
                       var adminRoleList = await repo.getAllUserRoleFromAdmin();
                       var userRoleList = await repo.getAllUserRole();
                       for (var element in adminRoleList) {
-                        if (element.email == (widget.userRoleModel?.email ?? "")) {
+                        if (element.email ==
+                            (widget.userRoleModel?.email ?? "")) {
                           adminRoleKey = element.userKey ?? '';
                           break;
                         }
                       }
                       for (var element in userRoleList) {
-                        if (element.email == (widget.userRoleModel?.email ?? "")) {
+                        if (element.email ==
+                            (widget.userRoleModel?.email ?? "")) {
                           userRoleKey = element.userKey ?? '';
                           break;
                         }
                       }
 
-                      DatabaseReference dataRef = FirebaseDatabase.instance.ref("$constUserId/User Role/$userRoleKey");
-                      DatabaseReference adminDataRef = FirebaseDatabase.instance.ref("Admin Panel/User Role/$adminRoleKey");
+                      DatabaseReference dataRef = FirebaseDatabase.instance
+                          .ref("$constUserId/User Role/$userRoleKey");
+                      DatabaseReference adminDataRef = FirebaseDatabase.instance
+                          .ref("Admin Panel/User Role/$adminRoleKey");
                       userRolePermissionModel.email = emailController.text;
                       userRolePermissionModel.userTitle = titleController.text;
                       userRolePermissionModel.userRoleName = userRoleName.text;
-                      userRolePermissionModel.databaseId = FirebaseAuth.instance.currentUser!.uid;
+                      userRolePermissionModel.databaseId =
+                          FirebaseAuth.instance.currentUser!.uid;
                       await dataRef.update(userRolePermissionModel.toJson());
-                      await adminDataRef.update(userRolePermissionModel.toJson());
+                      await adminDataRef
+                          .update(userRolePermissionModel.toJson());
                       ref.refresh(userRoleProvider);
 
-                      EasyLoading.showSuccess(lang.S.of(context).successfullyUpdated, duration: const Duration(milliseconds: 500));
+                      EasyLoading.showSuccess(
+                          lang.S.of(context).successfullyUpdated,
+                          duration: const Duration(milliseconds: 500));
                       // ignore: use_build_context_synchronously
                       // Navigator.pop(context);
                       GoRouter.of(context).pop();
                     } catch (e) {
                       EasyLoading.dismiss();
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                     return;
                   }
@@ -806,7 +844,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                     // );
                     userRolePermissionModel.email = emailController.text;
                     userRolePermissionModel.userTitle = titleController.text;
-                    userRolePermissionModel.databaseId = FirebaseAuth.instance.currentUser!.uid;
+                    userRolePermissionModel.databaseId =
+                        FirebaseAuth.instance.currentUser!.uid;
                     // print(FirebaseAuth.instance.currentUser!.uid);
                     signUp(
                       context: context,
@@ -825,20 +864,37 @@ class _AddUserRoleState extends State<AddUserRole> {
   }
 }
 
-void signUp({required BuildContext context, required String email, required String password, required WidgetRef ref, required UserRoleModel userRoleModel}) async {
+void signUp(
+    {required BuildContext context,
+    required String email,
+    required String password,
+    required WidgetRef ref,
+    required UserRoleModel userRoleModel}) async {
   EasyLoading.show(status: '${lang.S.of(context).registering}....');
   try {
-    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
+    UserCredential userCredential = await FirebaseAuth.instance
+        .createUserWithEmailAndPassword(email: email, password: password);
 
     if (userCredential.additionalUserInfo!.isNewUser) {
-      await FirebaseDatabase.instance.ref().child(userRoleModel.databaseId ?? "").child('User Role').push().set(userRoleModel.toJson());
-      await FirebaseDatabase.instance.ref().child('Admin Panel').child('User Role').push().set(userRoleModel.toJson());
+      await FirebaseDatabase.instance
+          .ref()
+          .child(userRoleModel.databaseId ?? "")
+          .child('User Role')
+          .push()
+          .set(userRoleModel.toJson());
+      await FirebaseDatabase.instance
+          .ref()
+          .child('Admin Panel')
+          .child('User Role')
+          .push()
+          .set(userRoleModel.toJson());
 
       await FirebaseAuth.instance.signOut();
       await Future.delayed(const Duration(seconds: 1));
       try {
         await Future.delayed(const Duration(seconds: 1));
-        await FirebaseAuth.instance.signInWithEmailAndPassword(email: mainLoginEmail, password: mainLoginPassword);
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: mainLoginEmail, password: mainLoginPassword);
         await Future.delayed(const Duration(seconds: 2));
         ref.refresh(userRoleProvider);
 
@@ -864,7 +920,8 @@ void signUp({required BuildContext context, required String email, required Stri
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               //content: Text('Wrong password provided for that user.'),
-              content: Text('${lang.S.of(context).wrongPasswordProvidedForThatUser}.'),
+              content: Text(
+                  '${lang.S.of(context).wrongPasswordProvidedForThatUser}.'),
               duration: const Duration(seconds: 3),
             ),
           );
@@ -894,7 +951,8 @@ void signUp({required BuildContext context, required String email, required Stri
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           //content: Text('The account already exists for that email.'),
-          content: Text('${lang.S.of(context).theAccountAlreadyExistsForThatEmail}.'),
+          content: Text(
+              '${lang.S.of(context).theAccountAlreadyExistsForThatEmail}.'),
           duration: const Duration(seconds: 3),
         ),
       );
