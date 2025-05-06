@@ -106,13 +106,70 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
               shape: BoxShape.circle,
             ),
             todayDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.5),
-              shape: BoxShape.circle,
+              color: Colors.transparent, // Eliminar fondo del día actual
             ),
             selectedDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              shape: BoxShape.circle,
+              color: Colors.transparent, // Eliminar fondo del día seleccionado
             ),
+            cellMargin: EdgeInsets.all(6),
+            markersAlignment: Alignment.center,
+          ),
+          calendarBuilders: CalendarBuilders(
+            todayBuilder: (context, day, focusedDay) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.camera_alt, // Cambiar el ícono a una cámara
+                      color: Theme.of(context).primaryColor,
+                      size: 16,
+                    ),
+                    Text(
+                      '${day.day}', // Mostrar el número del día
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            selectedBuilder: (context, day, focusedDay) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.checkroom, // Ícono de vestido para el día seleccionado
+                      color: Colors.pinkAccent,
+                      size: 16,
+                    ),
+                    Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.pinkAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            defaultBuilder: (context, day, focusedDay) {
+              return Center(
+                child: Text(
+                  '${day.day}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black,
+                  ),
+                ),
+              );
+            },
           ),
           onDaySelected: (selectedDay, focusedDay) {
             setState(() {

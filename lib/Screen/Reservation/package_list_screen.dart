@@ -328,118 +328,125 @@ class PackageListScreen extends ConsumerWidget {
   }
 
   Widget _buildPackageCard(BuildContext context, ServicePackageModel package) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: 500, maxHeight: 600),
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DressSelectionScreen(
-                  packagesAsync: package,
-                  packageId: package.id,
-                  packageName: package.name,
-                  dressIds: package.components,
-                ),
-              ),
-            );
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Encabezado
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Theme.of(context).primaryColor,
-                child: Text(
-                  package.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-
-              // Cuerpo (con precio arriba del documento)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoRow(Icons.category, package.category),
-                        const SizedBox(height: 6),
-                        _buildInfoRow(Icons.description, package.subcategory),
-                        const SizedBox(height: 6),
-                        _buildInfoRow(
-                          Icons.attach_money,
-                          '\$${myFormat.format(package.price)}',
-                          isHighlighted: true,
-                        ),
-                        const SizedBox(height: 6),
-                        _buildInfoRow(
-                          Icons.info_outline,
-                          package.description,
-                        ),
-                        const SizedBox(height: 6),
-                        _buildInfoRow(
-                          Icons.timer,
-                          '${package.duration['value']} ${package.duration['unit']}',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Botón de selección
-              Container(
-                color: Colors.grey.shade100,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DressSelectionScreen(
-                          packagesAsync: package,
-                          packageId: package.id,
-                          packageName: package.name,
-                          dressIds: package.components,
-                        ),
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Encabezado de la tarjeta
+          InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(package.name),
+                    content: SingleChildScrollView(
+                      child: Text(
+                        package.description,
+                        style: const TextStyle(fontSize: 14),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Seleccionar'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Cerrar'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              color: Theme.of(context).primaryColor,
+              child: Text(
+                package.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+
+          // Cuerpo de la tarjeta con descripción visible
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow(Icons.category, package.category),
+                const SizedBox(height: 8),
+                _buildInfoRow(Icons.description, package.description),
+              ],
+            ),
+          ),
+
+          // Monto y hora
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow(
+                  Icons.attach_money,
+                  '\$${myFormat.format(package.price)}',
+                  isHighlighted: true,
+                ),
+                const SizedBox(height: 8),
+                _buildInfoRow(
+                  Icons.timer,
+                  '${package.duration['value']} ${package.duration['unit']}',
+                ),
+              ],
+            ),
+          ),
+
+          // Botón de selección
+          Container(
+            color: Colors.grey.shade100,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DressSelectionScreen(
+                      packagesAsync: package,
+                      packageId: package.id,
+                      packageName: package.name,
+                      dressIds: package.components,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Seleccionar paquete'),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  // Ajustar la altura de la caja de descripción para permitir 13 líneas
-  Widget _buildInfoRow(IconData icon, dynamic text,
-      {bool isHighlighted = false}) {
+  // Ajustar la descripción para que no se salga del margen en el cuadro del paquete
+  Widget _buildInfoRow(IconData icon, dynamic text, {bool isHighlighted = false}) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
           icon,
@@ -452,11 +459,11 @@ class PackageListScreen extends ConsumerWidget {
             text.toString(),
             style: TextStyle(
               fontSize: isHighlighted ? 14 : 12,
-              fontWeight: FontWeight.bold,
+              fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
               color: isHighlighted ? Colors.green.shade800 : Colors.black87,
             ),
-            maxLines: 13, // Permitir hasta 13 líneas
-            overflow: TextOverflow.ellipsis, // Truncar texto largo si excede
+            maxLines: 3, // Limitar a 3 líneas para evitar desbordamiento
+            overflow: TextOverflow.ellipsis, // Truncar texto largo
           ),
         ),
       ],

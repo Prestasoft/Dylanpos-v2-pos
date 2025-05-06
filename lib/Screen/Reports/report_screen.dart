@@ -189,6 +189,63 @@ class _SaleReportsState extends State<SaleReports> {
   int _saleReportPerPage = 10; // Default number of items to display
   int _currentPage = 1;
 
+  Widget _buildDateRangeFilter(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _selectDate(context),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Desde: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: selected2ndDate,
+                  firstDate: selectedDate,
+                  lastDate: DateTime(2101),
+                );
+                if (picked != null && picked != selected2ndDate) {
+                  setState(() {
+                    selected2ndDate = picked;
+                  });
+                }
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Hasta: ${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
@@ -222,7 +279,7 @@ class _SaleReportsState extends State<SaleReports> {
                             topLeft: Radius.circular(10.0),
                             topRight: Radius.circular(10.0),
                           ),
-                          color: kGreyTextColor.withValues(alpha: 0.1),
+                          color: kGreyTextColor.withOpacity(0.1),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,29 +376,14 @@ class _SaleReportsState extends State<SaleReports> {
                           reTransaction.add(element);
                         }
                       }
-                      // final pages = (reTransaction.length / _saleReportPerPage).ceil();
-                      //
-                      // final startIndex = (_currentPage - 1) * _saleReportPerPage;
-                      // // final endIndex = startIndex + _saleReportPerPage;
-                      // final endIndex = _saleReportPerPage == -1 ? reTransaction.length : startIndex + _saleReportPerPage;
-                      // final paginatedList = reTransaction.sublist(
-                      //   startIndex,
-                      //   endIndex > reTransaction.length ? reTransaction.length : endIndex,
-                      // );
-                      // Calculate pagination
-                      final pages = _saleReportPerPage == -1
-                          ? 1
-                          : (reTransaction.length / _saleReportPerPage).ceil();
-                      final startIndex = _saleReportPerPage == -1
-                          ? 0
-                          : (_currentPage - 1) * _saleReportPerPage;
-                      final endIndex = _saleReportPerPage == -1
-                          ? reTransaction.length
-                          : (startIndex + _saleReportPerPage)
-                              .clamp(0, reTransaction.length);
-                      // Get paginated transactions
-                      final paginatedList =
-                          reTransaction.sublist(startIndex, endIndex);
+                      final pages = (reTransaction.length / _saleReportPerPage).ceil();
+
+                      final startIndex = (_currentPage - 1) * _saleReportPerPage;
+                      final endIndex = startIndex + _saleReportPerPage;
+                      final paginatedList = reTransaction.sublist(
+                        startIndex,
+                        endIndex > reTransaction.length ? reTransaction.length : endIndex,
+                      );
                       final profile = ref.watch(profileDetailsProvider);
                       final settingProvider = ref.watch(generalSettingProvider);
                       return Column(
@@ -656,15 +698,13 @@ class _SaleReportsState extends State<SaleReports> {
                                                 Icons.keyboard_arrow_down,
                                                 color: Colors.black,
                                               ),
-                                              items: [10, 20, 50, 100, -1]
+                                              items: [10, 20, 50, 100]
                                                   .map<DropdownMenuItem<int>>(
                                                       (int value) {
                                                 return DropdownMenuItem<int>(
                                                   value: value,
                                                   child: Text(
-                                                    value == -1
-                                                        ? "All"
-                                                        : value.toString(),
+                                                    value.toString(),
                                                     style: theme
                                                         .textTheme.bodyLarge,
                                                   ),
@@ -672,13 +712,8 @@ class _SaleReportsState extends State<SaleReports> {
                                               }).toList(),
                                               onChanged: (int? newValue) {
                                                 setState(() {
-                                                  if (newValue == -1) {
-                                                    _saleReportPerPage =
-                                                        -1; // Set to -1 for "All"
-                                                  } else {
-                                                    _saleReportPerPage =
-                                                        newValue ?? 10;
-                                                  }
+                                                  _saleReportPerPage =
+                                                      newValue ?? 10;
                                                   _currentPage = 1;
                                                 });
                                               },
@@ -801,6 +836,15 @@ class _SaleReportsState extends State<SaleReports> {
                                 reTransaction.isNotEmpty
                                     ? Column(
                                         children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(10.0),
+                                            child: Text(
+                                              'Mostrando resultados desde ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} hasta ${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
                                           LayoutBuilder(
                                             builder: (context, constrains) {
                                               return Scrollbar(
@@ -837,10 +881,10 @@ class _SaleReportsState extends State<SaleReports> {
                                                             ),
                                                           ),
                                                           dataRowColor:
-                                                              const WidgetStatePropertyAll(
+                                                              const MaterialStatePropertyAll(
                                                                   Colors.white),
                                                           headingRowColor:
-                                                              WidgetStateProperty
+                                                              MaterialStateProperty
                                                                   .all(const Color(
                                                                       0xFFF8F3FF)),
                                                           showBottomBorder:
@@ -1100,7 +1144,7 @@ class _SaleReportsState extends State<SaleReports> {
                                                   children: [
                                                     InkWell(
                                                       overlayColor:
-                                                          WidgetStateProperty
+                                                          MaterialStateProperty
                                                               .all<Color>(
                                                                   Colors.grey),
                                                       hoverColor: Colors.grey,
@@ -1171,10 +1215,9 @@ class _SaleReportsState extends State<SaleReports> {
                                                     ),
                                                     InkWell(
                                                       hoverColor: Colors.blue
-                                                          .withValues(
-                                                              alpha: 0.1),
+                                                          .withOpacity(0.1),
                                                       overlayColor:
-                                                          WidgetStateProperty
+                                                          MaterialStateProperty
                                                               .all<Color>(
                                                                   Colors.blue),
                                                       onTap: _currentPage *
@@ -1321,7 +1364,7 @@ class _SaleReportsState extends State<SaleReports> {
                         .visible(selected == 'Informe de perdidas y ganancias'),
                   )),
             ]),
-            // Visibility(visible: MediaQuery.of(context).size.height != 0, child: ),
+            _buildDateRangeFilter(context),
           ],
         ),
       ),

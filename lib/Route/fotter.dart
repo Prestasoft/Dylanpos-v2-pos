@@ -24,7 +24,7 @@ class FooterWidget extends StatelessWidget {
       builder: (_, ref, watch) {
         final settingProver = ref.watch(generalSettingProvider);
         return settingProver.when(data: (setting) {
-          final companyName = setting.companyName.isNotEmpty == true ? setting.companyName : 'PrestaSoft SRL';
+          final companyName = setting.companyName.isNotEmpty == true ? setting.companyName : 'Victor Guzman Fotografia';
           return LayoutBuilder(
             builder: (context, constraints) => Container(
               padding: rf.ResponsiveValue<EdgeInsetsGeometry?>(
