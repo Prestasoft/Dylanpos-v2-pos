@@ -1,4 +1,4 @@
-# salespro_admin
+# Sistema de reservas y renta de vestidos para fotografias.
 
 A new Flutter project.
 
