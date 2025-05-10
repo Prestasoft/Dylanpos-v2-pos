@@ -60,23 +60,47 @@ class _LossProfitReportState extends State<LossProfitReport> {
     return total.abs();
   }
 
-  DateTime selectedDate =
-      DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTimeRange selectedDate = DateTimeRange(
+    start: DateTime(DateTime.now().year, DateTime.now().month, 1),
+    end: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day,
+        23, 59, 59),
+  );
+
+  //DateTime selected2ndDate = DateTime.now();
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final DateTimeRange? picked = await showDateRangePicker(
         context: context,
-        initialDate: selectedDate,
+        initialDateRange: selectedDate,
         firstDate: DateTime(2015, 8),
-        lastDate: DateTime(2101));
+        lastDate: DateTime(2101),
+        initialEntryMode: DatePickerEntryMode.calendar,
+        builder: (context, child) {
+          return Column(
+            children: [
+              Material(
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.hardEdge,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 400.0, maxHeight: 600),
+                  child: child,
+                ),
+              )
+            ],
+          );
+        });
+
     if (picked != null && picked != selectedDate) {
+      final DateTime start =
+          DateTime(picked.start.year, picked.start.month, picked.start.day);
+
+      final DateTime end = DateTime(
+          picked.end.year, picked.end.month, picked.end.day, 23, 59, 59);
       setState(() {
-        selectedDate = picked;
+        selectedDate = DateTimeRange(start: start, end: end);
       });
     }
   }
-
-  DateTime selected2ndDate = DateTime.now();
 
   // Future<void> _selectedDate(BuildContext context) async {
   //   final DateTime? picked = await showDatePicker(context: context, initialDate: selected2ndDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
@@ -119,33 +143,55 @@ class _LossProfitReportState extends State<LossProfitReport> {
           switch (selectedMonth) {
             case 'Este mes':
               {
-                var date =
-                    DateTime(DateTime.now().year, DateTime.now().month, 1)
-                        .toString();
-
-                selectedDate = DateTime.parse(date);
-                selected2ndDate = DateTime.now();
+                selectedDate = DateTimeRange(
+                    start:
+                        DateTime(DateTime.now().year, DateTime.now().month, 1),
+                    end: DateTime.now());
+              }
+              {
+                selectedDate = DateTimeRange(
+                    start:
+                        DateTime(DateTime.now().year, DateTime.now().month, 1),
+                    end: DateTime.now());
               }
               break;
             case 'Ultimo mes':
               {
-                selectedDate =
-                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate =
-                    DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate = DateTimeRange(
+                    start: DateTime(
+                        DateTime.now().year, DateTime.now().month - 1, 1),
+                    end:
+                        DateTime(DateTime.now().year, DateTime.now().month, 0));
               }
               break;
             case 'Ultimos 6 meses':
               {
-                selectedDate =
-                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
-                selected2ndDate = DateTime.now();
+                selectedDate = DateTimeRange(
+                    start: DateTime(
+                        DateTime.now().year, DateTime.now().month - 6, 1),
+                    end: DateTime.now());
               }
               break;
             case 'Este año':
               {
-                selectedDate = DateTime(DateTime.now().year, 1, 1);
-                selected2ndDate = DateTime.now();
+                selectedDate = DateTimeRange(
+                    start: DateTime(DateTime.now().year, 1, 1),
+                    end: DateTime.now());
+              }
+              {
+                selectedDate = DateTimeRange(
+                    start: DateTime(DateTime.now().year, 1, 1),
+                    end: DateTime.now());
+              }
+              break;
+            case 'Ver todo':
+              {
+                selectedDate = DateTimeRange(
+                    start: DateTime(1900, 01, 01), end: DateTime.now());
+              }
+              {
+                selectedDate = DateTimeRange(
+                    start: DateTime(1900, 01, 01), end: DateTime.now());
               }
               break;
           }
@@ -188,12 +234,13 @@ class _LossProfitReportState extends State<LossProfitReport> {
                   element.customerName
                       .toLowerCase()
                       .contains(searchItem.toLowerCase())) &&
-              (selectedDate.isBefore(DateTime.parse(element.purchaseDate)) ||
+              (selectedDate.start
+                      .isBefore(DateTime.parse(element.purchaseDate)) ||
                   DateTime.parse(element.purchaseDate)
-                      .isAtSameMomentAs(selectedDate)) &&
-              (selected2ndDate.isAfter(DateTime.parse(element.purchaseDate)) ||
+                      .isAtSameMomentAs(selectedDate.start)) &&
+              (selectedDate.end.isAfter(DateTime.parse(element.purchaseDate)) ||
                   DateTime.parse(element.purchaseDate)
-                      .isAtSameMomentAs(selected2ndDate))) {
+                      .isAtSameMomentAs(selectedDate.end))) {
             showAbleSaleTransactions.add(element);
           }
         }
@@ -290,7 +337,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                     onTap: () => _selectDate(context),
                                     child: Text.rich(TextSpan(
                                         text:
-                                            '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                                            '${selectedDate.start.day}/${selectedDate.start.month}/${selectedDate.start.year}',
                                         style: theme.textTheme.titleSmall,
                                         children: [
                                           TextSpan(
@@ -303,7 +350,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                           ),
                                           TextSpan(
                                             text:
-                                                '${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                                '${selectedDate.end.day}/${selectedDate.end.month}/${selectedDate.end.year}',
                                             style: theme.textTheme.titleSmall,
                                           )
                                         ])),
@@ -546,8 +593,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                         personalInformationModel: snapShot,
                                         saleTransactionModel:
                                             showAbleSaleTransactions,
-                                        fromDate: selectedDate.toString(),
-                                        toDate: selected2ndDate.toString(),
+                                        fromDate: selectedDate.start.toString(),
+                                        toDate: selectedDate.end.toString(),
                                         saleAmount:
                                             calculateTotalSale(transaction)
                                                 .toStringAsFixed(2),
@@ -593,8 +640,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                                         personalInformationModel: snapShot,
                                         saleTransactionModel:
                                             showAbleSaleTransactions,
-                                        fromDate: selectedDate.toString(),
-                                        toDate: selected2ndDate.toString(),
+                                        fromDate: selectedDate.start.toString(),
+                                        toDate: selectedDate.end.toString(),
                                         saleAmount:
                                             calculateTotalSale(transaction)
                                                 .toStringAsFixed(2),
