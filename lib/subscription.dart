@@ -138,93 +138,11 @@ class Subscription {
   }
 
   static Future<bool> subscriptionChecker({required String item}) async {
-    // Get user data and current subscription information
-    await getUserDataFromLocal();
-
-    // Fetch current subscription plan and the corresponding details from the database
-    SubscriptionModel userSubscriptionModel = await CurrentSubscriptionPlanRepo().getCurrentSubscriptionPlans();
-    SubscriptionPlanModel? originalModel = await CurrentSubscriptionPlanRepo().getSubscriptionPlanByName(userSubscriptionModel.subscriptionName);
-
-    // Return false with error if originalModel is null (safety check)
-    if (originalModel == null) {
-      EasyLoading.showError('Subscription plan not found');
-      return false;
-    }
-
-    // Calculate remaining time in days
-    Duration remainingTime = DateTime.parse(userSubscriptionModel.subscriptionDate).difference(DateTime.now());
-    int remainingDays = remainingTime.inHours.abs() ~/ 24;
-
-    // Handle the case where the subscription has expired
-    if (remainingDays > originalModel.duration) {
-      if (originalModel.subscriptionPrice == 0) {
-        // Create a new free subscription model and update the database
-        SubscriptionModel postFreePlan = SubscriptionModel(
-          subscriptionName: originalModel.subscriptionName,
-          subscriptionDate: DateTime.now().toString(),
-          saleNumber: originalModel.saleNumber,
-          purchaseNumber: originalModel.purchaseNumber,
-          partiesNumber: originalModel.partiesNumber,
-          dueNumber: originalModel.dueNumber,
-          duration: originalModel.duration,
-          products: originalModel.products,
-        );
-
-        // Update user's subscription data in Firebase and set the reminder flag
-        final DatabaseReference subscriptionRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Subscription');
-        await subscriptionRef.set(postFreePlan.toJson());
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isFiveDayRemainderShown', true);
-
-        return true; // Free plan reset, subscription continues
-      } else {
-        EasyLoading.showError('Subscription expired, please renew');
-        return false; // Paid plan expired
-      }
-    }
-
-    // Check subscription item limits
-    int? itemCount;
-    switch (item) {
-      case 'Sales':
-        itemCount = userSubscriptionModel.saleNumber;
-        break;
-      case 'Parties':
-        itemCount = userSubscriptionModel.partiesNumber;
-        break;
-      case 'Purchase':
-        itemCount = userSubscriptionModel.purchaseNumber;
-        break;
-      case 'Products':
-        itemCount = userSubscriptionModel.products;
-        break;
-      case 'Due List':
-        itemCount = userSubscriptionModel.dueNumber;
-        break;
-      default:
-        EasyLoading.showError('Invalid subscription item');
-        return false;
-    }
-    if (itemCount == -202 || itemCount > 0) {
-      return true;
-    } else {
-      EasyLoading.showError('Limit reached for $item');
-      return false;
-    }
+    // Eliminar restricciones de suscripción
+    return true;
   }
 
   static void decreaseSubscriptionLimits({required String itemType, required BuildContext context}) async {
-    final ref = FirebaseDatabase.instance.ref(constUserId).child('Subscription');
-
-    await ref.child(itemType).get().then((value) {
-      int beforeAction = int.parse(value.value.toString());
-      if (beforeAction != -202) {
-        int afterAction = beforeAction - 1;
-        ref.update({itemType: afterAction});
-      }
-
-      Subscription.getUserLimitsData(context: context, wannaShowMsg: false);
-    });
+    // Eliminar lógica para disminuir límites de suscripción
   }
 }
