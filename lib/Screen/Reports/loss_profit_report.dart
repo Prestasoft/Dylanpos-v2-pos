@@ -148,12 +148,6 @@ class _LossProfitReportState extends State<LossProfitReport> {
                         DateTime(DateTime.now().year, DateTime.now().month, 1),
                     end: DateTime.now());
               }
-              {
-                selectedDate = DateTimeRange(
-                    start:
-                        DateTime(DateTime.now().year, DateTime.now().month, 1),
-                    end: DateTime.now());
-              }
               break;
             case 'Ultimo mes':
               {
@@ -178,17 +172,8 @@ class _LossProfitReportState extends State<LossProfitReport> {
                     start: DateTime(DateTime.now().year, 1, 1),
                     end: DateTime.now());
               }
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(DateTime.now().year, 1, 1),
-                    end: DateTime.now());
-              }
               break;
             case 'Ver todo':
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(1900, 01, 01), end: DateTime.now());
-              }
               {
                 selectedDate = DateTimeRange(
                     start: DateTime(1900, 01, 01), end: DateTime.now());
@@ -394,7 +379,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                transaction.length.toString(),
+                                showAbleSaleTransactions.length.toString(),
                                 style: kTextStyle.copyWith(
                                     color: kTitleColor,
                                     fontWeight: FontWeight.bold,
@@ -426,7 +411,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '$globalCurrency ${myFormat.format(double.tryParse(getTotalDue(transaction).toString()) ?? 0)}',
+                                '$globalCurrency ${myFormat.format(double.tryParse(getTotalDue(showAbleSaleTransactions).toString()) ?? 0)}',
                                 style: kTextStyle.copyWith(
                                     color: kTitleColor,
                                     fontWeight: FontWeight.bold,
@@ -459,7 +444,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalSale(transaction).toStringAsFixed(2)) ?? 0)}',
+                                '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalSale(showAbleSaleTransactions).toStringAsFixed(2)) ?? 0)}',
                                 style: kTextStyle.copyWith(
                                     color: kTitleColor,
                                     fontWeight: FontWeight.bold,
@@ -492,7 +477,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalProfit(transaction).toStringAsFixed(2)) ?? 0)}',
+                                '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalProfit(showAbleSaleTransactions).toStringAsFixed(2)) ?? 0)}',
                                 style: kTextStyle.copyWith(
                                     color: kTitleColor,
                                     fontWeight: FontWeight.bold,
@@ -525,7 +510,7 @@ class _LossProfitReportState extends State<LossProfitReport> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalLoss(transaction).toStringAsFixed(2)) ?? 0)}',
+                                '$globalCurrency ${myFormat.format(double.tryParse(calculateTotalLoss(showAbleSaleTransactions).toStringAsFixed(2)) ?? 0)}',
                                 style: kTextStyle.copyWith(
                                     color: kTitleColor,
                                     fontWeight: FontWeight.bold,
