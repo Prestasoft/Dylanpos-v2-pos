@@ -906,7 +906,8 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
                                                           data,
                                                       saleTransactionModel:
                                                           myTransitionModel,
-                                                      setting: setting);
+                                                      setting: setting,
+                                                      context: context);
 
                                               print(
                                                   '---------Second step -----------');

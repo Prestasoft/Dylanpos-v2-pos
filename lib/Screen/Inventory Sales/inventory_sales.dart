@@ -2831,17 +2831,16 @@ class _InventorySalesState extends State<InventorySales> {
                                                         printType == 'both') {
                                                       await GeneratePdfAndPrint()
                                                           .printSaleInvoice(
-                                                              personalInformationModel:
-                                                                  data,
-                                                              saleTransactionModel:
-                                                                  transitionModel,
-                                                              context: context,
-                                                              fromInventorySale:
-                                                                  true,
-                                                              setting: setting,
-                                                              printType:
-                                                                  'thermal',
-                                                              post: post);
+                                                        personalInformationModel:
+                                                            data,
+                                                        saleTransactionModel:
+                                                            transitionModel,
+                                                        context: context,
+                                                        fromInventorySale: true,
+                                                        setting: setting,
+                                                        printType: 'thermal',
+                                                        post: post,
+                                                      );
 
                                                       print("llego uoo ");
                                                     }
