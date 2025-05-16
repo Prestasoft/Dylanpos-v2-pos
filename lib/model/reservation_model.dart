@@ -9,6 +9,7 @@ class ReservationModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? estado;
+  final List<Map<String, String>> multipleDress;
 
   ReservationModel({
     String? id,
@@ -20,6 +21,7 @@ class ReservationModel {
     required this.reservationTime,
     DateTime? createdAt,
     DateTime? updatedAt,
+    required this.multipleDress,
     this.estado = "pendiente",
   })  : id = id ?? '',
         createdAt = createdAt ?? DateTime.now(),
@@ -37,6 +39,12 @@ class ReservationModel {
       createdAt: _parseTimestamp(map['created_at']),
       updatedAt: _parseTimestamp(map['updated_at']),
       estado: map['estado'],
+      multipleDress: List<Map<String, String>>.from(
+        (map['dress_ids'] ?? []).map((x) => {
+              'dress_id': x['dress_id'] ?? '',
+              'branch_id': x['branch_id'] ?? '',
+            }),
+      ),
     );
   }
 
@@ -70,6 +78,12 @@ class ReservationModel {
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
       'estado': estado,
+      'dress_ids': multipleDress.map((dress) {
+        return {
+          'dress_id': dress['dress_id'],
+          'branch_id': dress['branch_id'],
+        };
+      }).toList(),
     };
   }
 }

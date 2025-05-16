@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -934,6 +935,8 @@ Future<Uint8List> generateThermalDocument({
   final ref = ProviderScope.containerOf(context);
   final List<String> idReservaciones = post?.reservationIds ?? [];
 
+  //debugger();
+
   //actualizar los prodcutos
   await ref.read(ActualizarEstadoReservaProvider({
     'id': idReservaciones,
@@ -1289,6 +1292,19 @@ Future<Uint8List> generateThermalDocument({
 
 // Función auxiliar para construir la sección de cada reservación
 pw.Widget _buildReservationSection(FullReservation reservacion) {
+  String nombresVestidos = "";
+
+  if (reservacion.reservation['multiple_dress'] != null) {
+    final multipleDress = reservacion.reservation['multiple_dress'] as List;
+    // Filtrar los nombres de los vestidos
+    if (multipleDress.isNotEmpty) {
+      nombresVestidos = multipleDress
+          .map((e) => e['dress_name'] ?? '')
+          .where((name) => name.isNotEmpty)
+          .join('\n');
+    }
+  }
+
   return pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [
@@ -1309,6 +1325,21 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           ),
         ],
       ),
+      if (reservacion.reservation['multiple_dress'] != null) ...[
+        pw.SizedBox(height: 2),
+        pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Vestimenta:',
+                style:
+                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            pw.Text(
+              nombresVestidos,
+              style: pw.TextStyle(fontSize: 8),
+            ),
+          ],
+        ),
+      ],
       if (reservacion.dress != null) ...[
         pw.SizedBox(height: 2),
         pw.Row(

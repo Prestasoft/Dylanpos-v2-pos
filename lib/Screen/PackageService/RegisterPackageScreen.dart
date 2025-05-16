@@ -574,6 +574,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
   }
 
   void _showAddPackageDialog(BuildContext context, WidgetRef ref) {
+    List<String?> _selectedComponents = [null]; // Un dropdown inicial
+
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -585,291 +587,408 @@ class _ServicePackageListState extends State<ServicePackageList> {
                 borderRadius: BorderRadius.circular(10.0)),
             child: SizedBox(
               width: 600,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            lang.S.of(context).addServicePackage,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                        Flexible(
-                          child: IconButton(
-                              onPressed: () {
-                                _clearForm();
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(
-                                FeatherIcons.x,
-                                color: kTitleColor,
-                                size: 21.0,
-                              )),
-                        )
-                      ],
-                    ),
-                  ),
-                  const Divider(
-                    thickness: 1.0,
-                    height: 1.0,
-                    color: kNeutral300,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Name
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).packageName,
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return lang.S.of(context).packageNameRequired;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Category - Changed to DropdownButtonFormField
-                          Consumer(
-                            builder: (context, ref, child) {
-                              final categoriesAsync =
-                                  ref.watch(categoryProvider);
-                              return categoriesAsync.when(
-                                data: (categories) {
-                                  if (categories.isEmpty) {
-                                    return Text('No categories available');
-                                  }
-                                  return DropdownButtonFormField<String>(
-                                    value: _selectedCategory,
-                                    decoration: InputDecoration(
-                                      labelText: lang.S.of(context).category,
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    items: categories.map((category) {
-                                      return DropdownMenuItem<String>(
-                                        value: category.categoryName,
-                                        child: Text(category.categoryName),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState1(() {
-                                        _selectedCategory = value;
-                                      });
-                                    },
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return lang.S
-                                            .of(context)
-                                            .categoryRequired;
-                                      }
-                                      return null;
-                                    },
-                                  );
-                                },
-                                loading: () => CircularProgressIndicator(),
-                                error: (error, stack) => Text('Error: $error'),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Subcategory
-                          TextFormField(
-                            controller: _subcategoryController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).subcategory,
-                              border: OutlineInputBorder(),
-                              hintText: lang.S.of(context).subcategoryHint,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Description
-                          AdjustableDescriptionField(
-                              controller: _descriptionController),
-                          const SizedBox(height: 16),
-
-                          // Price
-                          TextFormField(
-                            controller: _priceController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).price,
-                              border: OutlineInputBorder(),
-                              prefixText: '\$',
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return lang.S.of(context).priceRequired;
-                              }
-                              if (double.tryParse(value) == null) {
-                                return lang.S.of(context).invalidNumber;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Duration
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _durationValueController,
-                                  decoration: InputDecoration(
-                                    labelText: lang.S.of(context).duration,
-                                    border: OutlineInputBorder(),
+                          Flexible(
+                            child: Text(
+                              lang.S.of(context).addServicePackage,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return lang.S
-                                          .of(context)
-                                          .durationRequired;
-                                    }
-                                    if (int.tryParse(value) == null) {
-                                      return lang.S.of(context).invalidInteger;
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                flex: 3,
-                                child: DropdownButtonFormField<String>(
-                                  value: _durationUnit,
-                                  decoration: InputDecoration(
-                                    labelText: lang.S.of(context).unit,
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: [
-                                    DropdownMenuItem(
-                                        value: 'hours',
-                                        child: Text(lang.S.of(context).hours)),
-                                    DropdownMenuItem(
-                                        value: 'days',
-                                        child: Text(lang.S.of(context).days)),
-                                  ],
-                                  onChanged: (value) {
-                                    setState1(() {
-                                      _durationUnit = value!;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
+                          Flexible(
+                            child: IconButton(
                                 onPressed: () {
                                   _clearForm();
                                   Navigator.pop(context);
                                 },
-                                child: Text(
-                                  lang.S.of(context).cancel,
-                                ),
-                              ),
-                              SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width <= 570
-                                          ? 10
-                                          : 30.0),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (_formKey.currentState!.validate()) {
-                                    EasyLoading.show(
-                                        status:
-                                            lang.S.of(context).addingPackage);
-                                    final newPackage = ServicePackageModel(
-                                      id: '', // Will be assigned by Firebase
-                                      type: 'service',
-                                      name: _nameController.text,
-                                      category: _selectedCategory ?? '',
-                                      subcategory: _subcategoryController.text,
-                                      description: _descriptionController.text,
-                                      price: double.tryParse(
-                                              _priceController.text) ??
-                                          0.0,
-                                      duration: {
-                                        'value': int.tryParse(
-                                                _durationValueController
-                                                    .text) ??
-                                            0,
-                                        'unit': _durationUnit,
-                                      },
-                                      components: [],
-                                      branches: [],
-                                      createdAt: DateTime.now(),
-                                      updatedAt: DateTime.now(),
-                                    );
-
-                                    try {
-                                      final result = await ref
-                                          .read(
-                                              servicePackagesProvider.notifier)
-                                          .addPackage(newPackage);
-                                      if (result) {
-                                        EasyLoading.showSuccess(lang.S
-                                            .of(context)
-                                            .packageAddedSuccess);
-                                        _clearForm();
-                                        Navigator.pop(context);
-                                      } else {
-                                        EasyLoading.showError(lang.S
-                                            .of(context)
-                                            .failedToAddPackage);
-                                      }
-                                    } catch (e) {
-                                      EasyLoading.showError(
-                                          '${lang.S.of(context).error}: $e');
-                                    }
-                                  }
-                                },
-                                child: Text(
-                                  lang.S.of(context).submit,
-                                  style: kTextStyle.copyWith(color: kWhite),
-                                ),
-                              )
-                            ],
-                          ),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height *
-                                0.02, // Ajusta el tamaño según el alto de la pantalla
+                                icon: const Icon(
+                                  FeatherIcons.x,
+                                  color: kTitleColor,
+                                  size: 21.0,
+                                )),
                           )
                         ],
                       ),
                     ),
-                  )
-                ],
+                    const Divider(
+                      thickness: 1.0,
+                      height: 1.0,
+                      color: kNeutral300,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Name
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                labelText: lang.S.of(context).packageName,
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return lang.S.of(context).packageNameRequired;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Category - Changed to DropdownButtonFormField
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final categoriesAsync =
+                                    ref.watch(categoryProvider);
+                                return categoriesAsync.when(
+                                  data: (categories) {
+                                    if (categories.isEmpty) {
+                                      return Text('No categories available');
+                                    }
+                                    return DropdownButtonFormField<String>(
+                                      value: _selectedCategory,
+                                      decoration: InputDecoration(
+                                        labelText: lang.S.of(context).category,
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      items: categories.map((category) {
+                                        return DropdownMenuItem<String>(
+                                          value: category.categoryName,
+                                          child: Text(category.categoryName),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState1(() {
+                                          _selectedCategory = value;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return lang.S
+                                              .of(context)
+                                              .categoryRequired;
+                                        }
+                                        return null;
+                                      },
+                                    );
+                                  },
+                                  loading: () => CircularProgressIndicator(),
+                                  error: (error, stack) =>
+                                      Text('Error: $error'),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Subcategory
+                            TextFormField(
+                              controller: _subcategoryController,
+                              decoration: InputDecoration(
+                                labelText: lang.S.of(context).subcategory,
+                                border: OutlineInputBorder(),
+                                hintText: lang.S.of(context).subcategoryHint,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Components
+
+                            /// COMPONENTES
+                            Text(
+                              lang.S.of(context).components,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final categoriesAsync =
+                                    ref.watch(categoryProvider);
+
+                                return categoriesAsync.when(
+                                  data: (categories) {
+                                    return Column(
+                                      children: [
+                                        ..._selectedComponents
+                                            .asMap()
+                                            .entries
+                                            .map(
+                                          (entry) {
+                                            int index = entry.key;
+                                            String? selectedValue = entry.value;
+
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 8.0),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child:
+                                                        DropdownButtonFormField<
+                                                            String>(
+                                                      value: selectedValue,
+                                                      decoration:
+                                                          InputDecoration(
+                                                        labelText:
+                                                            '${lang.S.of(context).selectComponent} ${index + 1}',
+                                                        border:
+                                                            OutlineInputBorder(),
+                                                      ),
+                                                      items: categories
+                                                          .map((category) {
+                                                        return DropdownMenuItem<
+                                                            String>(
+                                                          value: category
+                                                              .categoryName,
+                                                          child: Text(category
+                                                              .categoryName),
+                                                        );
+                                                      }).toList(),
+                                                      onChanged: (value) {
+                                                        setState1(() {
+                                                          _selectedComponents[
+                                                              index] = value;
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  // if (_selectedComponents
+                                                  //         .length >
+                                                  //     1)
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                        Icons.remove_circle,
+                                                        color: Colors.red,
+                                                      ),
+                                                      onPressed: () {
+                                                        setState1(() {
+                                                          _selectedComponents
+                                                              .removeAt(index);
+                                                        });
+                                                      },
+                                                    ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              setState1(() {
+                                                _selectedComponents.add(null);
+                                              });
+                                            },
+                                            icon: const Icon(Icons.add),
+                                            label: Text(lang.S
+                                                .of(context)
+                                                .addComponent),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                  loading: () =>
+                                      const CircularProgressIndicator(),
+                                  error: (e, st) => Text('Error: $e'),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Description
+                            AdjustableDescriptionField(
+                                controller: _descriptionController),
+                            const SizedBox(height: 16),
+
+                            // Price
+                            TextFormField(
+                              controller: _priceController,
+                              decoration: InputDecoration(
+                                labelText: lang.S.of(context).price,
+                                border: OutlineInputBorder(),
+                                prefixText: '\$',
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return lang.S.of(context).priceRequired;
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return lang.S.of(context).invalidNumber;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Duration
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: _durationValueController,
+                                    decoration: InputDecoration(
+                                      labelText: lang.S.of(context).duration,
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return lang.S
+                                            .of(context)
+                                            .durationRequired;
+                                      }
+                                      if (int.tryParse(value) == null) {
+                                        return lang.S
+                                            .of(context)
+                                            .invalidInteger;
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  flex: 3,
+                                  child: DropdownButtonFormField<String>(
+                                    value: _durationUnit,
+                                    decoration: InputDecoration(
+                                      labelText: lang.S.of(context).unit,
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    items: [
+                                      DropdownMenuItem(
+                                          value: 'hours',
+                                          child:
+                                              Text(lang.S.of(context).hours)),
+                                      DropdownMenuItem(
+                                          value: 'days',
+                                          child: Text(lang.S.of(context).days)),
+                                    ],
+                                    onChanged: (value) {
+                                      setState1(() {
+                                        _durationUnit = value!;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  onPressed: () {
+                                    _clearForm();
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    lang.S.of(context).cancel,
+                                  ),
+                                ),
+                                SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width <= 570
+                                            ? 10
+                                            : 30.0),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      EasyLoading.show(
+                                          status:
+                                              lang.S.of(context).addingPackage);
+                                      final newPackage = ServicePackageModel(
+                                        id: '', // Will be assigned by Firebase
+                                        type: 'service',
+                                        name: _nameController.text,
+                                        category: _selectedCategory ?? '',
+                                        subcategory:
+                                            _subcategoryController.text,
+                                        description:
+                                            _descriptionController.text,
+                                        price: double.tryParse(
+                                                _priceController.text) ??
+                                            0.0,
+                                        duration: {
+                                          'value': int.tryParse(
+                                                  _durationValueController
+                                                      .text) ??
+                                              0,
+                                          'unit': _durationUnit,
+                                        },
+                                        components: _selectedComponents
+                                            .whereType<String>()
+                                            .toList(),
+                                        branches: [],
+                                        createdAt: DateTime.now(),
+                                        updatedAt: DateTime.now(),
+                                      );
+
+                                      try {
+                                        final result = await ref
+                                            .read(servicePackagesProvider
+                                                .notifier)
+                                            .addPackage(newPackage);
+                                        if (result) {
+                                          EasyLoading.showSuccess(lang.S
+                                              .of(context)
+                                              .packageAddedSuccess);
+                                          _clearForm();
+                                          Navigator.pop(context);
+                                        } else {
+                                          EasyLoading.showError(lang.S
+                                              .of(context)
+                                              .failedToAddPackage);
+                                        }
+                                      } catch (e) {
+                                        EasyLoading.showError(
+                                            '${lang.S.of(context).error}: $e');
+                                      }
+                                    }
+                                  },
+                                  child: Text(
+                                    lang.S.of(context).submit,
+                                    style: kTextStyle.copyWith(color: kWhite),
+                                  ),
+                                )
+                              ],
+                            ),
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height *
+                                  0.02, // Ajusta el tamaño según el alto de la pantalla
+                            )
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
           );
@@ -879,7 +998,10 @@ class _ServicePackageListState extends State<ServicePackageList> {
   }
 
   void _showEditPackageDialog(
-      BuildContext context, WidgetRef ref, ServicePackageModel package) {
+    BuildContext context,
+    WidgetRef ref,
+    ServicePackageModel package,
+  ) {
     // Fill form with existing package data
     _nameController.text = package.name;
     _selectedCategory = package.category;
@@ -888,295 +1010,482 @@ class _ServicePackageListState extends State<ServicePackageList> {
     _priceController.text = package.price.toString();
     _durationValueController.text = package.duration['value'].toString();
     _durationUnit = package.duration['unit'];
+    List<String?> _selectedComponents = [];
+
+    if ((package.components == null || package.components!.isEmpty)) {
+      _selectedComponents.add(null); // Agrega un dropdown inicial vacío
+    } else {
+      _selectedComponents = List<String?>.from(package.components!);
+    }
 
     showDialog(
       barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState1) {
+          List<String> _components =
+              List<String>.from(package.components ?? []);
+          String? _selectedComponent;
           return Dialog(
             surfaceTintColor: kWhite,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.0)),
             child: SizedBox(
               width: 600,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            lang.S.of(context).editPackage,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                        Flexible(
-                          child: IconButton(
-                              onPressed: () {
-                                _clearForm();
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(
-                                FeatherIcons.x,
-                                color: kTitleColor,
-                                size: 21.0,
-                              )),
-                        )
-                      ],
-                    ),
-                  ),
-                  const Divider(
-                    thickness: 1.0,
-                    height: 1.0,
-                    color: kNeutral300,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Name
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).packageName,
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return lang.S.of(context).packageNameRequired;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Category - Changed to DropdownButtonFormField
-                          Consumer(
-                            builder: (context, ref, child) {
-                              final categoriesAsync =
-                                  ref.watch(categoryProvider);
-                              return categoriesAsync.when(
-                                data: (categories) {
-                                  if (categories.isEmpty) {
-                                    return Text('No categories available');
-                                  }
-                                  return DropdownButtonFormField<String>(
-                                    value: _selectedCategory,
-                                    decoration: InputDecoration(
-                                      labelText: lang.S.of(context).category,
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    items: categories.map((category) {
-                                      return DropdownMenuItem<String>(
-                                        value: category.categoryName,
-                                        child: Text(category.categoryName),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState1(() {
-                                        _selectedCategory = value;
-                                      });
-                                    },
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return lang.S
-                                            .of(context)
-                                            .categoryRequired;
-                                      }
-                                      return null;
-                                    },
-                                  );
-                                },
-                                loading: () => CircularProgressIndicator(),
-                                error: (error, stack) => Text('Error: $error'),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Subcategory
-                          TextFormField(
-                            controller: _subcategoryController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).subcategory,
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Description
-                          AdjustableDescriptionField(
-                              controller: _descriptionController),
-                          const SizedBox(height: 16),
-
-                          // Price
-                          TextFormField(
-                            controller: _priceController,
-                            decoration: InputDecoration(
-                              labelText: lang.S.of(context).price,
-                              border: OutlineInputBorder(),
-                              prefixText: '\$',
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return lang.S.of(context).priceRequired;
-                              }
-                              if (double.tryParse(value) == null) {
-                                return lang.S.of(context).invalidNumber;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Duration
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _durationValueController,
-                                  decoration: InputDecoration(
-                                    labelText: lang.S.of(context).duration,
-                                    border: OutlineInputBorder(),
+                          Flexible(
+                            child: Text(
+                              lang.S.of(context).editPackage,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return lang.S
-                                          .of(context)
-                                          .durationRequired;
-                                    }
-                                    if (int.tryParse(value) == null) {
-                                      return lang.S.of(context).invalidInteger;
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                flex: 3,
-                                child: DropdownButtonFormField<String>(
-                                  value: _durationUnit,
-                                  decoration: InputDecoration(
-                                    labelText: lang.S.of(context).unit,
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: [
-                                    DropdownMenuItem(
-                                        value: 'hours',
-                                        child: Text(lang.S.of(context).hours)),
-                                    DropdownMenuItem(
-                                        value: 'days',
-                                        child: Text(lang.S.of(context).days)),
-                                  ],
-                                  onChanged: (value) {
-                                    setState1(() {
-                                      _durationUnit = value!;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
+                          Flexible(
+                            child: IconButton(
                                 onPressed: () {
                                   _clearForm();
                                   Navigator.pop(context);
                                 },
-                                child: Text(
-                                  lang.S.of(context).cancel,
-                                ),
-                              ),
-                              SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width <= 570
-                                          ? 10
-                                          : 30.0),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (_formKey.currentState!.validate()) {
-                                    EasyLoading.show(
-                                        status:
-                                            lang.S.of(context).updatingPackage);
-                                    final updatedPackage = package.copyWith(
-                                      name: _nameController.text,
-                                      category: _selectedCategory ?? '',
-                                      subcategory: _subcategoryController.text,
-                                      description: _descriptionController.text,
-                                      price: double.tryParse(
-                                              _priceController.text) ??
-                                          0.0,
-                                      duration: {
-                                        'value': int.tryParse(
-                                                _durationValueController
-                                                    .text) ??
-                                            0,
-                                        'unit': _durationUnit,
-                                      },
-                                      updatedAt: DateTime.now(),
-                                    );
-
-                                    try {
-                                      final result = await ref
-                                          .read(
-                                              servicePackagesProvider.notifier)
-                                          .updatePackage(updatedPackage);
-                                      if (result) {
-                                        EasyLoading.showSuccess(lang.S
-                                            .of(context)
-                                            .packageUpdatedSuccess);
-                                        _clearForm();
-                                        Navigator.pop(context);
-                                      } else {
-                                        EasyLoading.showError(lang.S
-                                            .of(context)
-                                            .failedToUpdatePackage);
-                                      }
-                                    } catch (e) {
-                                      EasyLoading.showError(
-                                          '${lang.S.of(context).error}: $e');
-                                    }
-                                  }
-                                },
-                                child: Text(
-                                  lang.S.of(context).update,
-                                  style: kTextStyle.copyWith(color: kWhite),
-                                ),
-                              )
-                            ],
-                          ),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height *
-                                0.02, // Ajusta el tamaño según el alto de la pantalla
+                                icon: const Icon(
+                                  FeatherIcons.x,
+                                  color: kTitleColor,
+                                  size: 21.0,
+                                )),
                           )
                         ],
                       ),
                     ),
-                  )
-                ],
+                    const Divider(
+                      thickness: 1.0,
+                      height: 1.0,
+                      color: kNeutral300,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Name
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                labelText: lang.S.of(context).packageName,
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return lang.S.of(context).packageNameRequired;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Category - Changed to DropdownButtonFormField
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final categoriesAsync =
+                                    ref.watch(categoryProvider);
+                                return categoriesAsync.when(
+                                  data: (categories) {
+                                    if (categories.isEmpty) {
+                                      return Text('No categories available');
+                                    }
+                                    return DropdownButtonFormField<String>(
+                                      value: _selectedCategory,
+                                      decoration: InputDecoration(
+                                        labelText: lang.S.of(context).category,
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      items: categories.map((category) {
+                                        return DropdownMenuItem<String>(
+                                          value: category.categoryName,
+                                          child: Text(category.categoryName),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState1(() {
+                                          _selectedCategory = value;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return lang.S
+                                              .of(context)
+                                              .categoryRequired;
+                                        }
+                                        return null;
+                                      },
+                                    );
+                                  },
+                                  loading: () => CircularProgressIndicator(),
+                                  error: (error, stack) =>
+                                      Text('Error: $error'),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Subcategory
+                            TextFormField(
+                              controller: _subcategoryController,
+                              decoration: InputDecoration(
+                                labelText: lang.S.of(context).subcategory,
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Components - Se agrega control para agregar varios combos
+
+                            // Components - Varios combos
+                            Text(
+                              lang.S.of(context).components,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            // Consumer(
+                            //   builder: (context, ref, child) {
+                            //     final categoriesAsync =
+                            //         ref.watch(categoryProvider);
+
+                            //     return categoriesAsync.when(
+                            //       data: (categories) {
+                            //         final dropdownItems = categories
+                            //             .map((c) => DropdownMenuItem<String>(
+                            //                   value: c.categoryName,
+                            //                   child: Text(c.categoryName),
+                            //                 ))
+                            //             .toList();
+
+                            //         return Column(
+                            //           children: [
+                            //   ..._selectedComponents
+                            //       .asMap()
+                            //       .entries
+                            //       .map((entry) {
+                            //     int index = entry.key;
+                            //     String? selectedValue = entry.value;
+
+                            //     return Padding(
+                            //       padding: const EdgeInsets.only(
+                            //           bottom: 8.0),
+                            //       child:
+                            //           DropdownButtonFormField<String>(
+                            //         value: selectedValue,
+                            //         decoration: InputDecoration(
+                            //           labelText:
+                            //               '${lang.S.of(context).selectComponent} ${index + 1}',
+                            //           border: OutlineInputBorder(),
+                            //         ),
+                            //         items: categories.map((category) {
+                            //           return DropdownMenuItem<String>(
+                            //             value: category.categoryName,
+                            //             child: Text(
+                            //                 category.categoryName),
+                            //           );
+                            //         }).toList(),
+                            //         onChanged: (value) {
+                            //           setState1(() {
+                            //             _selectedComponents[index] =
+                            //                 value;
+                            //           });
+                            //         },
+                            //       ),
+                            //     );
+                            //   }),
+                            //   ElevatedButton(
+                            //     onPressed: () {
+                            //       setState1(() {
+                            //         _selectedComponents.add(
+                            //             null); // agrega un nuevo dropdown vacío
+                            //       });
+                            //     },
+                            //     child: const Icon(Icons.add),
+                            //   ),
+                            // ],
+
+                            //         );
+                            //       },
+                            //       loading: () =>
+                            //           const CircularProgressIndicator(),
+                            //       error: (e, st) => Text('Error: $e'),
+                            //     );
+                            //   },
+                            // ),
+
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final categoriesAsync =
+                                    ref.watch(categoryProvider);
+
+                                return categoriesAsync.when(
+                                  data: (categories) {
+                                    final dropdownItems = categories
+                                        .map((c) => DropdownMenuItem<String>(
+                                              value: c.categoryName,
+                                              child: Text(c.categoryName),
+                                            ))
+                                        .toList();
+
+                                    return Column(
+                                      children: [
+                                        ..._selectedComponents
+                                            .asMap()
+                                            .entries
+                                            .map((entry) {
+                                          int index = entry.key;
+                                          String? selectedValue = entry.value;
+
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8.0),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child:
+                                                      DropdownButtonFormField<
+                                                          String>(
+                                                    value: selectedValue,
+                                                    decoration: InputDecoration(
+                                                      labelText:
+                                                          '${lang.S.of(context).selectComponent} ${index + 1}',
+                                                      border:
+                                                          OutlineInputBorder(),
+                                                    ),
+                                                    items: dropdownItems,
+                                                    onChanged: (value) {
+                                                      setState1(() {
+                                                        _selectedComponents[
+                                                            index] = value;
+                                                      });
+                                                    },
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                      Icons.remove_circle,
+                                                      color: Colors.red),
+                                                  onPressed: () {
+                                                    setState1(() {
+                                                      _selectedComponents
+                                                          .removeAt(index);
+                                                    });
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            setState1(() {
+                                              _selectedComponents.add(null);
+                                            });
+                                          },
+                                          child: const Icon(Icons.add),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                  loading: () =>
+                                      const CircularProgressIndicator(),
+                                  error: (e, st) => Text('Error: $e'),
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Description
+                            AdjustableDescriptionField(
+                                controller: _descriptionController),
+                            const SizedBox(height: 16),
+
+                            // Price
+                            TextFormField(
+                              controller: _priceController,
+                              decoration: InputDecoration(
+                                labelText: lang.S.of(context).price,
+                                border: OutlineInputBorder(),
+                                prefixText: '\$',
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return lang.S.of(context).priceRequired;
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return lang.S.of(context).invalidNumber;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Duration
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: _durationValueController,
+                                    decoration: InputDecoration(
+                                      labelText: lang.S.of(context).duration,
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return lang.S
+                                            .of(context)
+                                            .durationRequired;
+                                      }
+                                      if (int.tryParse(value) == null) {
+                                        return lang.S
+                                            .of(context)
+                                            .invalidInteger;
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  flex: 3,
+                                  child: DropdownButtonFormField<String>(
+                                    value: _durationUnit,
+                                    decoration: InputDecoration(
+                                      labelText: lang.S.of(context).unit,
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    items: [
+                                      DropdownMenuItem(
+                                          value: 'hours',
+                                          child:
+                                              Text(lang.S.of(context).hours)),
+                                      DropdownMenuItem(
+                                          value: 'days',
+                                          child: Text(lang.S.of(context).days)),
+                                    ],
+                                    onChanged: (value) {
+                                      setState1(() {
+                                        _durationUnit = value!;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  onPressed: () {
+                                    _clearForm();
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    lang.S.of(context).cancel,
+                                  ),
+                                ),
+                                SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width <= 570
+                                            ? 10
+                                            : 30.0),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      EasyLoading.show(
+                                          status: lang.S
+                                              .of(context)
+                                              .updatingPackage);
+                                      final updatedPackage = package.copyWith(
+                                        name: _nameController.text,
+                                        category: _selectedCategory ?? '',
+                                        subcategory:
+                                            _subcategoryController.text,
+                                        description:
+                                            _descriptionController.text,
+                                        price: double.tryParse(
+                                                _priceController.text) ??
+                                            0.0,
+                                        duration: {
+                                          'value': int.tryParse(
+                                                  _durationValueController
+                                                      .text) ??
+                                              0,
+                                          'unit': _durationUnit,
+                                        },
+                                        updatedAt: DateTime.now(),
+                                        components: _selectedComponents
+                                            .whereType<String>()
+                                            .toList(),
+                                      );
+
+                                      try {
+                                        final result = await ref
+                                            .read(servicePackagesProvider
+                                                .notifier)
+                                            .updatePackage(updatedPackage);
+                                        if (result) {
+                                          EasyLoading.showSuccess(lang.S
+                                              .of(context)
+                                              .packageUpdatedSuccess);
+                                          _clearForm();
+                                          Navigator.pop(context);
+                                        } else {
+                                          EasyLoading.showError(lang.S
+                                              .of(context)
+                                              .failedToUpdatePackage);
+                                        }
+                                      } catch (e) {
+                                        EasyLoading.showError(
+                                            '${lang.S.of(context).error}: $e');
+                                      }
+                                    }
+                                  },
+                                  child: Text(
+                                    lang.S.of(context).update,
+                                    style: kTextStyle.copyWith(color: kWhite),
+                                  ),
+                                )
+                              ],
+                            ),
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height *
+                                  0.02, // Ajusta el tamaño según el alto de la pantalla
+                            )
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
           );

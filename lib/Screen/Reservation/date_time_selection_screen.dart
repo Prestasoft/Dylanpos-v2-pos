@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import '../../Provider/reservation_provider.dart';
 import '../../model/customer_model.dart';
 import 'Seleccioncliente.dart';
@@ -12,6 +15,7 @@ class DateTimeSelectionScreen extends ConsumerStatefulWidget {
   final String dressId;
   final String dressName;
   final String branchId;
+  final List<DressReservation> dressReservations;
 
   const DateTimeSelectionScreen({
     Key? key,
@@ -20,6 +24,7 @@ class DateTimeSelectionScreen extends ConsumerStatefulWidget {
     required this.dressId,
     required this.dressName,
     required this.branchId,
+    required this.dressReservations,
   }) : super(key: key);
 
   @override
@@ -112,6 +117,12 @@ class _DateTimeSelectionScreenState
   }
 
   void _checkAvailabilityAndContinue() async {
+    
+    debugger();
+    
+    
+    bool isDressAvailable = true;
+
     if (packageDuration == null) {
       setState(() {
         errorMessage = "No se pudo cargar la información del paquete.";
@@ -126,46 +137,90 @@ class _DateTimeSelectionScreenState
 
     final String formattedDate = _formatDate(selectedDate);
 
-    // Usar el nuevo proveedor que verifica disponibilidad en un rango
-    final availability = await ref.read(isDressAvailableForRangeProvider({
-      'dressId': widget.dressId,
-      'startDate': formattedDate,
-      'duration': packageDuration,
-    }).future);
+    if (widget.dressReservations.isEmpty) {
+      isDressAvailable = await ref.read(isDressAvailableForRangeProvider({
+        'dressId': widget.dressId,
+        'startDate': formattedDate,
+        'duration': packageDuration,
+      }).future);
+    } else {
+      for (var dress in widget.dressReservations) {
+        final available = await ref.read(
+          isDressAvailableForRangeProvider({
+            'dressId': dress.id,
+            'startDate': formattedDate,
+            'duration': packageDuration,
+          }).future,
+        );
+
+        if (!available) {
+          // Si alguno no está disponible, se puede actuar
+          isDressAvailable = false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('El vestido "${dress.name}" no está disponible.'),
+            ),
+          );
+          break;
+        }
+      }
+    }
 
     setState(() {
       isChecking = false;
     });
+
     if (selectedCustomer == null) {
       setState(() {
         errorMessage = "Por favor, selecciona un cliente.";
+        return;
       });
-      return;
-    }
-
-    if (availability) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ConfirmationScreen(
-            packageId: widget.packageId,
-            packageName: widget.packageName,
-            dressId: widget.dressId,
-            dressName: widget.dressName,
-            branchId: widget.branchId,
-            selectedDate: selectedDate,
-            selectedTime: selectedTime,
-            clientId: selectedCustomer!.phoneNumber,
-          ),
-        ),
-      );
     } else {
-      // Mensaje más específico sobre el problema de disponibilidad
-      final String duracionTexto = _getDuracionTexto();
-      setState(() {
-        errorMessage =
-            "Este vestido no está disponible durante el período seleccionado ($duracionTexto).";
-      });
+      if (isDressAvailable) {
+        if (widget.dressReservations.isEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ConfirmationScreen(
+                packageId: widget.packageId,
+                packageName: widget.packageName,
+                dressId: widget.dressId,
+                dressName: widget.dressName,
+                branchId: widget.branchId,
+                selectedDate: selectedDate,
+                selectedTime: selectedTime,
+                clientId: selectedCustomer!.phoneNumber,
+                dressReservations: [],
+              ),
+            ),
+          );
+        } else {
+          // Si hay varios vestidos seleccionados, se puede proceder a la pantalla de confirmación
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ConfirmationScreen(
+                packageId: widget.packageId,
+                packageName: widget.packageName,
+                dressId: '',
+                dressName: '',
+                branchId: '',
+                selectedDate: selectedDate,
+                selectedTime: selectedTime,
+                clientId: selectedCustomer!.phoneNumber,
+                dressReservations: widget.dressReservations,
+              ),
+            ),
+          );
+        }
+      } else {
+        // Mensaje más específico sobre el problema de disponibilidad
+        final String duracionTexto = _getDuracionTexto();
+        setState(() {
+          errorMessage =
+              "Este vestido no está disponible durante el período seleccionado ($duracionTexto).";
+        });
+      }
     }
   }
 
@@ -193,102 +248,129 @@ class _DateTimeSelectionScreenState
           ? Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Selecciona fecha y hora para tu sesión con el vestido:",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    widget.dressName,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Seleeccione cliente",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: CustomerSelector(
-                          initialCustomer: selectedCustomer,
-                          onCustomerSelected: (CustomerModel) {
-                            selectedCustomer = CustomerModel;
-                          })),
-                  Text(
-                    "Duración: ${_getDuracionTexto()}",
-                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                  ),
-                  SizedBox(height: 24),
-                  Card(
-                    child: ListTile(
-                      leading: Icon(Icons.calendar_today,
-                          color: Theme.of(context).primaryColor),
-                      title: Text("Fecha"),
-                      subtitle: Text(
-                        "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
-                      ),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _selectDate(context),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Selecciona fecha y hora para tu sesión con el vestido:",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                     ),
-                  ),
-                  SizedBox(height: 12),
-                  Card(
-                    child: ListTile(
-                      leading: Icon(Icons.access_time,
-                          color: Theme.of(context).primaryColor),
-                      title: Text("Hora"),
-                      subtitle: Text(selectedTime.format(context)),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _selectTime(context),
+                    SizedBox(height: 8),
+                    _showDressesOption(context),
+                    SizedBox(height: 8),
+                    Text(
+                      "Seleccione cliente",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  if (errorMessage != null) ...[
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red),
+                    Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: CustomerSelector(
+                            initialCustomer: selectedCustomer,
+                            onCustomerSelected: (CustomerModel) {
+                              selectedCustomer = CustomerModel;
+                            })),
+                    Text(
+                      "Duración: ${_getDuracionTexto()}",
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                    SizedBox(height: 24),
+                    Card(
+                      child: ListTile(
+                        leading: Icon(Icons.calendar_today,
+                            color: Theme.of(context).primaryColor),
+                        title: Text("Fecha"),
+                        subtitle: Text(
+                          "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                        ),
+                        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () => _selectDate(context),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.red),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              errorMessage!,
-                              style: TextStyle(color: Colors.red),
+                    ),
+                    SizedBox(height: 12),
+                    Card(
+                      child: ListTile(
+                        leading: Icon(Icons.access_time,
+                            color: Theme.of(context).primaryColor),
+                        title: Text("Hora"),
+                        subtitle: Text(selectedTime.format(context)),
+                        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () => _selectTime(context),
+                      ),
+                    ),
+                    if (errorMessage != null) ...[
+                      SizedBox(height: 16),
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                errorMessage!,
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      ),
+                    ],
+                    //Spacer(),
+                    SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        onPressed:
+                            isChecking ? null : _checkAvailabilityAndContinue,
+                        child: isChecking
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text('Continuar'),
                       ),
                     ),
                   ],
-                  Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onPressed:
-                          isChecking ? null : _checkAvailabilityAndContinue,
-                      child: isChecking
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text('Continuar'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
     );
+  }
+
+  Widget _showDressesOption(BuildContext context) {
+    if (widget.dressReservations.isEmpty) {
+      return Text(
+        widget.dressName,
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      );
+    } else if (widget.dressReservations.isNotEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widget.dressReservations
+            .map((dress) => Text(
+                  dress.name,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ))
+            .toList(),
+      );
+    } else {
+      return Text(
+        "No hay vestidos seleccionados",
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      );
+    }
   }
 }
