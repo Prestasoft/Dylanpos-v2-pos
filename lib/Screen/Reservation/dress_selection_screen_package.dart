@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
-import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import 'date_time_selection_screen.dart';
 
-class DressSelectionScreen extends ConsumerStatefulWidget {
+class DressSelectionPackageScreen extends ConsumerStatefulWidget {
   final ServicePackageModel packagesAsync;
   final String packageId;
   final String packageName;
   final List<String> dressIds;
 
-  const DressSelectionScreen({
+  const DressSelectionPackageScreen({
     Key? key,
     required this.packagesAsync,
     required this.packageId,
@@ -21,11 +20,12 @@ class DressSelectionScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<DressSelectionScreen> createState() =>
-      _DressSelectionScreenState();
+  ConsumerState<DressSelectionPackageScreen> createState() =>
+      _DressSelectionPackageScreenState();
 }
 
-class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
+class _DressSelectionPackageScreenState
+    extends ConsumerState<DressSelectionPackageScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
   bool isUsingOneTimeProvider = false;
@@ -293,31 +293,34 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                       return GestureDetector(
                         onTap: isAvailable
                             ? () {
-
-                              List<DressReservation> selectedDressClass = [
-                                DressReservation(
-                                  id: dress.id,
-                                  name: dress.name,
-                                  branchId: dress.branchId,
-                                  componentName: widget.packageName,
-                                ),
-                              ];
-
-
-
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        DateTimeSelectionScreen(
-                                      packageId: widget.packageId,
-                                      packageName: widget.packageName,
-                                      dressId: dress.id,
-                                      dressName: dress.name,
-                                      branchId: dress.branchId,
-                                      dressReservations: selectedDressClass,
+                                if (widget.dressIds.contains(dress.id)) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Este vestido ya fue usado en esta reserva.'),
                                     ),
-                                  ),
+                                  );
+                                  return;
+                                }
+
+                                Navigator.pop(
+                                  context,
+                                  {
+                                    'vestidoName': dress.name,
+                                    'vestidoId': dress.id,
+                                    'branchId': dress.branchId
+                                  },
+
+                                  // MaterialPageRoute(
+                                  //   builder: (context) =>
+                                  //       DateTimeSelectionScreen(
+                                  //     packageId: widget.packageId,
+                                  //     packageName: widget.packageName,
+                                  //     dressId: dress.id,
+                                  //     dressName: dress.name,
+                                  //     branchId: dress.branchId,
+                                  //   ),
+                                  // ),
                                 );
                               }
                             : null,

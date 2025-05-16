@@ -157,6 +157,9 @@ final ReservaPendientProvider =
       final service = serviceId != null && servicesMap != null
           ? servicesMap[serviceId]
           : null;
+          
+      final multipleDress =
+          data['multiple_dress'] != null ? data['multiple_dress'] : [];
 
       return FullReservation(
         id: id,
@@ -165,6 +168,14 @@ final ReservaPendientProvider =
         service: service != null ? Map<String, dynamic>.from(service) : null,
         dressIds: dressIds.toList(), // Agregar automáticamente los IDs
         serviceIds: serviceIds.toList(), // Agregar automáticamente los IDs
+        
+    multipleDress: (data['multiple_dress'] as List<dynamic>?)
+    ?.map<Map<String, String>>((item) =>
+        Map<String, String>.from(item as Map))
+    .toList() ?? [],
+        //multipleDress: multipleDress
+        //    .map((e) => Map<String, String>.from(e))
+        //   .toList(), // Agregar automáticamente los IDs
       );
     }).toList()
       ..sort((a, b) {
@@ -688,6 +699,7 @@ final crearReservaProvider =
       'created_at': ServerValue.timestamp,
       'updated_at': ServerValue.timestamp,
       'estado': 'pendiente',
+      'multiple_dress': params['multiple_dress'] ?? [],
     };
     await newReservationRef.set(reservationData);
     // Refresh the reservations provider

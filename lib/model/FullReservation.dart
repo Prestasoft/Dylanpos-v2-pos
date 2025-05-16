@@ -8,6 +8,7 @@ class FullReservation {
   final CustomerModel? client;  // Cambié esto de Map<String, dynamic>? a CustomerModel?
   final List<String> dressIds;
   final List<String> serviceIds;
+  final List<Map<String, String>> multipleDress;
 
   FullReservation({
     required this.id,
@@ -16,6 +17,7 @@ class FullReservation {
     this.service,
     this.client,  // Se espera un CustomerModel
     this.dressIds = const [],
-    this.serviceIds = const []
+    this.serviceIds = const [],
+    this.multipleDress = const [],
   });
 }
