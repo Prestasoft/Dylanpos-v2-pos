@@ -10,6 +10,7 @@ class DressSelectionPackageScreen extends ConsumerStatefulWidget {
   final String packageId;
   final String packageName;
   final List<String> dressIds;
+  final String CategoryComposite;
 
   const DressSelectionPackageScreen({
     Key? key,
@@ -17,6 +18,7 @@ class DressSelectionPackageScreen extends ConsumerStatefulWidget {
     required this.packageId,
     required this.packageName,
     required this.dressIds,
+    required this.CategoryComposite,
   }) : super(key: key);
 
   @override
@@ -113,9 +115,9 @@ class _DressSelectionPackageScreenState
   @override
   Widget build(BuildContext context) {
     final dressesAsync = isUsingOneTimeProvider
-        ? ref.watch(dressesOnceProvider(widget.packagesAsync.category))
+        ? ref.watch(dressesOnceProvider(widget.CategoryComposite))
         : ref.watch(availableDressesByComponentsProvider(
-            widget.packagesAsync.category));
+            widget.CategoryComposite));
 
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;

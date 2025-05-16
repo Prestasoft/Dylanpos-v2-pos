@@ -139,6 +139,8 @@ class _PackageReservationScreen
                                         dressIds: codigosSeleccionados,
                                         packageId: widget.packagesAsync.id,
                                         packageName: widget.packagesAsync.name,
+                                        CategoryComposite: widget.packagesAsync.components[index],
+                                       
                                       ),
                                     ),
                                   );
