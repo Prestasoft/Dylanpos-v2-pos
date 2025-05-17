@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
+import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'dress_selection_screen.dart';
 import '../../commas.dart';
@@ -117,7 +120,7 @@ class PackageListScreen extends ConsumerWidget {
                             _calculateColumnCount(constraints.maxWidth);
 
                         return Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(6),
                           child: GridView.builder(
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
@@ -413,6 +416,7 @@ class PackageListScreen extends ConsumerWidget {
           // Botón de selección
           Container(
             color: Colors.grey.shade100,
+            
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
@@ -422,17 +426,28 @@ class PackageListScreen extends ConsumerWidget {
                 ),
               ),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DressSelectionScreen(
-                      packagesAsync: package,
-                      packageId: package.id,
-                      packageName: package.name,
-                      dressIds: package.components,
+                if (package.components.isEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DressSelectionScreen(
+                        packagesAsync: package,
+                        packageId: package.id,
+                        packageName: package.name,
+                        dressIds: package.components,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PackageReservationScreen(
+                        packagesAsync: package,
+                      ),
+                    ),
+                  );
+                }
               },
               icon: const Icon(Icons.check_circle_outline),
               label: const Text('Seleccionar paquete'),
@@ -444,7 +459,8 @@ class PackageListScreen extends ConsumerWidget {
   }
 
   // Ajustar la descripción para que no se salga del margen en el cuadro del paquete
-  Widget _buildInfoRow(IconData icon, dynamic text, {bool isHighlighted = false}) {
+  Widget _buildInfoRow(IconData icon, dynamic text,
+      {bool isHighlighted = false}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

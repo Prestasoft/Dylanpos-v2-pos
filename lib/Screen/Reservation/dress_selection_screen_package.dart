@@ -1,34 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
-import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import 'date_time_selection_screen.dart';
 
-class DressSelectionScreen extends ConsumerStatefulWidget {
+class DressSelectionPackageScreen extends ConsumerStatefulWidget {
   final ServicePackageModel packagesAsync;
   final String packageId;
   final String packageName;
   final List<String> dressIds;
+  final String CategoryComposite;
 
-  const DressSelectionScreen({
+  const DressSelectionPackageScreen({
     Key? key,
     required this.packagesAsync,
     required this.packageId,
     required this.packageName,
     required this.dressIds,
+    required this.CategoryComposite,
   }) : super(key: key);
 
   @override
-  ConsumerState<DressSelectionScreen> createState() =>
-      _DressSelectionScreenState();
+  ConsumerState<DressSelectionPackageScreen> createState() =>
+      _DressSelectionPackageScreenState();
 }
 
-class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
+class _DressSelectionPackageScreenState
+    extends ConsumerState<DressSelectionPackageScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  bool isUsingOneTimeProvider = false;
+  bool isUsingOneTimeProvider = true;
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 0;
   final int _itemsPerPage = 12; // Múltiplo de 4 para mejor alineación
@@ -113,9 +115,13 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final dressesAsync = isUsingOneTimeProvider
-        ? ref.watch(dressesOnceProvider(widget.packagesAsync.category))
+        ? ref.watch(dressesOnceProvider(widget.CategoryComposite))
         : ref.watch(availableDressesByComponentsProvider(
-            widget.packagesAsync.category));
+            widget.CategoryComposite));
+
+    //ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
+    ref.watch(dressesOnceProvider(widget.CategoryComposite));
+
 
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
@@ -293,31 +299,34 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                       return GestureDetector(
                         onTap: isAvailable
                             ? () {
-
-                              List<DressReservation> selectedDressClass = [
-                                DressReservation(
-                                  id: dress.id,
-                                  name: dress.name,
-                                  branchId: dress.branchId,
-                                  componentName: widget.packageName,
-                                ),
-                              ];
-
-
-
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        DateTimeSelectionScreen(
-                                      packageId: widget.packageId,
-                                      packageName: widget.packageName,
-                                      dressId: dress.id,
-                                      dressName: dress.name,
-                                      branchId: dress.branchId,
-                                      dressReservations: selectedDressClass,
+                                if (widget.dressIds.contains(dress.id)) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Este vestido ya fue usado en esta reserva.'),
                                     ),
-                                  ),
+                                  );
+                                  return;
+                                }
+
+                                Navigator.pop(
+                                  context,
+                                  {
+                                    'vestidoName': dress.name,
+                                    'vestidoId': dress.id,
+                                    'branchId': dress.branchId
+                                  },
+
+                                  // MaterialPageRoute(
+                                  //   builder: (context) =>
+                                  //       DateTimeSelectionScreen(
+                                  //     packageId: widget.packageId,
+                                  //     packageName: widget.packageName,
+                                  //     dressId: dress.id,
+                                  //     dressName: dress.name,
+                                  //     branchId: dress.branchId,
+                                  //   ),
+                                  // ),
                                 );
                               }
                             : null,

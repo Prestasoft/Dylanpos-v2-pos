@@ -800,7 +800,11 @@
     "duration": "Duración",
     "unit": "Unidad",
     "hours": "horas",
-    "days": "días"
+    "days": "días",
+    "components": "Components",
+    "selectComponent": "Select a category to add"
+
+
   }
 
 

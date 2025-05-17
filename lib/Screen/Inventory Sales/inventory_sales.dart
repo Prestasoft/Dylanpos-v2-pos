@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
@@ -134,6 +135,12 @@ class _InventorySalesState extends State<InventorySales> {
       fontSize: 13,
       color: Colors.grey[700], // Esto no puede ser const
     );
+
+    final TextStyle smallGreyTextStyleBold = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.bold,
+      color: Colors.black, // Esto no puede ser const
+    );
     showDialog(
       context: context,
       builder: (context) {
@@ -221,151 +228,302 @@ class _InventorySalesState extends State<InventorySales> {
                                   .trim()
                                   .replaceAll(RegExp(r'[\[\]"]'), '');
 
-                              // Create ReservationProductModel
-                              final reservationModel =
-                                  ReservationProductModel.fromMap({
-                                'id': full.id,
-                                'service_id': service?['id'] ?? '',
-                                'service_name': service?['name'] ?? 'Servicio',
-                                'client_id': clientId,
-                                'dress_id': dress?['id'] ?? '',
-                                'dress_name': dress?['name'] ?? 'Vestido',
-                                'branch_id': reservation['branch_id'] ?? '',
-                                'reservation_date':
-                                    reservation['reservation_date'] ?? '',
-                                'reservation_time':
-                                    reservation['reservation_time'] ?? '',
-                                'price': service != null &&
-                                        service['price'] != null
-                                    ? (service['price'] is num
-                                        ? (service['price'] as num).toDouble()
-                                        : 0.0)
-                                    : 0.0,
-                                'created_at': reservation['created_at'],
-                                'updated_at': reservation['updated_at'],
-                                'duration': service?['duration'] ?? {},
-                              });
+                              //debugger();
 
-                              print(
-                                  "jsonq ${ReservationUtils.formatFullReservation(full)}");
+                              // Verificar si no es reserva de paquetes compuestos
+                              bool isCommonReservation =
+                                  full.multipleDress.isEmpty;
 
-                              return InkWell(
-                                onTap: () {
-                                  _addReservationToCart(reservationModel);
-                                  Navigator.pop(context);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8, horizontal: 16),
-                                  child: Row(
-                                    children: [
-                                      // Dress image
-                                      SizedBox(
-                                        width: 60,
-                                        height: 60,
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: Image.network(
-                                            dressImageUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) =>
-                                                    Container(
-                                              color: Colors.grey[200],
-                                              child: Icon(
-                                                  Icons.image_not_supported,
-                                                  color: Colors.grey[400],
-                                                  size: 30),
+                              // Mapeo Nuevo de acuerdo a la estructura de vestidos
+                              
+                              if (isCommonReservation) {
+                                final reservationModel =
+                                    ReservationProductModel.fromMap({
+                                  'id': full.id,
+                                  'service_id': service?['id'] ?? '',
+                                  'service_name':
+                                      service?['name'] ?? 'Servicio',
+                                  'client_id': clientId,
+                                  'dress_id': dress?['id'] ?? '',
+                                  'dress_name': dress?['name'] ?? 'Vestido',
+                                  'branch_id': reservation['branch_id'] ?? '',
+                                  'reservation_date':
+                                      reservation['reservation_date'] ?? '',
+                                  'reservation_time':
+                                      reservation['reservation_time'] ?? '',
+                                  'price': service != null &&
+                                          service['price'] != null
+                                      ? (service['price'] is num
+                                          ? (service['price'] as num).toDouble()
+                                          : 0.0)
+                                      : 0.0,
+                                  'created_at': reservation['created_at'],
+                                  'updated_at': reservation['updated_at'],
+                                  'duration': service?['duration'] ?? {},
+                                });
+
+                                return InkWell(
+                                  onTap: () {
+                                    _addReservationToCart(reservationModel);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
+                                    child: Row(
+                                      children: [
+                                        // Dress image
+                                        SizedBox(
+                                          width: 60,
+                                          height: 60,
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: Image.network(
+                                              dressImageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error,
+                                                      stackTrace) =>
+                                                  Container(
+                                                color: Colors.grey[200],
+                                                child: Icon(
+                                                    Icons.image_not_supported,
+                                                    color: Colors.grey[400],
+                                                    size: 30),
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Vestido'}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                  '📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '🏬 Sucursal: ${reservation['branch_id']}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '👗 Vestido: ${dress?['name'] ?? '-'}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '🔖 Categoría: ${dress?['category'] ?? '-'}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '🛎️ Servicio: ${service?['name'] ?? '-'}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '📝 Descripción:\n${service?['description'] ?? '-'}',
+                                                  style: smallGreyTextStyle),
+                                            ],
+                                          ),
+                                        ),
+
+                                        // Price and add icon
+                                        Column(
                                           crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                              CrossAxisAlignment.end,
                                           children: [
                                             Text(
-                                              '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Vestido'}',
-                                              style: const TextStyle(
+                                              '\$${reservationModel.price.toStringAsFixed(2)}',
+                                              style: TextStyle(
                                                 fontWeight: FontWeight.bold,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
                                                 fontSize: 16,
                                               ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                                '📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}',
-                                                style: smallGreyTextStyle),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                                '🏬 Sucursal: ${reservation['branch_id']}',
-                                                style: smallGreyTextStyle),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                                '👗 Vestido: ${dress?['name'] ?? '-'}',
-                                                style: smallGreyTextStyle),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                                '🔖 Categoría: ${dress?['category'] ?? '-'}',
-                                                style: smallGreyTextStyle),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                                '🛎️ Servicio: ${service?['name'] ?? '-'}',
-                                                style: smallGreyTextStyle),
-                                            const SizedBox(height: 2),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                                '⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}',
-                                                style: smallGreyTextStyle),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                                '📝 Descripción:\n${service?['description'] ?? '-'}',
-                                                style: smallGreyTextStyle),
+                                            const SizedBox(height: 6),
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .primaryColor
+                                                    .withOpacity(0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Icon(
+                                                Icons.add_shopping_cart,
+                                                size: 18,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                              ),
+                                            ),
                                           ],
                                         ),
-                                      ),
-
-                                      // Price and add icon
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            '\$${reservationModel.price.toStringAsFixed(2)}',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context)
-                                                  .primaryColor,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Container(
-                                            padding: const EdgeInsets.all(6),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context)
-                                                  .primaryColor
-                                                  .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: Icon(
-                                              Icons.add_shopping_cart,
-                                              size: 18,
-                                              color: Theme.of(context)
-                                                  .primaryColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              } else {
+                                final reservationModel =
+                                    ReservationProductCompositeModel.fromMap({
+                                  'id': full.id,
+                                  'service_id': service?['id'] ?? '',
+                                  'service_name':
+                                      service?['name'] ?? 'Servicio',
+                                  'client_id': clientId,
+                                  'reservation_date':
+                                      reservation['reservation_date'] ?? '',
+                                  'reservation_time':
+                                      reservation['reservation_time'] ?? '',
+                                  'price': service != null &&
+                                          service['price'] != null
+                                      ? (service['price'] is num
+                                          ? (service['price'] as num).toDouble()
+                                          : 0.0)
+                                      : 0.0,
+                                  'created_at': reservation['created_at'],
+                                  'updated_at': reservation['updated_at'],
+                                  'duration': service?['duration'] ?? {},
+                                  'dress_info': full.multipleDress,
+                                });
+
+                                return InkWell(
+                                  onTap: () {
+                                    _addReservationCompositeToCart(
+                                        reservationModel);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
+                                    child: Row(
+                                      children: [
+                                        // Dress image
+                                        SizedBox(
+                                          width: 60,
+                                          height: 60,
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: Image.network(
+                                              dressImageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error,
+                                                      stackTrace) =>
+                                                  Container(
+                                                color: Colors.grey[200],
+                                                child: Icon(
+                                                    Icons.image_not_supported,
+                                                    color: Colors.grey[400],
+                                                    size: 30),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Combo de Vestimentas'}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                  '📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text('👗 Vestimentas Reservadas:',
+                                                  style:
+                                                      smallGreyTextStyleBold),
+                                              const SizedBox(height: 2),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    left: 8, right: 8),
+                                                child: _showDressesOption(
+                                                    full.multipleDress),
+                                              ),
+                                              Text(
+                                                  '🔖 Categoría: ${service?['category'] ?? '-'}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '🛎️ Servicio: ${service?['name'] ?? '-'}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}',
+                                                  style: smallGreyTextStyle),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                  '📝 Descripción:\n${service?['description'] ?? '-'}',
+                                                  style: smallGreyTextStyle),
+                                            ],
+                                          ),
+                                        ),
+
+                                        // Price and add icon
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              '\$${reservationModel.price.toStringAsFixed(2)}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .primaryColor
+                                                    .withOpacity(0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Icon(
+                                                Icons.add_shopping_cart,
+                                                size: 18,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ),
@@ -385,6 +543,18 @@ class _InventorySalesState extends State<InventorySales> {
     setState(() {
       cartList.add(
         reservation.toCartItem()..reservationId = reservation.id, // Asignar ID
+      );
+      addFocus();
+      updateDueAmount();
+    });
+  }
+
+  void _addReservationCompositeToCart(
+      ReservationProductCompositeModel reservation) {
+    setState(() {
+      cartList.add(
+        reservation.toCartCompositeItem()
+          ..reservationId = reservation.id, // Asignar ID
       );
       addFocus();
       updateDueAmount();
@@ -485,6 +655,27 @@ class _InventorySalesState extends State<InventorySales> {
       }
     });
     productFocusNode.add(f);
+  }
+
+  Widget _showDressesOption(dynamic dress) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: dress.map<Widget>((item) {
+        final dressName = item['dress_name'] ?? 'Sin nombre';
+        final branchId = item['branch_id'] ?? 'Sin sucursal';
+
+        return _buildInfoItem(
+            dressName, branchId); // Asegúrate que retorne un Widget
+      }).toList(),
+    );
+  }
+
+  Widget _buildInfoItem(String dress, String branch) {
+    return Text('* ' + dress + ' - ' + branch,
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey[700], // Esto no puede ser const
+        ));
   }
 
   DropdownButton<String> getOption() {
@@ -2749,7 +2940,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                     }
 
                                                     print(
-                                                        "TIPO DE DE IMPRECION $printType");
+                                                        "TIPO DE DE IMPRESION $printType");
                                                     EasyLoading.show(
                                                         status:
                                                             '${lang.S.of(context).loading}...',

@@ -7181,7 +7181,17 @@ class S {
   String get successfull {
     return Intl.message('Successfull', name: 'successfull', desc: '', args: []);
   }
+
+    String get selectComponent {
+    return Intl.message('Select a category to add', name: 'selectcomponent', desc: '', args: []);
+  }
+
+      String get addComponent {
+    return Intl.message('Add component', name: 'addcomponent', desc: '', args: []);
+  }
 }
+
+
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {
   const AppLocalizationDelegate();
