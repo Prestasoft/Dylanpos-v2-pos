@@ -119,6 +119,9 @@ class _DressSelectionPackageScreenState
         : ref.watch(availableDressesByComponentsProvider(
             widget.CategoryComposite));
 
+    ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
+
+
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final itemWidth = screenWidth / 4 - 16; // 4 items por fila con margen
