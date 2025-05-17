@@ -30,7 +30,7 @@ class _DressSelectionPackageScreenState
     extends ConsumerState<DressSelectionPackageScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  bool isUsingOneTimeProvider = false;
+  bool isUsingOneTimeProvider = true;
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 0;
   final int _itemsPerPage = 12; // Múltiplo de 4 para mejor alineación
@@ -119,7 +119,8 @@ class _DressSelectionPackageScreenState
         : ref.watch(availableDressesByComponentsProvider(
             widget.CategoryComposite));
 
-    ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
+    //ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
+    ref.watch(dressesOnceProvider(widget.CategoryComposite));
 
 
     final theme = Theme.of(context);
