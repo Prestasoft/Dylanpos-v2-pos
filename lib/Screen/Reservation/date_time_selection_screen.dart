@@ -118,7 +118,7 @@ class _DateTimeSelectionScreenState
 
   void _checkAvailabilityAndContinue() async {
     
-    debugger();
+    //debugger();
     
     bool isDressAvailable = true;
 
