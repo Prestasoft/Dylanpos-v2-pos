@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -9,10 +11,12 @@ class ReservationCalendarScreen extends ConsumerStatefulWidget {
   const ReservationCalendarScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ReservationCalendarScreen> createState() => _ReservationCalendarScreenState();
+  ConsumerState<ReservationCalendarScreen> createState() =>
+      _ReservationCalendarScreenState();
 }
 
-class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarScreen> {
+class _ReservationCalendarScreenState
+    extends ConsumerState<ReservationCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -71,7 +75,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
         ],
       ),
     );
-
   }
 
   Widget _buildCalendar(AsyncValue<List<ReservationModel>> reservationsValue) {
@@ -143,7 +146,8 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.checkroom, // Ícono de vestido para el día seleccionado
+                      Icons
+                          .checkroom, // Ícono de vestido para el día seleccionado
                       color: Colors.pinkAccent,
                       size: 16,
                     ),
@@ -194,13 +198,13 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
     );
   }
 
-  Widget _buildReservationsList(AsyncValue<List<ReservationModel>> reservationsValue) {
-
-
+  Widget _buildReservationsList(
+      AsyncValue<List<ReservationModel>> reservationsValue) {
     return reservationsValue.when(
       data: (allReservations) {
         // Filter reservations for selected day
-        final selectedDayKey = DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
+        final selectedDayKey = DateTime(
+            _selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
         final reservations = _reservationsByDay[selectedDayKey] ?? [];
 
         if (reservations.isEmpty) {
@@ -222,15 +226,16 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             final reservationTime = _parseTime(reservation.reservationTime);
 
             // Combine date and time
-            final reservationDateTime = reservationDate != null && reservationTime != null
-                ? DateTime(
-              reservationDate.year,
-              reservationDate.month,
-              reservationDate.day,
-              reservationTime.hour,
-              reservationTime.minute,
-            )
-                : null;
+            final reservationDateTime =
+                reservationDate != null && reservationTime != null
+                    ? DateTime(
+                        reservationDate.year,
+                        reservationDate.month,
+                        reservationDate.day,
+                        reservationTime.hour,
+                        reservationTime.minute,
+                      )
+                    : null;
 
             // Determine reservation status
             ReservationStatus status = ReservationStatus.upcoming;
@@ -245,7 +250,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             return ReservationCard(
               reservation: reservation,
               status: status,
-              onTap: () =>  showModalBottomSheet(
+              onTap: () => showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
@@ -253,7 +258,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                   reservation: reservation,
                   onEdit: () {
                     Navigator.pop(context); // Cierra el modal
-
                   },
                   onCancel: () {
                     Navigator.pop(context); // Cierra el modal
@@ -322,16 +326,19 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancelar Reservación'),
-        content: const Text('¿Estás seguro que deseas cancelar esta reservación?'),
+        content:
+            const Text('¿Estás seguro que deseas cancelar esta reservación?'),
         actions: [
           TextButton(
-            onPressed: () =>  Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('No'),
           ),
           TextButton(
             onPressed: () {
               ref.read(ActualizarEstadoReservaProvider({
-                'id':[reservation.id],'estado': 'cancelado'}));
+                'id': [reservation.id],
+                'estado': 'cancelado'
+              }));
               Navigator.of(context).pop(); // Cierra el diálogo de confirmación
             },
             child: const Text('Sí, Cancelar'),
@@ -341,7 +348,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
       ),
     );
   }
-
 
   DateTime? _parseDate(String date) {
     try {
@@ -366,6 +372,7 @@ enum ReservationStatus {
   upcoming,
   aboutToExpire,
 }
+
 class ReservationCard extends ConsumerWidget {
   final ReservationModel reservation;
   final ReservationStatus status;
@@ -404,7 +411,8 @@ class ReservationCard extends ConsumerWidget {
     }
 
     // Obtenemos los datos completos de la reservación
-    final fullReservationAsync = ref.watch(fullReservationByIdProviderVQ(reservation.id));
+    final fullReservationAsync =
+        ref.watch(fullReservationByIdProviderVQ(reservation.id));
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -416,11 +424,25 @@ class ReservationCard extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: fullReservationAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Text('Error al cargar datos: $error', style: TextStyle(color: Colors.red)),
+            error: (error, _) => Text('Error al cargar datos: $error',
+                style: TextStyle(color: Colors.red)),
             data: (fullReservation) {
-              final clientName = fullReservation?.client?.customerName ?? 'Cliente desconocido';
-              final dressName = fullReservation?.dress?['name'] ?? 'Vestido no especificado';
-              final serviceName = fullReservation?.service?['name'] ?? 'Servicio no especificado';
+              final clientName = fullReservation?.client?.customerName ??
+                  'Cliente desconocido';
+
+              String dressName = '';
+
+              // Verifica si el vestido es de reserva simple o no
+              final dressComposite =
+                  fullReservation?.reservation['multiple_dress'] ?? [];
+
+              if (dressComposite.isEmpty) {
+                dressName = fullReservation?.dress?['name'] ??
+                    'Vestido no especificado';
+              }
+
+              final serviceName = fullReservation?.service?['name'] ??
+                  'Servicio no especificado';
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,7 +458,8 @@ class ReservationCard extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 '${reservation.reservationDate} - ${reservation.reservationTime}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                             ),
                           ],
@@ -446,7 +469,8 @@ class ReservationCard extends ConsumerWidget {
                         label: Text(statusText),
                         avatar: Icon(statusIcon, size: 16, color: Colors.white),
                         backgroundColor: statusColor,
-                        labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                        labelStyle:
+                            const TextStyle(color: Colors.white, fontSize: 12),
                         padding: EdgeInsets.zero,
                       ),
                     ],
@@ -457,7 +481,8 @@ class ReservationCard extends ConsumerWidget {
                       const Icon(Icons.person, size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Cliente: $clientName', style: const TextStyle(fontSize: 14)),
+                        child: Text('Cliente: $clientName',
+                            style: const TextStyle(fontSize: 14)),
                       ),
                     ],
                   ),
@@ -466,18 +491,18 @@ class ReservationCard extends ConsumerWidget {
                     children: [
                       const Icon(Icons.checkroom, size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Vestido: $dressName', style: const TextStyle(fontSize: 14)),
-                      ),
+                      _buildDressName(dressName, dressComposite),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.engineering, size: 16, color: Colors.grey),
+                      const Icon(Icons.engineering,
+                          size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Servicio: $serviceName', style: const TextStyle(fontSize: 14)),
+                        child: Text('Servicio: $serviceName',
+                            style: const TextStyle(fontSize: 14)),
                       ),
                     ],
                   ),
@@ -489,9 +514,59 @@ class ReservationCard extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _buildDressName(String dressName, dynamic dress) {
+    // Verifica si el vestido es de reserva simple o no
+    if (dress.isEmpty) {
+      return Text('Vestido: ' + dressName,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ));
+    } else if (dress.isNotEmpty) {
+      // Si no es de reserva simple, muestra la lista de vestidos
+      final fullReservation = dress;
+
+      return Padding(
+        padding: const EdgeInsets.only(left: 8, right: 8),
+        child: Column(
+          children: [
+            const Text('Vestimenta',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                )),
+            _showDressesOption(dress),
+          ],
+        ),
+      );
+    } else {
+      return const Text('Vestido: Vestido no especificado',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ));
+    }
+  }
 }
 
+Widget _showDressesOption(dynamic dress) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: dress.map<Widget>((item) {
+      final dressName = item['dress_name'] ?? 'Sin nombre';
+      return _buildInfoItem(dressName); // Asegúrate que retorne un Widget
+    }).toList(),
+  );
+}
 
+Widget _buildInfoItem(String dress) {
+  return Text('* ' + dress,
+      style: TextStyle(
+        fontSize: 13,
+        color: Colors.grey[700], // Esto no puede ser const
+      ));
+}
 
 class ReservationDetailView extends ConsumerWidget {
   final ReservationModel reservation;
@@ -509,7 +584,8 @@ class ReservationDetailView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fullReservationAsync = ref.watch(fullReservationByIdProviderVQ(reservation.id));
+    final fullReservationAsync =
+        ref.watch(fullReservationByIdProviderVQ(reservation.id));
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -543,15 +619,19 @@ class ReservationDetailView extends ConsumerWidget {
 
               // Contenido principal
               Padding(
-                padding: const EdgeInsets.only(top: 50, left: 16, right: 16, bottom: 16),
+                padding: const EdgeInsets.only(
+                    top: 50, left: 16, right: 16, bottom: 16),
                 child: fullReservationAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(
-                    child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
+                    child: Text('Error: $error',
+                        style: const TextStyle(color: Colors.red)),
                   ),
                   data: (fullReservation) {
                     if (fullReservation == null) {
-                      return const Center(child: Text('No se encontraron detalles'));
+                      return const Center(
+                          child: Text('No se encontraron detalles'));
                     }
 
                     final reservationData = fullReservation.reservation;
@@ -559,9 +639,20 @@ class ReservationDetailView extends ConsumerWidget {
                     final service = fullReservation.service;
                     final client = fullReservation.client;
 
+                    // Verifica si el vestido es de reserva simple o no
+                    final dressComposite =
+                        fullReservation?.reservation['multiple_dress'] ?? [];
+                    String dressName = '';
+
+                    if (dressComposite.isEmpty) {
+                      dressName = fullReservation?.dress?['name'] ??
+                          'Vestido no especificado';
+                    }
+
                     String formattedDate = '';
                     try {
-                      final date = DateFormat('yyyy-MM-dd').parse(reservationData['reservation_date'] ?? '');
+                      final date = DateFormat('yyyy-MM-dd')
+                          .parse(reservationData['reservation_date'] ?? '');
                       formattedDate = DateFormat.yMMMMd('es').format(date);
                     } catch (e) {
                       formattedDate = reservationData['reservation_date'] ?? '';
@@ -585,9 +676,10 @@ class ReservationDetailView extends ConsumerWidget {
                         // Título
                         Text(
                           'Detalles de la Reservación',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
 
                         const SizedBox(height: 16),
@@ -599,7 +691,8 @@ class ReservationDetailView extends ConsumerWidget {
                             child: Column(
                               children: [
                                 // Imagen del vestido
-                                if (dress != null && dress['images'] != null) ...[
+                                if (dress != null &&
+                                    dress['images'] != null) ...[
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: _buildDressImage(dress['images']),
@@ -612,9 +705,15 @@ class ReservationDetailView extends ConsumerWidget {
                                   context,
                                   title: 'Información de la Reservación',
                                   children: [
-                                    _buildDetailItem(Icons.calendar_today, 'Fecha', formattedDate),
-                                    _buildDetailItem(Icons.access_time, 'Hora', reservationData['reservation_time'] ?? ''),
-                                    _buildDetailItem(Icons.business, 'Sucursal', reservationData['branch_id'] ?? ''),
+                                    _buildDetailItem(Icons.calendar_today,
+                                        'Fecha', formattedDate),
+                                    _buildDetailItem(
+                                        Icons.access_time,
+                                        'Hora',
+                                        reservationData['reservation_time'] ??
+                                            ''),
+                                    _buildDetailItem(Icons.business, 'Sucursal',
+                                        reservationData['branch_id'] ?? ''),
                                   ],
                                 ),
 
@@ -624,26 +723,73 @@ class ReservationDetailView extends ConsumerWidget {
                                     context,
                                     title: 'Información del Cliente',
                                     children: [
-                                      _buildDetailItem(Icons.person, 'Nombre', client.customerName),
-                                      _buildDetailItem(Icons.phone, 'Teléfono', client.phoneNumber),
-                                      _buildDetailItem(Icons.email, 'Email', client.emailAddress),
+                                      _buildDetailItem(Icons.person, 'Nombre',
+                                          client.customerName),
+                                      _buildDetailItem(Icons.phone, 'Teléfono',
+                                          client.phoneNumber),
+                                      _buildDetailItem(Icons.email, 'Email',
+                                          client.emailAddress),
                                       if (client.customerAddress.isNotEmpty)
-                                        _buildDetailItem(Icons.location_on, 'Dirección', client.customerAddress),
+                                        _buildDetailItem(
+                                            Icons.location_on,
+                                            'Dirección',
+                                            client.customerAddress),
                                     ],
                                   ),
 
-                                // Sección del vestido
+                                // Sección del vestido Reserva Simple
                                 if (dress != null)
                                   _buildSection(
                                     context,
                                     title: 'Información del Vestido',
                                     children: [
-                                      _buildDetailItem(Icons.checkroom, 'Vestido', dress['name'] ?? ''),
-                                      _buildDetailItem(Icons.category, 'Categoría', dress['category'] ?? ''),
+                                      _buildDetailItem(Icons.checkroom,
+                                          'Vestido', dress['name'] ?? ''),
+                                      _buildDetailItem(Icons.category,
+                                          'Categoría', dress['category'] ?? ''),
                                       if (dress['color'] != null)
-                                        _buildDetailItem(Icons.color_lens, 'Color', dress['color']),
+                                        _buildDetailItem(Icons.color_lens,
+                                            'Color', dress['color']),
                                       if (dress['size'] != null)
-                                        _buildDetailItem(Icons.straighten, 'Talla', dress['size']),
+                                        _buildDetailItem(Icons.straighten,
+                                            'Talla', dress['size']),
+                                    ],
+                                  ),
+
+                                // Sección del vestido Reserva Compuesta
+                                if (fullReservation
+                                        .reservation['multiple_dress'] !=
+                                    null)
+                                  _buildSection(
+                                    context,
+                                    title: 'Información de Vestimenta',
+                                    children: [
+                                      Text(
+                                        'Vestimenta',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[600],
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      _buildDetailItemComposite(Icons.checkroom,
+                                          'Vestido', dressComposite),
+                                      const SizedBox(height: 2),
+                                      // Text(
+                                      //   'Categoría',
+                                      //   style: TextStyle(
+                                      //     fontSize: 14,
+                                      //     color: Colors.grey[600],
+                                      //     fontWeight: FontWeight.bold,
+                                      //   ),
+                                      // ),
+                                      _buildDetailItem(
+                                          Icons.category,
+                                          'Categoría',
+                                          service != null
+                                              ? (service['category'] ?? '')
+                                              : ''),
                                     ],
                                   ),
 
@@ -653,11 +799,22 @@ class ReservationDetailView extends ConsumerWidget {
                                     context,
                                     title: 'Información del Servicio',
                                     children: [
-                                      _buildDetailItem(Icons.engineering, 'Servicio', service['name'] ?? ''),
-                                      _buildDetailItem(Icons.timer, 'Duración', _formatDuration(service['duration'])),
-                                      _buildDetailItem(Icons.attach_money, 'Precio', '\$${(service['price'] is num ? (service['price'] as num).toDouble() : 0.0).toStringAsFixed(2)}'),
-                                      if (service['description'] != null && service['description'].toString().isNotEmpty)
-                                        _buildDetailItem(Icons.description, 'Descripción', service['description']),
+                                      _buildDetailItem(Icons.engineering,
+                                          'Servicio', service['name'] ?? ''),
+                                      _buildDetailItem(Icons.timer, 'Duración',
+                                          _formatDuration(service['duration'])),
+                                      _buildDetailItem(
+                                          Icons.attach_money,
+                                          'Precio',
+                                          '\$${(service['price'] is num ? (service['price'] as num).toDouble() : 0.0).toStringAsFixed(2)}'),
+                                      if (service['description'] != null &&
+                                          service['description']
+                                              .toString()
+                                              .isNotEmpty)
+                                        _buildDetailItem(
+                                            Icons.description,
+                                            'Descripción',
+                                            service['description']),
                                     ],
                                   ),
 
@@ -665,19 +822,24 @@ class ReservationDetailView extends ConsumerWidget {
 
                                 // Botones de acción
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
                                     children: [
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: onEdit,
-                                          icon: const Icon(Icons.edit, size: 20),
+                                          icon:
+                                              const Icon(Icons.edit, size: 20),
                                           label: const Text('Editar'),
                                           style: ElevatedButton.styleFrom(
                                             foregroundColor: Colors.white,
-                                            backgroundColor: Theme.of(context).primaryColor,
-                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                            backgroundColor:
+                                                Theme.of(context).primaryColor,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 14),
                                           ),
                                         ),
                                       ),
@@ -685,12 +847,14 @@ class ReservationDetailView extends ConsumerWidget {
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: onCancel,
-                                          icon: const Icon(Icons.cancel, size: 20),
+                                          icon: const Icon(Icons.cancel,
+                                              size: 20),
                                           label: const Text('Cancelar'),
                                           style: ElevatedButton.styleFrom(
                                             foregroundColor: Colors.white,
                                             backgroundColor: Colors.red,
-                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 14),
                                           ),
                                         ),
                                       ),
@@ -714,7 +878,8 @@ class ReservationDetailView extends ConsumerWidget {
     );
   }
 
-  Widget _buildSection(BuildContext context, {required String title, required List<Widget> children}) {
+  Widget _buildSection(BuildContext context,
+      {required String title, required List<Widget> children}) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 1,
@@ -726,8 +891,8 @@ class ReservationDetailView extends ConsumerWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const Divider(),
             ...children,
@@ -770,11 +935,60 @@ class ReservationDetailView extends ConsumerWidget {
     );
   }
 
+  Widget _buildDetailItemComposite(
+      IconData icon, String title, dynamic dressComposite) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: dressComposite.map<Widget>((item) {
+        final dressName = item['dress_name'] ?? 'Sin nombre';
+        final branchId = item['branch_id'] ?? 'Sin sucursal';
+
+        return Expanded(
+          child: _buildInfoItem(dressName, branchId, icon),
+        ); // Asegúrate que retorne un Widget
+      }).toList(),
+    );
+  }
+
+  Widget _buildInfoItem(String dressName, String branchId, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 22, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  dressName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  branchId,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDressImage(dynamic images) {
     String imageUrl = '';
 
     if (images is String) {
-      imageUrl = images.split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
+      imageUrl =
+          images.split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
     } else if (images is List && images.isNotEmpty) {
       imageUrl = images.first.toString();
     }
@@ -789,14 +1003,14 @@ class ReservationDetailView extends ConsumerWidget {
       child: imageUrl.isEmpty
           ? Icon(Icons.image_not_supported, color: Colors.grey[400], size: 40)
           : Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Icon(
-          Icons.image_not_supported,
-          color: Colors.grey[400],
-          size: 40,
-        ),
-      ),
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Icon(
+                Icons.image_not_supported,
+                color: Colors.grey[400],
+                size: 40,
+              ),
+            ),
     );
   }
 
