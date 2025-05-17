@@ -139,8 +139,8 @@ class _PackageReservationScreen
                                         dressIds: codigosSeleccionados,
                                         packageId: widget.packagesAsync.id,
                                         packageName: widget.packagesAsync.name,
-                                        CategoryComposite: widget.packagesAsync.components[index],
-                                       
+                                        CategoryComposite: widget
+                                            .packagesAsync.components[index],
                                       ),
                                     ),
                                   );
@@ -253,21 +253,32 @@ class _PackageReservationScreen
                           style: TextStyle(fontSize: 18),
                         ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DateTimeSelectionScreen(
-                          packageId: widget.packagesAsync.id,
-                          packageName: widget.packagesAsync.name,
-                          dressId: '',
-                          dressName: '',
-                          branchId: '',
-                          dressReservations: [
-                            ...dressReservations,
-                          ],
+                    if (dressReservations.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              Text("Por favor selecciona al menos un vestido."),
+                          backgroundColor: Colors.red,
                         ),
-                      ),
-                    );
+                      );
+                      return;
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DateTimeSelectionScreen(
+                            packageId: widget.packagesAsync.id,
+                            packageName: widget.packagesAsync.name,
+                            dressId: '',
+                            dressName: '',
+                            branchId: '',
+                            dressReservations: [
+                              ...dressReservations,
+                            ],
+                          ),
+                        ),
+                      );
+                    }
                   }
 
                   //isSubmitting ? null : _confirmReservation,

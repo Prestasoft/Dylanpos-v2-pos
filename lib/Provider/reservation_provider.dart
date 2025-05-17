@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
@@ -157,7 +159,7 @@ final ReservaPendientProvider =
       final service = serviceId != null && servicesMap != null
           ? servicesMap[serviceId]
           : null;
-          
+
       final multipleDress =
           data['multiple_dress'] != null ? data['multiple_dress'] : [];
 
@@ -168,11 +170,12 @@ final ReservaPendientProvider =
         service: service != null ? Map<String, dynamic>.from(service) : null,
         dressIds: dressIds.toList(), // Agregar automáticamente los IDs
         serviceIds: serviceIds.toList(), // Agregar automáticamente los IDs
-        
-    multipleDress: (data['multiple_dress'] as List<dynamic>?)
-    ?.map<Map<String, String>>((item) =>
-        Map<String, String>.from(item as Map))
-    .toList() ?? [],
+
+        multipleDress: (data['multiple_dress'] as List<dynamic>?)
+                ?.map<Map<String, String>>(
+                    (item) => Map<String, String>.from(item as Map))
+                .toList() ??
+            [],
         //multipleDress: multipleDress
         //    .map((e) => Map<String, String>.from(e))
         //   .toList(), // Agregar automáticamente los IDs
@@ -278,6 +281,85 @@ final isDressAvailableForRangeProvider =
     final DatabaseEvent event =
         await dbRef.orderByChild('dress_id').equalTo(dressId).once();
 
+    // Logica nueva para verificar disponibilidad en Reservas Compuestas
+    final snapshotC = await dbRef.once();
+    final data = snapshotC.snapshot.value;
+    List<Map<String, String>> allDresses = [];
+    List<Map<dynamic, dynamic>> allDressReservation = [];
+
+    if (data is Map) {
+      data.forEach((reservationId, reservationData) {
+        if (reservationData is Map) {
+          final dresses = reservationData['multiple_dress'];
+          if (dresses is List) {
+            for (var dress in dresses) {
+              if (dress is Map && dress.containsKey('dress_id')) {
+                allDresses.add({
+                  'dress_id': dress['dress_id'].toString(),
+                  'service_id': reservationData['service_id'].toString(),
+                  'reservation_date': reservationData['reservation_date'],
+                  'reservation_time': reservationData['reservation_time'],
+                });
+              }
+            }
+          }
+        }
+      });
+    }
+
+    if (allDresses.isNotEmpty) {
+      for (var dress in allDresses) {
+        if (dress is Map && dress['dress_id'] == dressId) {
+          // Guardamos la reserva entera
+          allDressReservation.add(dress);
+        }
+      }
+
+      if (allDressReservation.isNotEmpty) {
+        for (var _reservation in allDressReservation) {
+          // Convertir fecha de reserva a DateTime
+          final String reservationDateStr = _reservation['reservation_date'];
+          final DateTime reservationStart = DateTime.parse(reservationDateStr);
+
+          // Obtener la duración de esa reserva (del paquete asociado)
+          final String serviceId = _reservation['service_id'];
+
+          // Obtener el paquete directamente
+          final serviceSnapshot = await FirebaseDatabase.instance
+              .ref('Admin Panel/services/$serviceId')
+              .get();
+
+          if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
+            final Map<dynamic, dynamic> serviceData =
+                serviceSnapshot.value as Map<dynamic, dynamic>;
+            final Map<String, dynamic> reservationDurationMap =
+                (serviceData['duration'] is Map)
+                    ? Map<String, dynamic>.from(serviceData['duration'])
+                    : {'value': 1, 'unit': 'days'};
+
+            // Calcular la fecha de fin de la reserva existente
+            DateTime reservationEnd;
+            if (reservationDurationMap['unit'] == 'days') {
+              reservationEnd = reservationStart
+                  .add(Duration(days: reservationDurationMap['value']));
+            } else if (reservationDurationMap['unit'] == 'hours') {
+              reservationEnd = reservationStart
+                  .add(Duration(hours: reservationDurationMap['value']));
+            } else {
+              reservationEnd = reservationStart.add(Duration(days: 1));
+            }
+
+            // Verificar superposición
+            if (!(endDateTime.isBefore(reservationStart) ||
+                startDateTime.isAfter(reservationEnd))) {
+              return false; // Hay superposición, no está disponible
+            }
+          }
+        }
+      }
+    }
+
+    // Logica para verificar disponibilidad en Reservas Simples
     final snapshot = event.snapshot;
     if (snapshot.value == null)
       return true; // No hay reservas para este vestido
@@ -657,11 +739,91 @@ final isDressAvailableProvider =
   final String time = params['time'];
 
   try {
+    final startDateTime = DateTime.parse(date);
+    final endDateTime = startDateTime.add(Duration(days: 1));
+
     final DatabaseReference ref =
         FirebaseDatabase.instance.ref('Admin Panel/reservations');
     final DatabaseEvent event =
         await ref.orderByChild('dress_id').equalTo(dressId).once();
 
+    // Verificacion de disponibilidad en Reservas Compuestas
+    final snapshotC = await ref.once();
+    final data = snapshotC.snapshot.value;
+    List<Map<String, String>> allDresses = [];
+    List<Map<dynamic, dynamic>> allDressReservation = [];
+
+    if (data is Map) {
+      data.forEach((reservationId, reservationData) {
+        if (reservationData is Map) {
+          final dresses = reservationData['multiple_dress'];
+          if (dresses is List) {
+            for (var dress in dresses) {
+              if (dress is Map && dress.containsKey('dress_id')) {
+                allDresses.add({
+                  'dress_id': dress['dress_id'].toString(),
+                  'service_id': reservationData['service_id'].toString(),
+                  'reservation_date': reservationData['reservation_date'],
+                  'reservation_time': reservationData['reservation_time'],
+                });
+              }
+            }
+          }
+        }
+      });
+    }
+
+    if (allDresses.isNotEmpty) {
+      for (var dress in allDresses) {
+        if (dress is Map && dress['dress_id'] == dressId) {
+          allDressReservation.add(dress);
+        }
+      }
+    }
+
+    if (allDressReservation.isNotEmpty) {
+      for (var _reservation in allDressReservation) {
+        final String reservationDateStr = _reservation['reservation_date'];
+        final DateTime reservationStart = DateTime.parse(reservationDateStr);
+
+        // Obtener la duración de esa reserva (del paquete asociado)
+        final String serviceId = _reservation['service_id'];
+
+        // Obtener el paquete directamente
+        final serviceSnapshot = await FirebaseDatabase.instance
+            .ref('Admin Panel/services/$serviceId')
+            .get();
+
+        if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
+          final Map<dynamic, dynamic> serviceData =
+              serviceSnapshot.value as Map<dynamic, dynamic>;
+          final Map<String, dynamic> reservationDurationMap =
+              (serviceData['duration'] is Map)
+                  ? Map<String, dynamic>.from(serviceData['duration'])
+                  : {'value': 1, 'unit': 'days'};
+
+          // Calcular la fecha de fin de la reserva existente
+          DateTime reservationEnd;
+          if (reservationDurationMap['unit'] == 'days') {
+            reservationEnd = reservationStart
+                .add(Duration(days: reservationDurationMap['value']));
+          } else if (reservationDurationMap['unit'] == 'hours') {
+            reservationEnd = reservationStart
+                .add(Duration(hours: reservationDurationMap['value']));
+          } else {
+            reservationEnd = reservationStart.add(Duration(days: 1));
+          }
+
+          // Verificar superposición
+          if (!(endDateTime.isBefore(reservationStart) ||
+              startDateTime.isAfter(reservationEnd))) {
+            return false; // Hay superposición, no está disponible
+          }
+        }
+      }
+    }
+
+    // Verificacion de disponibilidad en Reservas Simples
     final snapshot = event.snapshot;
 
     if (snapshot.value == null) return true;

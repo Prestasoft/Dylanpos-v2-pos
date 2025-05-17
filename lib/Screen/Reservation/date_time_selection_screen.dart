@@ -120,7 +120,6 @@ class _DateTimeSelectionScreenState
     
     debugger();
     
-    
     bool isDressAvailable = true;
 
     if (packageDuration == null) {
