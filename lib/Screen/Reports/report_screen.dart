@@ -1108,7 +1108,15 @@ class _SaleReportsState extends State<SaleReports> {
                                                                                 // final pdfFotter = setting.companyName.isNotEmpty == true ? setting.companyName : appsName;
                                                                                 return GestureDetector(
                                                                                   onTap: () async {
-                                                                                    AnchorElement(href: "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(await generateSaleDocument(personalInformation: profile.value!, transactions: paginatedList[index], generalSetting: setting))}")
+                                                                                    AnchorElement(
+                                                                                        href: "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(
+                                                                                      await generateSaleDocument(
+                                                                                        personalInformation: profile.value!,
+                                                                                        transactions: paginatedList[index],
+                                                                                        generalSetting: setting,
+                                                                                        context: context,
+                                                                                      ),
+                                                                                    )}")
                                                                                       ..setAttribute("download", "${dynamicInvoice}_S-${reTransaction[index].invoiceNumber}.pdf")
                                                                                       ..click();
                                                                                   },

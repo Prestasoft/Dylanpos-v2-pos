@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -15,12 +16,29 @@ import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
 
 ///___________Sales_PDF_Formats____________________________________________________________________________________________________________________________
-FutureOr<Uint8List> generateSaleDocument(
-    {required SaleTransactionModel transactions,
-    required PersonalInformationModel personalInformation,
-    required GeneralSettingModel generalSetting,
-    SaleTransactionModel? post}) async {
+FutureOr<Uint8List> generateSaleDocument({
+  required SaleTransactionModel transactions,
+  required PersonalInformationModel personalInformation,
+  required GeneralSettingModel generalSetting,
+  SaleTransactionModel? post,
+  required BuildContext context,
+}) async {
+  final imageData = await rootBundle.load('images/sideLogo.png');
+  final imageBytes = imageData.buffer.asUint8List();
+  final image = pw.MemoryImage(imageBytes);
+
   final pw.Document doc = pw.Document();
+  final ref = ProviderScope.containerOf(context);
+  final List<String> idReservaciones = post?.reservationIds ?? [];
+  //actualizar los prodcutos
+  await ref.read(ActualizarEstadoReservaProvider({
+    'id': idReservaciones,
+    'estado': 'confirmado',
+  }));
+  // Obtener la lista de IDs de reservaciones
+  // Obtener todas las reservaciones primero
+  final List<FullReservation?> reservaciones = await Future.wait(idReservaciones
+      .map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
   double totalAmount({required SaleTransactionModel transactions}) {
     double amount = 0;
 
@@ -31,6 +49,29 @@ FutureOr<Uint8List> generateSaleDocument(
     }
 
     return double.parse(amount.toStringAsFixed(2));
+  }
+
+  List<List<String>> rows = [];
+
+  for (int i = 0; i < transactions.productList!.length; i++) {
+    final item = transactions.productList![i];
+
+    final fullReservation =
+        ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+    final serviceDescription = fullReservation?.service?['description'] ?? '';
+
+    rows.add(<String>[
+      '${i + 1}',
+      '''${item.productName}\n$serviceDescription''',
+      '',
+      myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
+      myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
+      calculateProductVat(product: item),
+      myFormat.format(double.tryParse(
+              (double.parse(item.subTotal) * item.quantity.toInt())
+                  .toStringAsFixed(2)) ??
+          0),
+    ]);
   }
 
   doc.addPage(
@@ -50,13 +91,19 @@ FutureOr<Uint8List> generateSaleDocument(
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(10.0),
                 child: pw.Center(
-                  child: pw.Text(
-                    personalInformation.companyName,
-                    style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                        color: PdfColors.black,
-                        fontSize: 22.0,
-                        fontWeight: pw.FontWeight.bold),
-                  ),
+                  child: pw.Column(children: [
+                    pw.Image(
+                      image,
+                      width: 300,
+                    ),
+                    // pw.Text(
+                    //   personalInformation.companyName,
+                    //   style: pw.Theme.of(context).defaultTextStyle.copyWith(
+                    //       color: PdfColors.black,
+                    //       fontSize: 22.0,
+                    //       fontWeight: pw.FontWeight.bold),
+                    // ),
+                  ]),
                 ),
               ),
 
@@ -95,7 +142,7 @@ FutureOr<Uint8List> generateSaleDocument(
                       padding: const pw.EdgeInsets.all(1.0),
                       child: pw.Center(
                         child: pw.Text(
-                          'GST del Cliente: ${personalInformation.gst}',
+                          'RNC: ${personalInformation.gst}',
                           style: pw.Theme.of(context)
                               .defaultTextStyle
                               .copyWith(color: PdfColors.black, fontSize: 14.0),
@@ -243,7 +290,7 @@ FutureOr<Uint8List> generateSaleDocument(
                               pw.SizedBox(
                                 width: 60.0,
                                 child: pw.Text(
-                                  'GST del Cliente',
+                                  'RNC',
                                   style: pw.Theme.of(context)
                                       .defaultTextStyle
                                       .copyWith(color: PdfColors.black),
@@ -411,10 +458,11 @@ FutureOr<Uint8List> generateSaleDocument(
         );
       },
       footer: (pw.Context context) {
-        return pw.Column(children: [
-          pw.Padding(
-            padding: const pw.EdgeInsets.all(10.0),
-            child: pw.Row(
+        return pw.Column(
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 10.0),
+              child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Container(
@@ -445,29 +493,34 @@ FutureOr<Uint8List> generateSaleDocument(
                         bottom: 3.0 * PdfPageFormat.mm),
                     padding: const pw.EdgeInsets.only(
                         bottom: 3.0 * PdfPageFormat.mm),
-                    child: pw.Column(children: [
-                      pw.Container(
-                        width: 120.0,
-                        height: 1.0,
-                        color: PdfColors.black,
-                      ),
-                      pw.SizedBox(height: 4.0),
-                      pw.Text(
-                        'Firma Autorizada',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                              color: PdfColors.black,
-                              fontSize: 11,
-                            ),
-                      )
-                    ]),
+                    child: pw.Column(
+                      children: [
+                        pw.Container(
+                          width: 120.0,
+                          height: 1.0,
+                          color: PdfColors.black,
+                        ),
+                        pw.SizedBox(height: 4.0),
+                        pw.Text(
+                          'Firma Autorizada',
+                          style: pw.Theme.of(context).defaultTextStyle.copyWith(
+                                color: PdfColors.black,
+                                fontSize: 11,
+                              ),
+                        )
+                      ],
+                    ),
                   ),
-                ]),
-          ),
-          pw.Text(
-              'Powered By ${generalSetting.companyName.isNotEmpty == true ? generalSetting.companyName : pdfFooter}',
-              style: const pw.TextStyle(fontSize: 10, color: PdfColors.black)),
-          pw.SizedBox(height: 5),
-        ]);
+                ],
+              ),
+            ),
+            pw.Text(
+                'Powered By ${generalSetting.companyName.isNotEmpty == true ? generalSetting.companyName : pdfFooter}',
+                style:
+                    const pw.TextStyle(fontSize: 10, color: PdfColors.black)),
+            pw.SizedBox(height: 5),
+          ],
+        );
       },
       build: (pw.Context context) => <pw.Widget>[
         pw.Padding(
@@ -534,42 +587,15 @@ FutureOr<Uint8List> generateSaleDocument(
                 },
                 data: <List<String>>[
                   <String>[
-                    'SL',
-                    'Product Description',
-                    'Warranty',
-                    'Quantity',
-                    'Unit Price',
-                    'TAX',
-                    'Price'
+                    'N°',
+                    'Descripción del producto',
+                    'Garantía',
+                    'Cantidad',
+                    'Precio unitario',
+                    'Impuesto',
+                    'Precio total'
                   ],
-                  for (int i = 0; i < transactions.productList!.length; i++)
-                    <String>[
-                      ('${i + 1}'),
-                      ("${transactions.productList!.elementAt(i).productName.toString()}\n"),
-                      (''),
-                      (myFormat.format(double.tryParse(transactions.productList!
-                              .elementAt(i)
-                              .quantity
-                              .toString()) ??
-                          0)),
-                      (myFormat.format(double.tryParse(transactions.productList!
-                              .elementAt(i)
-                              .subTotal
-                              .toString()) ??
-                          0)),
-                      (calculateProductVat(
-                          product: transactions.productList!.elementAt(i))),
-                      (myFormat.format(double.tryParse((double.parse(
-                                      transactions.productList!
-                                          .elementAt(i)
-                                          .subTotal) *
-                                  transactions.productList!
-                                      .elementAt(i)
-                                      .quantity
-                                      .toInt())
-                              .toStringAsFixed(2)) ??
-                          0))
-                    ],
+                  ...rows
                 ],
               ),
               // pw.SizedBox(width: 5),
@@ -591,7 +617,7 @@ FutureOr<Uint8List> generateSaleDocument(
                         pw.Container(
                           width: 300,
                           child: pw.Text(
-                            "En Palabras: ${amountToWords(transactions.totalAmount!.toInt())}",
+                            "En Palabras: ${amountToWordsEs(transactions.totalAmount!.toInt())}",
                             maxLines: 3,
                             style: pw.TextStyle(
                                 color: PdfColors.black,
@@ -686,7 +712,7 @@ FutureOr<Uint8List> generateSaleDocument(
                             pw.SizedBox(
                               width: 100.0,
                               child: pw.Text(
-                                "Service/Shipping",
+                                "Envío/Servicios",
                                 style: pw.Theme.of(context)
                                     .defaultTextStyle
                                     .copyWith(
@@ -1100,7 +1126,6 @@ Future<Uint8List> generateThermalDocument({
             pw.Divider(thickness: 0.2),
 
             ...transactions.productList!.map((item) {
-//
               final fullReservation =
                   ref.read(fullReservationByIdProviderVQ(item.productId)).value;
               final serviceDescription =
