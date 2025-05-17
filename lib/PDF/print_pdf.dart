@@ -55,11 +55,13 @@ class GeneratePdfAndPrint {
     }
   }
 
-  Future<void> uploadSaleInvoice(
-      {required PersonalInformationModel personalInformationModel,
-      required SaleTransactionModel saleTransactionModel,
-      bool? fromInventorySale,
-      required GeneralSettingModel setting}) async {
+  Future<void> uploadSaleInvoice({
+    required PersonalInformationModel personalInformationModel,
+    required SaleTransactionModel saleTransactionModel,
+    bool? fromInventorySale,
+    required GeneralSettingModel setting,
+    required BuildContext context,
+  }) async {
     var data = await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
     if (data.whatsappMarketingEnabled &&
         (saleTransactionModel.sendWhatsappMessage ?? false)) {
@@ -78,7 +80,8 @@ class GeneratePdfAndPrint {
     var pdfData = await generateSaleDocument(
         personalInformation: personalInformationModel,
         transactions: saleTransactionModel,
-        generalSetting: setting.companyName as GeneralSettingModel);
+        generalSetting: setting.companyName as GeneralSettingModel,
+        context: context);
     //Convert unint8List to pdf and upload in to firebase storage
     await uploadPdfToFirebase(
         pdfData, 'sale', saleTransactionModel.invoiceNumber);
@@ -234,19 +237,20 @@ class GeneratePdfAndPrint {
     EasyLoading.dismiss();
   }
 
-  Future<void> printSaleInvoice(
-      {required PersonalInformationModel personalInformationModel,
-      required SaleTransactionModel saleTransactionModel,
-      required BuildContext
-          context, // Pass a valid context from the parent widget
-      bool? fromInventorySale,
-      bool? isFromQuotation,
-      int reservations = 0,
-      bool? fromSaleReports,
-      required GeneralSettingModel setting,
-      bool? fromLedger,
-      String? printType = 'normal', // 'normal', 'thermal' o 'both'
-      SaleTransactionModel? post}) async {
+  Future<void> printSaleInvoice({
+    required PersonalInformationModel personalInformationModel,
+    required SaleTransactionModel saleTransactionModel,
+    required BuildContext
+        context, // Pass a valid context from the parent widget
+    bool? fromInventorySale,
+    bool? isFromQuotation,
+    int reservations = 0,
+    bool? fromSaleReports,
+    required GeneralSettingModel setting,
+    bool? fromLedger,
+    String? printType = 'normal', // 'normal', 'thermal' o 'both'
+    SaleTransactionModel? post,
+  }) async {
     var data = await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
     if (data.whatsappMarketingEnabled &&
         (saleTransactionModel.sendWhatsappMessage ?? false)) {
@@ -259,23 +263,25 @@ class GeneratePdfAndPrint {
       }
     }
 
-    EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
+    EasyLoading.show(status: 'Generando PDF...', dismissOnTap: true);
     Uint8List pdfData;
     if (printType == 'thermal') {
       pdfData = await generateThermalDocument(
-          personalInformation: personalInformationModel,
-          transactions: saleTransactionModel,
-          generalSetting: setting,
-          post: post,
-          context: context);
+        personalInformation: personalInformationModel,
+        transactions: saleTransactionModel,
+        generalSetting: setting,
+        post: post,
+        context: context,
+      );
     } else {
+      //print(saleTransactionModel.productList?.first.toJson());
       pdfData = await generateSaleDocument(
-          personalInformation: personalInformationModel,
-          transactions: saleTransactionModel,
-          generalSetting: setting,
-          post: post
-          //context: context
-          );
+        personalInformation: personalInformationModel,
+        transactions: saleTransactionModel,
+        generalSetting: setting,
+        post: post,
+        context: context,
+      );
     }
 
     await uploadPdfToFirebase(
@@ -1095,7 +1101,7 @@ class GeneratePdfAndPrint {
                           pw.Container(
                             width: 300,
                             child: pw.Text(
-                              "In Word: ${amountToWords(transactions.totalAmount!.toInt())}",
+                              "In Word: ${amountToWordsEs(transactions.totalAmount!.toInt())}",
                               maxLines: 3,
                               style: pw.TextStyle(
                                   color: PdfColors.black,
@@ -2280,7 +2286,7 @@ class GeneratePdfAndPrint {
                           pw.Container(
                             width: 300,
                             child: pw.Text(
-                              "In Word: ${amountToWords(transactions.payDueAmount!.toInt())}",
+                              "In Word: ${amountToWordsEs(transactions.payDueAmount!.toInt())}",
                               maxLines: 3,
                               style: pw.TextStyle(
                                   color: PdfColors.black,
@@ -3396,6 +3402,112 @@ String amountToWords(int amount) {
     } else {
       words += '${tens[amount ~/ 10]} ${units[amount % 10]}';
     }
+  }
+
+  return words.trim();
+}
+
+String amountToWordsEs(int amount) {
+  final units = [
+    '',
+    'uno',
+    'dos',
+    'tres',
+    'cuatro',
+    'cinco',
+    'seis',
+    'siete',
+    'ocho',
+    'nueve'
+  ];
+
+  final teens = [
+    'diez',
+    'once',
+    'doce',
+    'trece',
+    'catorce',
+    'quince',
+    'dieciséis',
+    'diecisiete',
+    'dieciocho',
+    'diecinueve'
+  ];
+
+  final tens = [
+    '',
+    '',
+    'veinte',
+    'treinta',
+    'cuarenta',
+    'cincuenta',
+    'sesenta',
+    'setenta',
+    'ochenta',
+    'noventa'
+  ];
+
+  final hundreds = [
+    '',
+    'ciento',
+    'doscientos',
+    'trescientos',
+    'cuatrocientos',
+    'quinientos',
+    'seiscientos',
+    'setecientos',
+    'ochocientos',
+    'novecientos'
+  ];
+
+  if (amount == 0) return 'cero';
+
+  String convertHundreds(int n) {
+    String result = '';
+
+    if (n == 100) return 'cien';
+
+    if ((n ~/ 100) > 0) {
+      result += '${hundreds[n ~/ 100]} ';
+      n %= 100;
+    }
+
+    if (n >= 10 && n < 20) {
+      result += '${teens[n - 10]}';
+    } else {
+      if ((n ~/ 10) > 0) {
+        result += tens[n ~/ 10];
+        if (n % 10 > 0) {
+          result += ' y ${units[n % 10]}';
+        }
+      } else if (n % 10 > 0) {
+        result += units[n % 10];
+      }
+    }
+
+    return result.trim();
+  }
+
+  String words = '';
+  if ((amount ~/ 1000000) > 0) {
+    int millions = amount ~/ 1000000;
+    words +=
+        '${amountToWordsEs(millions)} ${millions == 1 ? 'millón' : 'millones'} ';
+    amount %= 1000000;
+  }
+
+  if ((amount ~/ 1000) > 0) {
+    int thousands = amount ~/ 1000;
+    if (thousands == 1) {
+      words += 'mil ';
+    } else {
+      words += '${amountToWordsEs(thousands)} mil ';
+    }
+    amount %= 1000;
+  }
+
+  if (amount > 0) {
+    words += convertHundreds(amount);
   }
 
   return words.trim();

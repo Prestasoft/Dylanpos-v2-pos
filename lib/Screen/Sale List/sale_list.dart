@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -499,21 +501,120 @@ class _SaleListState extends State<SaleList> {
                                                               PopupMenuItem(
                                                                 onTap:
                                                                     () async {
-                                                                  await GeneratePdfAndPrint()
-                                                                      .printSaleInvoice(
-                                                                    setting:
-                                                                        setting,
-                                                                    personalInformationModel:
-                                                                        profile
-                                                                            .value!,
-                                                                    saleTransactionModel:
-                                                                        showAbleSaleTransactions[
-                                                                            index],
+                                                                  final printType =
+                                                                      await showDialog<
+                                                                          String>(
                                                                     context:
                                                                         context,
-                                                                    fromSaleReports:
-                                                                        true,
+                                                                    builder:
+                                                                        (context) =>
+                                                                            AlertDialog(
+                                                                      title: Text(
+                                                                          'Seleccionar formato de impresión'),
+                                                                      content:
+                                                                          Column(
+                                                                        mainAxisSize:
+                                                                            MainAxisSize.min,
+                                                                        children: [
+                                                                          ListTile(
+                                                                            leading:
+                                                                                Icon(Icons.receipt, color: Colors.blue),
+                                                                            title:
+                                                                                Text('Factura térmica'),
+                                                                            subtitle:
+                                                                                Text('Para impresora de 58-80mm'),
+                                                                            onTap: () =>
+                                                                                Navigator.pop(context, 'thermal'),
+                                                                          ),
+                                                                          Divider(),
+                                                                          ListTile(
+                                                                            leading:
+                                                                                Icon(Icons.description, color: Colors.green),
+                                                                            title:
+                                                                                Text('Factura normal'),
+                                                                            subtitle:
+                                                                                Text('Formato completo A4/Letter'),
+                                                                            onTap: () =>
+                                                                                Navigator.pop(context, 'normal'),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      actions: [
+                                                                        TextButton(
+                                                                          child:
+                                                                              Text('Cancelar'),
+                                                                          onPressed: () =>
+                                                                              Navigator.pop(context),
+                                                                        ),
+                                                                      ],
+                                                                    ),
                                                                   );
+                                                                  if (printType ==
+                                                                      null) {
+                                                                    EasyLoading
+                                                                        .dismiss();
+
+                                                                    return;
+                                                                  }
+                                                                  EasyLoading.show(
+                                                                      status:
+                                                                          '${lang.S.of(context).loading}...',
+                                                                      dismissOnTap:
+                                                                          false);
+
+                                                                  SaleTransactionModel
+                                                                      post =
+                                                                      checkLossProfit(
+                                                                          transitionModel:
+                                                                              showAbleSaleTransactions[index]);
+                                                                  if (printType ==
+                                                                          'normal' ||
+                                                                      printType ==
+                                                                          'both') {
+                                                                    await GeneratePdfAndPrint()
+                                                                        .printSaleInvoice(
+                                                                      setting:
+                                                                          setting,
+                                                                      personalInformationModel:
+                                                                          profile
+                                                                              .value!,
+                                                                      saleTransactionModel:
+                                                                          showAbleSaleTransactions[
+                                                                              index],
+                                                                      context:
+                                                                          context,
+                                                                      fromSaleReports:
+                                                                          true,
+                                                                      post:
+                                                                          post,
+                                                                    );
+                                                                  }
+
+                                                                  if (printType ==
+                                                                          'thermal' ||
+                                                                      printType ==
+                                                                          'both') {
+                                                                    await GeneratePdfAndPrint()
+                                                                        .printSaleInvoice(
+                                                                      setting:
+                                                                          setting,
+                                                                      personalInformationModel:
+                                                                          profile
+                                                                              .value!,
+                                                                      saleTransactionModel:
+                                                                          showAbleSaleTransactions[
+                                                                              index],
+                                                                      context:
+                                                                          context,
+                                                                      printType:
+                                                                          'thermal',
+                                                                      fromSaleReports:
+                                                                          true,
+                                                                      post:
+                                                                          post,
+                                                                    );
+                                                                  }
+
                                                                   GoRouter.of(
                                                                           bc)
                                                                       .pop();
