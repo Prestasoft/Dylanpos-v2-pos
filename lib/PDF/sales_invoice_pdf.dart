@@ -168,7 +168,7 @@ FutureOr<Uint8List> generateSaleDocument({
                           padding: const pw.EdgeInsets.only(
                               top: 2.0, bottom: 2, left: 5, right: 5),
                           child: pw.Text(
-                            'Factura de Venta',
+                            'Factura de Reservacion',
                             style: pw.Theme.of(context)
                                 .defaultTextStyle
                                 .copyWith(

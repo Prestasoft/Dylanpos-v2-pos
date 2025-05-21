@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://victorguzmanfotografia.com"],
+    "origin": ["*"],
     "method": ["GET"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type"]
