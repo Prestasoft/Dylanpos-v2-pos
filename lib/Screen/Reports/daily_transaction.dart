@@ -47,8 +47,47 @@ class _DailyTransactionState extends State<DailyTransaction> {
 
   String searchItem = '';
 
-  DateTime selectedDate =
-      DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTimeRange selectedDate = DateTimeRange(
+    start: DateTime(DateTime.now().year, DateTime.now().month, 1),
+    end: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day,
+        23, 59, 59),
+  );
+
+  //DateTime selected2ndDate = DateTime.now();
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+        context: context,
+        initialDateRange: selectedDate,
+        firstDate: DateTime(2015, 8),
+        lastDate: DateTime(2101),
+        initialEntryMode: DatePickerEntryMode.calendar,
+        builder: (context, child) {
+          return Column(
+            children: [
+              Material(
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.hardEdge,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 400.0, maxHeight: 600),
+                  child: child,
+                ),
+              )
+            ],
+          );
+        });
+
+    if (picked != null && picked != selectedDate) {
+      final DateTime start =
+          DateTime(picked.start.year, picked.start.month, picked.start.day);
+
+      final DateTime end = DateTime(
+          picked.end.year, picked.end.month, picked.end.day, 23, 59, 59);
+      setState(() {
+        selectedDate = DateTimeRange(start: start, end: end);
+      });
+    }
+  }
 
   List<String> month = [
     'Este mes',
@@ -82,39 +121,55 @@ class _DailyTransactionState extends State<DailyTransaction> {
           switch (selectedMonth) {
             case 'Este mes':
               {
-                var date =
-                    DateTime(DateTime.now().year, DateTime.now().month, 1)
-                        .toString();
-
-                selectedDate = DateTime.parse(date);
-                selected2ndDate = DateTime.now();
+                selectedDate = DateTimeRange(
+                    start:
+                        DateTime(DateTime.now().year, DateTime.now().month, 1),
+                    end: DateTime.now());
+              }
+              {
+                selectedDate = DateTimeRange(
+                    start:
+                        DateTime(DateTime.now().year, DateTime.now().month, 1),
+                    end: DateTime.now());
               }
               break;
             case 'Ultimo mes':
               {
-                selectedDate =
-                    DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
-                selected2ndDate =
-                    DateTime(DateTime.now().year, DateTime.now().month, 0);
+                selectedDate = DateTimeRange(
+                    start: DateTime(
+                        DateTime.now().year, DateTime.now().month - 1, 1),
+                    end:
+                        DateTime(DateTime.now().year, DateTime.now().month, 0));
               }
               break;
             case 'Ultimos 6 meses':
               {
-                selectedDate =
-                    DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
-                selected2ndDate = DateTime.now();
+                selectedDate = DateTimeRange(
+                    start: DateTime(
+                        DateTime.now().year, DateTime.now().month - 6, 1),
+                    end: DateTime.now());
               }
               break;
             case 'Este año':
               {
-                selectedDate = DateTime(DateTime.now().year, 1, 1);
-                selected2ndDate = DateTime.now();
+                selectedDate = DateTimeRange(
+                    start: DateTime(DateTime.now().year, 1, 1),
+                    end: DateTime.now());
+              }
+              {
+                selectedDate = DateTimeRange(
+                    start: DateTime(DateTime.now().year, 1, 1),
+                    end: DateTime.now());
               }
               break;
             case 'Ver todo':
               {
-                selectedDate = DateTime(1900, 01, 01);
-                selected2ndDate = DateTime.now();
+                selectedDate = DateTimeRange(
+                    start: DateTime(1900, 01, 01), end: DateTime.now());
+              }
+              {
+                selectedDate = DateTimeRange(
+                    start: DateTime(1900, 01, 01), end: DateTime.now());
               }
               break;
           }
@@ -123,20 +178,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: selectedDate,
-        firstDate: DateTime(2015, 8),
-        lastDate: DateTime(2101));
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
-  DateTime selected2ndDate = DateTime.now();
   final _horizontalScroll = ScrollController();
   int _lossProfitPerPage = 10; // Default number of items to display
   int _currentPage = 1;
@@ -179,10 +220,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
                 continue;
               }
 
-              if ((selectedDate.isBefore(parsedDate) ||
-                      parsedDate.isAtSameMomentAs(selectedDate)) &&
-                  (selected2ndDate.isAfter(parsedDate) ||
-                      parsedDate.isAtSameMomentAs(selected2ndDate))) {
+              if ((selectedDate.start.isBefore(parsedDate) ||
+                      parsedDate.isAtSameMomentAs(selectedDate.start)) &&
+                  (selectedDate.end.isAfter(parsedDate) ||
+                      parsedDate.isAtSameMomentAs(selectedDate.end))) {
                 reTransaction.add(element);
               }
             }
@@ -316,7 +357,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                             children: [
                                               TextSpan(
                                                 text:
-                                                    '${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ',
+                                                    '${selectedDate.start.day}/${selectedDate.start.month}/${selectedDate.start.year} ',
                                                 style:
                                                     theme.textTheme.titleSmall,
                                               ),
@@ -324,7 +365,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                   text: lang.S.of(context).to),
                                               TextSpan(
                                                 text:
-                                                    ' ${selected2ndDate.day}/${selected2ndDate.month}/${selected2ndDate.year}',
+                                                    ' ${selectedDate.end.day}/${selectedDate.end.month}/${selectedDate.end.year}',
                                                 style:
                                                     theme.textTheme.titleSmall,
                                               ),
