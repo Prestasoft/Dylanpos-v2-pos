@@ -246,7 +246,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         onPressed: () {
                           // Navigator.pushNamed(context, PurchaseList.route);
                           // context.go(PurchaseList.route);
-                          context.go('/purchase/pos-purchase');
+                          context.go('/calendario-reservas');
                         },
                         child: Row(
                           children: [

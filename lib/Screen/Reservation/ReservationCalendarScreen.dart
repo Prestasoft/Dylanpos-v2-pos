@@ -764,32 +764,20 @@ class ReservationDetailView extends ConsumerWidget {
                                     context,
                                     title: 'Información de Vestimenta',
                                     children: [
-                                      Text(
-                                        'Vestimenta',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      _buildDetailItemComposite(Icons.checkroom,
-                                          'Vestido', dressComposite),
-                                      const SizedBox(height: 2),
-                                      // Text(
-                                      //   'Categoría',
-                                      //   style: TextStyle(
-                                      //     fontSize: 14,
-                                      //     color: Colors.grey[600],
-                                      //     fontWeight: FontWeight.bold,
-                                      //   ),
-                                      // ),
-                                      _buildDetailItem(
-                                          Icons.category,
-                                          'Categoría',
-                                          service != null
-                                              ? (service['category'] ?? '')
-                                              : ''),
+                                      _buildDetailItemComposite(
+                                          Icons.checkroom,
+                                          'Vestido',
+                                          dressComposite),
+                                      // _buildDetailItem(Icons.checkroom,
+                                      //     'Vestido', dress['name'] ?? ''),
+                                      // _buildDetailItem(Icons.category,
+                                      //     'Categoría', dress['category'] ?? ''),
+                                      // if (dress['color'] != null)
+                                      //   _buildDetailItem(Icons.color_lens,
+                                      //       'Color', dress['color']),
+                                      // if (dress['size'] != null)
+                                      //   _buildDetailItem(Icons.straighten,
+                                      //       'Talla', dress['size']),
                                     ],
                                   ),
 
@@ -943,9 +931,17 @@ class ReservationDetailView extends ConsumerWidget {
         final dressName = item['dress_name'] ?? 'Sin nombre';
         final branchId = item['branch_id'] ?? 'Sin sucursal';
 
-        return Expanded(
-          child: _buildInfoItem(dressName, branchId, icon),
-        ); // Asegúrate que retorne un Widget
+        // Text(
+        //   title,
+        //   style: TextStyle(
+        //     fontSize: 14,
+        //     color: Colors.grey[600],
+        //     fontWeight: FontWeight.w500,
+        //   ),
+        // );
+        // const SizedBox(height: 2);
+        return _buildInfoItem(
+            dressName, branchId, icon); // Asegúrate que retorne un Widget
       }).toList(),
     );
   }
@@ -962,18 +958,10 @@ class ReservationDetailView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                
                 Text(
-                  dressName,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  branchId,
-                  style: const TextStyle(fontSize: 14),
+                  dressName + ' - ' + branchId,
+                  style: const TextStyle(fontSize: 16),
                 ),
               ],
             ),

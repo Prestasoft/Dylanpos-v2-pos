@@ -28,10 +28,10 @@ class DressSelectionScreen extends ConsumerStatefulWidget {
 class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  bool isUsingOneTimeProvider = false;
+  bool isUsingOneTimeProvider = true;
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 0;
-  final int _itemsPerPage = 12; // Múltiplo de 4 para mejor alineación
+  final int _itemsPerPage = 200; // Múltiplo de 4 para mejor alineación
   List<DressModel> _allDresses = [];
   List<DressModel> _displayedDresses = [];
   bool _isLoadingMore = false;

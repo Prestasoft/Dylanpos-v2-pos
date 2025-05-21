@@ -48,44 +48,108 @@ class _CustomerSelectorState extends ConsumerState<CustomerSelector> {
     }
   }
 
-  DropdownButton<String> getResult(List<CustomerModel> model) {
-    List<DropdownMenuItem<String>> dropDownItems = [
-      const DropdownMenuItem(
-        value: 'Guest',
-        child: Text('Guest'),
-      )
-    ];
-
-    for (var des in model) {
-      var item = DropdownMenuItem(
-        value: des.phoneNumber,
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text('${des.customerName} ${des.phoneNumber}'),
+  void _openCustomerSearchDialog(List<CustomerModel> customers) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      String searchQuery = '';
+      List<CustomerModel> filtered = [
+        CustomerModel(
+          customerName: "Guest",
+          phoneNumber: "00",
+          type: "Guest",
+          customerAddress: '',
+          emailAddress: '',
+          profilePicture: '',
+          openingBalance: '0',
+          remainedBalance: '0',
+          dueAmount: '0',
+          gst: '',
+          receiveWhatsappUpdates: false,
         ),
-      );
-      dropDownItems.add(item);
-    }
+        ...customers
+      ];
 
-    return DropdownButton(
-      items: dropDownItems,
-      isExpanded: true,
-      value: selectedUserId,
-      onChanged: (value) {
-        setState(() {
-          selectedUserId = value!;
-          for (var element in model) {
-            if (element.phoneNumber == selectedUserId) {
-              selectedUserName = element;
-              widget.onCustomerSelected(element);
-            } else if (selectedUserId == 'Guest') {
-              selectedUserName = CustomerModel(customerName: "Guest", phoneNumber: "00", type: "Guest", customerAddress: '', emailAddress: '', profilePicture: '', openingBalance: '0', remainedBalance: '0', dueAmount: '0', gst: '', receiveWhatsappUpdates: false);
-            }
-          }
-        });
-      },
-    );
-  }
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: const Text('Seleccionar Cliente'),
+            content: SizedBox(
+              width: 400,
+              height: 500,
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Buscar cliente por nombre',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) {
+                      searchQuery = value.toLowerCase();
+                      setDialogState(() {
+                        filtered = [
+                          CustomerModel(
+                            customerName: "Guest",
+                            phoneNumber: "00",
+                            type: "Guest",
+                            customerAddress: '',
+                            emailAddress: '',
+                            profilePicture: '',
+                            openingBalance: '0',
+                            remainedBalance: '0',
+                            dueAmount: '0',
+                            gst: '',
+                            receiveWhatsappUpdates: false,
+                          ),
+                          ...customers.where((customer) {
+                            return customer.customerName
+                                .toLowerCase()
+                                .contains(searchQuery);
+                          }).toList(),
+                        ];
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final customer = filtered[index];
+                        return ListTile(
+                          leading: const Icon(Icons.person),
+                          title: Text(customer.customerName),
+                          subtitle: Text(customer.phoneNumber),
+                          onTap: () {
+                            setState(() {
+                              selectedUserId = customer.phoneNumber;
+                              selectedUserName = customer;
+                            });
+                            widget.onCustomerSelected(customer);
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -96,10 +160,11 @@ class _CustomerSelectorState extends ConsumerState<CustomerSelector> {
         List<String> listOfPhoneNumber = [];
         List<CustomerModel> customersList = [];
 
-        for (var value1 in allCustomers) {
-          listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
-          if (value1.type != 'Supplier') {
-            customersList.add(value1);
+        for (var value in allCustomers) {
+          listOfPhoneNumber
+              .add(value.phoneNumber.removeAllWhiteSpace().toLowerCase());
+          if (value.type != 'Supplier') {
+            customersList.add(value);
           }
         }
 
@@ -107,18 +172,34 @@ class _CustomerSelectorState extends ConsumerState<CustomerSelector> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Flexible(
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(5),
-                    bottomLeft: Radius.circular(5),
+              child: GestureDetector(
+                onTap: () {
+                  _openCustomerSearchDialog(customersList);
+                },
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(5),
+                      bottomLeft: Radius.circular(5),
+                    ),
                   ),
-                  border: Border.all(color: Colors.grey),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: getResult(customersList),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selectedUserName.customerName != 'Guest'
+                              ? '${selectedUserName.customerName} (${selectedUserName.phoneNumber})'
+                              : 'Guest',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.arrow_drop_down),
+                    ],
+                  ),
                 ),
               ),
             ),
