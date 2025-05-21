@@ -1104,15 +1104,15 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                       child: DropdownButtonFormField<String>(
                                         validator: (value) {
                                           if (value == null) {
-                                            return 'Month required';
+                                            return 'Mes requerido';
                                           }
                                           return null;
                                         },
                                         decoration: const InputDecoration(
-                                          labelText: 'Select Month',
+                                          labelText: 'Seleccionar Mes',
                                         ),
                                         value: selectedMonth,
-                                        hint: const Text('Select Month'),
+                                        hint: const Text('Seleccionar Mes'),
                                         items: monthList.map((month) {
                                           return DropdownMenuItem(
                                             value: month,
@@ -1139,11 +1139,11 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                       child: DropdownButtonFormField<String>(
                                         value: selectedYear,
                                         decoration: const InputDecoration(
-                                          labelText: 'Select Year',
+                                          labelText: 'Seleccionar Año',
                                         ),
                                         validator: (value) {
                                           if (value == null) {
-                                            return 'Year required';
+                                            return 'Año requerido';
                                           }
                                           return null;
                                         },
@@ -1304,10 +1304,15 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                                   'name'] ??
                                                               'N/A',
                                                         ),
-                                                        _buildDetailRow(
+
+                                                       _buildDetailRow(
                                                           'Cliente:',
-                                                          entry.reservation[
-                                                                  'client_id'] ??
+                                                          entry.client?.customerName ??
+                                                              'N/A',
+                                                       ),
+                                                        _buildDetailRow(
+                                                          'Telefono Cliente:',
+                                                          entry.client?.phoneNumber ??
                                                               'N/A',
                                                         ),
                                                         _buildDetailRow(
