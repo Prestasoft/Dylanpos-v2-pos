@@ -33,7 +33,7 @@ class _DressSelectionPackageScreenState
   bool isUsingOneTimeProvider = true;
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 0;
-  final int _itemsPerPage = 12; // Múltiplo de 4 para mejor alineación
+  final int _itemsPerPage = 200; // Múltiplo de 4 para mejor alineación
   List<DressModel> _allDresses = [];
   List<DressModel> _displayedDresses = [];
   bool _isLoadingMore = false;
@@ -122,7 +122,7 @@ class _DressSelectionPackageScreenState
     //ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
     ref.watch(dressesOnceProvider(widget.CategoryComposite));
 
-
+    
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final itemWidth = screenWidth / 4 - 16; // 4 items por fila con margen

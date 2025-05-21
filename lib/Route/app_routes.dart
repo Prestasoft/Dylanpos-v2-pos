@@ -4,6 +4,7 @@ import 'package:salespro_admin/Route/shell_route_warpper.dart';
 import 'package:salespro_admin/Screen/Authentication/add_profile.dart';
 import 'package:salespro_admin/Screen/Authentication/forgot_password.dart';
 import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
+import 'package:salespro_admin/Screen/Calendar/CalendarDressScreen.dart';
 import 'package:salespro_admin/Screen/Category%20List/category_list.dart';
 import 'package:salespro_admin/Screen/Customer%20List/add_customer.dart';
 import 'package:salespro_admin/Screen/Customer%20List/customer_list.dart';
@@ -86,6 +87,13 @@ abstract class AcnooAppRoutes {
             path: '/dashboard',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: MtHomeScreen(),
+            ),
+          ),
+
+              GoRoute(
+            path: '/calendario-reservas',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: CalendarDressScreen(),
             ),
           ),
 
