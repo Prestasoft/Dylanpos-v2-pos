@@ -885,6 +885,7 @@ final fullReservationsByDressProvider2 =
       FirebaseDatabase.instance.ref('Admin Panel/reservations');
   final dressesRef = FirebaseDatabase.instance.ref('Admin Panel/dresses');
   final servicesRef = FirebaseDatabase.instance.ref('Admin Panel/services');
+  final customers = await ref.watch(allCustomerProvider.future);
 
   // Obtener todas las reservas a partir de hoy
   final event = await reservationsRef
@@ -929,12 +930,18 @@ final fullReservationsByDressProvider2 =
     final data = Map<String, dynamic>.from(entry.value as Map);
     final dressId = data['dress_id']?.toString();
     final serviceId = data['service_id']?.toString();
+    final clientId = data['client_id']?.toString();
 
     final dress =
         dressId != null && dressesMap != null ? dressesMap[dressId] : null;
     final service = serviceId != null && servicesMap != null
         ? servicesMap[serviceId]
         : null;
+         final client = customers.firstWhere(
+      (c) => c.phoneNumber == clientId,
+      orElse: () => CustomerModel.empty(),
+    );
+        
 
     return FullReservation(
       id: id,
@@ -943,6 +950,8 @@ final fullReservationsByDressProvider2 =
       service: service != null ? Map<String, dynamic>.from(service) : null,
       dressIds: dressIds.toList(),
       serviceIds: serviceIds.toList(),
+      client: client.phoneNumber.isNotEmpty ? client : null,
+      
     );
   }).toList()
     ..sort((a, b) {

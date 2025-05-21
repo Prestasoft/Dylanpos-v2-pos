@@ -49,107 +49,88 @@ class _CustomerSelectorState extends ConsumerState<CustomerSelector> {
   }
 
   void _openCustomerSearchDialog(List<CustomerModel> customers) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      String searchQuery = '';
-      List<CustomerModel> filtered = [
-        CustomerModel(
-          customerName: "Guest",
-          phoneNumber: "00",
-          type: "Guest",
-          customerAddress: '',
-          emailAddress: '',
-          profilePicture: '',
-          openingBalance: '0',
-          remainedBalance: '0',
-          dueAmount: '0',
-          gst: '',
-          receiveWhatsappUpdates: false,
-        ),
-        ...customers
-      ];
+    showDialog(
+      context: context,
+      builder: (context) {
+        String searchQuery = '';
+        List<CustomerModel> filtered = [
+          ...customers
+        ];
 
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            title: const Text('Seleccionar Cliente'),
-            content: SizedBox(
-              width: 400,
-              height: 500,
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Buscar cliente por nombre',
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onChanged: (value) {
-                      searchQuery = value.toLowerCase();
-                      setDialogState(() {
-                        filtered = [
-                          CustomerModel(
-                            customerName: "Guest",
-                            phoneNumber: "00",
-                            type: "Guest",
-                            customerAddress: '',
-                            emailAddress: '',
-                            profilePicture: '',
-                            openingBalance: '0',
-                            remainedBalance: '0',
-                            dueAmount: '0',
-                            gst: '',
-                            receiveWhatsappUpdates: false,
-                          ),
-                          ...customers.where((customer) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: const Text('Seleccionar Cliente'),
+              content: SizedBox(
+                width: 400,
+                height: 500,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Buscar cliente por nombre',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        searchQuery = value.toLowerCase();
+                        setDialogState(() {
+                          final filteredCustomers = customers.where((customer) {
                             return customer.customerName
                                 .toLowerCase()
                                 .contains(searchQuery);
-                          }).toList(),
-                        ];
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final customer = filtered[index];
-                        return ListTile(
-                          leading: const Icon(Icons.person),
-                          title: Text(customer.customerName),
-                          subtitle: Text(customer.phoneNumber),
-                          onTap: () {
-                            setState(() {
-                              selectedUserId = customer.phoneNumber;
-                              selectedUserName = customer;
-                            });
-                            widget.onCustomerSelected(customer);
-                            Navigator.pop(context);
-                          },
-                        );
+                          }).toList();
+
+                          // Mostrar Guest solo si la búsqueda está vacía
+                          if (searchQuery.isEmpty) {
+                            filtered = [
+                              ...filteredCustomers,
+                            ];
+                          } else {
+                            filtered = filteredCustomers;
+                          }
+                        });
                       },
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final customer = filtered[index];
+                          return ListTile(
+                            leading: const Icon(Icons.person),
+                            title: Text(customer.customerName),
+                            subtitle: Text(customer.phoneNumber),
+                            onTap: () {
+                              setState(() {
+                                selectedUserId = customer.phoneNumber;
+                                selectedUserName = customer;
+                              });
+                              widget.onCustomerSelected(customer);
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
