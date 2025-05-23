@@ -13,6 +13,7 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/Provider/daily_transaction_provider.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
+import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_edit.dart';
 import 'package:salespro_admin/currency.dart';
 import 'package:salespro_admin/delete_invoice_functions.dart';
@@ -743,6 +744,21 @@ class _SaleListState extends State<SaleList> {
                                                                                 invoice: showAbleSaleTransactions[index].invoiceNumber,
                                                                                 status: 'Sale',
                                                                                 field: "saleTransactionModel");
+
+
+                                                                            // Cancel reservation if exists
+                                                                            final reservationId = (showAbleSaleTransactions[index].reservationIds.isNotEmpty)
+                                                                                ? showAbleSaleTransactions[index].reservationIds.first
+                                                                                : '';
+
+                                                                            await consuearRef.read(cancelReservationProvider(reservationId).future);
+
+                                                                            // Actualizar estado de la reserva a cancelada
+                                                                            // bool status_reserva = await consuearRef.read(ActualizarEstadoReservaProvider({
+                                                                            //   'id': reservationId.toList(),
+                                                                            //   'estado': 'cancelado',
+                                                                            // }).future);
+
                                                                             DatabaseReference
                                                                                 ref =
                                                                                 FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${showAbleSaleTransactions[index].key}");
@@ -758,6 +774,8 @@ class _SaleListState extends State<SaleList> {
                                                                             await consuearRef.refresh(profileDetailsProvider);
                                                                             // ignore: unused_result
                                                                             await consuearRef.refresh(dailyTransactionProvider);
+                                                                            // ignore: unused_result
+                                                                            await consuearRef.refresh(reservationsProvider);
                                                                             EasyLoading.showSuccess(lang.S.of(context).done);
                                                                             // Use Navigator.of(context2).pop() instead of GoRouter.of(context2).pop()
                                                                             // Navigator.of(context2).pop();

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -9,63 +10,84 @@ import 'model/product_model.dart';
 import 'model/sale_transaction_model.dart';
 
 class DeleteInvoice {
-  Future<void> editStockAndSerial({
-    required SaleTransactionModel saleTransactionModel,
-  }) async {
-    for (var element in saleTransactionModel.productList!) {
-      final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
 
-      var data = await ref.orderByChild('productCode').equalTo(element.productId).once();
-      String productPath = data.snapshot.value.toString().substring(1, 21);
+Future<void> editStockAndSerial({
+  required SaleTransactionModel saleTransactionModel,
+}) async {
+  for (var product in saleTransactionModel.productList!) {
+    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
 
-      var data1 = await ref.child('$productPath/productStock').get();
-      int stock = int.parse(data1.value.toString());
-      int remainStock = stock + int.parse(element.quantity.toString());
+    // Buscar el producto por productCode
+    final data = await ref.orderByChild('productCode').equalTo(product.productId).once();
 
-      await ref.child(productPath).update({'productStock': '$remainStock'});
-
-      ///_____serial_add________________________________
-      ProductModel? productData;
-
-      final serialRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/$productPath');
-      await serialRef.orderByKey().get().then((value) {
-        productData = ProductModel.fromJson(jsonDecode(jsonEncode(value.value)));
-      });
-
-      for (var element in element.serialNumber!) {
-        productData!.serialNumber.add(element);
-      }
-      await serialRef.child('serialNumber').set(productData!.serialNumber.map((e) => e).toList());
+    if (data.snapshot.value == null) {
+      continue; // No se encontró el producto
     }
-  }
 
-  Future<void> editStockAndSerialForPurchase({required PurchaseTransactionModel saleTransactionModel}) async {
-    for (var element in saleTransactionModel.productList!) {
-      final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+    // Obtener la clave del producto directamente
+    final dataMap = Map.from(data.snapshot.value as Map);
+    final productPath = dataMap.keys.first;
 
-      var data = await ref.orderByChild('productCode').equalTo(element.productCode).once();
-      String productPath = data.snapshot.value.toString().substring(1, 21);
+    // Obtener el stock actual
+    var stockSnap = await ref.child('$productPath/productStock').get();
+    int currentStock = int.tryParse(stockSnap.value.toString()) ?? 0;
+    int updatedStock = currentStock + int.tryParse(product.quantity.toString())!;
 
-      var data1 = await ref.child('$productPath/productStock').get();
-      int stock = int.parse(data1.value.toString());
-      int remainStock = stock - int.parse(element.productStock.toString());
+    // Actualizar el stock
+    await ref.child(productPath).update({'productStock': '$updatedStock'});
 
-      await ref.child(productPath).update({'productStock': '$remainStock'});
+    /// Agregar los números de serie nuevamente
+    ProductModel? productData;
+    final serialRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/$productPath');
 
-      ///_____serial_remove________________________________
-      ProductModel? productData;
+    await serialRef.orderByKey().get().then((value) {
+      productData = ProductModel.fromJson(jsonDecode(jsonEncode(value.value)));
+    });
 
-      final serialRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/$productPath');
-      await serialRef.orderByKey().get().then((value) {
-        productData = ProductModel.fromJson(jsonDecode(jsonEncode(value.value)));
-      });
-
-      for (var element in element.serialNumber) {
-        productData!.serialNumber.remove(element);
+    for (var serial in product.serialNumber ?? []) {
+      if (!productData!.serialNumber.contains(serial)) {
+        productData!.serialNumber.add(serial);
       }
-      await serialRef.child('serialNumber').set(productData!.serialNumber.map((e) => e).toList());
     }
+
+    await serialRef.child('serialNumber').set(productData!.serialNumber);
   }
+}
+
+Future<void> editStockAndSerialForPurchase({required PurchaseTransactionModel saleTransactionModel}) async {
+  for (var element in saleTransactionModel.productList!) {
+    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+
+    final data = await ref.orderByChild('productCode').equalTo(element.productCode).once();
+
+    if (data.snapshot.value == null) {
+      continue; // No se encontró el producto
+    }
+
+    final dataMap = Map.from(data.snapshot.value as Map);
+    final productPath = dataMap.keys.first;
+
+    var data1 = await ref.child('$productPath/productStock').get();
+    int stock = int.parse(data1.value.toString());
+    int remainStock = stock - int.parse(element.productStock.toString());
+
+    await ref.child(productPath).update({'productStock': '$remainStock'});
+
+    ///_____serial_remove________________________________
+    ProductModel? productData;
+
+    final serialRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/$productPath');
+    await serialRef.orderByKey().get().then((value) {
+      productData = ProductModel.fromJson(jsonDecode(jsonEncode(value.value)));
+    });
+
+    for (var serial in element.serialNumber) {
+      productData!.serialNumber.remove(serial);
+    }
+
+    await serialRef.child('serialNumber').set(productData!.serialNumber.map((e) => e).toList());
+  }
+}
 
   Future<void> customerDueUpdate({required String phone, required num due}) async {
     if (due > 0) {
