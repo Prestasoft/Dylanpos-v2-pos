@@ -64,13 +64,17 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       }).future);
     } else {
       for (var dress in widget.dressReservations) {
-        final available = await ref.read(
-          isDressAvailableProvider({
-            'dressId': dress.id,
-            'date': formattedDate,
-            'time': formattedTime,
-          }).future,
-        );
+        bool available = true;
+
+        if (dress.componentName != "Sin Vestimenta") {
+          available = await ref.read(
+            isDressAvailableProvider({
+              'dressId': dress.id,
+              'date': formattedDate,
+              'time': formattedTime,
+            }).future,
+          );
+        }
 
         if (!available) {
           // Si alguno no está disponible, se puede actuar

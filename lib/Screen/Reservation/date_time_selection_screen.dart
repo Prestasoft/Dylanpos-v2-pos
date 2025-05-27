@@ -117,9 +117,8 @@ class _DateTimeSelectionScreenState
   }
 
   void _checkAvailabilityAndContinue() async {
-    
     //debugger();
-    
+
     bool isDressAvailable = true;
 
     if (packageDuration == null) {
@@ -144,13 +143,17 @@ class _DateTimeSelectionScreenState
       }).future);
     } else {
       for (var dress in widget.dressReservations) {
-        final available = await ref.read(
-          isDressAvailableForRangeProvider({
-            'dressId': dress.id,
-            'startDate': formattedDate,
-            'duration': packageDuration,
-          }).future,
-        );
+        bool available = true;
+
+        if (dress.componentName != "Sin Vestimenta") {
+          available = await ref.read(
+            isDressAvailableForRangeProvider({
+              'dressId': dress.id,
+              'startDate': formattedDate,
+              'duration': packageDuration,
+            }).future,
+          );
+        }
 
         if (!available) {
           // Si alguno no está disponible, se puede actuar
