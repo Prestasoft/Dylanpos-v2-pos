@@ -615,7 +615,6 @@ final fullReservationByIdProvider =
   });
 });
 
- 
 final sidebarProvider =
     StateNotifierProvider<SidebarNotifier, SidebarState>((ref) {
   return SidebarNotifier();
@@ -779,6 +778,7 @@ final crearReservaProvider =
       'created_at': ServerValue.timestamp,
       'updated_at': ServerValue.timestamp,
       'estado': 'pendiente',
+      'nota': params['note'],
       'multiple_dress': params['multiple_dress'] ?? [],
     };
     await newReservationRef.set(reservationData);
@@ -813,13 +813,13 @@ final fullReservationsByDressProvider =
 
     final data = snapshot.value as Map<dynamic, dynamic>;
 
-final reservations = data.entries.where((entry) {
-  final value = entry.value;
-  return value is Map &&
-      value['multiple_dress'] is List &&
-      (value['multiple_dress'] as List).any((dress) =>
-          dress is Map && dress['dress_id'] == dressId);
-}).toList();
+    final reservations = data.entries.where((entry) {
+      final value = entry.value;
+      return value is Map &&
+          value['multiple_dress'] is List &&
+          (value['multiple_dress'] as List)
+              .any((dress) => dress is Map && dress['dress_id'] == dressId);
+    }).toList();
 
     // Obtener los IDs únicos de vestidos y servicios
     final dressIds = reservations
@@ -901,8 +901,8 @@ final fullReservationsByDressProvider2 =
     final value = entry.value;
     return value is Map &&
         value['multiple_dress'] is List &&
-        (value['multiple_dress'] as List).any((dress) =>
-            dress is Map && dress['dress_id'] == dressId);
+        (value['multiple_dress'] as List)
+            .any((dress) => dress is Map && dress['dress_id'] == dressId);
   }).toList();
 
   // Obtener los IDs únicos de vestidos y servicios
@@ -935,11 +935,10 @@ final fullReservationsByDressProvider2 =
     final service = serviceId != null && servicesMap != null
         ? servicesMap[serviceId]
         : null;
-         final client = customers.firstWhere(
+    final client = customers.firstWhere(
       (c) => c.phoneNumber == clientId,
       orElse: () => CustomerModel.empty(),
     );
-        
 
     return FullReservation(
       id: id,
@@ -949,7 +948,6 @@ final fullReservationsByDressProvider2 =
       dressIds: dressIds.toList(),
       serviceIds: serviceIds.toList(),
       client: client.phoneNumber.isNotEmpty ? client : null,
-      
     );
   }).toList()
     ..sort((a, b) {
