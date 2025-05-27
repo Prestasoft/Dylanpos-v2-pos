@@ -53,6 +53,10 @@ FutureOr<Uint8List> generateSaleDocument({
   }
 
   List<List<String>> rows = [];
+  final notas = reservaciones
+      .map((e) => e?.reservation['nota']?.toString())
+      .where((nota) => nota != null && nota.trim().isNotEmpty)
+      .toList();
 
   for (int i = 0; i < transactions.productList!.length; i++) {
     final item = transactions.productList![i];
@@ -64,7 +68,6 @@ FutureOr<Uint8List> generateSaleDocument({
     rows.add(<String>[
       '${i + 1}',
       '''${item.productName}\n$serviceDescription''',
-      fullReservation?.reservation['nota'] ?? "Sin notas",
       myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
       myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
       calculateProductVat(product: item),
@@ -567,12 +570,11 @@ FutureOr<Uint8List> generateSaleDocument({
                 // headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#D5D8DC')),
                 columnWidths: <int, pw.TableColumnWidth>{
                   0: const pw.FlexColumnWidth(1),
-                  1: const pw.FlexColumnWidth(4.5),
+                  1: const pw.FlexColumnWidth(6),
                   2: const pw.FlexColumnWidth(1.5),
-                  3: const pw.FlexColumnWidth(1.5),
-                  4: const pw.FlexColumnWidth(1.7),
+                  3: const pw.FlexColumnWidth(1.7),
+                  4: const pw.FlexColumnWidth(1.5),
                   5: const pw.FlexColumnWidth(1.5),
-                  6: const pw.FlexColumnWidth(1.5),
                 },
                 headerStyle: pw.TextStyle(
                     color: PdfColors.black,
@@ -584,25 +586,22 @@ FutureOr<Uint8List> generateSaleDocument({
                   0: pw.Alignment.center,
                   1: pw.Alignment.centerLeft,
                   2: pw.Alignment.center,
-                  3: pw.Alignment.center,
+                  3: pw.Alignment.centerRight,
                   4: pw.Alignment.centerRight,
                   5: pw.Alignment.centerRight,
-                  6: pw.Alignment.centerRight,
                 },
                 cellAlignments: <int, pw.Alignment>{
                   0: pw.Alignment.center,
                   1: pw.Alignment.centerLeft,
                   2: pw.Alignment.center,
-                  3: pw.Alignment.center,
+                  3: pw.Alignment.centerRight,
                   4: pw.Alignment.centerRight,
                   5: pw.Alignment.centerRight,
-                  6: pw.Alignment.centerRight,
                 },
                 data: <List<String>>[
                   <String>[
                     'N°',
                     'Descripción del producto',
-                    'Notas',
                     'Cantidad',
                     'Precio unitario',
                     'Impuesto',
@@ -636,6 +635,17 @@ FutureOr<Uint8List> generateSaleDocument({
                                 color: PdfColors.black,
                                 fontSize: 11,
                                 fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.SizedBox(height: 10.0),
+                        pw.Container(
+                          width: 300,
+                          child: pw.Text(
+                            "Notas: ${notas.isEmpty ? 'Sin notas' : notas.join(', ')}",
+                            style: pw.TextStyle(
+                              color: PdfColors.black,
+                              fontSize: 11,
+                            ),
                           ),
                         )
                       ]),
