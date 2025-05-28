@@ -334,11 +334,14 @@ class _ReservationCalendarScreenState
             child: const Text('No'),
           ),
           TextButton(
-            onPressed: () {
-              ref.read(ActualizarEstadoReservaProvider({
-                'id': [reservation.id],
-                'estado': 'cancelado'
-              }));
+            onPressed: () async  {
+
+                await ref.read(cancelReservationProvider(reservation.id));
+
+              // ref.read(ActualizarEstadoReservaProvider({
+              //   'id': [reservation.id],
+              //   'estado': 'cancelado'
+              // }));
               Navigator.of(context).pop(); // Cierra el diálogo de confirmación
             },
             child: const Text('Sí, Cancelar'),
