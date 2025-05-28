@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
 import 'package:salespro_admin/model/customer_model.dart';
+import '../model/dress_model.dart';
 import '../model/reservation_model.dart';
 import 'customer_provider.dart';
 
@@ -615,7 +616,6 @@ final fullReservationByIdProvider =
   });
 });
 
- 
 final sidebarProvider =
     StateNotifierProvider<SidebarNotifier, SidebarState>((ref) {
   return SidebarNotifier();
@@ -779,6 +779,7 @@ final crearReservaProvider =
       'created_at': ServerValue.timestamp,
       'updated_at': ServerValue.timestamp,
       'estado': 'pendiente',
+      'nota': params['note'],
       'multiple_dress': params['multiple_dress'] ?? [],
     };
     await newReservationRef.set(reservationData);
@@ -813,13 +814,13 @@ final fullReservationsByDressProvider =
 
     final data = snapshot.value as Map<dynamic, dynamic>;
 
-final reservations = data.entries.where((entry) {
-  final value = entry.value;
-  return value is Map &&
-      value['multiple_dress'] is List &&
-      (value['multiple_dress'] as List).any((dress) =>
-          dress is Map && dress['dress_id'] == dressId);
-}).toList();
+    final reservations = data.entries.where((entry) {
+      final value = entry.value;
+      return value is Map &&
+          value['multiple_dress'] is List &&
+          (value['multiple_dress'] as List)
+              .any((dress) => dress is Map && dress['dress_id'] == dressId);
+    }).toList();
 
     // Obtener los IDs únicos de vestidos y servicios
     final dressIds = reservations
@@ -901,8 +902,8 @@ final fullReservationsByDressProvider2 =
     final value = entry.value;
     return value is Map &&
         value['multiple_dress'] is List &&
-        (value['multiple_dress'] as List).any((dress) =>
-            dress is Map && dress['dress_id'] == dressId);
+        (value['multiple_dress'] as List)
+            .any((dress) => dress is Map && dress['dress_id'] == dressId);
   }).toList();
 
   // Obtener los IDs únicos de vestidos y servicios
@@ -935,11 +936,10 @@ final fullReservationsByDressProvider2 =
     final service = serviceId != null && servicesMap != null
         ? servicesMap[serviceId]
         : null;
-         final client = customers.firstWhere(
+    final client = customers.firstWhere(
       (c) => c.phoneNumber == clientId,
       orElse: () => CustomerModel.empty(),
     );
-        
 
     return FullReservation(
       id: id,
@@ -949,7 +949,6 @@ final fullReservationsByDressProvider2 =
       dressIds: dressIds.toList(),
       serviceIds: serviceIds.toList(),
       client: client.phoneNumber.isNotEmpty ? client : null,
-      
     );
   }).toList()
     ..sort((a, b) {
@@ -963,3 +962,89 @@ final fullReservationsByDressProvider2 =
 
   return fullReservations;
 });
+
+// final dressesByStatusProvider =
+//     FutureProvider.family<List<DressModel>, Map<String, String>>(
+//         (ref, params) async {
+//   print("Call provider");
+//   final search = params['search']?.trim().toLowerCase() ?? '';
+//   final status = params['status'] ?? 'Todos';
+
+//   final now = DateTime.now();
+//   final endOfYear = DateTime(now.year, 12, 31, 23, 59, 59);
+
+//   // Obtener todos los vestidos
+//   final snapshot =
+//       await FirebaseDatabase.instance.ref('Admin Panel/dresses').get();
+//   final value = snapshot.value;
+//   if (value == null || value is! Map) return [];
+
+//   List<DressModel> allDresses = [];
+//   (value).forEach((key, data) {
+//     if (data is Map && data.containsKey('name')) {
+//       allDresses.add(DressModel.fromRealtimeDB(data, key));
+//     }
+//   });
+
+//   // Filtrar por nombre
+//   final filteredByName = allDresses.where((dress) {
+//     final matchesSearch =
+//         dress.name.toLowerCase().contains(search) || search.isEmpty;
+//     return matchesSearch;
+//   }).toList();
+
+//   if (status == 'Todos') return filteredByName;
+
+//   if (status == 'Lavanderia') {
+//     return filteredByName.where((dress) => dress.available == false).toList();
+//   }
+
+//   final reservationsSnapshot =
+//       await FirebaseDatabase.instance.ref('Admin Panel/reservations').get();
+//   final reservationsData = reservationsSnapshot.value;
+
+//   final reservedDressIds = <String>{};
+
+//   if (reservationsData is Map) {
+//     reservationsData.forEach((resId, resData) {
+//       if (resData is Map) {
+//         // Reservas simples
+//         final String? dressId = resData['dress_id'];
+//         final String? dateStr = resData['reservation_date'];
+//         if (dressId != null && dateStr != null) {
+//           final date = DateTime.tryParse(dateStr);
+//           if (date != null && date.isAfter(now) && date.isBefore(endOfYear)) {
+//             reservedDressIds.add(dressId);
+//           }
+//         }
+
+//         // Reservas múltiples
+//         final multiple = resData['multiple_dress'];
+//         final String? resDateStr = resData['reservation_date'];
+//         if (multiple is List && resDateStr != null) {
+//           final date = DateTime.tryParse(resDateStr);
+//           if (date != null && date.isAfter(now) && date.isBefore(endOfYear)) {
+//             for (var item in multiple) {
+//               if (item is Map && item['dress_id'] != null) {
+//                 reservedDressIds.add(item['dress_id'].toString());
+//               }
+//             }
+//           }
+//         }
+//       }
+//     });
+//   }
+
+//   if (status == 'Reservados') {
+//     return filteredByName
+//         .where((dress) => reservedDressIds.contains(dress.id))
+//         .toList();
+//   } else if (status == 'Disponible') {
+//     return filteredByName
+//         .where((dress) =>
+//             !reservedDressIds.contains(dress.id) && dress.available == true)
+//         .toList();
+//   }
+
+//   return filteredByName;
+// });
