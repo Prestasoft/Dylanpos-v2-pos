@@ -780,6 +780,7 @@ final crearReservaProvider =
       'updated_at': ServerValue.timestamp,
       'estado': 'pendiente',
       'multiple_dress': params['multiple_dress'] ?? [],
+      'notas': params['notas'] ?? '', // Guardar notas si existen
     };
     await newReservationRef.set(reservationData);
     // Refresh the reservations provider

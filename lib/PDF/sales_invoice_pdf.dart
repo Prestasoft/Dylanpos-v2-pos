@@ -1415,8 +1415,9 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           ),
         ],
       ),
-      if (reservacion.reservation['notes'] != null &&
-          reservacion.reservation['notes'].toString().isNotEmpty) ...[
+      // Mostrar notas si existen (acepta 'notas' o 'notes')
+      if ((reservacion.reservation['notas'] != null && reservacion.reservation['notas'].toString().isNotEmpty) ||
+          (reservacion.reservation['notes'] != null && reservacion.reservation['notes'].toString().isNotEmpty)) ...[
         pw.SizedBox(height: 2),
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1427,7 +1428,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
             pw.SizedBox(width: 5),
             pw.Expanded(
               child: pw.Text(
-                reservacion.reservation['notes'].toString(),
+                reservacion.reservation['notas']?.toString() ?? reservacion.reservation['notes']?.toString() ?? '',
                 style: pw.TextStyle(fontSize: 8),
                 maxLines: 2,
               ),
@@ -1960,7 +1961,7 @@ String formatDateTime(
 //                         transactions.customerPhone,
 //                         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
 //                       ),
-//                     ),
+//                     },
 //                   ]),
 //                 ]),
 //                 pw.Column(children: [
@@ -1985,7 +1986,7 @@ String formatDateTime(
 //                         'Admin',
 //                         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
 //                       ),
-//                     ),
+//                     },
 //                   ]),
 //                   pw.Row(children: [
 //                     pw.SizedBox(
@@ -2008,7 +2009,7 @@ String formatDateTime(
 //                         '#${transactions.invoiceNumber}',
 //                         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
 //                       ),
-//                     ),
+//                     },
 //                   ]),
 //                   pw.Row(children: [
 //                     pw.SizedBox(
@@ -2031,7 +2032,7 @@ String formatDateTime(
 //                         DateTimeFormat.format(DateTime.parse(transactions.purchaseDate), format: 'D, M j'),
 //                         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
 //                       ),
-//                     ),
+//                     },
 //                   ]),
 //                 ]),
 //               ]),
@@ -2085,7 +2086,7 @@ String formatDateTime(
 //             color: PdfColors.black,
 //             padding: const pw.EdgeInsets.all(10.0),
 //             child: pw.Center(child: pw.Text('Powered By Pos Saas', style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold))),
-//           ),
+//           },
 //         ]);
 //       },
 //       build: (pw.Context context) => <pw.Widget>[

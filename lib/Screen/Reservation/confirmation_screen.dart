@@ -35,6 +35,9 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
 class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
   bool isSubmitting = false;
 
+  // 1. Agregar controlador para notas
+  final TextEditingController _notasController = TextEditingController();
+
   String _formatDate(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
@@ -130,6 +133,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       'date': formattedDate,
       'time': formattedTime,
       'multiple_dress': multipleDress,
+      'notas': _notasController.text, // <-- Guardar notas
     }).future);
 
     setState(() {
@@ -186,10 +190,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
               SizedBox(height: 24),
               _buildInfoItem(Icons.camera_alt, "Paquete", widget.packageName),
               SizedBox(height: 16),
-
-              // Se mostrara el/los vestidos seleccionado/s
               _showDressesOption(Icons.content_cut),
-              //_buildInfoItem(Icons.content_cut, "Vestido", widget.dressName),
               SizedBox(height: 16),
               _buildInfoItem(
                 Icons.calendar_today,
@@ -202,7 +203,19 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                 "Hora",
                 widget.selectedTime.format(context),
               ),
-              //Spacer(),
+              // Campo de Notas
+              SizedBox(height: 16),
+              Text("Notas", style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 4),
+              TextField(
+                controller: _notasController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Escribe aquí tus notas...',
+                ),
+              ),
               SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,

@@ -79,6 +79,9 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
   int _itemsPerPage = 10;
   int _currentPage = 1;
 
+  // Campo para notas
+  TextEditingController _notasController = TextEditingController();
+
   Future<void> _pickImages() async {
     try {
       final List<XFile> pickedImages = await ImagePicker().pickMultiImage();
@@ -990,6 +993,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
       _isAvailable = true;
       _selectedImages.clear();
       _existingImageUrls.clear();
+      _notasController.clear(); // Limpiar notas
     });
   }
 
@@ -1347,6 +1351,22 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                 error: (e, _) => Padding(
                                   padding: const EdgeInsets.only(top: 16),
                                   child: Text('Error loading reservations: $e'),
+                                ),
+                              ),
+
+                              // Campo de notas
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 10.0),
+                                child: TextFormField(
+                                  controller: _notasController,
+                                  minLines: 2,
+                                  maxLines: 4,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Notas',
+                                    border: OutlineInputBorder(),
+                                    hintText: 'Escribe aquí tus notas...',
+                                  ),
                                 ),
                               ),
                             ],
