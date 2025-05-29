@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: "AIzaSyBP1pN3CBRNcUROMYinjTjKCzisLN7RjA0",
   authDomain: "dylanpos-v2.firebaseapp.com",
-  databaseURL: "https://dylanpos-v3-sd.firebaseio.com",
+  databaseURL: "https://dylanpos-v2-default-rtdb.firebaseio.com",
   projectId: "dylanpos-v2",
   storageBucket: "dylanpos-v2.firebasestorage.app",
   messagingSenderId: "917502791038",
