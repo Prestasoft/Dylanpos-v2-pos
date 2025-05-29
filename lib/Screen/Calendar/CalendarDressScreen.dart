@@ -27,6 +27,10 @@ import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 
+import '../../Provider/dress_with_reservations.dart';
+import '../../model/FullReservation.dart';
+import '../../model/args_dress.dart';
+
 class CalendarDressScreen extends ConsumerStatefulWidget {
   const CalendarDressScreen({super.key});
 
@@ -69,7 +73,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
   String searchItem = '';
   bool _isAvailable = true;
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
+  List<DressModel> showAbleDresses = [];
   // For image handling
   final List<dynamic> _selectedImages =
       []; // Can hold File (mobile) or XFile/Uint8List (web)
@@ -78,6 +82,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
   final _horizontalScroll = ScrollController();
   int _itemsPerPage = 10;
   int _currentPage = 1;
+  String itemStatus = "Todos";
 
   // Campo para notas
   TextEditingController _notasController = TextEditingController();
@@ -113,26 +118,37 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
 
     final reservationsAsyncValue =
         ref.watch(fullReservationsByDressProvider('dress_1746102671326'));
-
+    showAbleDresses.clear();
     return SafeArea(
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          AsyncValue<List<DressModel>> dresses = ref.watch(dressesProvider);
-          return dresses.when(data: (list) {
-            List<DressModel> showAbleDresses = [];
+          //AsyncValue<List<DressModel>> dresses = ref.watch(dressesProvider);
+          //ref.read(provider)
+          // final dressesAsync = ref.read(dressesByStatusProvider({
+          //   'search': searchItem,
+          //   'status': itemStatus, // 'Disponible', 'Reservados', 'Todos'
+          // }));
 
-            for (var element in list) {
-              if (element.name
-                  .removeAllWhiteSpace()
-                  .toLowerCase()
-                  .contains(searchItem.toLowerCase())) {
-                showAbleDresses.add(element);
-              } else if (searchItem == '') {
-                showAbleDresses.add(element);
-              }
-            }
+          final params = DressFilterParams(
+            search: searchItem,
+            status: itemStatus,
+          );
 
+          final dressesAsync = ref.watch(dressesByStatusProvider(params));
+
+          return dressesAsync.when(data: (list) {
+            // for (var element in list) {
+            //   if (element.name
+            //       .removeAllWhiteSpace()
+            //       .toLowerCase()
+            //       .contains(searchItem.toLowerCase())) {
+            //     showAbleDresses.add(element);
+            //   } else if (searchItem == '') {
+            //     showAbleDresses.add(element);
+            //   }
+            // }
+            showAbleDresses.addAll(list);
             final pages = (showAbleDresses.length / _itemsPerPage).ceil();
 
             return SingleChildScrollView(
@@ -172,101 +188,179 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                     const SizedBox(height: 10),
 
                     // Search and pagination controls
-                    ResponsiveGridRow(rowSegments: 100, children: [
-                      ResponsiveGridCol(
-                        xs: screenWidth < 360
-                            ? 50
-                            : screenWidth > 430
-                                ? 33
-                                : 40,
-                        md: screenWidth < 768
-                            ? 24
-                            : screenWidth < 950
-                                ? 20
-                                : 15,
-                        lg: screenWidth < 1700 ? 15 : 10,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 48,
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8.0),
-                              border: Border.all(color: kNeutral300),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                    child: Text(
-                                  'Show-',
-                                  style: theme.textTheme.bodyLarge,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                )),
-                                DropdownButton<int>(
-                                  isDense: true,
-                                  padding: EdgeInsets.zero,
-                                  underline: const SizedBox(),
-                                  value: _itemsPerPage,
-                                  icon: const Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Colors.black,
-                                  ),
-                                  items: [10, 20, 50, 100, -1]
-                                      .map<DropdownMenuItem<int>>((int value) {
-                                    return DropdownMenuItem<int>(
-                                      value: value,
+                    ResponsiveGridRow(
+                      rowSegments: 100,
+                      children: [
+                        ResponsiveGridCol(
+                          xs: screenWidth < 360
+                              ? 50
+                              : screenWidth > 430
+                                  ? 33
+                                  : 40,
+                          md: screenWidth < 768
+                              ? 24
+                              : screenWidth < 950
+                                  ? 20
+                                  : 15,
+                          lg: screenWidth < 1700 ? 15 : 10,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 48,
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: kNeutral300),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Flexible(
                                       child: Text(
-                                        value == -1 ? "All" : value.toString(),
-                                        style: theme.textTheme.bodyLarge,
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (int? newValue) {
-                                    setState(() {
-                                      if (newValue == -1) {
-                                        _itemsPerPage = -1;
-                                      } else {
-                                        _itemsPerPage = newValue ?? 10;
-                                      }
-                                      _currentPage = 1;
-                                    });
-                                  },
-                                ),
-                              ],
+                                    'Show-',
+                                    style: theme.textTheme.bodyLarge,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                  DropdownButton<int>(
+                                    isDense: true,
+                                    padding: EdgeInsets.zero,
+                                    underline: const SizedBox(),
+                                    value: _itemsPerPage,
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.black,
+                                    ),
+                                    items: [
+                                      10,
+                                      20,
+                                      50,
+                                      100,
+                                      -1
+                                    ].map<DropdownMenuItem<int>>((int value) {
+                                      return DropdownMenuItem<int>(
+                                        value: value,
+                                        child: Text(
+                                          value == -1
+                                              ? "All"
+                                              : value.toString(),
+                                          style: theme.textTheme.bodyLarge,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (int? newValue) {
+                                      setState(() {
+                                        if (newValue == -1) {
+                                          _itemsPerPage = -1;
+                                        } else {
+                                          _itemsPerPage = newValue ?? 10;
+                                        }
+                                        _currentPage = 1;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      ResponsiveGridCol(
-                          xs: 100,
-                          md: 60,
-                          lg: 35,
-                          child: Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: TextFormField(
-                              showCursor: true,
-                              cursorColor: kTitleColor,
-                              onChanged: (value) {
-                                setState(() {
-                                  searchItem = value;
-                                });
-                              },
-                              keyboardType: TextInputType.name,
-                              decoration: kInputDecoration.copyWith(
-                                contentPadding: const EdgeInsets.all(10.0),
-                                hintText: (_lang.searchByName),
-                                suffixIcon: const Icon(
-                                  FeatherIcons.search,
-                                  color: kNeutral400,
+                        ResponsiveGridCol(
+                            xs: 100,
+                            md: 60,
+                            lg: 35,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: TextFormField(
+                                showCursor: true,
+                                cursorColor: kTitleColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    searchItem = value;
+                                  });
+                                },
+                                keyboardType: TextInputType.name,
+                                decoration: kInputDecoration.copyWith(
+                                  contentPadding: const EdgeInsets.all(10.0),
+                                  hintText: (_lang.searchByName),
+                                  suffixIcon: const Icon(
+                                    FeatherIcons.search,
+                                    color: kNeutral400,
+                                  ),
                                 ),
                               ),
+                            )),
+                        ResponsiveGridCol(
+                          xs: screenWidth < 360
+                              ? 60
+                              : screenWidth > 430
+                                  ? 43
+                                  : 50,
+                          md: screenWidth < 768
+                              ? 34
+                              : screenWidth < 950
+                                  ? 30
+                                  : 25,
+                          lg: screenWidth < 1700 ? 22 : 18,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 48,
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: kNeutral300),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Flexible(
+                                      child: Text(
+                                    'Estado - ',
+                                    style: theme.textTheme.bodyLarge,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                  DropdownButton<String>(
+                                    isDense: true,
+                                    padding: EdgeInsets.zero,
+                                    underline: const SizedBox(),
+                                    value: itemStatus,
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.black,
+                                    ),
+                                    items: [
+                                      "Todos",
+                                      "Disponibles",
+                                      "Reservados",
+                                      "Lavanderia",
+                                    ].map<DropdownMenuItem<String>>(
+                                        (String value) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(
+                                          value.toString(),
+                                          style: theme.textTheme.bodyLarge,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        itemStatus = newValue ?? "";
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
-                          )),
-                    ]),
+                          ),
+                        ),
+                      ],
+                    ),
 
                     const SizedBox(height: 20.0),
                     showAbleDresses.isNotEmpty
@@ -998,6 +1092,398 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
   }
 
 // Show Dialog Calendar Reservations
+  // Future<void> _showCalendarDressDialog(
+  //     BuildContext context, WidgetRef ref, DressModel dress) async {
+  //   // Set form values with existing dress data
+  //   _nameController.text = dress.name;
+  //   _selectedCategory = dress.category;
+  //   _selectedBranch = dress.branchId;
+  //   _subcategoryController.text = dress.subcategory;
+  //   _isAvailable = dress.available;
+  //   _existingImageUrls.addAll(dress.images);
+  //   _selectedImages.clear();
+
+  //   selectedMonth ??= monthList[DateTime.now().month - 1];
+  //   selectedYear ??= DateTime.now().year.toString();
+
+  //   final reservations =
+  //       await ref.read(fullReservationsByDressProvider2(dress.id).future);
+
+  //   // 👉 Asignar valores por defecto (simulando selección manual)
+  //   selectedMonth = monthList[DateTime.now().month - 1];
+  //   selectedYear = DateTime.now().year.toString();
+
+  //   showDialog(
+  //     barrierDismissible: true,
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return StatefulBuilder(
+  //         builder: (context, setState1) {
+  //           final reservationsAsyncValue =
+  //               ref.watch(fullReservationsByDressProvider2(dress.id));
+
+  //           return Dialog(
+  //             surfaceTintColor: kWhite,
+  //             shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(10.0)),
+  //             child: Container(
+  //               width: 800,
+  //               constraints: BoxConstraints(
+  //                 maxHeight: MediaQuery.of(context).size.height * 0.85,
+  //               ),
+  //               child: Column(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Padding(
+  //                     padding: const EdgeInsets.all(12.0),
+  //                     child: Row(
+  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                       children: [
+  //                         Flexible(
+  //                           child: Text(
+  //                             'Reservas para vestido: ${dress.name}',
+  //                             maxLines: 2,
+  //                             overflow: TextOverflow.ellipsis,
+  //                             style: Theme.of(context)
+  //                                 .textTheme
+  //                                 .titleLarge
+  //                                 ?.copyWith(
+  //                                   fontWeight: FontWeight.w600,
+  //                                 ),
+  //                           ),
+  //                         ),
+  //                         IconButton(
+  //                             onPressed: () {
+  //                               _clearForm();
+  //                               Navigator.pop(context);
+  //                             },
+  //                             icon: const Icon(
+  //                               FeatherIcons.x,
+  //                               color: kTitleColor,
+  //                               size: 21.0,
+  //                             )),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                   Padding(
+  //                     padding:
+  //                         const EdgeInsets.only(left: 100, right: 100, top: 10),
+  //                     //child: _buildCalendar(reservationsAsyncValue),
+  //                   ),
+  //                   const Divider(
+  //                     thickness: 1.0,
+  //                     height: 1.0,
+  //                     color: kNeutral300,
+  //                   ),
+  //                   Expanded(
+  //                     child: SingleChildScrollView(
+  //                       padding: const EdgeInsets.all(12.0),
+  //                       child: Form(
+  //                         key: _formKey,
+  //                         child: Column(
+  //                           crossAxisAlignment: CrossAxisAlignment.start,
+  //                           children: [
+  //                             // Images section
+  //                             // _buildImagePicker(
+  //                             //     existingImages: _existingImageUrls),
+  //                             // const SizedBox(height: 16),
+
+  //                             Padding(
+  //                               padding: const EdgeInsets.all(10),
+  //                               child: Row(
+  //                                 mainAxisAlignment:
+  //                                     MainAxisAlignment.spaceBetween,
+  //                                 children: [
+  //                                   // Mes
+
+  //                                   Flexible(
+  //                                     flex: 1,
+  //                                     child: DropdownButtonFormField<String>(
+  //                                       validator: (value) {
+  //                                         if (value == null) {
+  //                                           return 'Mes requerido';
+  //                                         }
+  //                                         return null;
+  //                                       },
+  //                                       decoration: const InputDecoration(
+  //                                         labelText: 'Seleccionar Mes',
+  //                                       ),
+  //                                       value: selectedMonth,
+  //                                       hint: const Text('Seleccionar Mes'),
+  //                                       items: monthList.map((month) {
+  //                                         return DropdownMenuItem(
+  //                                           value: month,
+  //                                           child: Text(month),
+  //                                         );
+  //                                       }).toList(),
+  //                                       onChanged: (value) {
+  //                                         setState1(() {
+  //                                           selectedMonth = value!;
+  //                                         });
+  //                                       },
+  //                                       icon: const Icon(Icons.arrow_drop_down,
+  //                                           color: Colors.grey),
+  //                                       dropdownColor: Colors.white,
+  //                                     ),
+  //                                   ),
+
+  //                                   const SizedBox(
+  //                                       width: 16), // Espacio entre los combos
+
+  //                                   // Año
+  //                                   Flexible(
+  //                                     flex: 1,
+  //                                     child: DropdownButtonFormField<String>(
+  //                                       value: selectedYear,
+  //                                       decoration: const InputDecoration(
+  //                                         labelText: 'Seleccionar Año',
+  //                                       ),
+  //                                       validator: (value) {
+  //                                         if (value == null) {
+  //                                           return 'Año requerido';
+  //                                         }
+  //                                         return null;
+  //                                       },
+  //                                       items: yearList.map((year) {
+  //                                         return DropdownMenuItem<String>(
+  //                                           value: year,
+  //                                           child: Text(year),
+  //                                         );
+  //                                       }).toList(),
+  //                                       onChanged: (value) {
+  //                                         setState1(() {
+  //                                           selectedYear = value!;
+  //                                         });
+  //                                       },
+  //                                       icon: const Icon(Icons.arrow_drop_down,
+  //                                           color: Colors.grey),
+  //                                       dropdownColor: Colors.white,
+  //                                     ),
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                             ),
+
+  //                             const SizedBox(height: 16),
+
+  //                             // Datos de Reservas
+  //                             reservationsAsyncValue.when(
+  //                               data: (data) {
+  //                                 // Convertir mes y año seleccionados a DateTime
+  //                                 final selectedMonthIndex =
+  //                                     monthList.indexOf(selectedMonth!) + 1;
+  //                                 final selectedYearInt =
+  //                                     int.parse(selectedYear!);
+
+  //                                 final filteredReservations =
+  //                                     data.where((data) {
+  //                                   String formattedDate = '';
+  //                                   try {
+  //                                     final date = DateFormat('yyyy-MM-dd')
+  //                                         .parse(data.reservation[
+  //                                                 'reservation_date'] ??
+  //                                             '');
+  //                                     formattedDate =
+  //                                         DateFormat.yMMMMd('es').format(date);
+  //                                   } catch (e) {
+  //                                     formattedDate = data.reservation[
+  //                                             'reservation_date'] ??
+  //                                         '';
+  //                                   }
+
+  //                                   // Convertir la fecha a un objeto DateTime
+  //                                   final date = DateTime.parse(
+  //                                       data.reservation['reservation_date']);
+
+  //                                   return date.month == selectedMonthIndex &&
+  //                                       date.year == selectedYearInt;
+  //                                 }).toList();
+
+  //                                 if (filteredReservations.isEmpty) {
+  //                                   return const Padding(
+  //                                     padding: EdgeInsets.only(top: 16),
+  //                                     child: Text(
+  //                                         "No reservations for this month."),
+  //                                   );
+  //                                 }
+
+  //                                 return ListView.builder(
+  //                                   shrinkWrap: true,
+  //                                   physics:
+  //                                       const NeverScrollableScrollPhysics(),
+  //                                   itemCount: filteredReservations.length,
+  //                                   itemBuilder: (context, index) {
+  //                                     final entry = filteredReservations[index];
+
+  //                                     return Card(
+  //                                       margin: const EdgeInsets.symmetric(
+  //                                           vertical: 8),
+  //                                       child: Padding(
+  //                                         padding: const EdgeInsets.all(12.0),
+  //                                         child: Column(
+  //                                           crossAxisAlignment:
+  //                                               CrossAxisAlignment.start,
+  //                                           children: [
+  //                                             const Row(
+  //                                               children: [
+  //                                                 Icon(Icons.calendar_today,
+  //                                                     size: 20),
+  //                                                 SizedBox(width: 8),
+  //                                                 Text(
+  //                                                   'Detalles de la Reserva',
+  //                                                   style: TextStyle(
+  //                                                     fontWeight:
+  //                                                         FontWeight.bold,
+  //                                                     fontSize: 16,
+  //                                                   ),
+  //                                                 ),
+  //                                               ],
+  //                                             ),
+  //                                             const SizedBox(height: 12),
+
+  //                                             /// Estructura personalizada
+  //                                             Row(
+  //                                               crossAxisAlignment:
+  //                                                   CrossAxisAlignment.start,
+  //                                               children: [
+  //                                                 // Columna izquierda (solo la fecha)
+  //                                                 Container(
+  //                                                   width: 80,
+  //                                                   alignment: Alignment.center,
+  //                                                   padding:
+  //                                                       const EdgeInsets.all(8),
+  //                                                   decoration: BoxDecoration(
+  //                                                     color: Colors
+  //                                                         .deepPurple.shade50,
+  //                                                     borderRadius:
+  //                                                         BorderRadius.circular(
+  //                                                             8),
+  //                                                   ),
+  //                                                   child: Text(
+  //                                                     // Solo el día en formato dos dígitos
+  //                                                     (() {
+  //                                                       final dateStr = entry
+  //                                                                   .reservation[
+  //                                                               'reservation_date'] ??
+  //                                                           '';
+  //                                                       try {
+  //                                                         final date =
+  //                                                             DateTime.parse(
+  //                                                                 dateStr);
+  //                                                         return DateFormat(
+  //                                                                 'dd')
+  //                                                             .format(
+  //                                                                 date); // Solo día
+  //                                                       } catch (_) {
+  //                                                         return 'N/A';
+  //                                                       }
+  //                                                     })(),
+  //                                                     style: const TextStyle(
+  //                                                       fontSize: 20,
+  //                                                       fontWeight:
+  //                                                           FontWeight.bold,
+  //                                                     ),
+  //                                                   ),
+  //                                                 ),
+
+  //                                                 const SizedBox(width: 16),
+
+  //                                                 // Columnas derechas con detalles
+  //                                                 Expanded(
+  //                                                   child: Column(
+  //                                                     crossAxisAlignment:
+  //                                                         CrossAxisAlignment
+  //                                                             .start,
+  //                                                     children: [
+  //                                                       _buildDetailRow(
+  //                                                         'Servicio:',
+  //                                                         entry.service?[
+  //                                                                 'name'] ??
+  //                                                             'N/A',
+  //                                                       ),
+  //                                                       _buildDetailRow(
+  //                                                         'Cliente:',
+  //                                                         entry.client
+  //                                                                 ?.customerName ??
+  //                                                             'N/A',
+  //                                                       ),
+  //                                                       _buildDetailRow(
+  //                                                         'Telefono Cliente:',
+  //                                                         entry.client
+  //                                                                 ?.phoneNumber ??
+  //                                                             'N/A',
+  //                                                       ),
+  //                                                       _buildDetailRow(
+  //                                                         'Fecha:',
+  //                                                         entry.reservation[
+  //                                                                     'reservation_date'] +
+  //                                                                 ' - ' +
+  //                                                                 entry.reservation[
+  //                                                                     'reservation_time'] ??
+  //                                                             'N/A',
+  //                                                       ),
+  //                                                       _buildDetailRow(
+  //                                                         'Estado:',
+  //                                                         entry.reservation[
+  //                                                                 'status'] ??
+  //                                                             'Pendiente',
+  //                                                       ),
+  //                                                     ],
+  //                                                   ),
+  //                                                 ),
+  //                                               ],
+  //                                             ),
+  //                                           ],
+  //                                         ),
+  //                                       ),
+  //                                     );
+  //                                   },
+  //                                 );
+  //                               },
+  //                               loading: () => const Center(
+  //                                   child: CircularProgressIndicator()),
+  //                               error: (e, _) => Padding(
+  //                                 padding: const EdgeInsets.only(top: 16),
+  //                                 child: Text('Error loading reservations: $e'),
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   const Divider(
+  //                     thickness: 1.0,
+  //                     height: 1.0,
+  //                     color: kNeutral300,
+  //                   ),
+  //                   Padding(
+  //                     padding: const EdgeInsets.all(12.0),
+  //                     child: Row(
+  //                       mainAxisAlignment: MainAxisAlignment.end,
+  //                       children: [
+  //                         OutlinedButton(
+  //                           onPressed: () {
+  //                             _clearForm();
+  //                             Navigator.pop(context);
+  //                           },
+  //                           child: Text(lang.S.of(context).cancel),
+  //                         ),
+  //                         const SizedBox(width: 10),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
+
   Future<void> _showCalendarDressDialog(
       BuildContext context, WidgetRef ref, DressModel dress) async {
     // Set form values with existing dress data
@@ -1009,15 +1495,11 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     _existingImageUrls.addAll(dress.images);
     _selectedImages.clear();
 
-    selectedMonth ??= monthList[DateTime.now().month - 1];
+    // Solo inicializar el año, quitar el mes
     selectedYear ??= DateTime.now().year.toString();
 
     final reservations =
         await ref.read(fullReservationsByDressProvider2(dress.id).future);
-
-    // 👉 Asignar valores por defecto (simulando selección manual)
-    selectedMonth = monthList[DateTime.now().month - 1];
-    selectedYear = DateTime.now().year.toString();
 
     showDialog(
       barrierDismissible: true,
@@ -1072,11 +1554,6 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                         ],
                       ),
                     ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(left: 100, right: 100, top: 10),
-                      //child: _buildCalendar(reservationsAsyncValue),
-                    ),
                     const Divider(
                       thickness: 1.0,
                       height: 1.0,
@@ -1090,60 +1567,20 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Images section
-                              // _buildImagePicker(
-                              //     existingImages: _existingImageUrls),
-                              // const SizedBox(height: 16),
-
+                              // Solo selector de año
                               Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    // Mes
-
-                                    Flexible(
-                                      flex: 1,
-                                      child: DropdownButtonFormField<String>(
-                                        validator: (value) {
-                                          if (value == null) {
-                                            return 'Mes requerido';
-                                          }
-                                          return null;
-                                        },
-                                        decoration: const InputDecoration(
-                                          labelText: 'Seleccionar Mes',
-                                        ),
-                                        value: selectedMonth,
-                                        hint: const Text('Seleccionar Mes'),
-                                        items: monthList.map((month) {
-                                          return DropdownMenuItem(
-                                            value: month,
-                                            child: Text(month),
-                                          );
-                                        }).toList(),
-                                        onChanged: (value) {
-                                          setState1(() {
-                                            selectedMonth = value!;
-                                          });
-                                        },
-                                        icon: const Icon(Icons.arrow_drop_down,
-                                            color: Colors.grey),
-                                        dropdownColor: Colors.white,
-                                      ),
-                                    ),
-
-                                    const SizedBox(
-                                        width: 16), // Espacio entre los combos
-
-                                    // Año
+                                    // Solo el dropdown del año
                                     Flexible(
                                       flex: 1,
                                       child: DropdownButtonFormField<String>(
                                         value: selectedYear,
                                         decoration: const InputDecoration(
                                           labelText: 'Seleccionar Año',
+                                          prefixIcon:
+                                              Icon(Icons.calendar_today),
                                         ),
                                         validator: (value) {
                                           if (value == null) {
@@ -1167,190 +1604,401 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                         dropdownColor: Colors.white,
                                       ),
                                     ),
+                                    const Spacer(
+                                        flex: 2), // Espacio para centrar
                                   ],
                                 ),
                               ),
 
                               const SizedBox(height: 16),
 
-                              // Datos de Reservas
+                              // Lista de reservaciones organizadas por mes
                               reservationsAsyncValue.when(
                                 data: (data) {
-                                  // Convertir mes y año seleccionados a DateTime
-                                  final selectedMonthIndex =
-                                      monthList.indexOf(selectedMonth!) + 1;
                                   final selectedYearInt =
                                       int.parse(selectedYear!);
 
-                                  final filteredReservations =
-                                      data.where((data) {
-                                    String formattedDate = '';
+                                  // Filtrar reservaciones del año seleccionado
+                                  final yearReservations =
+                                      data.where((reservation) {
                                     try {
-                                      final date = DateFormat('yyyy-MM-dd')
-                                          .parse(data.reservation[
+                                      final date = DateTime.parse(
+                                          reservation.reservation[
                                                   'reservation_date'] ??
                                               '');
-                                      formattedDate =
-                                          DateFormat.yMMMMd('es').format(date);
+                                      return date.year == selectedYearInt;
                                     } catch (e) {
-                                      formattedDate = data.reservation[
-                                              'reservation_date'] ??
-                                          '';
+                                      return false;
                                     }
-
-                                    // Convertir la fecha a un objeto DateTime
-                                    final date = DateTime.parse(
-                                        data.reservation['reservation_date']);
-
-                                    return date.month == selectedMonthIndex &&
-                                        date.year == selectedYearInt;
                                   }).toList();
 
-                                  if (filteredReservations.isEmpty) {
-                                    return const Padding(
-                                      padding: EdgeInsets.only(top: 16),
-                                      child: Text(
-                                          "No reservations for this month."),
-                                    );
+                                  // Agrupar reservaciones por mes
+                                  final reservationsByMonth =
+                                      <int, List<FullReservation>>{};
+
+                                  for (var reservation in yearReservations) {
+                                    try {
+                                      final date = DateTime.parse(
+                                          reservation.reservation[
+                                                  'reservation_date'] ??
+                                              '');
+                                      final month = date.month;
+
+                                      if (!reservationsByMonth
+                                          .containsKey(month)) {
+                                        reservationsByMonth[month] = [];
+                                      }
+                                      reservationsByMonth[month]!
+                                          .add(reservation);
+                                    } catch (e) {
+                                      // Ignorar reservaciones con fechas inválidas
+                                      continue;
+                                    }
                                   }
 
-                                  return ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: filteredReservations.length,
-                                    itemBuilder: (context, index) {
-                                      final entry = filteredReservations[index];
+                                  // Ordenar reservaciones dentro de cada mes por fecha
+                                  reservationsByMonth
+                                      .forEach((month, reservations) {
+                                    reservations.sort((a, b) {
+                                      final dateA =
+                                          a.reservation['reservation_date'] ??
+                                              '';
+                                      final dateB =
+                                          b.reservation['reservation_date'] ??
+                                              '';
+                                      final timeA =
+                                          a.reservation['reservation_time'] ??
+                                              '';
+                                      final timeB =
+                                          b.reservation['reservation_time'] ??
+                                              '';
+                                      final dateCompare =
+                                          dateA.compareTo(dateB);
+                                      return dateCompare != 0
+                                          ? dateCompare
+                                          : timeA.compareTo(timeB);
+                                    });
+                                  });
 
-                                      return Card(
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 8),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const Row(
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children:
+                                        monthList.asMap().entries.map((entry) {
+                                      final monthIndex = entry.key +
+                                          1; // Los meses van de 1-12
+                                      final monthName = entry.value;
+                                      final monthReservations =
+                                          reservationsByMonth[monthIndex] ?? [];
+
+                                      return Container(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 24),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Título del mes
+                                            Container(
+                                              width: double.infinity,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                      horizontal: 16),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    Colors.deepPurple.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: Colors
+                                                      .deepPurple.shade200,
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Row(
                                                 children: [
-                                                  Icon(Icons.calendar_today,
-                                                      size: 20),
-                                                  SizedBox(width: 8),
+                                                  Icon(
+                                                    Icons.calendar_month,
+                                                    color: Colors
+                                                        .deepPurple.shade700,
+                                                    size: 20,
+                                                  ),
+                                                  const SizedBox(width: 8),
                                                   Text(
-                                                    'Detalles de la Reserva',
+                                                    monthName,
                                                     style: TextStyle(
+                                                      fontSize: 18,
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      fontSize: 16,
+                                                      color: Colors
+                                                          .deepPurple.shade700,
+                                                    ),
+                                                  ),
+                                                  const Spacer(),
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: monthReservations
+                                                              .isNotEmpty
+                                                          ? Colors
+                                                              .green.shade100
+                                                          : Colors
+                                                              .grey.shade200,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                    child: Text(
+                                                      '${monthReservations.length} reserva${monthReservations.length != 1 ? 's' : ''}',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: monthReservations
+                                                                .isNotEmpty
+                                                            ? Colors
+                                                                .green.shade700
+                                                            : Colors
+                                                                .grey.shade600,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                              const SizedBox(height: 12),
+                                            ),
 
-                                              /// Estructura personalizada
-                                              Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  // Columna izquierda (solo la fecha)
-                                                  Container(
-                                                    width: 80,
-                                                    alignment: Alignment.center,
-                                                    padding:
-                                                        const EdgeInsets.all(8),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors
-                                                          .deepPurple.shade50,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
+                                            const SizedBox(height: 12),
+
+                                            // Contenido del mes
+                                            if (monthReservations.isEmpty)
+                                              Container(
+                                                width: double.infinity,
+                                                padding:
+                                                    const EdgeInsets.all(20),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color: Colors.grey.shade300,
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.event_busy,
+                                                      color:
+                                                          Colors.grey.shade400,
+                                                      size: 32,
                                                     ),
-                                                    child: Text(
-                                                      // Solo el día en formato dos dígitos
-                                                      (() {
-                                                        final dateStr = entry
-                                                                    .reservation[
-                                                                'reservation_date'] ??
-                                                            '';
-                                                        try {
-                                                          final date =
-                                                              DateTime.parse(
-                                                                  dateStr);
-                                                          return DateFormat(
-                                                                  'dd')
-                                                              .format(
-                                                                  date); // Solo día
-                                                        } catch (_) {
-                                                          return 'N/A';
-                                                        }
-                                                      })(),
-                                                      style: const TextStyle(
-                                                        fontSize: 20,
-                                                        fontWeight:
-                                                            FontWeight.bold,
+                                                    const SizedBox(height: 8),
+                                                    Text(
+                                                      'No hay reservaciones este mes',
+                                                      style: TextStyle(
+                                                        color: Colors
+                                                            .grey.shade600,
+                                                        fontSize: 14,
+                                                        fontStyle:
+                                                            FontStyle.italic,
                                                       ),
                                                     ),
+                                                  ],
+                                                ),
+                                              )
+                                            else
+                                              ...monthReservations
+                                                  .map((reservation) {
+                                                return Card(
+                                                  margin: const EdgeInsets.only(
+                                                      bottom: 12),
+                                                  elevation: 2,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
                                                   ),
-
-                                                  const SizedBox(width: 16),
-
-                                                  // Columnas derechas con detalles
-                                                  Expanded(
-                                                    child: Column(
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            16.0),
+                                                    child: Row(
                                                       crossAxisAlignment:
                                                           CrossAxisAlignment
                                                               .start,
                                                       children: [
-                                                        _buildDetailRow(
-                                                          'Servicio:',
-                                                          entry.service?[
-                                                                  'name'] ??
-                                                              'N/A',
+                                                        // Fecha destacada
+                                                        Container(
+                                                          width: 60,
+                                                          height: 60,
+                                                          alignment:
+                                                              Alignment.center,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors
+                                                                .deepPurple
+                                                                .shade100,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                            border: Border.all(
+                                                              color: Colors
+                                                                  .deepPurple
+                                                                  .shade300,
+                                                              width: 1,
+                                                            ),
+                                                          ),
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Text(
+                                                                (() {
+                                                                  try {
+                                                                    final date =
+                                                                        DateTime.parse(reservation.reservation['reservation_date'] ??
+                                                                            '');
+                                                                    return DateFormat(
+                                                                            'dd')
+                                                                        .format(
+                                                                            date);
+                                                                  } catch (_) {
+                                                                    return 'N/A';
+                                                                  }
+                                                                })(),
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: 20,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color: Colors
+                                                                      .deepPurple
+                                                                      .shade700,
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                (() {
+                                                                  try {
+                                                                    final date =
+                                                                        DateTime.parse(reservation.reservation['reservation_date'] ??
+                                                                            '');
+                                                                    return DateFormat(
+                                                                            'MMM',
+                                                                            'es')
+                                                                        .format(
+                                                                            date)
+                                                                        .toUpperCase();
+                                                                  } catch (_) {
+                                                                    return '';
+                                                                  }
+                                                                })(),
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: 10,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  color: Colors
+                                                                      .deepPurple
+                                                                      .shade600,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
 
-                                                       _buildDetailRow(
-                                                          'Cliente:',
-                                                          entry.client?.customerName ??
-                                                              'N/A',
-                                                       ),
-                                                        _buildDetailRow(
-                                                          'Telefono Cliente:',
-                                                          entry.client?.phoneNumber ??
-                                                              'N/A',
-                                                        ),
-                                                        _buildDetailRow(
-                                                          'Fecha:',
-                                                          entry.reservation[
-                                                                      'reservation_date'] +
-                                                                  ' - ' +
-                                                                  entry.reservation[
-                                                                      'reservation_time'] ??
-                                                              'N/A',
-                                                        ),
-                                                        _buildDetailRow(
-                                                          'Estado:',
-                                                          entry.reservation[
-                                                                  'status'] ??
-                                                              'Pendiente',
+                                                        const SizedBox(
+                                                            width: 16),
+
+                                                        // Detalles de la reservación
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              _buildDetailRow(
+                                                                'Servicio:',
+                                                                reservation.service?[
+                                                                        'name'] ??
+                                                                    'N/A',
+                                                              ),
+                                                              _buildDetailRow(
+                                                                'Cliente:',
+                                                                reservation
+                                                                        .client
+                                                                        ?.customerName ??
+                                                                    'N/A',
+                                                              ),
+                                                              _buildDetailRow(
+                                                                'Teléfono:',
+                                                                reservation
+                                                                        .client
+                                                                        ?.phoneNumber ??
+                                                                    'N/A',
+                                                              ),
+                                                              _buildDetailRow(
+                                                                'Hora:',
+                                                                reservation.reservation[
+                                                                        'reservation_time'] ??
+                                                                    'N/A',
+                                                              ),
+                                                              _buildDetailRow(
+                                                                'Estado:',
+                                                                reservation.reservation[
+                                                                        'status'] ??
+                                                                    'Pendiente',
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
+                                                );
+                                              }).toList(),
+                                          ],
                                         ),
                                       );
-                                    },
+                                    }).toList(),
                                   );
                                 },
                                 loading: () => const Center(
                                     child: CircularProgressIndicator()),
                                 error: (e, _) => Padding(
                                   padding: const EdgeInsets.only(top: 16),
-                                  child: Text('Error loading reservations: $e'),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline,
+                                        color: Colors.red.shade400,
+                                        size: 48,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Error al cargar las reservaciones',
+                                        style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        '$e',
+                                        style: TextStyle(
+                                          color: Colors.red.shade600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
 
@@ -1405,6 +2053,37 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     );
   }
 
+// Método auxiliar para construir filas de detalles (si no existe)
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   List<String> monthList = [
     'Enero',
     'Febrero',
@@ -1420,21 +2099,21 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     'Diciembre'
   ];
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(value),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildDetailRow(String label, String value) {
+  //   return Padding(
+  //     padding: const EdgeInsets.only(bottom: 6.0),
+  //     child: Row(
+  //       children: [
+  //         Text(
+  //           label,
+  //           style: const TextStyle(fontWeight: FontWeight.bold),
+  //         ),
+  //         const SizedBox(width: 6),
+  //         Expanded(
+  //           child: Text(value),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

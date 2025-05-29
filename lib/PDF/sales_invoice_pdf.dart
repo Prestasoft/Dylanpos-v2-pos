@@ -24,7 +24,7 @@ FutureOr<Uint8List> generateSaleDocument({
   SaleTransactionModel? post,
   required BuildContext context,
 }) async {
-  final imageData = await rootBundle.load('images/sideLogo.png');
+  final imageData = await rootBundle.load('images/vg_logo.png');
   final imageBytes = imageData.buffer.asUint8List();
   final image = pw.MemoryImage(imageBytes);
 
@@ -53,6 +53,10 @@ FutureOr<Uint8List> generateSaleDocument({
   }
 
   List<List<String>> rows = [];
+  final notas = reservaciones
+      .map((e) => e?.reservation['nota']?.toString())
+      .where((nota) => nota != null && nota.trim().isNotEmpty)
+      .toList();
 
   for (int i = 0; i < transactions.productList!.length; i++) {
     final item = transactions.productList![i];
@@ -64,7 +68,6 @@ FutureOr<Uint8List> generateSaleDocument({
     rows.add(<String>[
       '${i + 1}',
       '''${item.productName}\n$serviceDescription''',
-      '',
       myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
       myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
       calculateProductVat(product: item),
@@ -87,96 +90,105 @@ FutureOr<Uint8List> generateSaleDocument({
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              ///________Company_Name_________________________________________________________
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(10.0),
-                child: pw.Center(
-                  child: pw.Column(children: [
-                    pw.Image(
-                      image,
-                      width: 300,
+              pw.Row(
+                children: [
+                  pw.Container(
+                    width: 150,
+                    padding: const pw.EdgeInsets.all(10.0),
+                    child: pw.Center(
+                      child: pw.Column(
+                        children: [
+                          pw.Image(
+                            image,
+                          ),
+                        ],
+                      ),
                     ),
-                    // pw.Text(
-                    //   personalInformation.companyName,
-                    //   style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                    //       color: PdfColors.black,
-                    //       fontSize: 22.0,
-                    //       fontWeight: pw.FontWeight.bold),
-                    // ),
-                  ]),
-                ),
-              ),
-
-              ///______Phone________________________________________________________________
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(1.0),
-                child: pw.Center(
-                  child: pw.Text(
-                    'Teléfono: ${personalInformation.phoneNumber}',
-                    style: pw.Theme.of(context)
-                        .defaultTextStyle
-                        .copyWith(color: PdfColors.black, fontSize: 14.0),
                   ),
-                ),
-              ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        personalInformation.companyName,
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(
+                            color: PdfColors.black,
+                            fontSize: 20.0,
+                            fontWeight: pw.FontWeight.bold),
+                      ),
 
-              ///______Address________________________________________________________________
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(1.0),
-                child: pw.Center(
-                  child: pw.Text(
-                    'Dirección: ${personalInformation.countryName}',
-                    style: pw.Theme.of(context)
-                        .defaultTextStyle
-                        .copyWith(color: PdfColors.black, fontSize: 14.0),
-                  ),
-                ),
-              ),
-
-              ///______Shop_GST________________________________________________________________
-              personalInformation.gst.trim().isNotEmpty
-                  ? pw.Container(
-                      width: double.infinity,
-                      padding: const pw.EdgeInsets.all(1.0),
-                      child: pw.Center(
-                        child: pw.Text(
-                          'RNC: ${personalInformation.gst}',
-                          style: pw.Theme.of(context)
-                              .defaultTextStyle
-                              .copyWith(color: PdfColors.black, fontSize: 14.0),
+                      ///______Phone________________________________________________________________
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(1.0),
+                        child: pw.Center(
+                          child: pw.Text(
+                            'Teléfono: ${personalInformation.phoneNumber}',
+                            style: pw.Theme.of(context)
+                                .defaultTextStyle
+                                .copyWith(
+                                    color: PdfColors.black, fontSize: 14.0),
+                          ),
                         ),
                       ),
-                    )
-                  : pw.Container(),
+
+                      ///______Address________________________________________________________________
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(1.0),
+                        child: pw.Center(
+                          child: pw.Text(
+                            'Dirección: ${personalInformation.countryName}',
+                            style: pw.Theme.of(context)
+                                .defaultTextStyle
+                                .copyWith(
+                                    color: PdfColors.black, fontSize: 14.0),
+                          ),
+                        ),
+                      ),
+
+                      ///______Shop_GST________________________________________________________________
+                      personalInformation.gst.trim().isNotEmpty
+                          ? pw.Container(
+                              padding: const pw.EdgeInsets.all(1.0),
+                              child: pw.Center(
+                                child: pw.Text(
+                                  'RNC: ${personalInformation.gst}',
+                                  style: pw.Theme.of(context)
+                                      .defaultTextStyle
+                                      .copyWith(
+                                          color: PdfColors.black,
+                                          fontSize: 14.0),
+                                ),
+                              ),
+                            )
+                          : pw.Container(),
+                    ],
+                  )
+                ],
+              ),
 
               ///________Bill/Invoice_________________________________________________________
               pw.Container(
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(10.0),
                 child: pw.Center(
-                    child: pw.Container(
-                        decoration: pw.BoxDecoration(
-                          border:
-                              pw.Border.all(color: PdfColors.black, width: 0.5),
-                          borderRadius:
-                              const pw.BorderRadius.all(pw.Radius.circular(10)),
-                        ),
-                        child: pw.Padding(
-                          padding: const pw.EdgeInsets.only(
-                              top: 2.0, bottom: 2, left: 5, right: 5),
-                          child: pw.Text(
-                            'Factura de Reservacion',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(
-                                    color: PdfColors.black,
-                                    fontSize: 16.0,
-                                    fontWeight: pw.FontWeight.bold),
-                          ),
-                        ))),
+                  child: pw.Container(
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColors.black, width: 0.5),
+                      borderRadius:
+                          const pw.BorderRadius.all(pw.Radius.circular(10)),
+                    ),
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.only(
+                          top: 2.0, bottom: 2, left: 5, right: 5),
+                      child: pw.Text(
+                        'Factura de Reservacion',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(
+                            color: PdfColors.black,
+                            fontSize: 16.0,
+                            fontWeight: pw.FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
               ),
 
               ///___________price_section_____________________________________________________
@@ -251,35 +263,38 @@ FutureOr<Uint8List> generateSaleDocument({
 
                       ///_____Address_______________________________________
                       pw.SizedBox(height: 2),
-                      pw.Row(children: [
-                        pw.SizedBox(
-                          width: 60.0,
-                          child: pw.Text(
-                            'Dirección',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
+                      pw.Row(
+                        children: [
+                          pw.SizedBox(
+                            width: 60.0,
+                            child: pw.Text(
+                              'Dirección',
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
                           ),
-                        ),
-                        pw.SizedBox(
-                          width: 10.0,
-                          child: pw.Text(
-                            ':',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
+                          pw.SizedBox(
+                            width: 10.0,
+                            child: pw.Text(
+                              ':',
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
                           ),
-                        ),
-                        pw.SizedBox(
-                          width: 140.0,
-                          child: pw.Text(
-                            transactions.customerAddress,
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
+                          pw.SizedBox(
+                            width: 140.0,
+                            child: pw.Text(
+                              transactions.customerAddress,
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
                           ),
-                        ),
-                      ]),
+                        ],
+                      ),
+                      pw.SizedBox(height: 2),
 
                       ///_____Party GST_______________________________________
                       pw.SizedBox(
@@ -555,12 +570,11 @@ FutureOr<Uint8List> generateSaleDocument({
                 // headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#D5D8DC')),
                 columnWidths: <int, pw.TableColumnWidth>{
                   0: const pw.FlexColumnWidth(1),
-                  1: const pw.FlexColumnWidth(4.5),
+                  1: const pw.FlexColumnWidth(6),
                   2: const pw.FlexColumnWidth(1.5),
-                  3: const pw.FlexColumnWidth(1.5),
-                  4: const pw.FlexColumnWidth(1.7),
+                  3: const pw.FlexColumnWidth(1.7),
+                  4: const pw.FlexColumnWidth(1.5),
                   5: const pw.FlexColumnWidth(1.5),
-                  6: const pw.FlexColumnWidth(1.5),
                 },
                 headerStyle: pw.TextStyle(
                     color: PdfColors.black,
@@ -572,25 +586,22 @@ FutureOr<Uint8List> generateSaleDocument({
                   0: pw.Alignment.center,
                   1: pw.Alignment.centerLeft,
                   2: pw.Alignment.center,
-                  3: pw.Alignment.center,
+                  3: pw.Alignment.centerRight,
                   4: pw.Alignment.centerRight,
                   5: pw.Alignment.centerRight,
-                  6: pw.Alignment.centerRight,
                 },
                 cellAlignments: <int, pw.Alignment>{
                   0: pw.Alignment.center,
                   1: pw.Alignment.centerLeft,
                   2: pw.Alignment.center,
-                  3: pw.Alignment.center,
+                  3: pw.Alignment.centerRight,
                   4: pw.Alignment.centerRight,
                   5: pw.Alignment.centerRight,
-                  6: pw.Alignment.centerRight,
                 },
                 data: <List<String>>[
                   <String>[
                     'N°',
                     'Descripción del producto',
-                    'Garantía',
                     'Cantidad',
                     'Precio unitario',
                     'Impuesto',
@@ -624,6 +635,17 @@ FutureOr<Uint8List> generateSaleDocument({
                                 color: PdfColors.black,
                                 fontSize: 11,
                                 fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.SizedBox(height: 10.0),
+                        pw.Container(
+                          width: 300,
+                          child: pw.Text(
+                            "Notas: ${notas.isEmpty ? 'Sin notas' : notas.join(', ')}",
+                            style: pw.TextStyle(
+                              color: PdfColors.black,
+                              fontSize: 11,
+                            ),
                           ),
                         )
                       ]),
@@ -1409,29 +1431,26 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           pw.Text('Estado:',
               style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
           pw.Text(
-            reservacion.reservation['stado']?.toString().toUpperCase() ??
+            reservacion.reservation['estado']?.toString().toUpperCase() ??
                 'Confirmado',
             style: pw.TextStyle(fontSize: 8),
           ),
         ],
       ),
-      // Mostrar notas si existen (acepta 'notas' o 'notes')
-      if ((reservacion.reservation['notas'] != null && reservacion.reservation['notas'].toString().isNotEmpty) ||
-          (reservacion.reservation['notes'] != null && reservacion.reservation['notes'].toString().isNotEmpty)) ...[
+      if (reservacion.reservation['nota'] != null &&
+          reservacion.reservation['nota'].toString().isNotEmpty) ...[
         pw.SizedBox(height: 2),
         pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text('Notas:',
                 style:
                     pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(width: 5),
-            pw.Expanded(
-              child: pw.Text(
-                reservacion.reservation['notas']?.toString() ?? reservacion.reservation['notes']?.toString() ?? '',
-                style: pw.TextStyle(fontSize: 8),
-                maxLines: 2,
-              ),
+            pw.Text(
+              reservacion.reservation['nota'].toString(),
+              style: pw.TextStyle(fontSize: 8),
+              maxLines: 2,
             ),
           ],
         ),

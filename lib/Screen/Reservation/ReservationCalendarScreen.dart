@@ -334,11 +334,14 @@ class _ReservationCalendarScreenState
             child: const Text('No'),
           ),
           TextButton(
-            onPressed: () {
-              ref.read(ActualizarEstadoReservaProvider({
-                'id': [reservation.id],
-                'estado': 'cancelado'
-              }));
+            onPressed: () async  {
+
+                await ref.read(cancelReservationProvider(reservation.id));
+
+              // ref.read(ActualizarEstadoReservaProvider({
+              //   'id': [reservation.id],
+              //   'estado': 'cancelado'
+              // }));
               Navigator.of(context).pop(); // Cierra el diálogo de confirmación
             },
             child: const Text('Sí, Cancelar'),
@@ -444,6 +447,8 @@ class ReservationCard extends ConsumerWidget {
               final serviceName = fullReservation?.service?['name'] ??
                   'Servicio no especificado';
 
+              final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -502,6 +507,18 @@ class ReservationCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Servicio: $serviceName',
+                            style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.textsms_outlined,
+                          size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Nota: $note',
                             style: const TextStyle(fontSize: 14)),
                       ),
                     ],
@@ -714,6 +731,8 @@ class ReservationDetailView extends ConsumerWidget {
                                             ''),
                                     _buildDetailItem(Icons.business, 'Sucursal',
                                         reservationData['branch_id'] ?? ''),
+                                    _buildDetailItem(Icons.textsms_outlined,
+                                        'Notas', reservationData['nota'] ?? ''),
                                   ],
                                 ),
 

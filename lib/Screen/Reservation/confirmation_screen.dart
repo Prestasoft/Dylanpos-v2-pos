@@ -35,8 +35,7 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
 class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
   bool isSubmitting = false;
 
-  // 1. Agregar controlador para notas
-  final TextEditingController _notasController = TextEditingController();
+  TextEditingController noteController = TextEditingController();
 
   String _formatDate(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
@@ -65,13 +64,17 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       }).future);
     } else {
       for (var dress in widget.dressReservations) {
-        final available = await ref.read(
-          isDressAvailableProvider({
-            'dressId': dress.id,
-            'date': formattedDate,
-            'time': formattedTime,
-          }).future,
-        );
+        bool available = true;
+
+        if (dress.componentName != "Sin Vestimenta") {
+          available = await ref.read(
+            isDressAvailableProvider({
+              'dressId': dress.id,
+              'date': formattedDate,
+              'time': formattedTime,
+            }).future,
+          );
+        }
 
         if (!available) {
           // Si alguno no está disponible, se puede actuar
@@ -133,7 +136,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       'date': formattedDate,
       'time': formattedTime,
       'multiple_dress': multipleDress,
-      'notas': _notasController.text, // <-- Guardar notas
+      'note': noteController.text,
     }).future);
 
     setState(() {
@@ -203,17 +206,45 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                 "Hora",
                 widget.selectedTime.format(context),
               ),
-              // Campo de Notas
               SizedBox(height: 16),
-              Text("Notas", style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
-              TextField(
-                controller: _notasController,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Escribe aquí tus notas...',
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.textsms_outlined,
+                          color: Theme.of(context).primaryColor, size: 28),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Nota",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: noteController,
+                                    decoration: InputDecoration(
+                                      labelText: "Nota opcional",
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 24),
@@ -280,9 +311,8 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: widget.dressReservations
-            .map(
-                (dress) => _buildInfoItem(icon, dress.componentName, dress.name)
-                )
+            .map((dress) =>
+                _buildInfoItem(icon, dress.componentName, dress.name))
             .toList(),
       );
     } else {
