@@ -338,7 +338,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "dueIsNotForGuestCustomer": MessageLookupByLibrary.simpleMessage(
           "La deuda no es para clientes invitados",
         ),
-        "dueList": MessageLookupByLibrary.simpleMessage("Lista de pendientes"),
+        "dueList": MessageLookupByLibrary.simpleMessage("Cuentas x Cobrar"),
         "dueListCustomer": MessageLookupByLibrary.simpleMessage(
           "Lista de Pendientes (Cliente)",
         ),
@@ -1398,7 +1398,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "total": MessageLookupByLibrary.simpleMessage("total"),
         "totalAmount": MessageLookupByLibrary.simpleMessage("Total de la cantidad"),
         "totalDiscount": MessageLookupByLibrary.simpleMessage("Descuento total"),
-        "totalDue": MessageLookupByLibrary.simpleMessage("Total adeudado"),
+        "totalDue": MessageLookupByLibrary.simpleMessage("Total Pendiente de Pago"),
         "totalDues": MessageLookupByLibrary.simpleMessage("Total de deudas"),
         "totalExpense": MessageLookupByLibrary.simpleMessage("Gasto total"),
         "totalIncome": MessageLookupByLibrary.simpleMessage("Ingresos totales"),

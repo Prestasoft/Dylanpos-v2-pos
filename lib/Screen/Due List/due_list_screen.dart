@@ -146,8 +146,8 @@ class _DueListState extends State<DueList> {
                             padding: const EdgeInsets.all(12.0),
                             child: Text(
                               selectedParties == 'Clientes'
-                                  ? 'Lista de pagos pendientes (Clientes)'
-                                  : 'Lista de pagos pendientes (Proveedores)',
+                                  ? 'Lista de Cuentas x Cobrar (Clientes)'
+                                  : 'Lista de Cuentas x Pagar (Proveedores)',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
