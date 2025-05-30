@@ -171,7 +171,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                     style: GoogleFonts.poppins(
                       fontSize:
                           context.width() < 900 ? 25 : context.width() * 0.018,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: Colors.black,
                     ),
                     textAlign: TextAlign.start,

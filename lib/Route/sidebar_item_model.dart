@@ -230,12 +230,12 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/stock-list',
       // sidebarItemType: SidebarItemType.submenu,
     ),
-    SidebarItemModel(
-      name: lang.S.current.subciption,
-      iconPath: 'images/dashboard_icon/subscription.svg',
-      navigationPath: '/subscription',
+    // SidebarItemModel(
+    //  name: lang.S.current.subciption,
+    //  iconPath: 'images/dashboard_icon/subscription.svg',
+    //  navigationPath: '/subscription',
       // sidebarItemType: SidebarItemType.submenu,
-    ),
+    //),
     SidebarItemModel(
       name: lang.S.current.userRole,
       iconPath: 'images/dashboard_icon/user_role.svg',
