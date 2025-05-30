@@ -27,7 +27,9 @@ class DueList extends StatefulWidget {
 }
 
 class _DueListState extends State<DueList> {
-  double totalCustomerDue({required List<CustomerModel> customers, required String selectedCustomerType}) {
+  double totalCustomerDue(
+      {required List<CustomerModel> customers,
+      required String selectedCustomerType}) {
     double totalDue = 0;
     for (var c in customers) {
       totalDue += double.parse(c.dueAmount);
@@ -37,7 +39,7 @@ class _DueListState extends State<DueList> {
 
   int selectedItem = 10;
   int itemCount = 10;
-  String selectedParties = 'Customers';
+  String selectedParties = 'Clientes';
   ScrollController mainScroll = ScrollController();
   String searchItem = '';
 
@@ -61,23 +63,31 @@ class _DueListState extends State<DueList> {
       child: Scaffold(
           backgroundColor: kDarkWhite,
           body: Consumer(builder: (_, ref, watch) {
-            AsyncValue<List<CustomerModel>> customers = ref.watch(allCustomerProvider);
+            AsyncValue<List<CustomerModel>> customers =
+                ref.watch(allCustomerProvider);
             return customers.when(data: (allCustomerList) {
               List<CustomerModel> customerList = [];
               List<CustomerModel> supplierList = [];
               List<CustomerModel> showAbleCustomer = [];
               List<CustomerModel> showAbleSupplier = [];
               for (var value1 in allCustomerList) {
-                if (value1.type != 'Supplier' && value1.dueAmount.toDouble() > 0) {
+                if (value1.type != 'Proveedores' &&
+                    value1.dueAmount.toDouble() > 0) {
                   customerList.add(value1);
                 } else {
-                  value1.dueAmount.toDouble() > 0 ? supplierList.add(value1) : null;
+                  value1.dueAmount.toDouble() > 0
+                      ? supplierList.add(value1)
+                      : null;
                 }
               }
 
               ///___________customer_filter______________________________________________________
               for (var element in customerList) {
-                if (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.phoneNumber.contains(searchItem)) {
+                if (element.customerName
+                        .removeAllWhiteSpace()
+                        .toLowerCase()
+                        .contains(searchItem.toLowerCase()) ||
+                    element.phoneNumber.contains(searchItem)) {
                   showAbleCustomer.add(element);
                 } else if (searchItem == '') {
                   showAbleCustomer.add(element);
@@ -86,7 +96,11 @@ class _DueListState extends State<DueList> {
 
               ///___________Suppiler_filter______________________________________________________
               for (var element in supplierList) {
-                if (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.phoneNumber.contains(searchItem)) {
+                if (element.customerName
+                        .removeAllWhiteSpace()
+                        .toLowerCase()
+                        .contains(searchItem.toLowerCase()) ||
+                    element.phoneNumber.contains(searchItem)) {
                   showAbleSupplier.add(element);
                 } else if (searchItem == '') {
                   showAbleSupplier.add(element);
@@ -122,14 +136,18 @@ class _DueListState extends State<DueList> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.0),
+                          color: kWhite),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: Text(
-                              selectedParties == 'Customers' ? 'Lista de pagos pendientes (cliente)' : 'Lista de pagos pendientes (Proveedores)',
+                              selectedParties == 'Clientes'
+                                  ? 'Lista de pagos pendientes (Clientes)'
+                                  : 'Lista de pagos pendientes (Proveedores)',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -151,23 +169,35 @@ class _DueListState extends State<DueList> {
                                     GestureDetector(
                                       onTap: (() {
                                         setState(() {
-                                          selectedParties = 'Customers';
-                                          _currentPage = 1; // Reset to first page when switching tabs
+                                          selectedParties = 'Clientes';
+                                          _currentPage =
+                                              1; // Reset to first page when switching tabs
                                         });
                                       }),
                                       child: Container(
                                         height: 40,
                                         width: 100,
                                         decoration: BoxDecoration(
-                                          color: selectedParties == 'Customers' ? kBlueTextColor : Colors.white,
-                                          borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                          border: Border.all(width: 1, color: selectedParties == 'Customers' ? kBlueTextColor : Colors.grey),
+                                          color: selectedParties == 'Clientes'
+                                              ? kBlueTextColor
+                                              : Colors.white,
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(8)),
+                                          border: Border.all(
+                                              width: 1,
+                                              color:
+                                                  selectedParties == 'Clientes'
+                                                      ? kBlueTextColor
+                                                      : Colors.grey),
                                         ),
                                         child: Center(
                                           child: Text(
                                             lang.S.of(context).customers,
                                             style: TextStyle(
-                                              color: selectedParties == 'Customers' ? Colors.white : Colors.black,
+                                              color:
+                                                  selectedParties == 'Clientes'
+                                                      ? Colors.white
+                                                      : Colors.black,
                                             ),
                                           ),
                                         ),
@@ -177,23 +207,36 @@ class _DueListState extends State<DueList> {
                                     GestureDetector(
                                       onTap: (() {
                                         setState(() {
-                                          selectedParties = 'Suppliers';
-                                          _currentPage = 1; // Reset to first page when switching tabs
+                                          selectedParties = 'Proveedores';
+                                          _currentPage =
+                                              1; // Reset to first page when switching tabs
                                         });
                                       }),
                                       child: Container(
                                         height: 40,
                                         width: 100,
                                         decoration: BoxDecoration(
-                                          color: selectedParties == 'Suppliers' ? kBlueTextColor : Colors.white,
-                                          borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                          border: Border.all(width: 1, color: selectedParties == 'Suppliers' ? kBlueTextColor : Colors.grey),
+                                          color:
+                                              selectedParties == 'Proveedores'
+                                                  ? kBlueTextColor
+                                                  : Colors.white,
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(8)),
+                                          border: Border.all(
+                                              width: 1,
+                                              color: selectedParties ==
+                                                      'Proveedores'
+                                                  ? kBlueTextColor
+                                                  : Colors.grey),
                                         ),
                                         child: Center(
                                           child: Text(
                                             lang.S.of(context).supplier,
                                             style: TextStyle(
-                                              color: selectedParties == 'Suppliers' ? Colors.white : Colors.black,
+                                              color: selectedParties ==
+                                                      'Proveedores'
+                                                  ? Colors.white
+                                                  : Colors.black,
                                             ),
                                           ),
                                         ),
@@ -227,12 +270,15 @@ class _DueListState extends State<DueList> {
                                         height: 48,
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8.0),
-                                          border: Border.all(color: kNeutral300),
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          border:
+                                              Border.all(color: kNeutral300),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Flexible(
                                                 child: Text(
@@ -250,19 +296,26 @@ class _DueListState extends State<DueList> {
                                                 Icons.keyboard_arrow_down,
                                                 color: Colors.black,
                                               ),
-                                              items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                              items: [10, 20, 50, 100, -1]
+                                                  .map<DropdownMenuItem<int>>(
+                                                      (int value) {
                                                 return DropdownMenuItem<int>(
                                                   value: value,
                                                   child: Text(
-                                                    value == -1 ? "Todos" : value.toString(),
-                                                    style: theme.textTheme.bodyLarge,
+                                                    value == -1
+                                                        ? "Todos"
+                                                        : value.toString(),
+                                                    style: theme
+                                                        .textTheme.bodyLarge,
                                                   ),
                                                 );
                                               }).toList(),
                                               onChanged: (int? newValue) {
                                                 setState(() {
-                                                  _categoryPerPage = newValue ?? 10;
-                                                  _currentPage = 1; // Reset to first page when changing items per page
+                                                  _categoryPerPage =
+                                                      newValue ?? 10;
+                                                  _currentPage =
+                                                      1; // Reset to first page when changing items per page
                                                 });
                                               },
                                             ),
@@ -281,13 +334,16 @@ class _DueListState extends State<DueList> {
                                         onChanged: (value) {
                                           setState(() {
                                             searchItem = value;
-                                            _currentPage = 1; // Reset to first page when searching
+                                            _currentPage =
+                                                1; // Reset to first page when searching
                                           });
                                         },
                                         keyboardType: TextInputType.name,
                                         decoration: kInputDecoration.copyWith(
-                                          contentPadding: const EdgeInsets.all(10.0),
-                                          hintText: (lang.S.of(context).searchByName),
+                                          contentPadding:
+                                              const EdgeInsets.all(10.0),
+                                          hintText:
+                                              (lang.S.of(context).searchByName),
                                           suffixIcon: const Icon(
                                             FeatherIcons.search,
                                             color: kNeutral400,
@@ -297,17 +353,23 @@ class _DueListState extends State<DueList> {
                                 ]),
                                 const SizedBox(height: 12),
                                 Container(
-                                  padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0,
+                                      right: 20.0,
+                                      top: 10.0,
+                                      bottom: 10.0),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8.0),
                                     color: const Color(0xFFFEE7CB),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Text(
                                         '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerDue(customers: selectedParties == 'Clientes' ? showAbleCustomer : showAbleSupplier, selectedCustomerType: selectedParties).toStringAsFixed(2)) ?? 0)}',
-                                        style: theme.textTheme.titleLarge?.copyWith(
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -325,11 +387,15 @@ class _DueListState extends State<DueList> {
 
                           ///__________customer_list_________________________________________________________
                           const SizedBox(height: 20.0),
-                          selectedParties == 'Suppliers' && showAbleSupplier.isNotEmpty || selectedParties != 'Suppliers' && showAbleCustomer.isNotEmpty
+                          selectedParties == 'Proveedores' &&
+                                      showAbleSupplier.isNotEmpty ||
+                                  selectedParties != 'Proveedores' &&
+                                      showAbleCustomer.isNotEmpty
                               ? Column(
                                   children: [
                                     LayoutBuilder(
-                                      builder: (BuildContext context, BoxConstraints constraints) {
+                                      builder: (BuildContext context,
+                                          BoxConstraints constraints) {
                                         final kWidth = constraints.maxWidth;
                                         return Scrollbar(
                                             controller: _horizontalScroll,
@@ -345,71 +411,166 @@ class _DueListState extends State<DueList> {
                                                 ),
                                                 child: Theme(
                                                   data: theme.copyWith(
-                                                    dividerColor: Colors.transparent,
-                                                    dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                                    dividerColor:
+                                                        Colors.transparent,
+                                                    dividerTheme:
+                                                        const DividerThemeData(
+                                                            color: Colors
+                                                                .transparent),
                                                   ),
                                                   child: DataTable(
                                                       border: const TableBorder(
-                                                        horizontalInside: BorderSide(
+                                                        horizontalInside:
+                                                            BorderSide(
                                                           width: 1,
                                                           color: kNeutral300,
                                                         ),
                                                       ),
-                                                      dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                      headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                      dataRowColor:
+                                                          const WidgetStatePropertyAll(
+                                                              Colors.white),
+                                                      headingRowColor:
+                                                          WidgetStateProperty
+                                                              .all(const Color(
+                                                                  0xFFF8F3FF)),
                                                       showBottomBorder: false,
                                                       dividerThickness: 0.0,
-                                                      headingTextStyle: theme.textTheme.titleMedium,
+                                                      headingTextStyle: theme
+                                                          .textTheme
+                                                          .titleMedium,
                                                       columns: [
-                                                        DataColumn(label: Text(lang.S.of(context).SL)),
-                                                        DataColumn(label: Text(lang.S.of(context).partyName)),
-                                                        DataColumn(label: Text(lang.S.of(context).partyType)),
-                                                        DataColumn(label: Text(lang.S.of(context).phone)),
-                                                        DataColumn(label: Text(lang.S.of(context).email)),
-                                                        DataColumn(label: Text(lang.S.of(context).due)),
-                                                        DataColumn(label: Text(lang.S.of(context).collectDue)),
+                                                        DataColumn(
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .SL)),
+                                                        DataColumn(
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .partyName)),
+                                                        DataColumn(
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .partyType)),
+                                                        DataColumn(
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .phone)),
+                                                        DataColumn(
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .email)),
+                                                        DataColumn(
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .due)),
+                                                        DataColumn(
+                                                            label: Text(lang.S
+                                                                .of(context)
+                                                                .collectDue)),
                                                       ],
-                                                      rows: List.generate(selectedParties == 'Suppliers' ? paginatedSupplierList.length : paginatedCustomerList.length, (index) {
+                                                      rows: List.generate(
+                                                          selectedParties ==
+                                                                  'Proveedores'
+                                                              ? paginatedSupplierList
+                                                                  .length
+                                                              : paginatedCustomerList
+                                                                  .length,
+                                                          (index) {
                                                         return DataRow(cells: [
-                                                          DataCell(Text((index + 1).toString())),
                                                           DataCell(Text(
-                                                            selectedParties == 'Suppliers' ? paginatedSupplierList[index].customerName : paginatedCustomerList[index].customerName,
+                                                              (index + 1)
+                                                                  .toString())),
+                                                          DataCell(Text(
+                                                            selectedParties ==
+                                                                    'Proveedores'
+                                                                ? paginatedSupplierList[
+                                                                        index]
+                                                                    .customerName
+                                                                : paginatedCustomerList[
+                                                                        index]
+                                                                    .customerName,
                                                           )),
                                                           DataCell(Text(
-                                                            selectedParties == 'Suppliers' ? paginatedSupplierList[index].type : paginatedCustomerList[index].type,
+                                                            selectedParties ==
+                                                                    'Proveedores'
+                                                                ? paginatedSupplierList[
+                                                                        index]
+                                                                    .type
+                                                                : paginatedCustomerList[
+                                                                        index]
+                                                                    .type,
                                                           )),
                                                           DataCell(Text(
-                                                            selectedParties == 'Suppliers' ? paginatedSupplierList[index].phoneNumber : paginatedCustomerList[index].phoneNumber,
-                                                            style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                            selectedParties ==
+                                                                    'Proveedores'
+                                                                ? paginatedSupplierList[
+                                                                        index]
+                                                                    .phoneNumber
+                                                                : paginatedCustomerList[
+                                                                        index]
+                                                                    .phoneNumber,
+                                                            style: kTextStyle
+                                                                .copyWith(
+                                                                    color:
+                                                                        kGreyTextColor),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           )),
                                                           DataCell(Text(
-                                                            selectedParties == 'Suppliers' ? paginatedSupplierList[index].emailAddress : paginatedCustomerList[index].emailAddress,
-                                                            style: kTextStyle.copyWith(color: kGreyTextColor),
+                                                            selectedParties ==
+                                                                    'Proveedores'
+                                                                ? paginatedSupplierList[
+                                                                        index]
+                                                                    .emailAddress
+                                                                : paginatedCustomerList[
+                                                                        index]
+                                                                    .emailAddress,
+                                                            style: kTextStyle
+                                                                .copyWith(
+                                                                    color:
+                                                                        kGreyTextColor),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           )),
                                                           DataCell(Text(
-                                                            selectedParties == 'Suppliers' ? '$globalCurrency${myFormat.format(double.tryParse(paginatedSupplierList[index].dueAmount) ?? 0)}' : '$globalCurrency${myFormat.format(double.tryParse(paginatedCustomerList[index].dueAmount))}',
+                                                            selectedParties ==
+                                                                    'Proveedores'
+                                                                ? '$globalCurrency${myFormat.format(double.tryParse(paginatedSupplierList[index].dueAmount) ?? 0)}'
+                                                                : '$globalCurrency${myFormat.format(double.tryParse(paginatedCustomerList[index].dueAmount))}',
                                                           )),
                                                           DataCell(
                                                             GestureDetector(
                                                               onTap: () async {
-                                                                if (await Subscription.subscriptionChecker(item: 'Lista de pagos Pendientes')) {
+                                                                if (await Subscription
+                                                                    .subscriptionChecker(
+                                                                        item:
+                                                                            'Lista de pagos Pendientes')) {
                                                                   showDialog(
-                                                                    barrierDismissible: false,
-                                                                    context: context,
-                                                                    builder: (BuildContext context) {
+                                                                    barrierDismissible:
+                                                                        false,
+                                                                    context:
+                                                                        context,
+                                                                    builder:
+                                                                        (BuildContext
+                                                                            context) {
                                                                       return StatefulBuilder(
-                                                                        builder: (context, setStates) {
+                                                                        builder:
+                                                                            (context,
+                                                                                setStates) {
                                                                           return Dialog(
-                                                                            surfaceTintColor: Colors.white,
-                                                                            shape: RoundedRectangleBorder(
+                                                                            surfaceTintColor:
+                                                                                Colors.white,
+                                                                            shape:
+                                                                                RoundedRectangleBorder(
                                                                               borderRadius: BorderRadius.circular(5.0),
                                                                             ),
-                                                                            child: ShowDuePaymentPopUp(
-                                                                              customerModel: selectedParties == 'Suppliers' ? paginatedSupplierList[index] : paginatedCustomerList[index],
+                                                                            child:
+                                                                                ShowDuePaymentPopUp(
+                                                                              customerModel: selectedParties == 'Proveedores' ? paginatedSupplierList[index] : paginatedCustomerList[index],
                                                                             ),
                                                                           );
                                                                         },
@@ -417,12 +578,16 @@ class _DueListState extends State<DueList> {
                                                                     },
                                                                   );
                                                                 } else {
-                                                                  EasyLoading.showError('Update your plan first,\nDue Collection limit is over.');
+                                                                  EasyLoading
+                                                                      .showError(
+                                                                          'Update your plan first,\nDue Collection limit is over.');
                                                                 }
                                                               },
                                                               child: const Text(
                                                                 'Aplicar pago >',
-                                                                style: TextStyle(color: Colors.blue),
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .blue),
                                                               ),
                                                             ),
                                                           ),
@@ -436,34 +601,53 @@ class _DueListState extends State<DueList> {
                                     Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Flexible(
                                             child: Text(
-                                              _categoryPerPage == -1 ? '${lang.S.of(context).showing} all ${selectedParties == 'Suppliers' ? showAbleSupplier.length : showAbleCustomer.length} entries' : '${lang.S.of(context).showing} ${((_currentPage - 1) * _categoryPerPage + 1).toString()} to ${((_currentPage - 1) * _categoryPerPage + _categoryPerPage).clamp(0, selectedParties == 'Suppliers' ? showAbleSupplier.length : showAbleCustomer.length)} of ${selectedParties == 'Suppliers' ? showAbleSupplier.length : showAbleCustomer.length} entries',
+                                              _categoryPerPage == -1
+                                                  ? '${lang.S.of(context).showing} all ${selectedParties == 'Proveedores' ? showAbleSupplier.length : showAbleCustomer.length} entries'
+                                                  : '${lang.S.of(context).showing} ${((_currentPage - 1) * _categoryPerPage + 1).toString()} to ${((_currentPage - 1) * _categoryPerPage + _categoryPerPage).clamp(0, selectedParties == 'Proveedores' ? showAbleSupplier.length : showAbleCustomer.length)} of ${selectedParties == 'Proveedores' ? showAbleSupplier.length : showAbleCustomer.length} entries',
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                          if (_categoryPerPage != -1) // Only show pagination controls when not in "All" mode
+                                          if (_categoryPerPage !=
+                                              -1) // Only show pagination controls when not in "All" mode
                                             Row(
                                               children: [
                                                 InkWell(
-                                                  overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                                  overlayColor:
+                                                      WidgetStateProperty.all<
+                                                          Color>(Colors.grey),
                                                   hoverColor: Colors.grey,
-                                                  onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                                  onTap: _currentPage > 1
+                                                      ? () => setState(
+                                                          () => _currentPage--)
+                                                      : null,
                                                   child: Container(
                                                     height: 32,
                                                     width: 90,
                                                     decoration: BoxDecoration(
-                                                      border: Border.all(color: kBorderColorTextField),
-                                                      borderRadius: const BorderRadius.only(
-                                                        bottomLeft: Radius.circular(4.0),
-                                                        topLeft: Radius.circular(4.0),
+                                                      border: Border.all(
+                                                          color:
+                                                              kBorderColorTextField),
+                                                      borderRadius:
+                                                          const BorderRadius
+                                                              .only(
+                                                        bottomLeft:
+                                                            Radius.circular(
+                                                                4.0),
+                                                        topLeft:
+                                                            Radius.circular(
+                                                                4.0),
                                                       ),
                                                     ),
                                                     child: Center(
-                                                      child: Text(lang.S.of(context).previous),
+                                                      child: Text(lang.S
+                                                          .of(context)
+                                                          .previous),
                                                     ),
                                                   ),
                                                 ),
@@ -471,13 +655,16 @@ class _DueListState extends State<DueList> {
                                                   height: 32,
                                                   width: 32,
                                                   decoration: BoxDecoration(
-                                                    border: Border.all(color: kBorderColorTextField),
+                                                    border: Border.all(
+                                                        color:
+                                                            kBorderColorTextField),
                                                     color: kMainColor,
                                                   ),
                                                   child: Center(
                                                     child: Text(
                                                       '$_currentPage',
-                                                      style: const TextStyle(color: Colors.white),
+                                                      style: const TextStyle(
+                                                          color: Colors.white),
                                                     ),
                                                   ),
                                                 ),
@@ -485,30 +672,55 @@ class _DueListState extends State<DueList> {
                                                   height: 32,
                                                   width: 32,
                                                   decoration: BoxDecoration(
-                                                    border: Border.all(color: kBorderColorTextField),
+                                                    border: Border.all(
+                                                        color:
+                                                            kBorderColorTextField),
                                                     color: Colors.transparent,
                                                   ),
                                                   child: Center(
                                                     child: Text(
-                                                      '${(selectedParties == 'Suppliers' ? (showAbleSupplier.length / _categoryPerPage).ceil() : (showAbleCustomer.length / _categoryPerPage).ceil())}',
+                                                      '${(selectedParties == 'Proveedores' ? (showAbleSupplier.length / _categoryPerPage).ceil() : (showAbleCustomer.length / _categoryPerPage).ceil())}',
                                                     ),
                                                   ),
                                                 ),
                                                 InkWell(
-                                                  hoverColor: Colors.blue.withOpacity(0.1),
-                                                  overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
-                                                  onTap: _currentPage * _categoryPerPage < (selectedParties == 'Suppliers' ? showAbleSupplier.length : showAbleCustomer.length) ? () => setState(() => _currentPage++) : null,
+                                                  hoverColor: Colors.blue
+                                                      .withOpacity(0.1),
+                                                  overlayColor:
+                                                      MaterialStateProperty.all<
+                                                          Color>(Colors.blue),
+                                                  onTap: _currentPage *
+                                                              _categoryPerPage <
+                                                          (selectedParties ==
+                                                                  'Suppliers'
+                                                              ? showAbleSupplier
+                                                                  .length
+                                                              : showAbleCustomer
+                                                                  .length)
+                                                      ? () => setState(
+                                                          () => _currentPage++)
+                                                      : null,
                                                   child: Container(
                                                     height: 32,
                                                     width: 90,
                                                     decoration: BoxDecoration(
-                                                      border: Border.all(color: kBorderColorTextField),
-                                                      borderRadius: const BorderRadius.only(
-                                                        bottomRight: Radius.circular(4.0),
-                                                        topRight: Radius.circular(4.0),
+                                                      border: Border.all(
+                                                          color:
+                                                              kBorderColorTextField),
+                                                      borderRadius:
+                                                          const BorderRadius
+                                                              .only(
+                                                        bottomRight:
+                                                            Radius.circular(
+                                                                4.0),
+                                                        topRight:
+                                                            Radius.circular(
+                                                                4.0),
                                                       ),
                                                     ),
-                                                    child: const Center(child: Text('Siguiente')),
+                                                    child: const Center(
+                                                        child:
+                                                            Text('Siguiente')),
                                                   ),
                                                 ),
                                               ],
@@ -518,7 +730,9 @@ class _DueListState extends State<DueList> {
                                     ),
                                   ],
                                 )
-                              : EmptyWidget(title: lang.S.of(context).noDueTransantionFound)
+                              : EmptyWidget(
+                                  title:
+                                      lang.S.of(context).noDueTransantionFound)
                         ],
                       ),
                     ),

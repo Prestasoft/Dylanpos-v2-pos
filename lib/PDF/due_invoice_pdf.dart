@@ -571,10 +571,10 @@ FutureOr<Uint8List> generateDueDocument({
                   2: pw.Alignment.center,
                 },
                 data: <List<String>>[
-                  <String>['N.º', 'Descripción deuda', 'Monto adeudado'],
+                  <String>['N.º', 'Descripción', 'Monto adeudado'],
                   <String>[
                     ('${1}'),
-                    ('Deuda anterior'),
+                    ('Pago de balance pendiente de la factura #${transactions.invoiceNumber}'),
                     (transactions.totalDue.toString())
                   ],
                 ],
