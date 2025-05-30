@@ -125,7 +125,7 @@ FutureOr<Uint8List> generateDueDocument({
                       padding: const pw.EdgeInsets.only(
                           top: 2.0, bottom: 2, left: 5, right: 5),
                       child: pw.Text(
-                        'Factura',
+                        'Recibo de pago de Factura ',
                         style: pw.Theme.of(context).defaultTextStyle.copyWith(
                               color: PdfColors.black,
                               fontSize: 16.0,
@@ -571,10 +571,10 @@ FutureOr<Uint8List> generateDueDocument({
                   2: pw.Alignment.center,
                 },
                 data: <List<String>>[
-                  <String>['N.º', 'Descripción', 'Monto adeudado'],
+                  <String>['N.º', 'Descripción', 'Monto Pendiente'],
                   <String>[
                     ('${1}'),
-                    ('Pago de balance pendiente de la factura #${transactions.invoiceNumber}'),
+                    ('Pago ah balance pendiente de la factura #${transactions.invoiceNumber}'),
                     (transactions.totalDue.toString())
                   ],
                 ],
@@ -619,7 +619,7 @@ FutureOr<Uint8List> generateDueDocument({
                             pw.SizedBox(
                               width: 100.0,
                               child: pw.Text(
-                                'Monto total adeudado',
+                                'Monto total Pendiente',
                                 style: pw.Theme.of(context)
                                     .defaultTextStyle
                                     .copyWith(
