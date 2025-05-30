@@ -1396,7 +1396,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "Producto más vendido",
         ),
         "total": MessageLookupByLibrary.simpleMessage("total"),
-        "totalAmount": MessageLookupByLibrary.simpleMessage("Total de la cantidad"),
+        "totalAmount": MessageLookupByLibrary.simpleMessage("Total Facturado"),
         "totalDiscount": MessageLookupByLibrary.simpleMessage("Descuento total"),
         "totalDue": MessageLookupByLibrary.simpleMessage("Total Pendiente de Pago"),
         "totalDues": MessageLookupByLibrary.simpleMessage("Total de deudas"),
@@ -1408,7 +1408,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "totalPaid": MessageLookupByLibrary.simpleMessage("Total pagado"),
         "totalPayable": MessageLookupByLibrary.simpleMessage("Total a pagar"),
         "totalPaymentOut": MessageLookupByLibrary.simpleMessage(
-          "Pago total saliente",
+          "Pago total Entrante",
         ),
         "totalPrice": MessageLookupByLibrary.simpleMessage("Precio total"),
         "totalProduct": MessageLookupByLibrary.simpleMessage("Productos totales"),
@@ -1425,7 +1425,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "totalValue": MessageLookupByLibrary.simpleMessage("Valor total"),
         "totalVat": MessageLookupByLibrary.simpleMessage("Total de IVA"),
         "totalpaymentIn": MessageLookupByLibrary.simpleMessage(
-          "Pago total entrante",
+          "Pago total Saliente",
         ),
         "transaction": MessageLookupByLibrary.simpleMessage("Transacción"),
         "transactionId": MessageLookupByLibrary.simpleMessage("ID de transacción"),

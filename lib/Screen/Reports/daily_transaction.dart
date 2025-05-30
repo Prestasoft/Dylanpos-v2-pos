@@ -432,7 +432,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   bottom: 10.0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10.0),
-                                color: const Color(0xFFFEE7CB),
+                                color: const Color.fromARGB(143, 243, 110, 66),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -468,7 +468,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   bottom: 10.0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10.0),
-                                color: const Color(0xFFFED3D3),
+                                color: const Color.fromARGB(131, 95, 226, 47),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
