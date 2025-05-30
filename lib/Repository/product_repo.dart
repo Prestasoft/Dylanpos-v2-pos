@@ -12,19 +12,33 @@ import '../model/unit_model.dart';
 class ProductRepo {
   Future<List<ProductModel>> getAllProduct() async {
     List<ProductModel> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        productList.add(ProductModel.fromJson(jsonDecode(jsonEncode(element.value))));
-      }
-    });
+    final result = await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Products')
+        .orderByKey()
+        .get();
+    for (var element in result.children) {
+      print(element.value);
+      productList
+          .add(ProductModel.fromJson(jsonDecode(jsonEncode(element.value))));
+    }
     return productList;
   }
 
-  Future<List<dynamic>> getAllProductByJson({required String searchData}) async {
+  Future<List<dynamic>> getAllProductByJson(
+      {required String searchData}) async {
     List<dynamic> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Products')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        if (jsonDecode(jsonEncode(element.value))['productName'].toString().toLowerCase().contains(searchData.toLowerCase())) {
+        if (jsonDecode(jsonEncode(element.value))['productName']
+            .toString()
+            .toLowerCase()
+            .contains(searchData.toLowerCase())) {
           productList.add(element.value);
         }
       }
@@ -32,11 +46,26 @@ class ProductRepo {
     return productList;
   }
 
-  Future<List<dynamic>> getAllProductByJsonWarehouse({required String searchData, required WareHouseModel warehouseId}) async {
+  Future<List<dynamic>> getAllProductByJsonWarehouse(
+      {required String searchData, required WareHouseModel warehouseId}) async {
     List<dynamic> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Products')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        if (jsonDecode(jsonEncode(element.value))['productName'].toString().toLowerCase().contains(searchData.toLowerCase()) && ((jsonDecode(jsonEncode(element.value))['warehouseId'] == '' && warehouseId.warehouseName == 'InHouse') ? true : jsonDecode(jsonEncode(element.value))['warehouseId'].toString() == warehouseId.id)) {
+        if (jsonDecode(jsonEncode(element.value))['productName']
+                .toString()
+                .toLowerCase()
+                .contains(searchData.toLowerCase()) &&
+            ((jsonDecode(jsonEncode(element.value))['warehouseId'] == '' &&
+                    warehouseId.warehouseName == 'InHouse')
+                ? true
+                : jsonDecode(jsonEncode(element.value))['warehouseId']
+                        .toString() ==
+                    warehouseId.id)) {
           productList.add(element.value);
         }
       }
@@ -46,13 +75,20 @@ class ProductRepo {
 
   Future<List<CategoryModel>> getAllCategory() async {
     List<CategoryModel> categoryList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Categories').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Categories')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        categoryList.add(CategoryModel.fromJson(jsonDecode(jsonEncode(element.value))));
+        categoryList
+            .add(CategoryModel.fromJson(jsonDecode(jsonEncode(element.value))));
       }
     });
     return categoryList;
   }
+
   Future<List<BrandsModel>> getAllBrands() async {
     List<BrandsModel> brandList = [];
 
@@ -71,7 +107,8 @@ class ProductRepo {
           if (element.value is Map<dynamic, dynamic>) {
             final mapValue = element.value as Map<dynamic, dynamic>;
 
-            if (mapValue.containsKey('accountName') && mapValue.containsKey('bankName')) {
+            if (mapValue.containsKey('accountName') &&
+                mapValue.containsKey('bankName')) {
               brandList.add(BrandsModel.fromJson(mapValue));
             } else {
               print('Elemento no tiene las claves necesarias: $mapValue');
@@ -95,8 +132,6 @@ class ProductRepo {
     return brandList;
   }
 
-
-
   // Future<List<BrandsModel>> getAllBrandss(s) async {
   //   List<BrandsModel> brandList = [];
   //   await FirebaseDatabase.instance.ref('Admin Panel').child('Bank Info').orderByKey().get().then((value) {
@@ -109,7 +144,12 @@ class ProductRepo {
 
   Future<List<UnitModel>> getAllUnits() async {
     List<UnitModel> unitList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Units').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Units')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
         unitList.add(UnitModel.fromJson(jsonDecode(jsonEncode(element.value))));
       }

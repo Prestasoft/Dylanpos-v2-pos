@@ -36,7 +36,7 @@ class ShowDuePaymentPopUp extends StatefulWidget {
 
 class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
   // List of items in our dropdown menu
-  List<String> items = ['Select Invoice'];
+  List<String> items = ['Seleccionar Factura'];
   int count = 0;
 
   bool saleButtonClicked = false;
@@ -53,15 +53,11 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
   );
 
   List<String> paymentItem = [
-    'Cash',
-    'Bank',
-    'Due',
-    'B-kash',
-    'Nagad',
-    'Rocket',
-    'DBBL',
+    'Efectivo',
+    'Transferencia',
+    'Tarjeta',
   ];
-  String selectedPaymentOption = 'Cash';
+  String selectedPaymentOption = 'Efectivo';
 
   DropdownButton<String> getOption() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -89,8 +85,8 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
 
   double dueAmount = 0.0;
   double returnAmount = 0.0;
-  String selectedInvoice = 'Select Invoice';
-  String dropdownValue = 'Select Invoice';
+  String selectedInvoice = 'Seleccionar Factura';
+  String dropdownValue = 'Seleccionar Factura';
   int invoice = 0;
 
   TextEditingController payingAmountController = TextEditingController();
@@ -144,11 +140,15 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                         ),
                       ),
                       IconButton(
-                          onPressed: () {
-                            GoRouter.of(context).pop();
-                          },
-                          icon: const Icon(FeatherIcons.x,
-                              color: kNeutral500, size: 20.0))
+                        onPressed: () {
+                          GoRouter.of(context).pop();
+                        },
+                        icon: const Icon(
+                          FeatherIcons.x,
+                          color: kNeutral500,
+                          size: 20.0,
+                        ),
+                      )
                     ],
                   ),
                 ),
@@ -189,7 +189,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                         dueAmount =
                                             element.dueAmount!.toDouble();
                                       } else if (selectedInvoice ==
-                                          'Select Invoice') {
+                                          'Seleccionar Factura') {
                                         dueAmount = widget
                                             .customerModel.remainedBalance
                                             .toDouble();
@@ -497,13 +497,14 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                       return InputDecorator(
                                         decoration: const InputDecoration(),
                                         child: Theme(
-                                            data: ThemeData(
-                                                highlightColor:
-                                                    dropdownItemColor,
-                                                focusColor: dropdownItemColor,
-                                                hoverColor: dropdownItemColor),
-                                            child: DropdownButtonHideUnderline(
-                                                child: getOption())),
+                                          data: ThemeData(
+                                              highlightColor: dropdownItemColor,
+                                              focusColor: dropdownItemColor,
+                                              hoverColor: dropdownItemColor),
+                                          child: DropdownButtonHideUnderline(
+                                            child: getOption(),
+                                          ),
+                                        ),
                                       );
                                     },
                                   ),

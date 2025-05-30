@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -40,14 +41,15 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-   apiKey: "AIzaSyCm5cqfIUlV3wll49QA36IRwUrbnww__lo",
-  authDomain: "dylanpos-victorfoto-stodgo.firebaseapp.com",
-  databaseURL: "https://dylanpos-victorfoto-stodgo-default-rtdb.firebaseio.com",
-  projectId: "dylanpos-victorfoto-stodgo",
-  storageBucket: "dylanpos-victorfoto-stodgo.firebasestorage.app",
-  messagingSenderId: "892139987413",
-  appId: "1:892139987413:web:e93a15d7a74313c78e1d5c",
-  measurementId: "G-B6GB7L2RCM"
+    apiKey: "AIzaSyCm5cqfIUlV3wll49QA36IRwUrbnww__lo",
+    authDomain: "dylanpos-victorfoto-stodgo.firebaseapp.com",
+    databaseURL:
+        "https://dylanpos-victorfoto-stodgo-default-rtdb.firebaseio.com",
+    projectId: "dylanpos-victorfoto-stodgo",
+    storageBucket: "dylanpos-victorfoto-stodgo.firebasestorage.app",
+    messagingSenderId: "892139987413",
+    appId: "1:892139987413:web:e93a15d7a74313c78e1d5c",
+    measurementId: "G-B6GB7L2RCM",
   );
 
   //   apiKey: "AIzaSyBP1pN3CBRNcUROMYinjTjKCzisLN7RjA0",

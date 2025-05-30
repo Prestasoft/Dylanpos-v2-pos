@@ -3,9 +3,12 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:table_calendar/table_calendar.dart';
+
+import '../Due List/due_popUp.dart';
 
 class ReservationCalendarScreen extends ConsumerStatefulWidget {
   const ReservationCalendarScreen({Key? key}) : super(key: key);
@@ -250,10 +253,8 @@ class _ReservationCalendarScreenState
             return ReservationCard(
               reservation: reservation,
               status: status,
-              onTap: () => showModalBottomSheet(
+              onTap: () => showDialog(
                 context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
                 builder: (context) => ReservationDetailView(
                   reservation: reservation,
                   onEdit: () {
@@ -334,9 +335,8 @@ class _ReservationCalendarScreenState
             child: const Text('No'),
           ),
           TextButton(
-            onPressed: () async  {
-
-                await ref.read(cancelReservationProvider(reservation.id));
+            onPressed: () async {
+              await ref.read(cancelReservationProvider(reservation.id));
 
               // ref.read(ActualizarEstadoReservaProvider({
               //   'id': [reservation.id],
@@ -604,296 +604,370 @@ class ReservationDetailView extends ConsumerWidget {
     final fullReservationAsync =
         ref.watch(fullReservationByIdProviderVQ(reservation.id));
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.9,
-      snap: true,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Botón de cerrar
-              Positioned(
-                top: 12,
-                right: 12,
-                child: IconButton(
-                  icon: const Icon(Icons.close, size: 28, color: Colors.grey),
-                  onPressed: onClose,
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 650, // o el tamaño que desees
+          maxHeight: 700, // opcional
+        ),
+        child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  spreadRadius: 5,
                 ),
-              ),
-
-              // Contenido principal
-              Padding(
-                padding: const EdgeInsets.only(
-                    top: 50, left: 16, right: 16, bottom: 16),
-                child: fullReservationAsync.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Center(
-                    child: Text('Error: $error',
-                        style: const TextStyle(color: Colors.red)),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Botón de cerrar
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, size: 28, color: Colors.grey),
+                    onPressed: onClose,
                   ),
-                  data: (fullReservation) {
-                    if (fullReservation == null) {
-                      return const Center(
-                          child: Text('No se encontraron detalles'));
-                    }
+                ),
 
-                    final reservationData = fullReservation.reservation;
-                    final dress = fullReservation.dress;
-                    final service = fullReservation.service;
-                    final client = fullReservation.client;
+                // Contenido principal
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: 40,
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                  ),
+                  child: fullReservationAsync.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) => Center(
+                      child: Text('Error: $error',
+                          style: const TextStyle(color: Colors.red)),
+                    ),
+                    data: (fullReservation) {
+                      if (fullReservation == null) {
+                        return const Center(
+                            child: Text('No se encontraron detalles'));
+                      }
 
-                    // Verifica si el vestido es de reserva simple o no
-                    final dressComposite =
-                        fullReservation?.reservation['multiple_dress'] ?? [];
-                    String dressName = '';
+                      final reservationData = fullReservation.reservation;
+                      final dress = fullReservation.dress;
+                      final service = fullReservation.service;
+                      final client = fullReservation.client;
 
-                    if (dressComposite.isEmpty) {
-                      dressName = fullReservation?.dress?['name'] ??
-                          'Vestido no especificado';
-                    }
+                      // Verifica si el vestido es de reserva simple o no
+                      final dressComposite =
+                          fullReservation?.reservation['multiple_dress'] ?? [];
+                      String dressName = '';
 
-                    String formattedDate = '';
-                    try {
-                      final date = DateFormat('yyyy-MM-dd')
-                          .parse(reservationData['reservation_date'] ?? '');
-                      formattedDate = DateFormat.yMMMMd('es').format(date);
-                    } catch (e) {
-                      formattedDate = reservationData['reservation_date'] ?? '';
-                    }
+                      if (dressComposite.isEmpty) {
+                        dressName = fullReservation?.dress?['name'] ??
+                            'Vestido no especificado';
+                      }
 
-                    return Column(
-                      children: [
-                        // Indicador de arrastre
-                        Center(
-                          child: Container(
-                            width: 60,
-                            height: 5,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                              borderRadius: BorderRadius.circular(8),
+                      String formattedDate = '';
+                      try {
+                        final date = DateFormat('yyyy-MM-dd')
+                            .parse(reservationData['reservation_date'] ?? '');
+                        formattedDate = DateFormat.yMMMMd('es').format(date);
+                      } catch (e) {
+                        formattedDate =
+                            reservationData['reservation_date'] ?? '';
+                      }
+
+                      return Column(
+                        children: [
+                          // Indicador de arrastre
+                          Center(
+                            child: Container(
+                              width: 60,
+                              height: 5,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[400],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                           ),
-                        ),
 
-                        // Título
-                        Text(
-                          'Detalles de la Reservación',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Contenido desplazable
-                        Expanded(
-                          child: SingleChildScrollView(
-                            controller: scrollController,
-                            child: Column(
+                          // Título
+                          Text(
+                            'Detalles de la Reservación',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          //TODO ADEUDO
+                          if (client!.dueAmount.toDouble() > 0)
+                            Row(
                               children: [
-                                // Imagen del vestido
-                                if (dress != null &&
-                                    dress['images'] != null) ...[
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: _buildDressImage(dress['images']),
+                                Text(
+                                  'El cliente tiene un balance pendiente',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                ),
+                                SizedBox(
+                                  width: 24,
+                                ),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return StatefulBuilder(
+                                            builder: (context, setStates) {
+                                              return Dialog(
+                                                surfaceTintColor: Colors.white,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          5.0),
+                                                ),
+                                                child: ShowDuePaymentPopUp(
+                                                  customerModel: client!,
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                    icon: const Icon(Icons.payment, size: 20),
+                                    label: const Text('Añadir Pago'),
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor:
+                                          Theme.of(context).primaryColor,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          const SizedBox(height: 8),
+
+                          // Contenido desplazable
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  // Imagen del vestido
+                                  if (dress != null &&
+                                      dress['images'] != null) ...[
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: _buildDressImage(dress['images']),
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+
+                                  // Sección de reservación
+                                  _buildSection(
+                                    context,
+                                    title: 'Información de la Reservación',
+                                    children: [
+                                      _buildDetailItem(Icons.calendar_today,
+                                          'Fecha', formattedDate),
+                                      _buildDetailItem(
+                                          Icons.access_time,
+                                          'Hora',
+                                          reservationData['reservation_time'] ??
+                                              ''),
+                                      _buildDetailItem(
+                                          Icons.business,
+                                          'Sucursal',
+                                          reservationData['branch_id'] ?? ''),
+                                      _buildDetailItem(
+                                          Icons.textsms_outlined,
+                                          'Notas',
+                                          reservationData['nota'] ?? ''),
+                                    ],
+                                  ),
+
+                                  // Sección del cliente
+                                  if (client != null)
+                                    _buildSection(
+                                      context,
+                                      title: 'Información del Cliente',
+                                      children: [
+                                        _buildDetailItem(Icons.person, 'Nombre',
+                                            client.customerName),
+                                        _buildDetailItem(Icons.phone,
+                                            'Teléfono', client.phoneNumber),
+                                        _buildDetailItem(Icons.email, 'Email',
+                                            client.emailAddress),
+                                        if (client.customerAddress.isNotEmpty)
+                                          _buildDetailItem(
+                                              Icons.location_on,
+                                              'Dirección',
+                                              client.customerAddress),
+                                      ],
+                                    ),
+
+                                  // Sección del vestido Reserva Simple
+                                  if (dress != null)
+                                    _buildSection(
+                                      context,
+                                      title: 'Información del Vestido',
+                                      children: [
+                                        _buildDetailItem(Icons.checkroom,
+                                            'Vestido', dress['name'] ?? ''),
+                                        _buildDetailItem(
+                                            Icons.category,
+                                            'Categoría',
+                                            dress['category'] ?? ''),
+                                        if (dress['color'] != null)
+                                          _buildDetailItem(Icons.color_lens,
+                                              'Color', dress['color']),
+                                        if (dress['size'] != null)
+                                          _buildDetailItem(Icons.straighten,
+                                              'Talla', dress['size']),
+                                      ],
+                                    ),
+
+                                  // Sección del vestido Reserva Compuesta
+                                  if (fullReservation
+                                          .reservation['multiple_dress'] !=
+                                      null)
+                                    _buildSection(
+                                      context,
+                                      title: 'Información de Vestimenta',
+                                      children: [
+                                        Text(
+                                          'Vestimenta',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        _buildDetailItemComposite(
+                                            Icons.checkroom,
+                                            'Vestido',
+                                            dressComposite),
+                                        const SizedBox(height: 2),
+                                        // Text(
+                                        //   'Categoría',
+                                        //   style: TextStyle(
+                                        //     fontSize: 14,
+                                        //     color: Colors.grey[600],
+                                        //     fontWeight: FontWeight.bold,
+                                        //   ),
+                                        // ),
+                                        _buildDetailItem(
+                                            Icons.category,
+                                            'Categoría',
+                                            service != null
+                                                ? (service['category'] ?? '')
+                                                : ''),
+                                      ],
+                                    ),
+
+                                  // Sección del servicio
+                                  if (service != null)
+                                    _buildSection(
+                                      context,
+                                      title: 'Información del Servicio',
+                                      children: [
+                                        _buildDetailItem(Icons.engineering,
+                                            'Servicio', service['name'] ?? ''),
+                                        _buildDetailItem(
+                                            Icons.timer,
+                                            'Duración',
+                                            _formatDuration(
+                                                service['duration'])),
+                                        _buildDetailItem(
+                                            Icons.attach_money,
+                                            'Precio',
+                                            '\$${(service['price'] is num ? (service['price'] as num).toDouble() : 0.0).toStringAsFixed(2)}'),
+                                        if (service['description'] != null &&
+                                            service['description']
+                                                .toString()
+                                                .isNotEmpty)
+                                          _buildDetailItem(
+                                              Icons.description,
+                                              'Descripción',
+                                              service['description']),
+                                      ],
+                                    ),
+
+                                  const SizedBox(height: 24),
+
+                                  // Botones de acción
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: onEdit,
+                                            icon: const Icon(Icons.edit,
+                                                size: 20),
+                                            label: const Text('Editar'),
+                                            style: ElevatedButton.styleFrom(
+                                              foregroundColor: Colors.white,
+                                              backgroundColor: Theme.of(context)
+                                                  .primaryColor,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 14),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: onCancel,
+                                            icon: const Icon(Icons.cancel,
+                                                size: 20),
+                                            label: const Text('Cancelar'),
+                                            style: ElevatedButton.styleFrom(
+                                              foregroundColor: Colors.white,
+                                              backgroundColor: Colors.red,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 14),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   const SizedBox(height: 16),
                                 ],
-
-                                // Sección de reservación
-                                _buildSection(
-                                  context,
-                                  title: 'Información de la Reservación',
-                                  children: [
-                                    _buildDetailItem(Icons.calendar_today,
-                                        'Fecha', formattedDate),
-                                    _buildDetailItem(
-                                        Icons.access_time,
-                                        'Hora',
-                                        reservationData['reservation_time'] ??
-                                            ''),
-                                    _buildDetailItem(Icons.business, 'Sucursal',
-                                        reservationData['branch_id'] ?? ''),
-                                    _buildDetailItem(Icons.textsms_outlined,
-                                        'Notas', reservationData['nota'] ?? ''),
-                                  ],
-                                ),
-
-                                // Sección del cliente
-                                if (client != null)
-                                  _buildSection(
-                                    context,
-                                    title: 'Información del Cliente',
-                                    children: [
-                                      _buildDetailItem(Icons.person, 'Nombre',
-                                          client.customerName),
-                                      _buildDetailItem(Icons.phone, 'Teléfono',
-                                          client.phoneNumber),
-                                      _buildDetailItem(Icons.email, 'Email',
-                                          client.emailAddress),
-                                      if (client.customerAddress.isNotEmpty)
-                                        _buildDetailItem(
-                                            Icons.location_on,
-                                            'Dirección',
-                                            client.customerAddress),
-                                    ],
-                                  ),
-
-                                // Sección del vestido Reserva Simple
-                                if (dress != null)
-                                  _buildSection(
-                                    context,
-                                    title: 'Información del Vestido',
-                                    children: [
-                                      _buildDetailItem(Icons.checkroom,
-                                          'Vestido', dress['name'] ?? ''),
-                                      _buildDetailItem(Icons.category,
-                                          'Categoría', dress['category'] ?? ''),
-                                      if (dress['color'] != null)
-                                        _buildDetailItem(Icons.color_lens,
-                                            'Color', dress['color']),
-                                      if (dress['size'] != null)
-                                        _buildDetailItem(Icons.straighten,
-                                            'Talla', dress['size']),
-                                    ],
-                                  ),
-
-                                // Sección del vestido Reserva Compuesta
-                                if (fullReservation
-                                        .reservation['multiple_dress'] !=
-                                    null)
-                                  _buildSection(
-                                    context,
-                                    title: 'Información de Vestimenta',
-                                    children: [
-                                      Text(
-                                        'Vestimenta',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      _buildDetailItemComposite(Icons.checkroom,
-                                          'Vestido', dressComposite),
-                                      const SizedBox(height: 2),
-                                      // Text(
-                                      //   'Categoría',
-                                      //   style: TextStyle(
-                                      //     fontSize: 14,
-                                      //     color: Colors.grey[600],
-                                      //     fontWeight: FontWeight.bold,
-                                      //   ),
-                                      // ),
-                                      _buildDetailItem(
-                                          Icons.category,
-                                          'Categoría',
-                                          service != null
-                                              ? (service['category'] ?? '')
-                                              : ''),
-                                    ],
-                                  ),
-
-                                // Sección del servicio
-                                if (service != null)
-                                  _buildSection(
-                                    context,
-                                    title: 'Información del Servicio',
-                                    children: [
-                                      _buildDetailItem(Icons.engineering,
-                                          'Servicio', service['name'] ?? ''),
-                                      _buildDetailItem(Icons.timer, 'Duración',
-                                          _formatDuration(service['duration'])),
-                                      _buildDetailItem(
-                                          Icons.attach_money,
-                                          'Precio',
-                                          '\$${(service['price'] is num ? (service['price'] as num).toDouble() : 0.0).toStringAsFixed(2)}'),
-                                      if (service['description'] != null &&
-                                          service['description']
-                                              .toString()
-                                              .isNotEmpty)
-                                        _buildDetailItem(
-                                            Icons.description,
-                                            'Descripción',
-                                            service['description']),
-                                    ],
-                                  ),
-
-                                const SizedBox(height: 24),
-
-                                // Botones de acción
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 24),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          onPressed: onEdit,
-                                          icon:
-                                              const Icon(Icons.edit, size: 20),
-                                          label: const Text('Editar'),
-                                          style: ElevatedButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            backgroundColor:
-                                                Theme.of(context).primaryColor,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 14),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          onPressed: onCancel,
-                                          icon: const Icon(Icons.cancel,
-                                              size: 20),
-                                          label: const Text('Cancelar'),
-                                          style: ElevatedButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            backgroundColor: Colors.red,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 14),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            )),
+      ),
     );
   }
 
