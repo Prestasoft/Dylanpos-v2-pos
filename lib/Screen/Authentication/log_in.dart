@@ -178,7 +178,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                             child: Center(
                               child: Container(
                                 height: tabAndMobileScreen ? MediaQuery.of(context).size.width / 1.1 : MediaQuery.of(context).size.height / 1.2,
-                                decoration: BoxDecoration(image: DecorationImage(image: AssetImage(tabAndMobileScreen ? 'images/loginlogovictor.png' : 'images/loginlogovictor.png'))),
+                                decoration: BoxDecoration(image: DecorationImage(image: AssetImage(tabAndMobileScreen ? 'images/loginlogovictor.png' : 'images/loginlogovictorq.png'))),
                               ),
                             )),
                         ResponsiveGridCol(

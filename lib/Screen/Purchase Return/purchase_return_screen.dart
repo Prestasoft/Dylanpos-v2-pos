@@ -919,6 +919,7 @@ class _PurchaseReturnScreenState extends State<PurchaseReturnScreen> {
                                                 getTotalReturnAmount()
                                                     .toString()),
                                             discountAmount: 0,
+                                            sellerName: "Admin", // TODO: Reemplazar por el nombre real del usuario autenticado
                                             dueAmount: 0,
                                             isPaid: false,
                                             paymentType: 'Cash',

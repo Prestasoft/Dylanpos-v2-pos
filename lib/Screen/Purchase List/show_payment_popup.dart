@@ -471,6 +471,7 @@ class _ShowEditPurchasePaymentPopUpState
                                                     discountAmount: widget
                                                         .purchaseTransitionModel
                                                         .discountAmount,
+                                                    sellerName: "Admin", // TODO: Reemplazar por el nombre real del usuario autenticado
                                                   );
                                                   final userId =
                                                       await getUserID();
