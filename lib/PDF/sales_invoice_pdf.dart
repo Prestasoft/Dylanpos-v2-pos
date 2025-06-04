@@ -297,6 +297,40 @@ FutureOr<Uint8List> generateSaleDocument({
                         ],
                       ),
                       pw.SizedBox(height: 2),
+                      pw.Row(
+                        children: [
+                          pw.SizedBox(
+                            width: 60.0,
+                            child: pw.Text(
+                              'Fecha de reservacion',
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
+                          ),
+                          pw.SizedBox(
+                            width: 10.0,
+                            child: pw.Text(
+                              ':',
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
+                          ),
+                          pw.SizedBox(
+                            width: 140.0,
+                            child: pw.Text(
+                              reservaciones
+                                      .first?.reservation["reservationDate"] ??
+                                  "",
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 2),
 
                       ///_____Party GST_______________________________________
                       pw.SizedBox(
@@ -393,7 +427,7 @@ FutureOr<Uint8List> generateSaleDocument({
                         pw.SizedBox(
                           width: 125.0,
                           child: pw.Text(
-                            'Admin',
+                            transactions.sellerName ?? "Admin",
                             style: pw.Theme.of(context)
                                 .defaultTextStyle
                                 .copyWith(color: PdfColors.black),
