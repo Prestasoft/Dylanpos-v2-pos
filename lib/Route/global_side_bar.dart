@@ -148,14 +148,14 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       ),
                                       onPressed: () {
                                         // Navigator.pushNamed(context, Product.route);
-                                        context.go('/product');
+                                        context.go('/service-package/dresses');
                                       },
                                       child: Row(
                                         children: [
                                           const Icon(Icons.add_rounded,
                                               color: kMainColor),
                                           Text(
-                                            'Product',
+                                            'Vestidos',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleMedium
@@ -199,14 +199,14 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       onPressed: () {
                                         // Navigator.pushNamed(context, PurchaseList.route);
                                         // context.go(PurchaseList.route);
-                                        context.go('/purchase-list');
+                                        context.go('/calendario-reservas');
                                       },
                                       child: Row(
                                         children: [
                                           const Icon(Icons.add_rounded,
                                               color: Color(0xFF15CD75)),
                                           Text(
-                                            'Compra',
+                                            'Calendario',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleMedium
@@ -263,7 +263,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                           const Icon(Icons.add_rounded,
                                               color: kWhite),
                                           Text(
-                                            'Pos',
+                                            'Rentar',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleMedium
@@ -302,14 +302,14 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                       ),
                                       onPressed: () {
                                         // Navigator.pushNamed(context, InventorySales.route);
-                                        context.go('/inventory-sales');
+                                        context.go('/sales/inventory-sales');
                                       },
                                       child: Row(
                                         children: [
                                           const Icon(Icons.add_rounded,
                                               color: kMainColor),
                                           Text(
-                                            'Inventario',
+                                            'Facturar',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleMedium

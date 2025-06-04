@@ -1349,6 +1349,7 @@ class _PurchaseEditState extends State<PurchaseEdit> {
                                                           purchaseDate: widget.purchaseTransitionModel.purchaseDate,
                                                           totalAmount: getTotalAmount().toDouble() - discountAmount,
                                                           productList: cartList,
+                                                          sellerName: "Admin", // TODO: Reemplazar por el nombre real del usuario autenticado
                                                         );
                                                         ShowEditPurchasePaymentPopUp(
                                                           purchaseTransitionModel: purchaseTransitionModel,

@@ -2132,6 +2132,7 @@ class _PurchaseState extends State<Purchase> {
                                                                           discountAmount)
                                                                       .toStringAsFixed(
                                                                           2)),
+                                                              sellerName: "Admin", // TODO: Reemplazar por el nombre real del usuario autenticado
                                                             );
                                                             context.push(
                                                               '/purchase/purchase-payment-popup',

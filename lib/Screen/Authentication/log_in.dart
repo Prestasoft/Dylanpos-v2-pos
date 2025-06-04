@@ -155,7 +155,7 @@ class _EmailLogInState extends State<EmailLogIn> {
     final kSmallFontSize = responsiveValue<double>(context, xs: 14, md: 14, lg: 18);
 
     return Scaffold(
-        backgroundColor: kMainColor,
+        backgroundColor: const Color.fromARGB(255, 142, 146, 149),
         body: Consumer(builder: (context, ref, watch) {
           final loginProvider = ref.watch(logInProvider);
           final settingProvider = ref.watch(generalSettingProvider);
@@ -178,7 +178,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                             child: Center(
                               child: Container(
                                 height: tabAndMobileScreen ? MediaQuery.of(context).size.width / 1.1 : MediaQuery.of(context).size.height / 1.2,
-                                decoration: BoxDecoration(image: DecorationImage(image: AssetImage(tabAndMobileScreen ? 'images/loginLogo2.png' : 'images/login logo.png'))),
+                                decoration: BoxDecoration(image: DecorationImage(image: AssetImage(tabAndMobileScreen ? 'images/loginlogovictor.png' : 'images/loginlogovictorq.png'))),
                               ),
                             )),
                         ResponsiveGridCol(
@@ -200,10 +200,10 @@ class _EmailLogInState extends State<EmailLogIn> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     RichText(
-                                        text: TextSpan(text: 'Bienvenido ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: kLargeFontSize, color: kTitleColor, fontWeight: FontWeight.bold), children: [
+                                        text: TextSpan(text: 'Santo Domingo ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
                                       TextSpan(
                                         text: dynamicAppsName,
-                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: kLargeFontSize, color: kMainColor, fontWeight: FontWeight.bold),
+                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: const Color.fromRGBO(0, 167, 250, 1), fontWeight: FontWeight.bold),
                                       )
                                     ])),
                                     Text(
@@ -394,17 +394,17 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                     ],
                                                   )),
                                               const Spacer(),
-                                              TextButton(
-                                                style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: const VisualDensity(horizontal: -4, vertical: -4)),
-                                                onPressed: () {
-                                                  context.go(SignUp.route);
-                                                },
-                                                child: Text(
-                                                  lang.S.of(context).registration,
-                                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: kMainColor, fontSize: kSmallFontSize),
-                                                  textAlign: TextAlign.end,
-                                                ),
-                                              )
+                                              // TextButton(
+                                              //   style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: const VisualDensity(horizontal: -4, vertical: -4)),
+                                              //   onPressed: () {
+                                              //     context.go(SignUp.route);
+                                              //   },
+                                              //   child: Text(
+                                              //     lang.S.of(context).registration,
+                                              //     style: Theme.of(context).textTheme.titleMedium?.copyWith(color: kMainColor, fontSize: kSmallFontSize),
+                                              //     textAlign: TextAlign.end,
+                                              //   ),
+                                              // )
                                             ],
                                           ),
                                         ],

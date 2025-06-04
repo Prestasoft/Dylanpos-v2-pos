@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -40,13 +41,34 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: "AIzaSyBP1pN3CBRNcUROMYinjTjKCzisLN7RjA0",
-  authDomain: "dylanpos-v2.firebaseapp.com",
-  databaseURL: "https://dylanpos-v2-default-rtdb.firebaseio.com",
-  projectId: "dylanpos-v2",
-  storageBucket: "dylanpos-v2.firebasestorage.app",
-  messagingSenderId: "917502791038",
-  appId: "1:917502791038:web:478334d1eb2748c1c6772f",
-  measurementId: "G-XN9YDWN22N"
+    apiKey: "AIzaSyCm5cqfIUlV3wll49QA36IRwUrbnww__lo",
+    authDomain: "dylanpos-victorfoto-stodgo.firebaseapp.com",
+    databaseURL: "https://dylanpos-victorfoto-stodgo-default-rtdb.firebaseio.com",
+    projectId: "dylanpos-victorfoto-stodgo",
+    storageBucket: "dylanpos-victorfoto-stodgo.appspot.com",
+    messagingSenderId: "892139987413",
+    appId: "1:892139987413:web:e93a15d7a74313c78e1d5c",
+    measurementId: "G-B6GB7L2RCM",
   );
+
+
+  // SANTIAGO BASE DE DATOS
+  //   apiKey: "AIzaSyBP1pN3CBRNcUROMYinjTjKCzisLN7RjA0",
+  // authDomain: "dylanpos-v2.firebaseapp.com",
+  // databaseURL: "https://dylanpos-v2-default-rtdb.firebaseio.com",
+  // projectId: "dylanpos-v2",
+  // storageBucket: "dylanpos-v2.firebasestorage.app",
+  // messagingSenderId: "917502791038",
+  // appId: "1:917502791038:web:478334d1eb2748c1c6772f",
+  // measurementId: "G-XN9YDWN22N"
+
+   // SANTO DOMINGO BASE DE DATOS
+  // apiKey: "AIzaSyCm5cqfIUlV3wll49QA36IRwUrbnww__lo",
+  // authDomain: "dylanpos-victorfoto-stodgo.firebaseapp.com",
+  // databaseURL: "https://dylanpos-victorfoto-stodgo-default-rtdb.firebaseio.com",
+  // projectId: "dylanpos-victorfoto-stodgo",
+  // storageBucket: "dylanpos-victorfoto-stodgo.firebasestorage.app",
+  // messagingSenderId: "892139987413",
+  // appId: "1:892139987413:web:e93a15d7a74313c78e1d5c",
+  // measurementId: "G-B6GB7L2RCM"
 }

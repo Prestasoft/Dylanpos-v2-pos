@@ -236,6 +236,7 @@ class _InventorySalesState extends State<InventorySales> {
 
 
                               // Mapeo Nuevo de acuerdo a la estructura de vestidos
+
                               if (isCommonReservation) {
                                 final reservationModel =
                                     ReservationProductModel.fromMap({

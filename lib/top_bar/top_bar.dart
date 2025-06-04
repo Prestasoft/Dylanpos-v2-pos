@@ -104,7 +104,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                           children: [
                             const Icon(Icons.add_rounded, color: kWhite),
                             Text(
-                              'Rentar Vestidos',
+                              'Rentar',
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -143,7 +143,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                           children: [
                             const Icon(Icons.add_rounded, color: kMainColor),
                             Text(
-                              'Facturar Reserva',
+                              'Facturar',
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -170,8 +170,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                     maxLines: 1,
                     style: GoogleFonts.poppins(
                       fontSize:
-                          context.width() < 900 ? 25 : context.width() * 0.018,
-                      fontWeight: FontWeight.w600,
+                          context.width() < 900 ? 18 : context.width() * 0.005,
+                      fontWeight: FontWeight.w500,
                       color: Colors.black,
                     ),
                     textAlign: TextAlign.start,
@@ -202,7 +202,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         ),
                         onPressed: () {
                           // Navigator.pushNamed(context, Product.route);
-                          context.go('/product');
+                          context.go('/service-package/dresses');
                         },
                         child: Row(
                           children: [

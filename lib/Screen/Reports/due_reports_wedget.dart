@@ -11,6 +11,7 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
+import '../../PDF/due_invoice_pdf.dart';
 import '../../PDF/print_pdf.dart';
 import '../../Provider/due_transaction_provider.dart';
 import '../../Provider/general_setting_provider.dart';
@@ -827,7 +828,7 @@ class _DueReportWidgetState extends State<DueReportWidget> {
                                                             onTap: () async {
                                                               AnchorElement(
                                                                   href:
-                                                                      "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(await GeneratePdfAndPrint().generateDueDocument(personalInformation: profile.value!, transactions: reTransaction[index], setting: setting))}")
+                                                                      "data:application/octet-stream;charset=utf-16le;base64,${base64Encode(await generateDueDocument(personalInformation: profile.value!, transactions: reTransaction[index], setting: setting))}")
                                                                 ..setAttribute(
                                                                     "download",
                                                                     "${dynamicInvoice}_D-${paginatedList[index].invoiceNumber}.pdf")

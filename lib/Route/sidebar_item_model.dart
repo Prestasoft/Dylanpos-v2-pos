@@ -54,13 +54,8 @@ List<SidebarItemModel> get topMenus {
       // sidebarItemType: SidebarItemType.submenu,
     ),
 
-
-
-
-
-
     SidebarItemModel(
-      name: 'Paquete de Servicio', // Nombre del paquete
+      name: 'Servicios', // Nombre del paquete
       iconPath: 'images/dashboard_icon/dashboard.svg', // Icono para la sección del paquete
       sidebarItemType: SidebarItemType.submenu, // Esto indica que tendrá submenús
       navigationPath: '/service-package', // Ruta principal para el paquete (corregido)
@@ -70,7 +65,7 @@ List<SidebarItemModel> get topMenus {
           navigationPath: '/register-package', // Ruta para registrar el paquete (corregido)
         ),
         SidebarSubmenuModel(
-          name: 'Registrar Vestidos', // Submenú para registrar un nuevo paquete
+          name: 'Registrar Vestimenta', // Submenú para registrar un nuevo paquete
           navigationPath: '/dresses', // Ruta para registrar el paquete (corregido)
         ),
 
@@ -83,15 +78,15 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/reservations',
       submenus: [
         SidebarSubmenuModel(
-          name: 'Reservas Vestimentas',
+          name: 'Reservar Vestimentas',
           navigationPath: '/rent-clothes', // NO '/reservations-list'
         ),
         SidebarSubmenuModel(
-          name: 'Reservas Paquete',
+          name: 'Reservar Paquete',
           navigationPath: '/list', // NO '/reservations-list'
         ),
         SidebarSubmenuModel(
-          name: 'Reservas calendario',
+          name: 'Reservas',
           navigationPath: '/calendario', // NO '/reservations-list'
         ),
       ],
@@ -222,24 +217,24 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/reports',
       // sidebarItemType: SidebarItemType.submenu,
     ),
-    SidebarItemModel(
-      name: 'WhatsApp Marketing',
-      iconPath: 'images/dashboard_icon/reports.svg',
-      navigationPath: '/whatsapp-marketing',
-      // sidebarItemType: SidebarItemType.submenu,
-    ),
+    // SidebarItemModel(
+    //   name: 'WhatsApp Marketing',
+    //   iconPath: 'images/dashboard_icon/reports.svg',
+    //   navigationPath: '/whatsapp-marketing',
+    //   // sidebarItemType: SidebarItemType.submenu,
+    // ),
     SidebarItemModel(
       name: 'Lista de Inventario',
       iconPath: 'images/dashboard_icon/stock_list.svg',
       navigationPath: '/stock-list',
       // sidebarItemType: SidebarItemType.submenu,
     ),
-    SidebarItemModel(
-      name: lang.S.current.subciption,
-      iconPath: 'images/dashboard_icon/subscription.svg',
-      navigationPath: '/subscription',
+    // SidebarItemModel(
+    //  name: lang.S.current.subciption,
+    //  iconPath: 'images/dashboard_icon/subscription.svg',
+    //  navigationPath: '/subscription',
       // sidebarItemType: SidebarItemType.submenu,
-    ),
+    //),
     SidebarItemModel(
       name: lang.S.current.userRole,
       iconPath: 'images/dashboard_icon/user_role.svg',

@@ -13,6 +13,7 @@ class PurchaseTransactionModel {
   String? paymentType;
   bool? sendWhatsappMessage;
   List<ProductModel>? productList;
+  String? sellerName;
 
   PurchaseTransactionModel({
     required this.customerName,
@@ -31,6 +32,7 @@ class PurchaseTransactionModel {
     this.productList,
     this.key,
     this.sendWhatsappMessage,
+    this.sellerName,
   });
 
   PurchaseTransactionModel.fromJson(Map<dynamic, dynamic> json) {
@@ -48,6 +50,7 @@ class PurchaseTransactionModel {
     isPaid = json['isPaid'];
     sendWhatsappMessage = json['sendWhatsappMessage'] ?? false;
     paymentType = json['paymentType'].toString();
+    sellerName = json['sellerName'];
     if (json['productList'] != null) {
       productList = <ProductModel>[];
       json['productList'].forEach((v) {
@@ -72,5 +75,6 @@ class PurchaseTransactionModel {
         'paymentType': paymentType,
         'sendWhatsappMessage': sendWhatsappMessage ?? false,
         'productList': productList?.map((e) => e.toJson()).toList(),
+        'sellerName': sellerName,
       };
 }
