@@ -98,7 +98,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         ),
                         onPressed: () {
                           // Navigator.pushNamed(context, PosSale.route);
-                          context.go('/sales/pos-sales');
+                          context.go('/reservations/rent-clothes');
                         },
                         child: Row(
                           children: [

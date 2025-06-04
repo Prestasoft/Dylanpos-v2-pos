@@ -227,7 +227,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
   List<Widget> TextSummaryPrice(BuildContext context, TextTheme _textTheme, ColorScheme _colors) {
     return [
       // Cabecera de la pantalla
-      _buildHeader(context, "Reserva de Vestimenta"),
+      _buildHeader(context, "Renta de Vestimenta"),
       SizedBox(height: 24),
       // Fecha de la reserva
       Card(
