@@ -15,7 +15,7 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/Repository/login_repo.dart';
 import 'package:salespro_admin/Route/static_string.dart';
-import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
+//import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
 import 'package:salespro_admin/const.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
@@ -155,280 +155,246 @@ class _EmailLogInState extends State<EmailLogIn> {
     final kSmallFontSize = responsiveValue<double>(context, xs: 14, md: 14, lg: 18);
 
     return Scaffold(
-        backgroundColor: const Color.fromARGB(255, 142, 146, 149),
-        body: Consumer(builder: (context, ref, watch) {
-          final loginProvider = ref.watch(logInProvider);
-          final settingProvider = ref.watch(generalSettingProvider);
-          return settingProvider.when(data: (setting) {
-            final dynamicNameLogo = setting.commonHeaderLogo.isNotEmpty ? setting.commonHeaderLogo : null;
-            final dynamicAppsName = setting.commonHeaderLogo.isNotEmpty ? setting.title : appsName;
-            return Padding(
-              padding: screenWidth < 400 ? const EdgeInsets.all(8) : const EdgeInsets.all(20.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    dynamicNameLogo != null ? Image.network(dynamicNameLogo, height: 50) : SvgPicture.asset(nameLogo, height: 50),
-                    Center(
-                      child: ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                        ResponsiveGridCol(
-                            lg: 6,
-                            md: screenWidth < 650 ? 12 : 6,
-                            xs: 12,
-                            child: Center(
-                              child: Container(
-                                height: tabAndMobileScreen ? MediaQuery.of(context).size.width / 1.1 : MediaQuery.of(context).size.height / 1.2,
-                                decoration: BoxDecoration(image: DecorationImage(image: AssetImage(tabAndMobileScreen ? 'images/loginlogovictor.png' : 'images/loginlogovictorq.png'))),
-                              ),
+      backgroundColor: Colors.transparent, // Cambiado a transparente para mostrar la imagen de fondo
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('images/fondo.webp'), // Cambia la ruta si deseas otra imagen
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Consumer(
+          builder: (context, ref, watch) {
+            final loginProvider = ref.watch(logInProvider);
+            final settingProvider = ref.watch(generalSettingProvider);
+            return settingProvider.when(
+              data: (setting) {
+                final dynamicNameLogo = setting.commonHeaderLogo.isNotEmpty ? setting.commonHeaderLogo : null;
+                final dynamicAppsName = setting.commonHeaderLogo.isNotEmpty ? setting.title : appsName;
+                return Padding(
+                  padding: screenWidth < 400 ? const EdgeInsets.all(8) : const EdgeInsets.all(20.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        dynamicNameLogo != null ? Image.network(dynamicNameLogo, height: 50) : SvgPicture.asset(nameLogo, height: 50),
+                        Center(
+                          child: ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                            ResponsiveGridCol(
+                                lg: 6,
+                                md: screenWidth < 650 ? 12 : 6,
+                                xs: 12,
+                                child: Center(
+                                  child: Container(
+                                    height: tabAndMobileScreen ? MediaQuery.of(context).size.width / 1.1 : MediaQuery.of(context).size.height / 1.2,
+                                    decoration: BoxDecoration(image: DecorationImage(image: AssetImage(tabAndMobileScreen ? 'images/loginLogo2.png' : 'images/loginLogo2.png'))),
+                                  ),
                             )),
-                        ResponsiveGridCol(
-                          md: screenWidth < 650 ? 12 : 6,
-                          sm: 12,
-                          lg: 6,
-                          xs: 12,
-                          child: Padding(
-                            padding: screenWidth < 380 ? EdgeInsets.zero : const EdgeInsets.only(left: 20, right: 25),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20.0),
-                              ),
+                            ResponsiveGridCol(
+                              md: screenWidth < 650 ? 12 : 6,
+                              sm: 12,
+                              lg: 6,
+                              xs: 12,
                               child: Padding(
-                                padding: EdgeInsets.all(tabAndMobileScreen ? 20 : 40),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    RichText(
-                                        text: TextSpan(text: 'Santo Domingo ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
-                                      TextSpan(
-                                        text: dynamicAppsName,
-                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: const Color.fromRGBO(0, 167, 250, 1), fontWeight: FontWeight.bold),
-                                      )
-                                    ])),
-                                    Text(
-                                      'Bienvenido de nuevo, por favor inicia sesión en tu cuenta',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: kRegularFontSize, color: kNeutral500),
-                                    ),
-                                    SizedBox(height: tabAndMobileScreen ? 20 : 40.0),
-                                    Form(
-                                      key: globalKey,
-                                      child: Column(
-                                        children: [
-                                          AppTextField(
-                                            showCursor: true,
-                                            cursorColor: kTitleColor,
-                                            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
-                                            textFieldType: TextFieldType.EMAIL,
-                                            validator: (value) {
-                                              if (value == null || value.isEmpty) {
-                                                return 'Email can\'n be empty';
-                                              } else if (!value.contains('@')) {
-                                                return 'Please enter a valid email';
-                                              }
-                                              return null;
-                                            },
-                                            onChanged: (value) {
-                                              loginProvider.email = value;
-                                            },
-                                            decoration: kInputDecoration.copyWith(
-                                              prefixIcon: Padding(
-                                                padding: const EdgeInsets.only(right: 8),
-                                                child: Container(
-                                                  alignment: Alignment.center,
-                                                  width: 48,
-                                                  decoration: const BoxDecoration(
-                                                    border: Border(right: BorderSide(color: kBorderColor)),
-                                                    // color: Color(0xff98A2B3),
-                                                  ),
-                                                  child:  HugeIcon(
-                                                    icon: HugeIcons.strokeRoundedMail01,
-                                                    color: kNeutral600,
-                                                    size: 24.0,
-                                                  ),
-                                                ),
-                                              ),
-                                              labelText: lang.S.of(context).email,
-                                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                              hintText: lang.S.of(context).enterYourEmailAddress,
-                                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 20.0),
-                                          TextFormField(
-                                            showCursor: true,
-                                            cursorColor: kTitleColor,
-                                            keyboardType: TextInputType.visiblePassword,
-                                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
-                                            validator: (value) {
-                                              if (value == null || value.isEmpty) {
-                                                return 'Password can\'t be empty';
-                                              } else if (value.length < 4) {
-                                                return 'Please enter a bigger password';
-                                              }
-                                              return null;
-                                            },
-                                            onChanged: (value) {
-                                              loginProvider.password = value;
-                                            },
-                                            obscureText: hidePassword,
-                                            decoration: kInputDecoration.copyWith(
-                                              prefixIcon: Padding(
-                                                padding: const EdgeInsets.only(right: 8),
-                                                child: Container(
-                                                  alignment: Alignment.center,
-                                                  width: 48,
-                                                  decoration: const BoxDecoration(
-                                                    border: Border(right: BorderSide(color: kBorderColor)),
-                                                    // color: Color(0xff98A2B3),
-                                                  ),
-                                                  child:  HugeIcon(
-                                                    icon: HugeIcons.strokeRoundedSquareLock02,
-                                                    color: kNeutral600,
-                                                    size: 24.0,
-                                                  ),
-                                                ),
-                                              ),
-                                              suffixIcon: IconButton(
-                                                onPressed: () {
-                                                  setState(() {
-                                                    hidePassword = !hidePassword;
-                                                  });
-                                                },
-                                                icon: Icon(
-                                                  hidePassword ? FeatherIcons.eyeOff : FeatherIcons.eye,
-                                                  color: kGreyTextColor,
-                                                ),
-                                              ),
-                                              labelText: lang.S.of(context).password,
-                                              labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                              hintText: lang.S.of(context).enterYourPassword,
-                                              hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 20.0),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              minimumSize: Size(screenWidth, 48),
-                                            ),
-                                            onPressed: () async {
-                                              if (validateAndSave()) {
-                                                bool isActive = await checkUser(context: context);
-                                                if (isActive) {
-                                                  loginProvider.signIn(context);
-                                                } else {
-                                                  //EasyLoading.showInfo('Please use the valid purchase code to use the app.');
-                                                  EasyLoading.showInfo('${lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp}.');
-                                                }
-                                              }
-                                            },
-                                            child: Text(lang.S.of(context).login),
-                                          ),
-                                          const SizedBox(height: 20.0),
-                                          // ResponsiveGridRow(children: [
-                                          //   ResponsiveGridCol(
-                                          //     xs: 6,
-                                          //     md: screenWidth < 576 && screenWidth < 890 ? 6 : 12,
-                                          //     lg: 6,
-                                          //     child: IconButton(
-                                          //         onPressed: () {
-                                          //           context.go(ForgotPassword.route);
-                                          //         },
-                                          //         icon: Row(
-                                          //           crossAxisAlignment: CrossAxisAlignment.center,
-                                          //           mainAxisAlignment: MainAxisAlignment.center,
-                                          //           children: [
-                                          //             Icon(
-                                          //               MdiIcons.lockAlertOutline,
-                                          //               color: kTitleColor,
-                                          //               size: kSmallFontSize,
-                                          //             ),
-                                          //             const SizedBox(width: 5.0),
-                                          //             Text(
-                                          //               lang.S.of(context).forgotPassword,
-                                          //               textAlign: TextAlign.center,
-                                          //               style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kNeutral600, fontSize: kSmallFontSize),
-                                          //             )
-                                          //           ],
-                                          //         )),
-                                          //   ),
-                                          //   ResponsiveGridCol(
-                                          //       md: screenWidth < 576 && screenWidth < 890 ? 6 : 12,
-                                          //       child: TextButton(
-                                          //         onPressed: () {
-                                          //           context.go(SignUp.route);
-                                          //         },
-                                          //         child: Text(
-                                          //           lang.S.of(context).registration,
-                                          //           style: Theme.of(context).textTheme.titleMedium?.copyWith(color: kMainColor, fontSize: kSmallFontSize),
-                                          //           textAlign: TextAlign.end,
-                                          //         ),
-                                          //       )),
-                                          // ]),
-                                          Row(
-                                            spacing: 2,
-                                            mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                padding: screenWidth < 380 ? EdgeInsets.zero : const EdgeInsets.only(left: 20, right: 25),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20.0),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(tabAndMobileScreen ? 20 : 40),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        RichText(
+                                            text: TextSpan(text: 'Santiago ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
+                                          TextSpan(
+                                            text: dynamicAppsName,
+                                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: const Color.fromRGBO(0, 167, 250, 1), fontWeight: FontWeight.bold),
+                                          )
+                                        ])),
+                                        Text(
+                                          'Bienvenido de nuevo, por favor inicia sesión en tu cuenta',
+                                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: kRegularFontSize, color: kNeutral500),
+                                        ),
+                                        SizedBox(height: tabAndMobileScreen ? 20 : 40.0),
+                                        Form(
+                                          key: globalKey,
+                                          child: Column(
                                             children: [
-                                              IconButton(
-                                                  padding: EdgeInsets.zero,
-                                                  visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                                                  onPressed: () {
-                                                    context.go(ForgotPassword.route);
-                                                  },
-                                                  icon: Row(
-                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
-                                                      Icon(
-                                                        MdiIcons.lockAlertOutline,
-                                                        color: kTitleColor,
-                                                        size: kSmallFontSize,
+                                              AppTextField(
+                                                showCursor: true,
+                                                cursorColor: kTitleColor,
+                                                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
+                                                textFieldType: TextFieldType.EMAIL,
+                                                validator: (value) {
+                                                  if (value == null || value.isEmpty) {
+                                                    return 'Email can\'n be empty';
+                                                  } else if (!value.contains('@')) {
+                                                    return 'Please enter a valid email';
+                                                  }
+                                                  return null;
+                                                },
+                                                onChanged: (value) {
+                                                  loginProvider.email = value;
+                                                },
+                                                decoration: kInputDecoration.copyWith(
+                                                  prefixIcon: Padding(
+                                                    padding: const EdgeInsets.only(right: 8),
+                                                    child: Container(
+                                                      alignment: Alignment.center,
+                                                      width: 48,
+                                                      decoration: const BoxDecoration(
+                                                        border: Border(right: BorderSide(color: kBorderColor)),
+                                                        // color: Color(0xff98A2B3),
                                                       ),
-                                                      const SizedBox(width: 5.0),
-                                                      Text(
-                                                        lang.S.of(context).forgotPassword,
-                                                        textAlign: TextAlign.center,
-                                                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kNeutral600, fontSize: kSmallFontSize),
-                                                      )
-                                                    ],
-                                                  )),
-                                              const Spacer(),
-                                              // TextButton(
-                                              //   style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: const VisualDensity(horizontal: -4, vertical: -4)),
-                                              //   onPressed: () {
-                                              //     context.go(SignUp.route);
-                                              //   },
-                                              //   child: Text(
-                                              //     lang.S.of(context).registration,
-                                              //     style: Theme.of(context).textTheme.titleMedium?.copyWith(color: kMainColor, fontSize: kSmallFontSize),
-                                              //     textAlign: TextAlign.end,
-                                              //   ),
-                                              // )
+                                                      child:  HugeIcon(
+                                                        icon: HugeIcons.strokeRoundedMail01,
+                                                        color: kNeutral600,
+                                                        size: 24.0,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  labelText: lang.S.of(context).email,
+                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                                  hintText: lang.S.of(context).enterYourEmailAddress,
+                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 20.0),
+                                              TextFormField(
+                                                showCursor: true,
+                                                cursorColor: kTitleColor,
+                                                keyboardType: TextInputType.visiblePassword,
+                                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
+                                                validator: (value) {
+                                                  if (value == null || value.isEmpty) {
+                                                    return 'Password can\'t be empty';
+                                                  } else if (value.length < 4) {
+                                                    return 'Please enter a bigger password';
+                                                  }
+                                                  return null;
+                                                },
+                                                onChanged: (value) {
+                                                  loginProvider.password = value;
+                                                },
+                                                obscureText: hidePassword,
+                                                decoration: kInputDecoration.copyWith(
+                                                  prefixIcon: Padding(
+                                                    padding: const EdgeInsets.only(right: 8),
+                                                    child: Container(
+                                                      alignment: Alignment.center,
+                                                      width: 48,
+                                                      decoration: const BoxDecoration(
+                                                        border: Border(right: BorderSide(color: kBorderColor)),
+                                                        // color: Color(0xff98A2B3),
+                                                      ),
+                                                      child:  HugeIcon(
+                                                        icon: HugeIcons.strokeRoundedSquareLock02,
+                                                        color: kNeutral600,
+                                                        size: 24.0,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  suffixIcon: IconButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        hidePassword = !hidePassword;
+                                                      });
+                                                    },
+                                                    icon: Icon(
+                                                      hidePassword ? FeatherIcons.eyeOff : FeatherIcons.eye,
+                                                      color: kGreyTextColor,
+                                                    ),
+                                                  ),
+                                                  labelText: lang.S.of(context).password,
+                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
+                                                  hintText: lang.S.of(context).enterYourPassword,
+                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 20.0),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  minimumSize: Size(screenWidth, 48),
+                                                ),
+                                                onPressed: () async {
+                                                  if (validateAndSave()) {
+                                                    bool isActive = await checkUser(context: context);
+                                                    if (isActive) {
+                                                      loginProvider.signIn(context);
+                                                    } else {
+                                                      //EasyLoading.showInfo('Please use the valid purchase code to use the app.');
+                                                      EasyLoading.showInfo('${lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp}.');
+                                                    }
+                                                  }
+                                                },
+                                                child: Text(lang.S.of(context).login),
+                                              ),
+                                              const SizedBox(height: 20.0),
+                                              
+                                              Row(
+                                                spacing: 2,
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                                                      onPressed: () {
+                                                        context.go(ForgotPassword.route);
+                                                      },
+                                                      icon: Row(
+                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Icon(
+                                                            MdiIcons.lockAlertOutline,
+                                                            color: kTitleColor,
+                                                            size: kSmallFontSize,
+                                                          ),
+                                                          const SizedBox(width: 5.0),
+                                                          Text(
+                                                            lang.S.of(context).forgotPassword,
+                                                            textAlign: TextAlign.center,
+                                                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kNeutral600, fontSize: kSmallFontSize),
+                                                          )
+                                                        ],
+                                                      )),
+                                                  const Spacer(),
+                                        
+                                                ],
+                                              ),
                                             ],
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        )
-                      ]),
+                            )
+                          ]),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
+              error: (e, stack) {
+                return Text(e.toString());
+              },
+              loading: () {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              },
             );
-          }, error: (e, stack) {
-            return Text(e.toString());
-          }, loading: () {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          });
-        }));
+          },
+        ),
+      ),
+    );
   }
 }

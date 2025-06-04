@@ -12,6 +12,8 @@ class ReservationModel {
   final String? nota;
   final String? place;
   final List<Map<String, String>> multipleDress;
+  final String reservation_associated;
+  final String package_price;
 
   ReservationModel({
     String? id,
@@ -25,6 +27,9 @@ class ReservationModel {
     DateTime? updatedAt,
     required this.multipleDress,
     this.estado = "pendiente",
+    required this.reservation_associated,
+    required this.package_price,
+    //required this.nota,
     this.nota = '',
     this.place = '',
   })  : id = id ?? '',
@@ -51,6 +56,8 @@ class ReservationModel {
               'branch_id': x['branch_id'] ?? '',
             }),
       ),
+      reservation_associated: map['reservation_associated'] ?? '',
+      package_price: map['package_price'] ?? '',
     );
   }
 
@@ -92,6 +99,8 @@ class ReservationModel {
           'branch_id': dress['branch_id'],
         };
       }).toList(),
+      'reservation_associated': reservation_associated,
+      'package_price': package_price,
     };
   }
 }

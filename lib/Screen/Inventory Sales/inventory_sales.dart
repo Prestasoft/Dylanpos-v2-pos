@@ -228,11 +228,12 @@ class _InventorySalesState extends State<InventorySales> {
                                   .trim()
                                   .replaceAll(RegExp(r'[\[\]"]'), '');
 
-                              //debugger();
+                              
 
                               // Verificar si no es reserva de paquetes compuestos
                               bool isCommonReservation =
                                   full.multipleDress.isEmpty;
+
 
                               // Mapeo Nuevo de acuerdo a la estructura de vestidos
 
@@ -260,8 +261,11 @@ class _InventorySalesState extends State<InventorySales> {
                                   'created_at': reservation['created_at'],
                                   'updated_at': reservation['updated_at'],
                                   'duration': service?['duration'] ?? {},
+                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0')
                                 });
 
+                                // Verifico si es Adicional de Reserva para poner algo que lo identifique y ademas el precio
+                                
                                 return InkWell(
                                   onTap: () {
                                     _addReservationToCart(reservationModel);
@@ -348,7 +352,9 @@ class _InventorySalesState extends State<InventorySales> {
                                               CrossAxisAlignment.end,
                                           children: [
                                             Text(
-                                              '\$${reservationModel.price.toStringAsFixed(2)}',
+                                              reservationModel.packagePrice > 0 
+                                              ? '\$${reservationModel.packagePrice.toStringAsFixed(2)}'
+                                              : '\$${reservationModel.price.toStringAsFixed(2)}',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Theme.of(context)
@@ -401,6 +407,8 @@ class _InventorySalesState extends State<InventorySales> {
                                   'updated_at': reservation['updated_at'],
                                   'duration': service?['duration'] ?? {},
                                   'dress_info': full.multipleDress,
+                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0')
+                                      
                                 });
 
                                 return InkWell(
@@ -492,7 +500,9 @@ class _InventorySalesState extends State<InventorySales> {
                                               CrossAxisAlignment.end,
                                           children: [
                                             Text(
-                                              '\$${reservationModel.price.toStringAsFixed(2)}',
+                                              reservationModel.packagePrice > 0 
+                                              ? '\$${reservationModel.packagePrice.toStringAsFixed(2)}'
+                                              : '\$${reservationModel.price.toStringAsFixed(2)}',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Theme.of(context)

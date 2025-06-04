@@ -25,6 +25,8 @@ import 'package:salespro_admin/Screen/Purchase%20List/purchase_list.dart';
 import 'package:salespro_admin/Screen/Purchase%20Return/purchase_returns_list.dart';
 import 'package:salespro_admin/Screen/Purchase/purchase.dart';
 import 'package:salespro_admin/Screen/Reservation/ReservationCalendarScreen.dart';
+import 'package:salespro_admin/Screen/Reservation/aditional_clothes_reservation_screen.dart';
+import 'package:salespro_admin/Screen/Reservation/clothes_reservation_screen.dart';
 import 'package:salespro_admin/Screen/Reservation/package_list_screen.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_edit.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_list.dart';
@@ -106,8 +108,16 @@ abstract class AcnooAppRoutes {
             ),
             routes: [
               GoRoute(
+                path: 'rent-clothes', // SOLO 'list' (NO '/reservations-list')
+                builder: (context, state) => const ClothesReservationScreen(),
+              ),
+              GoRoute(
                 path: 'list', // SOLO 'list' (NO '/reservations-list')
                 builder: (context, state) => const PackageListScreen(),
+              ),
+              GoRoute(
+                path: 'list2', // SOLO 'list' (NO '/reservations-list')
+                builder: (context, state) => const AdditionalClothesReservationScreen(),
               ),
               GoRoute(
                 path: 'calendario',

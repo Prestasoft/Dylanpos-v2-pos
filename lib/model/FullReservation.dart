@@ -9,6 +9,8 @@ class FullReservation {
   final List<String> dressIds;
   final List<String> serviceIds;
   final List<Map<String, String>> multipleDress;
+  final String reservation_associated;
+  final double package_price;
 
   FullReservation({
     required this.id,
@@ -19,5 +21,7 @@ class FullReservation {
     this.dressIds = const [],
     this.serviceIds = const [],
     this.multipleDress = const [],
+    this.reservation_associated = '',
+    this.package_price = 0.0,
   });
 }

@@ -335,10 +335,15 @@ class DressReservation {
   final String name;
   final String branchId;
   final String componentName;
+  final double? price;
+  final bool isAvailable;
 
   DressReservation(
       {required this.id,
       required this.name,
       required this.branchId,
-      required this.componentName});
+      required this.componentName,
+      this.price = 0.0,
+      this.isAvailable = true});
+      
 }

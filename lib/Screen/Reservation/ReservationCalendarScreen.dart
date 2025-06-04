@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
+import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -14,23 +15,45 @@ class ReservationCalendarScreen extends ConsumerStatefulWidget {
   const ReservationCalendarScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ReservationCalendarScreen> createState() =>
-      _ReservationCalendarScreenState();
+  ConsumerState<ReservationCalendarScreen> createState() => _ReservationCalendarScreenState();
 }
 
-class _ReservationCalendarScreenState
-    extends ConsumerState<ReservationCalendarScreen> {
+class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
-  late Map<DateTime, List<ReservationModel>> _reservationsByDay;
+  Map<DateTime, List<ReservationModel>> _reservationsByDay = {};
+  String? packageRentaId;
+
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
     _reservationsByDay = {};
+    Future.microtask(() => _loadRentaId());
   }
+
+  Future<void> _loadRentaId() async {
+  final packagesAsync = ref.read(servicePackagesProvider);
+
+  if (packagesAsync is AsyncData) {
+    final rentas = packagesAsync.value
+        ?.where((e) => e.name == "Renta de Vestimenta")
+        .toList();
+    if (rentas!.isNotEmpty) {
+      setState(() {
+        packageRentaId = rentas.first.id;
+      });
+    } else {
+      print("Paquete 'Renta de Vestimenta' no encontrado");
+    }
+  } else {
+    // Esperar a que cargue, o volver a intentarlo
+    await Future.delayed(const Duration(milliseconds: 200));
+    _loadRentaId(); // reintentar (opcional: ponle un contador para no entrar en loop infinito)
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -81,18 +104,27 @@ class _ReservationCalendarScreenState
   }
 
   Widget _buildCalendar(AsyncValue<List<ReservationModel>> reservationsValue) {
+    
+    // final rentas = ref.watch(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
+    // final String id = rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
     return reservationsValue.when(
       data: (reservations) {
-        // Process reservations and organize by day
+        // Agrupar reservas por día
         _reservationsByDay = {};
         for (var reservation in reservations) {
           final date = _parseDate(reservation.reservationDate);
           if (date != null) {
-            final dateKey = DateTime(date.year, date.month, date.day);
-            if (!_reservationsByDay.containsKey(dateKey)) {
-              _reservationsByDay[dateKey] = [];
+            // Si es del paquete de renta, añadir +-1 día también
+            if (reservation.serviceId == packageRentaId) {
+              for (int i = -1; i <= 1; i++) {
+                DateTime dateFechasRentas = date.add(Duration(days: i));
+                final dateKey = DateTime(dateFechasRentas.year, dateFechasRentas.month, dateFechasRentas.day);
+                _reservationsByDay.putIfAbsent(dateKey, () => []).add(reservation);
+              }
+            } else {
+              final dateKey = DateTime(date.year, date.month, date.day);
+              _reservationsByDay.putIfAbsent(dateKey, () => []).add(reservation);
             }
-            _reservationsByDay[dateKey]!.add(reservation);
           }
         }
 
@@ -107,32 +139,54 @@ class _ReservationCalendarScreenState
             return _reservationsByDay[dateKey] ?? [];
           },
           calendarStyle: CalendarStyle(
-            markerDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              shape: BoxShape.circle,
-            ),
             todayDecoration: BoxDecoration(
-              color: Colors.transparent, // Eliminar fondo del día actual
+              color: Colors.transparent,
             ),
             selectedDecoration: BoxDecoration(
-              color: Colors.transparent, // Eliminar fondo del día seleccionado
+              color: Colors.transparent,
             ),
-            cellMargin: EdgeInsets.all(6),
+            cellMargin: const EdgeInsets.all(6),
             markersAlignment: Alignment.center,
           ),
           calendarBuilders: CalendarBuilders(
+            markerBuilder: (context, day, events) {
+  if (events.isEmpty) return const SizedBox();
+
+  // Filtrar solo eventos válidos
+  final validEvents = events.whereType<ReservationModel>().toList();
+
+  return Align(
+    alignment: Alignment.bottomCenter,
+    child: Wrap(
+      spacing: 2, // espacio entre puntos
+      alignment: WrapAlignment.center,
+      children: validEvents.map((event) {
+        final isRentaEvent = event.serviceId == packageRentaId;
+        return Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isRentaEvent ? Colors.green : Theme.of(context).primaryColor,
+          ),
+        );
+      }).toList(),
+    ),
+  );
+},
+
             todayBuilder: (context, day, focusedDay) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.camera_alt, // Cambiar el ícono a una cámara
+                      Icons.camera_alt,
                       color: Theme.of(context).primaryColor,
                       size: 16,
                     ),
                     Text(
-                      '${day.day}', // Mostrar el número del día
+                      '${day.day}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -149,14 +203,13 @@ class _ReservationCalendarScreenState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons
-                          .checkroom, // Ícono de vestido para el día seleccionado
+                      Icons.checkroom,
                       color: Colors.pinkAccent,
                       size: 16,
                     ),
                     Text(
                       '${day.day}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.pinkAccent,
@@ -170,7 +223,7 @@ class _ReservationCalendarScreenState
               return Center(
                 child: Text(
                   '${day.day}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.black,
                   ),
@@ -201,13 +254,11 @@ class _ReservationCalendarScreenState
     );
   }
 
-  Widget _buildReservationsList(
-      AsyncValue<List<ReservationModel>> reservationsValue) {
+  Widget _buildReservationsList(AsyncValue<List<ReservationModel>> reservationsValue) {
     return reservationsValue.when(
       data: (allReservations) {
         // Filter reservations for selected day
-        final selectedDayKey = DateTime(
-            _selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
+        final selectedDayKey = DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
         final reservations = _reservationsByDay[selectedDayKey] ?? [];
 
         if (reservations.isEmpty) {
@@ -229,16 +280,15 @@ class _ReservationCalendarScreenState
             final reservationTime = _parseTime(reservation.reservationTime);
 
             // Combine date and time
-            final reservationDateTime =
-                reservationDate != null && reservationTime != null
-                    ? DateTime(
-                        reservationDate.year,
-                        reservationDate.month,
-                        reservationDate.day,
-                        reservationTime.hour,
-                        reservationTime.minute,
-                      )
-                    : null;
+            final reservationDateTime = reservationDate != null && reservationTime != null
+                ? DateTime(
+                    reservationDate.year,
+                    reservationDate.month,
+                    reservationDate.day,
+                    reservationTime.hour,
+                    reservationTime.minute,
+                  )
+                : null;
 
             // Determine reservation status
             ReservationStatus status = ReservationStatus.upcoming;
@@ -327,8 +377,7 @@ class _ReservationCalendarScreenState
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancelar Reservación'),
-        content:
-            const Text('¿Estás seguro que deseas cancelar esta reservación?'),
+        content: const Text('¿Estás seguro que deseas cancelar esta reservación?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -336,7 +385,7 @@ class _ReservationCalendarScreenState
           ),
           TextButton(
             onPressed: () async {
-              await ref.read(cancelReservationProvider(reservation.id));
+              await ref.read(cancelReservationProvider(reservation.id).future);
 
               // ref.read(ActualizarEstadoReservaProvider({
               //   'id': [reservation.id],
@@ -414,8 +463,7 @@ class ReservationCard extends ConsumerWidget {
     }
 
     // Obtenemos los datos completos de la reservación
-    final fullReservationAsync =
-        ref.watch(fullReservationByIdProviderVQ(reservation.id));
+    final fullReservationAsync = ref.watch(fullReservationByIdProviderVQ(reservation.id));
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -427,30 +475,24 @@ class ReservationCard extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: fullReservationAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Text('Error al cargar datos: $error',
-                style: TextStyle(color: Colors.red)),
+            error: (error, _) => Text('Error al cargar datos: $error', style: TextStyle(color: Colors.red)),
             data: (fullReservation) {
-              final clientName = fullReservation?.client?.customerName ??
-                  'Cliente desconocido';
+              final clientName = fullReservation?.client?.customerName ?? 'Cliente desconocido';
 
               String dressName = '';
 
               // Verifica si el vestido es de reserva simple o no
-              final dressComposite =
-                  fullReservation?.reservation['multiple_dress'] ?? [];
+              final dressComposite = fullReservation?.reservation['multiple_dress'] ?? [];
 
               if (dressComposite.isEmpty) {
-                dressName = fullReservation?.dress?['name'] ??
-                    'Vestido no especificado';
+                dressName = fullReservation?.dress?['name'] ?? 'Vestido no especificado';
               }
 
-              final serviceName = fullReservation?.service?['name'] ??
-                  'Servicio no especificado';
+              final serviceName = fullReservation?.service?['name'] ?? 'Servicio no especificado';
 
               final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
 
-              final place =
-                  fullReservation?.reservation['place'] ?? 'Sin lugar';
+              final place = fullReservation?.reservation['place'] ?? 'Sin lugar';
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,8 +508,7 @@ class ReservationCard extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 '${reservation.reservationDate} - ${reservation.reservationTime}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                             ),
                           ],
@@ -477,8 +518,7 @@ class ReservationCard extends ConsumerWidget {
                         label: Text(statusText),
                         avatar: Icon(statusIcon, size: 16, color: Colors.white),
                         backgroundColor: statusColor,
-                        labelStyle:
-                            const TextStyle(color: Colors.white, fontSize: 12),
+                        labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
                         padding: EdgeInsets.zero,
                       ),
                     ],
@@ -489,8 +529,7 @@ class ReservationCard extends ConsumerWidget {
                       const Icon(Icons.person, size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Cliente: $clientName',
-                            style: const TextStyle(fontSize: 14)),
+                        child: Text('Cliente: $clientName', style: const TextStyle(fontSize: 14)),
                       ),
                     ],
                   ),
@@ -505,12 +544,10 @@ class ReservationCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.engineering,
-                          size: 16, color: Colors.grey),
+                      const Icon(Icons.engineering, size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Servicio: $serviceName',
-                            style: const TextStyle(fontSize: 14)),
+                        child: Text('Servicio: $serviceName', style: const TextStyle(fontSize: 14)),
                       ),
                     ],
                   ),
@@ -520,20 +557,17 @@ class ReservationCard extends ConsumerWidget {
                       const Icon(Icons.place, size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Lugar: $place',
-                            style: const TextStyle(fontSize: 14)),
+                        child: Text('Lugar: $place', style: const TextStyle(fontSize: 14)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.textsms_outlined,
-                          size: 16, color: Colors.grey),
+                      const Icon(Icons.textsms_outlined, size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Nota: $note',
-                            style: const TextStyle(fontSize: 14)),
+                        child: Text('Nota: $note', style: const TextStyle(fontSize: 14)),
                       ),
                     ],
                   ),
@@ -615,8 +649,7 @@ class ReservationDetailView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fullReservationAsync =
-        ref.watch(fullReservationByIdProviderVQ(reservation.id));
+    final fullReservationAsync = ref.watch(fullReservationByIdProviderVQ(reservation.id));
 
     return Center(
       child: ConstrainedBox(
@@ -625,374 +658,234 @@ class ReservationDetailView extends ConsumerWidget {
           maxHeight: 700, // opcional
         ),
         child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 10,
-                  spreadRadius: 5,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Botón de cerrar
+              Positioned(
+                top: 12,
+                right: 12,
+                child: IconButton(
+                  icon: const Icon(Icons.close, size: 28, color: Colors.grey),
+                  onPressed: onClose,
                 ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // Botón de cerrar
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, size: 28, color: Colors.grey),
-                    onPressed: onClose,
+              ),
+
+              // Contenido principal
+              Padding(
+                padding: const EdgeInsets.only(top: 50, left: 16, right: 16, bottom: 16),
+                child: fullReservationAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Center(
+                    child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
                   ),
-                ),
+                  data: (fullReservation) {
+                    if (fullReservation == null) {
+                      return const Center(child: Text('No se encontraron detalles'));
+                    }
 
-                // Contenido principal
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: 40,
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
-                  ),
-                  child: fullReservationAsync.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, stack) => Center(
-                      child: Text('Error: $error',
-                          style: const TextStyle(color: Colors.red)),
-                    ),
-                    data: (fullReservation) {
-                      if (fullReservation == null) {
-                        return const Center(
-                            child: Text('No se encontraron detalles'));
-                      }
+                    final reservationData = fullReservation.reservation;
+                    final dress = fullReservation.dress;
+                    final service = fullReservation.service;
+                    final client = fullReservation.client;
+                    final dressComposite = reservationData['multiple_dress'] ?? [];
 
-                      final reservationData = fullReservation.reservation;
-                      final dress = fullReservation.dress;
-                      final service = fullReservation.service;
-                      final client = fullReservation.client;
+                    String formattedDate;
+                    try {
+                      final date = DateFormat('yyyy-MM-dd').parse(reservationData['reservation_date'] ?? '');
+                      formattedDate = DateFormat.yMMMMd('es').format(date);
+                    } catch (e) {
+                      formattedDate = reservationData['reservation_date'] ?? '';
+                    }
 
-                      // Verifica si el vestido es de reserva simple o no
-                      final dressComposite =
-                          fullReservation?.reservation['multiple_dress'] ?? [];
-                      String dressName = '';
-
-                      if (dressComposite.isEmpty) {
-                        dressName = fullReservation?.dress?['name'] ??
-                            'Vestido no especificado';
-                      }
-
-                      String formattedDate = '';
-                      try {
-                        final date = DateFormat('yyyy-MM-dd')
-                            .parse(reservationData['reservation_date'] ?? '');
-                        formattedDate = DateFormat.yMMMMd('es').format(date);
-                      } catch (e) {
-                        formattedDate =
-                            reservationData['reservation_date'] ?? '';
-                      }
-
-                      return Column(
-                        children: [
-                          // Indicador de arrastre
-                          Center(
-                            child: Container(
-                              width: 60,
-                              height: 5,
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[400],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 60,
+                            height: 5,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Detalles de la Reservación',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
 
-                          // Título
+                        if (client != null && client.dueAmount.toDouble() > 0) ...[
                           Text(
-                            'Detalles de la Reservación',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
+                            'El cliente tiene un balance pendiente',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.red,
                                 ),
                           ),
-                          const SizedBox(height: 16),
-                          //TODO ADEUDO
-                          if (client!.dueAmount.toDouble() > 0)
-                            Row(
-                              children: [
-                                Text(
-                                  'El cliente tiene un balance pendiente',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.red,
-                                      ),
-                                ),
-                                SizedBox(
-                                  width: 24,
-                                ),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return StatefulBuilder(
-                                            builder: (context, setStates) {
-                                              return Dialog(
-                                                surfaceTintColor: Colors.white,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          5.0),
-                                                ),
-                                                child: ShowDuePaymentPopUp(
-                                                  customerModel: client!,
-                                                ),
-                                              );
-                                            },
-                                          );
-                                        },
-                                      );
-                                    },
-                                    icon: const Icon(Icons.payment, size: 20),
-                                    label: const Text('Añadir Pago'),
-                                    style: ElevatedButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor:
-                                          Theme.of(context).primaryColor,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Dialog(
+                                    surfaceTintColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5.0),
                                     ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                          const SizedBox(height: 8),
-
-                          // Contenido desplazable
-                          Expanded(
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  // Imagen del vestido
-                                  if (dress != null &&
-                                      dress['images'] != null) ...[
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: _buildDressImage(dress['images']),
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-
-                                  // Sección de reservación
-                                  _buildSection(
-                                    context,
-                                    title: 'Información de la Reservación',
-                                    children: [
-                                      _buildDetailItem(Icons.calendar_today,
-                                          'Fecha', formattedDate),
-                                      _buildDetailItem(
-                                          Icons.access_time,
-                                          'Hora',
-                                          reservationData['reservation_time'] ??
-                                              ''),
-                                      _buildDetailItem(
-                                          Icons.business,
-                                          'Sucursal',
-                                          reservationData['branch_id'] ?? ''),
-                                      _buildDetailItem(
-                                          Icons.place,
-                                          'Lugar',
-                                          reservationData['place'] ??
-                                              'Sin lugar'),
-                                      _buildDetailItem(
-                                          Icons.textsms_outlined,
-                                          'Notas',
-                                          reservationData['nota'] ??
-                                              'Sin notas'),
-                                    ],
-                                  ),
-
-                                  // Sección del cliente
-                                  if (client != null)
-                                    _buildSection(
-                                      context,
-                                      title: 'Información del Cliente',
-                                      children: [
-                                        _buildDetailItem(Icons.person, 'Nombre',
-                                            client.customerName),
-                                        _buildDetailItem(Icons.phone,
-                                            'Teléfono', client.phoneNumber),
-                                        _buildDetailItem(Icons.email, 'Email',
-                                            client.emailAddress),
-                                        if (client.customerAddress.isNotEmpty)
-                                          _buildDetailItem(
-                                              Icons.location_on,
-                                              'Dirección',
-                                              client.customerAddress),
-                                      ],
-                                    ),
-
-                                  // Sección del vestido Reserva Simple
-                                  if (dress != null)
-                                    _buildSection(
-                                      context,
-                                      title: 'Información del Vestido',
-                                      children: [
-                                        _buildDetailItem(Icons.checkroom,
-                                            'Vestido', dress['name'] ?? ''),
-                                        _buildDetailItem(
-                                            Icons.category,
-                                            'Categoría',
-                                            dress['category'] ?? ''),
-                                        if (dress['color'] != null)
-                                          _buildDetailItem(Icons.color_lens,
-                                              'Color', dress['color']),
-                                        if (dress['size'] != null)
-                                          _buildDetailItem(Icons.straighten,
-                                              'Talla', dress['size']),
-                                      ],
-                                    ),
-
-                                  // Sección del vestido Reserva Compuesta
-                                  if (fullReservation
-                                          .reservation['multiple_dress'] !=
-                                      null)
-                                    _buildSection(
-                                      context,
-                                      title: 'Información de Vestimenta',
-                                      children: [
-                                        Text(
-                                          'Vestimenta',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey[600],
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        _buildDetailItemComposite(
-                                            Icons.checkroom,
-                                            'Vestido',
-                                            dressComposite),
-                                        const SizedBox(height: 2),
-                                        // Text(
-                                        //   'Categoría',
-                                        //   style: TextStyle(
-                                        //     fontSize: 14,
-                                        //     color: Colors.grey[600],
-                                        //     fontWeight: FontWeight.bold,
-                                        //   ),
-                                        // ),
-                                        _buildDetailItem(
-                                            Icons.category,
-                                            'Categoría',
-                                            service != null
-                                                ? (service['category'] ?? '')
-                                                : ''),
-                                      ],
-                                    ),
-
-                                  // Sección del servicio
-                                  if (service != null)
-                                    _buildSection(
-                                      context,
-                                      title: 'Información del Servicio',
-                                      children: [
-                                        _buildDetailItem(Icons.engineering,
-                                            'Servicio', service['name'] ?? ''),
-                                        _buildDetailItem(
-                                            Icons.timer,
-                                            'Duración',
-                                            _formatDuration(
-                                                service['duration'])),
-                                        _buildDetailItem(
-                                            Icons.attach_money,
-                                            'Precio',
-                                            '\$${(service['price'] is num ? (service['price'] as num).toDouble() : 0.0).toStringAsFixed(2)}'),
-                                        if (service['description'] != null &&
-                                            service['description']
-                                                .toString()
-                                                .isNotEmpty)
-                                          _buildDetailItem(
-                                              Icons.description,
-                                              'Descripción',
-                                              service['description']),
-                                      ],
-                                    ),
-
-                                  const SizedBox(height: 24),
-
-                                  // Botones de acción
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 24),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        Expanded(
-                                          child: ElevatedButton.icon(
-                                            onPressed: onEdit,
-                                            icon: const Icon(Icons.edit,
-                                                size: 20),
-                                            label: const Text('Editar'),
-                                            style: ElevatedButton.styleFrom(
-                                              foregroundColor: Colors.white,
-                                              backgroundColor: Theme.of(context)
-                                                  .primaryColor,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 14),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: ElevatedButton.icon(
-                                            onPressed: onCancel,
-                                            icon: const Icon(Icons.cancel,
-                                                size: 20),
-                                            label: const Text('Cancelar'),
-                                            style: ElevatedButton.styleFrom(
-                                              foregroundColor: Colors.white,
-                                              backgroundColor: Colors.red,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 14),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-                              ),
+                                    child: ShowDuePaymentPopUp(customerModel: client),
+                                  );
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.payment, size: 20),
+                            label: const Text('Añadir Pago'),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Theme.of(context).primaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                           ),
                         ],
-                      );
-                    },
-                  ),
+
+                        const SizedBox(height: 12),
+
+                        // Contenido scrollable
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                if (dress != null && dress['images'] != null) ...[
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: _buildDressImage(dress['images']),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+
+// Sección de reservación
+                                _buildSection(
+                                  context,
+                                  title: 'Información de la Reservación',
+                                  children: [
+                                    _buildDetailItem(Icons.calendar_today, 'Fecha', formattedDate),
+                                    _buildDetailItem(Icons.access_time, 'Hora', reservationData['reservation_time'] ?? ''),
+                                    _buildDetailItem(Icons.business, 'Sucursal', reservationData['branch_id'] ?? ''),
+                                    _buildDetailItem(Icons.place, 'Lugar', reservationData['place'] ?? 'Sin lugar'),
+                                    _buildDetailItem(Icons.textsms_outlined, 'Notas', reservationData['nota'] ?? 'Sin notas'),
+                                  ],
+                                ),
+
+                                if (client != null)
+                                  _buildSection(
+                                    context,
+                                    title: 'Información del Cliente',
+                                    children: [
+                                      _buildDetailItem(Icons.person, 'Nombre', client.customerName),
+                                      _buildDetailItem(Icons.phone, 'Teléfono', client.phoneNumber),
+                                      _buildDetailItem(Icons.email, 'Email', client.emailAddress),
+                                      if (client.customerAddress.isNotEmpty) _buildDetailItem(Icons.location_on, 'Dirección', client.customerAddress),
+                                    ],
+                                  ),
+                                if (dress != null)
+                                  _buildSection(
+                                    context,
+                                    title: 'Información del Vestido',
+                                    children: [
+                                      _buildDetailItem(Icons.checkroom, 'Vestido', dress['name'] ?? ''),
+                                      _buildDetailItem(Icons.category, 'Categoría', dress['category'] ?? ''),
+                                      if (dress['color'] != null) _buildDetailItem(Icons.color_lens, 'Color', dress['color']),
+                                      if (dress['size'] != null) _buildDetailItem(Icons.straighten, 'Talla', dress['size']),
+                                    ],
+                                  ),
+                                if (reservationData['multiple_dress'] != null)
+                                  _buildSection(
+                                    context,
+                                    title: 'Información de Vestimenta',
+                                    children: [
+                                      _buildDetailItemComposite(Icons.checkroom, 'Vestido', dressComposite),
+                                      _buildDetailItem(Icons.category, 'Categoría', service != null ? (service['category'] ?? '') : ''),
+                                    ],
+                                  ),
+                                if (service != null)
+                                  _buildSection(
+                                    context,
+                                    title: 'Información del Servicio',
+                                    children: [
+                                      _buildDetailItem(Icons.engineering, 'Servicio', service['name'] ?? ''),
+                                      _buildDetailItem(Icons.timer, 'Duración', _formatDuration(service['duration'])),
+                                      _buildDetailItem(Icons.attach_money, 'Precio', '\$${(service['price'] is num ? (service['price'] as num).toDouble() : 0.0).toStringAsFixed(2)}'),
+                                      if (service['description'] != null && service['description'].toString().isNotEmpty) _buildDetailItem(Icons.description, 'Descripción', service['description']),
+                                    ],
+                                  ),
+                                const SizedBox(height: 24),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: onEdit,
+                                          icon: const Icon(Icons.edit, size: 20),
+                                          label: const Text('Editar'),
+                                          style: ElevatedButton.styleFrom(
+                                            foregroundColor: Colors.white,
+                                            backgroundColor: Theme.of(context).primaryColor,
+                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: onCancel,
+                                          icon: const Icon(Icons.cancel, size: 20),
+                                          label: const Text('Cancelar'),
+                                          style: ElevatedButton.styleFrom(
+                                            foregroundColor: Colors.white,
+                                            backgroundColor: Colors.red,
+                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-              ],
-            )),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildSection(BuildContext context,
-      {required String title, required List<Widget> children}) {
+  Widget _buildSection(BuildContext context, {required String title, required List<Widget> children}) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 1,
@@ -1048,8 +941,7 @@ class ReservationDetailView extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailItemComposite(
-      IconData icon, String title, dynamic dressComposite) {
+  Widget _buildDetailItemComposite(IconData icon, String title, dynamic dressComposite) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: dressComposite.map<Widget>((item) {
@@ -1100,8 +992,7 @@ class ReservationDetailView extends ConsumerWidget {
     String imageUrl = '';
 
     if (images is String) {
-      imageUrl =
-          images.split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
+      imageUrl = images.split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
     } else if (images is List && images.isNotEmpty) {
       imageUrl = images.first.toString();
     }
