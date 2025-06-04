@@ -35,6 +35,7 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
 class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
   bool isSubmitting = false;
 
+  TextEditingController lugarController = TextEditingController();
   TextEditingController noteController = TextEditingController();
 
   String _formatDate(DateTime date) {
@@ -137,6 +138,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       'time': formattedTime,
       'multiple_dress': multipleDress,
       'note': noteController.text,
+      'place': lugarController.text,
     }).future);
 
     setState(() {
@@ -207,45 +209,13 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                 widget.selectedTime.format(context),
               ),
               SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.textsms_outlined,
-                          color: Theme.of(context).primaryColor, size: 28),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Nota",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: noteController,
-                                    decoration: InputDecoration(
-                                      labelText: "Nota opcional",
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _buildNote(
+                Icons.textsms_outlined,
+                "Nota",
+              ),
+              _buildPlace(
+                Icons.place,
+                "Lugar",
               ),
               SizedBox(height: 24),
               SizedBox(
@@ -266,6 +236,90 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Card _buildNote(IconData icon, String title) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Icon(icon, color: Theme.of(context).primaryColor, size: 28),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: noteController,
+                          decoration: InputDecoration(
+                            labelText: "Nota opcional",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Card _buildPlace(IconData icon, String title) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Icon(icon, color: Theme.of(context).primaryColor, size: 28),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: lugarController,
+                          decoration: InputDecoration(
+                            labelText: "Lugar",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

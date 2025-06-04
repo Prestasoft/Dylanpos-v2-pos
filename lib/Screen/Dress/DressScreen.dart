@@ -155,76 +155,85 @@ class _DressScreenState extends State<DressScreen> {
                     const SizedBox(height: 10),
 
                     // Search and pagination controls
-                    ResponsiveGridRow(rowSegments: 100, children: [
-                      ResponsiveGridCol(
-                        xs: screenWidth < 360
-                            ? 50
-                            : screenWidth > 430
-                                ? 33
-                                : 40,
-                        md: screenWidth < 768
-                            ? 24
-                            : screenWidth < 950
-                                ? 20
-                                : 15,
-                        lg: screenWidth < 1700 ? 15 : 10,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 48,
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8.0),
-                              border: Border.all(color: kNeutral300),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                    child: Text(
-                                  'Show-',
-                                  style: theme.textTheme.bodyLarge,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                )),
-                                DropdownButton<int>(
-                                  isDense: true,
-                                  padding: EdgeInsets.zero,
-                                  underline: const SizedBox(),
-                                  value: _itemsPerPage,
-                                  icon: const Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Colors.black,
-                                  ),
-                                  items: [10, 20, 50, 100, -1]
-                                      .map<DropdownMenuItem<int>>((int value) {
-                                    return DropdownMenuItem<int>(
-                                      value: value,
+                    ResponsiveGridRow(
+                      rowSegments: 100,
+                      children: [
+                        ResponsiveGridCol(
+                          xs: screenWidth < 360
+                              ? 50
+                              : screenWidth > 430
+                                  ? 33
+                                  : 40,
+                          md: screenWidth < 768
+                              ? 24
+                              : screenWidth < 950
+                                  ? 20
+                                  : 15,
+                          lg: screenWidth < 1700 ? 15 : 10,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 48,
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: kNeutral300),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Flexible(
                                       child: Text(
-                                        value == -1 ? "All" : value.toString(),
-                                        style: theme.textTheme.bodyLarge,
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (int? newValue) {
-                                    setState(() {
-                                      if (newValue == -1) {
-                                        _itemsPerPage = -1;
-                                      } else {
-                                        _itemsPerPage = newValue ?? 10;
-                                      }
-                                      _currentPage = 1;
-                                    });
-                                  },
-                                ),
-                              ],
+                                    'Show-',
+                                    style: theme.textTheme.bodyLarge,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                  DropdownButton<int>(
+                                    isDense: true,
+                                    padding: EdgeInsets.zero,
+                                    underline: const SizedBox(),
+                                    value: _itemsPerPage,
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.black,
+                                    ),
+                                    items: [
+                                      10,
+                                      20,
+                                      50,
+                                      100,
+                                      -1
+                                    ].map<DropdownMenuItem<int>>((int value) {
+                                      return DropdownMenuItem<int>(
+                                        value: value,
+                                        child: Text(
+                                          value == -1
+                                              ? "All"
+                                              : value.toString(),
+                                          style: theme.textTheme.bodyLarge,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (int? newValue) {
+                                      setState(() {
+                                        if (newValue == -1) {
+                                          _itemsPerPage = -1;
+                                        } else {
+                                          _itemsPerPage = newValue ?? 10;
+                                        }
+                                        _currentPage = 1;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      ResponsiveGridCol(
+                        ResponsiveGridCol(
                           xs: 100,
                           md: 60,
                           lg: 35,
@@ -248,8 +257,10 @@ class _DressScreenState extends State<DressScreen> {
                                 ),
                               ),
                             ),
-                          )),
-                    ]),
+                          ),
+                        ),
+                      ],
+                    ),
 
                     const SizedBox(height: 20.0),
                     showAbleDresses.isNotEmpty

@@ -93,245 +93,250 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
               ),
             ),
             ResponsiveRowColumnItem(
-                child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  widget.iconOnly
-                      ? const SizedBox.shrink()
-                      : Row(
-                          children: [
-                            screenWidth > 1260
-                                ? const SizedBox.shrink()
-                                : const GlobalLanguage(isDrawer: true),
-                            screenWidth > 1430
-                                ? const SizedBox.shrink()
-                                : const SizedBox(width: 10.0),
-                            screenWidth > 1430
-                                ? const SizedBox.shrink()
-                                : const GlobalCurrency(isDrawer: true),
-                            // GlobalCurrency(),
-                          ],
-                        ),
-                  widget.iconOnly
-                      ? const SizedBox.shrink()
-                      : screenWidth > 1260 && screenWidth > 1430
-                          ? const SizedBox.shrink()
-                          : const SizedBox(height: 16),
-                  widget.iconOnly
-                      ? const SizedBox.shrink()
-                      : Row(
-                          children: [
-                            screenWidth > 590
-                                ? const SizedBox.shrink()
-                                : SizedBox(
-                                    height: 40,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            15, 8, 15, 8),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0)),
-                                        backgroundColor:
-                                            kMainColor.withValues(alpha: 0.05),
-                                        side: const BorderSide(
-                                            color: kMainColor, width: 1),
-                                        textStyle: kTextStyle.copyWith(
-                                            color: const Color(0xFFFF2525)),
-                                        surfaceTintColor: kWhite,
-                                        shadowColor:
-                                            kMainColor.withValues(alpha: 0.1),
-                                        foregroundColor:
-                                            kMainColor.withValues(alpha: 0.1),
-                                      ),
-                                      onPressed: () {
-                                        // Navigator.pushNamed(context, Product.route);
-                                        context.go('/service-package/dresses');
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.add_rounded,
-                                              color: kMainColor),
-                                          Text(
-                                            'Vestidos',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                    color: kMainColor,
-                                                    fontWeight:
-                                                        FontWeight.w600),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                            screenWidth > 1260
-                                ? const SizedBox.shrink()
-                                : screenWidth > 1260
-                                    ? const SizedBox.shrink()
-                                    : const SizedBox(width: 10.0),
-                            screenWidth > 800
-                                ? const SizedBox.shrink()
-                                : SizedBox(
-                                    height: 40,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0)),
-                                        padding: const EdgeInsets.fromLTRB(
-                                            15, 8, 15, 8),
-                                        backgroundColor: const Color(0xFF15CD75)
-                                            .withValues(alpha: 0.05),
-                                        side: const BorderSide(
-                                            color: Color(0xFF15CD75), width: 1),
-                                        textStyle: kTextStyle.copyWith(
-                                            color: const Color(0xFF15CD75)),
-                                        surfaceTintColor: kWhite,
-                                        shadowColor: const Color(0xFF15CD75)
-                                            .withOpacity(0.1),
-                                        foregroundColor: const Color(0xFF15CD75)
-                                            .withOpacity(0.1),
-                                      ),
-                                      onPressed: () {
-                                        // Navigator.pushNamed(context, PurchaseList.route);
-                                        // context.go(PurchaseList.route);
-                                        context.go('/calendario-reservas');
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.add_rounded,
-                                              color: Color(0xFF15CD75)),
-                                          Text(
-                                            'Calendario',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                  color:
-                                                      const Color(0xFF15CD75),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                          ),
-                                        ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    widget.iconOnly
+                        ? const SizedBox.shrink()
+                        : Row(
+                            children: [
+                              screenWidth > 1260
+                                  ? const SizedBox.shrink()
+                                  : const GlobalLanguage(isDrawer: true),
+                              screenWidth > 1430
+                                  ? const SizedBox.shrink()
+                                  : const SizedBox(width: 10.0),
+                              screenWidth > 1430
+                                  ? const SizedBox.shrink()
+                                  : const GlobalCurrency(isDrawer: true),
+                              // GlobalCurrency(),
+                            ],
+                          ),
+                    widget.iconOnly
+                        ? const SizedBox.shrink()
+                        : screenWidth > 1260 && screenWidth > 1430
+                            ? const SizedBox.shrink()
+                            : const SizedBox(height: 16),
+                    widget.iconOnly
+                        ? const SizedBox.shrink()
+                        : Row(
+                            children: [
+                              screenWidth > 590
+                                  ? const SizedBox.shrink()
+                                  : SizedBox(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              15, 8, 15, 8),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.0)),
+                                          backgroundColor: kMainColor
+                                              .withValues(alpha: 0.05),
+                                          side: const BorderSide(
+                                              color: kMainColor, width: 1),
+                                          textStyle: kTextStyle.copyWith(
+                                              color: const Color(0xFFFF2525)),
+                                          surfaceTintColor: kWhite,
+                                          shadowColor:
+                                              kMainColor.withValues(alpha: 0.1),
+                                          foregroundColor:
+                                              kMainColor.withValues(alpha: 0.1),
+                                        ),
+                                        onPressed: () {
+                                          // Navigator.pushNamed(context, Product.route);
+                                          context
+                                              .go('/service-package/dresses');
+                                        },
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.add_rounded,
+                                                color: kMainColor),
+                                            Text(
+                                              'Vestidos',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                      color: kMainColor,
+                                                      fontWeight:
+                                                          FontWeight.w600),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                          ],
-                        ),
-                  widget.iconOnly
-                      ? const SizedBox.shrink()
-                      : screenWidth > 590 && screenWidth > 1260
-                          ? const SizedBox.shrink()
-                          : const SizedBox(height: 16),
-                  widget.iconOnly
-                      ? const SizedBox.shrink()
-                      : Row(
-                          children: [
-                            screenWidth > 670
-                                ? const SizedBox.shrink()
-                                : SizedBox(
-                                    height: 40,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0)),
-                                        padding: const EdgeInsets.fromLTRB(
-                                            15, 8, 15, 8),
+                              screenWidth > 1260
+                                  ? const SizedBox.shrink()
+                                  : screenWidth > 1260
+                                      ? const SizedBox.shrink()
+                                      : const SizedBox(width: 10.0),
+                              screenWidth > 800
+                                  ? const SizedBox.shrink()
+                                  : SizedBox(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.0)),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              15, 8, 15, 8),
+                                          backgroundColor:
+                                              const Color(0xFF15CD75)
+                                                  .withValues(alpha: 0.05),
+                                          side: const BorderSide(
+                                              color: Color(0xFF15CD75),
+                                              width: 1),
+                                          textStyle: kTextStyle.copyWith(
+                                              color: const Color(0xFF15CD75)),
+                                          surfaceTintColor: kWhite,
+                                          shadowColor: const Color(0xFF15CD75)
+                                              .withOpacity(0.1),
+                                          foregroundColor:
+                                              const Color(0xFF15CD75)
+                                                  .withOpacity(0.1),
+                                        ),
+                                        onPressed: () {
+                                          // Navigator.pushNamed(context, PurchaseList.route);
+                                          // context.go(PurchaseList.route);
+                                          context.go('/calendario-reservas');
+                                        },
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.add_rounded,
+                                                color: Color(0xFF15CD75)),
+                                            Text(
+                                              'Calendario',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    color:
+                                                        const Color(0xFF15CD75),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                            ],
+                          ),
+                    widget.iconOnly
+                        ? const SizedBox.shrink()
+                        : screenWidth > 590 && screenWidth > 1260
+                            ? const SizedBox.shrink()
+                            : const SizedBox(height: 16),
+                    widget.iconOnly
+                        ? const SizedBox.shrink()
+                        : Row(
+                            children: [
+                              screenWidth > 670
+                                  ? const SizedBox.shrink()
+                                  : SizedBox(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.0)),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              15, 8, 15, 8),
 
-                                        backgroundColor:
-                                            const Color(0xFF8424FF),
-                                        // side: const BorderSide(color: kBorderColorTextField, width: 1),
-                                        textStyle:
-                                            kTextStyle.copyWith(color: kWhite),
-                                        surfaceTintColor:
-                                            const Color(0xFF8424FF)
-                                                .withOpacity(0.5),
-                                        shadowColor: const Color(0xFF8424FF)
-                                            .withOpacity(0.1),
-                                      ),
-                                      onPressed: () {
-                                        // Navigator.pushNamed(context, PosSale.route);
-                                        context.go('/sales/pos-sales');
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.add_rounded,
+                                          backgroundColor:
+                                              const Color(0xFF8424FF),
+                                          // side: const BorderSide(color: kBorderColorTextField, width: 1),
+                                          textStyle: kTextStyle.copyWith(
                                               color: kWhite),
-                                          Text(
-                                            'Rentar',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.white,
-                                                ),
-                                          ),
-                                        ],
+                                          surfaceTintColor:
+                                              const Color(0xFF8424FF)
+                                                  .withOpacity(0.5),
+                                          shadowColor: const Color(0xFF8424FF)
+                                              .withOpacity(0.1),
+                                        ),
+                                        onPressed: () {
+                                          // Navigator.pushNamed(context, PosSale.route);
+                                          context.go('/sales/pos-sales');
+                                        },
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.add_rounded,
+                                                color: kWhite),
+                                            Text(
+                                              'Rentar',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                            screenWidth > 670
-                                ? const SizedBox.shrink()
-                                : const SizedBox(width: 16.0),
-                            screenWidth > 590
-                                ? const SizedBox.shrink()
-                                : SizedBox(
-                                    height: 40,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            15, 8, 15, 8),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0)),
-                                        backgroundColor:
-                                            kMainColor.withValues(alpha: 0.1),
-                                        side: const BorderSide(
-                                            color: kMainColor, width: 1),
-                                        textStyle:
-                                            kTextStyle.copyWith(color: kWhite),
-                                        surfaceTintColor: lightGreyColor,
-                                        shadowColor:
-                                            lightGreyColor.withOpacity(0.1),
-                                      ),
-                                      onPressed: () {
-                                        // Navigator.pushNamed(context, InventorySales.route);
-                                        context.go('/sales/inventory-sales');
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.add_rounded,
-                                              color: kMainColor),
-                                          Text(
-                                            'Facturar',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: kMainColor,
-                                                ),
-                                          ),
-                                        ],
+                              screenWidth > 670
+                                  ? const SizedBox.shrink()
+                                  : const SizedBox(width: 16.0),
+                              screenWidth > 590
+                                  ? const SizedBox.shrink()
+                                  : SizedBox(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              15, 8, 15, 8),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.0)),
+                                          backgroundColor:
+                                              kMainColor.withValues(alpha: 0.1),
+                                          side: const BorderSide(
+                                              color: kMainColor, width: 1),
+                                          textStyle: kTextStyle.copyWith(
+                                              color: kWhite),
+                                          surfaceTintColor: lightGreyColor,
+                                          shadowColor:
+                                              lightGreyColor.withOpacity(0.1),
+                                        ),
+                                        onPressed: () {
+                                          // Navigator.pushNamed(context, InventorySales.route);
+                                          context.go('/sales/inventory-sales');
+                                        },
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.add_rounded,
+                                                color: kMainColor),
+                                            Text(
+                                              'Facturar',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: kMainColor,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                          ],
-                        ),
-                  widget.iconOnly
-                      ? const SizedBox.shrink()
-                      : screenWidth > 670 && screenWidth > 590
-                          ? const SizedBox.shrink()
-                          : const SizedBox(height: 16),
-                ],
+                            ],
+                          ),
+                    widget.iconOnly
+                        ? const SizedBox.shrink()
+                        : screenWidth > 670 && screenWidth > 590
+                            ? const SizedBox.shrink()
+                            : const SizedBox(height: 16),
+                  ],
+                ),
               ),
-            )),
+            ),
             ResponsiveRowColumnItem(
               columnFit: FlexFit.tight,
               child: SingleChildScrollView(
@@ -341,6 +346,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                   columnPadding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     // Top Menus
+
                     ...topMenus.map((menu) {
                       final _selectedInfo = _isSelected(context, menu);
                       return ResponsiveRowColumnItem(

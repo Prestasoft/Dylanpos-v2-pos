@@ -31,34 +31,23 @@ import '../../Provider/dress_with_reservations.dart';
 import '../../model/FullReservation.dart';
 import '../../model/args_dress.dart';
 
-class CalendarDressScreen extends ConsumerStatefulWidget {
+class CalendarDressScreen extends StatefulWidget {
   const CalendarDressScreen({super.key});
 
   @override
-  ConsumerState<CalendarDressScreen> createState() => _CalendarDressScreen();
+  State<CalendarDressScreen> createState() => _CalendarDressScreen();
 
   // @override
   // State<CalendarDressScreen> createState() => _CalendarDressScreenState();
 }
 
-class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
+class _CalendarDressScreen extends State<CalendarDressScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
   late Map<DateTime, List<ReservationModel>> _reservationsByDay;
   String? selectedMonth;
   String? selectedYear;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDay = _focusedDay;
-    _reservationsByDay = {};
-    final int currentMonthIndex = DateTime.now().month - 1;
-    selectedMonth = monthList[currentMonthIndex];
-    selectedYear = DateTime.now().year.toString();
-    yearList = List.generate(6, (index) => (currentYear + index).toString());
-  }
 
   int selectedItem = 10;
   final int currentYear = DateTime.now().year;
@@ -70,7 +59,8 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
   String? _selectedBranch;
   TextEditingController _subcategoryController = TextEditingController();
   ScrollController mainScroll = ScrollController();
-  String searchItem = '';
+  //String searchItem = '';
+  TextEditingController searchCtr = TextEditingController();
   bool _isAvailable = true;
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   List<DressModel> showAbleDresses = [];
@@ -78,6 +68,17 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
   final List<dynamic> _selectedImages =
       []; // Can hold File (mobile) or XFile/Uint8List (web)
   final List<String> _existingImageUrls = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+    _reservationsByDay = {};
+    final int currentMonthIndex = DateTime.now().month - 1;
+    selectedMonth = monthList[currentMonthIndex];
+    selectedYear = DateTime.now().year.toString();
+    yearList = List.generate(6, (index) => (currentYear + index).toString());
+  }
 
   final _horizontalScroll = ScrollController();
   int _itemsPerPage = 10;
@@ -115,40 +116,24 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final _lang = lang.S.of(context);
-
-    final reservationsAsyncValue =
-        ref.watch(fullReservationsByDressProvider('dress_1746102671326'));
-    showAbleDresses.clear();
     return SafeArea(
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          //AsyncValue<List<DressModel>> dresses = ref.watch(dressesProvider);
-          //ref.read(provider)
-          // final dressesAsync = ref.read(dressesByStatusProvider({
-          //   'search': searchItem,
-          //   'status': itemStatus, // 'Disponible', 'Reservados', 'Todos'
-          // }));
-
-          final params = DressFilterParams(
-            search: searchItem,
-            status: itemStatus,
-          );
-
-          final dressesAsync = ref.watch(dressesByStatusProvider(params));
-
+          AsyncValue<List<DressModel>> dressesAsync =
+              ref.watch(dressesByStatusProvider(itemStatus));
           return dressesAsync.when(data: (list) {
-            // for (var element in list) {
-            //   if (element.name
-            //       .removeAllWhiteSpace()
-            //       .toLowerCase()
-            //       .contains(searchItem.toLowerCase())) {
-            //     showAbleDresses.add(element);
-            //   } else if (searchItem == '') {
-            //     showAbleDresses.add(element);
-            //   }
-            // }
-            showAbleDresses.addAll(list);
+            List<DressModel> showAbleDresses = [];
+            for (var element in list) {
+              if (element.name
+                  .removeAllWhiteSpace()
+                  .toLowerCase()
+                  .contains(searchCtr.text.toLowerCase())) {
+                showAbleDresses.add(element);
+              } else if (searchCtr.text == '') {
+                showAbleDresses.add(element);
+              }
+            }
             final pages = (showAbleDresses.length / _itemsPerPage).ceil();
 
             return SingleChildScrollView(
@@ -273,12 +258,17 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(10),
                               child: TextFormField(
-                                showCursor: true,
+                                controller: searchCtr,
+                                //showCursor: true,
                                 cursorColor: kTitleColor,
                                 onChanged: (value) {
-                                  setState(() {
-                                    searchItem = value;
-                                  });
+                                  Debouncer(milliseconds: 900).run(
+                                    () => setState(
+                                      () {
+                                        searchCtr.text = value;
+                                      },
+                                    ),
+                                  );
                                 },
                                 keyboardType: TextInputType.name,
                                 decoration: kInputDecoration.copyWith(

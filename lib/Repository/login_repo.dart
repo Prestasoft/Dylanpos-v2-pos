@@ -25,18 +25,29 @@ class LogInRepo extends ChangeNotifier {
     try {
       mainLoginEmail = email;
       mainLoginPassword = password;
-      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password).then((value) async {
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password)
+          .then((value) async {
         if (await checkSubUser()) {
           EasyLoading.showSuccess('Successful');
-          setUserDataOnLocalData(uid: constUserId, subUserTitle: constSubUserTitle, isSubUser: true);
+          setUserDataOnLocalData(
+              uid: constUserId,
+              subUserTitle: constSubUserTitle,
+              isSubUser: true);
           putUserDataImidiyate(uid: constUserId, title: '', isSubUse: true);
           // Navigator.of(context).pushNamed(MtHomeScreen.route);
           // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MtHomeScreen()), (Route<dynamic> route) => false);
           context.go(MtHomeScreen.route);
         } else {
           EasyLoading.showSuccess('Successful');
-          await setUserDataOnLocalData(uid: FirebaseAuth.instance.currentUser!.uid, subUserTitle: '', isSubUser: false);
-          putUserDataImidiyate(uid: FirebaseAuth.instance.currentUser!.uid, title: '', isSubUse: false);
+          await setUserDataOnLocalData(
+              uid: FirebaseAuth.instance.currentUser!.uid,
+              subUserTitle: '',
+              isSubUser: false);
+          putUserDataImidiyate(
+              uid: FirebaseAuth.instance.currentUser!.uid,
+              title: '',
+              isSubUse: false);
 
           if (await ProfileRepo().isProfileSetupDone()) {
             // Navigator.of(context).pushNamed(MtHomeScreen.route);
@@ -79,13 +90,22 @@ class LogInRepo extends ChangeNotifier {
   Future<bool> checkSubUser() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isSubUser = false;
-    await FirebaseDatabase.instance.ref('Admin Panel').child('User Role').orderByKey().get().then((value) {
+    await FirebaseDatabase.instance
+        .ref('Admin Panel')
+        .child('User Role')
+        .orderByKey()
+        .get()
+        .then((value) {
       for (var element in value.children) {
-        var data = UserRoleModel.fromJson(jsonDecode(jsonEncode(element.value)));
+        var data =
+            UserRoleModel.fromJson(jsonDecode(jsonEncode(element.value)));
 
-        if (data.email == email && data.databaseId != null && data.databaseId != '') {
+        if (data.email == email &&
+            data.databaseId != null &&
+            data.databaseId != '') {
           prefs.setString('userPermission', json.encode(data));
-          // finalUserRoleModel = data;
+          print(data);
+          finalUserRoleModel = data;
 
           constUserId = data.databaseId ?? '';
           constSubUserTitle = data.userTitle ?? '';

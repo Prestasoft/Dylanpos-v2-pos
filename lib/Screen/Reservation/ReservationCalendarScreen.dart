@@ -449,6 +449,9 @@ class ReservationCard extends ConsumerWidget {
 
               final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
 
+              final place =
+                  fullReservation?.reservation['place'] ?? 'Sin lugar';
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -507,6 +510,17 @@ class ReservationCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Servicio: $serviceName',
+                            style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.place, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Lugar: $place',
                             style: const TextStyle(fontSize: 14)),
                       ),
                     ],
@@ -796,9 +810,15 @@ class ReservationDetailView extends ConsumerWidget {
                                           'Sucursal',
                                           reservationData['branch_id'] ?? ''),
                                       _buildDetailItem(
+                                          Icons.place,
+                                          'Lugar',
+                                          reservationData['place'] ??
+                                              'Sin lugar'),
+                                      _buildDetailItem(
                                           Icons.textsms_outlined,
                                           'Notas',
-                                          reservationData['nota'] ?? ''),
+                                          reservationData['nota'] ??
+                                              'Sin notas'),
                                     ],
                                   ),
 
