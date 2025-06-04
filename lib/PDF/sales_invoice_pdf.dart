@@ -426,7 +426,7 @@ FutureOr<Uint8List> generateSaleDocument({
                         pw.SizedBox(
                           width: 125.0,
                           child: pw.Text(
-                            'Admin',
+                            transactions.sellerName ?? "Admin",
                             style: pw.Theme.of(context)
                                 .defaultTextStyle
                                 .copyWith(color: PdfColors.black),
