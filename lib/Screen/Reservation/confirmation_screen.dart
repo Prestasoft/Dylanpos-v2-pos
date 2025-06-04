@@ -257,108 +257,60 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Confirmar Reserva"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Resumen de tu Reserva",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 24),
-              _buildInfoItem(Icons.camera_alt, "Paquete", widget.packageName),
-              SizedBox(height: 16),
-              _showDressesOption(Icons.content_cut),
-              SizedBox(height: 16),
-              _buildInfoItem(
-                Icons.calendar_today,
-                "Fecha",
-                "${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}",
-              ),
-              SizedBox(height: 16),
-              _buildInfoItem(
-                Icons.access_time,
-                "Hora",
-                widget.selectedTime.format(context),
-              ),
-              SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.textsms_outlined, color: Theme.of(context).primaryColor, size: 28),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Nota",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: noteController,
-                                    decoration: InputDecoration(
-                                      labelText: "Nota opcional",
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    
-                
-              _buildNote(
-                Icons.textsms_outlined,
-                "Nota",
-              ),
-              _buildPlace(
-                Icons.place,
-                "Lugar",
-              ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green,
-                  ),
-                  onPressed: isSubmitting ? null : _confirmReservation,
-                  child: isSubmitting
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          "Confirmar Reserva",
-                          style: TextStyle(fontSize: 18),
-                        ),
+  return Scaffold(
+    appBar: AppBar(
+      title: Text("Confirmar Reserva"),
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Resumen de tu Reserva",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 24),
+            _buildInfoItem(Icons.camera_alt, "Paquete", widget.packageName),
+            SizedBox(height: 16),
+            _showDressesOption(Icons.content_cut),
+            SizedBox(height: 16),
+            _buildInfoItem(
+              Icons.calendar_today,
+              "Fecha",
+              "${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}",
+            ),
+            SizedBox(height: 16),
+            _buildInfoItem(
+              Icons.access_time,
+              "Hora",
+              widget.selectedTime.format(context),
+            ),
+            SizedBox(height: 16),
+            _buildNote(Icons.textsms_outlined, "Nota"),
+            _buildPlace(Icons.place, "Lugar"),
+            SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.green,
                 ),
+                onPressed: isSubmitting ? null : _confirmReservation,
+                child: isSubmitting
+                    ? CircularProgressIndicator(color: Colors.white)
+                    : Text("Confirmar Reserva", style: TextStyle(fontSize: 18)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-            ],
-          ))
-      )
-    );
-  }
+    ),
+  );
+}
+
 
   Card _buildNote(IconData icon, String title) {
     return Card(
