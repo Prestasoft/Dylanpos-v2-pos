@@ -46,6 +46,8 @@ class _EmailLogInState extends State<EmailLogIn> {
     return false;
   }
 
+  //PRUEBA
+
   bool hidePassword = true;
   Future<bool> checkUser({required BuildContext context}) async {
     final isActive = await PurchaseModel().isActiveBuyer();
