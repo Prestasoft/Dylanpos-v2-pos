@@ -52,6 +52,7 @@ FutureOr<Uint8List> generateSaleDocument({
     return double.parse(amount.toStringAsFixed(2));
   }
 
+  print(reservaciones.first?.reservation.toString());
   List<List<String>> rows = [];
   final notas = reservaciones
       .map((e) => e?.reservation['nota']?.toString())
@@ -203,7 +204,7 @@ FutureOr<Uint8List> generateSaleDocument({
                       ///_____Name_______________________________________
                       pw.Row(children: [
                         pw.SizedBox(
-                          width: 60.0,
+                          width: 75.0,
                           child: pw.Text(
                             'Cliente',
                             style: pw.Theme.of(context)
@@ -235,7 +236,7 @@ FutureOr<Uint8List> generateSaleDocument({
                       pw.SizedBox(height: 2),
                       pw.Row(children: [
                         pw.SizedBox(
-                          width: 60.0,
+                          width: 75.0,
                           child: pw.Text(
                             'Teléfono',
                             style: pw.Theme.of(context)
@@ -268,7 +269,7 @@ FutureOr<Uint8List> generateSaleDocument({
                       pw.Row(
                         children: [
                           pw.SizedBox(
-                            width: 60.0,
+                            width: 75.0,
                             child: pw.Text(
                               'Dirección',
                               style: pw.Theme.of(context)
@@ -297,6 +298,38 @@ FutureOr<Uint8List> generateSaleDocument({
                         ],
                       ),
                       pw.SizedBox(height: 2),
+                      pw.Row(
+                        children: [
+                          pw.SizedBox(
+                            width: 75.0,
+                            child: pw.Text(
+                              'Fecha de reservacion',
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
+                          ),
+                          pw.SizedBox(
+                            width: 10.0,
+                            child: pw.Text(
+                              ':',
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
+                          ),
+                          pw.SizedBox(
+                            width: 140.0,
+                            child: pw.Text(
+                              "${reservaciones.first?.reservation['reservation_date']} ${reservaciones.first?.reservation['reservation_time']}",
+                              style: pw.Theme.of(context)
+                                  .defaultTextStyle
+                                  .copyWith(color: PdfColors.black),
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 2),
 
                       ///_____Party GST_______________________________________
                       pw.SizedBox(
@@ -306,7 +339,7 @@ FutureOr<Uint8List> generateSaleDocument({
                       transactions.customerGst.trim().isNotEmpty
                           ? pw.Row(children: [
                               pw.SizedBox(
-                                width: 60.0,
+                                width: 75.0,
                                 child: pw.Text(
                                   'RNC',
                                   style: pw.Theme.of(context)
