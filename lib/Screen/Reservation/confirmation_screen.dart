@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:salespro_admin/Provider/customer_provider.dart';
+import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
+import 'package:salespro_admin/Screen/Reservation/clothes_reservation_screen.dart';
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
+import 'package:salespro_admin/model/customer_model.dart';
 import '../../Provider/reservation_provider.dart';
 
 class ConfirmationScreen extends ConsumerStatefulWidget {
@@ -53,6 +57,19 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     final String formattedDate = _formatDate(widget.selectedDate);
     final String formattedTime = _formatTime(widget.selectedTime);
 
+     double packagePrice = 0.0;
+
+    final packages = ref.watch(servicePackagesProvider);
+    if (packages.hasValue) {
+      final package = packages.value!.firstWhere(
+        (p) => p.id == widget.packageId,
+        
+      );
+      if (package != null) {
+        packagePrice = package.price;
+      }
+    }
+
     // Verificar una vez más que esté disponible
     bool isAvailable = true;
 
@@ -99,8 +116,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              "Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
+          content: Text("Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
           backgroundColor: Colors.red,
         ),
       );
@@ -137,13 +153,15 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       'time': formattedTime,
       'multiple_dress': multipleDress,
       'note': noteController.text,
+      'reservation_associated': '',
+      'package_price': packagePrice.toString(),
     }).future);
 
     setState(() {
       isSubmitting = false;
     });
 
-    if (success) {
+    if (success.statusReservation) {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -152,22 +170,83 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
         ),
       );
 
-      // Navigate to the POS sales screen
-      if (mounted) {
-        // Actualiza el estado del menú lateral
-        ref.read(sidebarProvider.notifier)
-          ..expandMenu('/sales') // Expande el menú de Ventas
-          ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
+      // Agregar cuadro de dialogo si quiero añadir adicionales
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Adicionales para las reservas'),
+          content: const Text('Desea agregar adicionales a la reservación?'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // Navigate to the POS sales screen
+                if (mounted) {
+                  // Actualiza el estado del menú lateral
+                  // ref.read(sidebarProvider.notifier)
+                    // ..expandMenu('/reservations') // Expande el menú de Ventas
+                    // ..selectItem('/reservations/rent-clothes'); // Selecciona el ítem
 
-        // Navega a la pantalla
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        context.go('/sales/inventory-sales');
-      }
+                  // Navega a la pantalla
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+
+                  //Navigator.of(context).pop(); // Cierra el diálogo de confirmación
+                  final customerList = ref.watch(allCustomerProvider);
+                  String clientName = "";
+                  if (customerList.hasValue) {
+                    
+                    List<CustomerModel> customersList = customerList.value!
+                      .where((c) => c.type != 'Supplier')
+                      .toList();
+                    final client = customersList.firstWhere(
+                      (c) => c.phoneNumber == widget.clientId
+                    );
+
+                    clientName = client.customerName;
+                  }
+
+                  // Navega a la pantalla de ClothesReservationScreen
+                  context.go('/reservations/list2', extra: {
+                    'packageId': widget.packageId,
+                    'packageName': widget.packageName,
+                    'selectedDate': widget.selectedDate,
+                    'selectedTime': widget.selectedTime,
+                    'clientId': widget.clientId,
+                    'clientName': clientName,
+                    'reservationId': success.reservationId,
+                    'package_price': packagePrice.toString(),
+                  });
+                }
+              },
+              child: const Text('Si'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Navigate to the POS sales screen
+                if (mounted) {
+                  // Actualiza el estado del menú lateral
+                  Navigator.of(context).pop(); // Cierra el diálogo de confirmación
+                  
+                  ref.read(sidebarProvider.notifier)
+                    ..expandMenu('/sales') // Expande el menú de Ventas
+                    ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
+
+                  // Navega a la pantalla
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  context.go('/sales/inventory-sales');
+                }
+
+                
+              },
+              child: const Text('No'),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+            ),
+          ],
+        ),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text("Error al crear la reserva. Por favor intenta de nuevo."),
+          content: Text("Error al crear la reserva. Por favor intenta de nuevo."),
           backgroundColor: Colors.red,
         ),
       );
@@ -212,8 +291,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
-                      Icon(Icons.textsms_outlined,
-                          color: Theme.of(context).primaryColor, size: 28),
+                      Icon(Icons.textsms_outlined, color: Theme.of(context).primaryColor, size: 28),
                       SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -310,10 +388,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     } else if (widget.dressReservations.isNotEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: widget.dressReservations
-            .map((dress) =>
-                _buildInfoItem(icon, dress.componentName, dress.name))
-            .toList(),
+        children: widget.dressReservations.map((dress) => _buildInfoItem(icon, dress.componentName, dress.name)).toList(),
       );
     } else {
       return Text(

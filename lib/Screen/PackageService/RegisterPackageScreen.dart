@@ -58,16 +58,12 @@ class _ServicePackageListState extends State<ServicePackageList> {
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          AsyncValue<List<ServicePackageModel>> packages =
-              ref.watch(servicePackagesProvider);
+          AsyncValue<List<ServicePackageModel>> packages = ref.watch(servicePackagesProvider);
           return packages.when(data: (list) {
             List<ServicePackageModel> showAblePackages = [];
 
             for (var element in list) {
-              if (element.name
-                  .removeAllWhiteSpace()
-                  .toLowerCase()
-                  .contains(searchItem.toLowerCase())) {
+              if (element.name.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase())) {
                 showAblePackages.add(element);
               } else if (searchItem == '') {
                 showAblePackages.add(element);
@@ -79,14 +75,12 @@ class _ServicePackageListState extends State<ServicePackageList> {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding:
-                          const EdgeInsets.only(left: 12, right: 12, top: 12),
+                      padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -104,8 +98,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             onPressed: () async {
                               _showAddPackageDialog(context, ref);
                             },
-                            icon: const Icon(FeatherIcons.plus,
-                                color: kWhite, size: 18.0),
+                            icon: const Icon(FeatherIcons.plus, color: kWhite, size: 18.0),
                             label: Text(
                               _lang.addServicePackage,
                               style: kTextStyle.copyWith(color: kWhite),
@@ -166,8 +159,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     Icons.keyboard_arrow_down,
                                     color: Colors.black,
                                   ),
-                                  items: [10, 20, 50, 100, -1]
-                                      .map<DropdownMenuItem<int>>((int value) {
+                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
                                     return DropdownMenuItem<int>(
                                       value: value,
                                       child: Text(
@@ -224,8 +216,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                         ? Column(
                             children: [
                               LayoutBuilder(
-                                builder: (BuildContext context,
-                                    BoxConstraints constraints) {
+                                builder: (BuildContext context, BoxConstraints constraints) {
                                   final kWidth = constraints.maxWidth;
                                   return Scrollbar(
                                     controller: _horizontalScroll,
@@ -242,9 +233,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                         child: Theme(
                                           data: theme.copyWith(
                                             dividerColor: Colors.transparent,
-                                            dividerTheme:
-                                                const DividerThemeData(
-                                                    color: Colors.transparent),
+                                            dividerTheme: const DividerThemeData(color: Colors.transparent),
                                           ),
                                           child: DataTable(
                                               border: const TableBorder(
@@ -253,131 +242,70 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor:
-                                                  const WidgetStatePropertyAll(
-                                                      Colors.white),
-                                              headingRowColor:
-                                                  WidgetStateProperty.all(
-                                                      const Color(0xFFF8F3FF)),
+                                              dataRowColor: const WidgetStatePropertyAll(Colors.white),
+                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle:
-                                                  theme.textTheme.titleMedium,
+                                              headingTextStyle: theme.textTheme.titleMedium,
                                               columns: [
-                                                DataColumn(
-                                                    label: Text(_lang.SL)),
-                                                DataColumn(
-                                                    label: Text(_lang.name)),
-                                                DataColumn(
-                                                    label:
-                                                        Text(_lang.category)),
-                                                DataColumn(
-                                                    label: Text(
-                                                        _lang.subcategory)),
-                                                DataColumn(
-                                                    label: Text(_lang.price)),
-                                                DataColumn(
-                                                    label:
-                                                        Text(_lang.duration)),
-                                                const DataColumn(
-                                                    label: Icon(
-                                                        FeatherIcons.settings)),
+                                                DataColumn(label: Text(_lang.SL)),
+                                                DataColumn(label: Text(_lang.name)),
+                                                DataColumn(label: Text(_lang.category)),
+                                                DataColumn(label: Text(_lang.subcategory)),
+                                                DataColumn(label: Text(_lang.price)),
+                                                DataColumn(label: Text(_lang.duration)),
+                                                const DataColumn(label: Icon(FeatherIcons.settings)),
                                               ],
                                               rows: List.generate(
                                                   _itemsPerPage == -1
                                                       ? showAblePackages.length
-                                                      : (_currentPage - 1) *
-                                                                      _itemsPerPage +
-                                                                  _itemsPerPage <=
-                                                              showAblePackages
-                                                                  .length
+                                                      : (_currentPage - 1) * _itemsPerPage + _itemsPerPage <= showAblePackages.length
                                                           ? _itemsPerPage
-                                                          : showAblePackages
-                                                                  .length -
-                                                              (_currentPage -
-                                                                      1) *
-                                                                  _itemsPerPage,
-                                                  (index) {
-                                                final dataIndex =
-                                                    (_currentPage - 1) *
-                                                            _itemsPerPage +
-                                                        index;
-                                                final package =
-                                                    showAblePackages[dataIndex];
+                                                          : showAblePackages.length - (_currentPage - 1) * _itemsPerPage, (index) {
+                                                final dataIndex = (_currentPage - 1) * _itemsPerPage + index;
+                                                final package = showAblePackages[dataIndex];
                                                 return DataRow(cells: [
                                                   // SL Number
-                                                  DataCell(Text(
-                                                      '${(_currentPage - 1) * _itemsPerPage + index + 1}')),
+                                                  DataCell(Text('${(_currentPage - 1) * _itemsPerPage + index + 1}')),
 
                                                   // Name
                                                   DataCell(Text(package.name)),
 
                                                   // Category
-                                                  DataCell(
-                                                      Text(package.category)),
+                                                  DataCell(Text(package.category)),
 
                                                   // Subcategory
-                                                  DataCell(Text(
-                                                      package.subcategory)),
+                                                  DataCell(Text(package.subcategory)),
 
                                                   // Price
-                                                  DataCell(Text(
-                                                      '\$${package.price.toStringAsFixed(2)}')),
+                                                  DataCell(Text('\$${package.price.toStringAsFixed(2)}')),
 
                                                   // Duration
-                                                  DataCell(Text(
-                                                      '${package.duration['value']} ${package.duration['unit']}')),
+                                                  DataCell(Text('${package.duration['value']} ${package.duration['unit']}')),
 
                                                   // Actions
                                                   DataCell(
                                                     Theme(
-                                                      data: ThemeData(
-                                                          highlightColor:
-                                                              dropdownItemColor,
-                                                          focusColor:
-                                                              dropdownItemColor,
-                                                          hoverColor:
-                                                              dropdownItemColor),
+                                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
                                                       child: SizedBox(
                                                         width: 20,
                                                         child: PopupMenuButton(
-                                                          surfaceTintColor:
-                                                              Colors.white,
-                                                          padding:
-                                                              EdgeInsets.zero,
-                                                          itemBuilder:
-                                                              (BuildContext
-                                                                      bc) =>
-                                                                  [
+                                                          surfaceTintColor: Colors.white,
+                                                          padding: EdgeInsets.zero,
+                                                          itemBuilder: (BuildContext bc) => [
                                                             // Edit
                                                             PopupMenuItem(
                                                                 onTap: () {
-                                                                  _showEditPackageDialog(
-                                                                      context,
-                                                                      ref,
-                                                                      package);
+                                                                  _showEditPackageDialog(context, ref, package);
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const Icon(
-                                                                        IconlyLight
-                                                                            .edit,
-                                                                        size:
-                                                                            20.0,
-                                                                        color:
-                                                                            kNeutral500),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            4.0),
+                                                                    const Icon(IconlyLight.edit, size: 20.0, color: kNeutral500),
+                                                                    const SizedBox(width: 4.0),
                                                                     Text(
-                                                                      _lang
-                                                                          .edit,
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .bodyLarge
-                                                                          ?.copyWith(
-                                                                        color:
-                                                                            kNeutral500,
+                                                                      _lang.edit,
+                                                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                                                        color: kNeutral500,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -386,51 +314,34 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                                             // Delete
                                                             PopupMenuItem(
                                                               onTap: () {
-                                                                _showDeleteConfirmation(
-                                                                    context,
-                                                                    ref,
-                                                                    package);
+                                                                _showDeleteConfirmation(context, ref, package);
                                                               },
                                                               child: Row(
                                                                 children: [
                                                                   HugeIcon(
-                                                                    icon: HugeIcons
-                                                                        .strokeRoundedDelete02,
-                                                                    color:
-                                                                        kNeutral500,
+                                                                    icon: HugeIcons.strokeRoundedDelete02,
+                                                                    color: kNeutral500,
                                                                     size: 20.0,
                                                                   ),
-                                                                  const SizedBox(
-                                                                      width:
-                                                                          4.0),
+                                                                  const SizedBox(width: 4.0),
                                                                   Text(
-                                                                    _lang
-                                                                        .delete,
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
-                                                                            color:
-                                                                                kNeutral500),
+                                                                    _lang.delete,
+                                                                    style: theme.textTheme.bodyLarge?.copyWith(color: kNeutral500),
                                                                   ),
                                                                 ],
                                                               ),
                                                             ),
                                                           ],
                                                           onSelected: (value) {
-                                                            context
-                                                                .go('/$value');
+                                                            context.go('/$value');
                                                           },
                                                           child: Center(
                                                             child: Container(
                                                                 height: 18,
                                                                 width: 18,
-                                                                alignment: Alignment
-                                                                    .centerRight,
-                                                                child:
-                                                                    const Icon(
-                                                                  Icons
-                                                                      .more_vert_sharp,
+                                                                alignment: Alignment.centerRight,
+                                                                child: const Icon(
+                                                                  Icons.more_vert_sharp,
                                                                   size: 18,
                                                                 )),
                                                           ),
@@ -450,8 +361,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
@@ -463,24 +373,16 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     Row(
                                       children: [
                                         InkWell(
-                                          overlayColor:
-                                              WidgetStateProperty.all<Color>(
-                                                  Colors.grey),
+                                          overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
                                           hoverColor: Colors.grey,
-                                          onTap: _currentPage > 1
-                                              ? () =>
-                                                  setState(() => _currentPage--)
-                                              : null,
+                                          onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: kBorderColorTextField),
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                bottomLeft:
-                                                    Radius.circular(4.0),
+                                              border: Border.all(color: kBorderColorTextField),
+                                              borderRadius: const BorderRadius.only(
+                                                bottomLeft: Radius.circular(4.0),
                                                 topLeft: Radius.circular(4.0),
                                               ),
                                             ),
@@ -493,15 +395,13 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: kBorderColorTextField),
+                                            border: Border.all(color: kBorderColorTextField),
                                             color: kMainColor,
                                           ),
                                           child: Center(
                                             child: Text(
                                               '$_currentPage',
-                                              style: const TextStyle(
-                                                  color: Colors.white),
+                                              style: const TextStyle(color: Colors.white),
                                             ),
                                           ),
                                         ),
@@ -509,8 +409,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: kBorderColorTextField),
+                                            border: Border.all(color: kBorderColorTextField),
                                             color: Colors.transparent,
                                           ),
                                           child: Center(
@@ -520,31 +419,20 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                           ),
                                         ),
                                         InkWell(
-                                          hoverColor:
-                                              Colors.blue.withOpacity(0.1),
-                                          overlayColor:
-                                              MaterialStateProperty.all<Color>(
-                                                  Colors.blue),
-                                          onTap: _currentPage * _itemsPerPage <
-                                                  showAblePackages.length
-                                              ? () =>
-                                                  setState(() => _currentPage++)
-                                              : null,
+                                          hoverColor: Colors.blue.withOpacity(0.1),
+                                          overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
+                                          onTap: _currentPage * _itemsPerPage < showAblePackages.length ? () => setState(() => _currentPage++) : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: kBorderColorTextField),
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                bottomRight:
-                                                    Radius.circular(4.0),
+                                              border: Border.all(color: kBorderColorTextField),
+                                              borderRadius: const BorderRadius.only(
+                                                bottomRight: Radius.circular(4.0),
                                                 topRight: Radius.circular(4.0),
                                               ),
                                             ),
-                                            child: const Center(
-                                                child: Text('Next')),
+                                            child: const Center(child: Text('Next')),
                                           ),
                                         ),
                                       ],
@@ -583,8 +471,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
         return StatefulBuilder(builder: (context, setState1) {
           return Dialog(
             surfaceTintColor: kWhite,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
             child: SizedBox(
               width: 600,
               child: SingleChildScrollView(
@@ -603,10 +490,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                               lang.S.of(context).addServicePackage,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -657,8 +541,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             // Category - Changed to DropdownButtonFormField
                             Consumer(
                               builder: (context, ref, child) {
-                                final categoriesAsync =
-                                    ref.watch(categoryProvider);
+                                final categoriesAsync = ref.watch(categoryProvider);
                                 return categoriesAsync.when(
                                   data: (categories) {
                                     if (categories.isEmpty) {
@@ -683,17 +566,14 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                       },
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return lang.S
-                                              .of(context)
-                                              .categoryRequired;
+                                          return lang.S.of(context).categoryRequired;
                                         }
                                         return null;
                                       },
                                     );
                                   },
                                   loading: () => CircularProgressIndicator(),
-                                  error: (error, stack) =>
-                                      Text('Error: $error'),
+                                  error: (error, stack) => Text('Error: $error'),
                                 );
                               },
                             ),
@@ -710,8 +590,6 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Components
-
                             /// COMPONENTES
                             Text(
                               lang.S.of(context).components,
@@ -720,52 +598,37 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             const SizedBox(height: 8),
                             Consumer(
                               builder: (context, ref, child) {
-                                final categoriesAsync =
-                                    ref.watch(categoryProvider);
+                                final categoriesAsync = ref.watch(categoryProvider);
 
                                 return categoriesAsync.when(
                                   data: (categories) {
                                     return Column(
                                       children: [
-                                        ..._selectedComponents
-                                            .asMap()
-                                            .entries
-                                            .map(
+                                        ..._selectedComponents.asMap().entries.map(
                                           (entry) {
                                             int index = entry.key;
                                             String? selectedValue = entry.value;
 
                                             return Padding(
-                                              padding: const EdgeInsets.only(
-                                                  bottom: 8.0),
+                                              padding: const EdgeInsets.only(bottom: 8.0),
                                               child: Row(
                                                 children: [
                                                   Expanded(
-                                                    child:
-                                                        DropdownButtonFormField<
-                                                            String>(
+                                                    child: DropdownButtonFormField<String>(
                                                       value: selectedValue,
-                                                      decoration:
-                                                          InputDecoration(
-                                                        labelText:
-                                                            '${lang.S.of(context).selectComponent} ${index + 1}',
-                                                        border:
-                                                            OutlineInputBorder(),
+                                                      decoration: InputDecoration(
+                                                        labelText: '${lang.S.of(context).selectComponent} ${index + 1}',
+                                                        border: OutlineInputBorder(),
                                                       ),
-                                                      items: categories
-                                                          .map((category) {
-                                                        return DropdownMenuItem<
-                                                            String>(
-                                                          value: category
-                                                              .categoryName,
-                                                          child: Text(category
-                                                              .categoryName),
+                                                      items: categories.map((category) {
+                                                        return DropdownMenuItem<String>(
+                                                          value: category.categoryName,
+                                                          child: Text(category.categoryName),
                                                         );
                                                       }).toList(),
                                                       onChanged: (value) {
                                                         setState1(() {
-                                                          _selectedComponents[
-                                                              index] = value;
+                                                          _selectedComponents[index] = value;
                                                         });
                                                       },
                                                     ),
@@ -774,18 +637,17 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                                   // if (_selectedComponents
                                                   //         .length >
                                                   //     1)
-                                                    IconButton(
-                                                      icon: const Icon(
-                                                        Icons.remove_circle,
-                                                        color: Colors.red,
-                                                      ),
-                                                      onPressed: () {
-                                                        setState1(() {
-                                                          _selectedComponents
-                                                              .removeAt(index);
-                                                        });
-                                                      },
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.remove_circle,
+                                                      color: Colors.red,
                                                     ),
+                                                    onPressed: () {
+                                                      setState1(() {
+                                                        _selectedComponents.removeAt(index);
+                                                      });
+                                                    },
+                                                  ),
                                                 ],
                                               ),
                                             );
@@ -800,16 +662,13 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                               });
                                             },
                                             icon: const Icon(Icons.add),
-                                            label: Text(lang.S
-                                                .of(context)
-                                                .addComponent),
+                                            label: Text(lang.S.of(context).addComponent),
                                           ),
                                         ),
                                       ],
                                     );
                                   },
-                                  loading: () =>
-                                      const CircularProgressIndicator(),
+                                  loading: () => const CircularProgressIndicator(),
                                   error: (e, st) => Text('Error: $e'),
                                 );
                               },
@@ -817,8 +676,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             const SizedBox(height: 20),
 
                             // Description
-                            AdjustableDescriptionField(
-                                controller: _descriptionController),
+                            AdjustableDescriptionField(controller: _descriptionController),
                             const SizedBox(height: 16),
 
                             // Price
@@ -856,14 +714,10 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     keyboardType: TextInputType.number,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return lang.S
-                                            .of(context)
-                                            .durationRequired;
+                                        return lang.S.of(context).durationRequired;
                                       }
                                       if (int.tryParse(value) == null) {
-                                        return lang.S
-                                            .of(context)
-                                            .invalidInteger;
+                                        return lang.S.of(context).invalidInteger;
                                       }
                                       return null;
                                     },
@@ -879,13 +733,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                       border: OutlineInputBorder(),
                                     ),
                                     items: [
-                                      DropdownMenuItem(
-                                          value: 'hours',
-                                          child:
-                                              Text(lang.S.of(context).hours)),
-                                      DropdownMenuItem(
-                                          value: 'days',
-                                          child: Text(lang.S.of(context).days)),
+                                      DropdownMenuItem(value: 'hours', child: Text(lang.S.of(context).hours)),
+                                      DropdownMenuItem(value: 'days', child: Text(lang.S.of(context).days)),
                                     ],
                                     onChanged: (value) {
                                       setState1(() {
@@ -912,63 +761,40 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     lang.S.of(context).cancel,
                                   ),
                                 ),
-                                SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width <= 570
-                                            ? 10
-                                            : 30.0),
+                                SizedBox(width: MediaQuery.of(context).size.width <= 570 ? 10 : 30.0),
                                 ElevatedButton(
                                   onPressed: () async {
                                     if (_formKey.currentState!.validate()) {
-                                      EasyLoading.show(
-                                          status:
-                                              lang.S.of(context).addingPackage);
+                                      EasyLoading.show(status: lang.S.of(context).addingPackage);
                                       final newPackage = ServicePackageModel(
                                         id: '', // Will be assigned by Firebase
                                         type: 'service',
                                         name: _nameController.text,
                                         category: _selectedCategory ?? '',
-                                        subcategory:
-                                            _subcategoryController.text,
-                                        description:
-                                            _descriptionController.text,
-                                        price: double.tryParse(
-                                                _priceController.text) ??
-                                            0.0,
+                                        subcategory: _subcategoryController.text,
+                                        description: _descriptionController.text,
+                                        price: double.tryParse(_priceController.text) ?? 0.0,
                                         duration: {
-                                          'value': int.tryParse(
-                                                  _durationValueController
-                                                      .text) ??
-                                              0,
+                                          'value': int.tryParse(_durationValueController.text) ?? 0,
                                           'unit': _durationUnit,
                                         },
-                                        components: _selectedComponents
-                                            .whereType<String>()
-                                            .toList(),
+                                        components: _selectedComponents.whereType<String>().toList(),
                                         branches: [],
                                         createdAt: DateTime.now(),
                                         updatedAt: DateTime.now(),
                                       );
 
                                       try {
-                                        final result = await ref
-                                            .read(servicePackagesProvider
-                                                .notifier)
-                                            .addPackage(newPackage);
+                                        final result = await ref.read(servicePackagesProvider.notifier).addPackage(newPackage);
                                         if (result) {
-                                          EasyLoading.showSuccess(lang.S
-                                              .of(context)
-                                              .packageAddedSuccess);
+                                          EasyLoading.showSuccess(lang.S.of(context).packageAddedSuccess);
                                           _clearForm();
                                           Navigator.pop(context);
                                         } else {
-                                          EasyLoading.showError(lang.S
-                                              .of(context)
-                                              .failedToAddPackage);
+                                          EasyLoading.showError(lang.S.of(context).failedToAddPackage);
                                         }
                                       } catch (e) {
-                                        EasyLoading.showError(
-                                            '${lang.S.of(context).error}: $e');
+                                        EasyLoading.showError('${lang.S.of(context).error}: $e');
                                       }
                                     }
                                   },
@@ -980,8 +806,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                               ],
                             ),
                             SizedBox(
-                              height: MediaQuery.of(context).size.height *
-                                  0.02, // Ajusta el tamaño según el alto de la pantalla
+                              height: MediaQuery.of(context).size.height * 0.02, // Ajusta el tamaño según el alto de la pantalla
                             )
                           ],
                         ),
@@ -1023,13 +848,11 @@ class _ServicePackageListState extends State<ServicePackageList> {
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState1) {
-          List<String> _components =
-              List<String>.from(package.components ?? []);
+          List<String> _components = List<String>.from(package.components ?? []);
           String? _selectedComponent;
           return Dialog(
             surfaceTintColor: kWhite,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
             child: SizedBox(
               width: 600,
               child: SingleChildScrollView(
@@ -1046,10 +869,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                           Flexible(
                             child: Text(
                               lang.S.of(context).editPackage,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -1100,8 +920,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             // Category - Changed to DropdownButtonFormField
                             Consumer(
                               builder: (context, ref, child) {
-                                final categoriesAsync =
-                                    ref.watch(categoryProvider);
+                                final categoriesAsync = ref.watch(categoryProvider);
                                 return categoriesAsync.when(
                                   data: (categories) {
                                     if (categories.isEmpty) {
@@ -1126,17 +945,14 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                       },
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return lang.S
-                                              .of(context)
-                                              .categoryRequired;
+                                          return lang.S.of(context).categoryRequired;
                                         }
                                         return null;
                                       },
                                     );
                                   },
                                   loading: () => CircularProgressIndicator(),
-                                  error: (error, stack) =>
-                                      Text('Error: $error'),
+                                  error: (error, stack) => Text('Error: $error'),
                                 );
                               },
                             ),
@@ -1232,8 +1048,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
 
                             Consumer(
                               builder: (context, ref, child) {
-                                final categoriesAsync =
-                                    ref.watch(categoryProvider);
+                                final categoriesAsync = ref.watch(categoryProvider);
 
                                 return categoriesAsync.when(
                                   data: (categories) {
@@ -1246,49 +1061,36 @@ class _ServicePackageListState extends State<ServicePackageList> {
 
                                     return Column(
                                       children: [
-                                        ..._selectedComponents
-                                            .asMap()
-                                            .entries
-                                            .map((entry) {
+                                        ..._selectedComponents.asMap().entries.map((entry) {
                                           int index = entry.key;
                                           String? selectedValue = entry.value;
 
                                           return Padding(
-                                            padding: const EdgeInsets.only(
-                                                bottom: 8.0),
+                                            padding: const EdgeInsets.only(bottom: 8.0),
                                             child: Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Expanded(
-                                                  child:
-                                                      DropdownButtonFormField<
-                                                          String>(
+                                                  child: DropdownButtonFormField<String>(
                                                     value: selectedValue,
                                                     decoration: InputDecoration(
-                                                      labelText:
-                                                          '${lang.S.of(context).selectComponent} ${index + 1}',
-                                                      border:
-                                                          OutlineInputBorder(),
+                                                      labelText: '${lang.S.of(context).selectComponent} ${index + 1}',
+                                                      border: OutlineInputBorder(),
                                                     ),
                                                     items: dropdownItems,
                                                     onChanged: (value) {
                                                       setState1(() {
-                                                        _selectedComponents[
-                                                            index] = value;
+                                                        _selectedComponents[index] = value;
                                                       });
                                                     },
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
                                                 IconButton(
-                                                  icon: const Icon(
-                                                      Icons.remove_circle,
-                                                      color: Colors.red),
+                                                  icon: const Icon(Icons.remove_circle, color: Colors.red),
                                                   onPressed: () {
                                                     setState1(() {
-                                                      _selectedComponents
-                                                          .removeAt(index);
+                                                      _selectedComponents.removeAt(index);
                                                     });
                                                   },
                                                 ),
@@ -1307,8 +1109,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                       ],
                                     );
                                   },
-                                  loading: () =>
-                                      const CircularProgressIndicator(),
+                                  loading: () => const CircularProgressIndicator(),
                                   error: (e, st) => Text('Error: $e'),
                                 );
                               },
@@ -1317,8 +1118,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                             const SizedBox(height: 16),
 
                             // Description
-                            AdjustableDescriptionField(
-                                controller: _descriptionController),
+                            AdjustableDescriptionField(controller: _descriptionController),
                             const SizedBox(height: 16),
 
                             // Price
@@ -1356,14 +1156,10 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     keyboardType: TextInputType.number,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return lang.S
-                                            .of(context)
-                                            .durationRequired;
+                                        return lang.S.of(context).durationRequired;
                                       }
                                       if (int.tryParse(value) == null) {
-                                        return lang.S
-                                            .of(context)
-                                            .invalidInteger;
+                                        return lang.S.of(context).invalidInteger;
                                       }
                                       return null;
                                     },
@@ -1379,13 +1175,8 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                       border: OutlineInputBorder(),
                                     ),
                                     items: [
-                                      DropdownMenuItem(
-                                          value: 'hours',
-                                          child:
-                                              Text(lang.S.of(context).hours)),
-                                      DropdownMenuItem(
-                                          value: 'days',
-                                          child: Text(lang.S.of(context).days)),
+                                      DropdownMenuItem(value: 'hours', child: Text(lang.S.of(context).hours)),
+                                      DropdownMenuItem(value: 'days', child: Text(lang.S.of(context).days)),
                                     ],
                                     onChanged: (value) {
                                       setState1(() {
@@ -1412,60 +1203,36 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                     lang.S.of(context).cancel,
                                   ),
                                 ),
-                                SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width <= 570
-                                            ? 10
-                                            : 30.0),
+                                SizedBox(width: MediaQuery.of(context).size.width <= 570 ? 10 : 30.0),
                                 ElevatedButton(
                                   onPressed: () async {
                                     if (_formKey.currentState!.validate()) {
-                                      EasyLoading.show(
-                                          status: lang.S
-                                              .of(context)
-                                              .updatingPackage);
+                                      EasyLoading.show(status: lang.S.of(context).updatingPackage);
                                       final updatedPackage = package.copyWith(
                                         name: _nameController.text,
                                         category: _selectedCategory ?? '',
-                                        subcategory:
-                                            _subcategoryController.text,
-                                        description:
-                                            _descriptionController.text,
-                                        price: double.tryParse(
-                                                _priceController.text) ??
-                                            0.0,
+                                        subcategory: _subcategoryController.text,
+                                        description: _descriptionController.text,
+                                        price: double.tryParse(_priceController.text) ?? 0.0,
                                         duration: {
-                                          'value': int.tryParse(
-                                                  _durationValueController
-                                                      .text) ??
-                                              0,
+                                          'value': int.tryParse(_durationValueController.text) ?? 0,
                                           'unit': _durationUnit,
                                         },
                                         updatedAt: DateTime.now(),
-                                        components: _selectedComponents
-                                            .whereType<String>()
-                                            .toList(),
+                                        components: _selectedComponents.whereType<String>().toList(),
                                       );
 
                                       try {
-                                        final result = await ref
-                                            .read(servicePackagesProvider
-                                                .notifier)
-                                            .updatePackage(updatedPackage);
+                                        final result = await ref.read(servicePackagesProvider.notifier).updatePackage(updatedPackage);
                                         if (result) {
-                                          EasyLoading.showSuccess(lang.S
-                                              .of(context)
-                                              .packageUpdatedSuccess);
+                                          EasyLoading.showSuccess(lang.S.of(context).packageUpdatedSuccess);
                                           _clearForm();
                                           Navigator.pop(context);
                                         } else {
-                                          EasyLoading.showError(lang.S
-                                              .of(context)
-                                              .failedToUpdatePackage);
+                                          EasyLoading.showError(lang.S.of(context).failedToUpdatePackage);
                                         }
                                       } catch (e) {
-                                        EasyLoading.showError(
-                                            '${lang.S.of(context).error}: $e');
+                                        EasyLoading.showError('${lang.S.of(context).error}: $e');
                                       }
                                     }
                                   },
@@ -1477,8 +1244,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                               ],
                             ),
                             SizedBox(
-                              height: MediaQuery.of(context).size.height *
-                                  0.02, // Ajusta el tamaño según el alto de la pantalla
+                              height: MediaQuery.of(context).size.height * 0.02, // Ajusta el tamaño según el alto de la pantalla
                             )
                           ],
                         ),
@@ -1494,8 +1260,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
     );
   }
 
-  void _showDeleteConfirmation(
-      BuildContext context, WidgetRef ref, ServicePackageModel package) {
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref, ServicePackageModel package) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1512,22 +1277,17 @@ class _ServicePackageListState extends State<ServicePackageList> {
                 Navigator.pop(context);
                 EasyLoading.show(status: lang.S.of(context).deleting);
                 try {
-                  final result = await ref
-                      .read(servicePackagesProvider.notifier)
-                      .deletePackage(package.id);
+                  final result = await ref.read(servicePackagesProvider.notifier).deletePackage(package.id);
                   if (result) {
-                    EasyLoading.showSuccess(
-                        lang.S.of(context).packageDeletedSuccess);
+                    EasyLoading.showSuccess(lang.S.of(context).packageDeletedSuccess);
                   } else {
-                    EasyLoading.showError(
-                        lang.S.of(context).failedToDeletePackage);
+                    EasyLoading.showError(lang.S.of(context).failedToDeletePackage);
                   }
                 } catch (e) {
                   EasyLoading.showError('${lang.S.of(context).error}: $e');
                 }
               },
-              child: Text(lang.S.of(context).delete,
-                  style: TextStyle(color: Colors.red)),
+              child: Text(lang.S.of(context).delete, style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -1553,12 +1313,10 @@ class AdjustableDescriptionField extends StatefulWidget {
   AdjustableDescriptionField({required this.controller});
 
   @override
-  _AdjustableDescriptionFieldState createState() =>
-      _AdjustableDescriptionFieldState();
+  _AdjustableDescriptionFieldState createState() => _AdjustableDescriptionFieldState();
 }
 
-class _AdjustableDescriptionFieldState
-    extends State<AdjustableDescriptionField> {
+class _AdjustableDescriptionFieldState extends State<AdjustableDescriptionField> {
   double _fieldHeight = 300.0; // Altura inicial del campo de descripción
 
   @override
@@ -1593,8 +1351,7 @@ class _AdjustableDescriptionFieldState
         ElevatedButton(
           onPressed: () {
             setState(() {
-              widget.controller.text =
-                  _formatDescription(widget.controller.text);
+              widget.controller.text = _formatDescription(widget.controller.text);
             });
           },
           child: Text('Formatear Descripción'),
@@ -1605,8 +1362,7 @@ class _AdjustableDescriptionFieldState
 
   String _formatDescription(String input) {
     // Divide el texto en líneas y elimina espacios innecesarios
-    List<String> lines =
-        input.split(RegExp(r'\n|\r')).map((line) => line.trim()).toList();
+    List<String> lines = input.split(RegExp(r'\n|\r')).map((line) => line.trim()).toList();
 
     // Agrega viñetas con el símbolo '•' a cada línea no vacía
     List<String> formattedLines = lines.map((line) {

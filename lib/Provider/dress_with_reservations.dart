@@ -30,7 +30,7 @@ final dressesByStatusProvider =
           final reservedIds = await _getReservedDressIds();
           return _filterByStatus(filteredByName, status, reservedIds);
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       //print('Error in dressesByStatusProvider: $e');
       //print('StackTrace: $stackTrace');
       return <DressModel>[];

@@ -107,6 +107,7 @@ final addDressProvider =
       'created_at': dress.createdAt.millisecondsSinceEpoch,
       'updated_at': DateTime.now().millisecondsSinceEpoch,
       'images': allImageUrls,
+      'price': dress.price, // Save price if available
     });
 
     return true;
@@ -156,6 +157,7 @@ final updateDressProvider =
       'available': dress.available,
       'updated_at': DateTime.now().millisecondsSinceEpoch,
       'images': allImageUrls,
+      'price': dress.price, // Update price if available
     });
 
     return true;

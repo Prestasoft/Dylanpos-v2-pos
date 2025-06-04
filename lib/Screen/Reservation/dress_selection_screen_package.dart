@@ -119,8 +119,8 @@ class _DressSelectionPackageScreenState
         : ref.watch(availableDressesByComponentsProvider(
             widget.CategoryComposite));
 
-    //ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
-    ref.watch(dressesOnceProvider(widget.CategoryComposite));
+    ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
+    //ref.watch(dressesOnceProvider(widget.CategoryComposite));
 
     
     final theme = Theme.of(context);
@@ -314,7 +314,8 @@ class _DressSelectionPackageScreenState
                                   {
                                     'vestidoName': dress.name,
                                     'vestidoId': dress.id,
-                                    'branchId': dress.branchId
+                                    'branchId': dress.branchId,
+                                    'vestidoPrice': dress.price.toString(),
                                   },
 
                                   // MaterialPageRoute(

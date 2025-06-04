@@ -8,6 +8,7 @@ class DressModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<String> images;
+  final double price;
   DressModel({
     required this.id,
     required this.name,
@@ -17,6 +18,7 @@ class DressModel {
     required this.available,
     required this.createdAt,
     required this.updatedAt,
+    this.price = 0.0, // 👈 Precio por defecto
     List<String>? images, // 👈 Constructor admite lista opcional
   }) : images = images ?? [];
 
@@ -33,6 +35,7 @@ class DressModel {
       images: map['images'] != null && map['images'] is List
           ? List<String>.from(map['images'].map((x) => x.toString()))
           : [],
+      price: map['price']?.toDouble() ?? 0.0, // 👈 Precio desde el mapa
     );
   }
   factory DressModel.fromRealtimeDB(Map<dynamic, dynamic> map, dynamic documentId) {
@@ -52,6 +55,7 @@ class DressModel {
           ? List<String>.from((map['images'] as Map).values.map((x) => x.toString()))
           : [])
           : [],
+      price: map['price']?.toDouble() ?? 0.0, // 👈 Precio desde el mapa
     );
   }
   Map<String, dynamic> toMap() {
@@ -64,6 +68,7 @@ class DressModel {
       'created_at': createdAt,
       'updated_at': updatedAt,
       'images': images, // 👈 Guardar la lista de imágenes
+      'price': price, // 👈 Guardar el precio
     };
   }
 }

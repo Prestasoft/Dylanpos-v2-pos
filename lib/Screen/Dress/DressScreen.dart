@@ -43,6 +43,7 @@ class _DressScreenState extends State<DressScreen> {
   String searchItem = '';
   bool _isAvailable = true;
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  TextEditingController _priceController = TextEditingController();
 
   // For image handling
   final List<dynamic> _selectedImages =
@@ -1117,6 +1118,7 @@ class _DressScreenState extends State<DressScreen> {
     _selectedBranch = dress.branchId;
     _subcategoryController.text = dress.subcategory;
     _isAvailable = dress.available;
+    _priceController.text = dress.price.toStringAsFixed(2);
     _existingImageUrls.addAll(dress.images);
     _selectedImages.clear();
 
@@ -1304,6 +1306,27 @@ class _DressScreenState extends State<DressScreen> {
 
                               const SizedBox(height: 16),
 
+                              // Price
+                              TextFormField(
+                                controller: _priceController,
+                                decoration: InputDecoration(
+                                  labelText: lang.S.of(context).price,
+                                  border: OutlineInputBorder(),
+                                  prefixText: '\$',
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return lang.S.of(context).priceRequired;
+                                  }
+                                  if (double.tryParse(value) == null) {
+                                    return lang.S.of(context).invalidNumber;
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+
                               // Available switch
                               SwitchListTile(
                                 title: Text(lang.S.of(context).available),
@@ -1352,6 +1375,9 @@ class _DressScreenState extends State<DressScreen> {
                                   createdAt: dress.createdAt,
                                   updatedAt: DateTime.now(),
                                   images: _existingImageUrls,
+                                  price: double.tryParse(
+                                          _priceController.text) ??
+                                      0.0, // Use parsed price or default to 0.0
                                 );
 
                                 Navigator.pop(context);
@@ -1584,6 +1610,28 @@ class _DressScreenState extends State<DressScreen> {
                                 },
                               ),
                               const SizedBox(height: 16),
+
+                              // Mount field
+                              TextFormField(
+                                controller: _priceController,
+                                decoration: InputDecoration(
+                                  labelText: lang.S.of(context).price,
+                                  border: OutlineInputBorder(),
+                                  prefixText: '\$',
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return lang.S.of(context).priceRequired;
+                                  }
+                                  if (double.tryParse(value) == null) {
+                                    return lang.S.of(context).invalidNumber;
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+
                               // Available switch
                               SwitchListTile(
                                 title: Text(lang.S.of(context).available),
@@ -1643,6 +1691,9 @@ class _DressScreenState extends State<DressScreen> {
                                   createdAt: DateTime.now(),
                                   updatedAt: DateTime.now(),
                                   images: [],
+                                  price: double.tryParse(
+                                          _priceController.text) ??
+                                      0.0, // Use parsed price or default to 0.0
                                 );
 
                                 Navigator.pop(context);

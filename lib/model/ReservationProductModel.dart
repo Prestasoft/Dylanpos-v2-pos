@@ -15,6 +15,7 @@ class ReservationProductModel {
   final DateTime updatedAt;
   final Map<String, dynamic> duration; // Duración del servicio
   final String descricpion;
+  final double packagePrice; // Opcional, si se usa un paquete de precios
   
   ReservationProductModel({
     required this.id,
@@ -31,6 +32,7 @@ class ReservationProductModel {
     required this.updatedAt,
     required this.duration,
     required this.descricpion,
+    required this.packagePrice
     });
 
   // Corrected fromMap factory constructor for ReservationProductModel
@@ -71,7 +73,9 @@ class ReservationProductModel {
           ? map['duration'] as Map<String, dynamic>
           : {},
       descricpion: map['description'] ?? '',
+      packagePrice: (map['package_price'] is num) ? (map['package_price'] as num).toDouble() : 0.0,
       );
+
   }
 
   // Convertir a AddToCartModel para el carrito de compras
@@ -80,11 +84,11 @@ class ReservationProductModel {
       productName: '$serviceName - $dressName',
       productId: id,
       quantity: 1,
-      subTotal: price.toString(),
+      subTotal: packagePrice > 0 ? packagePrice.toString() : price.toString(),
       productPurchasePrice: 0,
       warehouseName: descricpion,
       warehouseId: 'reserva-warehouse',
-      unitPrice: price,
+      unitPrice: packagePrice > 0 ? packagePrice : price,
       productImage: 'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
       taxType: 'none',
       margin: 0,
@@ -135,6 +139,7 @@ class ReservationProductCompositeModel {
   final DateTime updatedAt;
   final Map<String, dynamic> duration; // Duración del servicio
   final String descricpion;
+  final double packagePrice; // Opcional, si se usa un paquete de precios
 
   ReservationProductCompositeModel({
     required this.id,
@@ -149,6 +154,7 @@ class ReservationProductCompositeModel {
     required this.duration,
     required this.descricpion,
     required this.dressInfo,
+    required this.packagePrice,
   });
 
   // Corrected fromMap factory constructor for ReservationProductModel
@@ -196,8 +202,12 @@ class ReservationProductCompositeModel {
           ? map['duration'] as Map<String, dynamic>
           : {},
       descricpion: map['description'] ?? '',
+      packagePrice: (map['package_price'] is num) ? (map['package_price'] as num).toDouble() : 0.0,
       );
   }
+
+
+
 
    // Convertir a AddToCartModel para el carrito de compras
   AddToCartModel toCartCompositeItem() {
@@ -205,11 +215,11 @@ class ReservationProductCompositeModel {
       productName: '$serviceName - ${dressInfo.map((e) => e.dressName).join(', ')}',
       productId: id,
       quantity: 1,
-      subTotal: price.toString(),
+      subTotal:  packagePrice > 0 ? packagePrice.toString() : price.toString(),
       productPurchasePrice: 0,
       warehouseName: descricpion,
       warehouseId: 'reserva-warehouse',
-      unitPrice: price,
+      unitPrice: packagePrice > 0 ? packagePrice : price,
       productImage: 'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
       taxType: 'none',
       margin: 0,

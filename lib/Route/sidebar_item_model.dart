@@ -83,6 +83,10 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/reservations',
       submenus: [
         SidebarSubmenuModel(
+          name: 'Reservas Vestimentas',
+          navigationPath: '/rent-clothes', // NO '/reservations-list'
+        ),
+        SidebarSubmenuModel(
           name: 'Reservas Paquete',
           navigationPath: '/list', // NO '/reservations-list'
         ),

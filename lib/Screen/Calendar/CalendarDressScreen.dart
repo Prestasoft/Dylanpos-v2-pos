@@ -1,32 +1,23 @@
-import 'dart:developer';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:iconly/iconly.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
-import 'package:salespro_admin/Provider/dress_provider.dart';
-import 'package:salespro_admin/Provider/product_provider.dart';
+import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:salespro_admin/Screen/WareHouse/warehouse_model.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/export_button.dart';
-import 'package:salespro_admin/const.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-import 'package:salespro_admin/model/category_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
-
 import '../../Provider/dress_with_reservations.dart';
 import '../../model/FullReservation.dart';
 import '../../model/args_dress.dart';
@@ -75,17 +66,13 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   List<DressModel> showAbleDresses = [];
   // For image handling
-  final List<dynamic> _selectedImages =
-      []; // Can hold File (mobile) or XFile/Uint8List (web)
+  final List<dynamic> _selectedImages = []; // Can hold File (mobile) or XFile/Uint8List (web)
   final List<String> _existingImageUrls = [];
 
   final _horizontalScroll = ScrollController();
   int _itemsPerPage = 10;
   int _currentPage = 1;
   String itemStatus = "Todos";
-
-  // Campo para notas
-  // TextEditingController _notasController = TextEditingController();
 
   Future<void> _pickImages() async {
     try {
@@ -97,8 +84,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
             _selectedImages.addAll(pickedImages);
           } else {
             // For mobile, convert to File objects
-            _selectedImages
-                .addAll(pickedImages.map((xFile) => File(xFile.path)));
+            _selectedImages.addAll(pickedImages.map((xFile) => File(xFile.path)));
           }
         });
       }
@@ -116,20 +102,12 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final _lang = lang.S.of(context);
 
-    final reservationsAsyncValue =
-        ref.watch(fullReservationsByDressProvider('dress_1746102671326'));
+    final reservationsAsyncValue = ref.watch(fullReservationsByDressProvider('dress_1746102671326'));
     showAbleDresses.clear();
     return SafeArea(
       child: Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
-          //AsyncValue<List<DressModel>> dresses = ref.watch(dressesProvider);
-          //ref.read(provider)
-          // final dressesAsync = ref.read(dressesByStatusProvider({
-          //   'search': searchItem,
-          //   'status': itemStatus, // 'Disponible', 'Reservados', 'Todos'
-          // }));
-
           final params = DressFilterParams(
             search: searchItem,
             status: itemStatus,
@@ -138,30 +116,18 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
           final dressesAsync = ref.watch(dressesByStatusProvider(params));
 
           return dressesAsync.when(data: (list) {
-            // for (var element in list) {
-            //   if (element.name
-            //       .removeAllWhiteSpace()
-            //       .toLowerCase()
-            //       .contains(searchItem.toLowerCase())) {
-            //     showAbleDresses.add(element);
-            //   } else if (searchItem == '') {
-            //     showAbleDresses.add(element);
-            //   }
-            // }
             showAbleDresses.addAll(list);
             final pages = (showAbleDresses.length / _itemsPerPage).ceil();
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding:
-                          const EdgeInsets.only(left: 12, right: 12, top: 12),
+                      padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -233,19 +199,11 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [
-                                      10,
-                                      20,
-                                      50,
-                                      100,
-                                      -1
-                                    ].map<DropdownMenuItem<int>>((int value) {
+                                    items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
                                       return DropdownMenuItem<int>(
                                         value: value,
                                         child: Text(
-                                          value == -1
-                                              ? "All"
-                                              : value.toString(),
+                                          value == -1 ? "All" : value.toString(),
                                           style: theme.textTheme.bodyLarge,
                                         ),
                                       );
@@ -338,8 +296,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                       "Disponibles",
                                       "Reservados",
                                       "Lavanderia",
-                                    ].map<DropdownMenuItem<String>>(
-                                        (String value) {
+                                    ].map<DropdownMenuItem<String>>((String value) {
                                       return DropdownMenuItem<String>(
                                         value: value,
                                         child: Text(
@@ -367,8 +324,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                         ? Column(
                             children: [
                               LayoutBuilder(
-                                builder: (BuildContext context,
-                                    BoxConstraints constraints) {
+                                builder: (BuildContext context, BoxConstraints constraints) {
                                   final kWidth = constraints.maxWidth;
                                   return Scrollbar(
                                     controller: _horizontalScroll,
@@ -385,9 +341,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                         child: Theme(
                                           data: theme.copyWith(
                                             dividerColor: Colors.transparent,
-                                            dividerTheme:
-                                                const DividerThemeData(
-                                                    color: Colors.transparent),
+                                            dividerTheme: const DividerThemeData(color: Colors.transparent),
                                           ),
                                           child: DataTable(
                                               border: const TableBorder(
@@ -396,117 +350,62 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                   color: kNeutral300,
                                                 ),
                                               ),
-                                              dataRowColor:
-                                                  const WidgetStatePropertyAll(
-                                                      Colors.white),
-                                              headingRowColor:
-                                                  WidgetStateProperty.all(
-                                                      const Color(0xFFF8F3FF)),
+                                              dataRowColor: const WidgetStatePropertyAll(Colors.white),
+                                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
-                                              headingTextStyle:
-                                                  theme.textTheme.titleMedium,
+                                              headingTextStyle: theme.textTheme.titleMedium,
                                               columns: [
-                                                DataColumn(
-                                                    label: Text(_lang.SL)),
-                                                DataColumn(
-                                                    label: Text(_lang.image)),
-                                                DataColumn(
-                                                    label: Text(_lang.name)),
-                                                DataColumn(
-                                                    label:
-                                                        Text(_lang.category)),
-                                                DataColumn(
-                                                    label: Text(_lang.branch)),
-                                                const DataColumn(
-                                                    label: Icon(
-                                                        FeatherIcons.settings)),
+                                                DataColumn(label: Text(_lang.SL)),
+                                                DataColumn(label: Text(_lang.image)),
+                                                DataColumn(label: Text(_lang.name)),
+                                                DataColumn(label: Text(_lang.category)),
+                                                DataColumn(label: Text(_lang.branch)),
+                                                const DataColumn(label: Icon(FeatherIcons.settings)),
                                               ],
                                               rows: List.generate(
                                                   _itemsPerPage == -1
                                                       ? showAbleDresses.length
-                                                      : (_currentPage - 1) *
-                                                                      _itemsPerPage +
-                                                                  _itemsPerPage <=
-                                                              showAbleDresses
-                                                                  .length
+                                                      : (_currentPage - 1) * _itemsPerPage + _itemsPerPage <= showAbleDresses.length
                                                           ? _itemsPerPage
-                                                          : showAbleDresses
-                                                                  .length -
-                                                              (_currentPage -
-                                                                      1) *
-                                                                  _itemsPerPage,
-                                                  (index) {
-                                                final dataIndex =
-                                                    (_currentPage - 1) *
-                                                            _itemsPerPage +
-                                                        index;
-                                                final dress =
-                                                    showAbleDresses[dataIndex];
+                                                          : showAbleDresses.length - (_currentPage - 1) * _itemsPerPage, (index) {
+                                                final dataIndex = (_currentPage - 1) * _itemsPerPage + index;
+                                                final dress = showAbleDresses[dataIndex];
                                                 return DataRow(cells: [
                                                   // SL Number
-                                                  DataCell(Text(
-                                                      '${(_currentPage - 1) * _itemsPerPage + index + 1}')),
+                                                  DataCell(Text('${(_currentPage - 1) * _itemsPerPage + index + 1}')),
 
                                                   // Image (Thumbnail)
                                                   DataCell(
                                                     dress.images.isNotEmpty
                                                         ? ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        4),
-                                                            child:
-                                                                Image.network(
-                                                              dress
-                                                                  .images.first,
+                                                            borderRadius: BorderRadius.circular(4),
+                                                            child: Image.network(
+                                                              dress.images.first,
                                                               width: 50,
                                                               height: 50,
                                                               fit: BoxFit.cover,
-                                                              loadingBuilder:
-                                                                  (context,
-                                                                      child,
-                                                                      loadingProgress) {
-                                                                if (loadingProgress ==
-                                                                    null)
-                                                                  return child;
+                                                              loadingBuilder: (context, child, loadingProgress) {
+                                                                if (loadingProgress == null) return child;
                                                                 return Container(
                                                                   width: 50,
                                                                   height: 50,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200,
+                                                                  color: Colors.grey.shade200,
                                                                   child: Center(
-                                                                    child:
-                                                                        CircularProgressIndicator(
-                                                                      value: loadingProgress.expectedTotalBytes !=
-                                                                              null
-                                                                          ? loadingProgress.cumulativeBytesLoaded /
-                                                                              loadingProgress.expectedTotalBytes!
-                                                                          : null,
-                                                                      strokeWidth:
-                                                                          2,
+                                                                    child: CircularProgressIndicator(
+                                                                      value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
+                                                                      strokeWidth: 2,
                                                                     ),
                                                                   ),
                                                                 );
                                                               },
-                                                              errorBuilder:
-                                                                  (context,
-                                                                      error,
-                                                                      stackTrace) {
-                                                                print(
-                                                                    'Error con Image.network: $error');
+                                                              errorBuilder: (context, error, stackTrace) {
+                                                                print('Error con Image.network: $error');
                                                                 return Container(
                                                                   width: 50,
                                                                   height: 50,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200,
-                                                                  child: const Icon(
-                                                                      Icons
-                                                                          .error,
-                                                                      color: Colors
-                                                                          .red),
+                                                                  color: Colors.grey.shade200,
+                                                                  child: const Icon(Icons.error, color: Colors.red),
                                                                 );
                                                               },
                                                             ),
@@ -514,20 +413,11 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                         : Container(
                                                             width: 50,
                                                             height: 50,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: Colors.grey
-                                                                  .shade200,
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          4),
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.grey.shade200,
+                                                              borderRadius: BorderRadius.circular(4),
                                                             ),
-                                                            child: const Icon(
-                                                                Icons
-                                                                    .image_not_supported,
-                                                                color: Colors
-                                                                    .grey),
+                                                            child: const Icon(Icons.image_not_supported, color: Colors.grey),
                                                           ),
                                                   ),
 
@@ -535,62 +425,34 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                   DataCell(Text(dress.name)),
 
                                                   // Category
-                                                  DataCell(
-                                                      Text(dress.category)),
+                                                  DataCell(Text(dress.category)),
 
                                                   // Branch
-                                                  DataCell(
-                                                      Text(dress.branchId)),
+                                                  DataCell(Text(dress.branchId)),
 
                                                   // Actions
                                                   DataCell(
                                                     Theme(
-                                                      data: ThemeData(
-                                                          highlightColor:
-                                                              dropdownItemColor,
-                                                          focusColor:
-                                                              dropdownItemColor,
-                                                          hoverColor:
-                                                              dropdownItemColor),
+                                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
                                                       child: SizedBox(
                                                         width: 20,
                                                         child: PopupMenuButton(
-                                                          surfaceTintColor:
-                                                              Colors.white,
-                                                          padding:
-                                                              EdgeInsets.zero,
-                                                          itemBuilder:
-                                                              (BuildContext
-                                                                      bc) =>
-                                                                  [
+                                                          surfaceTintColor: Colors.white,
+                                                          padding: EdgeInsets.zero,
+                                                          itemBuilder: (BuildContext bc) => [
                                                             // Reserve
                                                             PopupMenuItem(
                                                                 onTap: () {
-                                                                  _showCalendarDressDialog(
-                                                                      context,
-                                                                      ref,
-                                                                      dress);
+                                                                  _showCalendarDressDialog(context, ref, dress);
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const Icon(
-                                                                        IconlyLight
-                                                                            .calendar,
-                                                                        size:
-                                                                            20.0,
-                                                                        color:
-                                                                            kNeutral500),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            4.0),
+                                                                    const Icon(IconlyLight.calendar, size: 20.0, color: kNeutral500),
+                                                                    const SizedBox(width: 4.0),
                                                                     Text(
                                                                       "Ver Reservas",
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .bodyLarge
-                                                                          ?.copyWith(
-                                                                        color:
-                                                                            kNeutral500,
+                                                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                                                        color: kNeutral500,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -599,50 +461,31 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                             // View Images
                                                             PopupMenuItem(
                                                                 onTap: () {
-                                                                  _showImagesGallery(
-                                                                      context,
-                                                                      dress);
+                                                                  _showImagesGallery(context, dress);
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    const Icon(
-                                                                        IconlyLight
-                                                                            .image,
-                                                                        size:
-                                                                            20.0,
-                                                                        color:
-                                                                            kNeutral500),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            4.0),
+                                                                    const Icon(IconlyLight.image, size: 20.0, color: kNeutral500),
+                                                                    const SizedBox(width: 4.0),
                                                                     Text(
-                                                                      _lang
-                                                                          .viewImages,
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .bodyLarge
-                                                                          ?.copyWith(
-                                                                        color:
-                                                                            kNeutral500,
+                                                                      _lang.viewImages,
+                                                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                                                        color: kNeutral500,
                                                                       ),
                                                                     ),
                                                                   ],
                                                                 )),
                                                           ],
                                                           onSelected: (value) {
-                                                            context
-                                                                .go('/$value');
+                                                            context.go('/$value');
                                                           },
                                                           child: Center(
                                                             child: Container(
                                                                 height: 18,
                                                                 width: 18,
-                                                                alignment: Alignment
-                                                                    .centerRight,
-                                                                child:
-                                                                    const Icon(
-                                                                  Icons
-                                                                      .more_vert_sharp,
+                                                                alignment: Alignment.centerRight,
+                                                                child: const Icon(
+                                                                  Icons.more_vert_sharp,
                                                                   size: 18,
                                                                 )),
                                                           ),
@@ -662,8 +505,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: Text(
@@ -675,24 +517,16 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                     Row(
                                       children: [
                                         InkWell(
-                                          overlayColor:
-                                              WidgetStateProperty.all<Color>(
-                                                  Colors.grey),
+                                          overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
                                           hoverColor: Colors.grey,
-                                          onTap: _currentPage > 1
-                                              ? () =>
-                                                  setState(() => _currentPage--)
-                                              : null,
+                                          onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: kBorderColorTextField),
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                bottomLeft:
-                                                    Radius.circular(4.0),
+                                              border: Border.all(color: kBorderColorTextField),
+                                              borderRadius: const BorderRadius.only(
+                                                bottomLeft: Radius.circular(4.0),
                                                 topLeft: Radius.circular(4.0),
                                               ),
                                             ),
@@ -705,15 +539,13 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: kBorderColorTextField),
+                                            border: Border.all(color: kBorderColorTextField),
                                             color: kMainColor,
                                           ),
                                           child: Center(
                                             child: Text(
                                               '$_currentPage',
-                                              style: const TextStyle(
-                                                  color: Colors.white),
+                                              style: const TextStyle(color: Colors.white),
                                             ),
                                           ),
                                         ),
@@ -721,8 +553,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                           height: 32,
                                           width: 32,
                                           decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: kBorderColorTextField),
+                                            border: Border.all(color: kBorderColorTextField),
                                             color: Colors.transparent,
                                           ),
                                           child: Center(
@@ -732,31 +563,20 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                           ),
                                         ),
                                         InkWell(
-                                          hoverColor:
-                                              Colors.blue.withOpacity(0.1),
-                                          overlayColor:
-                                              MaterialStateProperty.all<Color>(
-                                                  Colors.blue),
-                                          onTap: _currentPage * _itemsPerPage <
-                                                  showAbleDresses.length
-                                              ? () =>
-                                                  setState(() => _currentPage++)
-                                              : null,
+                                          hoverColor: Colors.blue.withOpacity(0.1),
+                                          overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
+                                          onTap: _currentPage * _itemsPerPage < showAbleDresses.length ? () => setState(() => _currentPage++) : null,
                                           child: Container(
                                             height: 32,
                                             width: 90,
                                             decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: kBorderColorTextField),
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                bottomRight:
-                                                    Radius.circular(4.0),
+                                              border: Border.all(color: kBorderColorTextField),
+                                              borderRadius: const BorderRadius.only(
+                                                bottomRight: Radius.circular(4.0),
                                                 topRight: Radius.circular(4.0),
                                               ),
                                             ),
-                                            child: const Center(
-                                                child: Text('Next')),
+                                            child: const Center(child: Text('Next')),
                                           ),
                                         ),
                                       ],
@@ -878,15 +698,13 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
           return FutureBuilder<Uint8List>(
             future: image.readAsBytes(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done &&
-                  snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
                 return Image.memory(
                   snapshot.data!,
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      _buildErrorWidget(),
+                  errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
                 );
               }
               return _buildPlaceholder();
@@ -906,15 +724,13 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
         return FutureBuilder<Uint8List>(
           future: image.readAsBytes(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done &&
-                snapshot.hasData) {
+            if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
               return Image.memory(
                 snapshot.data!,
                 width: 100,
                 height: 100,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _buildErrorWidget(),
+                errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
               );
             }
             return _buildPlaceholder();
@@ -969,8 +785,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
 
   void _showImagesGallery(BuildContext context, DressModel dress) {
     if (dress.images.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(lang.S.of(context).noImagesAvailable)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.S.of(context).noImagesAvailable)));
       return;
     }
 
@@ -1003,8 +818,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                 const Divider(),
                 Expanded(
                   child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
@@ -1020,8 +834,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             color: Colors.grey.shade200,
-                            child: const Center(
-                                child: CircularProgressIndicator()),
+                            child: const Center(child: CircularProgressIndicator()),
                           ),
                           errorWidget: (context, url, error) => Container(
                             color: Colors.grey.shade200,
@@ -1056,10 +869,8 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
-                  placeholder: (context, url) =>
-                      const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) =>
-                      const Icon(Icons.error, color: Colors.red),
+                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                  errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.red),
                 ),
               ),
               Positioned(
@@ -1091,401 +902,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     });
   }
 
-// Show Dialog Calendar Reservations
-  // Future<void> _showCalendarDressDialog(
-  //     BuildContext context, WidgetRef ref, DressModel dress) async {
-  //   // Set form values with existing dress data
-  //   _nameController.text = dress.name;
-  //   _selectedCategory = dress.category;
-  //   _selectedBranch = dress.branchId;
-  //   _subcategoryController.text = dress.subcategory;
-  //   _isAvailable = dress.available;
-  //   _existingImageUrls.addAll(dress.images);
-  //   _selectedImages.clear();
-
-  //   selectedMonth ??= monthList[DateTime.now().month - 1];
-  //   selectedYear ??= DateTime.now().year.toString();
-
-  //   final reservations =
-  //       await ref.read(fullReservationsByDressProvider2(dress.id).future);
-
-  //   // 👉 Asignar valores por defecto (simulando selección manual)
-  //   selectedMonth = monthList[DateTime.now().month - 1];
-  //   selectedYear = DateTime.now().year.toString();
-
-  //   showDialog(
-  //     barrierDismissible: true,
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return StatefulBuilder(
-  //         builder: (context, setState1) {
-  //           final reservationsAsyncValue =
-  //               ref.watch(fullReservationsByDressProvider2(dress.id));
-
-  //           return Dialog(
-  //             surfaceTintColor: kWhite,
-  //             shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(10.0)),
-  //             child: Container(
-  //               width: 800,
-  //               constraints: BoxConstraints(
-  //                 maxHeight: MediaQuery.of(context).size.height * 0.85,
-  //               ),
-  //               child: Column(
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Padding(
-  //                     padding: const EdgeInsets.all(12.0),
-  //                     child: Row(
-  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                       children: [
-  //                         Flexible(
-  //                           child: Text(
-  //                             'Reservas para vestido: ${dress.name}',
-  //                             maxLines: 2,
-  //                             overflow: TextOverflow.ellipsis,
-  //                             style: Theme.of(context)
-  //                                 .textTheme
-  //                                 .titleLarge
-  //                                 ?.copyWith(
-  //                                   fontWeight: FontWeight.w600,
-  //                                 ),
-  //                           ),
-  //                         ),
-  //                         IconButton(
-  //                             onPressed: () {
-  //                               _clearForm();
-  //                               Navigator.pop(context);
-  //                             },
-  //                             icon: const Icon(
-  //                               FeatherIcons.x,
-  //                               color: kTitleColor,
-  //                               size: 21.0,
-  //                             )),
-  //                       ],
-  //                     ),
-  //                   ),
-  //                   Padding(
-  //                     padding:
-  //                         const EdgeInsets.only(left: 100, right: 100, top: 10),
-  //                     //child: _buildCalendar(reservationsAsyncValue),
-  //                   ),
-  //                   const Divider(
-  //                     thickness: 1.0,
-  //                     height: 1.0,
-  //                     color: kNeutral300,
-  //                   ),
-  //                   Expanded(
-  //                     child: SingleChildScrollView(
-  //                       padding: const EdgeInsets.all(12.0),
-  //                       child: Form(
-  //                         key: _formKey,
-  //                         child: Column(
-  //                           crossAxisAlignment: CrossAxisAlignment.start,
-  //                           children: [
-  //                             // Images section
-  //                             // _buildImagePicker(
-  //                             //     existingImages: _existingImageUrls),
-  //                             // const SizedBox(height: 16),
-
-  //                             Padding(
-  //                               padding: const EdgeInsets.all(10),
-  //                               child: Row(
-  //                                 mainAxisAlignment:
-  //                                     MainAxisAlignment.spaceBetween,
-  //                                 children: [
-  //                                   // Mes
-
-  //                                   Flexible(
-  //                                     flex: 1,
-  //                                     child: DropdownButtonFormField<String>(
-  //                                       validator: (value) {
-  //                                         if (value == null) {
-  //                                           return 'Mes requerido';
-  //                                         }
-  //                                         return null;
-  //                                       },
-  //                                       decoration: const InputDecoration(
-  //                                         labelText: 'Seleccionar Mes',
-  //                                       ),
-  //                                       value: selectedMonth,
-  //                                       hint: const Text('Seleccionar Mes'),
-  //                                       items: monthList.map((month) {
-  //                                         return DropdownMenuItem(
-  //                                           value: month,
-  //                                           child: Text(month),
-  //                                         );
-  //                                       }).toList(),
-  //                                       onChanged: (value) {
-  //                                         setState1(() {
-  //                                           selectedMonth = value!;
-  //                                         });
-  //                                       },
-  //                                       icon: const Icon(Icons.arrow_drop_down,
-  //                                           color: Colors.grey),
-  //                                       dropdownColor: Colors.white,
-  //                                     ),
-  //                                   ),
-
-  //                                   const SizedBox(
-  //                                       width: 16), // Espacio entre los combos
-
-  //                                   // Año
-  //                                   Flexible(
-  //                                     flex: 1,
-  //                                     child: DropdownButtonFormField<String>(
-  //                                       value: selectedYear,
-  //                                       decoration: const InputDecoration(
-  //                                         labelText: 'Seleccionar Año',
-  //                                       ),
-  //                                       validator: (value) {
-  //                                         if (value == null) {
-  //                                           return 'Año requerido';
-  //                                         }
-  //                                         return null;
-  //                                       },
-  //                                       items: yearList.map((year) {
-  //                                         return DropdownMenuItem<String>(
-  //                                           value: year,
-  //                                           child: Text(year),
-  //                                         );
-  //                                       }).toList(),
-  //                                       onChanged: (value) {
-  //                                         setState1(() {
-  //                                           selectedYear = value!;
-  //                                         });
-  //                                       },
-  //                                       icon: const Icon(Icons.arrow_drop_down,
-  //                                           color: Colors.grey),
-  //                                       dropdownColor: Colors.white,
-  //                                     ),
-  //                                   ),
-  //                                 ],
-  //                               ),
-  //                             ),
-
-  //                             const SizedBox(height: 16),
-
-  //                             // Datos de Reservas
-  //                             reservationsAsyncValue.when(
-  //                               data: (data) {
-  //                                 // Convertir mes y año seleccionados a DateTime
-  //                                 final selectedMonthIndex =
-  //                                     monthList.indexOf(selectedMonth!) + 1;
-  //                                 final selectedYearInt =
-  //                                     int.parse(selectedYear!);
-
-  //                                 final filteredReservations =
-  //                                     data.where((data) {
-  //                                   String formattedDate = '';
-  //                                   try {
-  //                                     final date = DateFormat('yyyy-MM-dd')
-  //                                         .parse(data.reservation[
-  //                                                 'reservation_date'] ??
-  //                                             '');
-  //                                     formattedDate =
-  //                                         DateFormat.yMMMMd('es').format(date);
-  //                                   } catch (e) {
-  //                                     formattedDate = data.reservation[
-  //                                             'reservation_date'] ??
-  //                                         '';
-  //                                   }
-
-  //                                   // Convertir la fecha a un objeto DateTime
-  //                                   final date = DateTime.parse(
-  //                                       data.reservation['reservation_date']);
-
-  //                                   return date.month == selectedMonthIndex &&
-  //                                       date.year == selectedYearInt;
-  //                                 }).toList();
-
-  //                                 if (filteredReservations.isEmpty) {
-  //                                   return const Padding(
-  //                                     padding: EdgeInsets.only(top: 16),
-  //                                     child: Text(
-  //                                         "No reservations for this month."),
-  //                                   );
-  //                                 }
-
-  //                                 return ListView.builder(
-  //                                   shrinkWrap: true,
-  //                                   physics:
-  //                                       const NeverScrollableScrollPhysics(),
-  //                                   itemCount: filteredReservations.length,
-  //                                   itemBuilder: (context, index) {
-  //                                     final entry = filteredReservations[index];
-
-  //                                     return Card(
-  //                                       margin: const EdgeInsets.symmetric(
-  //                                           vertical: 8),
-  //                                       child: Padding(
-  //                                         padding: const EdgeInsets.all(12.0),
-  //                                         child: Column(
-  //                                           crossAxisAlignment:
-  //                                               CrossAxisAlignment.start,
-  //                                           children: [
-  //                                             const Row(
-  //                                               children: [
-  //                                                 Icon(Icons.calendar_today,
-  //                                                     size: 20),
-  //                                                 SizedBox(width: 8),
-  //                                                 Text(
-  //                                                   'Detalles de la Reserva',
-  //                                                   style: TextStyle(
-  //                                                     fontWeight:
-  //                                                         FontWeight.bold,
-  //                                                     fontSize: 16,
-  //                                                   ),
-  //                                                 ),
-  //                                               ],
-  //                                             ),
-  //                                             const SizedBox(height: 12),
-
-  //                                             /// Estructura personalizada
-  //                                             Row(
-  //                                               crossAxisAlignment:
-  //                                                   CrossAxisAlignment.start,
-  //                                               children: [
-  //                                                 // Columna izquierda (solo la fecha)
-  //                                                 Container(
-  //                                                   width: 80,
-  //                                                   alignment: Alignment.center,
-  //                                                   padding:
-  //                                                       const EdgeInsets.all(8),
-  //                                                   decoration: BoxDecoration(
-  //                                                     color: Colors
-  //                                                         .deepPurple.shade50,
-  //                                                     borderRadius:
-  //                                                         BorderRadius.circular(
-  //                                                             8),
-  //                                                   ),
-  //                                                   child: Text(
-  //                                                     // Solo el día en formato dos dígitos
-  //                                                     (() {
-  //                                                       final dateStr = entry
-  //                                                                   .reservation[
-  //                                                               'reservation_date'] ??
-  //                                                           '';
-  //                                                       try {
-  //                                                         final date =
-  //                                                             DateTime.parse(
-  //                                                                 dateStr);
-  //                                                         return DateFormat(
-  //                                                                 'dd')
-  //                                                             .format(
-  //                                                                 date); // Solo día
-  //                                                       } catch (_) {
-  //                                                         return 'N/A';
-  //                                                       }
-  //                                                     })(),
-  //                                                     style: const TextStyle(
-  //                                                       fontSize: 20,
-  //                                                       fontWeight:
-  //                                                           FontWeight.bold,
-  //                                                     ),
-  //                                                   ),
-  //                                                 ),
-
-  //                                                 const SizedBox(width: 16),
-
-  //                                                 // Columnas derechas con detalles
-  //                                                 Expanded(
-  //                                                   child: Column(
-  //                                                     crossAxisAlignment:
-  //                                                         CrossAxisAlignment
-  //                                                             .start,
-  //                                                     children: [
-  //                                                       _buildDetailRow(
-  //                                                         'Servicio:',
-  //                                                         entry.service?[
-  //                                                                 'name'] ??
-  //                                                             'N/A',
-  //                                                       ),
-  //                                                       _buildDetailRow(
-  //                                                         'Cliente:',
-  //                                                         entry.client
-  //                                                                 ?.customerName ??
-  //                                                             'N/A',
-  //                                                       ),
-  //                                                       _buildDetailRow(
-  //                                                         'Telefono Cliente:',
-  //                                                         entry.client
-  //                                                                 ?.phoneNumber ??
-  //                                                             'N/A',
-  //                                                       ),
-  //                                                       _buildDetailRow(
-  //                                                         'Fecha:',
-  //                                                         entry.reservation[
-  //                                                                     'reservation_date'] +
-  //                                                                 ' - ' +
-  //                                                                 entry.reservation[
-  //                                                                     'reservation_time'] ??
-  //                                                             'N/A',
-  //                                                       ),
-  //                                                       _buildDetailRow(
-  //                                                         'Estado:',
-  //                                                         entry.reservation[
-  //                                                                 'status'] ??
-  //                                                             'Pendiente',
-  //                                                       ),
-  //                                                     ],
-  //                                                   ),
-  //                                                 ),
-  //                                               ],
-  //                                             ),
-  //                                           ],
-  //                                         ),
-  //                                       ),
-  //                                     );
-  //                                   },
-  //                                 );
-  //                               },
-  //                               loading: () => const Center(
-  //                                   child: CircularProgressIndicator()),
-  //                               error: (e, _) => Padding(
-  //                                 padding: const EdgeInsets.only(top: 16),
-  //                                 child: Text('Error loading reservations: $e'),
-  //                               ),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   const Divider(
-  //                     thickness: 1.0,
-  //                     height: 1.0,
-  //                     color: kNeutral300,
-  //                   ),
-  //                   Padding(
-  //                     padding: const EdgeInsets.all(12.0),
-  //                     child: Row(
-  //                       mainAxisAlignment: MainAxisAlignment.end,
-  //                       children: [
-  //                         OutlinedButton(
-  //                           onPressed: () {
-  //                             _clearForm();
-  //                             Navigator.pop(context);
-  //                           },
-  //                           child: Text(lang.S.of(context).cancel),
-  //                         ),
-  //                         const SizedBox(width: 10),
-  //                       ],
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
-
-  Future<void> _showCalendarDressDialog(
-      BuildContext context, WidgetRef ref, DressModel dress) async {
+  Future<void> _showCalendarDressDialog(BuildContext context, WidgetRef ref, DressModel dress) async {
     // Set form values with existing dress data
     _nameController.text = dress.name;
     _selectedCategory = dress.category;
@@ -1494,12 +911,14 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     _isAvailable = dress.available;
     _existingImageUrls.addAll(dress.images);
     _selectedImages.clear();
-
     // Solo inicializar el año, quitar el mes
     selectedYear ??= DateTime.now().year.toString();
 
-    final reservations =
-        await ref.read(fullReservationsByDressProvider2(dress.id).future);
+    final reservations = await ref.read(fullReservationsByDressProvider2(dress.id).future);
+
+    // Variable de Rentas de Vestimenta
+    final rentas = ref.watch(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
+    final String packageRentaId = rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
 
     showDialog(
       barrierDismissible: true,
@@ -1507,13 +926,11 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState1) {
-            final reservationsAsyncValue =
-                ref.watch(fullReservationsByDressProvider2(dress.id));
+            final reservationsAsyncValue = ref.watch(fullReservationsByDressProvider2(dress.id));
 
             return Dialog(
               surfaceTintColor: kWhite,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
               child: Container(
                 width: 800,
                 constraints: BoxConstraints(
@@ -1533,10 +950,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                               'Reservas para vestido: ${dress.name}',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -1579,8 +993,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                         value: selectedYear,
                                         decoration: const InputDecoration(
                                           labelText: 'Seleccionar Año',
-                                          prefixIcon:
-                                              Icon(Icons.calendar_today),
+                                          prefixIcon: Icon(Icons.calendar_today),
                                         ),
                                         validator: (value) {
                                           if (value == null) {
@@ -1599,13 +1012,11 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                             selectedYear = value!;
                                           });
                                         },
-                                        icon: const Icon(Icons.arrow_drop_down,
-                                            color: Colors.grey),
+                                        icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
                                         dropdownColor: Colors.white,
                                       ),
                                     ),
-                                    const Spacer(
-                                        flex: 2), // Espacio para centrar
+                                    const Spacer(flex: 2), // Espacio para centrar
                                   ],
                                 ),
                               ),
@@ -1615,17 +1026,12 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                               // Lista de reservaciones organizadas por mes
                               reservationsAsyncValue.when(
                                 data: (data) {
-                                  final selectedYearInt =
-                                      int.parse(selectedYear!);
+                                  final selectedYearInt = int.parse(selectedYear!);
 
                                   // Filtrar reservaciones del año seleccionado
-                                  final yearReservations =
-                                      data.where((reservation) {
+                                  final yearReservations = data.where((reservation) {
                                     try {
-                                      final date = DateTime.parse(
-                                          reservation.reservation[
-                                                  'reservation_date'] ??
-                                              '');
+                                      final date = DateTime.parse(reservation.reservation['reservation_date'] ?? '');
                                       return date.year == selectedYearInt;
                                     } catch (e) {
                                       return false;
@@ -1633,86 +1039,58 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                   }).toList();
 
                                   // Agrupar reservaciones por mes
-                                  final reservationsByMonth =
-                                      <int, List<FullReservation>>{};
+
+                                  //Agrupar reservaciones por mes
+                                  final reservationsByMonth = <int, List<FullReservation>>{};
 
                                   for (var reservation in yearReservations) {
                                     try {
-                                      final date = DateTime.parse(
-                                          reservation.reservation[
-                                                  'reservation_date'] ??
-                                              '');
+                                      final date = DateTime.parse(reservation.reservation['reservation_date'] ?? '');
                                       final month = date.month;
 
-                                      if (!reservationsByMonth
-                                          .containsKey(month)) {
+                                      if (!reservationsByMonth.containsKey(month)) {
                                         reservationsByMonth[month] = [];
                                       }
-                                      reservationsByMonth[month]!
-                                          .add(reservation);
+                                      reservationsByMonth[month]!.add(reservation);
                                     } catch (e) {
                                       // Ignorar reservaciones con fechas inválidas
                                       continue;
                                     }
                                   }
 
-                                  // Ordenar reservaciones dentro de cada mes por fecha
-                                  reservationsByMonth
-                                      .forEach((month, reservations) {
+                                  //Ordenar reservaciones dentro de cada mes por fecha
+                                  reservationsByMonth.forEach((month, reservations) {
                                     reservations.sort((a, b) {
-                                      final dateA =
-                                          a.reservation['reservation_date'] ??
-                                              '';
-                                      final dateB =
-                                          b.reservation['reservation_date'] ??
-                                              '';
-                                      final timeA =
-                                          a.reservation['reservation_time'] ??
-                                              '';
-                                      final timeB =
-                                          b.reservation['reservation_time'] ??
-                                              '';
-                                      final dateCompare =
-                                          dateA.compareTo(dateB);
-                                      return dateCompare != 0
-                                          ? dateCompare
-                                          : timeA.compareTo(timeB);
+                                      final dateA = a.reservation['reservation_date'] ?? '';
+                                      final dateB = b.reservation['reservation_date'] ?? '';
+                                      final timeA = a.reservation['reservation_time'] ?? '';
+                                      final timeB = b.reservation['reservation_time'] ?? '';
+                                      final dateCompare = dateA.compareTo(dateB);
+                                      return dateCompare != 0 ? dateCompare : timeA.compareTo(timeB);
                                     });
                                   });
 
                                   return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children:
-                                        monthList.asMap().entries.map((entry) {
-                                      final monthIndex = entry.key +
-                                          1; // Los meses van de 1-12
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: monthList.asMap().entries.map((entry) {
+                                      final monthIndex = entry.key + 1; // Los meses van de 1-12
                                       final monthName = entry.value;
-                                      final monthReservations =
-                                          reservationsByMonth[monthIndex] ?? [];
+                                      final monthReservations = reservationsByMonth[monthIndex] ?? [];
 
                                       return Container(
-                                        margin:
-                                            const EdgeInsets.only(bottom: 24),
+                                        margin: const EdgeInsets.only(bottom: 24),
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             // Título del mes
                                             Container(
                                               width: double.infinity,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 12,
-                                                      horizontal: 16),
+                                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                                               decoration: BoxDecoration(
-                                                color:
-                                                    Colors.deepPurple.shade50,
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
+                                                color: Colors.deepPurple.shade50,
+                                                borderRadius: BorderRadius.circular(8),
                                                 border: Border.all(
-                                                  color: Colors
-                                                      .deepPurple.shade200,
+                                                  color: Colors.deepPurple.shade200,
                                                   width: 1,
                                                 ),
                                               ),
@@ -1720,8 +1098,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                 children: [
                                                   Icon(
                                                     Icons.calendar_month,
-                                                    color: Colors
-                                                        .deepPurple.shade700,
+                                                    color: Colors.deepPurple.shade700,
                                                     size: 20,
                                                   ),
                                                   const SizedBox(width: 8),
@@ -1729,41 +1106,23 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                     monthName,
                                                     style: TextStyle(
                                                       fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors
-                                                          .deepPurple.shade700,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.deepPurple.shade700,
                                                     ),
                                                   ),
                                                   const Spacer(),
                                                   Container(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                     decoration: BoxDecoration(
-                                                      color: monthReservations
-                                                              .isNotEmpty
-                                                          ? Colors
-                                                              .green.shade100
-                                                          : Colors
-                                                              .grey.shade200,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
+                                                      color: monthReservations.isNotEmpty ? Colors.green.shade100 : Colors.grey.shade200,
+                                                      borderRadius: BorderRadius.circular(12),
                                                     ),
                                                     child: Text(
                                                       '${monthReservations.length} reserva${monthReservations.length != 1 ? 's' : ''}',
                                                       style: TextStyle(
                                                         fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: monthReservations
-                                                                .isNotEmpty
-                                                            ? Colors
-                                                                .green.shade700
-                                                            : Colors
-                                                                .grey.shade600,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: monthReservations.isNotEmpty ? Colors.green.shade700 : Colors.grey.shade600,
                                                       ),
                                                     ),
                                                   ),
@@ -1777,12 +1136,10 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                             if (monthReservations.isEmpty)
                                               Container(
                                                 width: double.infinity,
-                                                padding:
-                                                    const EdgeInsets.all(20),
+                                                padding: const EdgeInsets.all(20),
                                                 decoration: BoxDecoration(
                                                   color: Colors.grey.shade50,
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
+                                                  borderRadius: BorderRadius.circular(8),
                                                   border: Border.all(
                                                     color: Colors.grey.shade300,
                                                     width: 1,
@@ -1792,177 +1149,107 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                                   children: [
                                                     Icon(
                                                       Icons.event_busy,
-                                                      color:
-                                                          Colors.grey.shade400,
+                                                      color: Colors.grey.shade400,
                                                       size: 32,
                                                     ),
                                                     const SizedBox(height: 8),
                                                     Text(
                                                       'No hay reservaciones este mes',
                                                       style: TextStyle(
-                                                        color: Colors
-                                                            .grey.shade600,
+                                                        color: Colors.grey.shade600,
                                                         fontSize: 14,
-                                                        fontStyle:
-                                                            FontStyle.italic,
+                                                        fontStyle: FontStyle.italic,
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                               )
                                             else
-                                              ...monthReservations
-                                                  .map((reservation) {
-                                                return Card(
-                                                  margin: const EdgeInsets.only(
-                                                      bottom: 12),
-                                                  elevation: 2,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            16.0),
-                                                    child: Row(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        // Fecha destacada
-                                                        Container(
-                                                          width: 60,
-                                                          height: 60,
-                                                          alignment:
-                                                              Alignment.center,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: Colors
-                                                                .deepPurple
-                                                                .shade100,
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                            border: Border.all(
-                                                              color: Colors
-                                                                  .deepPurple
-                                                                  .shade300,
-                                                              width: 1,
+                                              ...monthReservations.expand((reservation) {
+                                                final isRenta = reservation.reservation['service_id'] == packageRentaId;
+                                                final originalDateStr = reservation.reservation['reservation_date'] ?? '';
+                                                final originalDate = DateTime.tryParse(originalDateStr);
+
+                                                if (originalDate == null) return [];
+
+                                                final List<Widget> cards = [];
+
+                                                final range = isRenta ? [-1, 0, 1] : [0];
+
+                                                for (int i in range) {
+                                                  final shiftedDate = originalDate.add(Duration(days: i));
+                                                  // Validar que sea el mismo mes
+                                                  if (shiftedDate.month != originalDate.month) continue;
+
+                                                  cards.add(
+                                                    Card(
+                                                      margin: const EdgeInsets.only(bottom: 12),
+                                                      elevation: 2,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Padding(
+                                                        padding: const EdgeInsets.all(16.0),
+                                                        child: Row(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            // Fecha destacada
+                                                            Container(
+                                                              width: 60,
+                                                              height: 60,
+                                                              alignment: Alignment.center,
+                                                              decoration: BoxDecoration(
+                                                                color: isRenta ? Colors.greenAccent.shade100 : Colors.deepPurple.shade100,
+                                                                borderRadius: BorderRadius.circular(8),
+                                                                border: Border.all(
+                                                                  color: isRenta ? Colors.green : Colors.deepPurple.shade300,
+                                                                  width: 1,
+                                                                ),
+                                                              ),
+                                                              child: Column(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: [
+                                                                  Text(
+                                                                    DateFormat('dd').format(shiftedDate),
+                                                                    style: TextStyle(
+                                                                      fontSize: 20,
+                                                                      fontWeight: FontWeight.bold,
+                                                                      color: isRenta ? Colors.green.shade800 : Colors.deepPurple.shade700,
+                                                                    ),
+                                                                  ),
+                                                                  Text(
+                                                                    DateFormat('MMM', 'es').format(shiftedDate).toUpperCase(),
+                                                                    style: TextStyle(
+                                                                      fontSize: 10,
+                                                                      fontWeight: FontWeight.w600,
+                                                                      color: isRenta ? Colors.green.shade600 : Colors.deepPurple.shade600,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
                                                             ),
-                                                          ),
-                                                          child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Text(
-                                                                (() {
-                                                                  try {
-                                                                    final date =
-                                                                        DateTime.parse(reservation.reservation['reservation_date'] ??
-                                                                            '');
-                                                                    return DateFormat(
-                                                                            'dd')
-                                                                        .format(
-                                                                            date);
-                                                                  } catch (_) {
-                                                                    return 'N/A';
-                                                                  }
-                                                                })(),
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontSize: 20,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  color: Colors
-                                                                      .deepPurple
-                                                                      .shade700,
-                                                                ),
+                                                            const SizedBox(width: 16),
+                                                            // Detalles de la reservación
+                                                            Expanded(
+                                                              child: Column(
+                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                children: [
+                                                                  _buildDetailRow('Servicio:', reservation.service?['name'] ?? 'N/A'),
+                                                                  _buildDetailRow('Cliente:', reservation.client?.customerName ?? 'N/A'),
+                                                                  _buildDetailRow('Teléfono:', reservation.client?.phoneNumber ?? 'N/A'),
+                                                                  _buildDetailRow('Hora:', reservation.reservation['reservation_time'] ?? 'N/A'),
+                                                                  _buildDetailRow('Estado:', reservation.reservation['status'] ?? 'Pendiente'),
+                                                                ],
                                                               ),
-                                                              Text(
-                                                                (() {
-                                                                  try {
-                                                                    final date =
-                                                                        DateTime.parse(reservation.reservation['reservation_date'] ??
-                                                                            '');
-                                                                    return DateFormat(
-                                                                            'MMM',
-                                                                            'es')
-                                                                        .format(
-                                                                            date)
-                                                                        .toUpperCase();
-                                                                  } catch (_) {
-                                                                    return '';
-                                                                  }
-                                                                })(),
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontSize: 10,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600,
-                                                                  color: Colors
-                                                                      .deepPurple
-                                                                      .shade600,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
+                                                            ),
+                                                          ],
                                                         ),
-
-                                                        const SizedBox(
-                                                            width: 16),
-
-                                                        // Detalles de la reservación
-                                                        Expanded(
-                                                          child: Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              _buildDetailRow(
-                                                                'Servicio:',
-                                                                reservation.service?[
-                                                                        'name'] ??
-                                                                    'N/A',
-                                                              ),
-                                                              _buildDetailRow(
-                                                                'Cliente:',
-                                                                reservation
-                                                                        .client
-                                                                        ?.customerName ??
-                                                                    'N/A',
-                                                              ),
-                                                              _buildDetailRow(
-                                                                'Teléfono:',
-                                                                reservation
-                                                                        .client
-                                                                        ?.phoneNumber ??
-                                                                    'N/A',
-                                                              ),
-                                                              _buildDetailRow(
-                                                                'Hora:',
-                                                                reservation.reservation[
-                                                                        'reservation_time'] ??
-                                                                    'N/A',
-                                                              ),
-                                                              _buildDetailRow(
-                                                                'Estado:',
-                                                                reservation.reservation[
-                                                                        'status'] ??
-                                                                    'Pendiente',
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                );
+                                                  );
+                                                }
+
+                                                return cards;
                                               }).toList(),
                                           ],
                                         ),
@@ -1970,8 +1257,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                     }).toList(),
                                   );
                                 },
-                                loading: () => const Center(
-                                    child: CircularProgressIndicator()),
+                                loading: () => const Center(child: CircularProgressIndicator()),
                                 error: (e, _) => Padding(
                                   padding: const EdgeInsets.only(top: 16),
                                   child: Column(
@@ -2001,22 +1287,6 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
                                   ),
                                 ),
                               ),
-
-                              // Campo de notas
-                              // Padding(
-                              //   padding: const EdgeInsets.symmetric(
-                              //       vertical: 8.0, horizontal: 10.0),
-                              //   child: TextFormField(
-                              //     controller: _notasController,
-                              //     minLines: 2,
-                              //     maxLines: 4,
-                              //     decoration: const InputDecoration(
-                              //       labelText: 'Notas',
-                              //       border: OutlineInputBorder(),
-                              //       hintText: 'Escribe aquí tus notas...',
-                              //     ),
-                              //   ),
-                              // ),
                             ],
                           ),
                         ),
@@ -2084,20 +1354,7 @@ class _CalendarDressScreen extends ConsumerState<CalendarDressScreen> {
     );
   }
 
-  List<String> monthList = [
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre'
-  ];
+  List<String> monthList = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
   // Widget _buildDetailRow(String label, String value) {
   //   return Padding(
