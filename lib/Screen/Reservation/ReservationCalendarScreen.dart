@@ -22,14 +22,38 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
-  late Map<DateTime, List<ReservationModel>> _reservationsByDay;
+  Map<DateTime, List<ReservationModel>> _reservationsByDay = {};
+  String? packageRentaId;
+
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
     _reservationsByDay = {};
+    Future.microtask(() => _loadRentaId());
   }
+
+  Future<void> _loadRentaId() async {
+  final packagesAsync = ref.read(servicePackagesProvider);
+
+  if (packagesAsync is AsyncData) {
+    final rentas = packagesAsync.value
+        ?.where((e) => e.name == "Renta de Vestimenta")
+        .toList();
+    if (rentas!.isNotEmpty) {
+      setState(() {
+        packageRentaId = rentas.first.id;
+      });
+    } else {
+      print("Paquete 'Renta de Vestimenta' no encontrado");
+    }
+  } else {
+    // Esperar a que cargue, o volver a intentarlo
+    await Future.delayed(const Duration(milliseconds: 200));
+    _loadRentaId(); // reintentar (opcional: ponle un contador para no entrar en loop infinito)
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +104,9 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   }
 
   Widget _buildCalendar(AsyncValue<List<ReservationModel>> reservationsValue) {
-    final rentas = ref.read(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
-    final String packageRentaId = rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
-
+    
+    // final rentas = ref.watch(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
+    // final String id = rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
     return reservationsValue.when(
       data: (reservations) {
         // Agrupar reservas por día
@@ -126,25 +150,31 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           ),
           calendarBuilders: CalendarBuilders(
             markerBuilder: (context, day, events) {
-              if (events.isEmpty) return const SizedBox();
+  if (events.isEmpty) return const SizedBox();
 
-              final isRentaEvent = events.any(
-                (event) => event is ReservationModel && event.serviceId == packageRentaId,
-              );
+  // Filtrar solo eventos válidos
+  final validEvents = events.whereType<ReservationModel>().toList();
 
-              return Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(bottom: 4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isRentaEvent ? Colors.green : Theme.of(context).primaryColor,
-                  ),
-                ),
-              );
-            },
+  return Align(
+    alignment: Alignment.bottomCenter,
+    child: Wrap(
+      spacing: 2, // espacio entre puntos
+      alignment: WrapAlignment.center,
+      children: validEvents.map((event) {
+        final isRentaEvent = event.serviceId == packageRentaId;
+        return Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isRentaEvent ? Colors.green : Theme.of(context).primaryColor,
+          ),
+        );
+      }).toList(),
+    ),
+  );
+},
+
             todayBuilder: (context, day, focusedDay) {
               return Center(
                 child: Column(
