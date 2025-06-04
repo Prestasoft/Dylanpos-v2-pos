@@ -16,7 +16,8 @@ class SidebarItemModel {
     this.navigationPath,
     this.isPage = false,
   }) : assert(
-          sidebarItemType != SidebarItemType.submenu || (submenus != null && submenus.isNotEmpty),
+          sidebarItemType != SidebarItemType.submenu ||
+              (submenus != null && submenus.isNotEmpty),
           'Sub menus cannot be null or empty if the item type is submenu',
         );
 }
@@ -53,22 +54,26 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/dashboard',
       // sidebarItemType: SidebarItemType.submenu,
     ),
-
     SidebarItemModel(
       name: 'Servicios', // Nombre del paquete
-      iconPath: 'images/dashboard_icon/dashboard.svg', // Icono para la sección del paquete
-      sidebarItemType: SidebarItemType.submenu, // Esto indica que tendrá submenús
-      navigationPath: '/service-package', // Ruta principal para el paquete (corregido)
+      iconPath:
+          'images/dashboard_icon/dashboard.svg', // Icono para la sección del paquete
+      sidebarItemType:
+          SidebarItemType.submenu, // Esto indica que tendrá submenús
+      navigationPath:
+          '/service-package', // Ruta principal para el paquete (corregido)
       submenus: [
         SidebarSubmenuModel(
           name: 'Registrar Paquete', // Submenú para registrar un nuevo paquete
-          navigationPath: '/register-package', // Ruta para registrar el paquete (corregido)
+          navigationPath:
+              '/register-package', // Ruta para registrar el paquete (corregido)
         ),
         SidebarSubmenuModel(
-          name: 'Registrar Vestimenta', // Submenú para registrar un nuevo paquete
-          navigationPath: '/dresses', // Ruta para registrar el paquete (corregido)
+          name:
+              'Registrar Vestimenta', // Submenú para registrar un nuevo paquete
+          navigationPath:
+              '/dresses', // Ruta para registrar el paquete (corregido)
         ),
-
       ],
     ),
     SidebarItemModel(
@@ -91,7 +96,6 @@ List<SidebarItemModel> get topMenus {
         ),
       ],
     ),
-
     SidebarItemModel(
       name: lang.S.current.sales,
       iconPath: 'images/dashboard_icon/sales.svg',
@@ -233,7 +237,7 @@ List<SidebarItemModel> get topMenus {
     //  name: lang.S.current.subciption,
     //  iconPath: 'images/dashboard_icon/subscription.svg',
     //  navigationPath: '/subscription',
-      // sidebarItemType: SidebarItemType.submenu,
+    // sidebarItemType: SidebarItemType.submenu,
     //),
     SidebarItemModel(
       name: lang.S.current.userRole,

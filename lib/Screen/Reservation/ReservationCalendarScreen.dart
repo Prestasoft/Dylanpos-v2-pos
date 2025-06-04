@@ -462,6 +462,8 @@ class ReservationCard extends ConsumerWidget {
 
               final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
 
+              final place = fullReservation?.reservation['place'] ?? 'Sin lugar';
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -516,6 +518,16 @@ class ReservationCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Servicio: $serviceName', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.place, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Lugar: $place', style: const TextStyle(fontSize: 14)),
                       ),
                     ],
                   ),
@@ -645,7 +657,7 @@ class ReservationDetailView extends ConsumerWidget {
                 child: fullReservationAsync.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(
-                    child: Text('Error: \$error', style: const TextStyle(color: Colors.red)),
+                    child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
                   ),
                   data: (fullReservation) {
                     if (fullReservation == null) {
@@ -667,6 +679,7 @@ class ReservationDetailView extends ConsumerWidget {
                     }
 
                     return Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Center(
                           child: Container(
@@ -684,46 +697,46 @@ class ReservationDetailView extends ConsumerWidget {
                           'Detalles de la Reservación',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        if (client != null && client.dueAmount.toDouble() > 0)
-                          Row(
-                            children: [
-                              Text(
-                                'El cliente tiene un balance pendiente',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red,
-                                    ),
-                              ),
-                              const SizedBox(width: 24),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return Dialog(
-                                          surfaceTintColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(5.0),
-                                          ),
-                                          child: ShowDuePaymentPopUp(customerModel: client),
-                                        );
-                                      },
-                                    );
-                                  },
-                                  icon: const Icon(Icons.payment, size: 20),
-                                  label: const Text('Añadir Pago'),
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: Theme.of(context).primaryColor,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         const SizedBox(height: 8),
+
+                        if (client != null && client.dueAmount.toDouble() > 0) ...[
+                          Text(
+                            'El cliente tiene un balance pendiente',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Dialog(
+                                    surfaceTintColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5.0),
+                                    ),
+                                    child: ShowDuePaymentPopUp(customerModel: client),
+                                  );
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.payment, size: 20),
+                            label: const Text('Añadir Pago'),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Theme.of(context).primaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 12),
+
+                        // Contenido scrollable
                         Expanded(
                           child: SingleChildScrollView(
                             child: Column(
@@ -735,6 +748,8 @@ class ReservationDetailView extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 16),
                                 ],
+
+// Sección de reservación
                                 _buildSection(
                                   context,
                                   title: 'Información de la Reservación',
@@ -742,9 +757,11 @@ class ReservationDetailView extends ConsumerWidget {
                                     _buildDetailItem(Icons.calendar_today, 'Fecha', formattedDate),
                                     _buildDetailItem(Icons.access_time, 'Hora', reservationData['reservation_time'] ?? ''),
                                     _buildDetailItem(Icons.business, 'Sucursal', reservationData['branch_id'] ?? ''),
-                                    _buildDetailItem(Icons.textsms_outlined, 'Notas', reservationData['nota'] ?? ''),
+                                    _buildDetailItem(Icons.place, 'Lugar', reservationData['place'] ?? 'Sin lugar'),
+                                    _buildDetailItem(Icons.textsms_outlined, 'Notas', reservationData['nota'] ?? 'Sin notas'),
                                   ],
                                 ),
+
                                 if (client != null)
                                   _buildSection(
                                     context,

@@ -3,32 +3,25 @@ import 'dart:async';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nb_utils/nb_utils.dart';
 
 import '../model/args_dress.dart';
 import '../model/dress_model.dart';
 
-final dressesByStatusProvider =
-    FutureProvider.family<List<DressModel>, DressFilterParams>(
+final dressesByStatusProvider = FutureProvider.family<List<DressModel>, String>(
   (ref, params) async {
     try {
-      //print("Call provider with params: ${params.search}, ${params.status}");
-
-      final search = params.search.trim().toLowerCase();
-      final status = params.status;
-
       final dressesResult = await _fetchDresses();
       if (dressesResult.isEmpty) return [];
 
-      final filteredByName = _filterByName(dressesResult, search);
-
-      switch (status) {
+      switch (params) {
         case 'Todos':
-          return filteredByName;
+          return dressesResult;
         case 'Lavanderia':
-          return filteredByName.where((dress) => !dress.available).toList();
+          return dressesResult.where((dress) => !dress.available).toList();
         default:
           final reservedIds = await _getReservedDressIds();
-          return _filterByStatus(filteredByName, status, reservedIds);
+          return _filterByStatus(dressesResult, params, reservedIds);
       }
     } catch (e) {
       //print('Error in dressesByStatusProvider: $e');
@@ -79,7 +72,7 @@ List<DressModel> _filterByName(List<DressModel> dresses, String search) {
   if (search.isEmpty) return dresses;
 
   return dresses.where((dress) {
-    return dress.name.toLowerCase().contains(search);
+    return dress.name.removeAllWhiteSpace().toLowerCase().contains(search);
   }).toList();
 }
 

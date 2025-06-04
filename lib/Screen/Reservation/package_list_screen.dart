@@ -14,26 +14,38 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 // Proveedor para filtrar por categoría
 final categoryFilterProvider = StateProvider<String?>((ref) => null);
 
+final typeFilterProvider = StateProvider<String>((ref) => 'Todos');
+
 // Proveedor para los paquetes filtrados
 final filteredPackagesProvider =
     Provider<AsyncValue<List<ServicePackageModel>>>((ref) {
   final packages = ref.watch(servicePackagesProvider);
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase();
   final categoryFilter = ref.watch(categoryFilterProvider);
+  final typeFilter =
+      ref.watch(typeFilterProvider).toLowerCase(); // 'todos', 'exterior', etc.
 
   return packages.whenData((data) {
     return data.where((package) {
-      // Filtrar por texto de búsqueda
+      final name = package.name.toLowerCase();
+
+      // Filtro por búsqueda
       final matchesSearch = searchQuery.isEmpty ||
-          package.name.toLowerCase().contains(searchQuery) ||
+          name.contains(searchQuery) ||
           package.category.toLowerCase().contains(searchQuery) ||
           package.subcategory.toLowerCase().contains(searchQuery);
 
-      // Filtrar por categoría
+      // Filtro por categoría
       final matchesCategory =
           categoryFilter == null || package.category == categoryFilter;
 
-      return matchesSearch && matchesCategory;
+      // Filtro por tipo (nombre incluye "estudio", "exterior", "fiesta")
+      final hasTypeKeyword = ['estudio', 'exterior', 'fiesta']
+          .any((keyword) => name.contains(keyword));
+      final matchesType = typeFilter == 'todos' ||
+          (name.contains(typeFilter) && hasTypeKeyword);
+
+      return matchesSearch && matchesCategory && matchesType;
     }).toList();
   });
 });
@@ -70,6 +82,8 @@ class PackageListScreen extends ConsumerWidget {
               _buildSearchBar(ref),
 
               _buildCategoryFilter(ref, categories, context),
+
+              _buildTypeFilter(ref, context),
 
               Expanded(
                 child: filteredPackages.when(
@@ -330,6 +344,41 @@ class PackageListScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildTypeFilter(WidgetRef ref, BuildContext context) {
+    final selectedType = ref.watch(typeFilterProvider);
+
+    final types = ['Todos', 'Estudio', 'Exterior', 'Fiesta'];
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: types.map((type) {
+            final isSelected = selectedType.toLowerCase() == type.toLowerCase();
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: Text(type),
+                selected: isSelected,
+                selectedColor:
+                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                checkmarkColor: Theme.of(context).colorScheme.primary,
+                labelStyle: TextStyle(
+                  color:
+                      isSelected ? Theme.of(context).colorScheme.primary : null,
+                ),
+                onSelected: (_) {
+                  ref.read(typeFilterProvider.notifier).state = type;
+                },
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPackageCard(BuildContext context, ServicePackageModel package) {
     return Card(
       elevation: 4,
@@ -416,7 +465,6 @@ class PackageListScreen extends ConsumerWidget {
           // Botón de selección
           Container(
             color: Colors.grey.shade100,
-            
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(

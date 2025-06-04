@@ -57,7 +57,9 @@ FutureOr<Uint8List> generateSaleDocument({
       .map((e) => e?.reservation['nota']?.toString())
       .where((nota) => nota != null && nota.trim().isNotEmpty)
       .toList();
-
+  final place = reservaciones
+      .map((e) => e?.reservation['place'].toString())
+      .firstWhere((place) => place != null && place.trim().isNotEmpty);
   for (int i = 0; i < transactions.productList!.length; i++) {
     final item = transactions.productList![i];
 
@@ -635,6 +637,17 @@ FutureOr<Uint8List> generateSaleDocument({
                                 color: PdfColors.black,
                                 fontSize: 11,
                                 fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.SizedBox(height: 10.0),
+                        pw.Container(
+                          width: 300,
+                          child: pw.Text(
+                            "Lugar: ${place ?? 'Sin lugar'}",
+                            style: pw.TextStyle(
+                              color: PdfColors.black,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                         pw.SizedBox(height: 10.0),
@@ -1437,6 +1450,24 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           ),
         ],
       ),
+      if (reservacion.reservation['place'] != null &&
+          reservacion.reservation['place'].toString().isNotEmpty) ...[
+        pw.SizedBox(height: 2),
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Notas:',
+                style:
+                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(width: 5),
+            pw.Text(
+              reservacion.reservation['place'].toString(),
+              style: pw.TextStyle(fontSize: 8),
+              maxLines: 2,
+            ),
+          ],
+        ),
+      ],
       if (reservacion.reservation['nota'] != null &&
           reservacion.reservation['nota'].toString().isNotEmpty) ...[
         pw.SizedBox(height: 2),
