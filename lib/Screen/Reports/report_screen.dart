@@ -219,6 +219,39 @@ class _SaleReportsState extends State<SaleReports> {
     return total;
   }
 
+  double calculateTotalMoney(List<SaleTransactionModel> transitionModel) {
+    double total = 0.0;
+    for (var element in transitionModel) {
+      if (element.paymentType == 'Efectivo') {
+        double pago = element.totalAmount! - element.dueAmount!;
+        total += pago;
+      }
+    }
+    return total;
+  }
+
+  double calculateTotalTransfer(List<SaleTransactionModel> transitionModel) {
+    double total = 0.0;
+    for (var element in transitionModel) {
+      if (element.paymentType == 'Transferencia') {
+        double pago = element.totalAmount! - element.dueAmount!;
+        total += pago;
+      }
+    }
+    return total;
+  }
+
+  double calculateTotalCard(List<SaleTransactionModel> transitionModel) {
+    double total = 0.0;
+    for (var element in transitionModel) {
+      if (element.paymentType == 'Tarjeta') {
+        double pago = element.totalAmount! - element.dueAmount!;
+        total += pago;
+      }
+    }
+    return total;
+  }
+
   final _horizontalScroll = ScrollController();
   int _saleReportPerPage = 10; // Default number of items to display
   int _currentPage = 1;
@@ -544,6 +577,7 @@ class _SaleReportsState extends State<SaleReports> {
                                   ),
                                 ]),
                                 ResponsiveGridRow(rowSegments: 100, children: [
+                                  // Cantidad de Ventas
                                   ResponsiveGridCol(
                                     xs: 100,
                                     md: screenWidth < 800 ? 50 : 30,
@@ -582,6 +616,174 @@ class _SaleReportsState extends State<SaleReports> {
                                       ),
                                     ),
                                   ),
+
+                                  // Total Facturado
+                                  ResponsiveGridCol(
+                                    xs: 100,
+                                    md: screenWidth < 800 ? 50 : 30,
+                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                          color: const Color(0xFFFED3D3),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalSale(reTransaction).toString()) ?? 0)}',
+                                              style: theme.textTheme.titleLarge
+                                                  ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 18.0),
+                                            ),
+                                            Text(
+                                              lang.S.of(context).totalAmount,
+                                              style: theme.textTheme.bodyLarge,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Pagos Efectivo
+                                  ResponsiveGridCol(
+                                    xs: 100,
+                                    md: screenWidth < 800 ? 50 : 30,
+                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                          color: const Color(0xFFE3F2FD),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalMoney(reTransaction).toString()) ?? 0)}',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 18.0),
+                                            ),
+                                            Text(
+                                              'Pagos en Efectivo',
+                                              //lang.S.of(context).cashPayment,
+                                              style: theme.textTheme.bodyLarge,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Pagos Transferencia
+                                  ResponsiveGridCol(
+                                    xs: 100,
+                                    md: screenWidth < 800 ? 50 : 30,
+                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                          color: const Color(0xFFE3F2FD),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalTransfer(reTransaction).toString()) ?? 0)}',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 18.0),
+                                            ),
+                                            Text(
+                                              'Pagos Transferencia',
+                                              //lang.S.of(context).transferPayment,
+                                              style: theme.textTheme.bodyLarge,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Pagos Tarjeta
+                                  ResponsiveGridCol(
+                                    xs: 100,
+                                    md: screenWidth < 800 ? 50 : 30,
+                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                          color: const Color(0xFFE3F2FD),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalCard(reTransaction).toString()) ?? 0)}',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 18.0),
+                                            ),
+                                            Text(
+                                              'Pagos con Tarjetas',
+                                              //lang.S.of(context).transferPayment,
+                                              style: theme.textTheme.bodyLarge,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  //Total Adeudado
                                   ResponsiveGridCol(
                                     xs: 100,
                                     md: screenWidth < 800 ? 50 : 30,
@@ -614,44 +816,6 @@ class _SaleReportsState extends State<SaleReports> {
                                             ),
                                             Text(
                                               lang.S.of(context).unPaid,
-                                              style: theme.textTheme.bodyLarge,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  ResponsiveGridCol(
-                                    xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Container(
-                                        padding: const EdgeInsets.only(
-                                            left: 10.0,
-                                            right: 20.0,
-                                            top: 10.0,
-                                            bottom: 10.0),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color(0xFFFED3D3),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalSale(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleLarge
-                                                  ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 18.0),
-                                            ),
-                                            Text(
-                                              lang.S.of(context).totalAmount,
                                               style: theme.textTheme.bodyLarge,
                                             ),
                                           ],
