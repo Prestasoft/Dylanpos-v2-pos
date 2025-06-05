@@ -229,12 +229,12 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                   Navigator.of(context).pop(); // Cierra el diálogo de confirmación
                   
                   ref.read(sidebarProvider.notifier)
-                    ..expandMenu('/sales') // Expande el menú de Ventas
-                    ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
+                    ..expandMenu('/reservations') // Expande el menú de Ventas
+                    ..selectItem('/reservations/calendario'); // Selecciona el ítem
 
                   // Navega a la pantalla
                   Navigator.of(context).popUntil((route) => route.isFirst);
-                  context.go('/sales/inventory-sales');
+                  context.go('/reservations/calendario');
                 }
 
                 
