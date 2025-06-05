@@ -771,7 +771,7 @@ final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic
 
   try {
     final startDateTime = DateTime.parse(date);
-    final endDateTime = startDateTime.add(Duration(days: 1));
+    //final endDateTime = startDateTime.add(Duration(days: 1));
 
     final DatabaseReference dbref = FirebaseDatabase.instance.ref('Admin Panel/reservations');
     final DatabaseEvent event = await dbref.orderByChild('dress_id').equalTo(dressId).once();
@@ -865,7 +865,7 @@ final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic
           final DateTime reservationDateTime = DateTime.parse(_reservation['reservation_date'] + ' ' + _reservation['reservation_time']);
 
           // Verificar superposición
-          if (!(reservationDateTime.isBefore(reservationUseStart) || reservationDateTime.isAfter(reservationUseEnd))) {
+          if (!(startDateTime.isBefore(reservationUseStart) || startDateTime.isAfter(reservationUseEnd))) {
             return false; // Hay superposición, no está disponible
           }
         }

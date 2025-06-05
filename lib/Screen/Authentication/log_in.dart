@@ -319,6 +319,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                                               ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
                                                   minimumSize: Size(screenWidth, 48),
+                                                  backgroundColor: const Color(0xFFD59345), // Cambiado a color #d59345
                                                 ),
                                                 onPressed: () async {
                                                   if (validateAndSave()) {
@@ -326,7 +327,6 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                     if (isActive) {
                                                       loginProvider.signIn(context);
                                                     } else {
-                                                      //EasyLoading.showInfo('Please use the valid purchase code to use the app.');
                                                       EasyLoading.showInfo('${lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp}.');
                                                     }
                                                   }
