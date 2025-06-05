@@ -147,7 +147,7 @@ void updateInvoice({required String typeOfInvoice, required int invoice}) async 
   ///_______invoice_Update_____________________________________________
   final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
 
-  await personalInformationRef.update({typeOfInvoice: invoice + 1});
+  await personalInformationRef.update({typeOfInvoice: invoice});
 }
 
 Future<void> postDailyTransaction({required DailyTransactionModel dailyTransactionModel}) async {
