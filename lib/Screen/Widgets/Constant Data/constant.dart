@@ -114,10 +114,31 @@ final otpInputDecoration = InputDecoration(
   enabledBorder: outlineInputBorder(),
 );
 
-List<String> businessCategory = ['Fashion Store', 'Electronics Store', 'Computer Store', 'Vegetable Store', 'Sweet Store', 'Meat Store'];
-List<String> language = ['English', 'Bengali', 'Hindi', 'Urdu', 'French', 'Spanish'];
+List<String> businessCategory = [
+  'Fashion Store',
+  'Electronics Store',
+  'Computer Store',
+  'Vegetable Store',
+  'Sweet Store',
+  'Meat Store'
+];
+List<String> language = [
+  'English',
+  'Bengali',
+  'Hindi',
+  'Urdu',
+  'French',
+  'Spanish'
+];
 
-List<String> productCategory = ['Fashion', 'Electronics', 'Computer', 'Gadgets', 'Watches', 'Cloths'];
+List<String> productCategory = [
+  'Fashion',
+  'Electronics',
+  'Computer',
+  'Gadgets',
+  'Watches',
+  'Cloths'
+];
 
 List<String> userRole = [
   'Super Admin',
@@ -143,15 +164,23 @@ List<String> saleStats = [
   'Yearly',
 ];
 
-void updateInvoice({required String typeOfInvoice, required int invoice}) async {
+void updateInvoice(
+    {required String typeOfInvoice, required int invoice}) async {
   ///_______invoice_Update_____________________________________________
-  final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
+  final DatabaseReference personalInformationRef = FirebaseDatabase.instance
+      .ref()
+      .child(await getUserID())
+      .child('Personal Information');
 
   await personalInformationRef.update({typeOfInvoice: invoice});
 }
 
-Future<void> postDailyTransaction({required DailyTransactionModel dailyTransactionModel}) async {
-  final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
+Future<void> postDailyTransaction(
+    {required DailyTransactionModel dailyTransactionModel}) async {
+  final DatabaseReference personalInformationRef = FirebaseDatabase.instance
+      .ref()
+      .child(await getUserID())
+      .child('Personal Information');
   double remainingBalance = 0;
 
   await personalInformationRef.orderByKey().get().then((value) {
@@ -159,7 +188,10 @@ Future<void> postDailyTransaction({required DailyTransactionModel dailyTransacti
     remainingBalance = data['remainingShopBalance'];
   });
 
-  if (dailyTransactionModel.type == 'Sale' || dailyTransactionModel.type == 'Due Collection' || dailyTransactionModel.type == 'Income' || dailyTransactionModel.type == 'Purchase Return') {
+  if (dailyTransactionModel.type == 'Sale' ||
+      dailyTransactionModel.type == 'Due Collection' ||
+      dailyTransactionModel.type == 'Income' ||
+      dailyTransactionModel.type == 'Purchase Return') {
     remainingBalance += dailyTransactionModel.paymentIn;
   } else {
     remainingBalance -= dailyTransactionModel.paymentOut;
@@ -168,9 +200,11 @@ Future<void> postDailyTransaction({required DailyTransactionModel dailyTransacti
   dailyTransactionModel.remainingBalance = remainingBalance;
 
   ///________post_remaining Balance_on_personal_information___________________________________________________
-  await personalInformationRef.update({'remainingShopBalance': remainingBalance});
+  await personalInformationRef
+      .update({'remainingShopBalance': remainingBalance});
 
   ///_________dailyTransaction_Posting________________________________________________________________________
-  DatabaseReference dailyTransactionRef = FirebaseDatabase.instance.ref("${await getUserID()}/Daily Transaction");
+  DatabaseReference dailyTransactionRef =
+      FirebaseDatabase.instance.ref("${await getUserID()}/Daily Transaction");
   await dailyTransactionRef.push().set(dailyTransactionModel.toJson());
 }

@@ -52,12 +52,21 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
               // Filter the list based on searchItem
               if (searchItem.isNotEmpty) {
                 customerList = customerList.where((user) {
-                  return user.userTitle?.toLowerCase().contains(searchItem.toLowerCase()) == true || user.email?.toLowerCase().contains(searchItem.toLowerCase()) == true;
+                  return user.userTitle
+                              ?.toLowerCase()
+                              .contains(searchItem.toLowerCase()) ==
+                          true ||
+                      user.email
+                              ?.toLowerCase()
+                              .contains(searchItem.toLowerCase()) ==
+                          true;
                 }).toList();
               }
 
               final startIndex = (_currentPage - 1) * _lossProfitPerPage;
-              final endIndex = _lossProfitPerPage == -1 ? customerList.length : startIndex + _lossProfitPerPage;
+              final endIndex = _lossProfitPerPage == -1
+                  ? customerList.length
+                  : startIndex + _lossProfitPerPage;
               final paginatedList = customerList.sublist(
                 startIndex,
                 endIndex > customerList.length ? customerList.length : endIndex,
@@ -70,7 +79,9 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                     //_______________________________top_bar____________________________
                     // const TopBar(),
                     Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), color: kWhite),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.0),
+                          color: kWhite),
                       child: Column(
                         children: [
                           Padding(
@@ -81,7 +92,8 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                 Flexible(
                                   child: Text(
                                     lang.S.of(context).userRole,
-                                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                                    style: theme.textTheme.titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ),
                                 ElevatedButton(
@@ -90,17 +102,21 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                       barrierDismissible: false,
                                       context: context,
                                       builder: (BuildContext context) {
-                                        return StatefulBuilder(builder: (context, setState1) {
+                                        return StatefulBuilder(
+                                            builder: (context, setState1) {
                                           return Dialog(
-                                              insetPadding: const EdgeInsets.all(8),
+                                              insetPadding:
+                                                  const EdgeInsets.all(8),
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(10.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(10.0),
                                               ),
                                               surfaceTintColor: kWhite,
                                               child: SizedBox(
                                                 width: 700,
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(15.0),
+                                                  padding: const EdgeInsets.all(
+                                                      15.0),
                                                   child: AddUserRole(),
                                                 ),
                                               ));
@@ -167,11 +183,15 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                           Icons.keyboard_arrow_down,
                                           color: Colors.black,
                                         ),
-                                        items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                        items: [10, 20, 50, 100, -1]
+                                            .map<DropdownMenuItem<int>>(
+                                                (int value) {
                                           return DropdownMenuItem<int>(
                                             value: value,
                                             child: Text(
-                                              value == -1 ? "All" : value.toString(),
+                                              value == -1
+                                                  ? "All"
+                                                  : value.toString(),
                                               style: theme.textTheme.bodyLarge,
                                             ),
                                           );
@@ -179,9 +199,11 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                         onChanged: (int? newValue) {
                                           setState(() {
                                             if (newValue == -1) {
-                                              _lossProfitPerPage = -1; // Set to -1 for "All"
+                                              _lossProfitPerPage =
+                                                  -1; // Set to -1 for "All"
                                             } else {
-                                              _lossProfitPerPage = newValue ?? 10;
+                                              _lossProfitPerPage =
+                                                  newValue ?? 10;
                                             }
                                             _currentPage = 1;
                                           });
@@ -226,7 +248,8 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                     Column(
                                       children: [
                                         LayoutBuilder(
-                                          builder: (BuildContext context, BoxConstraints constraints) {
+                                          builder: (BuildContext context,
+                                              BoxConstraints constraints) {
                                             return Scrollbar(
                                               controller: _horizontalScroll,
                                               thumbVisibility: true,
@@ -234,95 +257,145 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                               thickness: 8,
                                               child: SingleChildScrollView(
                                                 controller: _horizontalScroll,
-                                                scrollDirection: Axis.horizontal,
+                                                scrollDirection:
+                                                    Axis.horizontal,
                                                 child: ConstrainedBox(
                                                   constraints: BoxConstraints(
-                                                    minWidth: constraints.maxWidth,
+                                                    minWidth:
+                                                        constraints.maxWidth,
                                                   ),
                                                   child: Theme(
                                                     data: theme.copyWith(
-                                                      dividerColor: Colors.transparent,
-                                                      dividerTheme: const DividerThemeData(color: Colors.transparent),
+                                                      dividerColor:
+                                                          Colors.transparent,
+                                                      dividerTheme:
+                                                          const DividerThemeData(
+                                                              color: Colors
+                                                                  .transparent),
                                                     ),
                                                     child: DataTable(
-                                                        border: const TableBorder(
-                                                          horizontalInside: BorderSide(
+                                                        border:
+                                                            const TableBorder(
+                                                          horizontalInside:
+                                                              BorderSide(
                                                             width: 1,
                                                             color: kNeutral300,
                                                           ),
                                                         ),
-                                                        dataRowColor: const WidgetStatePropertyAll(Colors.white),
-                                                        headingRowColor: WidgetStateProperty.all(const Color(0xFFF8F3FF)),
+                                                        dataRowColor:
+                                                            const WidgetStatePropertyAll(
+                                                                Colors.white),
+                                                        headingRowColor:
+                                                            WidgetStateProperty
+                                                                .all(const Color(
+                                                                    0xFFF8F3FF)),
                                                         showBottomBorder: false,
                                                         dividerThickness: 0.0,
-                                                        headingTextStyle: theme.textTheme.titleMedium,
+                                                        headingTextStyle: theme
+                                                            .textTheme
+                                                            .titleMedium,
                                                         columns: [
-                                                          DataColumn(label: Text(lang.S.of(context).SL)),
-                                                          DataColumn(label: Text(lang.S.of(context).userName)),
-                                                          DataColumn(label: Text(lang.S.of(context).userRole)),
-                                                          DataColumn(label: Text(lang.S.of(context).email)),
-                                                          DataColumn(label: Text(lang.S.of(context).action)),
+                                                          DataColumn(
+                                                              label: Text(lang.S
+                                                                  .of(context)
+                                                                  .SL)),
+                                                          DataColumn(
+                                                              label: Text(lang.S
+                                                                  .of(context)
+                                                                  .userName)),
+                                                          DataColumn(
+                                                              label: Text(lang.S
+                                                                  .of(context)
+                                                                  .userRole)),
+                                                          DataColumn(
+                                                              label: Text(lang.S
+                                                                  .of(context)
+                                                                  .email)),
+                                                          DataColumn(
+                                                              label: Text(lang.S
+                                                                  .of(context)
+                                                                  .action)),
                                                         ],
-                                                        rows: List.generate(paginatedList.length, (index) {
-                                                          return DataRow(cells: [
-                                                            ///______________S.L__________________________________________________
-                                                            DataCell(Text("${startIndex + index + 1}")),
+                                                        rows: List.generate(
+                                                            paginatedList
+                                                                .length,
+                                                            (index) {
+                                                          return DataRow(
+                                                              cells: [
+                                                                ///______________S.L__________________________________________________
+                                                                DataCell(Text(
+                                                                    "${startIndex + index + 1}")),
 
-                                                            ///______________Date__________________________________________________
-                                                            DataCell(
-                                                              Text(
-                                                                paginatedList[index].userTitle ?? '',
-                                                              ),
-                                                            ),
-
-                                                            DataCell(
-                                                              Text(
-                                                                paginatedList[index].userTitle ?? '',
-                                                              ),
-                                                            ),
-
-                                                            ///____________Invoice_________________________________________________
-                                                            DataCell(
-                                                              Text(
-                                                                paginatedList[index].email ?? '',
-                                                              ),
-                                                            ),
-
-                                                            ///______Party Name___________________________________________________________
-                                                            DataCell(
-                                                              GestureDetector(
-                                                                onTap: () {
-                                                                  showDialog(
-                                                                    barrierDismissible: false,
-                                                                    context: context,
-                                                                    builder: (BuildContext context) {
-                                                                      return StatefulBuilder(builder: (context, setState1) {
-                                                                        return Dialog(
-                                                                            shape: RoundedRectangleBorder(
-                                                                              borderRadius: BorderRadius.circular(10.0),
-                                                                            ),
-                                                                            child: SizedBox(
-                                                                              width: 700,
-                                                                              child: Padding(
-                                                                                padding: const EdgeInsets.all(10.0),
-                                                                                child: AddUserRole(
-                                                                                  userRoleModel: paginatedList[index],
-                                                                                ),
-                                                                              ),
-                                                                            ));
-                                                                      });
-                                                                    },
-                                                                  );
-                                                                },
-                                                                child: Text(
-                                                                  '${lang.S.of(context).view} >',
-                                                                  style: theme.textTheme.titleMedium?.copyWith(
-                                                                    color: kMainColor,
+                                                                ///______________Date__________________________________________________
+                                                                DataCell(
+                                                                  Text(
+                                                                    paginatedList[index]
+                                                                            .userTitle ??
+                                                                        '',
                                                                   ),
                                                                 ),
-                                                              ),
-                                                            ),
-                                                          ]);
+
+                                                                DataCell(
+                                                                  Text(
+                                                                    paginatedList[index]
+                                                                            .userRoleName ??
+                                                                        '',
+                                                                  ),
+                                                                ),
+
+                                                                ///____________Invoice_________________________________________________
+                                                                DataCell(
+                                                                  Text(
+                                                                    paginatedList[index]
+                                                                            .email ??
+                                                                        '',
+                                                                  ),
+                                                                ),
+
+                                                                ///______Party Name___________________________________________________________
+                                                                DataCell(
+                                                                  GestureDetector(
+                                                                    onTap: () {
+                                                                      showDialog(
+                                                                        barrierDismissible:
+                                                                            false,
+                                                                        context:
+                                                                            context,
+                                                                        builder:
+                                                                            (BuildContext
+                                                                                context) {
+                                                                          return StatefulBuilder(builder:
+                                                                              (context, setState1) {
+                                                                            return Dialog(
+                                                                                shape: RoundedRectangleBorder(
+                                                                                  borderRadius: BorderRadius.circular(10.0),
+                                                                                ),
+                                                                                child: SizedBox(
+                                                                                  width: 700,
+                                                                                  child: Padding(
+                                                                                    padding: const EdgeInsets.all(10.0),
+                                                                                    child: AddUserRole(
+                                                                                      userRoleModel: paginatedList[index],
+                                                                                    ),
+                                                                                  ),
+                                                                                ));
+                                                                          });
+                                                                        },
+                                                                      );
+                                                                    },
+                                                                    child: Text(
+                                                                      '${lang.S.of(context).view} >',
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .titleMedium
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            kMainColor,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ]);
                                                         })),
                                                   ),
                                                 ),
@@ -333,33 +406,50 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                         Padding(
                                           padding: const EdgeInsets.all(10.0),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
                                               Flexible(
                                                 child: Text(
                                                   '${lang.S.of(context).showing} ${((_currentPage - 1) * _lossProfitPerPage + 1).toString()} to ${((_currentPage - 1) * _lossProfitPerPage + _lossProfitPerPage).clamp(0, customerList.length)} of ${customerList.length} entries',
                                                   maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                               Row(
                                                 children: [
                                                   InkWell(
-                                                    overlayColor: WidgetStateProperty.all<Color>(Colors.grey),
+                                                    overlayColor:
+                                                        WidgetStateProperty.all<
+                                                            Color>(Colors.grey),
                                                     hoverColor: Colors.grey,
-                                                    onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                                                    onTap: _currentPage > 1
+                                                        ? () => setState(() =>
+                                                            _currentPage--)
+                                                        : null,
                                                     child: Container(
                                                       height: 32,
                                                       width: 90,
                                                       decoration: BoxDecoration(
-                                                        border: Border.all(color: kBorderColorTextField),
-                                                        borderRadius: const BorderRadius.only(
-                                                          bottomLeft: Radius.circular(4.0),
-                                                          topLeft: Radius.circular(4.0),
+                                                        border: Border.all(
+                                                            color:
+                                                                kBorderColorTextField),
+                                                        borderRadius:
+                                                            const BorderRadius
+                                                                .only(
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  4.0),
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                  4.0),
                                                         ),
                                                       ),
                                                       child: Center(
-                                                        child: Text(lang.S.of(context).previous),
+                                                        child: Text(lang.S
+                                                            .of(context)
+                                                            .previous),
                                                       ),
                                                     ),
                                                   ),
@@ -367,13 +457,17 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                     height: 32,
                                                     width: 32,
                                                     decoration: BoxDecoration(
-                                                      border: Border.all(color: kBorderColorTextField),
+                                                      border: Border.all(
+                                                          color:
+                                                              kBorderColorTextField),
                                                       color: kMainColor,
                                                     ),
                                                     child: Center(
                                                       child: Text(
                                                         '$_currentPage',
-                                                        style: const TextStyle(color: Colors.white),
+                                                        style: const TextStyle(
+                                                            color:
+                                                                Colors.white),
                                                       ),
                                                     ),
                                                   ),
@@ -381,7 +475,9 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                     height: 32,
                                                     width: 32,
                                                     decoration: BoxDecoration(
-                                                      border: Border.all(color: kBorderColorTextField),
+                                                      border: Border.all(
+                                                          color:
+                                                              kBorderColorTextField),
                                                       color: Colors.transparent,
                                                     ),
                                                     child: Center(
@@ -391,20 +487,37 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                     ),
                                                   ),
                                                   InkWell(
-                                                    hoverColor: Colors.blue.withValues(alpha: 0.1),
-                                                    overlayColor: WidgetStateProperty.all<Color>(Colors.blue),
-                                                    onTap: _currentPage * _lossProfitPerPage < customerList.length ? () => setState(() => _currentPage++) : null,
+                                                    hoverColor: Colors.blue
+                                                        .withValues(alpha: 0.1),
+                                                    overlayColor:
+                                                        WidgetStateProperty.all<
+                                                            Color>(Colors.blue),
+                                                    onTap: _currentPage *
+                                                                _lossProfitPerPage <
+                                                            customerList.length
+                                                        ? () => setState(() =>
+                                                            _currentPage++)
+                                                        : null,
                                                     child: Container(
                                                       height: 32,
                                                       width: 90,
                                                       decoration: BoxDecoration(
-                                                        border: Border.all(color: kBorderColorTextField),
-                                                        borderRadius: const BorderRadius.only(
-                                                          bottomRight: Radius.circular(4.0),
-                                                          topRight: Radius.circular(4.0),
+                                                        border: Border.all(
+                                                            color:
+                                                                kBorderColorTextField),
+                                                        borderRadius:
+                                                            const BorderRadius
+                                                                .only(
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  4.0),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  4.0),
                                                         ),
                                                       ),
-                                                      child: const Center(child: Text('Next')),
+                                                      child: const Center(
+                                                          child: Text('Next')),
                                                     ),
                                                   ),
                                                 ],
@@ -523,7 +636,8 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                     ),
                                   ],
                                 )
-                              : noDataFoundImage(text: lang.S.of(context).noUserFound),
+                              : noDataFoundImage(
+                                  text: lang.S.of(context).noUserFound),
                         ],
                       ),
                     ),

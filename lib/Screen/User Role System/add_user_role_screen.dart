@@ -58,19 +58,58 @@ class _AddUserRoleState extends State<AddUserRole> {
   TextEditingController titleController = TextEditingController();
   TextEditingController userRoleName = TextEditingController();
   List<Permission> permissions = [
-    Permission(title: 'Sale'),
-    Permission(title: 'Parties'),
-    Permission(title: 'Purchase'),
-    Permission(title: 'Product'),
-    Permission(title: 'Profile Edit'),
-    Permission(title: 'Add Expense'),
-    Permission(title: 'Loss Profit'),
-    Permission(title: 'Due List'),
-    Permission(title: 'Stock'),
-    Permission(title: 'Reports'),
-    Permission(title: 'Sales List'),
-    Permission(title: 'Purchase List'),
-    Permission(title: 'HRM')
+    Permission(type: 'Sale'),
+    Permission(type: 'Parties'),
+    Permission(type: 'Purchase'),
+    Permission(type: 'Product'),
+    Permission(type: 'Profile Edit'),
+    Permission(type: 'Add Expense'),
+    Permission(type: 'Loss Profit'),
+    Permission(type: 'Due List'),
+    Permission(type: 'Stock'),
+    Permission(type: 'Reports'),
+    Permission(type: 'Sales List'),
+    Permission(type: 'Purchase List'),
+    Permission(type: 'HRM')
+  ];
+  List<Permission> defaultPermissions = [
+    Permission(type: 'dashboard'),
+    Permission(type: 'services'),
+    Permission(type: 'register_package'),
+    Permission(type: 'register_clothing'),
+    Permission(type: 'reservations'),
+    Permission(type: 'rent_clothing'),
+    Permission(type: 'reserve_package'),
+    Permission(type: 'reservation_calendar'),
+    Permission(type: 'sales'),
+    Permission(type: 'pos_sales'),
+    Permission(type: 'inventory_sales'),
+    Permission(type: 'sales_list'),
+    Permission(type: 'sales_return'),
+    Permission(type: 'quotation_list'),
+    Permission(type: 'purchases'),
+    Permission(type: 'pos_purchase'),
+    Permission(type: 'purchase_list'),
+    Permission(type: 'purchase_return'),
+    Permission(type: 'categories'),
+    Permission(type: 'products'),
+    Permission(type: 'warehouses'),
+    Permission(type: 'suppliers'),
+    Permission(type: 'customers'),
+    Permission(type: 'dues'),
+    Permission(type: 'ledger'),
+    Permission(type: 'loss_profit'),
+    Permission(type: 'expense'),
+    Permission(type: 'income'),
+    Permission(type: 'transaction'),
+    Permission(type: 'reports'),
+    Permission(type: 'inventory_list'),
+    Permission(type: 'user_roles'),
+    Permission(type: 'tax_rates'),
+    Permission(type: 'hrm'),
+    Permission(type: 'designations'),
+    Permission(type: 'employees'),
+    Permission(type: 'salary_list'),
   ];
 
   @override
@@ -88,60 +127,12 @@ class _AddUserRoleState extends State<AddUserRole> {
     titleController.text = widget.userRoleModel?.userTitle ?? '';
     userRoleName.text = widget.userRoleModel?.userRoleName ?? '';
     if (widget.userRoleModel == null) return;
-    for (var data in permissions) {
-      if (data.title == 'Sale') {
-        data.view = widget.userRoleModel?.saleView ?? false;
-        data.edit = widget.userRoleModel?.saleEdit ?? false;
-        data.delete = widget.userRoleModel?.saleDelete ?? false;
-      } else if (data.title == 'Parties') {
-        data.view = widget.userRoleModel?.partiesView ?? false;
-        data.edit = widget.userRoleModel?.partiesEdit ?? false;
-        data.delete = widget.userRoleModel?.partiesDelete ?? false;
-      } else if (data.title == 'Purchase') {
-        data.view = widget.userRoleModel?.purchaseView ?? false;
-        data.edit = widget.userRoleModel?.purchaseEdit ?? false;
-        data.delete = widget.userRoleModel?.purchaseDelete ?? false;
-      } else if (data.title == 'Product') {
-        data.view = widget.userRoleModel?.productView ?? false;
-        data.edit = widget.userRoleModel?.productEdit ?? false;
-        data.delete = widget.userRoleModel?.productDelete ?? false;
-      } else if (data.title == 'Profile Edit') {
-        data.view = widget.userRoleModel?.profileEditView ?? false;
-        data.edit = widget.userRoleModel?.profileEditEdit ?? false;
-        data.delete = widget.userRoleModel?.profileEditDelete ?? false;
-      } else if (data.title == 'Add Expense') {
-        data.view = widget.userRoleModel?.addExpenseView ?? false;
-        data.edit = widget.userRoleModel?.addExpenseEdit ?? false;
-        data.delete = widget.userRoleModel?.addExpenseDelete ?? false;
-      } else if (data.title == 'Loss Profit') {
-        data.view = widget.userRoleModel?.lossProfitView ?? false;
-        data.edit = widget.userRoleModel?.lossProfitEdit ?? false;
-        data.delete = widget.userRoleModel?.lossProfitDelete ?? false;
-      } else if (data.title == 'Due List') {
-        data.view = widget.userRoleModel?.dueListView ?? false;
-        data.edit = widget.userRoleModel?.dueListEdit ?? false;
-        data.delete = widget.userRoleModel?.dueListDelete ?? false;
-      } else if (data.title == 'Stock') {
-        data.view = widget.userRoleModel?.stockView ?? false;
-        data.edit = widget.userRoleModel?.stockEdit ?? false;
-        data.delete = widget.userRoleModel?.stockDelete ?? false;
-      } else if (data.title == 'Reports') {
-        data.view = widget.userRoleModel?.reportsView ?? false;
-        data.edit = widget.userRoleModel?.reportsEdit ?? false;
-        data.delete = widget.userRoleModel?.reportsDelete ?? false;
-      } else if (data.title == 'Sales List') {
-        data.view = widget.userRoleModel?.salesListView ?? false;
-        data.edit = widget.userRoleModel?.salesListEdit ?? false;
-        data.delete = widget.userRoleModel?.salesListDelete ?? false;
-      } else if (data.title == 'Purchase List') {
-        data.view = widget.userRoleModel?.purchaseListView ?? false;
-        data.edit = widget.userRoleModel?.purchaseListEdit ?? false;
-        data.delete = widget.userRoleModel?.purchaseListDelete ?? false;
-      } else if (data.title == 'HRM') {
-        data.view = widget.userRoleModel?.hrmView ?? false;
-        data.edit = widget.userRoleModel?.hrmEdit ?? false;
-        data.delete = widget.userRoleModel?.hrmDelete ?? false;
-      }
+    print(widget.userRoleModel!.permissions);
+    print(widget.userRoleModel!.databaseId);
+    print(widget.userRoleModel!.userRoleName);
+    print(widget.userRoleModel!.userKey);
+    if (widget.userRoleModel!.permissions.isNotEmpty) {
+      defaultPermissions = widget.userRoleModel!.permissions;
     }
   }
 
@@ -492,14 +483,14 @@ class _AddUserRoleState extends State<AddUserRole> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
-                    itemCount: permissions.length,
+                    itemCount: defaultPermissions.length,
                     itemBuilder: (context, index) {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Padding(
                           padding: const EdgeInsetsDirectional.only(start: 10),
                           child: Text(
-                            permissions[index].title,
+                            defaultPermissions[index].type,
                             style: theme.textTheme.titleMedium,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -514,10 +505,11 @@ class _AddUserRoleState extends State<AddUserRole> {
                                     side: BorderSide(color: kNeutral500)),
                               ),
                               child: Checkbox(
-                                value: permissions[index].view,
+                                value: defaultPermissions[index].view,
                                 onChanged: (bool? value) {
                                   setState(() {
-                                    permissions[index].view = value ?? false;
+                                    defaultPermissions[index].view =
+                                        value ?? false;
                                   });
                                 },
                               ),
@@ -528,10 +520,11 @@ class _AddUserRoleState extends State<AddUserRole> {
                                     side: BorderSide(color: kNeutral500)),
                               ),
                               child: Checkbox(
-                                value: permissions[index].edit,
+                                value: defaultPermissions[index].edit,
                                 onChanged: (bool? value) {
                                   setState(() {
-                                    permissions[index].edit = value ?? false;
+                                    defaultPermissions[index].edit =
+                                        value ?? false;
                                   });
                                 },
                               ),
@@ -543,10 +536,11 @@ class _AddUserRoleState extends State<AddUserRole> {
                                 ),
                               ),
                               child: Checkbox(
-                                value: permissions[index].delete,
+                                value: defaultPermissions[index].delete,
                                 onChanged: (bool? value) {
                                   setState(() {
-                                    permissions[index].delete = value ?? false;
+                                    defaultPermissions[index].delete =
+                                        value ?? false;
                                   });
                                 },
                               ),
@@ -703,67 +697,12 @@ class _AddUserRoleState extends State<AddUserRole> {
                 style: ElevatedButton.styleFrom(
                     minimumSize: Size(screenWidth, 48)),
                 onPressed: (() async {
-                  UserRoleModel userRolePermissionModel = UserRoleModel();
-
-                  for (var data in permissions) {
-                    if (data.title == 'Sale') {
-                      userRolePermissionModel.saleEdit = data.edit;
-                      userRolePermissionModel.saleView = data.view;
-                      userRolePermissionModel.saleDelete = data.delete;
-                    } else if (data.title == 'Parties') {
-                      userRolePermissionModel.partiesEdit = data.edit;
-                      userRolePermissionModel.partiesView = data.view;
-                      userRolePermissionModel.partiesDelete = data.delete;
-                    } else if (data.title == 'Purchase') {
-                      userRolePermissionModel.purchaseEdit = data.edit;
-                      userRolePermissionModel.purchaseView = data.view;
-                      userRolePermissionModel.purchaseDelete = data.delete;
-                    } else if (data.title == 'Product') {
-                      userRolePermissionModel.productEdit = data.edit;
-                      userRolePermissionModel.productView = data.view;
-                      userRolePermissionModel.productDelete = data.delete;
-                    } else if (data.title == 'Profile Edit') {
-                      userRolePermissionModel.profileEditEdit = data.edit;
-                      userRolePermissionModel.profileEditView = data.view;
-                      userRolePermissionModel.profileEditDelete = data.delete;
-                    } else if (data.title == 'Add Expense') {
-                      userRolePermissionModel.addExpenseEdit = data.edit;
-                      userRolePermissionModel.addExpenseView = data.view;
-                      userRolePermissionModel.addExpenseDelete = data.delete;
-                    } else if (data.title == 'Loss Profit') {
-                      userRolePermissionModel.lossProfitEdit = data.edit;
-                      userRolePermissionModel.lossProfitView = data.view;
-                      userRolePermissionModel.lossProfitDelete = data.delete;
-                    } else if (data.title == 'Due List') {
-                      userRolePermissionModel.dueListEdit = data.edit;
-                      userRolePermissionModel.dueListView = data.view;
-                      userRolePermissionModel.dueListDelete = data.delete;
-                    } else if (data.title == 'Stock') {
-                      userRolePermissionModel.stockEdit = data.edit;
-                      userRolePermissionModel.stockView = data.view;
-                      userRolePermissionModel.stockDelete = data.delete;
-                    } else if (data.title == 'Reports') {
-                      userRolePermissionModel.reportsEdit = data.edit;
-                      userRolePermissionModel.reportsView = data.view;
-                      userRolePermissionModel.reportsDelete = data.delete;
-                    } else if (data.title == 'Sales List') {
-                      userRolePermissionModel.salesListEdit = data.edit;
-                      userRolePermissionModel.salesListView = data.view;
-                      userRolePermissionModel.salesListDelete = data.delete;
-                    } else if (data.title == 'Purchase List') {
-                      userRolePermissionModel.purchaseListEdit = data.edit;
-                      userRolePermissionModel.purchaseListView = data.view;
-                      userRolePermissionModel.purchaseListDelete = data.delete;
-                    } else if (data.title == 'HRM') {
-                      userRolePermissionModel.hrmEdit = data.edit;
-                      userRolePermissionModel.hrmView = data.view;
-                      userRolePermissionModel.hrmDelete = data.delete;
-                    }
-                  }
-                  print(userRolePermissionModel.toJson());
+                  UserRoleModel userRolePermissionModel =
+                      UserRoleModel(permissions: []);
+                  userRolePermissionModel.permissions = defaultPermissions;
 
                   //Check if no true in is permission array
-                  if (permissions.every((element) =>
+                  if (defaultPermissions.every((element) =>
                       element.view == false &&
                       element.edit == false &&
                       element.delete == false)) {
@@ -824,7 +763,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                     return;
                   }
                   if (validateAndSave()) {
-                    print(userRolePermissionModel.toJson());
+                    //print(userRolePermissionModel.toJson());
                     // UserRoleModel userRoleData = UserRoleModel(
                     //   email: emailController.text,
                     //   userTitle: titleController.text,
@@ -846,7 +785,9 @@ class _AddUserRoleState extends State<AddUserRole> {
                     userRolePermissionModel.userTitle = titleController.text;
                     userRolePermissionModel.databaseId =
                         FirebaseAuth.instance.currentUser!.uid;
+                    userRolePermissionModel.userRoleName = userRoleName.text;
                     // print(FirebaseAuth.instance.currentUser!.uid);
+                    print(userRolePermissionModel.toJson());
                     signUp(
                       context: context,
                       email: emailController.text,

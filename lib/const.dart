@@ -147,7 +147,7 @@ String mainLoginPassword = '';
 String mainLoginEmail = '';
 
 UserRoleModel finalUserRoleModel =
-    UserRoleModel(email: '', userTitle: '', databaseId: '');
+    UserRoleModel(email: '', userTitle: '', databaseId: '', permissions: []);
 
 Future<void> setUserDataOnLocalData(
     {required String uid,
@@ -228,6 +228,64 @@ Future<bool> checkUserRolePermission({required String type}) async {
   } else {
     return true;
   }
+}
+
+bool checkUserRolePermissionvV2({required String type}) {
+  //await getUserDataFromLocal();
+  bool permission = true;
+
+  //if (isSubUser) {
+  switch (type) {
+    case 'sale':
+      permission = finalUserRoleModel.saleView ?? false;
+      break;
+    case 'salesList':
+      permission = finalUserRoleModel.salesListView ?? false;
+      break;
+    case 'expense':
+      permission = finalUserRoleModel.addExpenseView ?? false;
+      break;
+    case 'due-list':
+      permission = finalUserRoleModel.dueListView ?? false;
+      break;
+    case 'loss-profit':
+      permission = finalUserRoleModel.lossProfitView ?? false;
+      break;
+    case 'parties':
+      permission = finalUserRoleModel.partiesView ?? false;
+      break;
+    case 'product':
+      permission = finalUserRoleModel.productView ?? false;
+      break;
+    case 'purchaseList':
+      permission = finalUserRoleModel.purchaseListView ?? false;
+      break;
+    case 'purchase':
+      permission = finalUserRoleModel.purchaseView ?? false;
+      break;
+    case 'reports':
+      permission = finalUserRoleModel.reportsView ?? false;
+      break;
+    case 'stock-list':
+      permission = finalUserRoleModel.stockView ?? false;
+      break;
+    case 'profileEdit':
+      permission = finalUserRoleModel.profileEditView ?? false;
+      break;
+    default:
+      permission = true;
+      break;
+  }
+
+  if (permission) {
+    return permission;
+  } else {
+    EasyLoading.showError(userPermissionErrorText);
+    return permission;
+  }
+  // } else {
+  //   return true;
+  // }
 }
 
 Future<String> getUserID() async {

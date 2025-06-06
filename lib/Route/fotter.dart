@@ -24,7 +24,9 @@ class FooterWidget extends StatelessWidget {
       builder: (_, ref, watch) {
         final settingProver = ref.watch(generalSettingProvider);
         return settingProver.when(data: (setting) {
-          final companyName = setting.companyName.isNotEmpty == true ? setting.companyName : 'Victor Guzman Fotografia';
+          final companyName = setting.companyName.isNotEmpty == true
+              ? setting.companyName
+              : 'Victor Guzman Fotografia DEV';
           return LayoutBuilder(
             builder: (context, constraints) => Container(
               padding: rf.ResponsiveValue<EdgeInsetsGeometry?>(
@@ -32,7 +34,8 @@ class FooterWidget extends StatelessWidget {
                 conditionalValues: [
                   rf.Condition.smallerThan(
                     name: BreakpointName.LG.name,
-                    value: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    value: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                   ),
                 ],
                 defaultValue: const EdgeInsets.symmetric(
