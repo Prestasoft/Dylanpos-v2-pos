@@ -230,6 +230,17 @@ Future<bool> checkUserRolePermission({required String type}) async {
   }
 }
 
+bool checkUserRoleEditPermissionV2({
+  required String type,
+}) {
+  final match = finalUserRoleModel.permissions.firstWhere(
+    (p) => p.type == type,
+    orElse: () => Permission(type: type, edit: false),
+  );
+
+  return match.edit;
+}
+
 bool checkUserRolePermissionvV2({required String type}) {
   //await getUserDataFromLocal();
   bool permission = true;

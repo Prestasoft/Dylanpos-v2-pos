@@ -3019,8 +3019,8 @@ class _AddProductState extends State<AddProduct> {
                                               ? () {}
                                               : () async {
                                                   if (!isDemo) {
-                                                    if (await checkUserRolePermission(
-                                                        type: 'product')) {
+                                                    if (checkUserRoleEditPermissionV2(
+                                                        type: 'products')) {
                                                       if (validateAndSave() &&
                                                           selectedCategories !=
                                                               null &&

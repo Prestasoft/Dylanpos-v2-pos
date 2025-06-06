@@ -2749,8 +2749,8 @@ class _PosSaleState extends State<PosSale> {
                                                           kMainColor,
                                                     ),
                                                     onPressed: () async {
-                                                      if (await checkUserRolePermission(
-                                                          type: 'sale')) {
+                                                      if (checkUserRoleEditPermissionV2(
+                                                          type: 'sales')) {
                                                         if (await Subscription
                                                             .subscriptionChecker(
                                                                 item:

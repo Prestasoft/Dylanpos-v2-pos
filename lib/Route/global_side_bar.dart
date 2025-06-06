@@ -66,6 +66,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    print(finalUserRoleModel);
     final filteredMenus = getTopMenusForUser(finalUserRoleModel);
     return Drawer(
       backgroundColor: Colors.black,
@@ -308,7 +309,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                         ),
                                         onPressed: () {
                                           // Navigator.pushNamed(context, InventorySales.route);
-                                          context.go('/sales/inventory-sales');
+                                          context.go('/inventory-sales');
                                         },
                                         child: Row(
                                           children: [

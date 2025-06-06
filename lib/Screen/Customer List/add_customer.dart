@@ -50,7 +50,8 @@ class _AddCustomerState extends State<AddCustomer> {
         Uint8List? bytesFromPicker = await ImagePickerWeb.getImageAsBytes();
         if (bytesFromPicker!.isNotEmpty) {
           EasyLoading.show(
-              status: '${lang.S.of(context).uploading}... ', dismissOnTap: false);
+              status: '${lang.S.of(context).uploading}... ',
+              dismissOnTap: false);
         }
 
         var snapshot = await FirebaseStorage.instance
@@ -146,17 +147,18 @@ class _AddCustomerState extends State<AddCustomer> {
     });
 
     try {
-      final response = await http.get(
-          Uri.parse('https://pres.soft-nh.com/api/consulta_data/$cedula'));
+      final response = await http
+          .get(Uri.parse('https://pres.soft-nh.com/api/consulta_data/$cedula'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         // Actualizar nombre del cliente
         if (data["padron"] != null) {
-          String fullName = "${data["padron"]["nombres"]} ${data["padron"]["apellido1"]} ${data["padron"]["apellido2"]}";
+          String fullName =
+              "${data["padron"]["nombres"]} ${data["padron"]["apellido1"]} ${data["padron"]["apellido2"]}";
           customerNameController.text = fullName;
         }
-        
+
         // Actualizar imagen del perfil
         if (data["foto"] != null && data["foto"]["Imagen"] != null) {
           String base64Image = data["foto"]["Imagen"];
@@ -164,7 +166,7 @@ class _AddCustomerState extends State<AddCustomer> {
           if (base64Image.contains(',')) {
             base64Image = base64Image.split(',').last;
           }
-          
+
           try {
             Uint8List decodedImage = base64.decode(base64Image);
             setState(() {
@@ -276,8 +278,9 @@ class _AddCustomerState extends State<AddCustomer> {
                                             showCursor: true,
                                             cursorColor: kTitleColor,
                                             decoration: InputDecoration(
-                                              labelText:
-                                                  lang.S.of(context).customerName,
+                                              labelText: lang.S
+                                                  .of(context)
+                                                  .customerName,
                                               hintText: lang.S
                                                   .of(context)
                                                   .enterCustomerName,
@@ -319,8 +322,9 @@ class _AddCustomerState extends State<AddCustomer> {
                                             showCursor: true,
                                             cursorColor: kTitleColor,
                                             decoration: InputDecoration(
-                                              labelText:
-                                                  lang.S.of(context).phoneNumber,
+                                              labelText: lang.S
+                                                  .of(context)
+                                                  .phoneNumber,
                                               hintText: lang.S
                                                   .of(context)
                                                   .enterYourPhoneNumber,
@@ -491,8 +495,10 @@ class _AddCustomerState extends State<AddCustomer> {
                                         hintText: 'Ingrese el número de cédula',
                                         suffixIcon: isSearching
                                             ? Padding(
-                                                padding: const EdgeInsets.all(8.0),
-                                                child: CircularProgressIndicator(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child:
+                                                    CircularProgressIndicator(
                                                   strokeWidth: 2,
                                                 ),
                                               )
@@ -581,12 +587,9 @@ class _AddCustomerState extends State<AddCustomer> {
                                               ? () {}
                                               : () async {
                                                   if (!isDemo) {
-                                                    if (await checkUserRolePermission(
-                                                            type: 'parties') &&
-                                                        await Subscription
-                                                            .subscriptionChecker(
-                                                                item:
-                                                                    'Parties')) {
+                                                    if (await Subscription
+                                                        .subscriptionChecker(
+                                                            item: 'Parties')) {
                                                       if (validateAndSave()) {
                                                         try {
                                                           setState(() {
@@ -598,15 +601,22 @@ class _AddCustomerState extends State<AddCustomer> {
                                                                   '${lang.S.of(context).loading}...',
                                                               dismissOnTap:
                                                                   false);
-                                                          
+
                                                           // Subir imagen a Firebase si se obtuvo del API
                                                           if (image != null) {
-                                                            var snapshot = await FirebaseStorage.instance
-                                                                .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
-                                                                .putData(image!);
-                                                            profilePicture = await snapshot.ref.getDownloadURL();
+                                                            var snapshot =
+                                                                await FirebaseStorage
+                                                                    .instance
+                                                                    .ref(
+                                                                        'Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+                                                                    .putData(
+                                                                        image!);
+                                                            profilePicture =
+                                                                await snapshot
+                                                                    .ref
+                                                                    .getDownloadURL();
                                                           }
-                                                          
+
                                                           final DatabaseReference
                                                               customerInformationRef =
                                                               FirebaseDatabase
@@ -715,7 +725,8 @@ class _AddCustomerState extends State<AddCustomer> {
                                     color: kWhite,
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       CustomDottedBorder(
                                         color: kLitGreyColor,
@@ -724,7 +735,9 @@ class _AddCustomerState extends State<AddCustomer> {
                                           width: double.infinity,
                                           alignment: Alignment.center,
                                           child: ClipRRect(
-                                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(12)),
                                             child: image != null
                                                 ? Container(
                                                     constraints: BoxConstraints(
@@ -740,37 +753,64 @@ class _AddCustomerState extends State<AddCustomer> {
                                                     height: 130,
                                                     alignment: Alignment.center,
                                                     width: context.width(),
-                                                    padding: const EdgeInsets.all(10.0),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            10.0),
                                                     decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(20.0),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20.0),
                                                     ),
                                                     child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
                                                       children: [
                                                         Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .center,
                                                           children: [
-                                                            SvgPicture.asset('images/blank_image.svg')
-                                                                .onTap(() => uploadFile()),
+                                                            SvgPicture.asset(
+                                                                    'images/blank_image.svg')
+                                                                .onTap(() =>
+                                                                    uploadFile()),
                                                           ],
                                                         ),
-                                                        const SizedBox(height: 5.0),
+                                                        const SizedBox(
+                                                            height: 5.0),
                                                         RichText(
-                                                          textAlign: TextAlign.center,
+                                                          textAlign:
+                                                              TextAlign.center,
                                                           text: TextSpan(
-                                                            text: lang.S.of(context).uploadAImage,
-                                                            style: theme.textTheme.titleMedium?.copyWith(
-                                                              color: kGreenTextColor,
+                                                            text: lang.S
+                                                                .of(context)
+                                                                .uploadAImage,
+                                                            style: theme
+                                                                .textTheme
+                                                                .titleMedium
+                                                                ?.copyWith(
+                                                              color:
+                                                                  kGreenTextColor,
                                                             ),
                                                             children: [
                                                               TextSpan(
-                                                                text: ' ', // Espacio entre los textos
+                                                                text:
+                                                                    ' ', // Espacio entre los textos
                                                               ),
                                                               TextSpan(
-                                                                text: lang.S.of(context).orDragAndDropPng,
-                                                                style: theme.textTheme.titleMedium?.copyWith(
-                                                                  color: kGreyTextColor,
+                                                                text: lang.S
+                                                                    .of(context)
+                                                                    .orDragAndDropPng,
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .titleMedium
+                                                                    ?.copyWith(
+                                                                  color:
+                                                                      kGreyTextColor,
                                                                 ),
                                                               ),
                                                             ],

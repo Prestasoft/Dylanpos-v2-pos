@@ -4173,8 +4173,8 @@ class _InventorySalesState extends State<InventorySales> {
                                           backgroundColor: kMainColor,
                                         ),
                                         onPressed: () async {
-                                          if (await checkUserRolePermission(
-                                              type: 'sale')) {
+                                          if (checkUserRoleEditPermissionV2(
+                                              type: 'sales')) {
                                             if (await Subscription
                                                 .subscriptionChecker(
                                                     item: 'Sales')) {

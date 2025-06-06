@@ -393,8 +393,8 @@ class _SaleReportsState extends State<SaleReports> {
                                     ),
                                   ).onTap(() async {
                                     if (categoryList[i] == 'Current Stock') {
-                                      if (await checkUserRolePermission(
-                                          type: '/stock-list')) {
+                                      if (checkUserRoleEditPermissionV2(
+                                          type: 'inventory_list')) {
                                         setState(() {
                                           selected = categoryList[i];
                                         });

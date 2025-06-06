@@ -143,7 +143,7 @@ class _AddUserRoleState extends State<AddUserRole> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
-
+    print("Const user id: $constUserId");
     return Consumer(builder: (context, ref, __) {
       return SingleChildScrollView(
         child: Column(
@@ -490,7 +490,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                         title: Padding(
                           padding: const EdgeInsetsDirectional.only(start: 10),
                           child: Text(
-                            defaultPermissions[index].type,
+                            getPermissionTitle(defaultPermissions[index].type),
                             style: theme.textTheme.titleMedium,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -742,12 +742,16 @@ class _AddUserRoleState extends State<AddUserRole> {
                       userRolePermissionModel.email = emailController.text;
                       userRolePermissionModel.userTitle = titleController.text;
                       userRolePermissionModel.userRoleName = userRoleName.text;
+                      // userRolePermissionModel.databaseId =
+                      //     widget.userRoleModel!.databaseId;
                       userRolePermissionModel.databaseId =
                           FirebaseAuth.instance.currentUser!.uid;
+                      print(userRolePermissionModel.toJson());
                       await dataRef.update(userRolePermissionModel.toJson());
                       await adminDataRef
                           .update(userRolePermissionModel.toJson());
                       ref.refresh(userRoleProvider);
+                      ref.refresh(allUserRoleProvider);
 
                       EasyLoading.showSuccess(
                           lang.S.of(context).successfullyUpdated,
@@ -761,26 +765,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                           .showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                     return;
-                  }
-                  if (validateAndSave()) {
-                    //print(userRolePermissionModel.toJson());
-                    // UserRoleModel userRoleData = UserRoleModel(
-                    //   email: emailController.text,
-                    //   userTitle: titleController.text,
-                    //   databaseId: FirebaseAuth.instance.currentUser!.uid,
-                    //   salePermission: salePermission,
-                    //   partiesPermission: partiesPermission,
-                    //   purchasePermission: purchasePermission,
-                    //   productPermission: productPermission,
-                    //   profileEditPermission: profileEditPermission,
-                    //   addExpensePermission: addExpensePermission,
-                    //   lossProfitPermission: lossProfitPermission,
-                    //   dueListPermission: dueListPermission,
-                    //   stockPermission: stockPermission,
-                    //   reportsPermission: reportsPermission,
-                    //   salesListPermission: salesListPermission,
-                    //   purchaseListPermission: purchaseListPermission,
-                    // );
+                  } else {
+                    if (!validateAndSave()) return;
                     userRolePermissionModel.email = emailController.text;
                     userRolePermissionModel.userTitle = titleController.text;
                     userRolePermissionModel.databaseId =
@@ -802,6 +788,87 @@ class _AddUserRoleState extends State<AddUserRole> {
         ),
       );
     });
+  }
+
+  String getPermissionTitle(String type) {
+    switch (type) {
+      case 'dashboard':
+        return 'Panel de Control';
+      case 'services':
+        return 'Servicios';
+      case 'register_package':
+        return 'Registrar Paquete';
+      case 'register_clothing':
+        return 'Registrar Vestimenta';
+      case 'reservations':
+        return 'Reservas';
+      case 'rent_clothing':
+        return 'Rentar Vestimentas';
+      case 'reserve_package':
+        return 'Reservar Paquete';
+      case 'reservation_calendar':
+        return 'Calendario de Reservas';
+      case 'sales':
+        return 'Ventas';
+      case 'pos_sales':
+        return 'Ventas en Punto de Venta';
+      case 'inventory_sales':
+        return 'Ventas desde Inventario';
+      case 'sales_list':
+        return 'Lista de Ventas';
+      case 'sales_return':
+        return 'Devoluciones de Venta';
+      case 'quotation_list':
+        return 'Lista de Cotizaciones';
+      case 'purchases':
+        return 'Compras';
+      case 'pos_purchase':
+        return 'Compra en Punto de Venta';
+      case 'purchase_list':
+        return 'Lista de Compras';
+      case 'purchase_return':
+        return 'Devoluciones de Compra';
+      case 'categories':
+        return 'Categorías';
+      case 'products':
+        return 'Productos';
+      case 'warehouses':
+        return 'Almacenes';
+      case 'suppliers':
+        return 'Proveedores';
+      case 'customers':
+        return 'Clientes';
+      case 'dues':
+        return 'Cuentas por Cobrar';
+      case 'ledger':
+        return 'Libro Mayor';
+      case 'loss_profit':
+        return 'Pérdidas y Ganancias';
+      case 'expense':
+        return 'Gastos';
+      case 'income':
+        return 'Ingresos';
+      case 'transaction':
+        return 'Transacciones';
+      case 'reports':
+        return 'Reportes';
+      case 'inventory_list':
+        return 'Lista de Inventario';
+      case 'user_roles':
+        return 'Roles de Usuario';
+      case 'tax_rates':
+        return 'Tasas de Impuesto';
+      case 'hrm':
+        return 'Gestión de Nómina';
+      case 'designations':
+        return 'Puestos';
+      case 'employees':
+        return 'Empleados';
+      case 'salary_list':
+        return 'Lista de Salarios';
+      default:
+        return type; // fallback: puedes usar algo como `return 'Desconocido';`
+    }
   }
 }
 

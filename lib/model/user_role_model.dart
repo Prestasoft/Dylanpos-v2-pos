@@ -206,18 +206,22 @@ class UserRoleModel {
 
 class Permission {
   String type;
+  String? title;
   bool view;
   bool edit;
   bool delete;
 
-  Permission(
-      {required this.type,
-      this.view = false,
-      this.edit = false,
-      this.delete = false});
+  Permission({
+    required this.type,
+    this.title,
+    this.view = false,
+    this.edit = false,
+    this.delete = false,
+  });
 
   factory Permission.fromJson(Map<String, dynamic> json) => Permission(
         type: json["type"],
+        title: json["title"],
         view: json["view"],
         edit: json["edit"],
         delete: json["delete"],
@@ -225,6 +229,7 @@ class Permission {
 
   Map<String, dynamic> toJson() => {
         "type": type,
+        "title": title,
         "view": view,
         "edit": edit,
         "delete": delete,
