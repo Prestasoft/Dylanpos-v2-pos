@@ -59,7 +59,6 @@ class _InventorySalesState extends State<InventorySales> {
   double discountAmount = 0;
   double vatGst = 0;
   DateTime selectedDueDate = DateTime.now();
-  String? invoiceNumberGenerated;
 
   TextEditingController payingAmountController = TextEditingController();
   TextEditingController changeAmountController = TextEditingController();
@@ -1936,6 +1935,9 @@ class _InventorySalesState extends State<InventorySales> {
                                                                   lang.S.of(context).create,
                                                                 ),
                                                                 onPressed: () async {
+                                                                  var invoice_number_variable = await getLastInvoiceNumber();
+                                                                  print("llego aqui: " + invoice_number_variable.toString());
+
                                                                   SaleTransactionModel transitionModel = SaleTransactionModel(
                                                                     customerName: selectedUserName?.customerName ?? '',
                                                                     customerType: selectedUserName?.type ?? '',
@@ -1943,7 +1945,8 @@ class _InventorySalesState extends State<InventorySales> {
                                                                     customerAddress: selectedUserName?.customerAddress ?? '',
                                                                     customerPhone: selectedUserName?.phoneNumber ?? '',
                                                                     customerGst: selectedUserName?.gst ?? '',
-                                                                    invoiceNumber: invoiceNumberGenerated ?? data.saleInvoiceCounter.toString(),
+
+                                                                    invoiceNumber: invoice_number_variable.toString(),
 
                                                                     sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
                                                                     purchaseDate: DateTime.now().toString(),
@@ -2171,6 +2174,7 @@ class _InventorySalesState extends State<InventorySales> {
 
                                                 //imprimir factura
 
+                                                print("llego aqui: " + post.toJson().toString());
                                                 if (printType == 'normal' || printType == 'both') {
                                                   await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: data, saleTransactionModel: transitionModel, context: context, fromInventorySale: true, setting: setting, printType: 'normal', post: post);
                                                 }
