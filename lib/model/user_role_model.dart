@@ -3,6 +3,7 @@ class UserRoleModel {
   String? userTitle;
   String? databaseId;
   String? userRoleName;
+  List<Permission> permissions;
   bool? saleView;
   bool? saleEdit;
   bool? saleDelete;
@@ -50,6 +51,7 @@ class UserRoleModel {
       this.userTitle,
       this.databaseId,
       this.userRoleName,
+      required this.permissions,
       this.saleView,
       this.saleEdit,
       this.saleDelete,
@@ -91,11 +93,28 @@ class UserRoleModel {
       this.hrmDelete,
       this.userKey});
 
+  /// Buscar permiso por tipo de menú o submenú
+  Permission? getPermission(String type) {
+    return permissions.firstWhere(
+      (p) => p.type == type,
+      orElse: () => Permission(type: type),
+    );
+  }
+
+  /// Métodos helper
+  bool canView(String type) => getPermission(type)?.view ?? false;
+  bool canEdit(String type) => getPermission(type)?.edit ?? false;
+  bool canDelete(String type) => getPermission(type)?.delete ?? false;
+
   factory UserRoleModel.fromJson(Map<String, dynamic> json) => UserRoleModel(
         email: json["email"] ?? '',
         userTitle: json["userTitle"] ?? '',
         databaseId: json["databaseId"] ?? '',
         userRoleName: json["userRoleName"] ?? '',
+        permissions: json["permissions"] == null
+            ? []
+            : List<Permission>.from(
+                json["permissions"].map((x) => Permission.fromJson(x))),
         saleView: json["saleView"] ?? false,
         saleEdit: json["saleEdit"] ?? false,
         saleDelete: json["saleDelete"] ?? false,
@@ -142,6 +161,7 @@ class UserRoleModel {
         "userTitle": userTitle,
         "databaseId": databaseId,
         "userRoleName": userRoleName,
+        "permissions": List<dynamic>.from(permissions.map((x) => x.toJson())),
         "saleView": saleView,
         "saleEdit": saleEdit,
         "saleDelete": saleDelete,
@@ -185,10 +205,42 @@ class UserRoleModel {
 }
 
 class Permission {
-  String title;
+  String type;
   bool view;
   bool edit;
   bool delete;
 
-  Permission({required this.title, this.view = false, this.edit = false, this.delete = false});
+  Permission(
+      {required this.type,
+      this.view = false,
+      this.edit = false,
+      this.delete = false});
+
+  factory Permission.fromJson(Map<String, dynamic> json) => Permission(
+        type: json["type"],
+        view: json["view"],
+        edit: json["edit"],
+        delete: json["delete"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "type": type,
+        "view": view,
+        "edit": edit,
+        "delete": delete,
+      };
+}
+
+class UserPermission {
+  final String type; // ejemplo: "dashboard", "servicios", etc.
+  final bool canView;
+  final bool canEdit;
+  final bool canDelete;
+
+  UserPermission({
+    required this.type,
+    this.canView = false,
+    this.canEdit = false,
+    this.canDelete = false,
+  });
 }

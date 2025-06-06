@@ -99,7 +99,7 @@ class LogInRepo extends ChangeNotifier {
       for (var element in value.children) {
         var data =
             UserRoleModel.fromJson(jsonDecode(jsonEncode(element.value)));
-
+        print(email);
         if (data.email == email &&
             data.databaseId != null &&
             data.databaseId != '') {
