@@ -15,7 +15,7 @@ String countryName = 'Bangladesh';
 String selectedCountry = 'English';
 
 // const kMainColor = Color(0xFF3F8CFF);
-const kMainColor = Color(0xff8424FF);
+const kMainColor = Color(0xFFD59345);
 const kMainColor100 = Color(0xffF8F1FF);
 const kDarkGreyColor = Color(0xFF2E2E3E);
 const kBackgroundColor = Color(0xffF4F4F4);

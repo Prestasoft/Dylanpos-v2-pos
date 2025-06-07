@@ -87,14 +87,14 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                          backgroundColor: const Color(0xFF8424FF),
+                          backgroundColor: kMainColor,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30.0)),
                           // side: const BorderSide(color: kBorderColorTextField, width: 1),
                           textStyle: kTextStyle.copyWith(color: kWhite),
-                          surfaceTintColor:
-                              const Color(0xFF8424FF).withOpacity(0.5),
-                          shadowColor: const Color(0xFF8424FF).withOpacity(0.1),
+                          // surfaceTintColor:
+                          //     const Color(0xFF8424FF).withOpacity(0.5),
+                          // shadowColor: const Color(0xFF8424FF).withOpacity(0.1),
                         ),
                         onPressed: () {
                           // Navigator.pushNamed(context, PosSale.route);

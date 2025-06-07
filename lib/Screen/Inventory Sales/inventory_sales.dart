@@ -853,6 +853,8 @@ class _InventorySalesState extends State<InventorySales> {
                         });
                       },
                       activeColor: kMainColor,
+                      inactiveThumbColor: kGreyTextColor,
+                      inactiveTrackColor: kBorderColor,
                     ),
                     const SizedBox(height: 8),
                     ConstrainedBox(

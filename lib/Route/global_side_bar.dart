@@ -250,16 +250,10 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                           padding: const EdgeInsets.fromLTRB(
                                               15, 8, 15, 8),
 
-                                          backgroundColor:
-                                              const Color(0xFF8424FF),
+                                          backgroundColor: kMainColor,
                                           // side: const BorderSide(color: kBorderColorTextField, width: 1),
                                           textStyle: kTextStyle.copyWith(
                                               color: kWhite),
-                                          surfaceTintColor:
-                                              const Color(0xFF8424FF)
-                                                  .withOpacity(0.5),
-                                          shadowColor: const Color(0xFF8424FF)
-                                              .withOpacity(0.1),
                                         ),
                                         onPressed: () {
                                           // Navigator.pushNamed(context, PosSale.route);
@@ -818,9 +812,8 @@ class SidebarMenuItem extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        tileColor: _isSelectedSubmenu
-            ? _selectedPrimaryColor.withValues(alpha: 0.20)
-            : null,
+        tileColor:
+            _isSelectedSubmenu ? kMainColor.withValues(alpha: 0.20) : null,
         title: Text(submenu.name),
         leading: Radio<SidebarSubmenuModel?>(
             value: submenu,
@@ -828,14 +821,14 @@ class SidebarMenuItem extends StatelessWidget {
             onChanged: onChanged,
             fillColor: WidgetStateProperty.resolveWith((states) {
               return _isSelectedSubmenu
-                  ? _selectedPrimaryColor
+                  ? kMainColor
                   : iconOnly
                       ? kGreyTextColor
                       : Colors.white;
             })),
         titleTextStyle: _theme.textTheme.bodyLarge?.copyWith(
           color: _isSelectedSubmenu
-              ? _selectedPrimaryColor
+              ? kMainColor
               : iconOnly
                   ? kGreyTextColor
                   : Colors.white,
@@ -844,7 +837,7 @@ class SidebarMenuItem extends StatelessWidget {
         contentPadding: EdgeInsets.only(left: iconOnly ? 8 : 8, right: 8),
         trailing: const Icon(Icons.chevron_right),
         iconColor: _isSelectedSubmenu
-            ? _selectedPrimaryColor
+            ? kMainColor
             : iconOnly
                 ? kGreyTextColor
                 : Colors.white,
