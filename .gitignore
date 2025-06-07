@@ -25,3 +25,4 @@ Thumbs.db
 
 .flutter-plugins-dependencies
 android/local.properties
+.flutter-plugins
