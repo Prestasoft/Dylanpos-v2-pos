@@ -73,8 +73,8 @@ class _InventorySalesState extends State<InventorySales> {
   FocusNode nameFocus = FocusNode();
   final ScrollController horizontalScroll = ScrollController();
 
-  String? selectedUserId = 'Guest';
-  String? clientename = 'Guest';
+  String? selectedUserId;
+  String? clientename;
 
   CustomerModel? selectedUserName;
   String? invoiceNumber;
@@ -86,7 +86,7 @@ class _InventorySalesState extends State<InventorySales> {
   int i = 0;
 
   List<String> get paymentItem => ['Efectivo', 'Transferencia', 'Tarjeta'];
-  List<String> get customerType => ['Retailer', 'Wholesaler', 'Dealer'];
+  List<String> get customerType => ['Minorista', 'Mayorista', 'Distribuidor'];
 
   @override
   void initState() {
@@ -1052,7 +1052,7 @@ class _InventorySalesState extends State<InventorySales> {
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (i == 0) {
+      if (element.warehouseName == 'SANTIAGO') {
         selectedWareHouse = element;
       }
       i++;
@@ -1349,8 +1349,7 @@ class _InventorySalesState extends State<InventorySales> {
                                             (FormFieldState<dynamic> field) {
                                           return InputDecorator(
                                             decoration: InputDecoration(
-                                              labelText:
-                                                  lang.S.of(context).warehouse,
+                                              labelText: 'Almacén',
                                             ),
                                             child: DropdownButtonHideUnderline(
                                               child: getWare(
@@ -1562,7 +1561,7 @@ class _InventorySalesState extends State<InventorySales> {
                                   builder: (FormFieldState<dynamic> field) {
                                     return InputDecorator(
                                         decoration: const InputDecoration(
-                                          labelText: 'Party Type',
+                                          labelText: 'Tipo de cliente',
                                         ),
                                         child: Theme(
                                             data: ThemeData(
