@@ -1,1 +1,0 @@
-/home/shakil/StudioProjects/pos-saas-update-gst99/build/app/intermediates/cxx/RelWithDebInfo/2d6510a5/obj/x86

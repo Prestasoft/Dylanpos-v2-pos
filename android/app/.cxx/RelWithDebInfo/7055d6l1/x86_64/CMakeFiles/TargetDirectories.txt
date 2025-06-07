@@ -1,2 +1,0 @@
-/home/shakil/StudioProjects/pos-saas-update-gst7/android/app/.cxx/RelWithDebInfo/7055d6l1/x86_64/CMakeFiles/edit_cache.dir
-/home/shakil/StudioProjects/pos-saas-update-gst7/android/app/.cxx/RelWithDebInfo/7055d6l1/x86_64/CMakeFiles/rebuild_cache.dir
