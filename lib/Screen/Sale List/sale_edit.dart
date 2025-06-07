@@ -91,13 +91,13 @@ class _SaleEditState extends State<SaleEdit> {
 
   dynamic productPriceChecker(
       {required ProductModel product, required String customerType}) {
-    if (customerType == "Retailer") {
+    if (customerType == "Regular") {
       return product.productSalePrice;
-    } else if (customerType == "Wholesaler") {
+    } else if (customerType == "Frecuente") {
       return product.productWholeSalePrice == ''
           ? '0'
           : product.productWholeSalePrice;
-    } else if (customerType == "Dealer") {
+    } else if (customerType == "Corporativo") {
       return product.productDealerPrice == ''
           ? '0'
           : product.productDealerPrice;
@@ -600,16 +600,16 @@ class _SaleEditState extends State<SaleEdit> {
 
             widget.transitionModel.productList?.forEach((element) {
               if (element.productId == products.productCode) {
-                if (widget.transitionModel.customerType.contains('Retailer')) {
+                if (widget.transitionModel.customerType.contains('Regular')) {
                   sentProductPrice = products.productSalePrice;
                 } else if (widget.transitionModel.customerType
-                    .contains('Dealer')) {
+                    .contains('Frecuente')) {
                   sentProductPrice = products.productDealerPrice;
                 } else if (widget.transitionModel.customerType
-                    .contains('Wholesaler')) {
+                    .contains('Corporativo')) {
                   sentProductPrice = products.productWholeSalePrice;
                 } else if (widget.transitionModel.customerType
-                    .contains('Supplier')) {
+                    .contains('Proveedor')) {
                   sentProductPrice = products.productPurchasePrice;
                 } else if (widget.transitionModel.customerType
                     .contains('Guest')) {

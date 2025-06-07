@@ -377,11 +377,11 @@ class _InventorySalesState extends State<InventorySales> {
 
   List<String> get customerType => [
         // lang.S.current.retailer,
-        'Cliente Final',
+        'Regular',
         // lang.S.current.wholesaler,
-        'Wholesaler',
+        'Frecuente',
         // lang.S.current.dealer,
-        'Dealer',
+        'Corporativo',
       ];
 
   late String selectedCustomerType = customerType.first;

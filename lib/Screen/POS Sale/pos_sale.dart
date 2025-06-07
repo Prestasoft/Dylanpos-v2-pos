@@ -119,7 +119,7 @@ class _PosSaleState extends State<PosSale> {
                     };
             } else if (selectedUserId == 'Guest') {
               previousDue = '0';
-              selectedCustomerType = 'Retailer';
+              selectedCustomerType = 'Regular';
             }
           }
           invoiceNumber = '';
@@ -130,13 +130,13 @@ class _PosSaleState extends State<PosSale> {
 
   dynamic productPriceChecker(
       {required ProductModel product, required String customerType}) {
-    if (customerType == "Retailer") {
+    if (customerType == "Regular") {
       return product.productSalePrice;
-    } else if (customerType == "Wholesaler") {
+    } else if (customerType == "Frecuente") {
       return product.productWholeSalePrice == ''
           ? '0'
           : product.productWholeSalePrice;
-    } else if (customerType == "Dealer") {
+    } else if (customerType == "Corporativo") {
       return product.productDealerPrice == ''
           ? '0'
           : product.productDealerPrice;
@@ -187,12 +187,12 @@ class _PosSaleState extends State<PosSale> {
   }
 
   List<String> customerType = [
-    'Retailer',
-    'Wholesaler',
-    'Dealer',
+    'Regular',
+    'Frecuente',
+    'Corporativo',
   ];
 
-  String selectedCustomerType = 'Retailer';
+  String selectedCustomerType = 'Regular';
 
   DropdownButton<String> getCategories() {
     List<DropdownMenuItem<String>> dropDownItems = [];

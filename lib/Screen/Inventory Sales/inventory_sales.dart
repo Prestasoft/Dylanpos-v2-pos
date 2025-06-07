@@ -86,7 +86,7 @@ class _InventorySalesState extends State<InventorySales> {
   int i = 0;
 
   List<String> get paymentItem => ['Efectivo', 'Transferencia', 'Tarjeta'];
-  List<String> get customerType => ['Minorista', 'Mayorista', 'Distribuidor'];
+  List<String> get customerType => ['Regular', 'Frecuente', 'Corporativo'];
 
   @override
   void initState() {
@@ -650,13 +650,13 @@ class _InventorySalesState extends State<InventorySales> {
 
   dynamic productPriceChecker(
       {required ProductModel product, required String customerType}) {
-    if (customerType == "Retailer") {
+    if (customerType == "Regular") {
       return product.productSalePrice;
-    } else if (customerType == "Wholesaler") {
+    } else if (customerType == "Frecuente") {
       return product.productWholeSalePrice == ''
           ? '0'
           : product.productWholeSalePrice;
-    } else if (customerType == "Dealer") {
+    } else if (customerType == "Corporativo") {
       return product.productDealerPrice == ''
           ? '0'
           : product.productDealerPrice;
@@ -1006,7 +1006,7 @@ class _InventorySalesState extends State<InventorySales> {
                     };
             } else if (selectedUserId == 'Guest') {
               previousDue = '0';
-              selectedCustomerType = 'Retailer';
+              selectedCustomerType = 'Regular';
             }
           }
           invoiceNumber = '';

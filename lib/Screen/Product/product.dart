@@ -1725,7 +1725,7 @@ class _ProductState extends State<Product> {
                                                 DataColumn(
                                                     label: Text('Category')),
                                                 DataColumn(
-                                                    label: Text('Retailer')),
+                                                    label: Text('Regular')),
                                                 DataColumn(
                                                     label: Text('Dealer')),
                                                 DataColumn(

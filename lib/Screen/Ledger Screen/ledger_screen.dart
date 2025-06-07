@@ -171,13 +171,13 @@ class _LedgerScreenState extends State<LedgerScreen> {
   List<String> get allPartis => [
         'All',
         // lang.S.current.all,
-        'Retailer',
+        'Regular',
         // lang.S.current.retailer,
-        'Dealer',
+        'Frecuente',
         // lang.S.current.dealer,
-        'Wholesaler',
+        'Corporativo',
         // lang.S.current.wholesaler,
-        "Supplier",
+        "Proveedor",
         // lang.S.current.supplier,
       ];
   int counter = 0;

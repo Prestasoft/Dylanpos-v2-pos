@@ -18,9 +18,17 @@ class LedgerDetails extends StatefulWidget {
 }
 
 class _LedgerDetailsState extends State<LedgerDetails> {
-  List<String> allPartis = ['All', 'Retailer', 'Dealer', 'Wholesaler', "Supplier"];
+  List<String> allPartis = [
+    'All',
+    'Regular',
+    'Frecuente',
+    'Corporativo',
+    "Proveedor"
+  ];
 
-  double singleCustomersTotalSaleAmount({required List<SaleTransactionModel> allTransitions, required String customerPhoneNumber}) {
+  double singleCustomersTotalSaleAmount(
+      {required List<SaleTransactionModel> allTransitions,
+      required String customerPhoneNumber}) {
     double totalSale = 0;
     for (var transition in allTransitions) {
       if (transition.customerPhone == customerPhoneNumber) {
@@ -30,7 +38,9 @@ class _LedgerDetailsState extends State<LedgerDetails> {
     return totalSale;
   }
 
-  double singleSupplierTotalSaleAmount({required List<dynamic> allTransitions, required String customerPhoneNumber}) {
+  double singleSupplierTotalSaleAmount(
+      {required List<dynamic> allTransitions,
+      required String customerPhoneNumber}) {
     double totalSale = 0;
     for (var transition in allTransitions) {
       if (transition.customerPhone == customerPhoneNumber) {
@@ -40,7 +50,9 @@ class _LedgerDetailsState extends State<LedgerDetails> {
     return totalSale;
   }
 
-  double totalSale({required List<SaleTransactionModel> allTransitions, required String selectedCustomerType}) {
+  double totalSale(
+      {required List<SaleTransactionModel> allTransitions,
+      required String selectedCustomerType}) {
     double totalSale = 0;
 
     if (selectedCustomerType != 'All') {
@@ -67,7 +79,9 @@ class _LedgerDetailsState extends State<LedgerDetails> {
     return totalPurchase;
   }
 
-  double totalCustomerDue({required List<CustomerModel> customers, required String selectedCustomerType}) {
+  double totalCustomerDue(
+      {required List<CustomerModel> customers,
+      required String selectedCustomerType}) {
     double totalDue = 0;
 
     if (selectedCustomerType != 'All') {
@@ -97,18 +111,22 @@ class _LedgerDetailsState extends State<LedgerDetails> {
     return totalDue;
   }
 
-  double totalCustomerReceivedAmount({required List<SaleTransactionModel> allTransitions, required String selectedCustomerType}) {
+  double totalCustomerReceivedAmount(
+      {required List<SaleTransactionModel> allTransitions,
+      required String selectedCustomerType}) {
     double totalReceived = 0;
 
     if (selectedCustomerType != 'All') {
       for (var transition in allTransitions) {
         if (transition.customerType == selectedCustomerType) {
-          totalReceived += transition.totalAmount!.toDouble() - transition.dueAmount!.toDouble();
+          totalReceived += transition.totalAmount!.toDouble() -
+              transition.dueAmount!.toDouble();
         }
       }
     } else {
       for (var transition in allTransitions) {
-        totalReceived += transition.totalAmount!.toDouble() - transition.dueAmount!.toDouble();
+        totalReceived += transition.totalAmount!.toDouble() -
+            transition.dueAmount!.toDouble();
       }
     }
     return totalReceived;
@@ -130,7 +148,8 @@ class _LedgerDetailsState extends State<LedgerDetails> {
   @override
   Widget build(BuildContext context) {
     return Consumer(builder: (_, ref, watch) {
-      AsyncValue<List<SaleTransactionModel>> saleTransactionReport = ref.watch(transitionProvider);
+      AsyncValue<List<SaleTransactionModel>> saleTransactionReport =
+          ref.watch(transitionProvider);
       final purchaseTransactionReport = ref.watch(purchaseTransitionProvider);
 
       final allCustomers = ref.watch(allCustomerProvider);
@@ -299,12 +318,17 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                                   return InputDecorator(
                                     decoration: InputDecoration(
                                       enabledBorder: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                                        borderSide: BorderSide(color: kBorderColorTextField, width: 2),
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(8.0)),
+                                        borderSide: BorderSide(
+                                            color: kBorderColorTextField,
+                                            width: 2),
                                       ),
                                       contentPadding: const EdgeInsets.all(8.0),
-                                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                                      labelText: lang.S.of(context).selectParties,
+                                      floatingLabelBehavior:
+                                          FloatingLabelBehavior.always,
+                                      labelText:
+                                          lang.S.of(context).selectParties,
                                     ),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
@@ -314,11 +338,15 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                                             selectedLedgerItems = value!;
 
                                             for (var element in allCustomers) {
-                                              if (selectedLedgerItems == 'All') {
-                                                listOfSelectedCustomers.add(element);
+                                              if (selectedLedgerItems ==
+                                                  'All') {
+                                                listOfSelectedCustomers
+                                                    .add(element);
                                               } else {
-                                                if (element.type == selectedLedgerItems) {
-                                                  listOfSelectedCustomers.add(element);
+                                                if (element.type ==
+                                                    selectedLedgerItems) {
+                                                  listOfSelectedCustomers
+                                                      .add(element);
                                                 }
                                               }
                                             }
@@ -345,7 +373,8 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                           SizedBox(
                             width: double.infinity,
                             child: DataTable(
-                              headingRowColor: MaterialStateProperty.all(kLitGreyColor),
+                              headingRowColor:
+                                  MaterialStateProperty.all(kLitGreyColor),
                               showBottomBorder: false,
                               columnSpacing: 0.0,
                               columns: [
@@ -353,34 +382,49 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                                   label: Text(
                                     lang.S.of(context).SL,
                                     // 'S.L',
-                                    style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                    style: kTextStyle.copyWith(
+                                        color: kTitleColor,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 DataColumn(
-                                  label: SizedBox(width: 200, child: Text(lang.S.of(context).name, style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold))),
+                                  label: SizedBox(
+                                      width: 200,
+                                      child: Text(lang.S.of(context).name,
+                                          style: kTextStyle.copyWith(
+                                              color: kTitleColor,
+                                              fontWeight: FontWeight.bold))),
                                 ),
                                 DataColumn(
                                   label: Text(
                                     lang.S.of(context).customerType,
-                                    style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                    style: kTextStyle.copyWith(
+                                        color: kTitleColor,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 DataColumn(
                                   label: Text(
                                     lang.S.of(context).totalAmount,
-                                    style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                    style: kTextStyle.copyWith(
+                                        color: kTitleColor,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 DataColumn(
                                   label: Text(
                                     lang.S.of(context).totalDue,
-                                    style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                    style: kTextStyle.copyWith(
+                                        color: kTitleColor,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 DataColumn(
                                   label: Text(
                                     lang.S.of(context).details,
-                                    style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
+                                    style: kTextStyle.copyWith(
+                                        color: kTitleColor,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],
@@ -393,31 +437,67 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                                   DataCell(
                                     GestureDetector(
                                       onTap: () {},
-                                      child: Text(listOfSelectedCustomers[index].customerName, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                      child: Text(
+                                          listOfSelectedCustomers[index]
+                                              .customerName,
+                                          style: kTextStyle.copyWith(
+                                              color: kGreyTextColor)),
                                     ),
                                   ),
                                   DataCell(
                                     GestureDetector(
                                       onTap: () {},
-                                      child: Text(listOfSelectedCustomers[index].type, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                      child: Text(
+                                          listOfSelectedCustomers[index].type,
+                                          style: kTextStyle.copyWith(
+                                              color: kGreyTextColor)),
                                     ),
                                   ),
                                   DataCell(
                                     GestureDetector(
                                       onTap: () {},
-                                      child: Text(listOfSelectedCustomers[index].type == 'Supplier' ? singleSupplierTotalSaleAmount(allTransitions: purchaseTransactionReport.value!, customerPhoneNumber: listOfSelectedCustomers[index].phoneNumber).toString() : singleCustomersTotalSaleAmount(allTransitions: saleTransactionReport.value!, customerPhoneNumber: listOfSelectedCustomers[index].phoneNumber).toString(), style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                      child: Text(
+                                          listOfSelectedCustomers[index]
+                                                      .type ==
+                                                  'Supplier'
+                                              ? singleSupplierTotalSaleAmount(
+                                                      allTransitions:
+                                                          purchaseTransactionReport
+                                                              .value!,
+                                                      customerPhoneNumber:
+                                                          listOfSelectedCustomers[
+                                                                  index]
+                                                              .phoneNumber)
+                                                  .toString()
+                                              : singleCustomersTotalSaleAmount(
+                                                      allTransitions:
+                                                          saleTransactionReport
+                                                              .value!,
+                                                      customerPhoneNumber:
+                                                          listOfSelectedCustomers[
+                                                                  index]
+                                                              .phoneNumber)
+                                                  .toString(),
+                                          style: kTextStyle.copyWith(
+                                              color: kGreyTextColor)),
                                     ),
                                   ),
                                   DataCell(
                                     GestureDetector(
                                       onTap: () {},
-                                      child: Text(listOfSelectedCustomers[index].dueAmount, style: kTextStyle.copyWith(color: kGreyTextColor)),
+                                      child: Text(
+                                          listOfSelectedCustomers[index]
+                                              .dueAmount,
+                                          style: kTextStyle.copyWith(
+                                              color: kGreyTextColor)),
                                     ),
                                   ),
                                   DataCell(
                                     GestureDetector(
                                       onTap: () {},
-                                      child: Text(lang.S.of(context).show, style: kTextStyle.copyWith(color: kBlueTextColor)),
+                                      child: Text(lang.S.of(context).show,
+                                          style: kTextStyle.copyWith(
+                                              color: kBlueTextColor)),
                                     ),
                                   ),
                                 ]),
@@ -434,7 +514,10 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                 child: Text(
                   lang.S.of(context).pleaseAddCustomer,
                   maxLines: 2,
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20.0),
+                  style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20.0),
                 ),
               );
       }, error: (e, stack) {

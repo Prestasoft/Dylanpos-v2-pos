@@ -144,7 +144,8 @@ class _CustomerListState extends State<CustomerList> {
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(),
                             onPressed: () async {
-                              if (finalUserRoleModel.partiesEdit == false) {
+                              if (!checkUserRoleEditPermissionV2(
+                                  type: 'customers')) {
                                 EasyLoading.showError(userPermissionErrorText);
                                 return;
                               }
@@ -322,12 +323,12 @@ class _CustomerListState extends State<CustomerList> {
                                               dataTextStyle:
                                                   theme.textTheme.bodyLarge,
                                               columns: [
-                                                DataColumn(
-                                                    label: Text('N°')),
+                                                DataColumn(label: Text('N°')),
                                                 // Nueva columna para la imagen
                                                 DataColumn(
-                                                    label: Text(
-                                                        lang.S.of(context).image)),
+                                                    label: Text(lang.S
+                                                        .of(context)
+                                                        .image)),
                                                 DataColumn(
                                                     label: Text(lang.S
                                                         .of(context)
@@ -379,17 +380,33 @@ class _CustomerListState extends State<CustomerList> {
                                                         color: kNeutral100,
                                                       ),
                                                       child: ClipOval(
-                                                        child: customer.profilePicture != null && 
-                                                            customer.profilePicture!.isNotEmpty
+                                                        child: customer.profilePicture !=
+                                                                    null &&
+                                                                customer
+                                                                    .profilePicture!
+                                                                    .isNotEmpty
                                                             ? CachedNetworkImage(
-                                                                imageUrl: customer.profilePicture!,
-                                                                fit: BoxFit.cover,
-                                                                placeholder: (context, url) => 
-                                                                    const CircularProgressIndicator(strokeWidth: 2),
-                                                                errorWidget: (context, url, error) => 
-                                                                    const Icon(Icons.person, size: 20),
+                                                                imageUrl: customer
+                                                                    .profilePicture!,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                placeholder: (context,
+                                                                        url) =>
+                                                                    const CircularProgressIndicator(
+                                                                        strokeWidth:
+                                                                            2),
+                                                                errorWidget: (context,
+                                                                        url,
+                                                                        error) =>
+                                                                    const Icon(
+                                                                        Icons
+                                                                            .person,
+                                                                        size:
+                                                                            20),
                                                               )
-                                                            : const Icon(Icons.person, size: 20),
+                                                            : const Icon(
+                                                                Icons.person,
+                                                                size: 20),
                                                       ),
                                                     ),
                                                   ),

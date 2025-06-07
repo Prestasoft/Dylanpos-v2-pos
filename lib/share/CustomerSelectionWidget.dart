@@ -160,7 +160,7 @@ class CustomerSelectionWidget extends ConsumerWidget {
 
   DropdownButton<String> _buildCustomerTypeDropdown() {
     List<DropdownMenuItem<String>> dropDownItems = [];
-    for (String des in ['Retailer', 'Wholesaler', 'Dealer']) {
+    for (String des in ['Regular', 'Frecuente', 'Corporativo']) {
       var item = DropdownMenuItem(
         value: des,
         child: Text(

@@ -85,14 +85,14 @@ class _EditCustomerState extends State<EditCustomer> {
   }
 
   List<String> categories = [
-    'Retailer',
-    'Wholesaler',
-    'Dealer',
-    'Supplier',
+    'Regular',
+    'Frecuente',
+    'Corporativo',
+    'Proveedor',
   ];
-  String pageName = 'Edit Customer';
+  String pageName = 'Editar cliente';
 
-  String selectedCategories = 'Retailer';
+  String selectedCategories = 'Regular';
 
   DropdownButton<String> getCategories() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -126,16 +126,16 @@ class _EditCustomerState extends State<EditCustomer> {
     checkCurrentUserAndRestartApp();
     if (widget.typeOfCustomerAdd == 'Buyer') {
       categories = [
-        'Retailer',
-        'Wholesaler',
-        'Dealer',
+        'Regular',
+        'Frecuente',
+        'Corporativo',
       ];
     } else if (widget.typeOfCustomerAdd == 'Supplier') {
       categories = [
-        'Supplier',
+        'Proveedor',
       ];
-      selectedCategories = 'Supplier';
-      pageName = 'Add Supplier';
+      selectedCategories = 'Proveedor';
+      pageName = 'Añadir Proveedor';
     }
     selectedCategories = widget.customerModel.type;
     profilePicture = widget.customerModel.profilePicture;

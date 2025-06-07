@@ -72,14 +72,14 @@ class _AddCustomerState extends State<AddCustomer> {
   }
 
   List<String> categories = [
-    'Retailer',
-    'Wholesaler',
-    'Dealer',
-    'Supplier',
+    'Regular',
+    'Frecuente',
+    'Corporativo',
+    'Proveedor',
   ];
   String pageName = 'Agregar Cliente';
 
-  String selectedCategories = 'Retailer';
+  String selectedCategories = 'Regular';
 
   @override
   initState() {
@@ -87,16 +87,16 @@ class _AddCustomerState extends State<AddCustomer> {
     checkCurrentUserAndRestartApp();
     if (widget.typeOfCustomerAdd == 'Buyer') {
       categories = [
-        'Retailer',
-        'Wholesaler',
-        'Dealer',
+        'Regular',
+        'Frecuente',
+        'Corporativo',
       ];
     } else if (widget.typeOfCustomerAdd == 'Supplier') {
       categories = [
-        'Supplier',
+        'Proveedor',
       ];
-      selectedCategories = 'Supplier';
-      pageName = 'Add Supplier';
+      selectedCategories = 'Proveedor';
+      pageName = 'Añadir Proveedor';
     }
   }
 
