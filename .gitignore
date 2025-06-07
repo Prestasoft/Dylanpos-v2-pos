@@ -6,10 +6,12 @@ build/
 .idea/
 .vscode/
 android/.gradle/
-android/app/build/
+android/app/
+ios/Flutter/*
 ios/Flutter/Flutter.framework
 ios/Flutter/Flutter.podspec
 ios/Runner/GeneratedPluginRegistrant.*
+linux/flutter
 
 # OS generated
 .DS_Store
@@ -20,3 +22,4 @@ Thumbs.db
 *.lock
 *.log
 *.tmp
+
