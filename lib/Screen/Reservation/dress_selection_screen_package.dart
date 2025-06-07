@@ -116,13 +116,12 @@ class _DressSelectionPackageScreenState
   Widget build(BuildContext context) {
     final dressesAsync = isUsingOneTimeProvider
         ? ref.watch(dressesOnceProvider(widget.CategoryComposite))
-        : ref.watch(availableDressesByComponentsProvider(
-            widget.CategoryComposite));
+        : ref.watch(
+            availableDressesByComponentsProvider(widget.CategoryComposite));
 
     ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
     //ref.watch(dressesOnceProvider(widget.CategoryComposite));
 
-    
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final itemWidth = screenWidth / 4 - 16; // 4 items por fila con margen
@@ -386,7 +385,7 @@ class _DressSelectionPackageScreenState
                                           ),
                                           child: Center(
                                             child: Text(
-                                              'RESERVADO',
+                                              'EN LAVANDERIA',
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,
