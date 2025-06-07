@@ -502,6 +502,8 @@ class _SaleListState extends State<SaleList> {
                                                               PopupMenuItem(
                                                                 onTap:
                                                                     () async {
+                                                                  print(
+                                                                      "Item index ======  ${paginatedTransactions[index].invoiceNumber}");
                                                                   final printType =
                                                                       await showDialog<
                                                                           String>(
@@ -567,7 +569,7 @@ class _SaleListState extends State<SaleList> {
                                                                       post =
                                                                       checkLossProfit(
                                                                           transitionModel:
-                                                                              showAbleSaleTransactions[index]);
+                                                                              paginatedTransactions[index]);
                                                                   if (printType ==
                                                                           'normal' ||
                                                                       printType ==
@@ -580,7 +582,7 @@ class _SaleListState extends State<SaleList> {
                                                                           profile
                                                                               .value!,
                                                                       saleTransactionModel:
-                                                                          showAbleSaleTransactions[
+                                                                          paginatedTransactions[
                                                                               index],
                                                                       context:
                                                                           context,
@@ -603,7 +605,7 @@ class _SaleListState extends State<SaleList> {
                                                                           profile
                                                                               .value!,
                                                                       saleTransactionModel:
-                                                                          showAbleSaleTransactions[
+                                                                          paginatedTransactions[
                                                                               index],
                                                                       context:
                                                                           context,
@@ -731,27 +733,28 @@ class _SaleListState extends State<SaleList> {
                                                                             DeleteInvoice
                                                                                 delete =
                                                                                 DeleteInvoice();
-                                                                            await delete.editStockAndSerial(saleTransactionModel: showAbleSaleTransactions[index]);
+                                                                            await delete.editStockAndSerial(saleTransactionModel: paginatedTransactions[index]);
                                                                             await delete.customerDueUpdate(
-                                                                              due: showAbleSaleTransactions[index].dueAmount ?? 0,
-                                                                              phone: showAbleSaleTransactions[index].customerPhone,
+                                                                              due: paginatedTransactions[index].dueAmount ?? 0,
+                                                                              phone: paginatedTransactions[index].customerPhone,
                                                                             );
                                                                             await delete.updateFromShopRemainBalance(
-                                                                              paidAmount: (showAbleSaleTransactions[index].totalAmount ?? 0) - (showAbleSaleTransactions[index].dueAmount ?? 0),
+                                                                              paidAmount: (paginatedTransactions[index].totalAmount ?? 0) - (paginatedTransactions[index].dueAmount ?? 0),
                                                                               isFromPurchase: false,
                                                                             );
                                                                             await delete.deleteDailyTransaction(
-                                                                                invoice: showAbleSaleTransactions[index].invoiceNumber,
+                                                                                invoice: paginatedTransactions[index].invoiceNumber,
                                                                                 status: 'Sale',
                                                                                 field: "saleTransactionModel");
 
-
                                                                             // Cancel reservation if exists
-                                                                            final reservationId = (showAbleSaleTransactions[index].reservationIds.isNotEmpty)
-                                                                                ? showAbleSaleTransactions[index].reservationIds.first
+                                                                            final reservationId = (paginatedTransactions[index].reservationIds.isNotEmpty)
+                                                                                ? paginatedTransactions[index].reservationIds.first
                                                                                 : '';
 
-                                                                            await consuearRef.read(cancelReservationProvider(reservationId).future);
+                                                                            if (reservationId.isNotEmpty) {
+                                                                              await consuearRef.read(cancelReservationProvider(reservationId).future);
+                                                                            }
 
                                                                             // Actualizar estado de la reserva a cancelada
                                                                             // bool status_reserva = await consuearRef.read(ActualizarEstadoReservaProvider({
@@ -761,21 +764,21 @@ class _SaleListState extends State<SaleList> {
 
                                                                             DatabaseReference
                                                                                 ref =
-                                                                                FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${showAbleSaleTransactions[index].key}");
+                                                                                FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${paginatedTransactions[index].key}");
 
                                                                             await ref.remove();
                                                                             // ignore: unused_result
-                                                                            await consuearRef.refresh(transitionProvider);
+                                                                            await consuearRef.refresh(transitionProvider.future);
                                                                             // ignore: unused_result
-                                                                            await consuearRef.refresh(productProvider);
+                                                                            await consuearRef.refresh(productProvider.future);
                                                                             // ignore: unused_result
-                                                                            await consuearRef.refresh(allCustomerProvider);
+                                                                            await consuearRef.refresh(allCustomerProvider.future);
                                                                             // ignore: unused_result
-                                                                            await consuearRef.refresh(profileDetailsProvider);
+                                                                            await consuearRef.refresh(profileDetailsProvider.future);
                                                                             // ignore: unused_result
-                                                                            await consuearRef.refresh(dailyTransactionProvider);
+                                                                            await consuearRef.refresh(dailyTransactionProvider.future);
                                                                             // ignore: unused_result
-                                                                            await consuearRef.refresh(reservationsProvider);
+                                                                            await consuearRef.refresh(reservationsProvider.future);
                                                                             EasyLoading.showSuccess(lang.S.of(context).done);
                                                                             // Use Navigator.of(context2).pop() instead of GoRouter.of(context2).pop()
                                                                             // Navigator.of(context2).pop();
@@ -829,7 +832,7 @@ class _SaleListState extends State<SaleList> {
                                                                           profile
                                                                               .value!,
                                                                       'saleTransactionModel':
-                                                                          showAbleSaleTransactions[
+                                                                          paginatedTransactions[
                                                                               index],
                                                                     },
                                                                   );
