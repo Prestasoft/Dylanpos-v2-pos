@@ -51,7 +51,7 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
   String? _selectedBranch;
   TextEditingController _subcategoryController = TextEditingController();
   ScrollController mainScroll = ScrollController();
-  //String searchItem = '';
+  String searchItem = '';
   TextEditingController searchCtr = TextEditingController();
   bool _isAvailable = true;
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -112,15 +112,14 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
           AsyncValue<List<DressModel>> dressesAsync =
               ref.watch(dressesByStatusProvider(itemStatus));
           return dressesAsync.when(data: (list) {
-            print(list);
             List<DressModel> showAbleDresses = [];
             for (var element in list) {
               if (element.name
                   .removeAllWhiteSpace()
                   .toLowerCase()
-                  .contains(searchCtr.text.toLowerCase())) {
+                  .contains(searchItem.toLowerCase())) {
                 showAbleDresses.add(element);
-              } else if (searchCtr.text == '') {
+              } else if (searchItem == '') {
                 showAbleDresses.add(element);
               }
             }
@@ -255,7 +254,8 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                   Debouncer(milliseconds: 900).run(
                                     () => setState(
                                       () {
-                                        searchCtr.text = value;
+                                        //searchCtr.text = value;
+                                        searchItem = value;
                                       },
                                     ),
                                   );
