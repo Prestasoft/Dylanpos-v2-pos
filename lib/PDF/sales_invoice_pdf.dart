@@ -260,51 +260,27 @@ FutureOr<Uint8List> generateSaleDocument({
                   ),
                   pw.SizedBox(height: 2),
 
-                  // pw.Row(
-                  //   children: [
-                  //     pw.SizedBox(
-                  //       width: 75.0,
-                  //       child: pw.Text(
-                  //         'Fecha de reservacion',
-                  //         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                  //       ),
-                  //     ),
-                  //     pw.SizedBox(
-                  //       width: 10.0,
-                  //       child: pw.Text(
-                  //         ':',
-                  //         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                  //       ),
-                  //     ),
-                  //     pw.SizedBox(
-                  //       width: 140.0,
-                  //       child: pw.Text(
-                  //         "${reservaciones.first?.reservation['reservation_date']} ${reservaciones.first?.reservation['reservation_time']}",
-                  //         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
+                  ///_____Reservation Date_______________________________________
                   pw.Row(
                     children: [
                       pw.SizedBox(
                         width: 75.0,
                         child: pw.Text(
-                          reservaciones.isNotEmpty ? 'Fecha de reservación' : 'Fecha de Venta',
+                          reservaciones.isNotEmpty ? 'Fecha de reservación' : '',
                           style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                         ),
                       ),
                       pw.SizedBox(
                         width: 10.0,
                         child: pw.Text(
-                          ':',
+                          reservaciones.isNotEmpty ? ':' : '',
                           style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                         ),
                       ),
                       pw.SizedBox(
                         width: 140.0,
                         child: pw.Text(
-                          reservaciones.isNotEmpty ? formatearFecha(reservaciones.first?.reservation?['reservation_date']) + ' ' + reservaciones.first!.reservation!['reservation_time'] : DateFormat('dd/MM/yyyy').format(DateTime.now()),
+                          reservaciones.isNotEmpty ? _formatearFechaYHora(reservaciones.first?.reservation['reservation_date'], reservaciones.first?.reservation?['reservation_time']) : '',
                           style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                         ),
                       ),
@@ -1388,6 +1364,17 @@ String formatearFecha(String? fecha) {
   try {
     final date = DateTime.parse(fecha);
     return DateFormat('dd/MM/yyyy').format(date);
+  } catch (e) {
+    return '-';
+  }
+}
+
+String _formatearFechaYHora(String? fecha, String? hora) {
+  if (fecha == null || fecha.isEmpty) return '-';
+  try {
+    final date = DateTime.parse(fecha);
+    final fechaFormateada = DateFormat('dd/MM/yyyy').format(date);
+    return hora != null && hora.isNotEmpty ? '$fechaFormateada $hora' : fechaFormateada;
   } catch (e) {
     return '-';
   }
