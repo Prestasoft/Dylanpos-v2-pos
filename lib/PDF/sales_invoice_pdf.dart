@@ -40,15 +40,12 @@ FutureOr<Uint8List> generateSaleDocument({
   //print("TRANSACCTION === ${transactions.key}");
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero
-  final List<FullReservation?> reservaciones = await Future.wait(idReservaciones
-      .map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
+  final List<FullReservation?> reservaciones = await Future.wait(idReservaciones.map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
   double totalAmount({required SaleTransactionModel transactions}) {
     double amount = 0;
 
     for (var element in transactions.productList!) {
-      amount = amount +
-          double.parse(element.subTotal) *
-              double.parse(element.quantity.toString());
+      amount = amount + double.parse(element.subTotal) * double.parse(element.quantity.toString());
     }
 
     return double.parse(amount.toStringAsFixed(2));
@@ -66,9 +63,7 @@ FutureOr<Uint8List> generateSaleDocument({
       .whereType<String>() // Filtra los null
       .toList();
 
-  final place = reservaciones
-      .map((e) => e?.reservation['place']?.toString().trim())
-      .firstWhere(
+  final place = reservaciones.map((e) => e?.reservation['place']?.toString().trim()).firstWhere(
         (p) => p != null && p.isNotEmpty,
         orElse: () => '-',
       );
@@ -76,8 +71,7 @@ FutureOr<Uint8List> generateSaleDocument({
   for (int i = 0; i < transactions.productList!.length; i++) {
     final item = transactions.productList![i];
     print("PRODUCT ITEM ===== ${item.productId}");
-    final fullReservation =
-        ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+    final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
     final serviceDescription = fullReservation?.service?['description'] ?? '';
 
     rows.add(<String>[
@@ -86,10 +80,7 @@ FutureOr<Uint8List> generateSaleDocument({
       myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
       myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
       calculateProductVat(product: item),
-      myFormat.format(double.tryParse(
-              (double.parse(item.subTotal) * item.quantity.toInt())
-                  .toStringAsFixed(2)) ??
-          0),
+      myFormat.format(double.tryParse((double.parse(item.subTotal) * item.quantity.toInt()).toStringAsFixed(2)) ?? 0),
     ]);
   }
 
@@ -100,8 +91,7 @@ FutureOr<Uint8List> generateSaleDocument({
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       header: (pw.Context context) {
         return pw.Padding(
-          padding: const pw.EdgeInsets.only(
-              left: 20.0, right: 20, bottom: 20, top: 5),
+          padding: const pw.EdgeInsets.only(left: 20.0, right: 20, bottom: 20, top: 5),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
@@ -125,10 +115,7 @@ FutureOr<Uint8List> generateSaleDocument({
                     children: [
                       pw.Text(
                         personalInformation.companyName,
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                            color: PdfColors.black,
-                            fontSize: 20.0,
-                            fontWeight: pw.FontWeight.bold),
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 20.0, fontWeight: pw.FontWeight.bold),
                       ),
 
                       ///______Phone________________________________________________________________
@@ -137,27 +124,33 @@ FutureOr<Uint8List> generateSaleDocument({
                         child: pw.Center(
                           child: pw.Text(
                             'Teléfono: ${personalInformation.phoneNumber}',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(
-                                    color: PdfColors.black, fontSize: 14.0),
+                            style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 14.0),
                           ),
                         ),
                       ),
 
                       ///______Address________________________________________________________________
+                      // pw.Container(
+                      //   padding: const pw.EdgeInsets.all(1.0),
+                      //   child: pw.Center(
+                      //     child: pw.Text(
+                      //       'Dirección: ${personalInformation.countryName}',
+                      //       style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 14.0),
+                      //     ),
+                      //   ),
+                      // ),
+
                       pw.Container(
-                        padding: const pw.EdgeInsets.all(1.0),
-                        child: pw.Center(
-                          child: pw.Text(
-                            'Dirección: ${personalInformation.countryName}',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(
-                                    color: PdfColors.black, fontSize: 14.0),
+                        width: 300,
+                        child: pw.Text(
+                          "Lugar: ${place ?? 'Sin lugar'}",
+                          style: pw.TextStyle(
+                            color: PdfColors.black,
+                            fontSize: 11,
                           ),
                         ),
                       ),
+                      pw.SizedBox(height: 10.0),
 
                       ///______Shop_GST________________________________________________________________
                       personalInformation.gst.trim().isNotEmpty
@@ -166,11 +159,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               child: pw.Center(
                                 child: pw.Text(
                                   'RNC: ${personalInformation.gst}',
-                                  style: pw.Theme.of(context)
-                                      .defaultTextStyle
-                                      .copyWith(
-                                          color: PdfColors.black,
-                                          fontSize: 14.0),
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 14.0),
                                 ),
                               ),
                             )
@@ -188,18 +177,13 @@ FutureOr<Uint8List> generateSaleDocument({
                   child: pw.Container(
                     decoration: pw.BoxDecoration(
                       border: pw.Border.all(color: PdfColors.black, width: 0.5),
-                      borderRadius:
-                          const pw.BorderRadius.all(pw.Radius.circular(10)),
+                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
                     ),
                     child: pw.Padding(
-                      padding: const pw.EdgeInsets.only(
-                          top: 2.0, bottom: 2, left: 5, right: 5),
+                      padding: const pw.EdgeInsets.only(top: 2.0, bottom: 2, left: 5, right: 5),
                       child: pw.Text(
                         'Factura de Reservacion',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                            color: PdfColors.black,
-                            fontSize: 16.0,
-                            fontWeight: pw.FontWeight.bold),
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 16.0, fontWeight: pw.FontWeight.bold),
                       ),
                     ),
                   ),
@@ -207,326 +191,276 @@ FutureOr<Uint8List> generateSaleDocument({
               ),
 
               ///___________price_section_____________________________________________________
-              pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    ///_________Left_Side__________________________________________________________
-                    pw.Column(children: [
-                      ///_____Name_______________________________________
-                      pw.Row(children: [
-                        pw.SizedBox(
-                          width: 75.0,
-                          child: pw.Text(
-                            'Cliente',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 10.0,
-                          child: pw.Text(
-                            ':',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 140.0,
-                          child: pw.Text(
-                            transactions.customerName,
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                      ]),
+              pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                ///_________Left_Side__________________________________________________________
+                pw.Column(children: [
+                  ///_____Name_______________________________________
+                  pw.Row(children: [
+                    pw.SizedBox(
+                      width: 75.0,
+                      child: pw.Text(
+                        'Cliente',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 10.0,
+                      child: pw.Text(
+                        ':',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 140.0,
+                      child: pw.Text(
+                        transactions.customerName,
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                  ]),
 
-                      ///_____Phone_______________________________________
-                      pw.SizedBox(height: 2),
-                      pw.Row(children: [
-                        pw.SizedBox(
-                          width: 75.0,
-                          child: pw.Text(
-                            'Teléfono',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 10.0,
-                          child: pw.Text(
-                            ':',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 140.0,
-                          child: pw.Text(
-                            transactions.customerPhone,
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                      ]),
+                  ///_____Phone_______________________________________
+                  pw.SizedBox(height: 2),
+                  pw.Row(children: [
+                    pw.SizedBox(
+                      width: 75.0,
+                      child: pw.Text(
+                        'Teléfono',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 10.0,
+                      child: pw.Text(
+                        ':',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 140.0,
+                      child: pw.Text(
+                        transactions.customerPhone,
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                  ]),
 
-                      ///_____Address_______________________________________
-                      pw.SizedBox(height: 2),
-                      pw.Row(
-                        children: [
+                  ///_____Address_______________________________________
+                  pw.SizedBox(height: 2),
+                  pw.Row(
+                    children: [
+                      pw.SizedBox(
+                        width: 75.0,
+                        child: pw.Text(
+                          'Lugar',
+                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                        ),
+                      ),
+                      pw.SizedBox(
+                        width: 10.0,
+                        child: pw.Text(
+                          ':',
+                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                        ),
+                      ),
+                      pw.SizedBox(
+                        width: 140.0,
+                        child: pw.Text(
+                          place ?? '-',
+                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                        ),
+                      ),
+
+                      // pw.SizedBox(
+                      //   width: 75.0,
+                      //   child: pw.Text(
+                      //     'Dirección',
+                      //     style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      //   ),
+                      // ),
+                      // pw.SizedBox(
+                      //   width: 10.0,
+                      //   child: pw.Text(
+                      //     ':',
+                      //     style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      //   ),
+                      // ),
+                      // pw.SizedBox(
+                      //   width: 140.0,
+                      //   child: pw.Text(
+                      //     transactions.customerAddress,
+                      //     style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      //   ),
+                      // ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 2),
+
+                  ///_____Reservation Date_______________________________________
+                  pw.Row(
+                    children: [
+                      pw.SizedBox(
+                        width: 75.0,
+                        child: pw.Text(
+                          reservaciones.isNotEmpty ? 'Fecha de reservación' : '',
+                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                        ),
+                      ),
+                      pw.SizedBox(
+                        width: 10.0,
+                        child: pw.Text(
+                          reservaciones.isNotEmpty ? ':' : '',
+                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                        ),
+                      ),
+                      pw.SizedBox(
+                        width: 140.0,
+                        child: pw.Text(
+                          reservaciones.isNotEmpty ? _formatearFechaYHora(reservaciones.first?.reservation['reservation_date'], reservaciones.first?.reservation?['reservation_time']) : '',
+                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  pw.SizedBox(height: 2),
+
+                  ///_____Party GST_______________________________________
+                  pw.SizedBox(height: transactions.customerGst.trim().isNotEmpty ? 2 : 0),
+                  transactions.customerGst.trim().isNotEmpty
+                      ? pw.Row(children: [
                           pw.SizedBox(
                             width: 75.0,
                             child: pw.Text(
-                              'Dirección',
-                              style: pw.Theme.of(context)
-                                  .defaultTextStyle
-                                  .copyWith(color: PdfColors.black),
+                              'RNC',
+                              style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                             ),
                           ),
                           pw.SizedBox(
                             width: 10.0,
                             child: pw.Text(
                               ':',
-                              style: pw.Theme.of(context)
-                                  .defaultTextStyle
-                                  .copyWith(color: PdfColors.black),
+                              style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                             ),
                           ),
                           pw.SizedBox(
                             width: 140.0,
                             child: pw.Text(
-                              transactions.customerAddress,
-                              style: pw.Theme.of(context)
-                                  .defaultTextStyle
-                                  .copyWith(color: PdfColors.black),
+                              transactions.customerGst,
+                              style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                             ),
                           ),
-                        ],
+                        ])
+                      : pw.Container(),
+                ]),
+
+                ///_________Right_Side___________________________________________________________
+                pw.Column(children: [
+                  ///______invoice_number_____________________________________________
+                  pw.Row(children: [
+                    pw.SizedBox(
+                      width: 50.0,
+                      child: pw.Text(
+                        'Factura',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                       ),
-                      pw.SizedBox(height: 2),
-
-                      ///_____Reservation Date_______________________________________
-                      pw.Row(
-                        children: [
-                          pw.SizedBox(
-                            width: 75.0,
-                            child: pw.Text(
-                              reservaciones.isNotEmpty
-                                  ? 'Fecha de reservación'
-                                  : '',
-                              style: pw.Theme.of(context)
-                                  .defaultTextStyle
-                                  .copyWith(color: PdfColors.black),
-                            ),
-                          ),
-                          pw.SizedBox(
-                            width: 10.0,
-                            child: pw.Text(
-                              reservaciones.isNotEmpty ? ':' : '',
-                              style: pw.Theme.of(context)
-                                  .defaultTextStyle
-                                  .copyWith(color: PdfColors.black),
-                            ),
-                          ),
-                          pw.SizedBox(
-                            width: 140.0,
-                            child: pw.Text(
-                              reservaciones.isNotEmpty
-                                  ? _formatearFechaYHora(
-                                      reservaciones.first
-                                          ?.reservation['reservation_date'],
-                                      reservaciones.first
-                                          ?.reservation?['reservation_time'])
-                                  : '',
-                              style: pw.Theme.of(context)
-                                  .defaultTextStyle
-                                  .copyWith(color: PdfColors.black),
-                            ),
-                          ),
-                        ],
+                    ),
+                    pw.SizedBox(
+                      width: 10.0,
+                      child: pw.Text(
+                        ':',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                       ),
-
-                      pw.SizedBox(height: 2),
-
-                      ///_____Party GST_______________________________________
-                      pw.SizedBox(
-                          height: transactions.customerGst.trim().isNotEmpty
-                              ? 2
-                              : 0),
-                      transactions.customerGst.trim().isNotEmpty
-                          ? pw.Row(children: [
-                              pw.SizedBox(
-                                width: 75.0,
-                                child: pw.Text(
-                                  'RNC',
-                                  style: pw.Theme.of(context)
-                                      .defaultTextStyle
-                                      .copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                              pw.SizedBox(
-                                width: 10.0,
-                                child: pw.Text(
-                                  ':',
-                                  style: pw.Theme.of(context)
-                                      .defaultTextStyle
-                                      .copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                              pw.SizedBox(
-                                width: 140.0,
-                                child: pw.Text(
-                                  transactions.customerGst,
-                                  style: pw.Theme.of(context)
-                                      .defaultTextStyle
-                                      .copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                            ])
-                          : pw.Container(),
-                    ]),
-
-                    ///_________Right_Side___________________________________________________________
-                    pw.Column(children: [
-                      ///______invoice_number_____________________________________________
-                      pw.Row(children: [
-                        pw.SizedBox(
-                          width: 50.0,
-                          child: pw.Text(
-                            'Factura',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 10.0,
-                          child: pw.Text(
-                            ':',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 125.0,
-                          child: pw.Text(
-                            '#${transactions.invoiceNumber}',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                      ]),
-                      pw.SizedBox(height: 2),
-
-                      ///_________Sells By________________________________________________
-                      pw.Row(children: [
-                        pw.SizedBox(
-                          width: 50.0,
-                          child: pw.Text(
-                            'Vendido por',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 10.0,
-                          child: pw.Text(
-                            ':',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 125.0,
-                          child: pw.Text(
-                            transactions.sellerName ?? "Admin",
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                      ]),
-                      pw.SizedBox(height: 2),
-
-                      ///______Date__________________________________________________________
-                      pw.Row(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.SizedBox(
-                              width: 50.0,
-                              child: pw.Text(
-                                'Fecha',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(color: PdfColors.black),
-                              ),
-                            ),
-                            pw.SizedBox(
-                              width: 10.0,
-                              child: pw.Text(
-                                ':',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(color: PdfColors.black),
-                              ),
-                            ),
-                            pw.Container(
-                              width: 125.0,
-                              child: pw.Text(
-                                '${DateFormat.yMd().format(DateTime.parse(transactions.purchaseDate))}, ${DateFormat.jm().format(DateTime.parse(transactions.purchaseDate))}',
-                                // DateTimeFormat.format(DateTime.parse(transactions.purchaseDate), format: AmericanDateTimeFormats.),
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(color: PdfColors.black),
-                              ),
-                            ),
-                          ]),
-                      pw.SizedBox(height: 2),
-
-                      ///______Status____________________________________________
-                      pw.Row(children: [
-                        pw.SizedBox(
-                          width: 50.0,
-                          child: pw.Text(
-                            'Estado',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 10.0,
-                          child: pw.Text(
-                            ':',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(color: PdfColors.black),
-                          ),
-                        ),
-                        pw.SizedBox(
-                          width: 125.0,
-                          child: pw.Text(
-                            transactions.isPaid! ? 'Pagado' : 'Pendiente',
-                            style: pw.Theme.of(context)
-                                .defaultTextStyle
-                                .copyWith(
-                                    color: PdfColors.black,
-                                    fontWeight: pw.FontWeight.bold),
-                          ),
-                        ),
-                      ]),
-                    ]),
+                    ),
+                    pw.SizedBox(
+                      width: 125.0,
+                      child: pw.Text(
+                        '#${transactions.invoiceNumber}',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
                   ]),
+                  pw.SizedBox(height: 2),
+
+                  ///_________Sells By________________________________________________
+                  pw.Row(children: [
+                    pw.SizedBox(
+                      width: 50.0,
+                      child: pw.Text(
+                        'Vendido por',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 10.0,
+                      child: pw.Text(
+                        ':',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 125.0,
+                      child: pw.Text(
+                        transactions.sellerName ?? "Admin",
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                  ]),
+                  pw.SizedBox(height: 2),
+
+                  ///______Date__________________________________________________________
+                  pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                    pw.SizedBox(
+                      width: 50.0,
+                      child: pw.Text(
+                        'Fecha',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 10.0,
+                      child: pw.Text(
+                        ':',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.Container(
+                      width: 125.0,
+                      child: pw.Text(
+                        '${DateFormat.yMd().format(DateTime.parse(transactions.purchaseDate))}, ${DateFormat.jm().format(DateTime.parse(transactions.purchaseDate))}',
+                        // DateTimeFormat.format(DateTime.parse(transactions.purchaseDate), format: AmericanDateTimeFormats.),
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                  ]),
+                  pw.SizedBox(height: 2),
+
+                  ///______Status____________________________________________
+                  pw.Row(children: [
+                    pw.SizedBox(
+                      width: 50.0,
+                      child: pw.Text(
+                        'Estado',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 10.0,
+                      child: pw.Text(
+                        ':',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 125.0,
+                      child: pw.Text(
+                        transactions.isPaid! ? 'Pagado' : 'Pendiente',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ),
+                  ]),
+                ]),
+              ]),
             ],
           ),
         );
@@ -541,10 +475,8 @@ FutureOr<Uint8List> generateSaleDocument({
                 children: [
                   pw.Container(
                     alignment: pw.Alignment.centerRight,
-                    margin: const pw.EdgeInsets.only(
-                        bottom: 3.0 * PdfPageFormat.mm),
-                    padding: const pw.EdgeInsets.only(
-                        bottom: 3.0 * PdfPageFormat.mm),
+                    margin: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
+                    padding: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
                     child: pw.Column(children: [
                       pw.Container(
                         width: 120.0,
@@ -563,10 +495,8 @@ FutureOr<Uint8List> generateSaleDocument({
                   ),
                   pw.Container(
                     alignment: pw.Alignment.centerRight,
-                    margin: const pw.EdgeInsets.only(
-                        bottom: 3.0 * PdfPageFormat.mm),
-                    padding: const pw.EdgeInsets.only(
-                        bottom: 3.0 * PdfPageFormat.mm),
+                    margin: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
+                    padding: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
                     child: pw.Column(
                       children: [
                         pw.Container(
@@ -588,18 +518,14 @@ FutureOr<Uint8List> generateSaleDocument({
                 ],
               ),
             ),
-            pw.Text(
-                'Powered By ${generalSetting.companyName.isNotEmpty == true ? generalSetting.companyName : pdfFooter}',
-                style:
-                    const pw.TextStyle(fontSize: 10, color: PdfColors.black)),
+            pw.Text('Powered By ${generalSetting.companyName.isNotEmpty == true ? generalSetting.companyName : pdfFooter}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.black)),
             pw.SizedBox(height: 5),
           ],
         );
       },
       build: (pw.Context context) => <pw.Widget>[
         pw.Padding(
-          padding:
-              const pw.EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0),
+          padding: const pw.EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0),
           child: pw.Column(
             children: [
               ///___________Table__________________________________________________________
@@ -634,10 +560,7 @@ FutureOr<Uint8List> generateSaleDocument({
                   4: const pw.FlexColumnWidth(1.5),
                   5: const pw.FlexColumnWidth(1.5),
                 },
-                headerStyle: pw.TextStyle(
-                    color: PdfColors.black,
-                    fontSize: 11,
-                    fontWeight: pw.FontWeight.bold),
+                headerStyle: pw.TextStyle(color: PdfColors.black, fontSize: 11, fontWeight: pw.FontWeight.bold),
                 rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
                 // oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
                 headerAlignments: <int, pw.Alignment>{
@@ -657,14 +580,7 @@ FutureOr<Uint8List> generateSaleDocument({
                   5: pw.Alignment.centerRight,
                 },
                 data: <List<String>>[
-                  <String>[
-                    'N°',
-                    'Descripción del producto',
-                    'Cantidad',
-                    'Precio unitario',
-                    'Impuesto',
-                    'Precio total'
-                  ],
+                  <String>['N°', 'Descripción del producto', 'Cantidad', 'Precio unitario', 'Impuesto', 'Precio total'],
                   ...rows
                 ],
               ),
@@ -673,51 +589,46 @@ FutureOr<Uint8List> generateSaleDocument({
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                          "Método de Pago: ${transactions.paymentType}",
-                          style: const pw.TextStyle(
-                            color: PdfColors.black,
-                            fontSize: 11,
-                          ),
+                  pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                    pw.Text(
+                      "Método de Pago: ${transactions.paymentType}",
+                      style: const pw.TextStyle(
+                        color: PdfColors.black,
+                        fontSize: 11,
+                      ),
+                    ),
+                    pw.SizedBox(height: 10.0),
+                    pw.Container(
+                      width: 300,
+                      child: pw.Text(
+                        "En Palabras: ${amountToWordsEs(transactions.totalAmount!.toInt())}",
+                        maxLines: 3,
+                        style: pw.TextStyle(color: PdfColors.black, fontSize: 11, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ),
+                    pw.SizedBox(height: 10.0),
+                    // pw.Container(
+                    //   width: 300,
+                    //   child: pw.Text(
+                    //     "Lugar: ${place ?? 'Sin lugar'}",
+                    //     style: pw.TextStyle(
+                    //       color: PdfColors.black,
+                    //       fontSize: 11,
+                    //     ),
+                    //   ),
+                    // ),
+                    // pw.SizedBox(height: 10.0),
+                    pw.Container(
+                      width: 300,
+                      child: pw.Text(
+                        "Notas: ${notas.isEmpty ? 'Sin notas' : notas.join(', ')}",
+                        style: pw.TextStyle(
+                          color: PdfColors.black,
+                          fontSize: 11,
                         ),
-                        pw.SizedBox(height: 10.0),
-                        pw.Container(
-                          width: 300,
-                          child: pw.Text(
-                            "En Palabras: ${amountToWordsEs(transactions.totalAmount!.toInt())}",
-                            maxLines: 3,
-                            style: pw.TextStyle(
-                                color: PdfColors.black,
-                                fontSize: 11,
-                                fontWeight: pw.FontWeight.bold),
-                          ),
-                        ),
-                        pw.SizedBox(height: 10.0),
-                        pw.Container(
-                          width: 300,
-                          child: pw.Text(
-                            "Lugar: ${place ?? 'Sin lugar'}",
-                            style: pw.TextStyle(
-                              color: PdfColors.black,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        pw.SizedBox(height: 10.0),
-                        pw.Container(
-                          width: 300,
-                          child: pw.Text(
-                            "Notas: ${notas.isEmpty ? 'Sin notas' : notas.join(', ')}",
-                            style: pw.TextStyle(
-                              color: PdfColors.black,
-                              fontSize: 11,
-                            ),
-                          ),
-                        )
-                      ]),
+                      ),
+                    )
+                  ]),
                   pw.SizedBox(
                     width: 250.0,
                     child: pw.Column(
@@ -731,9 +642,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 100.0,
                               child: pw.Text(
                                 'Total',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -743,13 +652,8 @@ FutureOr<Uint8List> generateSaleDocument({
                               alignment: pw.Alignment.centerRight,
                               width: 150.0,
                               child: pw.Text(
-                                myFormat.format(double.tryParse(
-                                        totalAmount(transactions: transactions)
-                                            .toString()) ??
-                                    0),
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                myFormat.format(double.tryParse(totalAmount(transactions: transactions).toString()) ?? 0),
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -760,21 +664,14 @@ FutureOr<Uint8List> generateSaleDocument({
 
                           ///________vat_______________________________________________
                           pw.ListView.builder(
-                            itemCount: getAllTaxFromCartList(
-                                    cart: transactions.productList ?? [])
-                                .length,
+                            itemCount: getAllTaxFromCartList(cart: transactions.productList ?? []).length,
                             itemBuilder: (context, index) {
                               return pw.Row(children: [
                                 pw.SizedBox(
                                   width: 100.0,
                                   child: pw.Text(
-                                    getAllTaxFromCartList(
-                                            cart: transactions.productList ??
-                                                [])[index]
-                                        .name,
-                                    style: pw.Theme.of(context)
-                                        .defaultTextStyle
-                                        .copyWith(
+                                    getAllTaxFromCartList(cart: transactions.productList ?? [])[index].name,
+                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                           color: PdfColors.black,
                                           fontSize: 11,
                                         ),
@@ -785,9 +682,7 @@ FutureOr<Uint8List> generateSaleDocument({
                                   width: 150.0,
                                   child: pw.Text(
                                     '${getAllTaxFromCartList(cart: transactions.productList ?? [])[index].taxRate}%',
-                                    style: pw.Theme.of(context)
-                                        .defaultTextStyle
-                                        .copyWith(
+                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                           color: PdfColors.black,
                                           fontSize: 11,
                                         ),
@@ -805,9 +700,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 100.0,
                               child: pw.Text(
                                 "Envío/Servicios",
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -817,13 +710,8 @@ FutureOr<Uint8List> generateSaleDocument({
                               alignment: pw.Alignment.centerRight,
                               width: 150.0,
                               child: pw.Text(
-                                myFormat.format(double.tryParse(transactions
-                                        .serviceCharge
-                                        .toString()) ??
-                                    0),
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                myFormat.format(double.tryParse(transactions.serviceCharge.toString()) ?? 0),
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -833,10 +721,7 @@ FutureOr<Uint8List> generateSaleDocument({
                           pw.SizedBox(height: 2),
 
                           ///_________divider__________________________________________
-                          pw.Divider(
-                              thickness: .5,
-                              height: 0.5,
-                              color: PdfColors.black),
+                          pw.Divider(thickness: .5, height: 0.5, color: PdfColors.black),
                           pw.SizedBox(height: 2),
 
                           ///________Sub Total Amount_______________________________________________
@@ -845,9 +730,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 100.0,
                               child: pw.Text(
                                 'Sub-Total',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -857,18 +740,8 @@ FutureOr<Uint8List> generateSaleDocument({
                               alignment: pw.Alignment.centerRight,
                               width: 150.0,
                               child: pw.Text(
-                                myFormat.format(double.tryParse(
-                                        (transactions.vat!.toDouble() +
-                                                transactions
-                                                    .serviceCharge!
-                                                    .toDouble() +
-                                                totalAmount(
-                                                    transactions: transactions))
-                                            .toString()) ??
-                                    0),
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                myFormat.format(double.tryParse((transactions.vat!.toDouble() + transactions.serviceCharge!.toDouble() + totalAmount(transactions: transactions)).toString()) ?? 0),
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -883,9 +756,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 100.0,
                               child: pw.Text(
                                 'Descuento',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -896,9 +767,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 150.0,
                               child: pw.Text(
                                 '- ${myFormat.format(double.tryParse(transactions.discountAmount.toString()) ?? 0)}',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -908,10 +777,7 @@ FutureOr<Uint8List> generateSaleDocument({
                           pw.SizedBox(height: 2),
 
                           ///_________divider__________________________________________
-                          pw.Divider(
-                              thickness: .5,
-                              height: 0.5,
-                              color: PdfColors.black),
+                          pw.Divider(thickness: .5, height: 0.5, color: PdfColors.black),
                           pw.SizedBox(height: 2),
 
                           ///________payable_Amount_______________________________________________
@@ -920,27 +786,15 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 150.0,
                               child: pw.Text(
                                 'Monto Neto a Pagar',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
-                                        color: PdfColors.black,
-                                        fontSize: 11,
-                                        fontWeight: pw.FontWeight.bold),
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 11, fontWeight: pw.FontWeight.bold),
                               ),
                             ),
                             pw.Container(
                               alignment: pw.Alignment.centerRight,
                               width: 100.0,
                               child: pw.Text(
-                                myFormat.format(double.tryParse(
-                                        transactions.totalAmount.toString()) ??
-                                    0),
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
-                                        color: PdfColors.black,
-                                        fontSize: 11,
-                                        fontWeight: pw.FontWeight.bold),
+                                myFormat.format(double.tryParse(transactions.totalAmount.toString()) ?? 0),
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 11, fontWeight: pw.FontWeight.bold),
                               ),
                             ),
                           ]),
@@ -952,9 +806,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 100.0,
                               child: pw.Text(
                                 'Monto Recibido',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -964,13 +816,8 @@ FutureOr<Uint8List> generateSaleDocument({
                               alignment: pw.Alignment.centerRight,
                               width: 150.0,
                               child: pw.Text(
-                                myFormat.format(double.tryParse(
-                                    (transactions.totalAmount! -
-                                            transactions.dueAmount!)
-                                        .toString())),
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                myFormat.format(double.tryParse((transactions.totalAmount! - transactions.dueAmount!).toString())),
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -980,10 +827,7 @@ FutureOr<Uint8List> generateSaleDocument({
                           pw.SizedBox(height: 2),
 
                           ///_________divider__________________________________________
-                          pw.Divider(
-                              thickness: .5,
-                              height: 0.5,
-                              color: PdfColors.black),
+                          pw.Divider(thickness: .5, height: 0.5, color: PdfColors.black),
                           pw.SizedBox(height: 2),
 
                           ///________Received_Amount_______________________________________________
@@ -992,9 +836,7 @@ FutureOr<Uint8List> generateSaleDocument({
                               width: 100.0,
                               child: pw.Text(
                                 'Monto Pendiente',
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -1011,12 +853,8 @@ FutureOr<Uint8List> generateSaleDocument({
                               alignment: pw.Alignment.centerRight,
                               width: 150.0,
                               child: pw.Text(
-                                myFormat.format(double.tryParse(
-                                        transactions.dueAmount!.toString()) ??
-                                    0),
-                                style: pw.Theme.of(context)
-                                    .defaultTextStyle
-                                    .copyWith(
+                                myFormat.format(double.tryParse(transactions.dueAmount!.toString()) ?? 0),
+                                style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,
                                     ),
@@ -1062,8 +900,7 @@ Future<Uint8List> generateThermalDocument({
   }));
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero
-  final List<FullReservation?> reservaciones = await Future.wait(idReservaciones
-      .map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
+  final List<FullReservation?> reservaciones = await Future.wait(idReservaciones.map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
 
   // Configuración para impresora térmica (80mm de ancho)
   const pageWidth = 80 * PdfPageFormat.mm;
@@ -1071,8 +908,7 @@ Future<Uint8List> generateThermalDocument({
 
   pdf.addPage(
     pw.Page(
-      pageFormat:
-          PdfPageFormat(pageWidth, pageHeight, marginAll: 2 * PdfPageFormat.mm),
+      pageFormat: PdfPageFormat(pageWidth, pageHeight, marginAll: 2 * PdfPageFormat.mm),
       build: (pw.Context context) {
         return pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1125,23 +961,17 @@ Future<Uint8List> generateThermalDocument({
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('No:',
-                    style: pw.TextStyle(
-                        fontSize: 8, fontWeight: pw.FontWeight.bold)),
-                pw.Text('#${transactions.invoiceNumber}',
-                    style: pw.TextStyle(fontSize: 8)),
+                pw.Text('No:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text('#${transactions.invoiceNumber}', style: pw.TextStyle(fontSize: 8)),
               ],
             ),
             pw.SizedBox(height: 2),
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Fecha:',
-                    style: pw.TextStyle(
-                        fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Fecha:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 pw.Text(
-                  DateFormat('dd/MM/yy HH:mm')
-                      .format(DateTime.parse(transactions.purchaseDate)),
+                  DateFormat('dd/MM/yy HH:mm').format(DateTime.parse(transactions.purchaseDate)),
                   style: pw.TextStyle(fontSize: 8),
                 ),
               ],
@@ -1150,9 +980,7 @@ Future<Uint8List> generateThermalDocument({
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Cliente:',
-                    style: pw.TextStyle(
-                        fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Cliente:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 pw.Text(
                   post?.customerName ?? '',
                   // Fallback to an empty string if customerName is null
@@ -1165,11 +993,8 @@ Future<Uint8List> generateThermalDocument({
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Teléfono:',
-                      style: pw.TextStyle(
-                          fontSize: 8, fontWeight: pw.FontWeight.bold)),
-                  pw.Text(transactions.customerPhone,
-                      style: pw.TextStyle(fontSize: 8)),
+                  pw.Text('Teléfono:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(transactions.customerPhone, style: pw.TextStyle(fontSize: 8)),
                 ],
               ),
             ],
@@ -1187,8 +1012,7 @@ Future<Uint8List> generateThermalDocument({
                 ),
               ),
               pw.SizedBox(height: 5),
-              for (final reservacion in reservaciones.where((r) => r != null))
-                _buildReservationSection(reservacion!),
+              for (final reservacion in reservaciones.where((r) => r != null)) _buildReservationSection(reservacion!),
               pw.Divider(thickness: 0.5),
               pw.SizedBox(height: 5),
             ],
@@ -1198,22 +1022,15 @@ Future<Uint8List> generateThermalDocument({
               children: [
                 pw.SizedBox(
                   width: 13,
-                  child: pw.Text('Nº ',
-                      style: pw.TextStyle(
-                          fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  child: pw.Text('Nº ', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 ),
                 pw.Expanded(
                   flex: 2,
-                  child: pw.Text('Descripción',
-                      style: pw.TextStyle(
-                          fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  child: pw.Text('Descripción', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 ),
                 pw.SizedBox(
                   width: 30,
-                  child: pw.Text('Total',
-                      textAlign: pw.TextAlign.right,
-                      style: pw.TextStyle(
-                          fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                  child: pw.Text('Total', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
                 ),
               ],
             ),
@@ -1221,10 +1038,8 @@ Future<Uint8List> generateThermalDocument({
             pw.Divider(thickness: 0.2),
 
             ...transactions.productList!.map((item) {
-              final fullReservation =
-                  ref.read(fullReservationByIdProviderVQ(item.productId)).value;
-              final serviceDescription =
-                  fullReservation?.service?['description'] ?? '';
+              final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+              final serviceDescription = fullReservation?.service?['description'] ?? '';
 
               return pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 3),
@@ -1256,8 +1071,7 @@ Future<Uint8List> generateThermalDocument({
                     pw.SizedBox(
                       width: 40,
                       child: pw.Text(
-                        formatCurrency(
-                            double.parse(item.subTotal) * item.quantity),
+                        formatCurrency(double.parse(item.subTotal) * item.quantity),
                         style: pw.TextStyle(fontSize: 6),
                         textAlign: pw.TextAlign.right,
                       ),
@@ -1275,9 +1089,7 @@ Future<Uint8List> generateThermalDocument({
               children: [
                 pw.Text('Subtotal:', style: pw.TextStyle(fontSize: 8)),
                 pw.Text(
-                  formatCurrency(transactions.totalAmount! -
-                      transactions.vat! -
-                      transactions.serviceCharge!),
+                  formatCurrency(transactions.totalAmount! - transactions.vat! - transactions.serviceCharge!),
                   style: pw.TextStyle(fontSize: 8),
                 ),
               ],
@@ -1289,8 +1101,7 @@ Future<Uint8List> generateThermalDocument({
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('IVA:', style: pw.TextStyle(fontSize: 8)),
-                  pw.Text(formatCurrency(transactions.vat!),
-                      style: pw.TextStyle(fontSize: 8)),
+                  pw.Text(formatCurrency(transactions.vat!), style: pw.TextStyle(fontSize: 8)),
                 ],
               ),
             ],
@@ -1301,8 +1112,7 @@ Future<Uint8List> generateThermalDocument({
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('Servicio:', style: pw.TextStyle(fontSize: 8)),
-                  pw.Text(formatCurrency(transactions.serviceCharge!),
-                      style: pw.TextStyle(fontSize: 8)),
+                  pw.Text(formatCurrency(transactions.serviceCharge!), style: pw.TextStyle(fontSize: 8)),
                 ],
               ),
             ],
@@ -1313,8 +1123,7 @@ Future<Uint8List> generateThermalDocument({
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('Descuento:', style: pw.TextStyle(fontSize: 8)),
-                  pw.Text('-${formatCurrency(transactions.discountAmount!)}',
-                      style: pw.TextStyle(fontSize: 8)),
+                  pw.Text('-${formatCurrency(transactions.discountAmount!)}', style: pw.TextStyle(fontSize: 8)),
                 ],
               ),
             ],
@@ -1323,13 +1132,10 @@ Future<Uint8List> generateThermalDocument({
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('TOTAL:',
-                    style: pw.TextStyle(
-                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                pw.Text('TOTAL:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                 pw.Text(
                   formatCurrency(transactions.totalAmount!),
-                  style:
-                      pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
                 ),
               ],
             ),
@@ -1340,8 +1146,7 @@ Future<Uint8List> generateThermalDocument({
               children: [
                 pw.Text('Pagado:', style: pw.TextStyle(fontSize: 8)),
                 pw.Text(
-                  formatCurrency(
-                      transactions.totalAmount! - transactions.dueAmount!),
+                  formatCurrency(transactions.totalAmount! - transactions.dueAmount!),
                   style: pw.TextStyle(fontSize: 8),
                 ),
               ],
@@ -1353,8 +1158,7 @@ Future<Uint8List> generateThermalDocument({
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('Pendiente:', style: pw.TextStyle(fontSize: 8)),
-                  pw.Text(formatCurrency(transactions.dueAmount!),
-                      style: pw.TextStyle(fontSize: 8)),
+                  pw.Text(formatCurrency(transactions.dueAmount!), style: pw.TextStyle(fontSize: 8)),
                 ],
               ),
             ],
@@ -1364,8 +1168,7 @@ Future<Uint8List> generateThermalDocument({
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text('Método:', style: pw.TextStyle(fontSize: 8)),
-                pw.Text(transactions.paymentType ?? '',
-                    style: pw.TextStyle(fontSize: 8)),
+                pw.Text(transactions.paymentType ?? '', style: pw.TextStyle(fontSize: 8)),
               ],
             ),
 
@@ -1376,8 +1179,7 @@ Future<Uint8List> generateThermalDocument({
             pw.Center(
               child: pw.Text(
                 '¡Gracias por su compra!',
-                style:
-                    pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
               ),
             ),
 
@@ -1385,9 +1187,7 @@ Future<Uint8List> generateThermalDocument({
             pw.SizedBox(height: 5),
             pw.Center(
               child: pw.Text(
-                generalSetting.companyName.isNotEmpty
-                    ? generalSetting.companyName
-                    : 'Powered by YourAppName',
+                generalSetting.companyName.isNotEmpty ? generalSetting.companyName : 'Powered by YourAppName',
                 style: pw.TextStyle(fontSize: 7),
               ),
             ),
@@ -1415,10 +1215,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
     final multipleDress = reservacion.reservation['multiple_dress'] as List;
     // Filtrar los nombres de los vestidos
     if (multipleDress.isNotEmpty) {
-      nombresVestidos = multipleDress
-          .map((e) => e['dress_name'] ?? '')
-          .where((name) => name.isNotEmpty)
-          .join('\n');
+      nombresVestidos = multipleDress.map((e) => e['dress_name'] ?? '').where((name) => name.isNotEmpty).join('\n');
     }
   }
 
@@ -1429,13 +1226,11 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
       pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('Fecha:',
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+          pw.Text('Fecha:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
           pw.Text(
             DateFormat('dd/MM/yy HH:mm').format(
               DateTime.fromMillisecondsSinceEpoch(
-                reservacion.reservation['created_at'] ??
-                    DateTime.now().millisecondsSinceEpoch,
+                reservacion.reservation['created_at'] ?? DateTime.now().millisecondsSinceEpoch,
               ),
             ),
             style: pw.TextStyle(fontSize: 8),
@@ -1447,9 +1242,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
         pw.Column(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('Vestimenta:',
-                style:
-                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            pw.Text('Vestimenta:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.Text(
               nombresVestidos,
               style: pw.TextStyle(fontSize: 8),
@@ -1462,9 +1255,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('Vestido:',
-                style:
-                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            pw.Text('Vestido:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.Text(
               () {
                 final name = reservacion.dress?['name']?.toString();
@@ -1481,13 +1272,9 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('Servicio:',
-                style:
-                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            pw.Text('Servicio:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.Text(
-              (reservacion.service?['name']?.toString() ?? '').isEmpty
-                  ? ''
-                  : reservacion.service!['name']!.toString(),
+              (reservacion.service?['name']?.toString() ?? '').isEmpty ? '' : reservacion.service!['name']!.toString(),
               style: pw.TextStyle(fontSize: 8),
               softWrap: true,
             ),
@@ -1498,24 +1285,19 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
       pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('Estado:',
-              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+          pw.Text('Estado:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
           pw.Text(
-            reservacion.reservation['estado']?.toString().toUpperCase() ??
-                'Confirmado',
+            reservacion.reservation['estado']?.toString().toUpperCase() ?? 'Confirmado',
             style: pw.TextStyle(fontSize: 8),
           ),
         ],
       ),
-      if (reservacion.reservation['place'] != null &&
-          reservacion.reservation['place'].toString().isNotEmpty) ...[
+      if (reservacion.reservation['place'] != null && reservacion.reservation['place'].toString().isNotEmpty) ...[
         pw.SizedBox(height: 2),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('Notas:',
-                style:
-                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            pw.Text('Notas:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(width: 5),
             pw.Text(
               reservacion.reservation['place'].toString(),
@@ -1525,15 +1307,12 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           ],
         ),
       ],
-      if (reservacion.reservation['nota'] != null &&
-          reservacion.reservation['nota'].toString().isNotEmpty) ...[
+      if (reservacion.reservation['nota'] != null && reservacion.reservation['nota'].toString().isNotEmpty) ...[
         pw.SizedBox(height: 2),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('Notas:',
-                style:
-                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            pw.Text('Notas:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(width: 5),
             pw.Text(
               reservacion.reservation['nota'].toString(),
@@ -1549,8 +1328,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
   );
 }
 
-String formatCurrency(double amount,
-    {String symbol = '\$', bool useCommas = true}) {
+String formatCurrency(double amount, {String symbol = '\$', bool useCommas = true}) {
   final formattedAmount = amount.toStringAsFixed(2);
 
   if (useCommas) {
@@ -1562,15 +1340,12 @@ String formatCurrency(double amount,
   return '$symbol$formattedAmount';
 }
 
-String formatProductName(String? productName,
-    {int maxLength = 20, String defaultText = 'Producto'}) {
+String formatProductName(String? productName, {int maxLength = 20, String defaultText = 'Producto'}) {
   if (productName == null || productName.isEmpty) {
     return defaultText;
   }
 
-  return productName.length > maxLength
-      ? '${productName.substring(0, maxLength)}...'
-      : productName;
+  return productName.length > maxLength ? '${productName.substring(0, maxLength)}...' : productName;
 }
 
 /// Función auxiliar para agregar separadores de miles
@@ -1593,8 +1368,7 @@ String _addThousandSeparators(String number) {
 /// formatDate(DateTime.now())  // Retorna: 31/12/2023 23:59
 /// ```
 String formatDate(DateTime date, {bool includeSeconds = false}) {
-  final formatPattern =
-      includeSeconds ? 'dd/MM/yyyy HH:mm:ss' : 'dd/MM/yyyy HH:mm';
+  final formatPattern = includeSeconds ? 'dd/MM/yyyy HH:mm:ss' : 'dd/MM/yyyy HH:mm';
   return DateFormat(formatPattern).format(date);
 }
 
@@ -1617,8 +1391,7 @@ String formatDateTime(
   String separator = ' ',
 }) {
   final datePart = includeDate ? formatShortDate(date) : '';
-  final timePart =
-      includeTime ? formatTime(date, includeSeconds: includeSeconds) : '';
+  final timePart = includeTime ? formatTime(date, includeSeconds: includeSeconds) : '';
 
   return [datePart, timePart].where((part) => part.isNotEmpty).join(separator);
 }
@@ -1638,9 +1411,7 @@ String _formatearFechaYHora(String? fecha, String? hora) {
   try {
     final date = DateTime.parse(fecha);
     final fechaFormateada = DateFormat('dd/MM/yyyy').format(date);
-    return hora != null && hora.isNotEmpty
-        ? '$fechaFormateada $hora'
-        : fechaFormateada;
+    return hora != null && hora.isNotEmpty ? '$fechaFormateada $hora' : fechaFormateada;
   } catch (e) {
     return '-';
   }
