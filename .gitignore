@@ -23,3 +23,5 @@ Thumbs.db
 *.log
 *.tmp
 
+.flutter-plugins-dependencies
+android/local.properties
