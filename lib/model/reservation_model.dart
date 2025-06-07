@@ -8,6 +8,7 @@ class ReservationModel {
   final String reservationTime;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool estadoFactura;
   final String? estado;
   final String? nota;
   final String? place;
@@ -26,6 +27,7 @@ class ReservationModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     required this.multipleDress,
+    required this.estadoFactura,
     this.estado = "pendiente",
     required this.reservation_associated,
     required this.package_price,
@@ -47,6 +49,7 @@ class ReservationModel {
       reservationTime: map['reservation_time'] ?? '',
       createdAt: _parseTimestamp(map['created_at']),
       updatedAt: _parseTimestamp(map['updated_at']),
+      estadoFactura: map['estado_factura'],
       estado: map['estado'],
       nota: map['nota'] ?? '',
       place: map['place'] ?? '',
@@ -90,6 +93,7 @@ class ReservationModel {
       'reservation_time': reservationTime,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
+      'estado_factura': estadoFactura,
       'estado': estado,
       'nota': nota,
       'place': place,

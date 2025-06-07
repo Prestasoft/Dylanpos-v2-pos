@@ -46,6 +46,30 @@ final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
   });
 });
 
+final reservationsFutureProvider =
+    FutureProvider<List<ReservationModel>>((ref) async {
+  final snapshot =
+      await FirebaseDatabase.instance.ref('Admin Panel/reservations').get();
+
+  if (snapshot.value == null) return [];
+
+  if (snapshot.value is Map) {
+    final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+
+    return data.entries.where((entry) {
+      final value = entry.value as Map;
+      return value['estado_factura'] == false && value['estado'] != 'cancelado';
+    }).map((entry) {
+      return ReservationModel.fromMap(
+        Map<String, dynamic>.from(entry.value as Map),
+        entry.key.toString(),
+      );
+    }).toList();
+  }
+
+  return <ReservationModel>[];
+});
+
 // Helper function to check if a map represents a valid reservation
 bool _isValidReservation(Map<dynamic, dynamic> map) {
   // Check if essential fields exist and are not empty strings
@@ -87,6 +111,7 @@ final ActualizarEstadoReservaProvider =
     final List<String> reservationIds = List<String>.from(params['id']);
     final String newEstado = params['estado'];
     final updateData = <String, dynamic>{
+      'estado_factura': params['estado_factura'],
       'estado': newEstado,
       'updated_at': ServerValue.timestamp,
     };
@@ -1088,6 +1113,7 @@ final crearReservaProvider =
       'reservation_time': params['time'],
       'created_at': ServerValue.timestamp,
       'updated_at': ServerValue.timestamp,
+      'estado_factura': params['estado_factura'],
       'estado': 'pendiente',
       'nota': params['note'],
       'place': params['place'],

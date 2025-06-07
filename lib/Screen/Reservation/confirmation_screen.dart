@@ -58,13 +58,12 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     final String formattedDate = _formatDate(widget.selectedDate);
     final String formattedTime = _formatTime(widget.selectedTime);
 
-     double packagePrice = 0.0;
+    double packagePrice = 0.0;
 
     final packages = ref.watch(servicePackagesProvider);
     if (packages.hasValue) {
       final package = packages.value!.firstWhere(
         (p) => p.id == widget.packageId,
-        
       );
       if (package != null) {
         packagePrice = package.price;
@@ -117,7 +116,8 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
+          content: Text(
+              "Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
           backgroundColor: Colors.red,
         ),
       );
@@ -153,6 +153,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       'date': formattedDate,
       'time': formattedTime,
       'multiple_dress': multipleDress,
+      'estado_factura': false,
       'note': noteController.text,
       'reservation_associated': '',
       'package_price': packagePrice.toString(),
@@ -185,8 +186,8 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                 if (mounted) {
                   // Actualiza el estado del menú lateral
                   // ref.read(sidebarProvider.notifier)
-                    // ..expandMenu('/reservations') // Expande el menú de Ventas
-                    // ..selectItem('/reservations/rent-clothes'); // Selecciona el ítem
+                  // ..expandMenu('/reservations') // Expande el menú de Ventas
+                  // ..selectItem('/reservations/rent-clothes'); // Selecciona el ítem
 
                   // Navega a la pantalla
                   Navigator.of(context).popUntil((route) => route.isFirst);
@@ -195,13 +196,11 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                   final customerList = ref.watch(allCustomerProvider);
                   String clientName = "";
                   if (customerList.hasValue) {
-                    
                     List<CustomerModel> customersList = customerList.value!
-                      .where((c) => c.type != 'Supplier')
-                      .toList();
-                    final client = customersList.firstWhere(
-                      (c) => c.phoneNumber == widget.clientId
-                    );
+                        .where((c) => c.type != 'Supplier')
+                        .toList();
+                    final client = customersList
+                        .firstWhere((c) => c.phoneNumber == widget.clientId);
 
                     clientName = client.customerName;
                   }
@@ -226,18 +225,18 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                 // Navigate to the POS sales screen
                 if (mounted) {
                   // Actualiza el estado del menú lateral
-                  Navigator.of(context).pop(); // Cierra el diálogo de confirmación
-                  
+                  Navigator.of(context)
+                      .pop(); // Cierra el diálogo de confirmación
+
                   ref.read(sidebarProvider.notifier)
                     ..expandMenu('/reservations') // Expande el menú de Ventas
-                    ..selectItem('/reservations/calendario'); // Selecciona el ítem
+                    ..selectItem(
+                        '/reservations/calendario'); // Selecciona el ítem
 
                   // Navega a la pantalla
                   Navigator.of(context).popUntil((route) => route.isFirst);
                   context.go('/reservations/calendario');
                 }
-
-                
               },
               child: const Text('No'),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -248,7 +247,8 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error al crear la reserva. Por favor intenta de nuevo."),
+          content:
+              Text("Error al crear la reserva. Por favor intenta de nuevo."),
           backgroundColor: Colors.red,
         ),
       );
@@ -257,60 +257,60 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text("Confirmar Reserva"),
-    ),
-    body: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Resumen de tu Reserva",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 24),
-            _buildInfoItem(Icons.camera_alt, "Paquete", widget.packageName),
-            SizedBox(height: 16),
-            _showDressesOption(Icons.content_cut),
-            SizedBox(height: 16),
-            _buildInfoItem(
-              Icons.calendar_today,
-              "Fecha",
-              "${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}",
-            ),
-            SizedBox(height: 16),
-            _buildInfoItem(
-              Icons.access_time,
-              "Hora",
-              widget.selectedTime.format(context),
-            ),
-            SizedBox(height: 16),
-            _buildNote(Icons.textsms_outlined, "Nota"),
-            _buildPlace(Icons.place, "Lugar"),
-            SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.green,
-                ),
-                onPressed: isSubmitting ? null : _confirmReservation,
-                child: isSubmitting
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text("Confirmar Reserva", style: TextStyle(fontSize: 18)),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Confirmar Reserva"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Resumen de tu Reserva",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+              SizedBox(height: 24),
+              _buildInfoItem(Icons.camera_alt, "Paquete", widget.packageName),
+              SizedBox(height: 16),
+              _showDressesOption(Icons.content_cut),
+              SizedBox(height: 16),
+              _buildInfoItem(
+                Icons.calendar_today,
+                "Fecha",
+                "${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}",
+              ),
+              SizedBox(height: 16),
+              _buildInfoItem(
+                Icons.access_time,
+                "Hora",
+                widget.selectedTime.format(context),
+              ),
+              SizedBox(height: 16),
+              _buildNote(Icons.textsms_outlined, "Nota"),
+              _buildPlace(Icons.place, "Lugar"),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.green,
+                  ),
+                  onPressed: isSubmitting ? null : _confirmReservation,
+                  child: isSubmitting
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text("Confirmar Reserva",
+                          style: TextStyle(fontSize: 18)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Card _buildNote(IconData icon, String title) {
     return Card(
@@ -435,7 +435,10 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
     } else if (widget.dressReservations.isNotEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: widget.dressReservations.map((dress) => _buildInfoItem(icon, dress.componentName, dress.name)).toList(),
+        children: widget.dressReservations
+            .map((dress) =>
+                _buildInfoItem(icon, dress.componentName, dress.name))
+            .toList(),
       );
     } else {
       return Text(

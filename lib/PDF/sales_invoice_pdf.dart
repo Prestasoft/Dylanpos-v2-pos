@@ -35,6 +35,7 @@ FutureOr<Uint8List> generateSaleDocument({
   await ref.read(ActualizarEstadoReservaProvider({
     'id': idReservaciones,
     'estado': 'confirmado',
+    'estado_factura': true,
   }));
   //print("TRANSACCTION === ${transactions.key}");
   // Obtener la lista de IDs de reservaciones
@@ -1057,6 +1058,7 @@ Future<Uint8List> generateThermalDocument({
   await ref.read(ActualizarEstadoReservaProvider({
     'id': idReservaciones,
     'estado': 'confirmado',
+    'estado_factura': true,
   }));
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero

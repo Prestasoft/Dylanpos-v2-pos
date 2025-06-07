@@ -35,6 +35,7 @@ import '../../model/add_to_cart_model.dart';
 import '../../model/customer_model.dart';
 import '../../model/daily_transaction_model.dart';
 import '../../model/product_model.dart';
+import '../../model/reservation_model.dart';
 import '../../model/sale_transaction_model.dart';
 import '../../subscription.dart';
 import '../Product/WarebasedProduct.dart';
@@ -733,18 +734,40 @@ class _InventorySalesState extends State<InventorySales> {
 
 // Implementation of the search dialog with a modern look
   Future<CustomerModel?> _showCustomerSearchDialog(
-      BuildContext context, List<CustomerModel> customers) async {
+    BuildContext context,
+    List<CustomerModel> customers,
+    List<ReservationModel> reservations,
+  ) async {
     TextEditingController searchController = TextEditingController();
     List<CustomerModel> filteredCustomers = List.from(customers);
+    bool switchValue = false;
 
     return showDialog<CustomerModel>(
       context: context,
       builder: (BuildContext context) {
         // Obtenemos el tamaño de la pantalla
         final screenSize = MediaQuery.of(context).size;
-
         return StatefulBuilder(
           builder: (context, setState) {
+            // Lógica de filtrado dinámica dentro del builder
+            filteredCustomers = customers.where((customer) {
+              final matchesSearch = searchController.text.isEmpty ||
+                  customer.customerName
+                      .toLowerCase()
+                      .contains(searchController.text.toLowerCase()) ||
+                  customer.phoneNumber
+                      .toLowerCase()
+                      .contains(searchController.text.toLowerCase());
+
+              final hasReservation = reservations.any(
+                (res) => res.clientId == customer.phoneNumber,
+              );
+
+              return matchesSearch &&
+                  (!switchValue ||
+                      hasReservation); // si el switch está activo, filtra
+            }).toList();
+
             return Dialog(
               // Limitamos el ancho del diálogo
               insetPadding: EdgeInsets.symmetric(
@@ -814,16 +837,24 @@ class _InventorySalesState extends State<InventorySales> {
                         isDense: true,
                       ),
                       onChanged: (value) {
-                        setState(() {
-                          filteredCustomers = customers
-                              .where((customer) => customer.customerName
-                                  .toLowerCase()
-                                  .contains(value.toLowerCase()))
-                              .toList();
-                        });
+                        setState(() {});
                       },
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      title: Text(
+                        "Clientes con reservas pendientes",
+                        //style: TextStyle(fontSize: 10),
+                      ),
+                      value: switchValue,
+                      onChanged: (value) {
+                        setState(() {
+                          switchValue = value;
+                        });
+                      },
+                      activeColor: kMainColor,
+                    ),
+                    const SizedBox(height: 8),
                     ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.35,
@@ -1082,10 +1113,13 @@ class _InventorySalesState extends State<InventorySales> {
                         ),
                         const SizedBox(height: 5.0),
                         const Divider(thickness: 1.0, color: kNeutral300),
-                        ElevatedButton(
-                          onPressed: () =>
-                              showReservationSelection(selectedUserId!),
-                          child: Text('Agregar Reserva'),
+                        Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: ElevatedButton(
+                            onPressed: () =>
+                                showReservationSelection(selectedUserId!),
+                            child: Text('Agregar Reserva'),
+                          ),
                         ),
                         ResponsiveGridRow(rowSegments: 120, children: [
                           ResponsiveGridCol(
@@ -1137,9 +1171,18 @@ class _InventorySalesState extends State<InventorySales> {
                                       data: (customerList) {
                                         return GestureDetector(
                                           onTap: () async {
+                                            ref.invalidate(
+                                                reservationsFutureProvider);
+                                            final reservations = await ref.read(
+                                                reservationsFutureProvider
+                                                    .future);
                                             CustomerModel? selectedCustomer =
                                                 await _showCustomerSearchDialog(
-                                                    context, customerList);
+                                              context,
+                                              customerList,
+                                              reservations,
+                                            );
+
                                             if (selectedCustomer != null) {
                                               setState(() {
                                                 clientename = selectedCustomer
@@ -1170,23 +1213,16 @@ class _InventorySalesState extends State<InventorySales> {
                                             }
                                           },
                                           child: Container(
+                                            margin: const EdgeInsets.all(10.0),
                                             decoration: BoxDecoration(
                                               borderRadius:
-                                                  BorderRadius.circular(8),
+                                                  BorderRadius.circular(6),
                                               border: Border.all(
                                                   color: Colors.grey.shade300),
                                               color: Colors.white,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(0.05),
-                                                  blurRadius: 5,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
                                             ),
                                             padding: const EdgeInsets.symmetric(
-                                                horizontal: 16, vertical: 12),
+                                                horizontal: 16, vertical: 11),
                                             child: Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment
@@ -1555,11 +1591,11 @@ class _InventorySalesState extends State<InventorySales> {
                                 scrollDirection: Axis.horizontal,
                                 controller: horizontalScroll,
                                 child: Container(
-                                  height:
-                                      MediaQuery.of(context).size.height < 720
-                                          ? 720 - 410
-                                          : MediaQuery.of(context).size.height -
-                                              410,
+                                  // height:
+                                  //     MediaQuery.of(context).size.height < 720
+                                  //         ? 720 - 410
+                                  //         : MediaQuery.of(context).size.height -
+                                  //             410,
                                   constraints: BoxConstraints(
                                     minWidth: kWidth,
                                   ),
