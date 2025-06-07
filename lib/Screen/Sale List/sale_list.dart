@@ -745,13 +745,14 @@ class _SaleListState extends State<SaleList> {
                                                                                 status: 'Sale',
                                                                                 field: "saleTransactionModel");
 
-
                                                                             // Cancel reservation if exists
                                                                             final reservationId = (showAbleSaleTransactions[index].reservationIds.isNotEmpty)
                                                                                 ? showAbleSaleTransactions[index].reservationIds.first
                                                                                 : '';
 
-                                                                            await consuearRef.read(cancelReservationProvider(reservationId).future);
+                                                                            if (reservationId.isNotEmpty) {
+                                                                              await consuearRef.read(cancelReservationProvider(reservationId).future);
+                                                                            }
 
                                                                             // Actualizar estado de la reserva a cancelada
                                                                             // bool status_reserva = await consuearRef.read(ActualizarEstadoReservaProvider({
