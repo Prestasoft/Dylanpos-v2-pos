@@ -59,14 +59,14 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
       Restart.restartApp();
     }
     checkSubscriptionData();
-
+    getUserDataFromLocal();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    print(finalUserRoleModel);
+    print("Final user: ${finalUserRoleModel.toJson()}");
     final filteredMenus = getTopMenusForUser(finalUserRoleModel);
     return Drawer(
       backgroundColor: Colors.black,
