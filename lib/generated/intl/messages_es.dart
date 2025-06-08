@@ -325,7 +325,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "Descargar formato Excel",
         ),
         "downloadPDF": MessageLookupByLibrary.simpleMessage("Descargar PDF"),
-        "due": MessageLookupByLibrary.simpleMessage("Debido"),
+        "due": MessageLookupByLibrary.simpleMessage("Pendiente"),
         "dueAmount": MessageLookupByLibrary.simpleMessage("Importe adeudado"),
         "dueAmountWillShowHere": MessageLookupByLibrary.simpleMessage(
           "El importe pendiente se mostrará aquí si está disponible",
@@ -1301,7 +1301,7 @@ class MessageLookup extends MessageLookupByLibrary {
           "¿Mostrar logotipo en la factura?",
         ),
         "showing": MessageLookupByLibrary.simpleMessage("Mostrando"),
-        "shpingOrServices": MessageLookupByLibrary.simpleMessage("Envío/Servicios"),
+        "shpingOrServices": MessageLookupByLibrary.simpleMessage("Adicionales"),
         "signUpPanel": MessageLookupByLibrary.simpleMessage("Panel de Registro"),
         "siteName": MessageLookupByLibrary.simpleMessage("Nombre del sitio"),
         "size": MessageLookupByLibrary.simpleMessage("Tamaño"),
