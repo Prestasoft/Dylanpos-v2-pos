@@ -159,7 +159,7 @@ class _EmailLogInState extends State<EmailLogIn> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('images/fondo.webp'), // Cambia la ruta si deseas otra imagen
+            image: AssetImage('images/fondo2.webp'), // Cambia la ruta si deseas otra imagen
             fit: BoxFit.cover,
           ),
         ),
