@@ -66,8 +66,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
         value: des,
         child: Text(
           des,
-          style: kTextStyle.copyWith(
-              color: kTitleColor, fontWeight: FontWeight.normal),
+          style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.normal),
         ),
       );
       dropDownItems.add(item);
@@ -109,14 +108,13 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
     count++;
     return Consumer(
       builder: (context, consumerRef, __) {
-        final customerProviderRef = widget.customerModel.type == 'Supplier'
-            ? consumerRef.watch(purchaseTransitionProvider)
-            : consumerRef.watch(transitionProvider);
+        final customerProviderRef = widget.customerModel.type == 'Supplier' ? consumerRef.watch(purchaseTransitionProvider) : consumerRef.watch(transitionProvider);
         final personalData = consumerRef.watch(profileDetailsProvider);
         final settingProvider = consumerRef.watch(generalSettingProvider);
 
         return personalData.when(data: (data) {
           invoice = data.dueInvoiceCounter;
+
           return SizedBox(
             width: 600,
             child: Column(
@@ -162,355 +160,306 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    ResponsiveGridRow(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ResponsiveGridCol(
+                    ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: ResponsiveGridRow(children: [
+                            ResponsiveGridCol(
                               xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: ResponsiveGridRow(children: [
-                                ResponsiveGridCol(
-                                  xs: 12,
-                                  md: 9,
-                                  lg: 9,
-                                  child: customerProviderRef.when(
-                                      data: (customer) {
-                                    for (var element in customer) {
-                                      if (element.customerPhone ==
-                                              widget
-                                                  .customerModel.phoneNumber &&
-                                          element.dueAmount != 0 &&
-                                          count < 2) {
-                                        items.add(element.invoiceNumber);
-                                      }
-                                      if (selectedInvoice ==
-                                          element.invoiceNumber) {
-                                        dueAmount =
-                                            element.dueAmount!.toDouble();
-                                      } else if (selectedInvoice ==
-                                          'Seleccionar Factura') {
-                                        dueAmount = widget
-                                            .customerModel.remainedBalance
-                                            .toDouble();
-                                      }
-                                    }
-                                    return Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Container(
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          borderRadius: const BorderRadius.all(
-                                            Radius.circular(05),
-                                          ),
-                                          border: Border.all(
-                                              width: 1, color: kNeutral400),
-                                        ),
-                                        child: Center(
-                                          child: Theme(
-                                            data: ThemeData(
-                                                highlightColor:
-                                                    dropdownItemColor,
-                                                focusColor: dropdownItemColor,
-                                                hoverColor: dropdownItemColor),
-                                            child: DropdownButtonHideUnderline(
-                                              child: DropdownButton(
-                                                value: dropdownValue,
-                                                icon: const Icon(
-                                                    Icons.keyboard_arrow_down),
-                                                items:
-                                                    items.map((String items) {
-                                                  return DropdownMenuItem(
-                                                    value: items,
-                                                    child: Text(items,
-                                                        style: theme.textTheme
-                                                            .titleMedium
-                                                            ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: kNeutral500,
-                                                        )),
-                                                  );
-                                                }).toList(),
-                                                onChanged: (newValue) {
-                                                  setState(() {
-                                                    payingAmountController
-                                                        .text = '0';
-                                                    payingAmountController
-                                                        .clear();
-                                                    dropdownValue =
-                                                        newValue.toString();
-                                                    selectedInvoice =
-                                                        newValue.toString();
-                                                  });
-                                                },
-                                              ),
-                                            ),
+                              md: 9,
+                              lg: 9,
+                              child: customerProviderRef.when(data: (customer) {
+                                for (var element in customer) {
+                                  if (element.customerPhone == widget.customerModel.phoneNumber && element.dueAmount != 0 && count < 2) {
+                                    items.add(element.invoiceNumber);
+                                  }
+                                  if (selectedInvoice == element.invoiceNumber) {
+                                    dueAmount = element.dueAmount!.toDouble();
+                                  } else if (selectedInvoice == 'Seleccionar Factura') {
+                                    dueAmount = widget.customerModel.remainedBalance.toDouble();
+                                  }
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Container(
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.all(
+                                        Radius.circular(05),
+                                      ),
+                                      border: Border.all(width: 1, color: kNeutral400),
+                                    ),
+                                    child: Center(
+                                      child: Theme(
+                                        data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton(
+                                            value: dropdownValue,
+                                            icon: const Icon(Icons.keyboard_arrow_down),
+                                            items: items.map((String items) {
+                                              return DropdownMenuItem(
+                                                value: items,
+                                                child: Text(items,
+                                                    style: theme.textTheme.titleMedium?.copyWith(
+                                                      fontWeight: FontWeight.w600,
+                                                      color: kNeutral500,
+                                                    )),
+                                              );
+                                            }).toList(),
+                                            onChanged: (newValue) {
+                                              setState(() {
+                                                payingAmountController.text = '0';
+                                                payingAmountController.clear();
+                                                dropdownValue = newValue.toString();
+                                                selectedInvoice = newValue.toString();
+                                              });
+                                            },
                                           ),
                                         ),
                                       ),
-                                    );
-                                  }, error: (e, stack) {
-                                    return Text(e.toString());
-                                  }, loading: () {
-                                    return const Center(
-                                        child: CircularProgressIndicator());
-                                  }),
-                                ),
-                                ResponsiveGridCol(
-                                    xs: 0,
-                                    md: 3,
-                                    lg: 3,
-                                    child: const SizedBox.shrink())
-                              ])),
-                          // ResponsiveGridCol(
-                          //   xs: 12,
-                          //   md: 6,
-                          //   lg: 6,
-                          //   child: customerProviderRef.when(data: (customer) {
-                          //     for (var element in customer) {
-                          //       if (element.customerPhone == widget.customerModel.phoneNumber && element.dueAmount != 0 && count < 2) {
-                          //         items.add(element.invoiceNumber);
-                          //       }
-                          //       if (selectedInvoice == element.invoiceNumber) {
-                          //         dueAmount = element.dueAmount!.toDouble();
-                          //       } else if (selectedInvoice == 'Select Invoice') {
-                          //         dueAmount = widget.customerModel.remainedBalance.toDouble();
-                          //       }
-                          //     }
-                          //     return Padding(
-                          //       padding: const EdgeInsets.all(12.0),
-                          //       child: Container(
-                          //         height: 48,
-                          //         decoration: BoxDecoration(
-                          //           borderRadius: const BorderRadius.all(
-                          //             Radius.circular(05),
-                          //           ),
-                          //           border: Border.all(width: 1, color: kNeutral400),
-                          //         ),
-                          //         child: Center(
-                          //           child: Theme(
-                          //             data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                          //             child: DropdownButtonHideUnderline(
-                          //               child: DropdownButton(
-                          //                 value: dropdownValue,
-                          //                 icon: const Icon(Icons.keyboard_arrow_down),
-                          //                 items: items.map((String items) {
-                          //                   return DropdownMenuItem(
-                          //                     value: items,
-                          //                     child: Text(items,
-                          //                         style: theme.textTheme.titleMedium?.copyWith(
-                          //                           fontWeight: FontWeight.w600,
-                          //                           color: kNeutral500,
-                          //                         )),
-                          //                   );
-                          //                 }).toList(),
-                          //                 onChanged: (newValue) {
-                          //                   setState(() {
-                          //                     payingAmountController.text = '0';
-                          //                     payingAmountController.clear();
-                          //                     dropdownValue = newValue.toString();
-                          //                     selectedInvoice = newValue.toString();
-                          //                   });
-                          //                 },
-                          //               ),
-                          //             ),
-                          //           ),
-                          //         ),
-                          //       ),
-                          //     );
-                          //   }, error: (e, stack) {
-                          //     return Text(e.toString());
-                          //   }, loading: () {
-                          //     return const Center(child: CircularProgressIndicator());
-                          //   }),
-                          // ),
-                          ResponsiveGridCol(
-                            xs: 12,
-                            md: 6,
-                            lg: 6,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Container(
-                                height: 48,
-                                padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(8)),
-                                  color: kbgColor,
-                                  border: Border.all(color: kbgColor),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      lang.S.of(context).grandTotal,
-                                      style: theme.textTheme.titleMedium,
                                     ),
-                                    // const Spacer(),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(double.tryParse(dueAmount.toString()) ?? 0)}',
-                                      style: theme.textTheme.titleMedium,
-                                    ),
-                                  ],
+                                  ),
+                                );
+                              }, error: (e, stack) {
+                                return Text(e.toString());
+                              }, loading: () {
+                                return const Center(child: CircularProgressIndicator());
+                              }),
+                            ),
+                            ResponsiveGridCol(xs: 0, md: 3, lg: 3, child: const SizedBox.shrink())
+                          ])),
+                      // ResponsiveGridCol(
+                      //   xs: 12,
+                      //   md: 6,
+                      //   lg: 6,
+                      //   child: customerProviderRef.when(data: (customer) {
+                      //     for (var element in customer) {
+                      //       if (element.customerPhone == widget.customerModel.phoneNumber && element.dueAmount != 0 && count < 2) {
+                      //         items.add(element.invoiceNumber);
+                      //       }
+                      //       if (selectedInvoice == element.invoiceNumber) {
+                      //         dueAmount = element.dueAmount!.toDouble();
+                      //       } else if (selectedInvoice == 'Select Invoice') {
+                      //         dueAmount = widget.customerModel.remainedBalance.toDouble();
+                      //       }
+                      //     }
+                      //     return Padding(
+                      //       padding: const EdgeInsets.all(12.0),
+                      //       child: Container(
+                      //         height: 48,
+                      //         decoration: BoxDecoration(
+                      //           borderRadius: const BorderRadius.all(
+                      //             Radius.circular(05),
+                      //           ),
+                      //           border: Border.all(width: 1, color: kNeutral400),
+                      //         ),
+                      //         child: Center(
+                      //           child: Theme(
+                      //             data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                      //             child: DropdownButtonHideUnderline(
+                      //               child: DropdownButton(
+                      //                 value: dropdownValue,
+                      //                 icon: const Icon(Icons.keyboard_arrow_down),
+                      //                 items: items.map((String items) {
+                      //                   return DropdownMenuItem(
+                      //                     value: items,
+                      //                     child: Text(items,
+                      //                         style: theme.textTheme.titleMedium?.copyWith(
+                      //                           fontWeight: FontWeight.w600,
+                      //                           color: kNeutral500,
+                      //                         )),
+                      //                   );
+                      //                 }).toList(),
+                      //                 onChanged: (newValue) {
+                      //                   setState(() {
+                      //                     payingAmountController.text = '0';
+                      //                     payingAmountController.clear();
+                      //                     dropdownValue = newValue.toString();
+                      //                     selectedInvoice = newValue.toString();
+                      //                   });
+                      //                 },
+                      //               ),
+                      //             ),
+                      //           ),
+                      //         ),
+                      //       ),
+                      //     );
+                      //   }, error: (e, stack) {
+                      //     return Text(e.toString());
+                      //   }, loading: () {
+                      //     return const Center(child: CircularProgressIndicator());
+                      //   }),
+                      // ),
+                      ResponsiveGridCol(
+                        xs: 12,
+                        md: 6,
+                        lg: 6,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.all(10.0),
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.all(Radius.circular(8)),
+                              color: kbgColor,
+                              border: Border.all(color: kbgColor),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  lang.S.of(context).grandTotal,
+                                  style: theme.textTheme.titleMedium,
                                 ),
-                              ),
+                                // const Spacer(),
+                                Text(
+                                  '$globalCurrency ${myFormat.format(double.tryParse(dueAmount.toString()) ?? 0)}',
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ],
                             ),
                           ),
-                        ]),
-                    ResponsiveGridRow(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ResponsiveGridCol(
-                              xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Text(
-                                  lang.S.of(context).payingAmount,
-                                  style: theme.textTheme.bodyLarge,
-                                ),
-                              )),
-                          ResponsiveGridCol(
-                              xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: TextFormField(
-                                  controller: payingAmountController,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      double paidAmount = double.parse(value);
-                                      if (paidAmount > dueAmount) {
-                                        changeAmountController.text =
-                                            (paidAmount - dueAmount).toString();
-                                        dueAmountController.text = '0';
-                                      } else {
-                                        dueAmountController.text =
-                                            (dueAmount - paidAmount)
-                                                .abs()
-                                                .toString();
-                                        changeAmountController.text = '0';
-                                      }
-                                    });
-                                  },
-                                  showCursor: true,
-                                  cursorColor: kTitleColor,
-                                  keyboardType: TextInputType.name,
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        lang.S.of(context).enterPaidAmount,
-                                  ),
-                                ),
-                              )),
-                        ]),
-                    ResponsiveGridRow(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ResponsiveGridCol(
-                              xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Text(
-                                  lang.S.of(context).changeAmount,
-                                  style: theme.textTheme.bodyLarge,
-                                ),
-                              )),
-                          ResponsiveGridCol(
-                              xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: TextFormField(
-                                  readOnly: true,
-                                  controller: changeAmountController,
-                                  cursorColor: kTitleColor,
-                                  keyboardType: TextInputType.name,
-                                  decoration: InputDecoration(
-                                    hintText: lang.S.of(context).changeAmount,
-                                  ),
-                                ),
-                              )),
-                        ]),
-                    ResponsiveGridRow(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ResponsiveGridCol(
-                            xs: 12,
-                            md: 6,
-                            lg: 6,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(
-                                lang.S.of(context).dueAmount,
-                                style: theme.textTheme.bodyLarge,
+                        ),
+                      ),
+                    ]),
+                    ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Text(
+                              lang.S.of(context).payingAmount,
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          )),
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: TextFormField(
+                              controller: payingAmountController,
+                              onChanged: (value) {
+                                setState(() {
+                                  double paidAmount = double.parse(value);
+                                  if (paidAmount > dueAmount) {
+                                    changeAmountController.text = (paidAmount - dueAmount).toString();
+                                    dueAmountController.text = '0';
+                                  } else {
+                                    dueAmountController.text = (dueAmount - paidAmount).abs().toString();
+                                    changeAmountController.text = '0';
+                                  }
+                                });
+                              },
+                              showCursor: true,
+                              cursorColor: kTitleColor,
+                              keyboardType: TextInputType.name,
+                              decoration: InputDecoration(
+                                hintText: lang.S.of(context).enterPaidAmount,
                               ),
                             ),
+                          )),
+                    ]),
+                    ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Text(
+                              lang.S.of(context).changeAmount,
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          )),
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: TextFormField(
+                              readOnly: true,
+                              controller: changeAmountController,
+                              cursorColor: kTitleColor,
+                              keyboardType: TextInputType.name,
+                              decoration: InputDecoration(
+                                hintText: lang.S.of(context).changeAmount,
+                              ),
+                            ),
+                          )),
+                    ]),
+                    ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                      ResponsiveGridCol(
+                        xs: 12,
+                        md: 6,
+                        lg: 6,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Text(
+                            lang.S.of(context).dueAmount,
+                            style: theme.textTheme.bodyLarge,
                           ),
-                          ResponsiveGridCol(
-                              xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: TextFormField(
-                                  readOnly: true,
-                                  controller: dueAmountController,
-                                  cursorColor: kTitleColor,
-                                  keyboardType: TextInputType.name,
-                                  decoration: InputDecoration(
-                                    hintText: lang.S.of(context).dueAmount,
-                                  ),
-                                ),
-                              ))
-                        ]),
-                    ResponsiveGridRow(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ResponsiveGridCol(
-                              xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Text(
-                                  lang.S.of(context).paymentType,
-                                  style: theme.textTheme.bodyLarge,
-                                ),
-                              )),
-                          ResponsiveGridCol(
-                              xs: 12,
-                              md: 6,
-                              lg: 6,
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: SizedBox(
-                                  height: 48,
-                                  child: FormField(
-                                    builder: (FormFieldState<dynamic> field) {
-                                      return InputDecorator(
-                                        decoration: const InputDecoration(),
-                                        child: Theme(
-                                          data: ThemeData(
-                                              highlightColor: dropdownItemColor,
-                                              focusColor: dropdownItemColor,
-                                              hoverColor: dropdownItemColor),
-                                          child: DropdownButtonHideUnderline(
-                                            child: getOption(),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ))
-                        ]),
+                        ),
+                      ),
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: TextFormField(
+                              readOnly: true,
+                              controller: dueAmountController,
+                              cursorColor: kTitleColor,
+                              keyboardType: TextInputType.name,
+                              decoration: InputDecoration(
+                                hintText: lang.S.of(context).dueAmount,
+                              ),
+                            ),
+                          ))
+                    ]),
+                    ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Text(
+                              lang.S.of(context).paymentType,
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          )),
+                      ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: SizedBox(
+                              height: 48,
+                              child: FormField(
+                                builder: (FormFieldState<dynamic> field) {
+                                  return InputDecorator(
+                                    decoration: const InputDecoration(),
+                                    child: Theme(
+                                      data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                      child: DropdownButtonHideUnderline(
+                                        child: getOption(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ))
+                    ]),
                     const SizedBox(height: 20.0),
                     ResponsiveGridRow(children: [
                       ResponsiveGridCol(
@@ -539,229 +488,97 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                 onPressed: saleButtonClicked
                                     ? () {}
                                     : () async {
-                                        if (dueAmount > 0 &&
-                                            !payingAmountController
-                                                .text.isEmptyOrNull &&
-                                            payingAmountController.text
-                                                    .toInt() >
-                                                0) {
+                                        if (dueAmount > 0 && !payingAmountController.text.isEmptyOrNull && payingAmountController.text.toInt() > 0) {
                                           try {
                                             setState(() {
                                               saleButtonClicked = true;
                                             });
-                                            EasyLoading.show(
-                                                status:
-                                                    '${lang.S.of(context).loading}...',
-                                                dismissOnTap: false);
-                                            DatabaseReference ref =
-                                                FirebaseDatabase.instance.ref(
-                                                    "${await getUserID()}/Due Transaction");
+                                            EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                            DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Due Transaction");
 
-                                            dueTransactionModel.totalDue =
-                                                dueAmount;
-                                            dueTransactionModel.sellerName =
-                                                isSubUser
-                                                    ? constSubUserTitle
-                                                    : 'Admin';
-                                            dueAmountController.text
-                                                        .toDouble() <=
-                                                    0
-                                                ? dueTransactionModel.isPaid =
-                                                    true
-                                                : dueTransactionModel.isPaid =
-                                                    false;
-                                            dueAmountController.text
-                                                        .toDouble() <=
-                                                    0
-                                                ? {
-                                                    dueTransactionModel
-                                                        .dueAmountAfterPay = 0,
-                                                    dueTransactionModel
-                                                            .payDueAmount =
-                                                        dueAmount
-                                                  }
-                                                : {
-                                                    dueTransactionModel
-                                                            .dueAmountAfterPay =
-                                                        dueAmountController.text
-                                                            .toDouble(),
-                                                    dueTransactionModel
-                                                            .payDueAmount =
-                                                        dueAmount -
-                                                            dueAmountController
-                                                                .text
-                                                                .toDouble()
-                                                  };
+                                            dueTransactionModel.invoiceNumber = selectedInvoice;
+                                            dueTransactionModel.totalDue = dueAmount;
+                                            dueTransactionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
+                                            dueAmountController.text.toDouble() <= 0 ? dueTransactionModel.isPaid = true : dueTransactionModel.isPaid = false;
+                                            dueAmountController.text.toDouble() <= 0 ? {dueTransactionModel.dueAmountAfterPay = 0, dueTransactionModel.payDueAmount = dueAmount} : {dueTransactionModel.dueAmountAfterPay = dueAmountController.text.toDouble(), dueTransactionModel.payDueAmount = dueAmount - dueAmountController.text.toDouble()};
 
-                                            dueTransactionModel.paymentType =
-                                                selectedPaymentOption;
-                                            dueTransactionModel
-                                                    .sendWhatsappMessage =
-                                                widget.customerModel
-                                                    .receiveWhatsappUpdates;
-                                            await ref.push().set(
-                                                dueTransactionModel.toJson());
+                                            dueTransactionModel.paymentType = selectedPaymentOption;
+                                            dueTransactionModel.sendWhatsappMessage = widget.customerModel.receiveWhatsappUpdates;
+                                            await ref.push().set(dueTransactionModel.toJson());
 
-                                            await GeneratePdfAndPrint()
-                                                .printDueInvoice(
-                                                    personalInformationModel:
-                                                        data,
-                                                    dueTransactionModel:
-                                                        dueTransactionModel,
-                                                    setting: setting);
+                                            await GeneratePdfAndPrint().printDueInvoice(personalInformationModel: data, dueTransactionModel: dueTransactionModel, setting: setting);
 
                                             ///_____UpdateInvoice__________________________________________________
                                             selectedInvoice != 'Select Invoice'
                                                 ? updateDueInvoice(
-                                                    type: widget
-                                                        .customerModel.type,
-                                                    invoice: selectedInvoice
-                                                        .toString(),
-                                                    remainDueAmount:
-                                                        dueAmountController.text
-                                                            .toInt(),
+                                                    type: widget.customerModel.type,
+                                                    invoice: selectedInvoice.toString(),
+                                                    remainDueAmount: dueAmountController.text.toInt(),
                                                   )
                                                 : null;
 
                                             ///________daily_transactionModel_________________________________________________________________________
 
-                                            if (dueTransactionModel
-                                                    .customerType ==
-                                                'Supplier') {
-                                              DailyTransactionModel
-                                                  dailyTransaction =
-                                                  DailyTransactionModel(
-                                                name: dueTransactionModel
-                                                    .customerName,
-                                                date: dueTransactionModel
-                                                    .purchaseDate,
+                                            if (dueTransactionModel.customerType == 'Supplier') {
+                                              DailyTransactionModel dailyTransaction = DailyTransactionModel(
+                                                name: dueTransactionModel.customerName,
+                                                date: dueTransactionModel.purchaseDate,
                                                 type: 'Due Payment',
-                                                total: dueTransactionModel
-                                                    .totalDue!
-                                                    .toDouble(),
+                                                total: dueTransactionModel.totalDue!.toDouble(),
                                                 paymentIn: 0,
-                                                paymentOut: dueTransactionModel
-                                                        .totalDue!
-                                                        .toDouble() -
-                                                    dueTransactionModel
-                                                        .dueAmountAfterPay!
-                                                        .toDouble(),
-                                                remainingBalance:
-                                                    dueTransactionModel
-                                                            .totalDue!
-                                                            .toDouble() -
-                                                        dueTransactionModel
-                                                            .dueAmountAfterPay!
-                                                            .toDouble(),
-                                                id: dueTransactionModel
-                                                    .invoiceNumber,
-                                                dueTransactionModel:
-                                                    dueTransactionModel,
+                                                paymentOut: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
+                                                remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
+                                                id: selectedInvoice,
+                                                //id: dueTransactionModel.invoiceNumber,
+                                                dueTransactionModel: dueTransactionModel,
                                               );
-                                              postDailyTransaction(
-                                                  dailyTransactionModel:
-                                                      dailyTransaction);
+                                              postDailyTransaction(dailyTransactionModel: dailyTransaction);
                                             } else {
-                                              DailyTransactionModel
-                                                  dailyTransaction =
-                                                  DailyTransactionModel(
-                                                name: dueTransactionModel
-                                                    .customerName,
-                                                date: dueTransactionModel
-                                                    .purchaseDate,
+                                              DailyTransactionModel dailyTransaction = DailyTransactionModel(
+                                                name: dueTransactionModel.customerName,
+                                                date: dueTransactionModel.purchaseDate,
                                                 type: 'Due Collection',
-                                                total: dueTransactionModel
-                                                    .totalDue!
-                                                    .toDouble(),
-                                                paymentIn: dueTransactionModel
-                                                        .totalDue!
-                                                        .toDouble() -
-                                                    dueTransactionModel
-                                                        .dueAmountAfterPay!
-                                                        .toDouble(),
+                                                total: dueTransactionModel.totalDue!.toDouble(),
+                                                paymentIn: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 paymentOut: 0,
-                                                remainingBalance:
-                                                    dueTransactionModel
-                                                            .totalDue!
-                                                            .toDouble() -
-                                                        dueTransactionModel
-                                                            .dueAmountAfterPay!
-                                                            .toDouble(),
-                                                id: dueTransactionModel
-                                                    .invoiceNumber,
-                                                dueTransactionModel:
-                                                    dueTransactionModel,
+                                                remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
+                                                id: selectedInvoice,
+                                                //id: dueTransactionModel.invoiceNumber,
+                                                dueTransactionModel: dueTransactionModel,
                                               );
-                                              postDailyTransaction(
-                                                  dailyTransactionModel:
-                                                      dailyTransaction);
+                                              postDailyTransaction(dailyTransactionModel: dailyTransaction);
                                             }
 
                                             ///_________DueUpdate______________________________________________________
-                                            final cRef =
-                                                FirebaseDatabase.instance.ref(
-                                                    '${await getUserID()}/Customers/');
+                                            final cRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
                                             String? key;
 
-                                            await FirebaseDatabase.instance
-                                                .ref(await getUserID())
-                                                .child('Customers')
-                                                .orderByKey()
-                                                .get()
-                                                .then((value) {
-                                              for (var element
-                                                  in value.children) {
-                                                var data = jsonDecode(
-                                                    jsonEncode(element.value));
-                                                if (data['phoneNumber'] ==
-                                                    widget.customerModel
-                                                        .phoneNumber) {
+                                            await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+                                              for (var element in value.children) {
+                                                var data = jsonDecode(jsonEncode(element.value));
+                                                if (data['phoneNumber'] == widget.customerModel.phoneNumber) {
                                                   key = element.key;
                                                 }
                                               }
                                             });
-                                            var data1 = await cRef
-                                                .child('$key/due')
-                                                .get();
-                                            var data2 = await cRef
-                                                .child('$key/remainedBalance')
-                                                .get();
-                                            int previousDue =
-                                                data1.value.toString().toInt();
-                                            int remainedBalance =
-                                                data2.value.toString().toInt();
+                                            var data1 = await cRef.child('$key/due').get();
+                                            var data2 = await cRef.child('$key/remainedBalance').get();
+                                            int previousDue = data1.value.toString().toInt();
+                                            int remainedBalance = data2.value.toString().toInt();
 
-                                            int totalDue = previousDue -
-                                                dueTransactionModel
-                                                    .payDueAmount!
-                                                    .toInt();
-                                            int remainedDue = remainedBalance -
-                                                dueTransactionModel
-                                                    .payDueAmount!
-                                                    .toInt();
-                                            cRef
-                                                .child(key!)
-                                                .update({'due': '$totalDue'});
-                                            selectedInvoice == 'Select Invoice'
-                                                ? cRef.child(key!).update({
-                                                    'remainedBalance':
-                                                        '$remainedDue'
-                                                  })
-                                                : null;
+                                            int totalDue = previousDue - dueTransactionModel.payDueAmount!.toInt();
+                                            int remainedDue = remainedBalance - dueTransactionModel.payDueAmount!.toInt();
+                                            cRef.child(key!).update({'due': '$totalDue'});
+                                            selectedInvoice == 'Select Invoice' ? cRef.child(key!).update({'remainedBalance': '$remainedDue'}) : null;
 
                                             ///_________Invoice Increase____________________________________________________________________________
                                             updateInvoice(
-                                              typeOfInvoice:
-                                                  'dueInvoiceCounter',
-                                              invoice: data.dueInvoiceCounter
-                                                  .toInt(),
+                                              typeOfInvoice: 'dueInvoiceCounter',
+                                              invoice: data.dueInvoiceCounter.toInt(),
                                             );
 
                                             ///________Subscription_____________________________________________________
-                                            Subscription
-                                                .decreaseSubscriptionLimits(
-                                                    itemType: 'dueNumber',
-                                                    context: context);
+                                            Subscription.decreaseSubscriptionLimits(itemType: 'dueNumber', context: context);
 
                                             consumerRef
                                                 // ignore: unused_result
@@ -770,22 +587,16 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 // ignore: unused_result
                                                 .refresh(transitionProvider);
                                             // ignore: unused_result
-                                            consumerRef.refresh(
-                                                purchaseTransitionProvider);
+                                            consumerRef.refresh(purchaseTransitionProvider);
                                             // ignore: unused_result
-                                            consumerRef.refresh(
-                                                dueTransactionProvider);
+                                            consumerRef.refresh(dueTransactionProvider);
                                             // ignore: unused_result
-                                            consumerRef.refresh(
-                                                profileDetailsProvider);
+                                            consumerRef.refresh(profileDetailsProvider);
                                             // ignore: unused_result
-                                            consumerRef.refresh(
-                                                dailyTransactionProvider);
+                                            consumerRef.refresh(dailyTransactionProvider);
 
                                             finish(context);
-                                            EasyLoading.showSuccess(lang.S
-                                                .of(context)
-                                                .addedSuccessfully);
+                                            EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully);
                                           } catch (e) {
                                             setState(() {
                                               saleButtonClicked = false;
@@ -795,18 +606,10 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                           }
                                         } else if (dueAmount <= 0) {
                                           // EasyLoading.showError('Select a Invoice');
-                                          EasyLoading.showError(lang.S
-                                              .of(context)
-                                              .selectAInvoice);
-                                        } else if (payingAmountController
-                                                .text.isEmptyOrNull ||
-                                            payingAmountController.text
-                                                    .toInt() <=
-                                                0) {
+                                          EasyLoading.showError(lang.S.of(context).selectAInvoice);
+                                        } else if (payingAmountController.text.isEmptyOrNull || payingAmountController.text.toInt() <= 0) {
                                           //EasyLoading.showError('Please Enter Amount');
-                                          EasyLoading.showError(lang.S
-                                              .of(context)
-                                              .pleaseEnterAmount);
+                                          EasyLoading.showError(lang.S.of(context).pleaseEnterAmount);
                                         }
                                       },
                                 child: Text(
@@ -991,24 +794,12 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
     );
   }
 
-  void updateDueInvoice(
-      {required String type,
-      required String invoice,
-      required int remainDueAmount}) async {
-    final ref = type == 'Supplier'
-        ? FirebaseDatabase.instance
-            .ref('${await getUserID()}/Purchase Transition/')
-        : FirebaseDatabase.instance
-            .ref('${await getUserID()}/Sales Transition/');
+  void updateDueInvoice({required String type, required String invoice, required int remainDueAmount}) async {
+    final ref = type == 'Supplier' ? FirebaseDatabase.instance.ref('${await getUserID()}/Purchase Transition/') : FirebaseDatabase.instance.ref('${await getUserID()}/Sales Transition/');
     String? key;
 
     type == 'Supplier'
-        ? await FirebaseDatabase.instance
-            .ref(await getUserID())
-            .child('Purchase Transition/')
-            .orderByKey()
-            .get()
-            .then((value) {
+        ? await FirebaseDatabase.instance.ref(await getUserID()).child('Purchase Transition/').orderByKey().get().then((value) {
             for (var element in value.children) {
               var data = jsonDecode(jsonEncode(element.value));
               if (data['invoiceNumber'] == invoice) {
@@ -1016,12 +807,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
               }
             }
           })
-        : await FirebaseDatabase.instance
-            .ref(await getUserID())
-            .child('Sales Transition')
-            .orderByKey()
-            .get()
-            .then((value) {
+        : await FirebaseDatabase.instance.ref(await getUserID()).child('Sales Transition').orderByKey().get().then((value) {
             for (var element in value.children) {
               var data = jsonDecode(jsonEncode(element.value));
               if (data['invoiceNumber'] == invoice) {
