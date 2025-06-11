@@ -574,7 +574,7 @@ FutureOr<Uint8List> generateDueDocument({
                   <String>['N.º', 'Descripción', 'Monto Pendiente'],
                   <String>[
                     ('${1}'),
-                    ('Pago ah balance pendiente de la factura #${transactions.invoiceNumber}'),
+                    ('Pago de balance pendiente de la factura #${transactions.invoiceNumber}'),
                     (transactions.totalDue.toString())
                   ],
                 ],
