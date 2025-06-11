@@ -1,13 +1,17 @@
 // ignore_for_file: use_build_context_synchronously
+import 'dart:developer';
 
+import 'package:salespro_admin/model/daily_transaction_model.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconly/iconly.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/customer_provider.dart';
@@ -15,9 +19,13 @@ import 'package:salespro_admin/Provider/daily_transaction_provider.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_edit.dart';
+import 'package:salespro_admin/Screen/currency/currency_provider.dart';
 import 'package:salespro_admin/currency.dart';
 import 'package:salespro_admin/delete_invoice_functions.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:salespro_admin/model/customer_model.dart';
+import 'package:salespro_admin/model/personal_information_model.dart';
+import 'package:salespro_admin/model/purchase_transation_model.dart';
 
 import '../../PDF/print_pdf.dart';
 import '../../Provider/product_provider.dart';
@@ -434,6 +442,46 @@ class _SaleListState extends State<SaleList> {
                                                                 ),
                                                               ),
 
+                                                              // Mostrar Resumen de Pagos
+                                                              PopupMenuItem(
+                                                                onTap: () {
+                                                                  // Creamos los datos del cliente desde la fila
+                                                                  final customer = Customer(
+                                                                    customerName: paginatedTransactions[index].customerName,
+                                                                    phoneNumber: paginatedTransactions[index].customerPhone,
+                                                                    invoiceNumber: paginatedTransactions[index].invoiceNumber,
+                                                                    payments: [], // Los datos reales se cargan en el showDialog
+                                                                    remainingDebt: paginatedTransactions[index].dueAmount ?? 0,
+                                                                    totalPaid: paginatedTransactions[index].totalAmount ?? 0,
+                                                                  );
+
+                                                                  // Llamamos al método paysDetails
+                                                                  Future.microtask(() {
+                                                                    paysDetails(
+                                                                      context: context,
+                                                                      invoiceNumber: customer.invoiceNumber,
+                                                                      customer: customer,
+                                                                    );
+                                                                  });
+                                                                },
+                                                                child: Row(
+                                                                  children: [
+                                                                    SvgPicture.asset(
+                                                                      "images/dashboard_icon/transaction.svg",
+                                                                      height: 22.0,
+                                                                      width: 22.0,
+                                                                      color: kGreyTextColor,
+                                                                    ),
+                                                                    const SizedBox(width: 4.0),
+                                                                    Text(
+                                                                      'Mostrar resumen de pagos',
+                                                                      //lang.S.of(context).edit,
+                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+
                                                               ///________Sale List Delete_______________________________
                                                               PopupMenuItem(
                                                                 onTap: () => showDialog(
@@ -580,110 +628,6 @@ class _SaleListState extends State<SaleList> {
                                   },
                                 ),
                               ),
-                              // Padding(
-                              //   padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-                              //   child: Row(
-                              //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              //     children: [
-                              //       Flexible(
-                              //         child: Text(
-                              //           itemsPerPage == -1
-                              //               ? 'Showing all ${showAbleSaleTransactions.length} entries'
-                              //               : 'Showing ${startIndex + 1} to $endIndex of ${showAbleSaleTransactions.length} entries',
-                              //           style: theme.textTheme.bodyLarge?.copyWith(
-                              //             color: kNeutral700,
-                              //           ),
-                              //           maxLines: 2,
-                              //           overflow: TextOverflow.ellipsis,
-                              //         ),
-                              //       ),
-                              //       if (itemsPerPage != -1) // Only show pagination controls when not showing "All"
-                              //         Container(
-                              //           alignment: Alignment.center,
-                              //           height: 32,
-                              //           decoration: BoxDecoration(
-                              //             borderRadius: BorderRadius.circular(4),
-                              //             border: Border.all(color: kNeutral300),
-                              //           ),
-                              //           child: Row(
-                              //             children: [
-                              //               Padding(
-                              //                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                              //                 child: GestureDetector(
-                              //                   onTap: () {
-                              //                     if (currentPage > 1) {
-                              //                       setState(() {
-                              //                         currentPage--;
-                              //                       });
-                              //                     }
-                              //                   },
-                              //                   child: Text(
-                              //                     'Previous',
-                              //                     style: theme.textTheme.bodyLarge?.copyWith(
-                              //                       color: kNeutral700,
-                              //                     ),
-                              //                   ),
-                              //                 ),
-                              //               ),
-                              //               Container(
-                              //                 alignment: Alignment.center,
-                              //                 decoration: const BoxDecoration(
-                              //                   color: kMainColor,
-                              //                   border: Border.symmetric(
-                              //                     vertical: BorderSide(color: kNeutral300),
-                              //                   ),
-                              //                 ),
-                              //                 child: Padding(
-                              //                   padding: const EdgeInsets.symmetric(horizontal: 10),
-                              //                   child: Text(
-                              //                     '$currentPage',
-                              //                     style: theme.textTheme.bodyLarge?.copyWith(
-                              //                       color: Colors.white,
-                              //                     ),
-                              //                   ),
-                              //                 ),
-                              //               ),
-                              //               Container(
-                              //                 alignment: Alignment.center,
-                              //                 decoration: const BoxDecoration(
-                              //                   border: Border.symmetric(
-                              //                     vertical: BorderSide(color: kNeutral300),
-                              //                   ),
-                              //                 ),
-                              //                 child: Padding(
-                              //                   padding: const EdgeInsets.symmetric(horizontal: 10),
-                              //                   child: Text(
-                              //                     '$totalPages',
-                              //                     style: theme.textTheme.bodyLarge?.copyWith(
-                              //                       color: kNeutral700,
-                              //                     ),
-                              //                   ),
-                              //                 ),
-                              //               ),
-                              //               Padding(
-                              //                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                              //                 child: GestureDetector(
-                              //                   onTap: () {
-                              //                     if (currentPage < totalPages) {
-                              //                       setState(() {
-                              //                         currentPage++;
-                              //                       });
-                              //                     }
-                              //                   },
-                              //                   child: Text(
-                              //                     'Next',
-                              //                     style: theme.textTheme.bodyLarge?.copyWith(
-                              //                       color: kNeutral700,
-                              //                     ),
-                              //                   ),
-                              //                 ),
-                              //               ),
-                              //             ],
-                              //           ),
-                              //         ),
-                              //     ],
-                              //   ),
-                              // ),
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
                                 child: Row(
@@ -805,4 +749,183 @@ class _SaleListState extends State<SaleList> {
       ),
     );
   }
+
+  void paysDetails({
+    required BuildContext context,
+    required String invoiceNumber,
+    required Customer customer,
+  }) {
+    // Cargar Datos de Pagos del Cliente
+    // usar el provider para obtener los datos de los pagos del cliente
+
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+
+        return Consumer(
+          builder: (context, ref, _) {
+            final dailyTransactionReport = ref.watch(dailyTransactionProvider);
+
+            return dailyTransactionReport.when(
+              data: (transactions) {
+                // verifico si pertenece a la factura
+                List<DailyTransactionModel> reTransaction = [];
+
+                for (var element in transactions.reversed.toList()) {
+                  if (element.id == invoiceNumber) {
+                    reTransaction.add(element);
+                  }
+                }
+
+                // sumar todos los pagos
+                double totalAbonado = reTransaction.fold(0.0, (sum, payment) => sum + payment.paymentIn);
+
+                return Dialog(
+                  surfaceTintColor: kWhite,
+                  backgroundColor: kWhite,
+                  child: SizedBox(
+                    width: 700,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          /// Título y botón cerrar
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Detalles del Cliente',
+                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
+                          ),
+                          const Divider(),
+
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Datos del cliente
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  /// Datos del cliente
+                                  Text('Nombre: ${customer.customerName}', style: theme.textTheme.bodyLarge),
+                                  const SizedBox(height: 8),
+                                  Text('Teléfono: ${customer.phoneNumber}', style: theme.textTheme.bodyLarge),
+                                  const SizedBox(height: 8),
+                                  Text('Factura Nº: $invoiceNumber', style: theme.textTheme.bodyLarge),
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
+                              const SizedBox(width: 120),
+                              // Totales
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Total de la factura:  ' + '\$${customer.totalPaid.toStringAsFixed(2)}',
+                                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: Colors.red),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Total Pagado:  \$${totalAbonado.toStringAsFixed(2)}',
+                                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Deuda Actual:  \$${customer.remainingDebt.toStringAsFixed(2)}',
+                                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          /// Tabla de pagos
+                          LayoutBuilder(builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                child: DataTable(
+                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F1F1)),
+                                  columns: const [
+                                    DataColumn(label: Text('Fecha')),
+                                    DataColumn(label: Text('Pago Registrado')),
+                                  ],
+                                  rows: reTransaction.map<DataRow>((payment) {
+                                    return DataRow(cells: [
+                                      DataCell(Text(payment.date)), // Asumimos que date es String
+                                      DataCell(Text('\$${payment.paymentIn.toStringAsFixed(2)}')),
+                                    ]);
+                                  }).toList(),
+                                ),
+                              ),
+                            );
+                          }),
+
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => AlertDialog(
+                title: const Text('Error'),
+                content: Text('No se pudieron cargar los pagos.\n$e'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cerrar'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class Customer {
+  final String customerName;
+  final String phoneNumber;
+  final String invoiceNumber;
+  final List<Payment> payments;
+  final double totalPaid;
+  final double remainingDebt;
+
+  Customer({
+    required this.customerName,
+    required this.phoneNumber,
+    required this.invoiceNumber,
+    required this.payments,
+    required this.totalPaid,
+    required this.remainingDebt,
+  });
+}
+
+class Payment {
+  final String date; // Formato: "dd/MM/yyyy"
+  final double amount;
+
+  Payment({
+    required this.date,
+    required this.amount,
+  });
 }
