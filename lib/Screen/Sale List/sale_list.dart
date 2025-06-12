@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 import 'dart:developer';
 
+import 'package:intl/intl.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -834,17 +835,17 @@ class _SaleListState extends State<SaleList> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    'Total de la factura:  ' + '\$${customer.totalPaid.toStringAsFixed(2)}',
+                                    'Total de la factura:  ' + '$currency${myFormat.format(double.tryParse(customer.totalPaid.toString()) ?? 0)}',
                                     style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: Colors.red),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Total Pagado:  \$${totalAbonado.toStringAsFixed(2)}',
+                                    'Total Pagado:  ' + '$currency${myFormat.format(double.tryParse(totalAbonado.toString()) ?? 0)}',
                                     style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Deuda Actual:  \$${customer.remainingDebt.toStringAsFixed(2)}',
+                                    'Deuda Actual:  ' + '$currency${myFormat.format(double.tryParse(customer.remainingDebt.toString()) ?? 0)}',
                                     style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 8),
@@ -867,8 +868,11 @@ class _SaleListState extends State<SaleList> {
                                   ],
                                   rows: reTransaction.map<DataRow>((payment) {
                                     return DataRow(cells: [
-                                      DataCell(Text(payment.date)), // Asumimos que date es String
-                                      DataCell(Text('\$${payment.paymentIn.toStringAsFixed(2)}')),
+                                      DataCell(_fechaConvertida(payment.date)), // Asumimos que date es String
+                                      DataCell(Padding(
+                                        padding: const EdgeInsets.only(left: 20),
+                                        child: Text('$currency${myFormat.format(double.tryParse(payment.paymentIn.toString()) ?? 0)}'),
+                                      )),
                                     ]);
                                   }).toList(),
                                 ),
@@ -899,6 +903,23 @@ class _SaleListState extends State<SaleList> {
         );
       },
     );
+  }
+
+  Widget _fechaConvertida(String? date) {
+    try {
+      // Validación básica
+      if (date == null || date.trim().isEmpty) {
+        return const Text('-');
+      }
+
+      // Intentar parsear la fecha
+      DateTime dateTime = DateTime.parse(date);
+      String formattedDate = DateFormat('yyyy/MM/dd HH:mm:ss').format(dateTime);
+      return Text(formattedDate);
+    } catch (e) {
+      // En caso de error de formato, mostramos un valor por defecto
+      return const Text('-');
+    }
   }
 }
 
