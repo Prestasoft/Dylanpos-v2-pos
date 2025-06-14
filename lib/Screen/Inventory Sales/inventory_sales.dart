@@ -213,9 +213,23 @@ class _InventorySalesState extends State<InventorySales> {
                               bool isCommonReservation = full.multipleDress.isEmpty;
 
                               // Mapeo Nuevo de acuerdo a la estructura de vestidos
-
                               if (isCommonReservation) {
-                                final reservationModel = ReservationProductModel.fromMap({'id': full.id, 'service_id': service?['id'] ?? '', 'service_name': service?['name'] ?? 'Servicio', 'client_id': clientId, 'dress_id': dress?['id'] ?? '', 'dress_name': dress?['name'] ?? 'Vestido', 'branch_id': reservation['branch_id'] ?? '', 'reservation_date': reservation['reservation_date'] ?? '', 'reservation_time': reservation['reservation_time'] ?? '', 'price': service != null && service['price'] != null ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0, 'created_at': reservation['created_at'], 'updated_at': reservation['updated_at'], 'duration': service?['duration'] ?? {}, 'package_price': double.tryParse(reservation['package_price'] ?? '0.0')});
+                                final reservationModel = ReservationProductModel.fromMap({
+                                  'id': full.id,
+                                  'service_id': service?['id'] ?? '',
+                                  'service_name': service?['name'] ?? 'Servicio',
+                                  'client_id': clientId,
+                                  'dress_id': dress?['id'] ?? '',
+                                  'dress_name': dress?['name'] ?? 'Vestido',
+                                  'branch_id': reservation['branch_id'] ?? '',
+                                  'reservation_date': reservation['reservation_date'] ?? '',
+                                  'reservation_time': reservation['reservation_time'] ?? '',
+                                  'price': service != null && service['price'] != null ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0,
+                                  'created_at': reservation['created_at'],
+                                  'updated_at': reservation['updated_at'],
+                                  'duration': service?['duration'] ?? {},
+                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0')
+                                });
 
                                 // Verifico si es Adicional de Reserva para poner algo que lo identifique y ademas el precio
 
@@ -263,7 +277,7 @@ class _InventorySalesState extends State<InventorySales> {
                                               const SizedBox(height: 2),
                                               Text('🏬 Sucursal: ${reservation['branch_id']}', style: smallGreyTextStyle),
                                               const SizedBox(height: 2),
-                                              Text('👗 Vestido: ${dress?['name'] ?? '-'}', style: smallGreyTextStyle),
+                                              Text('👗 Vestido: ${dress?['name'] ?? 'Sin Vestimenta'}', style: smallGreyTextStyle),
                                               const SizedBox(height: 2),
                                               Text('🔖 Categoría: ${dress?['category'] ?? '-'}', style: smallGreyTextStyle),
                                               const SizedBox(height: 2),
@@ -309,7 +323,20 @@ class _InventorySalesState extends State<InventorySales> {
                                   ),
                                 );
                               } else {
-                                final reservationModel = ReservationProductCompositeModel.fromMap({'id': full.id, 'service_id': service?['id'] ?? '', 'service_name': service?['name'] ?? 'Servicio', 'client_id': clientId, 'reservation_date': reservation['reservation_date'] ?? '', 'reservation_time': reservation['reservation_time'] ?? '', 'price': service != null && service['price'] != null ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0, 'created_at': reservation['created_at'], 'updated_at': reservation['updated_at'], 'duration': service?['duration'] ?? {}, 'dress_info': full.multipleDress, 'package_price': double.tryParse(reservation['package_price'] ?? '0.0')});
+                                final reservationModel = ReservationProductCompositeModel.fromMap({
+                                  'id': full.id,
+                                  'service_id': service?['id'] ?? '',
+                                  'service_name': service?['name'] ?? 'Servicio',
+                                  'client_id': clientId,
+                                  'reservation_date': reservation['reservation_date'] ?? '',
+                                  'reservation_time': reservation['reservation_time'] ?? '',
+                                  'price': service != null && service['price'] != null ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0,
+                                  'created_at': reservation['created_at'],
+                                  'updated_at': reservation['updated_at'],
+                                  'duration': service?['duration'] ?? {},
+                                  'dress_info': full.multipleDress,
+                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0')
+                                });
 
                                 return InkWell(
                                   onTap: () {

@@ -33,8 +33,7 @@ class PackageReservationScreen extends ConsumerStatefulWidget {
   _PackageReservationScreen createState() => _PackageReservationScreen();
 }
 
-class _PackageReservationScreen
-    extends ConsumerState<PackageReservationScreen> {
+class _PackageReservationScreen extends ConsumerState<PackageReservationScreen> {
   bool isSubmitting = false;
   Map<String, Map<String, String>> selectedValues = {};
   List<String> codigosSeleccionados = [];
@@ -70,8 +69,7 @@ class _PackageReservationScreen
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              "Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
+          content: Text("Lo sentimos, este vestido ya fue reservado. Por favor elige otra fecha u hora."),
           backgroundColor: Colors.red,
         ),
       );
@@ -99,8 +97,7 @@ class _PackageReservationScreen
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 24),
-            _buildInfoItem(
-                Icons.camera_alt, "Paquete", widget.packagesAsync.name),
+            _buildInfoItem(Icons.camera_alt, "Paquete", widget.packagesAsync.name),
             SizedBox(height: 16),
 
             // Muestra de todos los componentes
@@ -109,8 +106,7 @@ class _PackageReservationScreen
                 padding: const EdgeInsets.all(16.0),
                 child: ListView.builder(
                   shrinkWrap: true,
-                  physics:
-                      NeverScrollableScrollPhysics(), // Evita scroll interno
+                  physics: NeverScrollableScrollPhysics(), // Evita scroll interno
                   itemCount: widget.packagesAsync.components.length,
                   itemBuilder: (context, index) {
                     final component = widget.packagesAsync.components[index];
@@ -133,41 +129,25 @@ class _PackageReservationScreen
                                   final selected = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          DressSelectionPackageScreen(
+                                      builder: (context) => DressSelectionPackageScreen(
                                         packagesAsync: widget.packagesAsync,
                                         dressIds: codigosSeleccionados,
                                         packageId: widget.packagesAsync.id,
                                         packageName: widget.packagesAsync.name,
-                                        CategoryComposite: widget
-                                            .packagesAsync.components[index],
+                                        CategoryComposite: widget.packagesAsync.components[index],
                                       ),
                                     ),
                                   );
 
                                   if (selected != null) {
                                     setState(() {
-                                      selectedValues[index.toString()] =
-                                          selected;
-                                      codigosSeleccionados = selectedValues
-                                          .values
-                                          .map((e) => e['vestidoId'] ?? '')
-                                          .where((id) => id.isNotEmpty)
-                                          .toList();
+                                      selectedValues[index.toString()] = selected;
+                                      codigosSeleccionados = selectedValues.values.map((e) => e['vestidoId'] ?? '').where((id) => id.isNotEmpty).toList();
 
-                                      dressReservations =
-                                          selectedValues.entries.map((entry) {
+                                      dressReservations = selectedValues.entries.map((entry) {
                                         final value = entry.value;
-                                        final componentIndex =
-                                            int.tryParse(entry.key);
-                                        final componentName =
-                                            componentIndex != null &&
-                                                    componentIndex <
-                                                        widget.packagesAsync
-                                                            .components.length
-                                                ? widget.packagesAsync
-                                                    .components[componentIndex]
-                                                : '';
+                                        final componentIndex = int.tryParse(entry.key);
+                                        final componentName = componentIndex != null && componentIndex < widget.packagesAsync.components.length ? widget.packagesAsync.components[componentIndex] : '';
 
                                         return DressReservation(
                                           id: value['vestidoId'] ?? '',
@@ -177,13 +157,11 @@ class _PackageReservationScreen
                                         );
                                       }).toList();
                                     });
-                                    print(
-                                        'Seleccionados: $codigosSeleccionados');
+                                    print('Seleccionados: $codigosSeleccionados');
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 6),
+                                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                                 ),
                                 child: Text('Ver'),
                               ),
@@ -215,9 +193,7 @@ class _PackageReservationScreen
                                 child: TextField(
                                   readOnly: true,
                                   controller: TextEditingController(
-                                    text: selectedValues[index.toString()]
-                                            ?['vestidoName'] ??
-                                        '',
+                                    text: selectedValues[index.toString()]?['vestidoName'] ?? '',
                                   ),
                                   decoration: InputDecoration(
                                     labelText: "Nombre $component",
@@ -254,14 +230,55 @@ class _PackageReservationScreen
                         ),
                   onPressed: () {
                     if (dressReservations.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              Text("Por favor selecciona al menos un vestido."),
-                          backgroundColor: Colors.red,
-                        ),
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(
+                      //     content:
+                      //         Text("Por favor selecciona al menos un vestido."),
+                      //     backgroundColor: Colors.red,
+                      //   ),
+                      // );
+                      final rootContext = context; // guardamos el contexto de la pantalla
+
+                      showDialog(
+                        context: rootContext,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            title: const Text("Advertencia"),
+                            content: const Text("No seleccionaste ningún vestido. ¿Deseas continuar de todas formas?"),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(dialogContext).pop(); // Cierra el diálogo
+                                  return; // No hacer nada
+                                },
+                                child: const Text("No"),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(dialogContext).pop(); // Cierra el diálogo
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => DateTimeSelectionScreen(
+                                        packageId: widget.packagesAsync.id,
+                                        packageName: widget.packagesAsync.name,
+                                        dressId: '',
+                                        dressName: '',
+                                        branchId: '',
+                                        dressReservations: [
+                                          ...dressReservations,
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Text("Sí"),
+                              ),
+                            ],
+                          );
+                        },
                       );
-                      return;
                     } else {
                       Navigator.push(
                         context,
@@ -338,12 +355,5 @@ class DressReservation {
   final double? price;
   final bool isAvailable;
 
-  DressReservation(
-      {required this.id,
-      required this.name,
-      required this.branchId,
-      required this.componentName,
-      this.price = 0.0,
-      this.isAvailable = true});
-      
+  DressReservation({required this.id, required this.name, required this.branchId, required this.componentName, this.price = 0.0, this.isAvailable = true});
 }

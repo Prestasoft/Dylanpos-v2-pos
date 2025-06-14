@@ -28,12 +28,10 @@ class DateTimeSelectionScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  _DateTimeSelectionScreenState createState() =>
-      _DateTimeSelectionScreenState();
+  _DateTimeSelectionScreenState createState() => _DateTimeSelectionScreenState();
 }
 
-class _DateTimeSelectionScreenState
-    extends ConsumerState<DateTimeSelectionScreen> {
+class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScreen> {
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay.now();
   CustomerModel? selectedCustomer;
@@ -55,18 +53,13 @@ class _DateTimeSelectionScreenState
     });
 
     try {
-      final packageSnapshot = await FirebaseDatabase.instance
-          .ref('Admin Panel/services/${widget.packageId}')
-          .get();
+      final packageSnapshot = await FirebaseDatabase.instance.ref('Admin Panel/services/${widget.packageId}').get();
 
       if (packageSnapshot.exists && packageSnapshot.value is Map) {
-        final Map<dynamic, dynamic> packageData =
-            packageSnapshot.value as Map<dynamic, dynamic>;
+        final Map<dynamic, dynamic> packageData = packageSnapshot.value as Map<dynamic, dynamic>;
 
         setState(() {
-          packageDuration = (packageData['duration'] is Map)
-              ? Map<String, dynamic>.from(packageData['duration'])
-              : {'value': 1, 'unit': 'days'};
+          packageDuration = (packageData['duration'] is Map) ? Map<String, dynamic>.from(packageData['duration']) : {'value': 1, 'unit': 'days'};
           isLoadingPackage = false;
         });
       } else {
@@ -117,8 +110,6 @@ class _DateTimeSelectionScreenState
   }
 
   void _checkAvailabilityAndContinue() async {
-    //debugger();
-
     bool isDressAvailable = true;
 
     if (packageDuration == null) {
@@ -135,12 +126,15 @@ class _DateTimeSelectionScreenState
 
     final String formattedDate = _formatDate(selectedDate);
 
-    if (widget.dressReservations.isEmpty) {
+    if (widget.dressName.isNotEmpty && widget.dressId.isNotEmpty) {
       isDressAvailable = await ref.read(isDressAvailableForRangeProvider({
         'dressId': widget.dressId,
         'startDate': formattedDate,
         'duration': packageDuration,
       }).future);
+    } else if (widget.dressReservations.isEmpty) {
+      // Si no hay vestidos seleccionados, se puede proceder sin verificar disponibilidad
+      isDressAvailable = true;
     } else {
       for (var dress in widget.dressReservations) {
         bool available = true;
@@ -219,8 +213,7 @@ class _DateTimeSelectionScreenState
         // Mensaje más específico sobre el problema de disponibilidad
         final String duracionTexto = _getDuracionTexto();
         setState(() {
-          errorMessage =
-              "Este vestido no está disponible durante el período seleccionado ($duracionTexto).";
+          errorMessage = "Este vestido no está disponible durante el período seleccionado ($duracionTexto).";
         });
       }
     }
@@ -256,16 +249,14 @@ class _DateTimeSelectionScreenState
                   children: [
                     Text(
                       "Selecciona fecha y hora para tu sesión con el vestido:",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                     ),
                     SizedBox(height: 8),
                     _showDressesOption(context),
                     SizedBox(height: 8),
                     Text(
                       "Seleccione cliente",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     Padding(
                         padding: const EdgeInsets.all(12),
@@ -281,8 +272,7 @@ class _DateTimeSelectionScreenState
                     SizedBox(height: 24),
                     Card(
                       child: ListTile(
-                        leading: Icon(Icons.calendar_today,
-                            color: Theme.of(context).primaryColor),
+                        leading: Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
                         title: Text("Fecha"),
                         subtitle: Text(
                           "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
@@ -294,8 +284,7 @@ class _DateTimeSelectionScreenState
                     SizedBox(height: 12),
                     Card(
                       child: ListTile(
-                        leading: Icon(Icons.access_time,
-                            color: Theme.of(context).primaryColor),
+                        leading: Icon(Icons.access_time, color: Theme.of(context).primaryColor),
                         title: Text("Hora"),
                         subtitle: Text(selectedTime.format(context)),
                         trailing: Icon(Icons.arrow_forward_ios, size: 16),
@@ -333,14 +322,12 @@ class _DateTimeSelectionScreenState
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 16),
                         ),
-                        onPressed:
-                            isChecking ? null : _checkAvailabilityAndContinue,
+                        onPressed: isChecking ? null : _checkAvailabilityAndContinue,
                         child: isChecking
                             ? SizedBox(
                                 height: 20,
                                 width: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : Text('Continuar'),
                       ),
@@ -355,7 +342,7 @@ class _DateTimeSelectionScreenState
   Widget _showDressesOption(BuildContext context) {
     if (widget.dressReservations.isEmpty) {
       return Text(
-        widget.dressName,
+        widget.dressName == "" ? "No hay vestidos seleccionados" : widget.dressName,
         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       );
     } else if (widget.dressReservations.isNotEmpty) {
