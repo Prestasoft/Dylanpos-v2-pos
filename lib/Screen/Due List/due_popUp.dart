@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:mime/mime.dart';
+import 'dart:typed_data';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -97,6 +101,65 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
     // TODO: implement initState
     super.initState();
     dueAmount = widget.customerModel.remainedBalance.toDouble();
+  }
+
+  Future<void> _sendPdfViaWhatsApp({
+    required String phoneNumber,
+    required Uint8List pdfData,
+    required String invoiceNumber,
+    required String customerName,
+  }) async {
+    try {
+      // Validar número de teléfono
+      // final cleanedPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+      // if (!cleanedPhone.startsWith('+')) {
+      //   throw Exception('El número debe incluir código de país (ej: +1...)');
+      // }
+
+      EasyLoading.show(status: 'Preparando envío...');
+      
+      // Codificar PDF en Base64
+      final pdfBase64 = base64Encode(pdfData);
+      
+      // Crear mensaje
+      final safeMessage = '''
+        Hola ${customerName},
+        Adjunto su comprobante #${invoiceNumber}.
+        Gracias por su preferencia!
+        ''';
+      
+      // Crear cuerpo de la petición
+      final body = {
+        'token': '5i36w829nb1ljkj7',
+        'to': phoneNumber,
+        'filename': 'Comprobante_${invoiceNumber}.pdf',
+        'document': pdfBase64,
+        'caption': safeMessage,
+      };
+
+      // Configurar la petición HTTP
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document');
+      final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+      
+      EasyLoading.show(status: 'Enviando...');
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        EasyLoading.showSuccess('Enviado exitosamente');
+      } else {
+        throw Exception('Error en API: ${response.statusCode} - ${response.body}');
+      }
+
+    } catch (e) {
+      EasyLoading.showError('Error al enviar: ${e.toString().replaceAll('\n', ' ')}');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 500));
+      EasyLoading.dismiss();
+    }
   }
 
   @override
@@ -490,25 +553,78 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                     : () async {
                                         if (dueAmount > 0 && !payingAmountController.text.isEmptyOrNull && payingAmountController.text.toInt() > 0) {
                                           try {
-                                            setState(() {
-                                              saleButtonClicked = true;
-                                            });
-                                            EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                            setState(() => saleButtonClicked = true);
+                                            // EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                            
+                                            // 1. Guardar la transacción en Firebase
                                             DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Due Transaction");
-
+                                            
                                             dueTransactionModel.invoiceNumber = selectedInvoice;
                                             dueTransactionModel.totalDue = dueAmount;
                                             dueTransactionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
                                             dueAmountController.text.toDouble() <= 0 ? dueTransactionModel.isPaid = true : dueTransactionModel.isPaid = false;
-                                            dueAmountController.text.toDouble() <= 0 ? {dueTransactionModel.dueAmountAfterPay = 0, dueTransactionModel.payDueAmount = dueAmount} : {dueTransactionModel.dueAmountAfterPay = dueAmountController.text.toDouble(), dueTransactionModel.payDueAmount = dueAmount - dueAmountController.text.toDouble()};
-
+                                            dueAmountController.text.toDouble() <= 0 
+                                                ? {dueTransactionModel.dueAmountAfterPay = 0, dueTransactionModel.payDueAmount = dueAmount} 
+                                                : {dueTransactionModel.dueAmountAfterPay = dueAmountController.text.toDouble(), dueTransactionModel.payDueAmount = dueAmount - dueAmountController.text.toDouble()};
+                                            
                                             dueTransactionModel.paymentType = selectedPaymentOption;
                                             dueTransactionModel.sendWhatsappMessage = widget.customerModel.receiveWhatsappUpdates;
                                             await ref.push().set(dueTransactionModel.toJson());
 
-                                            await GeneratePdfAndPrint().printDueInvoice(personalInformationModel: data, dueTransactionModel: dueTransactionModel, setting: setting);
+                                            // 2. Preguntar si desea enviar por WhatsApp
+                                            final sendWhatsApp = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: Text('Enviar comprobante'),
+                                                content: Text('¿Desea enviar el comprobante de pago por WhatsApp al cliente?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, false),
+                                                    child: Text('No'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, true),
+                                                    child: Text('Sí, enviar'),
+                                                  ),
+                                                ],
+                                              ),
+                                            ) ?? false;
 
-                                            ///_____UpdateInvoice__________________________________________________
+                                            if (sendWhatsApp) {
+                                              try {
+                                                EasyLoading.show(status: 'Generando comprobante...');
+                                                
+                                                // Generar PDF para WhatsApp
+                                                final pdfData = await GeneratePdfAndPrint().printDueInvoice(
+                                                  personalInformationModel: data,
+                                                  dueTransactionModel: dueTransactionModel,
+                                                  setting: setting,
+                                                  returnPdfData: true, // Nuevo parámetro para obtener bytes
+                                                );
+
+                                                if (pdfData != null) {
+                                                  await _sendPdfViaWhatsApp(
+                                                    phoneNumber: dueTransactionModel.customerPhone ?? widget.customerModel.phoneNumber,
+                                                    pdfData: pdfData,
+                                                    invoiceNumber: selectedInvoice,
+                                                    customerName: dueTransactionModel.customerName ?? widget.customerModel.customerName,
+                                                  );
+                                                }
+                                              } catch (e) {
+                                                EasyLoading.showError('Error al enviar: ${e.toString()}');
+                                              }
+                                            }
+
+                                            // 3. Imprimir normalmente si no se envió por WhatsApp
+                                            if (!sendWhatsApp) {
+                                              await GeneratePdfAndPrint().printDueInvoice(
+                                                personalInformationModel: data,
+                                                dueTransactionModel: dueTransactionModel,
+                                                setting: setting,
+                                              );
+                                            }
+
+                                            // Resto del código para actualizar datos...
                                             selectedInvoice != 'Select Invoice'
                                                 ? updateDueInvoice(
                                                     type: widget.customerModel.type,
@@ -517,8 +633,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                   )
                                                 : null;
 
-                                            ///________daily_transactionModel_________________________________________________________________________
-
+                                            // Actualización de transacción diaria
                                             if (dueTransactionModel.customerType == 'Supplier') {
                                               DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                                 name: dueTransactionModel.customerName,
@@ -529,7 +644,6 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 paymentOut: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 id: selectedInvoice,
-                                                //id: dueTransactionModel.invoiceNumber,
                                                 dueTransactionModel: dueTransactionModel,
                                               );
                                               postDailyTransaction(dailyTransactionModel: dailyTransaction);
@@ -543,13 +657,12 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 paymentOut: 0,
                                                 remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 id: selectedInvoice,
-                                                //id: dueTransactionModel.invoiceNumber,
                                                 dueTransactionModel: dueTransactionModel,
                                               );
                                               postDailyTransaction(dailyTransactionModel: dailyTransaction);
                                             }
 
-                                            ///_________DueUpdate______________________________________________________
+                                            // Actualizar saldo del cliente
                                             final cRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
                                             String? key;
 
@@ -571,44 +684,28 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                             cRef.child(key!).update({'due': '$totalDue'});
                                             selectedInvoice == 'Select Invoice' ? cRef.child(key!).update({'remainedBalance': '$remainedDue'}) : null;
 
-                                            ///_________Invoice Increase____________________________________________________________________________
-                                            updateInvoice(
-                                              typeOfInvoice: 'dueInvoiceCounter',
-                                              invoice: data.dueInvoiceCounter.toInt(),
-                                            );
-
-                                            ///________Subscription_____________________________________________________
+                                            // Actualizar contadores y providers
+                                            updateInvoice(typeOfInvoice: 'dueInvoiceCounter', invoice: data.dueInvoiceCounter.toInt());
                                             Subscription.decreaseSubscriptionLimits(itemType: 'dueNumber', context: context);
 
-                                            consumerRef
-                                                // ignore: unused_result
-                                                .refresh(allCustomerProvider);
-                                            consumerRef
-                                                // ignore: unused_result
-                                                .refresh(transitionProvider);
-                                            // ignore: unused_result
+                                            consumerRef.refresh(allCustomerProvider);
+                                            consumerRef.refresh(transitionProvider);
                                             consumerRef.refresh(purchaseTransitionProvider);
-                                            // ignore: unused_result
                                             consumerRef.refresh(dueTransactionProvider);
-                                            // ignore: unused_result
                                             consumerRef.refresh(profileDetailsProvider);
-                                            // ignore: unused_result
                                             consumerRef.refresh(dailyTransactionProvider);
 
                                             finish(context);
                                             EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully);
                                           } catch (e) {
-                                            setState(() {
-                                              saleButtonClicked = false;
-                                            });
-                                            EasyLoading.dismiss();
-                                            //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                            setState(() => saleButtonClicked = false);
+                                            EasyLoading.showError('Error: ${e.toString()}');
+                                          } finally {
+                                            setState(() => saleButtonClicked = false);
                                           }
                                         } else if (dueAmount <= 0) {
-                                          // EasyLoading.showError('Select a Invoice');
                                           EasyLoading.showError(lang.S.of(context).selectAInvoice);
                                         } else if (payingAmountController.text.isEmptyOrNull || payingAmountController.text.toInt() <= 0) {
-                                          //EasyLoading.showError('Please Enter Amount');
                                           EasyLoading.showError(lang.S.of(context).pleaseEnterAmount);
                                         }
                                       },

@@ -1,6 +1,9 @@
 // ignore_for_file: use_build_context_synchronously
 import 'dart:developer';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:mime/mime.dart';
+import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -347,6 +350,8 @@ class _SaleListState extends State<SaleList> {
                                                               PopupMenuItem(
                                                                 onTap: () async {
                                                                   print("Item index ======  ${paginatedTransactions[index].invoiceNumber}");
+                                                                  
+                                                                  // 1. Diálogo para seleccionar tipo de impresión (sin loader)
                                                                   final printType = await showDialog<String>(
                                                                     context: context,
                                                                     builder: (context) => AlertDialog(
@@ -354,13 +359,13 @@ class _SaleListState extends State<SaleList> {
                                                                       content: Column(
                                                                         mainAxisSize: MainAxisSize.min,
                                                                         children: [
-                                                                          ListTile(
-                                                                            leading: Icon(Icons.receipt, color: Colors.blue),
-                                                                            title: Text('Factura térmica'),
-                                                                            subtitle: Text('Para impresora de 58-80mm'),
-                                                                            onTap: () => Navigator.pop(context, 'thermal'),
-                                                                          ),
-                                                                          Divider(),
+                                                                          // ListTile(
+                                                                          //   leading: Icon(Icons.receipt, color: Colors.blue),
+                                                                          //   title: Text('Factura térmica'),
+                                                                          //   subtitle: Text('Para impresora de 58-80mm'),
+                                                                          //   onTap: () => Navigator.pop(context, 'thermal'),
+                                                                          // ),
+                                                                          // Divider(),
                                                                           ListTile(
                                                                             leading: Icon(Icons.description, color: Colors.green),
                                                                             title: Text('Factura normal'),
@@ -377,35 +382,74 @@ class _SaleListState extends State<SaleList> {
                                                                       ],
                                                                     ),
                                                                   );
-                                                                  if (printType == null) {
-                                                                    EasyLoading.dismiss();
-
-                                                                    return;
-                                                                  }
-                                                                  EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                                                  
+                                                                  if (printType == null) return;
+                                                                  
+                                                                  // 2. Diálogo para confirmar envío por WhatsApp
+                                                                  final sendWhatsApp = await showDialog<bool>(
+                                                                    context: context,
+                                                                    builder: (context) => AlertDialog(
+                                                                      title: Text('Enviar por WhatsApp'),
+                                                                      content: Text('¿Desea enviar el comprobante por WhatsApp al cliente?'),
+                                                                      actions: [
+                                                                        TextButton(
+                                                                          onPressed: () => Navigator.pop(context, false),
+                                                                          child: Text('No'),
+                                                                        ),
+                                                                        TextButton(
+                                                                          onPressed: () => Navigator.pop(context, true),
+                                                                          child: Text('Sí, enviar'),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ) ?? false;
 
                                                                   SaleTransactionModel post = checkLossProfit(transitionModel: paginatedTransactions[index]);
-                                                                  if (printType == 'normal' || printType == 'both') {
-                                                                    await GeneratePdfAndPrint().printSaleInvoice(
-                                                                      setting: setting,
-                                                                      personalInformationModel: profile.value!,
-                                                                      saleTransactionModel: paginatedTransactions[index],
-                                                                      context: context,
-                                                                      fromSaleReports: true,
-                                                                      post: post,
-                                                                    );
-                                                                  }
+                                                                  
+                                                                  if (sendWhatsApp) {
+                                                                    try {
+                                                                      // olo para WhatsApp - muestra loader de carga
+                                                                      EasyLoading.show(status: 'Generando PDF para enviar...');
+                                                                      
+                                                                      // Generar PDF (returnPdfData: true para obtener los bytes)
+                                                                      final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
+                                                                        setting: setting,
+                                                                        personalInformationModel: profile.value!,
+                                                                        saleTransactionModel: paginatedTransactions[index],
+                                                                        context: context,
+                                                                        printType: printType,
+                                                                        fromSaleReports: true,
+                                                                        post: post,
+                                                                        returnPdfData: true,
+                                                                      );
 
-                                                                  if (printType == 'thermal' || printType == 'both') {
+                                                                      if (pdfData != null) {
+                                                                        // Enviar por WhatsApp
+                                                                        await _sendPdfViaWhatsApp(
+                                                                          phoneNumber: paginatedTransactions[index].customerPhone,
+                                                                          pdfData: pdfData,
+                                                                          invoiceNumber: paginatedTransactions[index].invoiceNumber,
+                                                                          customerName: paginatedTransactions[index].customerName,
+                                                                        );
+                                                                      }
+                                                                      EasyLoading.dismiss();
+                                                                    } catch (e) {
+                                                                      EasyLoading.dismiss();
+                                                                      EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
+                                                                    }
+                                                                  } else {
+                                                                    //Solo para impresión - muestra loader específico
+                                                                    EasyLoading.show(status: 'Preparando impresión...');
                                                                     await GeneratePdfAndPrint().printSaleInvoice(
                                                                       setting: setting,
                                                                       personalInformationModel: profile.value!,
                                                                       saleTransactionModel: paginatedTransactions[index],
                                                                       context: context,
-                                                                      printType: 'thermal',
+                                                                      printType: printType,
                                                                       fromSaleReports: true,
                                                                       post: post,
                                                                     );
+                                                                    EasyLoading.dismiss();
                                                                   }
 
                                                                   GoRouter.of(bc).pop();
@@ -749,6 +793,65 @@ class _SaleListState extends State<SaleList> {
         ),
       ),
     );
+  }
+
+  Future<void> _sendPdfViaWhatsApp({
+    required String phoneNumber,
+    required Uint8List pdfData,
+    required String invoiceNumber,
+    required String customerName,
+  }) async {
+    try {
+      // Validar número de teléfono
+      // final cleanedPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+      // if (!cleanedPhone.startsWith('+')) {
+      //   throw Exception('El número debe incluir código de país (ej: +1...)');
+      // }
+
+      EasyLoading.show(status: 'Preparando envío...');
+      
+      // Codificar PDF en Base64
+      final pdfBase64 = base64Encode(pdfData);
+      
+      // Crear mensaje
+      final safeMessage = '''
+        Hola ${customerName},
+        Adjunto su comprobante #${invoiceNumber}.
+        Gracias por su preferencia!
+        ''';
+      
+      // Crear cuerpo de la petición
+      final body = {
+        'token': '5i36w829nb1ljkj7',
+        'to': phoneNumber,
+        'filename': 'Comprobante_${invoiceNumber}.pdf',
+        'document': pdfBase64,
+        'caption': safeMessage,
+      };
+
+      // Configurar la petición HTTP
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document');
+      final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+      
+      EasyLoading.show(status: 'Enviando...');
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        EasyLoading.showSuccess('Enviado exitosamente');
+      } else {
+        throw Exception('Error en API: ${response.statusCode} - ${response.body}');
+      }
+
+    } catch (e) {
+      EasyLoading.showError('Error al enviar: ${e.toString().replaceAll('\n', ' ')}');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 500));
+      EasyLoading.dismiss();
+    }
   }
 
   void paysDetails({
