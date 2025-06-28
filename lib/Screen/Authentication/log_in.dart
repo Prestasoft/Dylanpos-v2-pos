@@ -47,6 +47,36 @@ class _EmailLogInState extends State<EmailLogIn> {
   }
 
   bool hidePassword = true;
+  bool rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  void _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      email = prefs.getString('saved_email') ?? '';
+      password = prefs.getString('saved_password') ?? '';
+      rememberMe = prefs.getBool('remember_me') ?? false;
+    });
+  }
+
+  void _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (rememberMe) {
+      await prefs.setString('saved_email', email);
+      await prefs.setString('saved_password', password);
+      await prefs.setBool('remember_me', true);
+    } else {
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+      await prefs.setBool('remember_me', false);
+    }
+  }
+
   Future<bool> checkUser({required BuildContext context}) async {
     final isActive = await PurchaseModel().isActiveBuyer();
     if (isActive) {
@@ -237,8 +267,10 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                   }
                                                   return null;
                                                 },
+                                                initialValue: email,
                                                 onChanged: (value) {
-                                                  loginProvider.email = value;
+                                                  loginProvider.email = value.trim();
+                                                  email = value.trim();
                                                 },
                                                 decoration: kInputDecoration.copyWith(
                                                   prefixIcon: Padding(
@@ -270,15 +302,32 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                 keyboardType: TextInputType.visiblePassword,
                                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
                                                 validator: (value) {
-                                                  if (value == null || value.isEmpty) {
+                                                  if (value == null || value.trim().isEmpty) {
                                                     return 'Password can\'t be empty';
-                                                  } else if (value.length < 4) {
+                                                  } else if (value.trim().length < 4) {
                                                     return 'Please enter a bigger password';
                                                   }
                                                   return null;
                                                 },
+                                                initialValue: password,
                                                 onChanged: (value) {
-                                                  loginProvider.password = value;
+                                                  loginProvider.password = value.trim();
+                                                  password = value.trim();
+                                                },
+                                                onEditingComplete: () async {
+                                                  password = password.trim();
+                                                  if (validateAndSave()) {
+                                                    bool isActive = await checkUser(context: context);
+                                                    if (isActive) {
+                                                      password = password.trim();
+                                                      _saveCredentials();
+                                                      loginProvider.email = email.trim();
+                                                      loginProvider.password = password;
+                                                      loginProvider.signIn(context);
+                                                    } else {
+                                                      EasyLoading.showInfo(lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp);
+                                                    }
+                                                  }
                                                 },
                                                 obscureText: hidePassword,
                                                 decoration: kInputDecoration.copyWith(
@@ -315,6 +364,20 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                   hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
                                                 ),
                                               ),
+                                              const SizedBox(height: 10.0),
+                                              Row(
+                                                children: [
+                                                  Checkbox(
+                                                    value: rememberMe,
+                                                    onChanged: (value) {
+                                                      setState(() {
+                                                        rememberMe = value ?? false;
+                                                      });
+                                                    },
+                                                  ),
+                                                  Text('Recordar credenciales', style: Theme.of(context).textTheme.bodyMedium),
+                                                ],
+                                              ),
                                               const SizedBox(height: 20.0),
                                               ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
@@ -322,12 +385,17 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                   backgroundColor: const Color(0xFFD59345), // Cambiado a color #d59345
                                                 ),
                                                 onPressed: () async {
+                                                  password = password.trim();
                                                   if (validateAndSave()) {
                                                     bool isActive = await checkUser(context: context);
                                                     if (isActive) {
+                                                      password = password.trim();
+                                                      _saveCredentials();
+                                                      loginProvider.email = email.trim();
+                                                      loginProvider.password = password;
                                                       loginProvider.signIn(context);
                                                     } else {
-                                                      EasyLoading.showInfo('${lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp}.');
+                                                      EasyLoading.showInfo(lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp);
                                                     }
                                                   }
                                                 },
