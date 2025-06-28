@@ -43,6 +43,13 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
     duration: 0,
     products: 0,
   );
+
+ SidebarItemModel  homeTab = SidebarItemModel(
+      name: 'Inicio',
+      iconPath: 'images/dashboard_icon/dashboard.svg',
+      type: "blank_home",
+      navigationPath: '/blank-home',
+    );
   void checkSubscriptionData() async {
     subscriptionModel =
         await currentSubscriptionPlanRepo.getCurrentSubscriptionPlans();
@@ -68,6 +75,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
     final screenWidth = MediaQuery.of(context).size.width;
     print("Final user: ${finalUserRoleModel.toJson()}");
     final filteredMenus = getTopMenusForUser(finalUserRoleModel);
+    final _selectedInfoHome = _isSelected(context,  homeTab 
+);
     return Drawer(
       backgroundColor: Colors.black,
       clipBehavior: Clip.none,
@@ -332,6 +341,29 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                             : const SizedBox(height: 16),
                   ],
                 ),
+              ),
+            ),
+            ResponsiveRowColumnItem(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ResponsiveRowColumnItem(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: SidebarMenuItem(
+                            iconOnly: widget.iconOnly,
+                            menuTile: homeTab,
+                            groupName: homeTab.name,
+                            isSelected: _selectedInfoHome.isSelectedMenu,
+                            selectedSubmenu: _selectedInfoHome.selectedSubmenu,
+                            onTap: () => _handleNavigation(context, homeTab),
+                            onSubmenuTap: (value) => _handleNavigation(
+                              context,
+                              homeTab,
+                              submenu: value,
+                            ),
+                          ),
+                        ),
+                      )
               ),
             ),
             ResponsiveRowColumnItem(

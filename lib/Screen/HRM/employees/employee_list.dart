@@ -113,7 +113,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                 const SizedBox(width: 20.0),
                                 ElevatedButton(
                                     onPressed: () async {
-                                      if (finalUserRoleModel.hrmEdit == false) {
+                                      if (!checkUserRoleEditPermissionV2(type: 'hrm')) {
                                         EasyLoading.showError(
                                             userPermissionErrorText);
                                         return;
@@ -405,9 +405,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                                     GestureDetector(
                                                                   onTap:
                                                                       () async {
-                                                                    if (finalUserRoleModel
-                                                                            .hrmEdit ==
-                                                                        false) {
+                                                                    if (!checkUserRoleEditPermissionV2(type: 'hrm')) {
                                                                       EasyLoading
                                                                           .showError(
                                                                               userPermissionErrorText);
@@ -478,9 +476,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                                                                     GestureDetector(
                                                                   onTap:
                                                                       () async {
-                                                                    if (finalUserRoleModel
-                                                                            .hrmDelete ==
-                                                                        false) {
+                                                                    if (!checkUserRoleDeletePermissionV2(type: 'hrm')) {
                                                                       EasyLoading
                                                                           .showError(
                                                                               userPermissionErrorText);

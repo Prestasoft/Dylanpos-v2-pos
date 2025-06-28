@@ -36,42 +36,12 @@ class _AddUserRoleState extends State<AddUserRole> {
     return false;
   }
 
-  bool allPermissions = false;
-  bool salePermission = false;
-  bool partiesPermission = false;
-  bool purchasePermission = false;
-  bool productPermission = false;
-  bool profileEditPermission = false;
-  bool addExpensePermission = false;
-  bool lossProfitPermission = false;
-  bool dueListPermission = false;
-  bool stockPermission = false;
-  bool reportsPermission = false;
-  bool salesListPermission = false;
-  bool purchaseListPermission = false;
-  bool incomePermission = false;
-  bool ledgerPermission = false;
-  bool dailyTransactionPermission = false;
+
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController titleController = TextEditingController();
   TextEditingController userRoleName = TextEditingController();
-  List<Permission> permissions = [
-    Permission(type: 'Sale'),
-    Permission(type: 'Parties'),
-    Permission(type: 'Purchase'),
-    Permission(type: 'Product'),
-    Permission(type: 'Profile Edit'),
-    Permission(type: 'Add Expense'),
-    Permission(type: 'Loss Profit'),
-    Permission(type: 'Due List'),
-    Permission(type: 'Stock'),
-    Permission(type: 'Reports'),
-    Permission(type: 'Sales List'),
-    Permission(type: 'Purchase List'),
-    Permission(type: 'HRM')
-  ];
   List<Permission> defaultPermissions = [
     Permission(type: 'dashboard'),
     Permission(type: 'services'),

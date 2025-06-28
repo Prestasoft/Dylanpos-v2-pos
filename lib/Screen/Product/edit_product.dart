@@ -2439,9 +2439,7 @@ class _AddProductState extends State<EditProduct> {
                                           padding: const EdgeInsets.all(10.0),
                                           child: ElevatedButton(
                                             onPressed: () async {
-                                              if (finalUserRoleModel
-                                                      .productEdit ==
-                                                  false) {
+                                              if (!checkUserRoleEditPermissionV2(type: 'product')) {
                                                 EasyLoading.showError(
                                                     userPermissionErrorText);
                                                 return;

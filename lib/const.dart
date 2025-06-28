@@ -241,6 +241,17 @@ bool checkUserRoleEditPermissionV2({
   return match.edit;
 }
 
+bool checkUserRoleDeletePermissionV2({
+  required String type,
+}) {
+  final match = finalUserRoleModel.permissions.firstWhere(
+    (p) => p.type == type,
+    orElse: () => Permission(type: type, delete: false),
+  );
+
+  return match.delete;
+}
+
 // bool checkUserRolePermissionvV2({required String type}) {
 //   //await getUserDataFromLocal();
 //   bool permission = true;

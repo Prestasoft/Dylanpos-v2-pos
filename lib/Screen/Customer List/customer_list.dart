@@ -594,7 +594,8 @@ class _CustomerListState extends State<CustomerList> {
                                                                                               lang.S.of(context).delete,
                                                                                             ),
                                                                                             onPressed: () {
-                                                                                              if (finalUserRoleModel.partiesDelete == false) {
+                                                                                              print("FUNCION DELETE ===================================> ${checkUserRoleDeletePermissionV2(type: 'customers')}");
+                                                                                              if (!checkUserRoleDeletePermissionV2(type: 'customers')) {
                                                                                                 EasyLoading.showError(userPermissionErrorText);
                                                                                                 return;
                                                                                               }
