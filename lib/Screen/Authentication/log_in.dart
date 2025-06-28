@@ -33,7 +33,9 @@ class EmailLogIn extends StatefulWidget {
 }
 
 class _EmailLogInState extends State<EmailLogIn> {
-  late String email, password;
+  // Inicializar como strings vacíos para evitar null
+  String email = '';
+  String password = '';
   GlobalKey<FormState> globalKey = GlobalKey<FormState>();
   String? user;
 
@@ -41,6 +43,12 @@ class _EmailLogInState extends State<EmailLogIn> {
     final form = globalKey.currentState;
     if (form!.validate()) {
       form.save();
+      // Asegurar que email y password estén limpios
+      email = email.trim();
+      password = password.trim();
+      if (email.isEmpty || password.isEmpty) {
+        return false;
+      }
       return true;
     }
     return false;
