@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:mime/mime.dart';
@@ -112,22 +111,6 @@ class _InventorySalesState extends State<InventorySales> {
     }
   }
 
-  void updateDueAmount() {
-    setState(() {
-      double total = double.parse(
-        (double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(1),
-      );
-      double paidAmount = double.tryParse(payingAmountController.text) ?? 0;
-      if (paidAmount > total) {
-        changeAmountController.text = (paidAmount - total).toString();
-        dueAmountController.text = '0';
-      } else {
-        dueAmountController.text = (total - paidAmount).abs().toString();
-        changeAmountController.text = '0';
-      }
-    });
-  }
-
   Future<void> _sendPdfViaWhatsApp({
     required String phoneNumber,
     required Uint8List pdfData,
@@ -185,6 +168,22 @@ class _InventorySalesState extends State<InventorySales> {
       await Future.delayed(const Duration(milliseconds: 500));
       EasyLoading.dismiss();
     }
+  }
+
+  void updateDueAmount() {
+    setState(() {
+      double total = double.parse(
+        (double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(1),
+      );
+      double paidAmount = double.tryParse(payingAmountController.text) ?? 0;
+      if (paidAmount > total) {
+        changeAmountController.text = (paidAmount - total).toString();
+        dueAmountController.text = '0';
+      } else {
+        dueAmountController.text = (total - paidAmount).abs().toString();
+        changeAmountController.text = '0';
+      }
+    });
   }
 
   void showReservationSelection(String clientId) {
@@ -2209,8 +2208,17 @@ class _InventorySalesState extends State<InventorySales> {
                                           if (cartList.isEmpty) {
                                             EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
                                           } else {
+                                            // getLastInvoiceNumber().then((valor) {
+                                            //   setState(() {
+                                            //     invoiceNumberGenerated = valor.toString();
+                                            //   });
+                                            // });
+
+                                            // debugger();
+                                            // print("llego aqui1: " + invoiceNumberGenerated.toString());
+
                                             var invoice_number_variable = await getLastInvoiceNumber();
-                                            print("Número de factura generado: " + invoice_number_variable.toString());
+                                            print("llego aqui: " + invoice_number_variable.toString());
 
                                             SaleTransactionModel transitionModel = SaleTransactionModel(
                                               customerName: selectedUserName?.customerName ?? '',
@@ -2219,7 +2227,12 @@ class _InventorySalesState extends State<InventorySales> {
                                               customerAddress: selectedUserName?.customerAddress ?? '',
                                               customerPhone: selectedUserName?.phoneNumber ?? '',
                                               customerGst: selectedUserName?.gst ?? '',
+                                              // Se agrega validador en el momento
                                               invoiceNumber: invoice_number_variable.toString(),
+
+                                              // data
+                                              //     .saleInvoiceCounter
+                                              //     .toString(),
                                               sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
                                               purchaseDate: DateTime.now().toString(),
                                               productList: cartList,
@@ -2232,194 +2245,218 @@ class _InventorySalesState extends State<InventorySales> {
 
                                             if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
                                               EasyLoading.showError(lang.S.of(context).dueIsNotAvailableForGuest);
-                                              return;
-                                            }
+                                            } else {
+                                              try {
+                                                setState(() {
+                                                  saleButtonClicked = true;
+                                                });
 
-                                            try {
-                                              setState(() => saleButtonClicked = true);
-
-                                              // 1. Preguntar formato de impresión
-                                              final printType = await showDialog<String>(
-                                                context: context,
-                                                builder: (context) => AlertDialog(
-                                                  title: Text('Seleccionar formato de impresión'),
-                                                  content: Column(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      ListTile(
-                                                        leading: Icon(Icons.receipt, color: Colors.blue),
-                                                        title: Text('Factura térmica'),
-                                                        subtitle: Text('Para impresora de 58-80mm'),
-                                                        onTap: () => Navigator.pop(context, 'thermal'),
-                                                      ),
-                                                      Divider(),
-                                                      ListTile(
-                                                        leading: Icon(Icons.description, color: Colors.green),
-                                                        title: Text('Factura normal'),
-                                                        subtitle: Text('Formato completo A4/Letter'),
-                                                        onTap: () => Navigator.pop(context, 'normal'),
+                                                final printType = await showDialog<String>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: Text('Seleccionar formato de impresión'),
+                                                    content: Column(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        ListTile(
+                                                          leading: Icon(Icons.receipt, color: Colors.blue),
+                                                          title: Text('Factura térmica'),
+                                                          subtitle: Text('Para impresora de 58-80mm'),
+                                                          onTap: () => Navigator.pop(context, 'thermal'),
+                                                        ),
+                                                        Divider(),
+                                                        ListTile(
+                                                          leading: Icon(Icons.description, color: Colors.green),
+                                                          title: Text('Factura normal'),
+                                                          subtitle: Text('Formato completo A4/Letter'),
+                                                          onTap: () => Navigator.pop(context, 'normal'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        child: Text('Cancelar'),
+                                                        onPressed: () => Navigator.pop(context),
                                                       ),
                                                     ],
                                                   ),
-                                                  actions: [
-                                                    TextButton(
-                                                      child: Text('Cancelar'),
-                                                      onPressed: () => Navigator.pop(context),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-
-                                              if (printType == null) {
-                                                setState(() => saleButtonClicked = false);
-                                                return;
-                                              }
-
-                                              // 2. Preguntar si desea enviar por WhatsApp
-                                              final sendWhatsApp = await showDialog<bool>(
-                                                context: context,
-                                                builder: (context) => AlertDialog(
-                                                  title: Text('Enviar por WhatsApp'),
-                                                  content: Text('¿Desea enviar el comprobante por WhatsApp al cliente?'),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () => Navigator.pop(context, false),
-                                                      child: Text('No'),
-                                                    ),
-                                                    TextButton(
-                                                      onPressed: () => Navigator.pop(context, true),
-                                                      child: Text('Sí, enviar'),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ) ?? false;
-
-                                              EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
-
-                                              // Configurar modelo de transacción
-                                              (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
-                                              (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
-                                              (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
-                                              transitionModel.paymentType = selectedPaymentOption;
-                                              transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
-
-                                              // Guardar en Firebase
-                                              DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
-                                              SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
-                                              await ref.push().set(post.toJson());
-
-                                              if (sendWhatsApp) {
-                                                try {
-                                                  // Generar PDF para WhatsApp
-                                                  final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
-                                                    personalInformationModel: data,
-                                                    saleTransactionModel: transitionModel,
-                                                    context: context,
-                                                    fromInventorySale: true,
-                                                    setting: setting,
-                                                    printType: printType,
-                                                    post: post,
-                                                    returnPdfData: true,
-                                                  );
-
-                                                  if (pdfData != null) {
-                                                    await _sendPdfViaWhatsApp(
-                                                      phoneNumber: transitionModel.customerPhone,
-                                                      pdfData: pdfData,
-                                                      invoiceNumber: transitionModel.invoiceNumber,
-                                                      customerName: transitionModel.customerName,
-                                                    );
-                                                  }
-                                                } catch (e) {
-                                                  EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
-                                                }
-                                              }
-
-                                              // Imprimir normalmente si no se envió por WhatsApp o como respaldo
-                                              if (!sendWhatsApp) {
-                                                await GeneratePdfAndPrint().printSaleInvoice(
-                                                  personalInformationModel: data,
-                                                  saleTransactionModel: transitionModel,
-                                                  context: context,
-                                                  fromInventorySale: true,
-                                                  setting: setting,
-                                                  printType: printType,
-                                                  post: post,
                                                 );
-                                              }
 
-                                              // Actualizar stock y otras operaciones
-                                              final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
-                                              for (var element in transitionModel.productList!) {
-                                                var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
-                                                final data2 = jsonDecode(jsonEncode(data.snapshot.value));
-                                                String productPath = data.snapshot.value.toString().substring(1, 21);
-
-                                                var data1 = await stockRef.child('$productPath/productStock').get();
-                                                num stock = num.parse(data1.value.toString());
-                                                num remainStock = stock - element.quantity;
-
-                                                stockRef.child(productPath).update({'productStock': '$remainStock'});
-
-                                                if (element.serialNumber?.isNotEmpty ?? false) {
-                                                  var productOldSerialList = data2[productPath]['serialNumber'];
-                                                  List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
-                                                  stockRef.child(productPath).update({
-                                                    'serialNumber': result.map((e) => e).toList(),
-                                                  });
+                                                if (printType == null) {
+                                                  EasyLoading.dismiss();
+                                                  setState(() => saleButtonClicked = false);
+                                                  return;
                                                 }
-                                              }
 
-                                              updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
-                                              Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
+                                                final sendWhatsApp = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: Text('Enviar por WhatsApp'),
+                                                    content: Text('¿Desea enviar el comprobante por WhatsApp al cliente?'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(context, false),
+                                                        child: Text('No'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(context, true),
+                                                        child: Text('Sí, enviar'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ) ?? false;
 
-                                              DailyTransactionModel dailyTransaction = DailyTransactionModel(
-                                                name: post.customerName,
-                                                date: post.purchaseDate,
-                                                type: 'Sale',
-                                                total: post.totalAmount!.toDouble(),
-                                                paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
-                                                paymentOut: 0,
-                                                remainingBalance: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
-                                                id: post.invoiceNumber,
-                                                saleTransactionModel: post,
-                                              );
-                                              postDailyTransaction(dailyTransactionModel: dailyTransaction);
+                                                EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
 
-                                              if (transitionModel.customerName != 'Guest') {
-                                                final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-                                                String? key;
+                                                print("TIPO DE DE IMPRESION $printType");
+                                                EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                                DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
+                                                (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
+                                                (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
+                                                (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
+                                                transitionModel.paymentType = selectedPaymentOption;
+                                                transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
+                                                SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
+                                                await ref.push().set(post.toJson());
 
-                                                await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
-                                                  for (var element in value.children) {
-                                                    var data = jsonDecode(jsonEncode(element.value));
-                                                    if (data['phoneNumber'] == transitionModel.customerPhone) {
-                                                      key = element.key;
+                                                //imprimir factura
+                                                if (sendWhatsApp) {
+                                                  try {
+                                                    // Generar PDF para WhatsApp
+                                                    final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
+                                                      personalInformationModel: data,
+                                                      saleTransactionModel: transitionModel,
+                                                      context: context,
+                                                      fromInventorySale: true,
+                                                      setting: setting,
+                                                      printType: 'normal',
+                                                      post: post,
+                                                      returnPdfData: true,
+                                                    );
+
+                                                    if (pdfData != null) {
+                                                      await _sendPdfViaWhatsApp(
+                                                        phoneNumber: transitionModel.customerPhone,
+                                                        pdfData: pdfData,
+                                                        invoiceNumber: transitionModel.invoiceNumber,
+                                                        customerName: transitionModel.customerName,
+                                                      );
                                                     }
+                                                  } catch (e) {
+                                                    EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
                                                   }
+                                                }
+
+                                                print("llego aqui: " + post.toJson().toString());
+                                                if (printType == 'normal' || printType == 'both') {
+                                                  await GeneratePdfAndPrint().printSaleInvoice(
+                                                    personalInformationModel: data, 
+                                                    saleTransactionModel: transitionModel, 
+                                                    context: context, 
+                                                    fromInventorySale: true, 
+                                                    setting: setting, 
+                                                    printType: 'normal', 
+                                                    post: post
+                                                  );
+                                                }
+
+                                                // if (printType == 'thermal' || printType == 'both') {
+                                                //   await GeneratePdfAndPrint().printSaleInvoice(
+                                                //     personalInformationModel: data,
+                                                //     saleTransactionModel: transitionModel,
+                                                //     context: context,
+                                                //     fromInventorySale: true,
+                                                //     setting: setting,
+                                                //     printType: 'thermal',
+                                                //     post: post,
+                                                //   );
+
+                                                //   print("llego uoo ");
+                                                // }
+
+                                                limpiarCarro();
+
+                                                final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
+                                                for (var element in transitionModel.productList!) {
+                                                  var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
+                                                  final data2 = jsonDecode(jsonEncode(data.snapshot.value));
+                                                  String productPath = data.snapshot.value.toString().substring(1, 21);
+
+                                                  var data1 = await stockRef.child('$productPath/productStock').get();
+                                                  num stock = num.parse(data1.value.toString());
+                                                  num remainStock = stock - element.quantity;
+
+                                                  stockRef.child(productPath).update({'productStock': '$remainStock'});
+
+                                                  if (element.serialNumber?.isNotEmpty ?? false) {
+                                                    var productOldSerialList = data2[productPath]['serialNumber'];
+
+                                                    List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
+                                                    stockRef.child(productPath).update({
+                                                      'serialNumber': result.map((e) => e).toList(),
+                                                    });
+                                                  }
+                                                }
+
+                                                updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
+
+                                                Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
+
+                                                DailyTransactionModel dailyTransaction = DailyTransactionModel(
+                                                  name: post.customerName,
+                                                  date: post.purchaseDate,
+                                                  type: 'Sale',
+                                                  total: post.totalAmount!.toDouble(),
+                                                  paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
+                                                  paymentOut: 0,
+                                                  remainingBalance: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
+                                                  id: post.invoiceNumber,
+                                                  saleTransactionModel: post,
+                                                );
+                                                postDailyTransaction(dailyTransactionModel: dailyTransaction);
+
+                                                if (transitionModel.customerName != 'Guest') {
+                                                  final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
+                                                  String? key;
+
+                                                  await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+                                                    for (var element in value.children) {
+                                                      var data = jsonDecode(jsonEncode(element.value));
+                                                      if (data['phoneNumber'] == transitionModel.customerPhone) {
+                                                        key = element.key;
+                                                      }
+                                                    }
+                                                  });
+                                                  var data1 = await dueUpdateRef.child('$key/due').get();
+                                                  int previousDue = data1.value.toString().toInt();
+
+                                                  int totalDue = previousDue + transitionModel.dueAmount!.toInt();
+                                                  dueUpdateRef.child(key!).update({'due': '$totalDue'});
+                                                }
+
+                                                print("llegaaaaaaaaaaaaaa aqui ");
+                                                // ignore: unused_result
+                                                consumerRef.refresh(allCustomerProvider);
+                                                // ignore: unused_result
+                                                consumerRef.refresh(transitionProvider);
+                                                // ignore: unused_result
+                                                consumerRef.refresh(productProvider);
+                                                // ignore: unused_result
+                                                consumerRef.refresh(purchaseTransitionProvider);
+                                                // ignore: unused_result
+                                                consumerRef.refresh(dueTransactionProvider);
+                                                // ignore: unused_result
+                                                consumerRef.refresh(profileDetailsProvider);
+                                                // ignore: unused_result
+                                                consumerRef.refresh(dailyTransactionProvider);
+
+                                                EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
+                                              } catch (e) {
+                                                setState(() {
+                                                  saleButtonClicked = false;
                                                 });
-                                                var data1 = await dueUpdateRef.child('$key/due').get();
-                                                int previousDue = data1.value.toString().toInt();
-                                                int totalDue = previousDue + transitionModel.dueAmount!.toInt();
-                                                dueUpdateRef.child(key!).update({'due': '$totalDue'});
+                                                EasyLoading.dismiss();
                                               }
-
-                                              // Actualizar providers
-                                              consumerRef.refresh(allCustomerProvider);
-                                              consumerRef.refresh(transitionProvider);
-                                              consumerRef.refresh(productProvider);
-                                              consumerRef.refresh(purchaseTransitionProvider);
-                                              consumerRef.refresh(dueTransactionProvider);
-                                              consumerRef.refresh(profileDetailsProvider);
-                                              consumerRef.refresh(dailyTransactionProvider);
-
-                                              EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
-                                              limpiarCarro();
-                                            } catch (e) {
-                                              setState(() => saleButtonClicked = false);
-                                              EasyLoading.showError('Error: ${e.toString()}');
-                                            } finally {
-                                              setState(() => saleButtonClicked = false);
                                             }
                                           }
                                         } else {
