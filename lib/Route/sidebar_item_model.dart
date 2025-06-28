@@ -323,6 +323,12 @@ enum SidebarItemType { tile, submenu }
 List<SidebarItemModel> get topMenus {
   return <SidebarItemModel>[
     SidebarItemModel(
+      name: 'Inicio',
+      iconPath: 'images/dashboard_icon/dashboard.svg',
+      type: "blank_home",
+      navigationPath: '/blank-home',
+    ),
+    SidebarItemModel(
       name: lang.S.current.dashBoard,
       iconPath: 'images/dashboard_icon/dashboard.svg',
       type: "dashboard",

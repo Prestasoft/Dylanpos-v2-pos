@@ -11,6 +11,7 @@ import 'package:salespro_admin/Repository/profile_details_repo.dart';
 import 'package:salespro_admin/Screen/Home/home_screen.dart';
 
 import '../Screen/Authentication/add_profile.dart';
+import '../Screen/blank_home.dart';
 import '../const.dart';
 import '../model/user_role_model.dart';
 
@@ -37,7 +38,7 @@ class LogInRepo extends ChangeNotifier {
           putUserDataImidiyate(uid: constUserId, title: '', isSubUse: true);
           // Navigator.of(context).pushNamed(MtHomeScreen.route);
           // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MtHomeScreen()), (Route<dynamic> route) => false);
-          context.go(MtHomeScreen.route);
+          context.go('/blank-home');
         } else {
           EasyLoading.showSuccess('Successful');
           await setUserDataOnLocalData(
@@ -52,7 +53,7 @@ class LogInRepo extends ChangeNotifier {
           if (await ProfileRepo().isProfileSetupDone()) {
             // Navigator.of(context).pushNamed(MtHomeScreen.route);
             // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MtHomeScreen()), (Route<dynamic> route) => false);
-            context.go(MtHomeScreen.route);
+            context.go('/blank-home');
           } else {
             // const ProfileAdd().launch(context);
             context.go(ProfileAdd.route);
