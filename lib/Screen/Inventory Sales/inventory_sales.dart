@@ -22,7 +22,7 @@ import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/ReservationProductModel.dart';
 import 'package:salespro_admin/utils/ReservationUtils.dart';
-
+import 'package:intl/intl.dart';
 import '../../PDF/print_pdf.dart';
 import '../../Provider/customer_provider.dart';
 import '../../Provider/daily_transaction_provider.dart';
@@ -2429,9 +2429,12 @@ class _InventorySalesState extends State<InventorySales> {
                                                   });
                                                   var data1 = await dueUpdateRef.child('$key/due').get();
                                                   int previousDue = data1.value.toString().toInt();
-
                                                   int totalDue = previousDue + transitionModel.dueAmount!.toInt();
-                                                  dueUpdateRef.child(key!).update({'due': '$totalDue'});
+                                                  
+                                                  await dueUpdateRef.child(key!).update({
+                                                    'due': '$totalDue',
+                                                    'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+                                                  });
                                                 }
 
                                                 print("llegaaaaaaaaaaaaaa aqui ");
