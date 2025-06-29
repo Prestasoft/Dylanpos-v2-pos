@@ -73,6 +73,7 @@ import '../model/expense_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
 import 'not_found.dart';
+import '../Screen/blank_home.dart';
 
 abstract class AcnooAppRoutes {
   static final routerConfig = GoRouter(
@@ -85,6 +86,14 @@ abstract class AcnooAppRoutes {
           );
         },
         routes: [
+          ///-----------------------Blank Home Route---------------------------
+          GoRoute(
+            path: '/blank-home',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: BlankHome(),
+            ),
+          ),
+
           ///-----------------------DashBoard Route---------------------------
           GoRoute(
             path: '/dashboard',
