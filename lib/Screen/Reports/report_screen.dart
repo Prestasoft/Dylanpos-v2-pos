@@ -42,12 +42,12 @@ class SaleReports extends StatefulWidget {
 class _SaleReportsState extends State<SaleReports> {
   List<String> categoryList = [
     'Ventas',
+    'Transaccion Diaria',
     'Devolucion',
     'Compra',
     'Devolucion de compra',
     'Pendiente',
     'Stock actual',
-    'Transaccion Diaria',
     'Historial de ventas de cotizaciones',
     'Informe de perdidas y ganancias',
   ];

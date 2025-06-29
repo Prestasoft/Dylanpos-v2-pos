@@ -36,8 +36,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
     return total;
   }
 
-  double calculateTotalPaymentOut(
-      List<DailyTransactionModel> dailyTransaction) {
+  double calculateTotalPaymentOut(List<DailyTransactionModel> dailyTransaction) {
     double total = 0.0;
     for (var element in dailyTransaction) {
       total += element.paymentOut;
@@ -46,14 +45,12 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   String searchItem = '';
+  String selectedTypeFilter = 'Todos'; // Nuevo filtro por tipo
 
   DateTimeRange selectedDate = DateTimeRange(
     start: DateTime(DateTime.now().year, DateTime.now().month, 1),
-    end: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day,
-        23, 59, 59),
+    end: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 23, 59, 59),
   );
-
-  //DateTime selected2ndDate = DateTime.now();
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTimeRange? picked = await showDateRangePicker(
@@ -78,11 +75,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
         });
 
     if (picked != null && picked != selectedDate) {
-      final DateTime start =
-          DateTime(picked.start.year, picked.start.month, picked.start.day);
-
-      final DateTime end = DateTime(
-          picked.end.year, picked.end.month, picked.end.day, 23, 59, 59);
+      final DateTime start = DateTime(picked.start.year, picked.start.month, picked.start.day);
+      final DateTime end = DateTime(picked.end.year, picked.end.month, picked.end.day, 23, 59, 59);
       setState(() {
         selectedDate = DateTimeRange(start: start, end: end);
       });
@@ -90,12 +84,20 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   List<String> month = [
+    'Hoy',
     'Este mes',
     'Ultimo mes',
     'Ultimos 6 meses',
     'Este año',
     'Ver todo'
   ];
+
+  // Opciones para el filtro por tipo
+  Map<String, String> typeFilters = {
+    'Todos': 'Todos',
+    'Sale': 'Reservas',
+    'Due Collection': 'Cuentas x Cobrar',
+  };
 
   String selectedMonth = 'Este mes';
 
@@ -119,43 +121,35 @@ class _DailyTransactionState extends State<DailyTransaction> {
         setState(() {
           selectedMonth = value!;
           switch (selectedMonth) {
+            case 'Hoy':
+              {
+                selectedDate = DateTimeRange(
+                    start: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+                    end: DateTime.now());
+              }
+              break;
             case 'Este mes':
               {
                 selectedDate = DateTimeRange(
-                    start:
-                        DateTime(DateTime.now().year, DateTime.now().month, 1),
-                    end: DateTime.now());
-              }
-              {
-                selectedDate = DateTimeRange(
-                    start:
-                        DateTime(DateTime.now().year, DateTime.now().month, 1),
+                    start: DateTime(DateTime.now().year, DateTime.now().month, 1),
                     end: DateTime.now());
               }
               break;
             case 'Ultimo mes':
               {
                 selectedDate = DateTimeRange(
-                    start: DateTime(
-                        DateTime.now().year, DateTime.now().month - 1, 1),
-                    end:
-                        DateTime(DateTime.now().year, DateTime.now().month, 0));
+                    start: DateTime(DateTime.now().year, DateTime.now().month - 1, 1),
+                    end: DateTime(DateTime.now().year, DateTime.now().month, 0));
               }
               break;
             case 'Ultimos 6 meses':
               {
                 selectedDate = DateTimeRange(
-                    start: DateTime(
-                        DateTime.now().year, DateTime.now().month - 6, 1),
+                    start: DateTime(DateTime.now().year, DateTime.now().month - 6, 1),
                     end: DateTime.now());
               }
               break;
             case 'Este año':
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(DateTime.now().year, 1, 1),
-                    end: DateTime.now());
-              }
               {
                 selectedDate = DateTimeRange(
                     start: DateTime(DateTime.now().year, 1, 1),
@@ -167,15 +161,58 @@ class _DailyTransactionState extends State<DailyTransaction> {
                 selectedDate = DateTimeRange(
                     start: DateTime(1900, 01, 01), end: DateTime.now());
               }
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(1900, 01, 01), end: DateTime.now());
-              }
               break;
           }
         });
       },
     );
+  }
+
+  // Widget para el filtro por tipo
+  DropdownButton<String> getTypeFilter() {
+    List<DropdownMenuItem<String>> dropDownItems = [];
+    typeFilters.forEach((key, value) {
+      var item = DropdownMenuItem(
+        value: key,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(value),
+        ),
+      );
+      dropDownItems.add(item);
+    });
+    return DropdownButton(
+      isExpanded: true,
+      items: dropDownItems,
+      value: selectedTypeFilter,
+      onChanged: (value) {
+        setState(() {
+          selectedTypeFilter = value!;
+        });
+      },
+    );
+  }
+
+  // Función para traducir el tipo a español
+  String translateType(String type) {
+    switch (type) {
+      case 'Sale':
+        return 'Venta';
+      case 'Sale Return':
+        return 'Devolución de venta';
+      case 'Purchase':
+        return 'Compra';
+      case 'Purchase Return':
+        return 'Devolución de compra';
+      case 'Due Collection':
+        return 'Cuenta x Cobrar';
+      case 'Due Payment':
+        return 'Pago de adeudo';
+      case 'Expense':
+        return 'Gasto';
+      default:
+        return type;
+    }
   }
 
   final _horizontalScroll = ScrollController();
@@ -195,21 +232,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
       return dailyTransactionReport.when(
         data: (dailyReport) {
           List<DailyTransactionModel> reTransaction = [];
-          // for (var element in dailyReport.reversed.toList()) {
-          //   if (element.date.isNotEmpty) {
-          //     DateTime? parsedDate;
-          //     try {
-          //       parsedDate = DateTime.parse(element.date);
-          //     } catch (e) {
-          //       continue;
-          //     }
-          //
-          //     if ((selectedDate.isBefore(parsedDate) || parsedDate.isAtSameMomentAs(selectedDate)) &&
-          //         (selected2ndDate.isAfter(parsedDate) || parsedDate.isAtSameMomentAs(selected2ndDate))) {
-          //       reTransaction.add(element);
-          //     }
-          //   }
-          // }
 
           for (var element in dailyReport.reversed.toList()) {
             if (element.date.isNotEmpty) {
@@ -224,7 +246,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
                       parsedDate.isAtSameMomentAs(selectedDate.start)) &&
                   (selectedDate.end.isAfter(parsedDate) ||
                       parsedDate.isAtSameMomentAs(selectedDate.end))) {
-                reTransaction.add(element);
+                // Aplicar filtro por tipo si no es "Todos"
+                if (selectedTypeFilter == 'Todos' || element.type == selectedTypeFilter) {
+                  reTransaction.add(element);
+                }
               }
             }
           }
@@ -248,16 +273,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
             }).toList();
           }
 
-          // final pages = (reTransaction.length / _lossProfitPerPage).ceil();
-          //
-          // final startIndex = (_currentPage - 1) * _lossProfitPerPage;
-          // final endIndex = _lossProfitPerPage == -1 ? reTransaction.length : startIndex + _lossProfitPerPage;
-          // final paginatedList = reTransaction.sublist(
-          //   startIndex,
-          //   endIndex > reTransaction.length ? reTransaction.length : endIndex,
-          // );
-
-          // Calculate pagination
           final pages = _lossProfitPerPage == -1
               ? 1
               : (reTransaction.length / _lossProfitPerPage).ceil();
@@ -269,14 +284,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
               : (startIndex + _lossProfitPerPage)
                   .clamp(0, reTransaction.length);
 
-          // Get paginated transactions
           final paginatedList = reTransaction.sublist(startIndex, endIndex);
-          // for (var element in dailyReport.reversed.toList()) {
-          //   if ((selectedDate.isBefore(DateTime.parse(element.date)) || DateTime.parse(element.date).isAtSameMomentAs(selectedDate)) &&
-          //       (selected2ndDate.isAfter(DateTime.parse(element.date)) || DateTime.parse(element.date).isAtSameMomentAs(selected2ndDate))) {
-          //     reTransaction.add(element);
-          //   }
-          // }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -302,9 +310,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                               child: FormField(
                                 builder: (FormFieldState<dynamic> field) {
                                   return InputDecorator(
-                                    decoration: const InputDecoration(
-                                        // border: InputBorder.none,
-                                        ),
+                                    decoration: const InputDecoration(),
                                     child: Theme(
                                         data: ThemeData(
                                             highlightColor: dropdownItemColor,
@@ -312,6 +318,32 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                             hoverColor: dropdownItemColor),
                                         child: DropdownButtonHideUnderline(
                                             child: getMonth())),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Nuevo filtro por tipo
+                        ResponsiveGridCol(
+                          xs: 100,
+                          md: 30,
+                          lg: 15,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: SizedBox(
+                              height: 48,
+                              child: FormField(
+                                builder: (FormFieldState<dynamic> field) {
+                                  return InputDecorator(
+                                    decoration: const InputDecoration(),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getTypeFilter())),
                                   );
                                 },
                               ),
@@ -349,8 +381,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                     const SizedBox(width: 10.0),
                                     Flexible(
                                       child: GestureDetector(
-                                        onTap: () => _selectDate(
-                                            context), // Handle date selection
+                                        onTap: () => _selectDate(context),
                                         child: RichText(
                                           text: TextSpan(
                                             style: theme.textTheme.titleSmall,
@@ -708,11 +739,11 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                         .paymentOut,
                                                   ),
                                                 ),
-                                                DataColumn(
-                                                  label: Text(
-                                                    lang.S.of(context).balance,
-                                                  ),
-                                                ),
+                                                // DataColumn(
+                                                //   label: Text(
+                                                //     lang.S.of(context).balance,
+                                                //   ),
+                                                // ),
                                                 DataColumn(
                                                   label: Text(
                                                     lang.S.of(context).action,
@@ -746,9 +777,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                             ),
                                                             DataCell(
                                                               Text(
-                                                                paginatedList[
-                                                                        index]
-                                                                    .type,
+                                                                translateType(paginatedList[index].type),
                                                               ),
                                                             ),
                                                             DataCell(
@@ -774,10 +803,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                     : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ?? 0)}',
                                                               ),
                                                             ),
-                                                            DataCell(
-                                                              Text(
-                                                                  '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].remainingBalance.toStringAsFixed(2)) ?? 0)}'),
-                                                            ),
+                                                            // DataCell(
+                                                            //   Text(
+                                                            //       '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].remainingBalance.toStringAsFixed(2)) ?? 0)}'),
+                                                            // ),
                                                             DataCell(
                                                                 settingProvider
                                                                     .when(data:
@@ -942,9 +971,9 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                             const DataCell(
                                                               Text(''),
                                                             ),
-                                                            const DataCell(
-                                                              Text(''),
-                                                            ),
+                                                            // const DataCell(
+                                                            //   Text(''),
+                                                            // ),
                                                             const DataCell(
                                                               Text(''),
                                                             ),

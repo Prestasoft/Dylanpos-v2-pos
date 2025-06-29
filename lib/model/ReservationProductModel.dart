@@ -72,7 +72,7 @@ class ReservationProductModel {
       duration: map['duration'] is Map<String, dynamic>
           ? map['duration'] as Map<String, dynamic>
           : {},
-      descricpion: map['description'] ?? '',
+      descricpion: map['descricpion'] ?? '',
       packagePrice: (map['package_price'] is num) ? (map['package_price'] as num).toDouble() : 0.0,
       );
 
@@ -101,7 +101,7 @@ class ReservationProductModel {
       reservationId: id,
       dressId: dressId,
       serviceId: serviceId,
-
+      descricpion: descricpion
     );
   }
 
@@ -201,7 +201,7 @@ class ReservationProductCompositeModel {
       duration: map['duration'] is Map<String, dynamic>
           ? map['duration'] as Map<String, dynamic>
           : {},
-      descricpion: map['description'] ?? '',
+      descricpion: map['descricpion'] ?? '',
       packagePrice: (map['package_price'] is num) ? (map['package_price'] as num).toDouble() : 0.0,
       );
   }
@@ -232,6 +232,7 @@ class ReservationProductCompositeModel {
       reservationId: id,
       dressId: '${dressInfo.map((e) => e.dressName).join(', ')}',
       serviceId: serviceId,
+      descricpion: descricpion
     );
   }
 

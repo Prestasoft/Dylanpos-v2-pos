@@ -266,6 +266,8 @@ class _InventorySalesState extends State<InventorySales> {
                               final dress = full.dress;
                               final service = full.service;
 
+                              
+
                               // Get dress image URL or use default
                               // Obtener la primera imagen del campo 'images'
                               final rawImages = dress?['images'] ?? '';
@@ -290,8 +292,11 @@ class _InventorySalesState extends State<InventorySales> {
                                   'created_at': reservation['created_at'],
                                   'updated_at': reservation['updated_at'],
                                   'duration': service?['duration'] ?? {},
-                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0')
+                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0'),
+                                  'descricpion': service?['description'] ?? '',
                                 });
+
+                                print( reservationModel.descricpion);
 
                                 // Verifico si es Adicional de Reserva para poner algo que lo identifique y ademas el precio
 
@@ -397,8 +402,11 @@ class _InventorySalesState extends State<InventorySales> {
                                   'updated_at': reservation['updated_at'],
                                   'duration': service?['duration'] ?? {},
                                   'dress_info': full.multipleDress,
-                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0')
+                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0'),
+                                  'descricpion': service?['description'] ?? '',
                                 });
+
+                                print( reservationModel.descricpion);
 
                                 return InkWell(
                                   onTap: () {
@@ -1452,11 +1460,28 @@ class _InventorySalesState extends State<InventorySales> {
                                           TextEditingController quantityController = TextEditingController(text: cartList[index].quantity.toString());
                                           return DataRow(cells: [
                                             DataCell(
-                                              Text(
-                                                cartList[index].productName ?? '',
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: theme.textTheme.bodyLarge,
+                                              GestureDetector(
+                                                onTap: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      title: const Text('Descripción del producto'),
+                                                      content: Text(cartList[index].descricpion ?? 'Sin descripción'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.of(context).pop(),
+                                                          child: const Text('Cerrar'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                                child: Text(
+                                                  cartList[index].productName ?? '',
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: theme.textTheme.bodyLarge,
+                                                ),
                                               ),
                                             ),
                                             DataCell(Row(
@@ -2427,6 +2452,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                       }
                                                     }
                                                   });
+                                                  
                                                   var data1 = await dueUpdateRef.child('$key/due').get();
                                                   int previousDue = data1.value.toString().toInt();
                                                   int totalDue = previousDue + transitionModel.dueAmount!.toInt();
