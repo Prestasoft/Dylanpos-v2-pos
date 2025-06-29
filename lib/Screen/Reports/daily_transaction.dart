@@ -197,9 +197,9 @@ class _DailyTransactionState extends State<DailyTransaction> {
   String translateType(String type) {
     switch (type) {
       case 'Sale':
-        return 'Venta';
+        return 'Reserva';
       case 'Sale Return':
-        return 'Devolución de venta';
+        return 'Devolución de reserva';
       case 'Purchase':
         return 'Compra';
       case 'Purchase Return':
