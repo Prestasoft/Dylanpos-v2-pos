@@ -298,35 +298,53 @@ class _DressSelectionPackageScreenState
                       return GestureDetector(
                         onTap: isAvailable
                             ? () {
-                                if (widget.dressIds.contains(dress.id)) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          'Este vestido ya fue usado en esta reserva.'),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                Navigator.pop(
-                                  context,
-                                  {
-                                    'vestidoName': dress.name,
-                                    'vestidoId': dress.id,
-                                    'branchId': dress.branchId,
-                                    'vestidoPrice': dress.price.toString(),
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    final media = MediaQuery.of(context);
+                                    final maxWidth = media.size.width * 0.8;
+                                    final maxHeight = media.size.height * 0.6;
+                                    return Dialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: SingleChildScrollView(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.all(16.0),
+                                              child: ClipRRect(
+                                                borderRadius: BorderRadius.circular(16),
+                                                child: ConstrainedBox(
+                                                  constraints: BoxConstraints(
+                                                    maxWidth: maxWidth,
+                                                    maxHeight: maxHeight,
+                                                  ),
+                                                  child: AspectRatio(
+                                                    aspectRatio: 3/4,
+                                                    child: firstImage.isNotEmpty
+                                                        ? Image.network(
+                                                            firstImage,
+                                                            fit: BoxFit.contain,
+                                                          )
+                                                        : Container(
+                                                            color: Colors.grey[200],
+                                                            child: Icon(
+                                                              Icons.image,
+                                                              color: Colors.grey[400],
+                                                              size: 64,
+                                                            ),
+                                                          ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
                                   },
-
-                                  // MaterialPageRoute(
-                                  //   builder: (context) =>
-                                  //       DateTimeSelectionScreen(
-                                  //     packageId: widget.packageId,
-                                  //     packageName: widget.packageName,
-                                  //     dressId: dress.id,
-                                  //     dressName: dress.name,
-                                  //     branchId: dress.branchId,
-                                  //   ),
-                                  // ),
                                 );
                               }
                             : null,
@@ -399,7 +417,46 @@ class _DressSelectionPackageScreenState
                                   ),
                                 ),
                               ),
-
+                              // Botón de selección debajo de la imagen
+                              if (isAvailable)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  child: ElevatedButton.icon(
+                                    icon: Icon(Icons.check_circle_outline),
+                                    label: Text('Seleccionar'),
+                                    style: ElevatedButton.styleFrom(
+                                      minimumSize: Size(0, 36),
+                                      backgroundColor: Colors.green[600],
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      textStyle: TextStyle(
+                                          fontSize: 13, fontWeight: FontWeight.w500),
+                                      padding: EdgeInsets.symmetric(vertical: 8),
+                                    ),
+                                    onPressed: () {
+                                      if (widget.dressIds.contains(dress.id)) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Este vestido ya fue usado en esta reserva.'),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      Navigator.pop(
+                                        context,
+                                        {
+                                          'vestidoName': dress.name,
+                                          'vestidoId': dress.id,
+                                          'branchId': dress.branchId,
+                                          'vestidoPrice': dress.price.toString(),
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
                               // Información del vestido (más compacta)
                               Padding(
                                 padding: const EdgeInsets.all(8.0),

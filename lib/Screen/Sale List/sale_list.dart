@@ -928,46 +928,49 @@ class _SaleListState extends State<SaleList> {
 
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              // Datos del cliente
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  /// Datos del cliente
-                                  Text('Nombre: ${customer.customerName}', style: theme.textTheme.bodyLarge),
-                                  const SizedBox(height: 8),
-                                  Text('Teléfono: ${customer.phoneNumber}', style: theme.textTheme.bodyLarge),
-                                  const SizedBox(height: 8),
-                                  Text('Factura Nº: $invoiceNumber', style: theme.textTheme.bodyLarge),
-                                  const SizedBox(height: 8),
-                                  if (reservedBy != null) 
-                                    Text('Reservado por: $reservedBy', style: theme.textTheme.bodyLarge),
-                                  const SizedBox(height: 12),
-                                ],
+                              /// Datos del cliente
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Nombre: ${customer.customerName}', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 8),
+                                    Text('Teléfono: ${customer.phoneNumber}', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 8),
+                                    Text('Factura Nº: $invoiceNumber', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 8),
+                                    if (reservedBy != null)
+                                      Text('Reservado por: $reservedBy', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 12),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(width: 120),
-                              // Totales
+
+                              /// Este spacer empuja la columna de totales a la derecha
+                              const Spacer(),
+
+                              /// Totales (alineados a la derecha)
                               Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    'Total de la factura:  ' + '$currency${myFormat.format(double.tryParse(customer.totalPaid.toString()) ?? 0)}',
+                                    'Total de la factura:  $currency${myFormat.format(double.tryParse(customer.totalPaid.toString()) ?? 0)}',
                                     style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: Colors.red),
+                                    textAlign: TextAlign.right,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Total Pagado:  ' + '$currency${myFormat.format(double.tryParse(totalAbonado.toString()) ?? 0)}',
+                                    'Total Pagado:  $currency${myFormat.format(double.tryParse(totalAbonado.toString()) ?? 0)}',
                                     style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.right,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Deuda Actual:  ' + '$currency${myFormat.format(double.tryParse(customer.remainingDebt.toString()) ?? 0)}',
+                                    'Deuda Actual:  $currency${myFormat.format(double.tryParse(customer.remainingDebt.toString()) ?? 0)}',
                                     style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.right,
                                   ),
-                                  const SizedBox(height: 8),
                                 ],
                               ),
                             ],
