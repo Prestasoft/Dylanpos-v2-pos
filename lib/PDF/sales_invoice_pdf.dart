@@ -37,6 +37,17 @@ FutureOr<Uint8List> generateSaleDocument({
     'estado': 'confirmado',
     'estado_factura': true,
   }));
+
+  // Primero, obtener el primer ID de reservación (si existe)
+  final firstReservationId = idReservaciones.isNotEmpty ? idReservaciones.first : null;
+
+  // Obtener la reservación completa usando el primer ID
+  final fullReservation = firstReservationId != null 
+      ? await ref.read(fullReservationByIdProviderVQ(firstReservationId).future)
+      : null;
+
+// Extraer el nombre del vendedor de la reservación
+final reservationSellerName = fullReservation?.reservation?['seller_name']?.toString() ?? 'No especificado';
   //print("TRANSACCTION === ${transactions.key}");
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero
@@ -128,17 +139,6 @@ FutureOr<Uint8List> generateSaleDocument({
                           ),
                         ),
                       ),
-
-                      ///______Address________________________________________________________________
-                      // pw.Container(
-                      //   padding: const pw.EdgeInsets.all(1.0),
-                      //   child: pw.Center(
-                      //     child: pw.Text(
-                      //       'Dirección: ${personalInformation.countryName}',
-                      //       style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 14.0),
-                      //     ),
-                      //   ),
-                      // ),
 
                       pw.Container(
                         width: 300,
@@ -270,28 +270,6 @@ FutureOr<Uint8List> generateSaleDocument({
                           style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                         ),
                       ),
-
-                      // pw.SizedBox(
-                      //   width: 75.0,
-                      //   child: pw.Text(
-                      //     'Dirección',
-                      //     style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      //   ),
-                      // ),
-                      // pw.SizedBox(
-                      //   width: 10.0,
-                      //   child: pw.Text(
-                      //     ':',
-                      //     style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      //   ),
-                      // ),
-                      // pw.SizedBox(
-                      //   width: 140.0,
-                      //   child: pw.Text(
-                      //     transactions.customerAddress,
-                      //     style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      //   ),
-                      // ),
                     ],
                   ),
                   pw.SizedBox(height: 2),
@@ -402,6 +380,32 @@ FutureOr<Uint8List> generateSaleDocument({
                       width: 125.0,
                       child: pw.Text(
                         transactions.sellerName ?? "Admin",
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                  ]),
+                  pw.SizedBox(height: 2),
+
+                  ///_________Reserved By________________________________________________
+                  pw.Row(children: [
+                    pw.SizedBox(
+                      width: 50.0,
+                      child: pw.Text(
+                        'Reservado por',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 10.0,
+                      child: pw.Text(
+                        ':',
+                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: 125.0,
+                      child: pw.Text(
+                        reservationSellerName,
                         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                       ),
                     ),
@@ -607,17 +611,6 @@ FutureOr<Uint8List> generateSaleDocument({
                       ),
                     ),
                     pw.SizedBox(height: 10.0),
-                    // pw.Container(
-                    //   width: 300,
-                    //   child: pw.Text(
-                    //     "Lugar: ${place ?? 'Sin lugar'}",
-                    //     style: pw.TextStyle(
-                    //       color: PdfColors.black,
-                    //       fontSize: 11,
-                    //     ),
-                    //   ),
-                    // ),
-                    // pw.SizedBox(height: 10.0),
                     pw.Container(
                       width: 300,
                       child: pw.Text(

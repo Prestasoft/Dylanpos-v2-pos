@@ -1121,6 +1121,7 @@ final crearReservaProvider =
       'notas': params['notas'] ?? '', // Guardar notas si existen
       'reservation_associated': params['reservation_associated'] ?? '',
       'package_price': params['package_price'] ?? 0,
+      'seller_name': params['seller_name'],
     };
     await newReservationRef.set(reservationData);
 

@@ -30,7 +30,7 @@ import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/customer_model.dart';
 import 'package:salespro_admin/model/personal_information_model.dart';
 import 'package:salespro_admin/model/purchase_transation_model.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import '../../PDF/print_pdf.dart';
 import '../../Provider/product_provider.dart';
 import '../../Provider/profile_provider.dart';
@@ -489,7 +489,21 @@ class _SaleListState extends State<SaleList> {
 
                                                               // Mostrar Resumen de Pagos
                                                               PopupMenuItem(
-                                                                onTap: () {
+                                                                onTap: () async {
+                                                                  
+                                                                  // Obtener el primer ID de reservación (si existe)
+                                                                  final ref = ProviderScope.containerOf(context);
+                                                                  // Variables para los datos de reservación
+                                                                  final List<String> idReservaciones = paginatedTransactions[index].reservationIds ?? [];
+                                                                  
+                                                                  // 2. Obtener el primer ID
+                                                                  final firstReservationId = idReservaciones.isNotEmpty ? idReservaciones.first : null;
+
+                                                                  // 3. Obtener el objeto completo de reservación (como lo hiciste antes)
+                                                                  final fullReservation = firstReservationId != null 
+                                                                      ? await ref.read(fullReservationByIdProviderVQ(firstReservationId).future)
+                                                                      : null;
+
                                                                   // Creamos los datos del cliente desde la fila
                                                                   final customer = Customer(
                                                                     customerName: paginatedTransactions[index].customerName,
@@ -500,12 +514,15 @@ class _SaleListState extends State<SaleList> {
                                                                     totalPaid: paginatedTransactions[index].totalAmount ?? 0,
                                                                   );
 
-                                                                  // Llamamos al método paysDetails
+                                                                  String? sellerName = fullReservation?.reservation?['seller_name']?.toString();
+
+                                                                  // Llamamos al método paysDetails con la información adicional
                                                                   Future.microtask(() {
                                                                     paysDetails(
                                                                       context: context,
                                                                       invoiceNumber: customer.invoiceNumber,
                                                                       customer: customer,
+                                                                      reservedBy: sellerName, // Pasamos solo el string
                                                                     );
                                                                   });
                                                                 },
@@ -858,10 +875,8 @@ class _SaleListState extends State<SaleList> {
     required BuildContext context,
     required String invoiceNumber,
     required Customer customer,
+    String? reservedBy,
   }) {
-    // Cargar Datos de Pagos del Cliente
-    // usar el provider para obtener los datos de los pagos del cliente
-
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -874,16 +889,14 @@ class _SaleListState extends State<SaleList> {
 
             return dailyTransactionReport.when(
               data: (transactions) {
-                // verifico si pertenece a la factura
                 List<DailyTransactionModel> reTransaction = [];
-
+                
                 for (var element in transactions.reversed.toList()) {
                   if (element.id == invoiceNumber) {
                     reTransaction.add(element);
                   }
                 }
 
-                // sumar todos los pagos
                 double totalAbonado = reTransaction.fold(0.0, (sum, payment) => sum + payment.paymentIn);
 
                 return Dialog(
@@ -928,7 +941,10 @@ class _SaleListState extends State<SaleList> {
                                   Text('Teléfono: ${customer.phoneNumber}', style: theme.textTheme.bodyLarge),
                                   const SizedBox(height: 8),
                                   Text('Factura Nº: $invoiceNumber', style: theme.textTheme.bodyLarge),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 8),
+                                  if (reservedBy != null) 
+                                    Text('Reservado por: $reservedBy', style: theme.textTheme.bodyLarge),
+                                  const SizedBox(height: 12),
                                 ],
                               ),
                               const SizedBox(width: 120),
@@ -957,7 +973,7 @@ class _SaleListState extends State<SaleList> {
                             ],
                           ),
 
-                          /// Tabla de pagos
+                          /// Resto de tu código de la tabla de pagos...
                           LayoutBuilder(builder: (context, constraints) {
                             return SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
@@ -971,7 +987,7 @@ class _SaleListState extends State<SaleList> {
                                   ],
                                   rows: reTransaction.map<DataRow>((payment) {
                                     return DataRow(cells: [
-                                      DataCell(_fechaConvertida(payment.date)), // Asumimos que date es String
+                                      DataCell(_fechaConvertida(payment.date)),
                                       DataCell(Padding(
                                         padding: const EdgeInsets.only(left: 20),
                                         child: Text('$currency${myFormat.format(double.tryParse(payment.paymentIn.toString()) ?? 0)}'),

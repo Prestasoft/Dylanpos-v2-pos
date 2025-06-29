@@ -7,7 +7,7 @@ import 'package:salespro_admin/Screen/Reservation/clothes_reservation_screen.dar
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import 'package:salespro_admin/model/customer_model.dart';
 import '../../Provider/reservation_provider.dart';
-
+import '../../const.dart';
 class ConfirmationScreen extends ConsumerStatefulWidget {
   final String packageId;
   final String packageName;
@@ -158,6 +158,7 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       'reservation_associated': '',
       'package_price': packagePrice.toString(),
       'place': lugarController.text,
+      'seller_name': isSubUser ? constSubUserTitle : 'Admin'
     }).future);
 
     setState(() {
