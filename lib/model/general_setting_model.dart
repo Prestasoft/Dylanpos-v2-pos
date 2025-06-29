@@ -16,7 +16,7 @@ class GeneralSettingModel {
   factory GeneralSettingModel.fromJson(Map<String, dynamic> json) {
     return GeneralSettingModel(
       title: json['title'] ?? 'DylanPOS',
-      companyName: json['companyName'] ?? 'PrestaSoft',
+      companyName: json['companyName'] ?? 'Victor Guzman Fotografia SRL',
       mainLogo: json['mainLogo'] ?? '',
       commonHeaderLogo: json['commonHeaderLogo'] ?? '',
       sidebarLogo: json['sidebarLogo'] ?? '',

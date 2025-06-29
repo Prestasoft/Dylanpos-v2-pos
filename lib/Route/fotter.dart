@@ -49,7 +49,7 @@ class FooterWidget extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'COPYRIGHT © 2025 $companyName${constraints.maxWidth <= BreakpointName.SM.start ? '' : ', Todos los Derechos Reservados'}',
+                      'COPYRIGHT © 2025 Victor Guzman Fotografia SRL${constraints.maxWidth <= BreakpointName.SM.start ? '' : ', Todos los Derechos Reservados'}',
                       style: _textStyle,
                     ),
                   ),
@@ -58,7 +58,7 @@ class FooterWidget extends StatelessWidget {
                       text: 'Desarrollado por ',
                       children: [
                         TextSpan(
-                          text: companyName,
+                          text: 'Miguel Castillo',
                           style: _textStyle?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: _theme.primaryColor,

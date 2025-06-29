@@ -15,7 +15,7 @@ import 'model/user_role_model.dart';
 ///______________DATA____________
 String appsName = 'VICTOR GUZMAN FOTOGRAFIA';
 String appsTitle = 'VICTOR GUZMAN FOTOGRAFIA';
-String pdfFooter = 'PrestaSoft SRL';
+String pdfFooter = 'VICTOR GUZMAN FOTOGRAFIA SRL';
 String madeBy = 'Prestasoft.do';
 bool isDemo = false;
 String invoiceFileName = "VICTOR GUZMAN FOTOGRAFIA";
