@@ -230,6 +230,17 @@ String userPermissionErrorText = 'Access not granted';
 //   }
 // }
 
+bool checkUserRoleViewPermissionV2({
+  required String type,
+}) {
+  final match = finalUserRoleModel.permissions.firstWhere(
+    (p) => p.type == type,
+    orElse: () => Permission(type: type, view: false),
+  );
+
+  return match.view;
+}
+
 bool checkUserRoleEditPermissionV2({
   required String type,
 }) {

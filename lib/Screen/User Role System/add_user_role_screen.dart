@@ -714,8 +714,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                       userRolePermissionModel.userRoleName = userRoleName.text;
                       // userRolePermissionModel.databaseId =
                       //     widget.userRoleModel!.databaseId;
-                      userRolePermissionModel.databaseId =
-                          FirebaseAuth.instance.currentUser!.uid;
+                      userRolePermissionModel.databaseId = constUserId;
                       print(userRolePermissionModel.toJson());
                       await dataRef.update(userRolePermissionModel.toJson());
                       await adminDataRef

@@ -80,9 +80,9 @@ class _TopBarWidgetState extends State<TopBarWidget> {
             // mainAxisSize: MainAxisSize.min,
             children: [
               // const SizedBox(width: 30.0),
-              screenWidth < 670
-                  ? const SizedBox.shrink()
-                  : SizedBox(
+               if(checkUserRoleViewPermissionV2(type: 'rent_clothing')) 
+                  screenWidth < 670
+                  ? const SizedBox.shrink():SizedBox(
                       height: 40,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -120,6 +120,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
               screenWidth < 670
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
+
+              if(checkUserRoleViewPermissionV2(type: 'inventory_sales')) 
               screenWidth < 590
                   ? const SizedBox.shrink()
                   : SizedBox(
@@ -183,6 +185,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                 return const Text('');
               }),
               const Spacer(),
+              if(checkUserRoleViewPermissionV2(type: 'register_clothing')) 
               screenWidth < 590
                   ? const SizedBox.shrink()
                   : SizedBox(
@@ -223,6 +226,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
               screenWidth < 800
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
+              if(checkUserRoleViewPermissionV2(type: 'reservation_calendar')) 
               screenWidth < 800
                   ? const SizedBox.shrink()
                   : SizedBox(
