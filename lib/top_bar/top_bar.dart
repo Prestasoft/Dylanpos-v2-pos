@@ -11,11 +11,8 @@ import 'package:responsive_framework/responsive_framework.dart' as rf;
 import 'package:restart_app/restart_app.dart';
 import 'package:salespro_admin/Route/static_string.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-import 'package:salespro_admin/global_language.dart';
-
 import '../Provider/profile_provider.dart';
 import '../Screen/Widgets/Constant Data/constant.dart';
-import '../Screen/currency/global_currency.dart';
 import '../const.dart';
 import '../model/personal_information_model.dart';
 
@@ -273,15 +270,12 @@ class _TopBarWidgetState extends State<TopBarWidget> {
               screenWidth < 1260
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
-              screenWidth < 1260
-                  ? const SizedBox.shrink()
-                  : const GlobalLanguage(isDrawer: false),
               screenWidth < 1430
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
-              screenWidth < 1430
-                  ? const SizedBox.shrink()
-                  : const GlobalCurrency(isDrawer: false)
+              // screenWidth < 1430
+              //     ? const SizedBox.shrink()
+              //     : const GlobalCurrency(isDrawer: false)
             ],
           );
         }),
