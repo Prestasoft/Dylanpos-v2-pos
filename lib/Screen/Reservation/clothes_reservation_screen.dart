@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,10 +15,7 @@ import '../../Provider/reservation_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class ClothesReservationScreen extends ConsumerStatefulWidget {
-  
-  const ClothesReservationScreen({
-    super.key
-  });
+  const ClothesReservationScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_apiS, library_private_types_in_public_api
@@ -31,6 +31,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
   List<String?> _selectedComponents = [null]; // Un dropdown inicial
   CustomerModel? selectedCustomer;
   int _retry = 0;
+  List<String> phoneNumbers = [];
 
   String _formatDate(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
@@ -113,22 +114,21 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
     return true;
   }
 
- void _confirmReservation() async {
-    
+  void _confirmReservation() async {
     setState(() {
       isSubmitting = true;
     });
 
     final String formattedDate = _formatDate(selectedDate);
     final String formattedTime = _formatTime(TimeOfDay.now());
-    final String note = "Reserva de vestimenta para ${selectedCustomer?.customerName ?? 'Cliente'}";  
+    final String note = "Reserva de vestimenta para ${selectedCustomer?.customerName ?? 'Cliente'}";
 
     final a = ref.read(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
-       
-    final String packageId= a.firstWhere((e) => e.name == "Renta de Vestimenta").id;
-    final String packageName= a.firstWhere((e) => e.name == "Renta de Vestimenta").name;
-    
-    // Variables temporales para guardar el vestido y la sucursal   
+
+    final String packageId = a.firstWhere((e) => e.name == "Renta de Vestimenta").id;
+    final String packageName = a.firstWhere((e) => e.name == "Renta de Vestimenta").name;
+
+    // Variables temporales para guardar el vestido y la sucursal
     List<Map<String, String>> multipleDress = [];
 
     // Logica que guarda segun un o varios vestidos
@@ -143,14 +143,14 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
         isSubmitting = false;
       });
       return;
-    } else{
-        multipleDress = dressReservations.map((dress) {
-          return {
-            'dress_id': dress.id,
-            'branch_id': dress.branchId,
-            'dress_name': dress.name,
-          };
-      }).toList();  
+    } else {
+      multipleDress = dressReservations.map((dress) {
+        return {
+          'dress_id': dress.id,
+          'branch_id': dress.branchId,
+          'dress_name': dress.name,
+        };
+      }).toList();
     }
 
     double totalReservationPrice = selectedValues.values.where((e) => e['vestidoPrice'] != null).map((e) => double.tryParse(e['vestidoPrice'].toString()) ?? 0.0).fold(0.0, (a, b) => a + b);
@@ -196,8 +196,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text("Error al crear la renta. Por favor intenta de nuevo."),
+          content: Text("Error al crear la renta. Por favor intenta de nuevo."),
           backgroundColor: Colors.red,
         ),
       );
@@ -209,6 +208,20 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
     late final ThemeData _theme = Theme.of(context);
     late final ColorScheme _colors = _theme.colorScheme;
     late final TextTheme _textTheme = _theme.textTheme;
+
+    final customerList = ref.watch(allCustomerProvider);
+
+    // Cargar la lista de Nros de Telefonos de clientes
+    phoneNumbers = customerList.when(
+      data: (customers) {
+        return customers.map((customer) => customer.phoneNumber).toList();
+      },
+      loading: () => [],
+      error: (error, stackTrace) {
+        log('Error loading customers: $error');
+        return [];
+      },
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -245,35 +258,69 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
 
       // Información del cliente
       Card(
-        child: ListTile(
-          leading: Icon(Icons.person, color: Theme.of(context).primaryColor),
-          title: const Text("Cliente"),
-          subtitle: Text(
-            selectedCustomer?.customerName ?? "Seleccione un cliente",
-            style: TextStyle(
-              color: selectedCustomer == null ? Colors.grey : Colors.black,
-            ),
-          ),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          onTap: () async {
-            await showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              builder: (context) => CustomerSelectionModal(
-                initialCustomer: selectedCustomer,
-                onCustomerSelected: (customer) {
-                  setState(() {
-                    selectedCustomer = customer;
-                  });
+        child: Row(
+          children: [
+            Expanded(
+              child: ListTile(
+                leading: Icon(Icons.person, color: Theme.of(context).primaryColor),
+                title: const Text("Cliente"),
+                subtitle: Text(
+                  selectedCustomer?.customerName ?? "Seleccione un cliente",
+                  style: TextStyle(
+                    color: selectedCustomer == null ? Colors.grey : Colors.black,
+                  ),
+                ),
+                //trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () async {
+                  await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    builder: (context) => CustomerSelectionModal(
+                      initialCustomer: selectedCustomer,
+                      onCustomerSelected: (customer) {
+                        setState(() {
+                          selectedCustomer = customer;
+                        });
+                      },
+                    ),
+                  );
                 },
               ),
-            );
-          },
+            ),
+
+            // Espacio para el botón de agregar cliente
+
+            // Boton para agregar un nuevo cliente
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 10),
+              child: Center(
+                child: IconButton(
+                  icon: const Icon(Icons.add_circle, color: Colors.green),
+                  onPressed: () async {
+                    final nuevoCliente = await context.push<CustomerModel>(
+                      '/add-customer',
+                      extra: {
+                        'typeOfCustomerAdd': 'Buyer',
+                        'listOfPhoneNumber': phoneNumbers,
+                      },
+                    );
+
+                    if (nuevoCliente != null) {
+                      setState(() {
+                        selectedCustomer = nuevoCliente;
+                      });
+                    }
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+
       SizedBox(height: 12),
 
       // Agregado de Combos con Categorias para seleccionar vestimenta
@@ -676,44 +723,42 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
     TextTheme textTheme,
   ) async {
     try {
-      
-        final a = ref.read(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
+      final a = ref.read(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
 
-        final clothReservation = ClothReservation(
-          packageId: a.firstWhere((e) => e.name == "Renta de Vestimenta").id,
-          packageName: a.firstWhere((e) => e.name == "Renta de Vestimenta").name,
-          dressId: '',
-          dressName: '',
-          branchId: '',
-          dressReservations: dressReservations,
-          clientId: selectedCustomer?.phoneNumber ?? '',
-          clientName: selectedCustomer?.customerName ?? '',
-          reservationId: '',
-          selectedDate: selectedDate,
-        );
+      final clothReservation = ClothReservation(
+        packageId: a.firstWhere((e) => e.name == "Renta de Vestimenta").id,
+        packageName: a.firstWhere((e) => e.name == "Renta de Vestimenta").name,
+        dressId: '',
+        dressName: '',
+        branchId: '',
+        dressReservations: dressReservations,
+        clientId: selectedCustomer?.phoneNumber ?? '',
+        clientName: selectedCustomer?.customerName ?? '',
+        reservationId: '',
+        selectedDate: selectedDate,
+      );
 
-        final isAvailable = await ref.read(
-          isClothesAvailableForRangeProvider({
-            'dressReservation': vestidoId,
-            'startDate': _formatDate(selectedDate),
-            'isAdditional': false,
-          }).future,
-        );
+      final isAvailable = await ref.read(
+        isClothesAvailableForRangeProvider({
+          'dressReservation': vestidoId,
+          'startDate': _formatDate(selectedDate),
+          'isAdditional': false,
+        }).future,
+      );
 
-        final widgetResult = Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(top: 4, right: 8),
-          child: Text(
-            isAvailable ? "Disponible" : "No Disponible",
-            style: textTheme.bodyLarge!.copyWith(
-              color: isAvailable ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
+      final widgetResult = Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(top: 4, right: 8),
+        child: Text(
+          isAvailable ? "Disponible" : "No Disponible",
+          style: textTheme.bodyLarge!.copyWith(
+            color: isAvailable ? Colors.green : Colors.red,
+            fontWeight: FontWeight.bold,
           ),
-        );
+        ),
+      );
 
-        return AvailabilityResult(isAvailable: isAvailable, widget: widgetResult);
-     
+      return AvailabilityResult(isAvailable: isAvailable, widget: widgetResult);
     } catch (e) {
       // Retry automático luego de 1 segundo
       Future.delayed(const Duration(seconds: 1), () {
@@ -726,7 +771,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
       rethrow;
     }
   }
-  
+
   Widget _buildButtonConfirm() {
     return SizedBox(
       width: double.infinity,
@@ -758,46 +803,44 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
                 }
 
                 // Nueva renta
-                  var a = ref.read(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
+                var a = ref.read(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
 
-                  ClothReservation clothReservation = ClothReservation(
-                    packageId: a.firstWhere((element) => element.name == "Renta de Vestimenta").id,
-                    packageName: a.firstWhere((element) => element.name == "Renta de Vestimenta").name,
-                    dressId: '',
-                    dressName: '',
-                    branchId: '',
-                    dressReservations: dressReservations,
-                    clientId: selectedCustomer?.phoneNumber ?? '',
-                    clientName: selectedCustomer?.customerName ?? '',
-                    reservationId: '',
-                    selectedDate: selectedDate,
-                    
+                ClothReservation clothReservation = ClothReservation(
+                  packageId: a.firstWhere((element) => element.name == "Renta de Vestimenta").id,
+                  packageName: a.firstWhere((element) => element.name == "Renta de Vestimenta").name,
+                  dressId: '',
+                  dressName: '',
+                  branchId: '',
+                  dressReservations: dressReservations,
+                  clientId: selectedCustomer?.phoneNumber ?? '',
+                  clientName: selectedCustomer?.customerName ?? '',
+                  reservationId: '',
+                  selectedDate: selectedDate,
+                );
+
+                // Verificación de disponibilidad (opcional porque ya se hace al seleccionar)
+                for (var dressReservation in dressReservations) {
+                  final isAvailable = await ref.read(
+                    isClothesAvailableForRangeProvider({
+                      'dressReservation': dressReservation.id,
+                      'startDate': _formatDate(selectedDate),
+                      'isAdditional': false,
+                    }).future,
                   );
 
-                  // Verificación de disponibilidad (opcional porque ya se hace al seleccionar)
-                  for (var dressReservation in dressReservations) {
-                    final isAvailable = await ref.read(
-                      isClothesAvailableForRangeProvider({
-                        'dressReservation': dressReservation.id,
-                        'startDate': _formatDate(selectedDate),
-                        'isAdditional': false,
-                      }).future,
+                  if (isAvailable == false) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("El vestido ${dressReservation.name} no está disponible para la fecha seleccionada."),
+                        backgroundColor: Colors.red,
+                      ),
                     );
-
-                    if (isAvailable == false) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("El vestido ${dressReservation.name} no está disponible para la fecha seleccionada."),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
+                    return;
                   }
+                }
 
-                  // Guardar lógica aquí...
-                  _confirmReservation();
-
+                // Guardar lógica aquí...
+                _confirmReservation();
               }
             : null,
         child: isSubmitting ? CircularProgressIndicator(color: Colors.white) : _buildTotalPrice(selectedValues),
