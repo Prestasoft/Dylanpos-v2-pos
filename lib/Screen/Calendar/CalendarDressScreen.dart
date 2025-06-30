@@ -431,64 +431,71 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                                   // Image (Thumbnail)
                                                   DataCell(
                                                     dress.images.isNotEmpty
-                                                        ? ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        4),
-                                                            child:
-                                                                Image.network(
-                                                              dress
-                                                                  .images.first,
-                                                              width: 50,
-                                                              height: 50,
-                                                              fit: BoxFit.cover,
-                                                              loadingBuilder:
-                                                                  (context,
-                                                                      child,
-                                                                      loadingProgress) {
-                                                                if (loadingProgress ==
-                                                                    null)
-                                                                  return child;
-                                                                return Container(
-                                                                  width: 50,
-                                                                  height: 50,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200,
-                                                                  child: Center(
-                                                                    child:
-                                                                        CircularProgressIndicator(
-                                                                      value: loadingProgress.expectedTotalBytes !=
-                                                                              null
-                                                                          ? loadingProgress.cumulativeBytesLoaded /
-                                                                              loadingProgress.expectedTotalBytes!
-                                                                          : null,
-                                                                      strokeWidth:
-                                                                          2,
+                                                        ? GestureDetector(
+                                                            onTap: () {
+                                                              _showFullScreenImage(
+                                                                  context,
+                                                                  dress.images
+                                                                      .first);
+                                                            },
+                                                            child: ClipRRect(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          4),
+                                                              child: Image.network(
+                                                                dress
+                                                                    .images.first,
+                                                                width: 50,
+                                                                height: 50,
+                                                                fit: BoxFit.cover,
+                                                                loadingBuilder:
+                                                                    (context,
+                                                                        child,
+                                                                        loadingProgress) {
+                                                                  if (loadingProgress ==
+                                                                      null)
+                                                                    return child;
+                                                                  return Container(
+                                                                    width: 50,
+                                                                    height: 50,
+                                                                    color: Colors
+                                                                        .grey
+                                                                        .shade200,
+                                                                    child: Center(
+                                                                      child:
+                                                                          CircularProgressIndicator(
+                                                                        value: loadingProgress.expectedTotalBytes !=
+                                                                                null
+                                                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                                                loadingProgress.expectedTotalBytes!
+                                                                            : null,
+                                                                        strokeWidth:
+                                                                            2,
+                                                                      ),
                                                                     ),
-                                                                  ),
-                                                                );
-                                                              },
-                                                              errorBuilder:
-                                                                  (context,
-                                                                      error,
-                                                                      stackTrace) {
-                                                                print(
-                                                                    'Error con Image.network: $error');
-                                                                return Container(
-                                                                  width: 50,
-                                                                  height: 50,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200,
-                                                                  child: const Icon(
-                                                                      Icons
-                                                                          .error,
-                                                                      color: Colors
-                                                                          .red),
-                                                                );
-                                                              },
+                                                                  );
+                                                                },
+                                                                errorBuilder:
+                                                                    (context,
+                                                                        error,
+                                                                        stackTrace) {
+                                                                  print(
+                                                                      'Error con Image.network: $error');
+                                                                  return Container(
+                                                                    width: 50,
+                                                                    height: 50,
+                                                                    color: Colors
+                                                                        .grey
+                                                                        .shade200,
+                                                                    child: const Icon(
+                                                                        Icons
+                                                                            .error,
+                                                                        color: Colors
+                                                                            .red),
+                                                                  );
+                                                                },
+                                                              ),
                                                             ),
                                                           )
                                                         : Container(
@@ -1046,7 +1053,7 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                 top: 20,
                 right: 20,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  icon: const Icon(Icons.close, color: Colors.red, size: 30),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),

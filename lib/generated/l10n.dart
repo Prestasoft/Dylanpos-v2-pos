@@ -7081,7 +7081,7 @@ class S {
   /// `Confirm Delete`
   String get confirmDelete {
     return Intl.message(
-      'Confirm Delete',
+      'Confirmar Eliminación',
       name: 'confirmDelete',
       desc: '',
       args: [],
@@ -7189,6 +7189,24 @@ class S {
       String get addComponent {
     return Intl.message('Add component', name: 'addcomponent', desc: '', args: []);
   }
+
+  String get areas => 'Áreas';
+  String get area => 'Área';
+  String get equipments => 'Equipos';
+  String get areasList => 'Lista de Áreas';
+  String get equipmentsList => 'Lista de Equipos';
+  String get addArea => 'Agregar Área';
+  String get editArea => 'Editar Área';
+  String get addEquipment => 'Agregar Equipo';
+  String get editEquipment => 'Editar Equipo';
+  String get quantityItems => 'Cantidad de Items';
+  String get actions => 'Acciones';
+  String get deleteAreaConfirmation => '¿Estás seguro de eliminar esta área?';
+  String get deleteEquipmentConfirmation => '¿Estás seguro de eliminar este equipo?';
+  String get areaDeleted => 'Área eliminada correctamente';
+  String get equipmentDeleted => 'Equipo eliminado correctamente';
+  String get deleteAreaConfirm => 'Realmente desea eliminar la área?';
+  String get deleteEquipmentConfirm => 'Realmente desea eliminar el equipo?';
 }
 
 

@@ -67,6 +67,7 @@ import '../Screen/WareHouse/warehouse_details.dart';
 import '../Screen/Widgets/Pop UP/Purchase/purchase_payment_popup.dart';
 import '../Screen/tax rates/tax_model.dart';
 import '../Screen/tax rates/tax_rate_screen.dart';
+import '../Screen/Equipments/areas_equipments_screen.dart';
 import '../model/customer_model.dart';
 import '../model/expense_model.dart';
 import '../model/personal_information_model.dart';
@@ -85,6 +86,14 @@ abstract class AcnooAppRoutes {
           );
         },
         routes: [
+          ///-----------------------Blank Home Route---------------------------
+          GoRoute(
+            path: '/blank-home',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: BlankHome(),
+            ),
+          ),
+
           ///-----------------------DashBoard Route---------------------------
           GoRoute(
             path: '/dashboard',
@@ -572,6 +581,14 @@ abstract class AcnooAppRoutes {
             ),
           ),
 
+          //---------------------Equipment Stock List------------------------------------
+          GoRoute(
+            path: '/equipment-stock-list',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: AreasEquipmentsScreen(),
+            ),
+          ),
+
           ///----------------------whatsapp marketing-------------------------
           GoRoute(
             path: '/whatsapp-marketing',
@@ -659,12 +676,6 @@ abstract class AcnooAppRoutes {
                 ),
               ),
             ],
-          ),
-          GoRoute(
-            path: '/blank-home',
-            pageBuilder: (context, state) => const NoTransitionPage<void>(
-              child: BlankHome(),
-            ),
           ),
         ],
       ),

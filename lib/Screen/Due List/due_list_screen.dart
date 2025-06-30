@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -10,6 +8,7 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/customer_model.dart';
+import 'package:intl/intl.dart'; // Añadir para manejo de fechas
 
 import '../../Provider/customer_provider.dart';
 import '../../const.dart';
@@ -42,6 +41,10 @@ class _DueListState extends State<DueList> {
   String selectedParties = 'Clientes';
   ScrollController mainScroll = ScrollController();
   String searchItem = '';
+  
+  // Nuevas variables para el filtro de fecha
+  String dateFilter = 'Todos'; // 'Hoy' o 'Todos'
+  DateTimeRange? dateRange; // Para el selector de rango de fechas
 
   @override
   void initState() {
@@ -52,6 +55,66 @@ class _DueListState extends State<DueList> {
   final _horizontalScroll = ScrollController();
   int _categoryPerPage = 10; // Default number of items to display
   int _currentPage = 1;
+
+  // Función para mostrar el selector de rango de fechas
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      initialDateRange: dateRange ?? DateTimeRange(
+        start: DateTime.now().subtract(const Duration(days: 7)),
+        end: DateTime.now(),
+      ),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: kBlueTextColor,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        dateRange = picked;
+        dateFilter = 'Rango';
+        _currentPage = 1;
+      });
+    }
+  }
+
+  // Función para filtrar por fecha
+  bool _filterByDate(CustomerModel customer) {
+    if (dateFilter == 'Todos') return true;
+    
+    if (customer.updatedAt == null || customer.updatedAt!.isEmpty) return false;
+    
+    try {
+      final updatedDate = DateFormat('yyyy-MM-dd HH:mm:ss').parse(customer.updatedAt!);
+      
+      if (dateFilter == 'Hoy') {
+        final now = DateTime.now();
+        return updatedDate.year == now.year &&
+               updatedDate.month == now.month &&
+               updatedDate.day == now.day;
+      } else if (dateFilter == 'Rango' && dateRange != null) {
+        return updatedDate.isAfter(dateRange!.start) && 
+               updatedDate.isBefore(dateRange!.end.add(const Duration(days: 1)));
+      }
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,26 +146,31 @@ class _DueListState extends State<DueList> {
 
               ///___________customer_filter______________________________________________________
               for (var element in customerList) {
-                if (element.customerName
-                        .removeAllWhiteSpace()
-                        .toLowerCase()
-                        .contains(searchItem.toLowerCase()) ||
-                    element.phoneNumber.contains(searchItem)) {
-                  showAbleCustomer.add(element);
-                } else if (searchItem == '') {
+                final name = element.customerName?.replaceAll(' ', '').toLowerCase() ?? '';
+                final phone = element.phoneNumber ?? '';
+
+                final search = searchItem.toLowerCase();
+
+                if ((name.contains(search) || phone.contains(search))) {
+                  if (_filterByDate(element)) {
+                    showAbleCustomer.add(element);
+                  }
+                } else if (searchItem == '' && _filterByDate(element)) {
                   showAbleCustomer.add(element);
                 }
               }
 
               ///___________Suppiler_filter______________________________________________________
               for (var element in supplierList) {
-                if (element.customerName
+                if ((element.customerName
                         .removeAllWhiteSpace()
                         .toLowerCase()
                         .contains(searchItem.toLowerCase()) ||
-                    element.phoneNumber.contains(searchItem)) {
-                  showAbleSupplier.add(element);
-                } else if (searchItem == '') {
+                    element.phoneNumber.contains(searchItem))) {
+                  if (_filterByDate(element)) {
+                    showAbleSupplier.add(element);
+                  }
+                } else if (searchItem == '' && _filterByDate(element)) {
                   showAbleSupplier.add(element);
                 }
               }
@@ -246,7 +314,7 @@ class _DueListState extends State<DueList> {
                                 ),
                                 const SizedBox(height: 12),
 
-                                ///___________search________________________________________________
+                                ///___________search_and_filters________________________________________________
                                 ResponsiveGridRow(rowSegments: 100, children: [
                                   ResponsiveGridCol(
                                     xs: screenWidth < 360
@@ -324,6 +392,122 @@ class _DueListState extends State<DueList> {
                                       ),
                                     ),
                                   ),
+                                  // Filtro de fecha (Hoy/Todos)
+                                  ResponsiveGridCol(
+                                    xs: screenWidth < 360
+                                        ? 50
+                                        : screenWidth > 430
+                                            ? 33
+                                            : 40,
+                                    md: screenWidth < 768
+                                        ? 24
+                                        : screenWidth < 950
+                                            ? 20
+                                            : 15,
+                                    lg: screenWidth < 1700 ? 15 : 10,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        right: screenWidth < 570 ? 0 : 10,
+                                        bottom: screenWidth < 570 ? 10 : 0,
+                                      ),
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        height: 48,
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          border:
+                                              Border.all(color: kNeutral300),
+                                        ),
+                                        child: DropdownButton<String>(
+                                          isDense: true,
+                                          padding: EdgeInsets.zero,
+                                          underline: const SizedBox(),
+                                          value: dateFilter,
+                                          icon: const Icon(
+                                            Icons.keyboard_arrow_down,
+                                            color: Colors.black,
+                                          ),
+                                          items: ['Todos', 'Hoy']
+                                              .map<DropdownMenuItem<String>>(
+                                                  (String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(
+                                                value,
+                                                style: theme.textTheme.bodyLarge,
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: (String? newValue) {
+                                            setState(() {
+                                              dateFilter = newValue ?? 'Todos';
+                                              if (dateFilter != 'Rango') {
+                                                dateRange = null;
+                                              }
+                                              _currentPage = 1;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  // Botón para seleccionar rango de fechas
+                                  if (dateFilter == 'Rango')
+                                    ResponsiveGridCol(
+                                      xs: screenWidth < 360
+                                          ? 50
+                                          : screenWidth > 430
+                                              ? 33
+                                              : 40,
+                                      md: screenWidth < 768
+                                          ? 24
+                                          : screenWidth < 950
+                                              ? 20
+                                              : 15,
+                                      lg: screenWidth < 1700 ? 15 : 10,
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          right: screenWidth < 570 ? 0 : 10,
+                                          bottom: screenWidth < 570 ? 10 : 0,
+                                        ),
+                                        child: InkWell(
+                                          onTap: () => _selectDateRange(context),
+                                          child: Container(
+                                            alignment: Alignment.center,
+                                            height: 48,
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                              border:
+                                                  Border.all(color: kNeutral300),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(Icons.calendar_today,
+                                                    size: 16),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  dateRange != null
+                                                      ? '${DateFormat('dd/MM/yyyy').format(dateRange!.start)} - ${DateFormat('dd/MM/yyyy').format(dateRange!.end)}'
+                                                      : 'Seleccionar rango',
+                                                  style:
+                                                      theme.textTheme.bodyLarge,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  // Campo de búsqueda
                                   ResponsiveGridCol(
                                       xs: 100,
                                       md: 60,

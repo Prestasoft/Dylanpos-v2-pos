@@ -18,7 +18,7 @@ import 'package:salespro_admin/Screen/Reports/quotation_reports_wedget.dart';
 import 'package:salespro_admin/Screen/Reports/seles_return_widget.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-
+import 'package:salespro_admin/Provider/reservation_provider.dart';
 import '../../PDF/print_pdf.dart';
 import '../../PDF/sales_invoice_pdf.dart';
 import '../../Provider/profile_provider.dart';
@@ -42,12 +42,12 @@ class SaleReports extends StatefulWidget {
 class _SaleReportsState extends State<SaleReports> {
   List<String> categoryList = [
     'Ventas',
+    'Transaccion Diaria',
     'Devolucion',
     'Compra',
     'Devolucion de compra',
     'Pendiente',
     'Stock actual',
-    'Transaccion Diaria',
     'Historial de ventas de cotizaciones',
     'Informe de perdidas y ganancias',
   ];
@@ -1116,6 +1116,7 @@ class _SaleReportsState extends State<SaleReports> {
                                                                     .S
                                                                     .of(context)
                                                                     .partyName)),
+                                                            DataColumn(label: Text('Reservado por')),
                                                             DataColumn(
                                                                 label: Text(lang
                                                                     .S
@@ -1126,6 +1127,8 @@ class _SaleReportsState extends State<SaleReports> {
                                                                     .S
                                                                     .of(context)
                                                                     .amount)),
+                                                            DataColumn(
+                                                                label: Text("Pagado")),
                                                             DataColumn(
                                                                 label: Text(lang
                                                                     .S
@@ -1146,6 +1149,8 @@ class _SaleReportsState extends State<SaleReports> {
                                                               paginatedList
                                                                   .length,
                                                               (index) {
+                                                                final reservationIds = paginatedList[index].reservationIds ?? [];
+                                                                final firstReservationId = reservationIds.isNotEmpty ? reservationIds.first : null;
                                                             return DataRow(
                                                                 cells: [
                                                                   ///______________S.L__________________________________________________
@@ -1184,8 +1189,23 @@ class _SaleReportsState extends State<SaleReports> {
                                                                     ),
                                                                   ),
 
-                                                                  ///___________Party Type______________________________________________
+                                                                  ///___________Seller Name______________________________________________
+                                                                  DataCell(
+                                                                      Consumer(builder: (context, ref, _) {
+                                                                        return ref.watch(fullReservationByIdProviderVQ(firstReservationId!)).when(
+                                                                          loading: () => const SizedBox(
+                                                                            width: 20,
+                                                                            height: 20,
+                                                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                                                          ),
+                                                                          error: (error, stack) => Text('Error'),
+                                                                          data: (fullReservation) => Text(fullReservation?.reservation?['seller_name'] ?? 'N/A'),
+                                                                        );
+                                                                      },
+                                                                    ),
+                                                                  ),
 
+                                                                  ///___________Party Type______________________________________________
                                                                   DataCell(
                                                                     Text(
                                                                       paginatedList[
@@ -1199,6 +1219,13 @@ class _SaleReportsState extends State<SaleReports> {
                                                                   DataCell(
                                                                     Text(
                                                                       '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].totalAmount.toString()) ?? 0)}',
+                                                                    ),
+                                                                  ),
+
+                                                                  ///___________Paid____________________________________________________
+                                                                  DataCell(
+                                                                    Text(
+                                                                      '$globalCurrency${myFormat.format((double.tryParse(paginatedList[index].totalAmount.toString()) ?? 0) - (double.tryParse(paginatedList[index].dueAmount.toString()) ?? 0))}',
                                                                     ),
                                                                   ),
 
