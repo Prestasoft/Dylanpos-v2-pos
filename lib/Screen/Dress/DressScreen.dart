@@ -323,8 +323,10 @@ class _DressScreenState extends State<DressScreen> {
                                                 DataColumn(
                                                     label: Text(_lang.branch)),
                                                 DataColumn(
-                                                    label:
-                                                        Text(_lang.available)),
+                                                    label: Text("Estado")),
+                                                // DataColumn(
+                                                //     label:
+                                                //         Text(_lang.available)),
                                                 const DataColumn(
                                                     label: Icon(
                                                         FeatherIcons.settings)),
@@ -453,162 +455,320 @@ class _DressScreenState extends State<DressScreen> {
                                                   DataCell(
                                                       Text(dress.branchId)),
 
-                                                  // Available
+                                                  // Branch
                                                   DataCell(
-                                                    Switch(
-                                                      value: dress.available,
-                                                      activeColor: kMainColor,
-                                                      onChanged: (value) async {
-                                                        _toggleDressAvailability(
-                                                            context,
-                                                            ref,
-                                                            dress,
-                                                            value);
-                                                      },
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4),
+                                                      decoration: BoxDecoration(
+                                                        color: dress.state ==
+                                                                'Disponible'
+                                                            ? Colors.green
+                                                                .withOpacity(
+                                                                    0.2)
+                                                            : dress.state ==
+                                                                    'Averiado'
+                                                                ? Colors.orange
+                                                                    .withOpacity(
+                                                                        0.2)
+                                                                : dress.state ==
+                                                                        'Lavandería'
+                                                                    ? Colors
+                                                                        .blue
+                                                                        .withOpacity(
+                                                                            0.2)
+                                                                    : Colors.red
+                                                                        .withOpacity(
+                                                                            0.2),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                      ),
+                                                      child: Text(
+                                                        dress.state,
+                                                        style: TextStyle(
+                                                          color: dress.state ==
+                                                                  'Disponible'
+                                                              ? Colors.green
+                                                              : dress.state ==
+                                                                      'Averiado'
+                                                                  ? Colors
+                                                                      .orangeAccent
+                                                                  : dress.state ==
+                                                                          'Lavandería'
+                                                                      ? Colors
+                                                                          .blue
+                                                                      : Colors
+                                                                          .red,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
+                                                  // Available
+                                                  // DataCell(
+                                                  //   Switch(
+                                                  //     value: dress.available,
+                                                  //     activeColor: kMainColor,
+                                                  //     onChanged: (value) async {
+                                                  //       _toggleDressAvailability(
+                                                  //           context,
+                                                  //           ref,
+                                                  //           dress,
+                                                  //           value);
+                                                  //     },
+                                                  //   ),
+                                                  // ),
 
                                                   // Actions
                                                   DataCell(
-                                                    Theme(
-                                                      data: ThemeData(
-                                                          highlightColor:
-                                                              dropdownItemColor,
-                                                          focusColor:
-                                                              dropdownItemColor,
-                                                          hoverColor:
-                                                              dropdownItemColor),
-                                                      child: SizedBox(
-                                                        width: 20,
-                                                        child: PopupMenuButton(
-                                                          surfaceTintColor:
-                                                              Colors.white,
-                                                          padding:
-                                                              EdgeInsets.zero,
-                                                          itemBuilder:
-                                                              (BuildContext
-                                                                      bc) =>
-                                                                  [
-                                                            // Edit
-                                                            PopupMenuItem(
-                                                                onTap: () {
-                                                                  _showEditDressDialog(
-                                                                      context,
-                                                                      ref,
-                                                                      dress);
-                                                                },
-                                                                child: Row(
-                                                                  children: [
-                                                                    const Icon(
-                                                                        IconlyLight
-                                                                            .edit,
-                                                                        size:
-                                                                            20.0,
-                                                                        color:
-                                                                            kNeutral500),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            4.0),
-                                                                    Text(
-                                                                      _lang
-                                                                          .edit,
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .bodyLarge
-                                                                          ?.copyWith(
-                                                                        color:
-                                                                            kNeutral500,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                )),
-
-                                                            // View Images
-                                                            PopupMenuItem(
-                                                                onTap: () {
-                                                                  _showImagesGallery(
-                                                                      context,
-                                                                      dress);
-                                                                },
-                                                                child: Row(
-                                                                  children: [
-                                                                    const Icon(
-                                                                        IconlyLight
-                                                                            .image,
-                                                                        size:
-                                                                            20.0,
-                                                                        color:
-                                                                            kNeutral500),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            4.0),
-                                                                    Text(
-                                                                      _lang
-                                                                          .viewImages,
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .bodyLarge
-                                                                          ?.copyWith(
-                                                                        color:
-                                                                            kNeutral500,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                )),
-
-                                                            // Delete
-                                                            PopupMenuItem(
-                                                              onTap: () {
-                                                                _showDeleteConfirmation(
-                                                                    context,
-                                                                    ref,
-                                                                    dress);
-                                                              },
-                                                              child: Row(
-                                                                children: [
-                                                                  HugeIcon(
-                                                                    icon: HugeIcons
-                                                                        .strokeRoundedDelete02,
-                                                                    color:
-                                                                        kNeutral500,
-                                                                    size: 20.0,
-                                                                  ),
-                                                                  const SizedBox(
-                                                                      width:
-                                                                          4.0),
-                                                                  Text(
-                                                                    _lang
-                                                                        .delete,
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
+                                                    Row(
+                                                      children: [
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                              Icons.build,
+                                                              color: Colors
+                                                                  .orange),
+                                                          tooltip:
+                                                              'Marcar como Averiado',
+                                                          onPressed: () async {
+                                                            final confirm =
+                                                                await _confirmChangeState(
+                                                              '¿Marcar vestido como averiado?',
+                                                              'Esta acción cambiará el estado del vestido a "Averiado". ¿Deseas continuar?',
+                                                            );
+                                                            if (confirm) {
+                                                              _changeDressAvailability(
+                                                                  context,
+                                                                  ref,
+                                                                  dress,
+                                                                  false,
+                                                                  "Averiado");
+                                                            }
+                                                          },
+                                                        ),
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                              Icons.warning,
+                                                              color:
+                                                                  Colors.red),
+                                                          tooltip:
+                                                              'Marcar como en Sesión',
+                                                          onPressed: () async {
+                                                            final confirm =
+                                                                await _confirmChangeState(
+                                                              '¿Marcar vestido como en sesión?',
+                                                              'Esta acción cambiará el estado del vestido a "Sesión". ¿Deseas continuar?',
+                                                            );
+                                                            if (confirm) {
+                                                              _changeDressAvailability(
+                                                                  context,
+                                                                  ref,
+                                                                  dress,
+                                                                  false,
+                                                                  "Sesión");
+                                                            }
+                                                          },
+                                                        ),
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                              Icons
+                                                                  .dry_cleaning_rounded,
+                                                              color:
+                                                                  Colors.blue),
+                                                          tooltip:
+                                                              'Marcar como en Lavandería',
+                                                          onPressed: () async {
+                                                            final confirm =
+                                                                await _confirmChangeState(
+                                                              '¿Marcar vestido como en lavandería?',
+                                                              'Esta acción cambiará el estado del vestido a "Lavandería". ¿Deseas continuar?',
+                                                            );
+                                                            if (confirm) {
+                                                              _changeDressAvailability(
+                                                                  context,
+                                                                  ref,
+                                                                  dress,
+                                                                  false,
+                                                                  "Lavandería");
+                                                            }
+                                                          },
+                                                        ),
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                              Icons
+                                                                  .check_circle,
+                                                              color:
+                                                                  Colors.green),
+                                                          tooltip:
+                                                              'Marcar como Disponible',
+                                                          onPressed: () async {
+                                                            final confirm =
+                                                                await _confirmChangeState(
+                                                              '¿Marcar vestido como disponible?',
+                                                              'Esta acción cambiará el estado del vestido a "Disponible". ¿Deseas continuar?',
+                                                            );
+                                                            if (confirm) {
+                                                              _changeDressAvailability(
+                                                                  context,
+                                                                  ref,
+                                                                  dress,
+                                                                  true,
+                                                                  "Disponible");
+                                                            }
+                                                          },
+                                                        ),
+                                                        Theme(
+                                                          data: ThemeData(
+                                                              highlightColor:
+                                                                  dropdownItemColor,
+                                                              focusColor:
+                                                                  dropdownItemColor,
+                                                              hoverColor:
+                                                                  dropdownItemColor),
+                                                          child: SizedBox(
+                                                            width: 20,
+                                                            child:
+                                                                PopupMenuButton(
+                                                              surfaceTintColor:
+                                                                  Colors.white,
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .zero,
+                                                              itemBuilder:
+                                                                  (BuildContext
+                                                                          bc) =>
+                                                                      [
+                                                                // Edit
+                                                                PopupMenuItem(
+                                                                    onTap: () {
+                                                                      _showEditDressDialog(
+                                                                          context,
+                                                                          ref,
+                                                                          dress);
+                                                                    },
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(
+                                                                            IconlyLight
+                                                                                .edit,
+                                                                            size:
+                                                                                20.0,
                                                                             color:
                                                                                 kNeutral500),
+                                                                        const SizedBox(
+                                                                            width:
+                                                                                4.0),
+                                                                        Text(
+                                                                          _lang
+                                                                              .edit,
+                                                                          style: theme
+                                                                              .textTheme
+                                                                              .bodyLarge
+                                                                              ?.copyWith(
+                                                                            color:
+                                                                                kNeutral500,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    )),
+
+                                                                // View Images
+                                                                PopupMenuItem(
+                                                                    onTap: () {
+                                                                      _showImagesGallery(
+                                                                          context,
+                                                                          dress);
+                                                                    },
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(
+                                                                            IconlyLight
+                                                                                .image,
+                                                                            size:
+                                                                                20.0,
+                                                                            color:
+                                                                                kNeutral500),
+                                                                        const SizedBox(
+                                                                            width:
+                                                                                4.0),
+                                                                        Text(
+                                                                          _lang
+                                                                              .viewImages,
+                                                                          style: theme
+                                                                              .textTheme
+                                                                              .bodyLarge
+                                                                              ?.copyWith(
+                                                                            color:
+                                                                                kNeutral500,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    )),
+
+                                                                // Delete
+                                                                PopupMenuItem(
+                                                                  onTap: () {
+                                                                    _showDeleteConfirmation(
+                                                                        context,
+                                                                        ref,
+                                                                        dress);
+                                                                  },
+                                                                  child: Row(
+                                                                    children: [
+                                                                      HugeIcon(
+                                                                        icon: HugeIcons
+                                                                            .strokeRoundedDelete02,
+                                                                        color:
+                                                                            kNeutral500,
+                                                                        size:
+                                                                            20.0,
+                                                                      ),
+                                                                      const SizedBox(
+                                                                          width:
+                                                                              4.0),
+                                                                      Text(
+                                                                        _lang
+                                                                            .delete,
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge
+                                                                            ?.copyWith(color: kNeutral500),
+                                                                      ),
+                                                                    ],
                                                                   ),
-                                                                ],
+                                                                ),
+                                                              ],
+                                                              onSelected:
+                                                                  (value) {
+                                                                context.go(
+                                                                    '/$value');
+                                                              },
+                                                              child: Center(
+                                                                child:
+                                                                    Container(
+                                                                        height:
+                                                                            18,
+                                                                        width:
+                                                                            18,
+                                                                        alignment:
+                                                                            Alignment
+                                                                                .centerRight,
+                                                                        child:
+                                                                            const Icon(
+                                                                          Icons
+                                                                              .more_vert_sharp,
+                                                                          size:
+                                                                              18,
+                                                                        )),
                                                               ),
                                                             ),
-                                                          ],
-                                                          onSelected: (value) {
-                                                            context
-                                                                .go('/$value');
-                                                          },
-                                                          child: Center(
-                                                            child: Container(
-                                                                height: 18,
-                                                                width: 18,
-                                                                alignment: Alignment
-                                                                    .centerRight,
-                                                                child:
-                                                                    const Icon(
-                                                                  Icons
-                                                                      .more_vert_sharp,
-                                                                  size: 18,
-                                                                )),
                                                           ),
                                                         ),
-                                                      ),
+                                                      ],
                                                     ),
                                                   ),
                                                 ]);
@@ -1120,6 +1280,28 @@ class _DressScreenState extends State<DressScreen> {
     }
   }
 
+//Change state dress
+  void _changeDressAvailability(BuildContext context, WidgetRef ref,
+      DressModel dress, bool value, String state) async {
+    final _lang = lang.S.of(context);
+
+    EasyLoading.show(status: _lang.updating);
+
+    final result = await ref.read(changeStateProvider(
+        {'dressId': dress.id, 'available': value, 'state': state}).future);
+
+    EasyLoading.dismiss();
+
+    if (result) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Estado de vestido cambiado a: $state')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ocurrio un error al actualizar el estado')));
+    }
+  }
+
 // Show dialog to edit an existing dress
   void _showEditDressDialog(
       BuildContext context, WidgetRef ref, DressModel dress) {
@@ -1385,6 +1567,7 @@ class _DressScreenState extends State<DressScreen> {
                                   available: _isAvailable,
                                   createdAt: dress.createdAt,
                                   updatedAt: DateTime.now(),
+                                  state: 'Disponible',
                                   images: _existingImageUrls,
                                   price: double.tryParse(
                                           _priceController.text) ??
@@ -1701,6 +1884,7 @@ class _DressScreenState extends State<DressScreen> {
                                   available: _isAvailable,
                                   createdAt: DateTime.now(),
                                   updatedAt: DateTime.now(),
+                                  state: 'Disponible',
                                   images: [],
                                   price: double.tryParse(
                                           _priceController.text) ??
@@ -1748,5 +1932,27 @@ class _DressScreenState extends State<DressScreen> {
         );
       },
     );
+  }
+
+  Future<bool> _confirmChangeState(String title, String message) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(lang.S.of(context).cancel),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Confirmar'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }

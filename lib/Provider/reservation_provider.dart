@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart';
@@ -20,11 +22,13 @@ final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
     if (snapshot.value is Map) {
       final Map<dynamic, dynamic> data =
           snapshot.value as Map<dynamic, dynamic>;
-
+      log(data.toString());
       // Filtrar reservaciones que no estén en estado 'cancelado' o 'pendiente'
       return data.entries
-          .where((entry) =>
-              entry.value is Map && _isValidReservation(entry.value as Map))
+          .where(
+            (entry) =>
+                entry.value is Map && _isValidReservation(entry.value as Map),
+          )
           .map((entry) {
             final reservation = ReservationModel.fromMap(
               Map<String, dynamic>.from(entry.value as Map),

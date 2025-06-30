@@ -9,6 +9,7 @@ class DressModel {
   final DateTime updatedAt;
   final List<String> images;
   final double price;
+  final String state;
   DressModel({
     required this.id,
     required this.name,
@@ -18,6 +19,7 @@ class DressModel {
     required this.available,
     required this.createdAt,
     required this.updatedAt,
+    required this.state,
     this.price = 0.0, // 👈 Precio por defecto
     List<String>? images, // 👈 Constructor admite lista opcional
   }) : images = images ?? [];
@@ -32,13 +34,15 @@ class DressModel {
       available: map['available'] ?? false,
       createdAt: map['created_at']?.toDate() ?? DateTime.now(),
       updatedAt: map['updated_at']?.toDate() ?? DateTime.now(),
+      state: map['state'] ?? "Sin Estado",
       images: map['images'] != null && map['images'] is List
           ? List<String>.from(map['images'].map((x) => x.toString()))
           : [],
       price: map['price']?.toDouble() ?? 0.0, // 👈 Precio desde el mapa
     );
   }
-  factory DressModel.fromRealtimeDB(Map<dynamic, dynamic> map, dynamic documentId) {
+  factory DressModel.fromRealtimeDB(
+      Map<dynamic, dynamic> map, dynamic documentId) {
     return DressModel(
       id: documentId.toString(),
       name: map['name']?.toString() ?? '',
@@ -48,12 +52,15 @@ class DressModel {
       available: map['available'] == true,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] ?? 0),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at'] ?? 0),
+      state: map['state'] ?? 'Sin Estado',
       images: map['images'] != null
           ? (map['images'] is List
-          ? List<String>.from((map['images'] as List).map((x) => x.toString()))
-          : map['images'] is Map
-          ? List<String>.from((map['images'] as Map).values.map((x) => x.toString()))
-          : [])
+              ? List<String>.from(
+                  (map['images'] as List).map((x) => x.toString()))
+              : map['images'] is Map
+                  ? List<String>.from(
+                      (map['images'] as Map).values.map((x) => x.toString()))
+                  : [])
           : [],
       price: map['price']?.toDouble() ?? 0.0, // 👈 Precio desde el mapa
     );
@@ -67,6 +74,7 @@ class DressModel {
       'available': available,
       'created_at': createdAt,
       'updated_at': updatedAt,
+      'state': state,
       'images': images, // 👈 Guardar la lista de imágenes
       'price': price, // 👈 Guardar el precio
     };

@@ -215,6 +215,26 @@ final toggleDressAvailabilityProvider =
   }
 });
 
+final changeStateProvider =
+    FutureProvider.family<bool, Map<String, dynamic>>((ref, data) async {
+  try {
+    String dressId = data['dressId'] as String;
+    bool newAvailability = data['available'] as bool;
+    String state = data['state'] as String;
+
+    await FirebaseDatabase.instance.ref('Admin Panel/dresses/$dressId').update({
+      'available': newAvailability,
+      'state': state,
+      'updated_at': DateTime.now().millisecondsSinceEpoch,
+    });
+
+    return true;
+  } catch (e) {
+    print('Error changing state dress availability: $e');
+    return false;
+  }
+});
+
 // Get all dresses
 final dressesProvider = StreamProvider<List<DressModel>>((ref) {
   return FirebaseDatabase.instance

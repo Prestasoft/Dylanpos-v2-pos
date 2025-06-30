@@ -445,8 +445,41 @@ class _CustomerListState extends State<CustomerList> {
                                                   ///___________Due____________________________________________________
 
                                                   DataCell(
-                                                    Text(
-                                                      "$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].dueAmount) ?? 0)}",
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4),
+                                                      decoration: BoxDecoration(
+                                                        color: (double.tryParse(
+                                                                        paginatedList[index]
+                                                                            .dueAmount) ??
+                                                                    0) ==
+                                                                0
+                                                            ? Colors.green
+                                                                .withOpacity(
+                                                                    0.2)
+                                                            : Colors.red
+                                                                .withOpacity(
+                                                                    0.2),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                      ),
+                                                      child: Text(
+                                                        "$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].dueAmount) ?? 0)}",
+                                                        style: TextStyle(
+                                                          color: (double.tryParse(
+                                                                          paginatedList[index]
+                                                                              .dueAmount) ??
+                                                                      0) ==
+                                                                  0
+                                                              ? Colors.green
+                                                              : Colors.red,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
 
