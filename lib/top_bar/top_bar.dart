@@ -77,84 +77,85 @@ class _TopBarWidgetState extends State<TopBarWidget> {
             // mainAxisSize: MainAxisSize.min,
             children: [
               // const SizedBox(width: 30.0),
-               if(checkUserRoleViewPermissionV2(type: 'rent_clothing')) 
-                  screenWidth < 670
-                  ? const SizedBox.shrink():SizedBox(
-                      height: 40,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                          backgroundColor: kMainColor,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30.0)),
-                          // side: const BorderSide(color: kBorderColorTextField, width: 1),
-                          textStyle: kTextStyle.copyWith(color: kWhite),
-                          // surfaceTintColor:
-                          //     const Color(0xFF8424FF).withOpacity(0.5),
-                          // shadowColor: const Color(0xFF8424FF).withOpacity(0.1),
-                        ),
-                        onPressed: () {
-                          // Navigator.pushNamed(context, PosSale.route);
-                          context.go('/reservations/rent-clothes');
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.add_rounded, color: kWhite),
-                            Text(
-                              'Rentar',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                            ),
-                          ],
+              if (checkUserRoleViewPermissionV2(type: 'rent_clothing'))
+                screenWidth < 670
+                    ? const SizedBox.shrink()
+                    : SizedBox(
+                        height: 40,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                            backgroundColor: kMainColor,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30.0)),
+                            // side: const BorderSide(color: kBorderColorTextField, width: 1),
+                            textStyle: kTextStyle.copyWith(color: kWhite),
+                            // surfaceTintColor:
+                            //     const Color(0xFF8424FF).withOpacity(0.5),
+                            // shadowColor: const Color(0xFF8424FF).withOpacity(0.1),
+                          ),
+                          onPressed: () {
+                            // Navigator.pushNamed(context, PosSale.route);
+                            context.go('/reservations/rent-clothes');
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_rounded, color: kWhite),
+                              Text(
+                                'Rentar',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
               screenWidth < 670
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
 
-              if(checkUserRoleViewPermissionV2(type: 'inventory_sales')) 
-              screenWidth < 590
-                  ? const SizedBox.shrink()
-                  : SizedBox(
-                      height: 40,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30.0)),
-                          padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                          backgroundColor: kMainColor.withValues(alpha: 0.1),
-                          side: const BorderSide(color: kMainColor, width: 1),
-                          textStyle: kTextStyle.copyWith(color: kWhite),
-                          surfaceTintColor: lightGreyColor,
-                          shadowColor: lightGreyColor.withOpacity(0.1),
-                        ),
-                        onPressed: () {
-                          // Navigator.pushNamed(context, InventorySales.route);
-                          context.go('/sales/inventory-sales');
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.add_rounded, color: kMainColor),
-                            Text(
-                              'Facturar',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: kMainColor,
-                                  ),
-                            ),
-                          ],
+              if (checkUserRoleViewPermissionV2(type: 'inventory_sales'))
+                screenWidth < 590
+                    ? const SizedBox.shrink()
+                    : SizedBox(
+                        height: 40,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30.0)),
+                            padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                            backgroundColor: kMainColor.withValues(alpha: 0.1),
+                            side: const BorderSide(color: kMainColor, width: 1),
+                            textStyle: kTextStyle.copyWith(color: kWhite),
+                            surfaceTintColor: lightGreyColor,
+                            shadowColor: lightGreyColor.withOpacity(0.1),
+                          ),
+                          onPressed: () {
+                            // Navigator.pushNamed(context, InventorySales.route);
+                            context.go('/sales/inventory-sales');
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_rounded, color: kMainColor),
+                              Text(
+                                'Facturar',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: kMainColor,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
               screenWidth < 590
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
@@ -182,91 +183,92 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                 return const Text('');
               }),
               const Spacer(),
-              if(checkUserRoleViewPermissionV2(type: 'register_clothing')) 
-              screenWidth < 590
-                  ? const SizedBox.shrink()
-                  : SizedBox(
-                      height: 40,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30.0)),
-                          padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                          backgroundColor: kMainColor.withValues(alpha: 0.05),
-                          side: const BorderSide(color: kMainColor, width: 1),
-                          textStyle: kTextStyle.copyWith(
-                              color: const Color(0xFFFF2525)),
-                          surfaceTintColor: kWhite,
-                          shadowColor: kMainColor.withOpacity(0.1),
-                          foregroundColor: kMainColor.withOpacity(0.1),
-                        ),
-                        onPressed: () {
-                          // Navigator.pushNamed(context, Product.route);
-                          context.go('/service-package/dresses');
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.add_rounded, color: kMainColor),
-                            Text(
-                              'Vestidos',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                      color: kMainColor,
-                                      fontWeight: FontWeight.w600),
-                            ),
-                          ],
+              if (checkUserRoleViewPermissionV2(type: 'register_clothing'))
+                screenWidth < 590
+                    ? const SizedBox.shrink()
+                    : SizedBox(
+                        height: 40,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30.0)),
+                            padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                            backgroundColor: kMainColor.withValues(alpha: 0.05),
+                            side: const BorderSide(color: kMainColor, width: 1),
+                            textStyle: kTextStyle.copyWith(
+                                color: const Color(0xFFFF2525)),
+                            surfaceTintColor: kWhite,
+                            shadowColor: kMainColor.withOpacity(0.1),
+                            foregroundColor: kMainColor.withOpacity(0.1),
+                          ),
+                          onPressed: () {
+                            // Navigator.pushNamed(context, Product.route);
+                            context.go('/service-package/dresses');
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_rounded, color: kMainColor),
+                              Text(
+                                'Vestidos',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                        color: kMainColor,
+                                        fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
               screenWidth < 800
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
-              if(checkUserRoleViewPermissionV2(type: 'reservation_calendar')) 
-              screenWidth < 800
-                  ? const SizedBox.shrink()
-                  : SizedBox(
-                      height: 40,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30.0)),
-                          padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                          backgroundColor:
-                              const Color(0xFF15CD75).withValues(alpha: 0.05),
-                          side: const BorderSide(
-                              color: Color(0xFF15CD75), width: 1),
-                          textStyle: kTextStyle.copyWith(
-                              color: const Color(0xFF15CD75)),
-                          surfaceTintColor: kWhite,
-                          shadowColor: const Color(0xFF15CD75).withOpacity(0.1),
-                          foregroundColor:
-                              const Color(0xFF15CD75).withOpacity(0.1),
-                        ),
-                        onPressed: () {
-                          // Navigator.pushNamed(context, PurchaseList.route);
-                          // context.go(PurchaseList.route);
-                          context.go('/calendario-reservas');
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.add_rounded,
-                                color: Color(0xFF15CD75)),
-                            Text(
-                              'Calendario',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: const Color(0xFF15CD75),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ],
+              if (checkUserRoleViewPermissionV2(type: 'reservation_calendar'))
+                screenWidth < 800
+                    ? const SizedBox.shrink()
+                    : SizedBox(
+                        height: 40,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30.0)),
+                            padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                            backgroundColor:
+                                const Color(0xFF15CD75).withValues(alpha: 0.05),
+                            side: const BorderSide(
+                                color: Color(0xFF15CD75), width: 1),
+                            textStyle: kTextStyle.copyWith(
+                                color: const Color(0xFF15CD75)),
+                            surfaceTintColor: kWhite,
+                            shadowColor:
+                                const Color(0xFF15CD75).withOpacity(0.1),
+                            foregroundColor:
+                                const Color(0xFF15CD75).withOpacity(0.1),
+                          ),
+                          onPressed: () {
+                            // Navigator.pushNamed(context, PurchaseList.route);
+                            // context.go(PurchaseList.route);
+                            context.go('/calendario-reservas');
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_rounded,
+                                  color: Color(0xFF15CD75)),
+                              Text(
+                                'Calendario',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: const Color(0xFF15CD75),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
               screenWidth < 1260
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
@@ -281,74 +283,109 @@ class _TopBarWidgetState extends State<TopBarWidget> {
         }),
         actions: [
           userProfileDetails.when(data: (details) {
-            return Theme(
-              data: ThemeData(
-                  highlightColor: dropdownItemColor,
-                  focusColor: dropdownItemColor,
-                  hoverColor: dropdownItemColor),
-              child: PopupMenuButton(
-                surfaceTintColor: Colors.white,
-                padding: EdgeInsets.zero,
-                position: PopupMenuPosition.under,
-                icon: Container(
-                  height: 70,
-                  width: 70,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2DB0F6).withOpacity(0.1),
-                    shape: BoxShape.rectangle,
+            return Row(
+              children: [
+                Badge.count(
+                  count: 1,
+                  child: PopupMenuButton(
+                    surfaceTintColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    position: PopupMenuPosition.under,
+                    icon: const Icon(Icons.notifications,
+                        color: kMainColor, size: 30.0),
+                    itemBuilder: (BuildContext context) => [
+                      PopupMenuItem(
+                        onTap: () {},
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline_rounded,
+                                size: 24.0, color: kErrorColor),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                              child: Text(
+                                "La reservación #111224 tiene un saldo pendiente",
+                                style: kTextStyle.copyWith(color: kTitleColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.settings,
-                      color: Color(0xFF2DB0F6), size: 30.0),
                 ),
-                itemBuilder: (BuildContext bc) => [
-                  PopupMenuItem(
-                    onTap: () {
-                      // isSubUser ? null : ProfileUpdate(personalInformationModel: details).launch(context);
-                      isSubUser
-                          ? null
-                          : context.go('/profile-update', extra: details);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.manage_accounts_sharp,
-                            size: 18.0, color: kTitleColor),
-                        const SizedBox(width: 4.0),
-                        Text(
+                SizedBox(
+                  width: 16,
+                ),
+                Theme(
+                  data: ThemeData(
+                      highlightColor: dropdownItemColor,
+                      focusColor: dropdownItemColor,
+                      hoverColor: dropdownItemColor),
+                  child: PopupMenuButton(
+                    surfaceTintColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    position: PopupMenuPosition.under,
+                    icon: Container(
+                      height: 70,
+                      width: 70,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2DB0F6).withOpacity(0.1),
+                        shape: BoxShape.rectangle,
+                      ),
+                      child: const Icon(Icons.settings,
+                          color: Color(0xFF2DB0F6), size: 30.0),
+                    ),
+                    itemBuilder: (BuildContext bc) => [
+                      PopupMenuItem(
+                        onTap: () {
+                          // isSubUser ? null : ProfileUpdate(personalInformationModel: details).launch(context);
                           isSubUser
-                              ? '${details.companyName}[$constSubUserTitle]'
-                              : lang.S.of(context).prof,
-                          style: kTextStyle.copyWith(color: kTitleColor),
+                              ? null
+                              : context.go('/profile-update', extra: details);
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(Icons.manage_accounts_sharp,
+                                size: 18.0, color: kTitleColor),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              isSubUser
+                                  ? '${details.companyName}[$constSubUserTitle]'
+                                  : lang.S.of(context).prof,
+                              style: kTextStyle.copyWith(color: kTitleColor),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    onTap: () async {
-                      await FirebaseAuth.instance.signOut();
-                      EasyLoading.showSuccess('Successfully Logged Out');
-                      // Navigator.of(context).pushAndRemoveUntil(
-                      //   MaterialPageRoute(builder: (context) => const EmailLogIn()),
-                      //       (route) => false,
-                      // );
-                      if (context.mounted) {
-                        context.go('/', extra: {'replace': true});
-                      }
-                      // const EmailLogIn().launch(context);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(FeatherIcons.logOut,
-                            size: 18.0, color: kTitleColor),
-                        const SizedBox(width: 4.0),
-                        Text(
-                          lang.S.of(context).logOut,
-                          style: kTextStyle.copyWith(color: kTitleColor),
+                      ),
+                      PopupMenuItem(
+                        onTap: () async {
+                          await FirebaseAuth.instance.signOut();
+                          EasyLoading.showSuccess('Successfully Logged Out');
+                          // Navigator.of(context).pushAndRemoveUntil(
+                          //   MaterialPageRoute(builder: (context) => const EmailLogIn()),
+                          //       (route) => false,
+                          // );
+                          if (context.mounted) {
+                            context.go('/', extra: {'replace': true});
+                          }
+                          // const EmailLogIn().launch(context);
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(FeatherIcons.logOut,
+                                size: 18.0, color: kTitleColor),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              lang.S.of(context).logOut,
+                              style: kTextStyle.copyWith(color: kTitleColor),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }, error: (e, stack) {
             return Center(

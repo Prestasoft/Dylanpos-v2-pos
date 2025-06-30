@@ -799,7 +799,8 @@ class ReservationDetailView extends ConsumerWidget {
                             style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.white,
                               backgroundColor: Theme.of(context).primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 16),
                             ),
                           ),
                         ],

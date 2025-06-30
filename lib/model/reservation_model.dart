@@ -50,7 +50,7 @@ class ReservationModel {
       reservationTime: map['reservation_time'] ?? '',
       createdAt: _parseTimestamp(map['created_at']),
       updatedAt: _parseTimestamp(map['updated_at']),
-      estadoFactura: map['estado_factura'],
+      estadoFactura: map['estado_factura'] ?? false,
       estado: map['estado'],
       nota: map['nota'] ?? '',
       place: map['place'] ?? '',
