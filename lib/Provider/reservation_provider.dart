@@ -14,6 +14,7 @@ import 'customer_provider.dart';
 final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
   return FirebaseDatabase.instance
       .ref('Admin Panel/reservations')
+      .orderByChild('reservation_time')  
       .onValue
       .map((event) {
     final snapshot = event.snapshot;

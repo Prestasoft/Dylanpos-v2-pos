@@ -1,7 +1,7 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:convert';
 import 'dart:html';
-
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +24,7 @@ import '../../PDF/sales_invoice_pdf.dart';
 import '../../Provider/profile_provider.dart';
 import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
+import '../../model/daily_transaction_model.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
 import '../currency/currency_provider.dart';
@@ -109,91 +110,88 @@ class _SaleReportsState extends State<SaleReports> {
   }
 
   List<String> month = [
-    'Este mes',
-    'Ultimo mes',
-    'Ultimos 6 meses',
-    'Este año',
-    'Ver todo',
-  ];
+  'Hoy',           // Nueva opción
+  'Este mes',
+  'Ultimo mes',
+  'Ultimos 6 meses',
+  'Este año',
+  'Ver todo',
+];
 
-  DropdownButton<String> getMonth() {
-    List<DropdownMenuItem<String>> dropDownItems = [];
-    for (String des in month) {
-      var item = DropdownMenuItem(
-        value: des,
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(des),
-        ),
-      );
-      dropDownItems.add(item);
-    }
-    return DropdownButton(
-      isExpanded: true,
-      items: dropDownItems,
-      value: selectedMonth,
-      onChanged: (value) {
-        setState(() {
-          selectedMonth = value!;
-          switch (selectedMonth) {
-            case 'Este mes':
-              {
-                selectedDate = DateTimeRange(
-                    start:
-                        DateTime(DateTime.now().year, DateTime.now().month, 1),
-                    end: DateTime.now());
-              }
-              {
-                selectedDate = DateTimeRange(
-                    start:
-                        DateTime(DateTime.now().year, DateTime.now().month, 1),
-                    end: DateTime.now());
-              }
-              break;
-            case 'Ultimo mes':
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(
-                        DateTime.now().year, DateTime.now().month - 1, 1),
-                    end:
-                        DateTime(DateTime.now().year, DateTime.now().month, 0));
-              }
-              break;
-            case 'Ultimos 6 meses':
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(
-                        DateTime.now().year, DateTime.now().month - 6, 1),
-                    end: DateTime.now());
-              }
-              break;
-            case 'Este año':
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(DateTime.now().year, 1, 1),
-                    end: DateTime.now());
-              }
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(DateTime.now().year, 1, 1),
-                    end: DateTime.now());
-              }
-              break;
-            case 'Ver todo':
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(1900, 01, 01), end: DateTime.now());
-              }
-              {
-                selectedDate = DateTimeRange(
-                    start: DateTime(1900, 01, 01), end: DateTime.now());
-              }
-              break;
-          }
-        });
-      },
+DropdownButton<String> getMonth() {
+  List<DropdownMenuItem<String>> dropDownItems = [];
+  for (String des in month) {
+    var item = DropdownMenuItem(
+      value: des,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(des),
+      ),
     );
+    dropDownItems.add(item);
   }
+  return DropdownButton(
+    isExpanded: true,
+    items: dropDownItems,
+    value: selectedMonth,
+    onChanged: (value) {
+      setState(() {
+        selectedMonth = value!;
+        switch (selectedMonth) {
+          case 'Hoy':
+            {
+              final now = DateTime.now();
+              selectedDate = DateTimeRange(
+                start: DateTime(now.year, now.month, now.day), // Inicio del día (00:00:00)
+                end: now, // Hasta el momento actual
+              );
+            }
+            break;
+          case 'Este mes':
+            {
+              selectedDate = DateTimeRange(
+                start: DateTime(DateTime.now().year, DateTime.now().month, 1),
+                end: DateTime.now(),
+              );
+            }
+            break;
+          case 'Ultimo mes':
+            {
+              selectedDate = DateTimeRange(
+                start: DateTime(DateTime.now().year, DateTime.now().month - 1, 1),
+                end: DateTime(DateTime.now().year, DateTime.now().month, 0),
+              );
+            }
+            break;
+          case 'Ultimos 6 meses':
+            {
+              selectedDate = DateTimeRange(
+                start: DateTime(DateTime.now().year, DateTime.now().month - 6, 1),
+                end: DateTime.now(),
+              );
+            }
+            break;
+          case 'Este año':
+            {
+              selectedDate = DateTimeRange(
+                start: DateTime(DateTime.now().year, 1, 1),
+                end: DateTime.now(),
+              );
+            }
+            break;
+          case 'Ver todo':
+            {
+              selectedDate = DateTimeRange(
+                start: DateTime(1900, 1, 1),
+                end: DateTime.now(),
+              );
+            }
+            break;
+        }
+      });
+    },
+  );
+}
 
   String searchItem = '';
 
@@ -219,36 +217,75 @@ class _SaleReportsState extends State<SaleReports> {
     return total;
   }
 
-  double calculateTotalMoney(List<SaleTransactionModel> transitionModel) {
-    double total = 0.0;
-    for (var element in transitionModel) {
-      if (element.paymentType == 'Efectivo') {
-        double pago = element.totalAmount! - element.dueAmount!;
-        total += pago;
+  Future<Map<String, dynamic>> getDailyTransactions(List<SaleTransactionModel> transactions) async {
+    final userID = await getUserID();
+    final ref = FirebaseDatabase.instance.ref(userID).child('Daily Transaction');
+    final snapshot = await ref.get();
+    
+    if (snapshot.exists) {
+      Map<String, dynamic> allDailyTransactions = Map<String, dynamic>.from(snapshot.value as Map);
+      
+      // Filtrar solo las transacciones que coincidan con nuestros invoiceNumbers
+      Map<String, dynamic> filteredTransactions = {};
+      
+      for (var transaction in transactions) {
+        final matchingEntries = allDailyTransactions.entries.where(
+          (entry) => entry.value['id'] == transaction.invoiceNumber
+        );
+        
+        for (var entry in matchingEntries) {
+          filteredTransactions[entry.key] = entry.value;
+        }
       }
+      
+      return filteredTransactions;
     }
+    return {};
+  }
+
+  // Luego modifica tus métodos de cálculo así:
+  double calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
+    double total = 0.0;
+    
+    dailyTransactions.forEach((key, value) {
+      final type = value['type'];
+      final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
+      
+      if (paymentType == 'Efectivo') {
+        total += (value['paymentIn'] as num).toDouble();
+      }
+    });
+    
     return total;
   }
 
-  double calculateTotalTransfer(List<SaleTransactionModel> transitionModel) {
+  double calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
     double total = 0.0;
-    for (var element in transitionModel) {
-      if (element.paymentType == 'Transferencia') {
-        double pago = element.totalAmount! - element.dueAmount!;
-        total += pago;
+    
+    dailyTransactions.forEach((key, value) {
+      final type = value['type'];
+      final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
+      
+      if (paymentType == 'Transferencia') {
+        total += (value['paymentIn'] as num).toDouble();
       }
-    }
+    });
+    
     return total;
   }
 
-  double calculateTotalCard(List<SaleTransactionModel> transitionModel) {
+  double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
     double total = 0.0;
-    for (var element in transitionModel) {
-      if (element.paymentType == 'Tarjeta') {
-        double pago = element.totalAmount! - element.dueAmount!;
-        total += pago;
+    
+    dailyTransactions.forEach((key, value) {
+      final type = value['type'];
+      final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
+      
+      if (paymentType == 'Tarjeta') {
+        total += (value['paymentIn'] as num).toDouble();
       }
-    }
+    });
+    
     return total;
   }
 
@@ -426,6 +463,7 @@ class _SaleReportsState extends State<SaleReports> {
                     return transactionReport.when(data: (transaction) {
                       List<SaleTransactionModel> reTransaction = [];
                       for (var element in transaction.reversed.toList()) {
+                        print(element);
                         if ((element.invoiceNumber
                                     .toLowerCase()
                                     .contains(searchItem.toLowerCase()) ||
@@ -664,37 +702,53 @@ class _SaleReportsState extends State<SaleReports> {
                                     lg: screenWidth < 1500 ? 30 : 20,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
-                                      child: Container(
-                                        padding: const EdgeInsets.only(
-                                            left: 10.0,
-                                            right: 20.0,
-                                            top: 10.0,
-                                            bottom: 10.0),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color(0xFFE3F2FD),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalMoney(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
+                                      child: FutureBuilder<Map<String, dynamic>>(
+                                        future: getDailyTransactions(reTransaction),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return Center( // Añade un Center para centrarlo
+                                              child: SizedBox( // Usa SizedBox para controlar el tamaño
+                                                  width: 20, // Ancho personalizado
+                                                  height: 20, // Alto personalizado
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 3, // Grosor de la línea del indicador
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Color personalizado
+                                                ),
+                                              )
+                                            );
+                                          }
+                                          
+                                          final dailyTransactions = snapshot.data ?? {};
+                                          final totalMoney = calculateTotalMoney(dailyTransactions);
+                                          
+                                          return Container(
+                                            padding: const EdgeInsets.only(
+                                                left: 10.0,
+                                                right: 20.0,
+                                                top: 10.0,
+                                                bottom: 10.0),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(10.0),
+                                              color: const Color(0xFFE3F2FD),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
+                                                  style: theme.textTheme.titleMedium?.copyWith(
                                                       color: kTitleColor,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                      fontWeight: FontWeight.w600,
                                                       fontSize: 18.0),
+                                                ),
+                                                Text(
+                                                  'Pagos en Efectivo',
+                                                  style: theme.textTheme.bodyLarge,
+                                                ),
+                                              ],
                                             ),
-                                            Text(
-                                              'Pagos en Efectivo',
-                                              //lang.S.of(context).cashPayment,
-                                              style: theme.textTheme.bodyLarge,
-                                            ),
-                                          ],
-                                        ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
@@ -706,37 +760,53 @@ class _SaleReportsState extends State<SaleReports> {
                                     lg: screenWidth < 1500 ? 30 : 20,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
-                                      child: Container(
-                                        padding: const EdgeInsets.only(
-                                            left: 10.0,
-                                            right: 20.0,
-                                            top: 10.0,
-                                            bottom: 10.0),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color(0xFFE3F2FD),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalTransfer(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
+                                      child: FutureBuilder<Map<String, dynamic>>(
+                                        future: getDailyTransactions(reTransaction),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return Center( // Añade un Center para centrarlo
+                                              child: SizedBox( // Usa SizedBox para controlar el tamaño
+                                                  width: 20, // Ancho personalizado
+                                                  height: 20, // Alto personalizado
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 3, // Grosor de la línea del indicador
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Color personalizado
+                                                ),
+                                              )
+                                            );
+                                          }
+                                          
+                                          final dailyTransactions = snapshot.data ?? {};
+                                          final totalMoney = calculateTotalTransfer(dailyTransactions);
+                                          
+                                          return Container(
+                                            padding: const EdgeInsets.only(
+                                                left: 10.0,
+                                                right: 20.0,
+                                                top: 10.0,
+                                                bottom: 10.0),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(10.0),
+                                              color: const Color(0xFFE3F2FD),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
+                                                  style: theme.textTheme.titleMedium?.copyWith(
                                                       color: kTitleColor,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                      fontWeight: FontWeight.w600,
                                                       fontSize: 18.0),
+                                                ),
+                                                Text(
+                                                  'Pagos Transferencia',
+                                                  style: theme.textTheme.bodyLarge,
+                                                ),
+                                              ],
                                             ),
-                                            Text(
-                                              'Pagos Transferencia',
-                                              //lang.S.of(context).transferPayment,
-                                              style: theme.textTheme.bodyLarge,
-                                            ),
-                                          ],
-                                        ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
@@ -748,37 +818,53 @@ class _SaleReportsState extends State<SaleReports> {
                                     lg: screenWidth < 1500 ? 30 : 20,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
-                                      child: Container(
-                                        padding: const EdgeInsets.only(
-                                            left: 10.0,
-                                            right: 20.0,
-                                            top: 10.0,
-                                            bottom: 10.0),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color(0xFFE3F2FD),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '$globalCurrency${myFormat.format(double.tryParse(calculateTotalCard(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
+                                      child: FutureBuilder<Map<String, dynamic>>(
+                                        future: getDailyTransactions(reTransaction),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return Center( // Añade un Center para centrarlo
+                                              child: SizedBox( // Usa SizedBox para controlar el tamaño
+                                                  width: 20, // Ancho personalizado
+                                                  height: 20, // Alto personalizado
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 3, // Grosor de la línea del indicador
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Color personalizado
+                                                ),
+                                              )
+                                            );
+                                          }
+                                          
+                                          final dailyTransactions = snapshot.data ?? {};
+                                          final totalMoney = calculateTotalCard(dailyTransactions);
+                                          
+                                          return Container(
+                                            padding: const EdgeInsets.only(
+                                                left: 10.0,
+                                                right: 20.0,
+                                                top: 10.0,
+                                                bottom: 10.0),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(10.0),
+                                              color: const Color(0xFFE3F2FD),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
+                                                  style: theme.textTheme.titleMedium?.copyWith(
                                                       color: kTitleColor,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                      fontWeight: FontWeight.w600,
                                                       fontSize: 18.0),
+                                                ),
+                                                Text(
+                                                  'Pagos con Tarjetas',
+                                                  style: theme.textTheme.bodyLarge,
+                                                ),
+                                              ],
                                             ),
-                                            Text(
-                                              'Pagos con Tarjetas',
-                                              //lang.S.of(context).transferPayment,
-                                              style: theme.textTheme.bodyLarge,
-                                            ),
-                                          ],
-                                        ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
