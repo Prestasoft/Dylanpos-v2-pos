@@ -1,6 +1,7 @@
 import 'add_to_cart_model.dart';
 
 class SaleTransactionModel {
+  String? pdfUrl;
   late String customerName, customerPhone, customerAddress, customerGst,
       customerType, customerImage, purchaseDate, invoiceNumber;
   double? totalAmount;
@@ -43,6 +44,7 @@ class SaleTransactionModel {
     this.key,
     this.sendWhatsappMessage,
     List<String>? reservationIds, // Parámetro opcional
+    this.pdfUrl,
   }) : reservationIds = reservationIds ?? []; // Asignación segura
 
   factory SaleTransactionModel.fromJson(Map<dynamic, dynamic> json) {
@@ -73,6 +75,7 @@ class SaleTransactionModel {
       reservationIds: json['reservationIds'] != null
           ? List<String>.from(json['reservationIds'])
           : null,
+      pdfUrl: json['pdfUrl'],
     );
   }
 
@@ -100,6 +103,7 @@ class SaleTransactionModel {
       'sendWhatsappMessage': sendWhatsappMessage ?? false,
       'productList': productList?.map((e) => e.toJson()).toList(),
       'reservationIds': reservationIds,
+      'pdfUrl': pdfUrl,
     };
   }
 }

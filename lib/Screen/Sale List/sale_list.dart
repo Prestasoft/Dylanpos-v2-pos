@@ -290,10 +290,39 @@ class _SaleListState extends State<SaleList> {
                                                   ),
                                                   //---------------------------invoice number----------------------
                                                   DataCell(
-                                                    Text(
-                                                      paginatedTransactions[index].invoiceNumber,
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
+                                                    InkWell(
+                                                      onTap: () async {
+                                                        final setting = settingProvider.valueOrNull;
+                                                        final profileInfo = profile.value;
+                                                        if (setting != null && profileInfo != null) {
+                                                          SaleTransactionModel post = checkLossProfit(transitionModel: paginatedTransactions[index]);
+                                                          // Mostrar loader mientras se genera el PDF
+                                                          EasyLoading.show(status: 'Preparando vista previa...');
+                                                        await GeneratePdfAndPrint().printSaleInvoice(
+                                                          setting: setting,
+                                                          personalInformationModel: profileInfo,
+                                                          saleTransactionModel: paginatedTransactions[index],
+                                                          context: context,
+                                                          printType: 'normal',
+                                                          fromSaleReports: true,
+                                                          post: post,
+                                                          // El comportamiento por defecto muestra el diálogo de impresión (vista previa)
+                                                        );
+                                                          EasyLoading.dismiss();
+                                                        } else {
+                                                          EasyLoading.showError('No se pudo cargar la configuración o el perfil');
+                                                        }
+                                                      },
+                                                      child: Text(
+                                                        paginatedTransactions[index].invoiceNumber,
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle(
+                                                          color: Colors.blue,
+                                                          decoration: TextDecoration.underline,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
                                                   //______Party Name___________________________________________________________
