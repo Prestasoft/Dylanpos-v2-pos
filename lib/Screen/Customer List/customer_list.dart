@@ -341,10 +341,10 @@ class _CustomerListState extends State<CustomerList> {
                                                     label: Text(lang.S
                                                         .of(context)
                                                         .phone)),
-                                                DataColumn(
-                                                    label: Text(lang.S
-                                                        .of(context)
-                                                        .email)),
+                                                // DataColumn(
+                                                //     label: Text(lang.S
+                                                //         .of(context)
+                                                //         .email)),
                                                 DataColumn(
                                                     label: Text(lang.S
                                                         .of(context)
@@ -434,13 +434,13 @@ class _CustomerListState extends State<CustomerList> {
                                                     ),
                                                   ),
 
-                                                  ///___________Email____________________________________________________
-                                                  DataCell(
-                                                    Text(
-                                                      paginatedList[index]
-                                                          .emailAddress,
-                                                    ),
-                                                  ),
+                                                  // ///___________Email____________________________________________________
+                                                  // DataCell(
+                                                  //   Text(
+                                                  //     paginatedList[index]
+                                                  //         .emailAddress,
+                                                  //   ),
+                                                  // ),
 
                                                   ///___________Due____________________________________________________
 

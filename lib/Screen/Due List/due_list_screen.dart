@@ -639,10 +639,10 @@ class _DueListState extends State<DueList> {
                                                             label: Text(lang.S
                                                                 .of(context)
                                                                 .phone)),
-                                                        DataColumn(
-                                                            label: Text(lang.S
-                                                                .of(context)
-                                                                .email)),
+                                                        // DataColumn(
+                                                        //     label: Text(lang.S
+                                                        //         .of(context)
+                                                        //         .email)),
                                                         DataColumn(
                                                             label: Text(lang.S
                                                                 .of(context)
@@ -702,24 +702,24 @@ class _DueListState extends State<DueList> {
                                                                 TextOverflow
                                                                     .ellipsis,
                                                           )),
-                                                          DataCell(Text(
-                                                            selectedParties ==
-                                                                    'Proveedores'
-                                                                ? paginatedSupplierList[
-                                                                        index]
-                                                                    .emailAddress
-                                                                : paginatedCustomerList[
-                                                                        index]
-                                                                    .emailAddress,
-                                                            style: kTextStyle
-                                                                .copyWith(
-                                                                    color:
-                                                                        kGreyTextColor),
-                                                            maxLines: 2,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                          )),
+                                                          // DataCell(Text(
+                                                          //   selectedParties ==
+                                                          //           'Proveedores'
+                                                          //       ? paginatedSupplierList[
+                                                          //               index]
+                                                          //           .emailAddress
+                                                          //       : paginatedCustomerList[
+                                                          //               index]
+                                                          //           .emailAddress,
+                                                          //   style: kTextStyle
+                                                          //       .copyWith(
+                                                          //           color:
+                                                          //               kGreyTextColor),
+                                                          //   maxLines: 2,
+                                                          //   overflow:
+                                                          //       TextOverflow
+                                                          //           .ellipsis,
+                                                          // )),
                                                           DataCell(Text(
                                                             selectedParties ==
                                                                     'Proveedores'

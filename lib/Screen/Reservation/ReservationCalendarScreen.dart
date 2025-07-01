@@ -14,6 +14,7 @@ import 'package:salespro_admin/Provider/dress_with_reservations.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../Due List/due_popUp.dart';
+import 'ReservationTypeLegend.dart';
 
 class ReservationCalendarScreen extends ConsumerStatefulWidget {
   const ReservationCalendarScreen({Key? key}) : super(key: key);
@@ -98,7 +99,11 @@ class _ReservationCalendarScreenState
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          const ReservationTypeLegend(),
+          const SizedBox(height: 8),
           _buildCalendar(reservationsAsyncValue),
+
           const Divider(),
           Expanded(
             child: _buildReservationsList(reservationsAsyncValue),
@@ -170,15 +175,38 @@ class _ReservationCalendarScreenState
                   spacing: 2, // espacio entre puntos
                   alignment: WrapAlignment.center,
                   children: validEvents.map((event) {
-                    final isRentaEvent = event.serviceId == packageRentaId;
+                    // Buscar el nombre del servicio usando el serviceId y la lista de paquetes
+                    Color dotColor = Theme.of(context).primaryColor;
+                    final packagesAsync = ref.read(servicePackagesProvider);
+                    String? serviceName;
+                    if (packagesAsync is AsyncData && packagesAsync.value != null) {
+                      final packageList = packagesAsync.value!;
+                      final package = packageList.where((pkg) => pkg.id == event.serviceId).toList();
+                      if (package.isNotEmpty) {
+                        serviceName = package.first.name;
+                      }
+                    }
+                    // Si es renta, verde
+                    if (event.serviceId == packageRentaId) {
+                      dotColor = Colors.green;
+                    } else if (serviceName != null) {
+                      final lowerName = serviceName.toLowerCase();
+                      if (lowerName.contains('fiesta')) {
+                        dotColor = Colors.amber;
+                      } else if (lowerName.contains('estudio')) {
+                        dotColor = Colors.blue;
+                      } else if (lowerName.contains('exterior')) {
+                        dotColor = Colors.purple;
+                      }
+                    }
+                    // Debug
+                    print('[CALENDAR] serviceId: ' + event.serviceId + ' | serviceName: ' + (serviceName ?? 'null'));
                     return Container(
                       width: 6,
                       height: 6,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isRentaEvent
-                            ? Colors.green
-                            : Theme.of(context).primaryColor,
+                        color: dotColor,
                       ),
                     );
                   }).toList(),
@@ -271,7 +299,19 @@ class _ReservationCalendarScreenState
         // Filter reservations for selected day
         final selectedDayKey = DateTime(
             _selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
-        final reservations = _reservationsByDay[selectedDayKey] ?? [];
+        final reservations = List<ReservationModel>.from(_reservationsByDay[selectedDayKey] ?? []);
+
+        // Ordenar por hora ascendente
+        reservations.sort((a, b) {
+          final timeA = _parseTime(a.reservationTime);
+          final timeB = _parseTime(b.reservationTime);
+          if (timeA == null && timeB == null) return 0;
+          if (timeA == null) return 1;
+          if (timeB == null) return -1;
+          return timeA.hour != timeB.hour
+              ? timeA.hour.compareTo(timeB.hour)
+              : timeA.minute.compareTo(timeB.minute);
+        });
 
         if (reservations.isEmpty) {
           return const Center(
@@ -457,22 +497,93 @@ class ReservationCard extends ConsumerWidget {
     Color statusColor;
     IconData statusIcon;
     String statusText;
+    Color? cardBgColor;
+    Color iconColor = Colors.white;
+
+    // Buscar el nombre del servicio usando el serviceId y la lista de paquetes
+    final packagesAsync = ref.read(servicePackagesProvider);
+    String? serviceName;
+    if (packagesAsync is AsyncData && packagesAsync.value != null) {
+      final packageList = packagesAsync.value!;
+      final package = packageList.where((pkg) => pkg.id == reservation.serviceId).toList();
+      if (package.isNotEmpty) {
+        serviceName = package.first.name;
+      }
+    }
+    final lowerName = serviceName?.toLowerCase() ?? '';
+    final isFiesta = lowerName.contains('fiesta');
+    final isEstudio = lowerName.contains('estudio');
+    final isExterior = lowerName.contains('exterior');
 
     switch (status) {
       case ReservationStatus.past:
-        statusColor = Colors.grey;
-        statusIcon = Icons.history;
-        statusText = 'Pasada';
+        if (isFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = Icons.celebration;
+          statusText = 'Fiesta pasada';
+          cardBgColor = Colors.amber.withOpacity(0.10);
+        } else if (isEstudio) {
+          statusColor = Colors.blue;
+          statusIcon = Icons.camera_alt;
+          statusText = 'Estudio pasado';
+          cardBgColor = Colors.blue.withOpacity(0.10);
+        } else if (isExterior) {
+          statusColor = Colors.purple;
+          statusIcon = Icons.landscape;
+          statusText = 'Exterior pasado';
+          cardBgColor = Colors.purple.withOpacity(0.10);
+        } else {
+          statusColor = Colors.grey;
+          statusIcon = Icons.history;
+          statusText = 'Pasada';
+          cardBgColor = Colors.grey.withOpacity(0.08);
+        }
         break;
       case ReservationStatus.aboutToExpire:
-        statusColor = Colors.orange;
-        statusIcon = Icons.warning_amber_rounded;
-        statusText = 'Por vencer';
+        if (isFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = Icons.celebration;
+          statusText = 'Fiesta por vencer';
+          cardBgColor = Colors.amber.withOpacity(0.10);
+        } else if (isEstudio) {
+          statusColor = Colors.blue;
+          statusIcon = Icons.camera_alt;
+          statusText = 'Estudio por vencer';
+          cardBgColor = Colors.blue.withOpacity(0.10);
+        } else if (isExterior) {
+          statusColor = Colors.purple;
+          statusIcon = Icons.landscape;
+          statusText = 'Exterior por vencer';
+          cardBgColor = Colors.purple.withOpacity(0.10);
+        } else {
+          statusColor = Colors.orange;
+          statusIcon = Icons.warning_amber_rounded;
+          statusText = 'Por vencer';
+          cardBgColor = Colors.orange.withOpacity(0.10);
+        }
         break;
       case ReservationStatus.upcoming:
-        statusColor = Colors.green;
-        statusIcon = Icons.event_available;
-        statusText = 'Próxima';
+        if (isFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = Icons.celebration;
+          statusText = 'Fiesta próxima';
+          cardBgColor = Colors.amber.withOpacity(0.10);
+        } else if (isEstudio) {
+          statusColor = Colors.blue;
+          statusIcon = Icons.camera_alt;
+          statusText = 'Estudio próximo';
+          cardBgColor = Colors.blue.withOpacity(0.10);
+        } else if (isExterior) {
+          statusColor = Colors.purple;
+          statusIcon = Icons.landscape;
+          statusText = 'Exterior próximo';
+          cardBgColor = Colors.purple.withOpacity(0.10);
+        } else {
+          statusColor = Colors.green;
+          statusIcon = Icons.event_available;
+          statusText = 'Próxima';
+          cardBgColor = Colors.green.withOpacity(0.10);
+        }
         break;
     }
 
@@ -483,6 +594,7 @@ class ReservationCard extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
+      color: cardBgColor,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
@@ -538,7 +650,7 @@ class ReservationCard extends ConsumerWidget {
                       ),
                       Chip(
                         label: Text(statusText),
-                        avatar: Icon(statusIcon, size: 16, color: Colors.white),
+                        avatar: Icon(statusIcon, size: 16, color: iconColor),
                         backgroundColor: statusColor,
                         labelStyle:
                             const TextStyle(color: Colors.white, fontSize: 12),
@@ -549,7 +661,7 @@ class ReservationCard extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Icon(Icons.person, size: 16, color: Colors.grey),
+                      Icon(Icons.person, size: 16, color: iconColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Cliente: $clientName',
@@ -560,7 +672,7 @@ class ReservationCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.checkroom, size: 16, color: Colors.grey),
+                      Icon(Icons.checkroom, size: 16, color: iconColor),
                       const SizedBox(width: 8),
                       _buildDressName(dressName, dressComposite),
                     ],
@@ -568,8 +680,7 @@ class ReservationCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.engineering,
-                          size: 16, color: Colors.grey),
+                      Icon(Icons.engineering, size: 16, color: iconColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Servicio: $serviceName',
@@ -580,7 +691,7 @@ class ReservationCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.place, size: 16, color: Colors.grey),
+                      Icon(Icons.place, size: 16, color: iconColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Lugar: $place',
@@ -591,8 +702,7 @@ class ReservationCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.textsms_outlined,
-                          size: 16, color: Colors.grey),
+                      Icon(Icons.textsms_outlined, size: 16, color: iconColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Nota: $note',
@@ -619,8 +729,6 @@ class ReservationCard extends ConsumerWidget {
           ));
     } else if (dress.isNotEmpty) {
       // Si no es de reserva simple, muestra la lista de vestidos
-      final fullReservation = dress;
-
       return Padding(
         padding: const EdgeInsets.only(left: 8, right: 8),
         child: Column(

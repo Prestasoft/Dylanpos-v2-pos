@@ -1259,10 +1259,31 @@ DropdownButton<String> getMonth() {
 
                                                                   ///____________Invoice_________________________________________________
                                                                   DataCell(
-                                                                    Text(
-                                                                      paginatedList[
-                                                                              index]
-                                                                          .invoiceNumber,
+                                                                    settingProvider.when(
+                                                                      data: (setting) => GestureDetector(
+                                                                        onTap: () async {
+                                                                          await GeneratePdfAndPrint().printSaleInvoice(
+                                                                            personalInformationModel: profile.value!,
+                                                                            fromSaleReports: true,
+                                                                            setting: setting,
+                                                                            saleTransactionModel: paginatedList[index],
+                                                                            context: context,
+                                                                          );
+                                                                        },
+                                                                        child: MouseRegion(
+                                                                          cursor: SystemMouseCursors.click,
+                                                                          child: Text(
+                                                                            paginatedList[index].invoiceNumber,
+                                                                            style: const TextStyle(
+                                                                              color: Colors.blue,
+                                                                              decoration: TextDecoration.underline,
+                                                                              fontWeight: FontWeight.bold,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      loading: () => const Text('...'),
+                                                                      error: (e, _) => Text('Error'),
                                                                     ),
                                                                   ),
 
