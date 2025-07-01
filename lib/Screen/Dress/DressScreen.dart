@@ -95,8 +95,8 @@ class _DressScreenState extends State<DressScreen> {
         body: Consumer(builder: (_, ref, watch) {
           AsyncValue<List<DressModel>> dresses = ref.watch(dressesProvider);
           return dresses.when(data: (list) {
-            List<DressModel> showAbleDresses = [];
 
+            List<DressModel> showAbleDresses = [];
             for (var element in list) {
               final matchesName = element.name.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || searchItem == '';
               final matchesCategory = _selectedCategoryFilter == null || _selectedCategoryFilter == '' || element.category == _selectedCategoryFilter;
@@ -104,6 +104,19 @@ class _DressScreenState extends State<DressScreen> {
                 showAbleDresses.add(element);
               }
             }
+
+            // Ordenar por los últimos 3 dígitos del nombre de forma ascendente (siempre 3 dígitos al final)
+            showAbleDresses.sort((a, b) {
+              int getLast3Digits(String name) {
+                if (name.length >= 3) {
+                  final last3 = name.substring(name.length - 3);
+                  final n = int.tryParse(last3);
+                  return n ?? 0;
+                }
+                return 0;
+              }
+              return getLast3Digits(a.name).compareTo(getLast3Digits(b.name));
+            });
 
             final pages = (showAbleDresses.length / _itemsPerPage).ceil();
 
@@ -334,9 +347,9 @@ class _DressScreenState extends State<DressScreen> {
                                                 DataColumn(
                                                     label:
                                                         Text(_lang.category)),
-                                                DataColumn(
-                                                    label: Text(
-                                                        _lang.subcategory)),
+                                                // DataColumn(
+                                                //     label: Text(
+                                                //         _lang.subcategory)),
                                                 DataColumn(
                                                     label: Text(_lang.branch)),
                                                 DataColumn(
@@ -438,8 +451,8 @@ class _DressScreenState extends State<DressScreen> {
                                                       Text(dress.category)),
 
                                                   // Subcategory
-                                                  DataCell(
-                                                      Text(dress.subcategory)),
+                                                  // DataCell(
+                                                  //     Text(dress.subcategory)),
 
                                                   // Branch
                                                   DataCell(

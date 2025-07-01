@@ -34,6 +34,7 @@ class CalendarDressScreen extends StatefulWidget {
 }
 
 class _CalendarDressScreen extends State<CalendarDressScreen> {
+  String? _selectedCategoryFilter;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -114,15 +115,24 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
           return dressesAsync.when(data: (list) {
             List<DressModel> showAbleDresses = [];
             for (var element in list) {
-              if (element.name
-                  .removeAllWhiteSpace()
-                  .toLowerCase()
-                  .contains(searchItem.toLowerCase())) {
-                showAbleDresses.add(element);
-              } else if (searchItem == '') {
+              final matchesName = element.name.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || searchItem == '';
+              final matchesCategory = _selectedCategoryFilter == null || _selectedCategoryFilter == '' || element.category == _selectedCategoryFilter;
+              if (matchesName && matchesCategory) {
                 showAbleDresses.add(element);
               }
             }
+            // Ordenar por los últimos 3 dígitos del nombre de forma ascendente (siempre 3 dígitos al final)
+            showAbleDresses.sort((a, b) {
+              int getLast3Digits(String name) {
+                if (name.length >= 3) {
+                  final last3 = name.substring(name.length - 3);
+                  final n = int.tryParse(last3);
+                  return n ?? 0;
+                }
+                return 0;
+              }
+              return getLast3Digits(a.name).compareTo(getLast3Digits(b.name));
+            });
             final pages = (showAbleDresses.length / _itemsPerPage).ceil();
 
             return SingleChildScrollView(
@@ -237,6 +247,40 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                   ),
                                 ],
                               ),
+                            ),
+                          ),
+                        ),
+                        ResponsiveGridCol(
+                          xs: 100,
+                          md: 40,
+                          lg: 25,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedCategoryFilter,
+                              isExpanded: true,
+                              decoration: kInputDecoration.copyWith(
+                                contentPadding: const EdgeInsets.all(10.0),
+                                hintText: 'Filtrar por categoría',
+                              ),
+                              items: [
+                                DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('Todas las categorías'),
+                                ),
+                                ...{
+                                  for (var d in list) d.category
+                                }.map((cat) => DropdownMenuItem<String>(
+                                      value: cat,
+                                      child: Text(cat),
+                                    ))
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCategoryFilter = value;
+                                  _currentPage = 1;
+                                });
+                              },
                             ),
                           ),
                         ),
