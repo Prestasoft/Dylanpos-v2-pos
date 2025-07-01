@@ -31,6 +31,7 @@ class DressScreen extends StatefulWidget {
 }
 
 class _DressScreenState extends State<DressScreen> {
+  String? _selectedCategoryFilter;
   int selectedItem = 10;
   int itemCount = 10;
 
@@ -97,12 +98,9 @@ class _DressScreenState extends State<DressScreen> {
             List<DressModel> showAbleDresses = [];
 
             for (var element in list) {
-              if (element.name
-                  .removeAllWhiteSpace()
-                  .toLowerCase()
-                  .contains(searchItem.toLowerCase())) {
-                showAbleDresses.add(element);
-              } else if (searchItem == '') {
+              final matchesName = element.name.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || searchItem == '';
+              final matchesCategory = _selectedCategoryFilter == null || _selectedCategoryFilter == '' || element.category == _selectedCategoryFilter;
+              if (matchesName && matchesCategory) {
                 showAbleDresses.add(element);
               }
             }
@@ -155,21 +153,13 @@ class _DressScreenState extends State<DressScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Search and pagination controls
+                    // Search, filter and pagination controls
                     ResponsiveGridRow(
                       rowSegments: 100,
                       children: [
                         ResponsiveGridCol(
-                          xs: screenWidth < 360
-                              ? 50
-                              : screenWidth > 430
-                                  ? 33
-                                  : 40,
-                          md: screenWidth < 768
-                              ? 24
-                              : screenWidth < 950
-                                  ? 20
-                                  : 15,
+                          xs: screenWidth < 360 ? 50 : screenWidth > 430 ? 33 : 40,
+                          md: screenWidth < 768 ? 24 : screenWidth < 950 ? 20 : 15,
                           lg: screenWidth < 1700 ? 15 : 10,
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
@@ -186,12 +176,13 @@ class _DressScreenState extends State<DressScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Flexible(
-                                      child: Text(
-                                    'Show-',
-                                    style: theme.textTheme.bodyLarge,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  )),
+                                    child: Text(
+                                      'Show-',
+                                      style: theme.textTheme.bodyLarge,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                   DropdownButton<int>(
                                     isDense: true,
                                     padding: EdgeInsets.zero,
@@ -201,19 +192,11 @@ class _DressScreenState extends State<DressScreen> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [
-                                      10,
-                                      20,
-                                      50,
-                                      100,
-                                      -1
-                                    ].map<DropdownMenuItem<int>>((int value) {
+                                    items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
                                       return DropdownMenuItem<int>(
                                         value: value,
                                         child: Text(
-                                          value == -1
-                                              ? "All"
-                                              : value.toString(),
+                                          value == -1 ? "All" : value.toString(),
                                           style: theme.textTheme.bodyLarge,
                                         ),
                                       );
@@ -231,6 +214,40 @@ class _DressScreenState extends State<DressScreen> {
                                   ),
                                 ],
                               ),
+                            ),
+                          ),
+                        ),
+                        ResponsiveGridCol(
+                          xs: 100,
+                          md: 40,
+                          lg: 25,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedCategoryFilter,
+                              isExpanded: true,
+                              decoration: kInputDecoration.copyWith(
+                                contentPadding: const EdgeInsets.all(10.0),
+                                hintText: 'Filtrar por categoría',
+                              ),
+                              items: [
+                                DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('Todas las categorías'),
+                                ),
+                                ...{
+                                  for (var d in list) d.category
+                                }.map((cat) => DropdownMenuItem<String>(
+                                      value: cat,
+                                      child: Text(cat),
+                                    ))
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCategoryFilter = value;
+                                  _currentPage = 1;
+                                });
+                              },
                             ),
                           ),
                         ),
@@ -360,83 +377,56 @@ class _DressScreenState extends State<DressScreen> {
                                                   // Image (Thumbnail)
                                                   DataCell(
                                                     dress.images.isNotEmpty
-                                                        ? ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        4),
-                                                            child:
-                                                                Image.network(
-                                                              dress
-                                                                  .images.first,
-                                                              width: 50,
-                                                              height: 50,
-                                                              fit: BoxFit.cover,
-                                                              loadingBuilder:
-                                                                  (context,
-                                                                      child,
-                                                                      loadingProgress) {
-                                                                if (loadingProgress ==
-                                                                    null)
-                                                                  return child;
-                                                                return Container(
-                                                                  width: 50,
-                                                                  height: 50,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200,
-                                                                  child: Center(
-                                                                    child:
-                                                                        CircularProgressIndicator(
-                                                                      value: loadingProgress.expectedTotalBytes !=
-                                                                              null
-                                                                          ? loadingProgress.cumulativeBytesLoaded /
-                                                                              loadingProgress.expectedTotalBytes!
-                                                                          : null,
-                                                                      strokeWidth:
-                                                                          2,
+                                                        ? GestureDetector(
+                                                            onTap: () {
+                                                              _showFullScreenImage(context, dress.images.first);
+                                                            },
+                                                            child: ClipRRect(
+                                                              borderRadius: BorderRadius.circular(4),
+                                                              child: Image.network(
+                                                                dress.images.first,
+                                                                width: 50,
+                                                                height: 50,
+                                                                fit: BoxFit.cover,
+                                                                loadingBuilder: (context, child, loadingProgress) {
+                                                                  if (loadingProgress == null) return child;
+                                                                  return Container(
+                                                                    width: 50,
+                                                                    height: 50,
+                                                                    color: Colors.grey.shade200,
+                                                                    child: Center(
+                                                                      child: CircularProgressIndicator(
+                                                                        value: loadingProgress.expectedTotalBytes != null
+                                                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                                                loadingProgress.expectedTotalBytes!
+                                                                            : null,
+                                                                        strokeWidth: 2,
+                                                                      ),
                                                                     ),
-                                                                  ),
-                                                                );
-                                                              },
-                                                              errorBuilder:
-                                                                  (context,
-                                                                      error,
-                                                                      stackTrace) {
-                                                                print(
-                                                                    'Error con Image.network: $error');
-                                                                return Container(
-                                                                  width: 50,
-                                                                  height: 50,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200,
-                                                                  child: const Icon(
-                                                                      Icons
-                                                                          .error,
-                                                                      color: Colors
-                                                                          .red),
-                                                                );
-                                                              },
+                                                                  );
+                                                                },
+                                                                errorBuilder: (context, error, stackTrace) {
+                                                                  print('Error con Image.network: $error');
+                                                                  return Container(
+                                                                    width: 50,
+                                                                    height: 50,
+                                                                    color: Colors.grey.shade200,
+                                                                    child: const Icon(Icons.error, color: Colors.red),
+                                                                  );
+                                                                },
+                                                              ),
                                                             ),
                                                           )
                                                         : Container(
                                                             width: 50,
                                                             height: 50,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: Colors.grey
-                                                                  .shade200,
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          4),
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.grey.shade200,
+                                                              borderRadius: BorderRadius.circular(4),
                                                             ),
                                                             child: const Icon(
-                                                                Icons
-                                                                    .image_not_supported,
-                                                                color: Colors
-                                                                    .grey),
+                                                                Icons.image_not_supported,
+                                                                color: Colors.grey),
                                                           ),
                                                   ),
 
