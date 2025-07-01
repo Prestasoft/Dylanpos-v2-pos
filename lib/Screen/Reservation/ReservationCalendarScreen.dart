@@ -1,12 +1,16 @@
-import 'dart:developer';
+// import 'package:firebase_storage/firebase_storage.dart';
+// import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:salespro_admin/model/reservation_model.dart';
+import 'package:salespro_admin/model/dress_model.dart';
+import 'package:salespro_admin/Provider/dress_with_reservations.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../Due List/due_popUp.dart';
@@ -887,7 +891,7 @@ class ReservationDetailView extends ConsumerWidget {
                                     context,
                                     title: 'Información de Vestimenta',
                                     children: [
-                                      _buildDetailItemComposite(Icons.checkroom,
+                                      _buildDetailItemComposite(context, Icons.checkroom,
                                           'Vestido', dressComposite),
                                       _buildDetailItem(
                                           Icons.category,
@@ -1036,54 +1040,137 @@ class ReservationDetailView extends ConsumerWidget {
   }
 
   Widget _buildDetailItemComposite(
-      IconData icon, String title, dynamic dressComposite) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: dressComposite.map<Widget>((item) {
-        final dressName = item['dress_name'] ?? 'Sin nombre';
-        final branchId = item['branch_id'] ?? 'Sin sucursal';
-
-        return Expanded(
-          child: _buildInfoItem(dressName, branchId, icon),
-        ); // Asegúrate que retorne un Widget
-      }).toList(),
-    );
-  }
-
-  Widget _buildInfoItem(String dressName, String branchId, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 22, color: Colors.grey[700]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+      BuildContext context, IconData icon, String title, dynamic dressComposite) {
+    // Usar Consumer para obtener la lista de vestidos
+    return Consumer(
+      builder: (context, ref, _) {
+        final dressesAsync = ref.watch(dressesByStatusProvider('Todos'));
+        // Validar que dressComposite sea una lista
+        final List<dynamic> compositeList =
+            (dressComposite is List) ? dressComposite : [];
+        return dressesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Text('Error al cargar vestidos: $e'),
+          data: (dressesList) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  dressName,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+              children: compositeList.map<Widget>((item) {
+                final dressName = (item['dress_name'] ?? 'Sin nombre').toString();
+                final branchId = (item['branch_id'] ?? 'Sin sucursal').toString();
+                // Buscar el modelo DressModel por nombre (ignora mayúsculas/minúsculas y espacios)
+                DressModel? match;
+                try {
+                  match = dressesList.firstWhere(
+                    (d) =>
+                        d.name.toString().removeAllWhiteSpace().toLowerCase() ==
+                        dressName.removeAllWhiteSpace().toLowerCase() &&
+                        d.branchId.toString() == branchId,
+                  );
+                } catch (_) {
+                  match = null;
+                }
+                String imageUrl = '';
+                if (match != null && match.images.isNotEmpty) {
+                  imageUrl = match.images.first.toString();
+                } else if (item['image'] != null && item['image'].toString().isNotEmpty) {
+                  imageUrl = item['image'].toString();
+                } else if (item['images'] != null) {
+                  if (item['images'] is List && (item['images'] as List).isNotEmpty) {
+                    imageUrl = item['images'][0].toString();
+                  } else if (item['images'] is String && item['images'].toString().isNotEmpty) {
+                    imageUrl = item['images'].toString().split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
+                  }
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(icon, size: 22, color: Colors.grey[700]),
+                      const SizedBox(width: 12),
+                      if (imageUrl.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (dialogContext) => Dialog(
+                                insetPadding: EdgeInsets.zero,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    InteractiveViewer(
+                                      panEnabled: true,
+                                      minScale: 0.5,
+                                      maxScale: 4,
+                                      child: CachedNetworkImage(
+                                        imageUrl: imageUrl,
+                                        fit: BoxFit.contain,
+                                        placeholder: (context, url) =>
+                                            const Center(child: CircularProgressIndicator()),
+                                        errorWidget: (context, url, error) =>
+                                            const Icon(Icons.error, color: Colors.red, size: 80),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 20,
+                                      right: 20,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.close, color: Colors.red, size: 30),
+                                        onPressed: () => Navigator.pop(dialogContext),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Image.network(
+                              imageUrl,
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.image_not_supported, color: Colors.grey[400], size: 24),
+                            ),
+                          ),
+                        ),
+                      if (imageUrl.isNotEmpty) const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dressName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              branchId,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  branchId,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+                );
+              }).toList(),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildDressImage(dynamic images) {
+  // _buildInfoItem eliminado porque no se utiliza
+
+  Widget _buildDressImage(dynamic images, {BuildContext? parentContext}) {
     String imageUrl = '';
 
     if (images is String) {
@@ -1093,24 +1180,66 @@ class ReservationDetailView extends ConsumerWidget {
       imageUrl = images.first.toString();
     }
 
-    return Container(
-      width: 150,
-      height: 150,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: imageUrl.isEmpty
-          ? Icon(Icons.image_not_supported, color: Colors.grey[400], size: 40)
-          : Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Icon(
-                Icons.image_not_supported,
-                color: Colors.grey[400],
-                size: 40,
-              ),
+    return Builder(
+      builder: (context) {
+        final effectiveContext = parentContext ?? context;
+        return GestureDetector(
+          onTap: imageUrl.isNotEmpty
+              ? () {
+                  showDialog(
+                    context: effectiveContext,
+                    builder: (dialogContext) => Dialog(
+                      insetPadding: EdgeInsets.zero,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          InteractiveViewer(
+                            panEnabled: true,
+                            minScale: 0.5,
+                            maxScale: 4,
+                            child: CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.contain,
+                              placeholder: (context, url) =>
+                                  const Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error, color: Colors.red, size: 80),
+                            ),
+                          ),
+                          Positioned(
+                            top: 20,
+                            right: 20,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red, size: 30),
+                              onPressed: () => Navigator.pop(dialogContext),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              : null,
+          child: Container(
+            width: 150,
+            height: 150,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: imageUrl.isEmpty
+                ? Icon(Icons.image_not_supported, color: Colors.grey[400], size: 40)
+                : CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                        const Center(child: CircularProgressIndicator()),
+                    errorWidget: (context, url, error) =>
+                        Icon(Icons.image_not_supported, color: Colors.grey[400], size: 40),
+                  ),
+          ),
+        );
+      },
     );
   }
 
