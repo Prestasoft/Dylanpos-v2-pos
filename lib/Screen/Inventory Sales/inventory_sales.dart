@@ -45,6 +45,9 @@ import '../Product/WarebasedProduct.dart';
 import '../WareHouse/warehouse_model.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
+import 'package:uuid/uuid.dart';
+import '../../model/sale_confirmation_model.dart';
+import 'package:intl/intl.dart';
 
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation});
@@ -136,7 +139,6 @@ class _InventorySalesState extends State<InventorySales> {
         Gracias por su preferencia!
         ''';
       
-      // Crear cuerpo de la petición
       final body = {
         'token': '5i36w829nb1ljkj7',
         'to': phoneNumber,
@@ -145,7 +147,6 @@ class _InventorySalesState extends State<InventorySales> {
         'caption': safeMessage,
       };
 
-      // Configurar la petición HTTP
       final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document');
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
@@ -164,6 +165,57 @@ class _InventorySalesState extends State<InventorySales> {
 
     } catch (e) {
       EasyLoading.showError('Error al enviar: ${e.toString().replaceAll('\n', ' ')}');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 500));
+      EasyLoading.dismiss();
+    }
+  }
+
+  Future<void> _sendConfirmationLinkViaWhatsApp({
+    required String phoneNumber,
+    required String customerName,
+    required String confirmationLink,
+  }) async {
+    try {
+      EasyLoading.show(status: 'Enviando confirmación...');
+
+      final message = '''
+  Hola $customerName 👋🏼
+
+Tu reserva está pendiente de confirmación.
+
+Haz clic en el siguiente enlace para confirmar tu reserva: 👇🏼
+$confirmationLink
+
+Este enlace expira en 24 horas. ¡Gracias por tu preferencia!
+
+Con aprecio,
+Equipo Víctor Guzmán Fotografía
+Para llamadas: 8098982876 ☎️
+''';
+
+      final body = {
+        'token': '5i36w829nb1ljkj7',
+        'to': phoneNumber,
+        'body': message,
+      };
+
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat');
+      final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        EasyLoading.showSuccess('Mensaje de confirmación enviado');
+      } else {
+        throw Exception('Error en WhatsApp API: ${response.body}');
+      }
+    } catch (e) {
+      EasyLoading.showError('Error al enviar link: ${e.toString()}');
     } finally {
       await Future.delayed(const Duration(milliseconds: 500));
       EasyLoading.dismiss();
@@ -2385,7 +2437,41 @@ class _InventorySalesState extends State<InventorySales> {
                                                   );
                                                 }
 
+                                                final token = const Uuid().v4();
 
+                                                final userId = await getUserID();
+
+                                                final confirmation = SaleConfirmationModel(
+                                                  token: token,
+                                                  saleId: ref.push().key ?? '',
+                                                  userId: userId,
+                                                  confirmed: false,
+                                                  createdAt: DateTime.now().toIso8601String(),
+                                                  expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+                                                  saleData: post,
+                                                );
+
+                                                final confirmRef = FirebaseDatabase.instance.ref('$userId/SaleConfirmations');
+                                                await confirmRef.push().set(confirmation.toJson());
+
+                                                final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; 
+
+                                                await _sendConfirmationLinkViaWhatsApp(
+                                                  phoneNumber: post.customerPhone,
+                                                  customerName: post.customerName,
+                                                  confirmationLink: link,
+                                                );
+
+                                                // if (printType == 'thermal' || printType == 'both') {
+                                                //   await GeneratePdfAndPrint().printSaleInvoice(
+                                                //     personalInformationModel: data,
+                                                //     saleTransactionModel: transitionModel,
+                                                //     context: context,
+                                                //     fromInventorySale: true,
+                                                //     setting: setting,
+                                                //     printType: 'thermal',
+                                                //     post: post,
+                                                //   );
 
                                                 limpiarCarro();
 

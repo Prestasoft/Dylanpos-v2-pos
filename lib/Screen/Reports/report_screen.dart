@@ -614,47 +614,8 @@ DropdownButton<String> getMonth() {
                                     ),
                                   ),
                                 ]),
+                                // Fila 1: Totales principales
                                 ResponsiveGridRow(rowSegments: 100, children: [
-                                  // Cantidad de Ventas
-                                  ResponsiveGridCol(
-                                    xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Container(
-                                        padding: const EdgeInsets.only(
-                                            left: 10.0,
-                                            right: 20.0,
-                                            top: 10.0,
-                                            bottom: 10.0),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color(0xFFCFF4E3),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              reTransaction.length.toString(),
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 18.0),
-                                            ),
-                                            Text(
-                                              lang.S.of(context).totalSale,
-                                              style: theme.textTheme.bodyLarge,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
                                   // Total Facturado
                                   ResponsiveGridCol(
                                     xs: 100,
@@ -671,7 +632,7 @@ DropdownButton<String> getMonth() {
                                         decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(10.0),
-                                          color: const Color(0xFFFED3D3),
+                                          color: const Color.fromARGB(255, 61, 234, 110),
                                         ),
                                         child: Column(
                                           crossAxisAlignment:
@@ -695,7 +656,7 @@ DropdownButton<String> getMonth() {
                                     ),
                                   ),
 
-                                  // Pagos Efectivo
+                                  // Total Pagado
                                   ResponsiveGridCol(
                                     xs: 100,
                                     md: screenWidth < 800 ? 50 : 30,
@@ -706,21 +667,123 @@ DropdownButton<String> getMonth() {
                                         future: getDailyTransactions(reTransaction),
                                         builder: (context, snapshot) {
                                           if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return Center( // Añade un Center para centrarlo
-                                              child: SizedBox( // Usa SizedBox para controlar el tamaño
-                                                  width: 20, // Ancho personalizado
-                                                  height: 20, // Alto personalizado
+                                            return Center(
+                                              child: SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 3,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                          final dailyTransactions = snapshot.data ?? {};
+                                          final totalEfectivo = calculateTotalMoney(dailyTransactions);
+                                          final totalTransfer = calculateTotalTransfer(dailyTransactions);
+                                          final totalCard = calculateTotalCard(dailyTransactions);
+                                          final totalPagado = (double.tryParse(totalEfectivo.toString()) ?? 0) +
+                                              (double.tryParse(totalTransfer.toString()) ?? 0) +
+                                              (double.tryParse(totalCard.toString()) ?? 0);
+                                          return Container(
+                                            padding: const EdgeInsets.only(
+                                                left: 10.0,
+                                                right: 20.0,
+                                                top: 10.0,
+                                                bottom: 10.0),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(10.0),
+                                              color: const Color.fromARGB(255, 226, 200, 123),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '$globalCurrency${myFormat.format(totalPagado)}',
+                                                  style: theme.textTheme.titleMedium?.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 18.0),
+                                                ),
+                                                Text(
+                                                  'Total Pagado',
+                                                  style: theme.textTheme.bodyLarge,
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Total Adeudado
+                                  ResponsiveGridCol(
+                                    xs: 100,
+                                    md: screenWidth < 800 ? 50 : 30,
+                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.only(
+                                            left: 10.0,
+                                            right: 20.0,
+                                            top: 10.0,
+                                            bottom: 10.0),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                          color: const Color.fromARGB(192, 246, 66, 66),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '$globalCurrency${myFormat.format(double.tryParse(getTotalDue(reTransaction).toString()) ?? 0)}',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                      color: kTitleColor,
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 18.0),
+                                            ),
+                                            Text(
+                                              lang.S.of(context).unPaid,
+                                              style: theme.textTheme.bodyLarge,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ]),
+
+                                // Fila 2: Métodos de pago alineados
+                                ResponsiveGridRow(rowSegments: 100, children: [
+                                  // Pagos en Efectivo
+                                  ResponsiveGridCol(
+                                    xs: 100,
+                                    md: screenWidth < 800 ? 50 : 30,
+                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: FutureBuilder<Map<String, dynamic>>(
+                                        future: getDailyTransactions(reTransaction),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return Center(
+                                              child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
                                                   child: CircularProgressIndicator(
-                                                    strokeWidth: 3, // Grosor de la línea del indicador
-                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Color personalizado
+                                                    strokeWidth: 3,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                                                 ),
                                               )
                                             );
                                           }
-                                          
                                           final dailyTransactions = snapshot.data ?? {};
                                           final totalMoney = calculateTotalMoney(dailyTransactions);
-                                          
                                           return Container(
                                             padding: const EdgeInsets.only(
                                                 left: 10.0,
@@ -764,21 +827,19 @@ DropdownButton<String> getMonth() {
                                         future: getDailyTransactions(reTransaction),
                                         builder: (context, snapshot) {
                                           if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return Center( // Añade un Center para centrarlo
-                                              child: SizedBox( // Usa SizedBox para controlar el tamaño
-                                                  width: 20, // Ancho personalizado
-                                                  height: 20, // Alto personalizado
+                                            return Center(
+                                              child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
                                                   child: CircularProgressIndicator(
-                                                    strokeWidth: 3, // Grosor de la línea del indicador
-                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Color personalizado
+                                                    strokeWidth: 3,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                                                 ),
                                               )
                                             );
                                           }
-                                          
                                           final dailyTransactions = snapshot.data ?? {};
                                           final totalMoney = calculateTotalTransfer(dailyTransactions);
-                                          
                                           return Container(
                                             padding: const EdgeInsets.only(
                                                 left: 10.0,
@@ -811,7 +872,7 @@ DropdownButton<String> getMonth() {
                                     ),
                                   ),
 
-                                  // Pagos Tarjeta
+                                  // Pagos con Tarjetas
                                   ResponsiveGridCol(
                                     xs: 100,
                                     md: screenWidth < 800 ? 50 : 30,
@@ -822,21 +883,19 @@ DropdownButton<String> getMonth() {
                                         future: getDailyTransactions(reTransaction),
                                         builder: (context, snapshot) {
                                           if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return Center( // Añade un Center para centrarlo
-                                              child: SizedBox( // Usa SizedBox para controlar el tamaño
-                                                  width: 20, // Ancho personalizado
-                                                  height: 20, // Alto personalizado
+                                            return Center(
+                                              child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
                                                   child: CircularProgressIndicator(
-                                                    strokeWidth: 3, // Grosor de la línea del indicador
-                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue), // Color personalizado
+                                                    strokeWidth: 3,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                                                 ),
                                               )
                                             );
                                           }
-                                          
                                           final dailyTransactions = snapshot.data ?? {};
                                           final totalMoney = calculateTotalCard(dailyTransactions);
-                                          
                                           return Container(
                                             padding: const EdgeInsets.only(
                                                 left: 10.0,
@@ -865,47 +924,6 @@ DropdownButton<String> getMonth() {
                                             ),
                                           );
                                         },
-                                      ),
-                                    ),
-                                  ),
-
-                                  //Total Adeudado
-                                  ResponsiveGridCol(
-                                    xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Container(
-                                        padding: const EdgeInsets.only(
-                                            left: 10.0,
-                                            right: 20.0,
-                                            top: 10.0,
-                                            bottom: 10.0),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color(0xFFFEE7CB),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '$globalCurrency${myFormat.format(double.tryParse(getTotalDue(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                      color: kTitleColor,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 18.0),
-                                            ),
-                                            Text(
-                                              lang.S.of(context).unPaid,
-                                              style: theme.textTheme.bodyLarge,
-                                            ),
-                                          ],
-                                        ),
                                       ),
                                     ),
                                   ),

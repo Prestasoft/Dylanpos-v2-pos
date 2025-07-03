@@ -114,9 +114,9 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                         ? const SizedBox.shrink()
                         : Row(
                             children: [
-                              screenWidth > 1260
-                                  ? const SizedBox.shrink()
-                                  : const GlobalLanguage(isDrawer: true),
+                              // screenWidth > 1260
+                              //     ? const SizedBox.shrink()
+                              //     : const GlobalLanguage(isDrawer: true),
                               screenWidth > 1430
                                   ? const SizedBox.shrink()
                                   : const SizedBox(width: 10.0),
@@ -168,7 +168,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                             const Icon(Icons.add_rounded,
                                                 color: kMainColor),
                                             Text(
-                                              'Vestidos',
+                                              'Prendas',
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .titleMedium
@@ -222,7 +222,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                             const Icon(Icons.add_rounded,
                                                 color: Color(0xFF15CD75)),
                                             Text(
-                                              'Calendario',
+                                              'Confirmacion de Vestimenta',
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .titleMedium

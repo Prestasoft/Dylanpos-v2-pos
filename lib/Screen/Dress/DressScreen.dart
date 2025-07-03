@@ -555,11 +555,10 @@ class _DressScreenState extends State<DressScreen> {
                                                         ),
                                                         IconButton(
                                                           icon: const Icon(
-                                                              Icons.warning,
-                                                              color:
-                                                                  Colors.red),
-                                                          tooltip:
-                                                              'Marcar como en Sesión',
+                                                            Icons.camera_alt,
+                                                            color: Color(0xFF795548), // Marrón
+                                                          ),
+                                                          tooltip: 'Marcar como en Sesión',
                                                           onPressed: () async {
                                                             final confirm =
                                                                 await _confirmChangeState(

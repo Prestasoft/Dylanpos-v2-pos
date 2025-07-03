@@ -365,7 +365,7 @@ List<SidebarItemModel> get topMenus {
           navigationPath: '/list',
         ),
         SidebarSubmenuModel(
-          name: 'Reservas',
+          name: 'Calendario de Reservas',
           type: "reservation_calendar",
           navigationPath: '/calendario',
         ),
@@ -404,6 +404,12 @@ List<SidebarItemModel> get topMenus {
           navigationPath: '/quotation-list',
         ),
       ],
+    ),
+    SidebarItemModel(
+      name: "Confirmaciones",
+      iconPath: 'images/dashboard_icon/reports.svg',
+      type: "sales_return",
+      navigationPath: '/sale-confirmations',
     ),
     SidebarItemModel(
       name: lang.S.current.purchase,

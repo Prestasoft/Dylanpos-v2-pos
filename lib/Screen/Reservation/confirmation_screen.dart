@@ -18,6 +18,9 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
   final TimeOfDay selectedTime;
   final String clientId;
   final List<DressReservation> dressReservations;
+  // Campos opcionales para la segunda fecha/hora de fiesta
+  final DateTime? fiestaDate;
+  final TimeOfDay? fiestaTime;
 
   const ConfirmationScreen({
     Key? key,
@@ -30,6 +33,8 @@ class ConfirmationScreen extends ConsumerStatefulWidget {
     required this.selectedTime,
     required this.clientId,
     required this.dressReservations,
+    this.fiestaDate,
+    this.fiestaTime,
   }) : super(key: key);
 
   @override
@@ -258,6 +263,21 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Normalización para detectar "pre-quince y fiesta" en cualquier variante de plan
+    String _normalize(String s) {
+      final withNoSpaces = s.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      final withNoAccents = withNoSpaces
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u');
+      final withoutPlan = withNoAccents.replaceFirst(RegExp(r'^plan [a-z]\s*'), '');
+      return withoutPlan;
+    }
+    final normalizedName = _normalize(widget.packageName);
+    final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta');
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Confirmar Reserva"),
@@ -288,6 +308,25 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
                 "Hora",
                 widget.selectedTime.format(context),
               ),
+              if (isPreQuinceFiesta && widget.fiestaDate != null && widget.fiestaTime != null) ...[
+                SizedBox(height: 24),
+                Text(
+                  "Datos de la Fiesta",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple[700]),
+                ),
+                SizedBox(height: 8),
+                _buildInfoItem(
+                  Icons.celebration,
+                  "Fecha de la Fiesta",
+                  "${widget.fiestaDate!.day}/${widget.fiestaDate!.month}/${widget.fiestaDate!.year}",
+                ),
+                SizedBox(height: 8),
+                _buildInfoItem(
+                  Icons.access_time,
+                  "Hora de la Fiesta",
+                  widget.fiestaTime!.format(context),
+                ),
+              ],
               SizedBox(height: 16),
               _buildNote(Icons.textsms_outlined, "Nota"),
               _buildPlace(Icons.place, "Lugar"),

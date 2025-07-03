@@ -77,6 +77,7 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
   int _itemsPerPage = 10;
   int _currentPage = 1;
   String itemStatus = "Todos";
+  List<String> dynamicStates = ["Todos", "Disponible", "Averiado", "En Sesión", "En Lavandería", "Reservados"];
 
   Future<void> _pickImages() async {
     try {
@@ -113,6 +114,21 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
           AsyncValue<List<DressModel>> dressesAsync =
               ref.watch(dressesByStatusProvider(itemStatus));
           return dressesAsync.when(data: (list) {
+            // Estados válidos y únicos, sin duplicados y con formato consistente
+            final List<String> validStates = ["Averiado", "Disponible", "En Sesión", "En Lavandería"];
+            dynamicStates = ["Todos", ...validStates, "Reservados"];
+
+            // Mapeo de iconos para cada estado
+            // Iconos personalizados según la imagen proporcionada
+            final Map<String, IconData> stateIcons = {
+              "Averiado": FeatherIcons.settings, // Llave inglesa naranja
+              "Disponible": Icons.check_circle, // Check verde
+              "En Sesión": FeatherIcons.camera, // Cámara marrón
+              "En Lavandería": FeatherIcons.shoppingBag, // Percha azul
+              "Todos": Icons.all_inclusive,
+              "Reservados": Icons.lock,
+            };
+
             List<DressModel> showAbleDresses = [];
             for (var element in list) {
               final matchesName = element.name.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || searchItem == '';
@@ -357,21 +373,35 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.black,
                                     ),
-                                    items: [
-                                      "Todos",
-                                      "Disponibles",
-                                      "Reservados",
-                                      "Lavanderia",
-                                    ].map<DropdownMenuItem<String>>(
-                                        (String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(
-                                          value.toString(),
-                                          style: theme.textTheme.bodyLarge,
-                                        ),
-                                      );
-                                    }).toList(),
+                                    items: dynamicStates.map<DropdownMenuItem<String>>(
+                                      (String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                stateIcons[value] ?? Icons.help_outline,
+                                                size: 20,
+                                                color: value == "Disponible"
+                                                    ? Colors.green
+                                                    : value == "Averiado"
+                                                        ? Colors.orange
+                                                        : value == "En Sesión"
+                                                            ? Colors.brown
+                                                            : value == "En Lavandería"
+                                                                ? Colors.blue
+                                                                : Colors.grey,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                value,
+                                                style: theme.textTheme.bodyLarge,
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ).toList(),
                                     onChanged: (String? newValue) {
                                       setState(() {
                                         itemStatus = newValue ?? "";
@@ -431,20 +461,13 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                               headingTextStyle:
                                                   theme.textTheme.titleMedium,
                                               columns: [
-                                                DataColumn(
-                                                    label: Text(_lang.SL)),
-                                                DataColumn(
-                                                    label: Text(_lang.image)),
-                                                DataColumn(
-                                                    label: Text(_lang.name)),
-                                                DataColumn(
-                                                    label:
-                                                        Text(_lang.category)),
-                                                DataColumn(
-                                                    label: Text(_lang.branch)),
-                                                const DataColumn(
-                                                    label: Icon(
-                                                        FeatherIcons.settings)),
+                                                DataColumn(label: Text(_lang.SL)),
+                                                DataColumn(label: Text(_lang.image)),
+                                                DataColumn(label: Text(_lang.name)),
+                                                DataColumn(label: Text(_lang.category)),
+                                                DataColumn(label: Text(_lang.branch)),
+                                                DataColumn(label: Text('Estado')), // Nueva columna Estado
+                                                const DataColumn(label: Icon(FeatherIcons.settings)),
                                               ],
                                               rows: List.generate(
                                                   _itemsPerPage == -1
@@ -570,30 +593,51 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                                       Text(dress.category)),
 
                                                   // Branch
+                                                  DataCell(Text(dress.branchId)),
+
+                                                  // Estado
                                                   DataCell(
-                                                      Text(dress.branchId)),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                      decoration: BoxDecoration(
+                                                        color: dress.state == 'Disponible'
+                                                            ? Colors.green.withOpacity(0.2)
+                                                            : dress.state == 'Averiado'
+                                                                ? Colors.orange.withOpacity(0.2)
+                                                                : dress.state == 'Lavandería'
+                                                                    ? Colors.blue.withOpacity(0.2)
+                                                                    : Colors.red.withOpacity(0.2),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                      child: Text(
+                                                        dress.state,
+                                                        style: TextStyle(
+                                                          color: dress.state == 'Disponible'
+                                                              ? Colors.green
+                                                              : dress.state == 'Averiado'
+                                                                  ? Colors.orange
+                                                                  : dress.state == 'Lavandería'
+                                                                      ? Colors.blue
+                                                                      : Colors.red,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
 
                                                   // Actions
                                                   DataCell(
                                                     Theme(
                                                       data: ThemeData(
-                                                          highlightColor:
-                                                              dropdownItemColor,
-                                                          focusColor:
-                                                              dropdownItemColor,
-                                                          hoverColor:
-                                                              dropdownItemColor),
+                                                          highlightColor: dropdownItemColor,
+                                                          focusColor: dropdownItemColor,
+                                                          hoverColor: dropdownItemColor),
                                                       child: SizedBox(
                                                         width: 20,
                                                         child: PopupMenuButton(
-                                                          surfaceTintColor:
-                                                              Colors.white,
-                                                          padding:
-                                                              EdgeInsets.zero,
-                                                          itemBuilder:
-                                                              (BuildContext
-                                                                      bc) =>
-                                                                  [
+                                                          surfaceTintColor: Colors.white,
+                                                          padding: EdgeInsets.zero,
+                                                          itemBuilder: (BuildContext bc) => [
                                                             // Reserve
                                                             PopupMenuItem(
                                                                 onTap: () {

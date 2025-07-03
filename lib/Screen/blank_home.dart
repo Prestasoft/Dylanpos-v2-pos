@@ -5,21 +5,19 @@ class BlankHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Fondo con imagen y logo centrado
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('images/fondo2.webp'), // Fondo igual al login
+          image: AssetImage('images/fondo2.webp'),
           fit: BoxFit.cover,
         ),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(
-          child: Image.asset(
-            'images/loginLogo2.png',
-            width: 400, // Aumenta el tamaño del logo
-            fit: BoxFit.contain,
-          ),
+      child: Center(
+        child: Image.asset(
+          'images/loginLogo2.png',
+          width: 400,
+          fit: BoxFit.contain,
         ),
       ),
     );

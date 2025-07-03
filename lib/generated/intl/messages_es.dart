@@ -1434,7 +1434,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
         "tryAgain": MessageLookupByLibrary.simpleMessage("Intentar de nuevo"),
         "type": MessageLookupByLibrary.simpleMessage("Tipo"),
-        "unPaid": MessageLookupByLibrary.simpleMessage("Sin pagar"),
+        "unPaid": MessageLookupByLibrary.simpleMessage("Total Pendiente"),
         "unit": MessageLookupByLibrary.simpleMessage("Unidad"),
         "unitName": MessageLookupByLibrary.simpleMessage("Nombre de la unidad"),
         "unitNameIsAlreadyExist": MessageLookupByLibrary.simpleMessage(

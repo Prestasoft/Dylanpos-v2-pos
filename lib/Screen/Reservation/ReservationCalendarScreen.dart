@@ -732,13 +732,46 @@ class ReservationCard extends ConsumerWidget {
       return Padding(
         padding: const EdgeInsets.only(left: 8, right: 8),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Vestimenta',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 )),
-            _showDressesOption(dress),
+            ...dress.map<Widget>((item) {
+              final dressName = item['dress_name'] ?? 'Sin nombre';
+              final branchId = item['branch_id'] ?? 'Sin sucursal';
+              final dressState = item['state']?.toString();
+              final isSesion = dressState != null && dressState.toLowerCase().trim() == 'sesión';
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('* $dressName', style: const TextStyle(fontSize: 13)),
+                  const SizedBox(width: 8),
+                  Text(branchId.toString(), style: const TextStyle(fontSize: 12, color: Color.fromARGB(255, 10, 10, 10))),
+                  if (isSesion)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red[700],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'En Sesión',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }).toList(),
           ],
         ),
       );
@@ -1178,17 +1211,52 @@ class ReservationDetailView extends ConsumerWidget {
                   match = null;
                 }
                 String imageUrl = '';
+                String? dressState;
                 if (match != null && match.images.isNotEmpty) {
                   imageUrl = match.images.first.toString();
+                  dressState = match.state;
                 } else if (item['image'] != null && item['image'].toString().isNotEmpty) {
                   imageUrl = item['image'].toString();
+                  dressState = item['state']?.toString();
                 } else if (item['images'] != null) {
                   if (item['images'] is List && (item['images'] as List).isNotEmpty) {
                     imageUrl = item['images'][0].toString();
                   } else if (item['images'] is String && item['images'].toString().isNotEmpty) {
                     imageUrl = item['images'].toString().split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
                   }
+                  dressState = item['state']?.toString();
                 }
+
+                // Lógica para mostrar el estado "En Sesión" solo si la hora ya llegó
+                String? showState;
+                if (dressState != null && dressState.toLowerCase() == 'sesión') {
+                  // Buscar la hora de la sesión
+                  String? sessionTime = item['session_time']?.toString();
+                  String? sessionDate = item['session_date']?.toString();
+                  // Si no hay hora/fecha en el item, intentar usar reservation_time/reservation_date
+                  sessionTime ??= item['reservation_time']?.toString();
+                  sessionDate ??= item['reservation_date']?.toString();
+                  if (sessionTime != null && sessionDate != null) {
+                    try {
+                      final now = DateTime.now();
+                      final date = DateFormat('yyyy-MM-dd').parse(sessionDate);
+                      final timeParts = sessionTime.split(':');
+                      final sessionDateTime = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        int.parse(timeParts[0]),
+                        int.parse(timeParts[1]),
+                      );
+                      if (now.isAfter(sessionDateTime)) {
+                        showState = 'En Sesión';
+                      }
+                    } catch (_) {}
+                  }
+                } else if (dressState != null && dressState.isNotEmpty && dressState.toLowerCase() != 'disponible') {
+                  showState = dressState;
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Row(
@@ -1249,18 +1317,43 @@ class ReservationDetailView extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              dressName,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              branchId,
-                              style: const TextStyle(fontSize: 14),
+                            Row(
+                              children: [
+                                Text(
+                                  dressName,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  branchId,
+                                  style: const TextStyle(fontSize: 14, color: Color.fromARGB(255, 3, 3, 3)),
+                                ),
+                                // Mostrar solo si la hora de la sesión ya llegó
+                                if (dressState != null && dressState.toLowerCase() == 'sesión') ...[
+                                  const SizedBox(width: 8),
+                                  DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                                    ),
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                      child: Text(
+                                        'En Sesión',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),

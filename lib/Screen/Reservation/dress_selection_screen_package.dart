@@ -457,27 +457,28 @@ class _DressSelectionPackageScreenState
                                     },
                                   ),
                                 ),
-                              // Información del vestido (más compacta)
+                              // Información del vestido (nombre centrado debajo del botón)
                               Padding(
-                                padding: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      dress.name,
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                    Center(
+                                      child: Text(
+                                        dress.name,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     SizedBox(height: 4),
                                     DressStatusBadge(
                                       isAvailable: isAvailable,
                                       timeLeft: null,
-                                      compact:
-                                          true, // Versión compacta del badge
+                                      compact: true, // Versión compacta del badge
                                     ),
                                   ],
                                 ),

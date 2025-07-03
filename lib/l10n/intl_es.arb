@@ -247,7 +247,7 @@
   "total": "total",
   "totalProfit": "Ganancia total",
   "totalLoss": "Pérdida total",
-  "unPaid": "Sin pagar",
+  "unPaid": "Total Pendiente",
   "lossOrProfit": "Pérdida/Ganancia",
   "saleAmount": "Monto de la venta",
   "profitPlus": "Ganancia(+)",

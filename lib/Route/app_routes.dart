@@ -34,6 +34,7 @@ import 'package:salespro_admin/Screen/Sales%20Return/sales_returns_list.dart';
 import 'package:salespro_admin/Screen/User%20Role%20System/user_role_screen.dart';
 import 'package:salespro_admin/Screen/Whatsapp%20Marketing/whatsapp_marketing_screen.dart';
 import 'package:salespro_admin/Screen/quatation_screen/quatation_screen.dart';
+import 'package:salespro_admin/Screen/Confirmation/sale_confirmations_list.dart';
 import 'package:salespro_admin/model/income_modle.dart';
 
 import '../Screen/Authentication/log_in.dart';
@@ -73,12 +74,13 @@ import '../model/expense_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
 import 'not_found.dart';
-import '../Screen/blank_home.dart';
+import 'package:salespro_admin/Screen/blank_home.dart';
 
 abstract class AcnooAppRoutes {
   static final routerConfig = GoRouter(
     initialLocation: '/',
     routes: [
+      // Ruta para BlankHome (ahora dentro del ShellRoute para mostrar menú y barra)
       ShellRoute(
         builder: (context, state, child) {
           return ShellRouteWrapper(
@@ -86,14 +88,13 @@ abstract class AcnooAppRoutes {
           );
         },
         routes: [
-          ///-----------------------Blank Home Route---------------------------
           GoRoute(
             path: '/blank-home',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: BlankHome(),
             ),
           ),
-
+          // ...existing code...
           ///-----------------------DashBoard Route---------------------------
           GoRoute(
             path: '/dashboard',
@@ -586,6 +587,14 @@ abstract class AcnooAppRoutes {
             path: '/equipment-stock-list',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: AreasEquipmentsScreen(),
+            ),
+          ),
+
+          //---------------------Confirmation List------------------------------------
+          GoRoute(
+            path: '/sale-confirmations',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: SaleConfirmationsScreen(),
             ),
           ),
 

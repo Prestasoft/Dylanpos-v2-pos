@@ -836,11 +836,28 @@ class _ServicePackageListState extends State<ServicePackageList> {
     _durationValueController.text = package.duration['value'].toString();
     _durationUnit = package.duration['unit'];
     List<String?> _selectedComponents = [];
-
-    if ((package.components == null || package.components!.isEmpty)) {
+    if (package.components.isEmpty) {
       _selectedComponents.add(null); // Agrega un dropdown inicial vacío
     } else {
-      _selectedComponents = List<String?>.from(package.components!);
+      _selectedComponents = List<String?>.from(package.components);
+    }
+
+    // Validar componentes existentes contra las categorías actuales
+    final categories = ref.read(categoryProvider).maybeWhen(
+      data: (cats) => cats.map((c) => c.categoryName).toSet(),
+      orElse: () => <String>{},
+    );
+    for (int i = 0; i < _selectedComponents.length; i++) {
+      if (_selectedComponents[i] != null && !categories.contains(_selectedComponents[i])) {
+        _selectedComponents[i] = null;
+      }
+    }
+
+    // Asegura que siempre haya al menos un dropdown visible
+    void ensureAtLeastOneDropdown() {
+      if (_selectedComponents.isEmpty) {
+        _selectedComponents.add(null);
+      }
     }
 
     showDialog(
@@ -848,8 +865,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState1) {
-          List<String> _components = List<String>.from(package.components ?? []);
-          String? _selectedComponent;
+          // Limpieza: variables no usadas eliminadas
           return Dialog(
             surfaceTintColor: kWhite,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
@@ -1064,7 +1080,6 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                         ..._selectedComponents.asMap().entries.map((entry) {
                                           int index = entry.key;
                                           String? selectedValue = entry.value;
-
                                           return Padding(
                                             padding: const EdgeInsets.only(bottom: 8.0),
                                             child: Row(
@@ -1091,6 +1106,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                                   onPressed: () {
                                                     setState1(() {
                                                       _selectedComponents.removeAt(index);
+                                                      ensureAtLeastOneDropdown();
                                                     });
                                                   },
                                                 ),

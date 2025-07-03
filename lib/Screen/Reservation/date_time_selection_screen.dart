@@ -34,6 +34,9 @@ class DateTimeSelectionScreen extends ConsumerStatefulWidget {
 class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScreen> {
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay.now();
+  // Para la segunda fecha y hora de fiesta (solo si aplica)
+  DateTime? selectedFiestaDate;
+  TimeOfDay? selectedFiestaTime;
   CustomerModel? selectedCustomer;
 
   String? errorMessage;
@@ -87,6 +90,34 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
+        errorMessage = null;
+      });
+    }
+  }
+
+  Future<void> _selectFiestaDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedFiestaDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(Duration(days: 365)),
+    );
+    if (picked != null && picked != selectedFiestaDate) {
+      setState(() {
+        selectedFiestaDate = picked;
+        errorMessage = null;
+      });
+    }
+  }
+
+  Future<void> _selectFiestaTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedFiestaTime ?? TimeOfDay.now(),
+    );
+    if (picked != null && picked != selectedFiestaTime) {
+      setState(() {
+        selectedFiestaTime = picked;
         errorMessage = null;
       });
     }
@@ -173,6 +204,28 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
       });
     } else {
       if (isDressAvailable) {
+        // Normalización para detectar "pre-quince y fiesta" en cualquier variante de plan
+        String _normalize(String s) {
+          final withNoSpaces = s.trim().toLowerCase().replaceAll(RegExp(r'\\s+'), ' ');
+          final withNoAccents = withNoSpaces
+            .replaceAll('á', 'a')
+            .replaceAll('é', 'e')
+            .replaceAll('í', 'i')
+            .replaceAll('ó', 'o')
+            .replaceAll('ú', 'u');
+          final withoutPlan = withNoAccents.replaceFirst(RegExp(r'^plan [a-z]\\s*'), '');
+          return withoutPlan;
+        }
+        final normalizedName = _normalize(widget.packageName);
+        final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta');
+
+        DateTime? fiestaDateToSend;
+        TimeOfDay? fiestaTimeToSend;
+        if (isPreQuinceFiesta) {
+          fiestaDateToSend = selectedFiestaDate;
+          fiestaTimeToSend = selectedFiestaTime;
+        }
+
         if (widget.dressReservations.isEmpty) {
           Navigator.push(
             context,
@@ -187,6 +240,8 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
                 selectedTime: selectedTime,
                 clientId: selectedCustomer!.phoneNumber,
                 dressReservations: [],
+                fiestaDate: fiestaDateToSend,
+                fiestaTime: fiestaTimeToSend,
               ),
             ),
           );
@@ -205,6 +260,8 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
                 selectedTime: selectedTime,
                 clientId: selectedCustomer!.phoneNumber,
                 dressReservations: widget.dressReservations,
+                fiestaDate: fiestaDateToSend,
+                fiestaTime: fiestaTimeToSend,
               ),
             ),
           );
@@ -235,6 +292,24 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
 
   @override
   Widget build(BuildContext context) {
+    // Mostrar si el nombre contiene "pre-quince y fiesta" ignorando mayúsculas/minúsculas, espacios, tildes y letras de plan (A, B, C, etc.)
+    String _normalize(String s) {
+      final withNoSpaces = s.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      // Quitar tildes
+      final withNoAccents = withNoSpaces
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u');
+      // Quitar "plan a ", "plan b ", "plan c ", etc. al inicio
+      final withoutPlan = withNoAccents.replaceFirst(RegExp(r'^plan [a-z]\s*'), '');
+      return withoutPlan;
+    }
+    final normalizedName = _normalize(widget.packageName);
+    final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta');
+    // Debug: imprime el nombre recibido y normalizado
+    print('packageName recibido: "${widget.packageName}" (normalizado: "$normalizedName")');
     return Scaffold(
       appBar: AppBar(
         title: Text("Agenda tu Sesión"),
@@ -247,29 +322,33 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Selecciona fecha y hora para tu sesión con el vestido:",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    ),
-                    SizedBox(height: 8),
-                    _showDressesOption(context),
-                    SizedBox(height: 8),
-                    Text(
-                      "Seleccione cliente",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: CustomerSelector(
-                            initialCustomer: selectedCustomer,
-                            onCustomerSelected: (CustomerModel) {
-                              selectedCustomer = CustomerModel;
-                            })),
-                    Text(
-                      "Duración: ${_getDuracionTexto()}",
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                    ),
-                    SizedBox(height: 24),
+    // (Eliminado el título de arriba, solo se muestra debajo de 'Seleccione cliente')
+    _showDressesOption(context),
+    SizedBox(height: 8),
+    Text(
+      "Seleccione cliente",
+      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    ),
+    Padding(
+        padding: const EdgeInsets.all(12),
+        child: CustomerSelector(
+            initialCustomer: selectedCustomer,
+            onCustomerSelected: (CustomerModel) {
+              selectedCustomer = CustomerModel;
+            })),
+    if (isPreQuinceFiesta) ...[
+      SizedBox(height: 16),
+      Text(
+        "Selecciona la fecha y la hora de Pre-quince:",
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.blue[800]),
+      ),
+      SizedBox(height: 8),
+    ],
+    Text(
+      "Duración: ${_getDuracionTexto()}",
+      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+    ),
+    SizedBox(height: 24),
                     Card(
                       child: ListTile(
                         leading: Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
@@ -291,6 +370,37 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
                         onTap: () => _selectTime(context),
                       ),
                     ),
+                    if (isPreQuinceFiesta) ...[
+                      SizedBox(height: 24),
+                      Text(
+                        "Selecciona la fecha y hora de la fiesta:",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple[700]),
+                      ),
+                      SizedBox(height: 8),
+                      Card(
+                        child: ListTile(
+                          leading: Icon(Icons.celebration, color: Colors.purple[700]),
+                          title: Text("Fecha de la Fiesta"),
+                          subtitle: Text(selectedFiestaDate != null
+                              ? "${selectedFiestaDate!.day}/${selectedFiestaDate!.month}/${selectedFiestaDate!.year}"
+                              : "Selecciona la fecha de la fiesta"),
+                          trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () => _selectFiestaDate(context),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Card(
+                        child: ListTile(
+                          leading: Icon(Icons.access_time, color: Colors.purple[700]),
+                          title: Text("Hora de la Fiesta"),
+                          subtitle: Text(selectedFiestaTime != null
+                              ? selectedFiestaTime!.format(context)
+                              : "Selecciona la hora de la fiesta"),
+                          trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () => _selectFiestaTime(context),
+                        ),
+                      ),
+                    ],
                     if (errorMessage != null) ...[
                       SizedBox(height: 16),
                       Container(
@@ -314,7 +424,6 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
                         ),
                       ),
                     ],
-                    //Spacer(),
                     SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
