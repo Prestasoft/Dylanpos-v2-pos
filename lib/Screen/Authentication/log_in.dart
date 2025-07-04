@@ -195,6 +195,7 @@ class _EmailLogInState extends State<EmailLogIn> {
     return Scaffold(
       backgroundColor: Colors.transparent, // Cambiado a transparente para mostrar la imagen de fondo
       body: Container(
+        height: MediaQuery.of(context).size.height, // Asegurar que ocupe toda la altura
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('images/fondo2.webp'), // Cambia la ruta si deseas otra imagen
@@ -211,11 +212,18 @@ class _EmailLogInState extends State<EmailLogIn> {
                 final dynamicAppsName = setting.commonHeaderLogo.isNotEmpty ? setting.title : appsName;
                 return Padding(
                   padding: screenWidth < 400 ? const EdgeInsets.all(8) : const EdgeInsets.all(20.0),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        dynamicNameLogo != null ? Image.network(dynamicNameLogo, height: 50) : SvgPicture.asset(nameLogo, height: 50),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height - 40, // Restar el padding
+                    child: SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: MediaQuery.of(context).size.height - 40,
+                        ),
+                        child: IntrinsicHeight(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                        // Logo comentado - dynamicNameLogo != null ? Image.network(dynamicNameLogo, height: 50) : SvgPicture.asset(nameLogo, height: 50),
                         Center(
                           child: ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
                             ResponsiveGridCol(
@@ -247,7 +255,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         RichText(
-                                            text: TextSpan(text: 'Santiago ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
+                                            text: TextSpan(text: 'Santo Domingo ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
                                           TextSpan(
                                             text: dynamicAppsName,
                                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: const Color.fromRGBO(0, 167, 250, 1), fontWeight: FontWeight.bold),
@@ -457,8 +465,11 @@ class _EmailLogInState extends State<EmailLogIn> {
                       ],
                     ),
                   ),
-                );
-              },
+                ),
+              ),
+            ),
+          );
+        },
               error: (e, stack) {
                 return Text(e.toString());
               },

@@ -130,8 +130,8 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
       
      // Crear cuerpo de la petición
       final body = {
-        // 'token': '5i36w829nb1ljkj7', //token santo domingo
-        'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': '5i36w829nb1ljkj7', //token santo domingo
+        //'token': '5gs146cmkgu6y5vw', //token santiago
         'to': phoneNumber,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
@@ -139,8 +139,8 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
       };
 
       // Configurar la petición HTTP
-      // final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
+      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');

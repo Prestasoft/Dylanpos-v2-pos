@@ -247,48 +247,49 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                         ? const SizedBox.shrink()
                         : Row(
                             children: [
-                              screenWidth > 670
-                                  ? const SizedBox.shrink()
-                                  : SizedBox(
-                                      height: 40,
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(30.0)),
-                                          padding: const EdgeInsets.fromLTRB(
-                                              15, 8, 15, 8),
+                              // Botón "Rentar" (POS) - COMENTADO
+                              // screenWidth > 670
+                              //     ? const SizedBox.shrink()
+                              //     : SizedBox(
+                              //         height: 40,
+                              //         child: ElevatedButton(
+                              //           style: ElevatedButton.styleFrom(
+                              //             shape: RoundedRectangleBorder(
+                              //                 borderRadius:
+                              //                     BorderRadius.circular(30.0)),
+                              //             padding: const EdgeInsets.fromLTRB(
+                              //                 15, 8, 15, 8),
 
-                                          backgroundColor: kMainColor,
-                                          // side: const BorderSide(color: kBorderColorTextField, width: 1),
-                                          textStyle: kTextStyle.copyWith(
-                                              color: kWhite),
-                                        ),
-                                        onPressed: () {
-                                          // Navigator.pushNamed(context, PosSale.route);
-                                          context.go('/sales/pos-sales');
-                                        },
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.add_rounded,
-                                                color: kWhite),
-                                            Text(
-                                              'Rentar',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleMedium
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.white,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                              screenWidth > 670
-                                  ? const SizedBox.shrink()
-                                  : const SizedBox(width: 16.0),
+                              //             backgroundColor: kMainColor,
+                              //             // side: const BorderSide(color: kBorderColorTextField, width: 1),
+                              //             textStyle: kTextStyle.copyWith(
+                              //                 color: kWhite),
+                              //           ),
+                              //           onPressed: () {
+                              //             // Navigator.pushNamed(context, PosSale.route);
+                              //             context.go('/sales/pos-sales');
+                              //           },
+                              //           child: Row(
+                              //             children: [
+                              //               const Icon(Icons.add_rounded,
+                              //                   color: kWhite),
+                              //               Text(
+                              //                 'Rentar',
+                              //                 style: Theme.of(context)
+                              //                     .textTheme
+                              //                     .titleMedium
+                              //                     ?.copyWith(
+                              //                       fontWeight: FontWeight.w600,
+                              //                       color: Colors.white,
+                              //                     ),
+                              //               ),
+                              //             ],
+                              //           ),
+                              //         ),
+                              //       ),
+                              // screenWidth > 670
+                              //     ? const SizedBox.shrink()
+                              //     : const SizedBox(width: 16.0),
                               screenWidth > 590
                                   ? const SizedBox.shrink()
                                   : SizedBox(
@@ -516,11 +517,9 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
       builder: (_, ref, watch) {
         final settingProvider = ref.watch(generalSettingProvider);
         return settingProvider.when(data: (setting) {
-          final logo =
-              setting.mainLogo.isNotEmpty == true ? setting.mainLogo : appLogo;
-          final nameLogo = setting.commonHeaderLogo.isNotEmpty == true
-              ? setting.sidebarLogo
-              : 'images/sideLogo.png';
+          // Obtener el nombre de la sucursal desde la configuración general
+          final branchName = 'Santo Domingo';
+          
           return Container(
             padding: const EdgeInsets.all(16),
             height: ResponsiveValue<double?>(
@@ -546,16 +545,38 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                   iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 if (iconOnly)
-                  Image.network(
-                    logo,
+                  // Mostrar solo las iniciales en modo icono
+                  Container(
+                    width: 38,
                     height: 38,
-                    width: 33,
+                    decoration: BoxDecoration(
+                      color: kMainColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Center(
+                      child: Text(
+                        branchName.split(' ').map((word) => word.isNotEmpty ? word[0] : '').take(2).join('').toUpperCase(),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 if (!iconOnly)
-                  Image.network(
-                    nameLogo,
-                    height: 38,
-                    width: 150,
+                  // Mostrar el nombre completo en modo expandido
+                  Expanded(
+                    child: Text(
+                      branchName,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
               ],
             ),

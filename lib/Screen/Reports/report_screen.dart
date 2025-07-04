@@ -1221,11 +1221,11 @@ DropdownButton<String> getMonth() {
                                                                     .of(context)
                                                                     .partyName)),
                                                             DataColumn(label: Text('Reservado por')),
-                                                            DataColumn(
-                                                                label: Text(lang
-                                                                    .S
-                                                                    .of(context)
-                                                                    .partyType)),
+                                                            // DataColumn(
+                                                            //     label: Text(lang
+                                                            //         .S
+                                                            //         .of(context)
+                                                            //         .partyType)),
                                                             DataColumn(
                                                                 label: Text(lang
                                                                     .S
@@ -1330,15 +1330,15 @@ DropdownButton<String> getMonth() {
                                                                     ),
                                                                   ),
 
-                                                                  ///___________Party Type______________________________________________
-                                                                  DataCell(
-                                                                    Text(
-                                                                      paginatedList[
-                                                                              index]
-                                                                          .paymentType
-                                                                          .toString(),
-                                                                    ),
-                                                                  ),
+                                                                  ///___________Party Type (COMENTADO)______________________________________________
+                                                                  // DataCell(
+                                                                  //   Text(
+                                                                  //     paginatedList[
+                                                                  //             index]
+                                                                  //         .paymentType
+                                                                  //         .toString(),
+                                                                  //   ),
+                                                                  // ),
 
                                                                   ///___________Amount____________________________________________________
                                                                   DataCell(

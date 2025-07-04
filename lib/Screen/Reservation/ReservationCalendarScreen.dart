@@ -11,7 +11,6 @@ import 'package:salespro_admin/model/dress_model.dart';
 import 'package:salespro_admin/Provider/dress_with_reservations.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../Due List/due_popUp.dart';
-import 'ReservationTypeLegend.dart';
 
 //------------------- ENUM Y CARD -------------------
 enum ReservationStatus {
@@ -331,6 +330,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
       data: (reservations) {
         // Agrupar reservas por día
         _reservationsByDay = {};
+        
         for (var reservation in reservations) {
           final date = _parseDate(reservation.reservationDate);
           if (date != null) {
@@ -352,6 +352,11 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             }
           }
         }
+        
+        // En un segundo paso, procesar las fechas de fiesta de forma asíncrona
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _processPreQuinceFiestaReservations(reservations);
+        });
 
         // Botones de formato de calendario: Día, Semana, Mes
         Widget formatButtons = Row(
@@ -751,49 +756,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
     );
   }
 
-  void _showFilterOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.all_inclusive),
-            title: const Text('Todas las reservaciones'),
-            onTap: () {
-              Navigator.pop(context);
-              // Apply filter
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.access_time),
-            title: const Text('Próximas'),
-            onTap: () {
-              Navigator.pop(context);
-              // Apply filter
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.warning_amber_rounded),
-            title: const Text('Por vencer'),
-            onTap: () {
-              Navigator.pop(context);
-              // Apply filter
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Pasadas'),
-            onTap: () {
-              Navigator.pop(context);
-              // Apply filter
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showCancelConfirmation(ReservationModel reservation) {
     showDialog(
       context: context,
@@ -840,6 +802,44 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   }
 
   // _buildDressName se usa en ReservationCard, no es necesario eliminarlo
+  
+  // Método para procesar las fechas de fiesta de reservas PRE-QUINCE FIESTA
+  void _processPreQuinceFiestaReservations(List<ReservationModel> reservations) async {
+    bool needsRefresh = false;
+    
+    for (var reservation in reservations) {
+      try {
+        final fullReservation = await ref.read(fullReservationByIdProviderVQ(reservation.id).future);
+        
+        if (fullReservation != null && 
+            fullReservation.reservation['session_type'] == 'pre-quince-fiesta') {
+          final fiestaDateStr = fullReservation.reservation['fiesta_date']?.toString();
+          if (fiestaDateStr != null && fiestaDateStr.isNotEmpty) {
+            final fiestaDate = _parseDate(fiestaDateStr);
+            if (fiestaDate != null) {
+              final fiestaDateKey = DateTime(fiestaDate.year, fiestaDate.month, fiestaDate.day);
+              
+              // Verificar que no esté ya agregada
+              final existingReservations = _reservationsByDay[fiestaDateKey] ?? [];
+              if (!existingReservations.any((r) => r.id == reservation.id)) {
+                _reservationsByDay
+                    .putIfAbsent(fiestaDateKey, () => [])
+                    .add(reservation);
+                needsRefresh = true;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        print('Error procesando fecha de fiesta para reserva ${reservation.id}: $e');
+      }
+    }
+    
+    // Si se agregó alguna fecha de fiesta, actualizar la UI
+    if (needsRefresh && mounted) {
+      setState(() {});
+    }
+  }
 }
 
 class ReservationDetailView extends ConsumerWidget {

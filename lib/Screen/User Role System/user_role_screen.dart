@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/user_role_model.dart';
 
 import '../../Provider/user_role_provider.dart';
+import '../../Repository/get_user_role_repo.dart';
 import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
@@ -352,47 +354,61 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                   ),
                                                                 ),
 
-                                                                ///______Party Name___________________________________________________________
+                                                                ///______Actions___________________________________________________________
                                                                 DataCell(
-                                                                  GestureDetector(
-                                                                    onTap: () {
-                                                                      showDialog(
-                                                                        barrierDismissible:
-                                                                            false,
-                                                                        context:
-                                                                            context,
-                                                                        builder:
-                                                                            (BuildContext
-                                                                                context) {
-                                                                          return StatefulBuilder(builder:
-                                                                              (context, setState1) {
-                                                                            return Dialog(
-                                                                                shape: RoundedRectangleBorder(
-                                                                                  borderRadius: BorderRadius.circular(10.0),
-                                                                                ),
-                                                                                child: SizedBox(
-                                                                                  width: 700,
-                                                                                  child: Padding(
-                                                                                    padding: const EdgeInsets.all(10.0),
-                                                                                    child: AddUserRole(
-                                                                                      userRoleModel: paginatedList[index],
+                                                                  Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    children: [
+                                                                      // Botón de editar
+                                                                      IconButton(
+                                                                        onPressed: () {
+                                                                          showDialog(
+                                                                            barrierDismissible: false,
+                                                                            context: context,
+                                                                            builder: (BuildContext context) {
+                                                                              return StatefulBuilder(builder: (context, setState1) {
+                                                                                return Dialog(
+                                                                                    shape: RoundedRectangleBorder(
+                                                                                      borderRadius: BorderRadius.circular(10.0),
                                                                                     ),
-                                                                                  ),
-                                                                                ));
-                                                                          });
+                                                                                    child: SizedBox(
+                                                                                      width: 700,
+                                                                                      child: Padding(
+                                                                                        padding: const EdgeInsets.all(10.0),
+                                                                                        child: AddUserRole(
+                                                                                          userRoleModel: paginatedList[index],
+                                                                                        ),
+                                                                                      ),
+                                                                                    ));
+                                                                              });
+                                                                            },
+                                                                          );
                                                                         },
-                                                                      );
-                                                                    },
-                                                                    child: Text(
-                                                                      '${lang.S.of(context).view} >',
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .titleMedium
-                                                                          ?.copyWith(
-                                                                        color:
-                                                                            kMainColor,
+                                                                        icon: const Icon(
+                                                                          FeatherIcons.edit,
+                                                                          color: kMainColor,
+                                                                          size: 18,
+                                                                        ),
+                                                                        tooltip: 'Editar usuario',
                                                                       ),
-                                                                    ),
+                                                                      const SizedBox(width: 4),
+                                                                      // Botón de eliminar
+                                                                      IconButton(
+                                                                        onPressed: () async {
+                                                                          await _showDeleteConfirmation(
+                                                                            context, 
+                                                                            paginatedList[index], 
+                                                                            ref
+                                                                          );
+                                                                        },
+                                                                        icon: const Icon(
+                                                                          FeatherIcons.trash2,
+                                                                          color: Colors.red,
+                                                                          size: 18,
+                                                                        ),
+                                                                        tooltip: 'Eliminar usuario',
+                                                                      ),
+                                                                    ],
                                                                   ),
                                                                 ),
                                                               ]);
@@ -655,5 +671,179 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
             });
           })),
     );
+  }
+
+  // Método para mostrar confirmación de eliminación
+  Future<void> _showDeleteConfirmation(BuildContext context, UserRoleModel user, WidgetRef ref) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Confirmar eliminación'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('¿Está seguro que desea eliminar el usuario?'),
+                const SizedBox(height: 8),
+                Text('Usuario: ${user.userTitle ?? "Sin título"}'),
+                Text('Email: ${user.email ?? "Sin email"}'),
+                Text('Rol: ${user.userRoleName ?? "Sin rol"}'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    border: Border.all(color: Colors.orange.shade200),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Nota: Esta acción eliminará el rol del usuario de la base de datos, pero no eliminará la cuenta de Firebase Authentication del usuario.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Eliminar'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _deleteUser(context, user, ref);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Método para eliminar usuario
+  Future<void> _deleteUser(BuildContext context, UserRoleModel user, WidgetRef ref) async {
+    try {
+      // Mostrar loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              CircularProgressIndicator(strokeWidth: 2),
+              SizedBox(width: 16),
+              Text('Eliminando usuario...'),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      final repo = UserRoleRepo();
+      
+      // Verificar si el usuario puede ser eliminado
+      bool canDelete = await repo.canDeleteUser(user);
+      if (!canDelete) {
+        String errorMessage = 'No se puede eliminar este usuario';
+        
+        // Personalizar mensaje según el motivo
+        if (user.email == FirebaseAuth.instance.currentUser?.email) {
+          errorMessage = 'No puedes eliminar tu propia cuenta';
+        } else if (user.email == null || user.email!.isEmpty) {
+          errorMessage = 'No se puede eliminar un usuario sin email';
+        }
+        
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Buscar las claves del usuario en ambas bases de datos
+      String userKey = '';
+      String adminKey = '';
+      
+      final userRoleList = await repo.getAllUserRole();
+      final adminRoleList = await repo.getAllUserRoleFromAdmin();
+      
+      for (var element in userRoleList) {
+        if (element.email == user.email) {
+          userKey = element.userKey ?? '';
+          break;
+        }
+      }
+      
+      for (var element in adminRoleList) {
+        if (element.email == user.email) {
+          adminKey = element.userKey ?? '';
+          break;
+        }
+      }
+
+      // Eliminar el usuario
+      bool success = await repo.deleteUserRole(userKey, adminKey, user.email ?? '');
+      
+      if (success) {
+        // Refrescar la lista
+        ref.invalidate(userRoleProvider);
+        
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Usuario ${user.userTitle ?? user.email} eliminado exitosamente'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
+          ),
+        );
+      } else {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Error al eliminar el usuario'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
   }
 }

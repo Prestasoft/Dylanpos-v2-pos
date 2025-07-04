@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -47,11 +46,27 @@ FutureOr<Uint8List> generateSaleDocument({
       : null;
 
 // Extraer el nombre del vendedor de la reservación
-final reservationSellerName = fullReservation?.reservation?['seller_name']?.toString() ?? 'No especificado';
+final reservationSellerName = fullReservation?.reservation['seller_name']?.toString() ?? 'No especificado';
   //print("TRANSACCTION === ${transactions.key}");
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero
   final List<FullReservation?> reservaciones = await Future.wait(idReservaciones.map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
+  
+  // Separar reservaciones por tipo
+  FullReservation? preQuinceFiestaReservation;
+  FullReservation? normalReservation;
+
+  for (final reservacion in reservaciones) {
+    if (reservacion != null) {
+      final sessionType = reservacion.reservation['session_type']?.toString();
+      if (sessionType == 'pre-quince-fiesta') {
+        preQuinceFiestaReservation = reservacion;
+      } else if (sessionType == null || sessionType == 'normal') {
+        normalReservation ??= reservacion; // Solo tomar la primera si no hay ninguna asignada
+      }
+    }
+  }
+
   double totalAmount({required SaleTransactionModel transactions}) {
     double amount = 0;
 
@@ -275,31 +290,114 @@ final reservationSellerName = fullReservation?.reservation?['seller_name']?.toSt
                   pw.SizedBox(height: 2),
 
                   ///_____Reservation Date_______________________________________
-                  pw.Row(
-                    children: [
-                      pw.SizedBox(
-                        width: 75.0,
-                        child: pw.Text(
-                          reservaciones.isNotEmpty ? 'Fecha de reservación' : '',
-                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                        ),
-                      ),
-                      pw.SizedBox(
-                        width: 10.0,
-                        child: pw.Text(
-                          reservaciones.isNotEmpty ? ':' : '',
-                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                        ),
-                      ),
-                      pw.SizedBox(
-                        width: 140.0,
-                        child: pw.Text(
-                          reservaciones.isNotEmpty ? _formatearFechaYHora(reservaciones.first?.reservation['reservation_date'], reservaciones.first?.reservation?['reservation_time']) : '',
-                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                        ),
-                      ),
-                    ],
-                  ),
+                  // Construir widgets de fecha dinámicamente
+                  ...() {
+                    List<pw.Widget> dateWidgets = [];
+                    
+                    // Mostrar fecha principal (pre-quince-fiesta si existe, sino normal)
+                    final mainReservation = preQuinceFiestaReservation ?? normalReservation ?? 
+                        (reservaciones.where((r) => r != null).isNotEmpty ? reservaciones.where((r) => r != null).first : null);
+                    
+                    if (mainReservation != null) {
+                      // Si es PRE-QUINCE FIESTA, mostrar ambas fechas
+                      if (preQuinceFiestaReservation != null) {
+                        // Fecha Pre-Quince (fecha principal)
+                        dateWidgets.add(
+                          pw.Row(
+                            children: [
+                              pw.SizedBox(
+                                width: 75.0,
+                                child: pw.Text(
+                                  'Fecha Pre-Quince',
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                                ),
+                              ),
+                              pw.SizedBox(
+                                width: 10.0,
+                                child: pw.Text(
+                                  ':',
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                                ),
+                              ),
+                              pw.SizedBox(
+                                width: 140.0,
+                                child: pw.Text(
+                                  _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time']),
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        // Fecha Fiesta (si existe)
+                        final fiestaDate = mainReservation.reservation['fiesta_date']?.toString();
+                        final fiestaTime = mainReservation.reservation['fiesta_time']?.toString();
+                        
+                        if (fiestaDate != null && fiestaDate.isNotEmpty && fiestaTime != null && fiestaTime.isNotEmpty) {
+                          dateWidgets.add(pw.SizedBox(height: 2));
+                          dateWidgets.add(
+                            pw.Row(
+                              children: [
+                                pw.SizedBox(
+                                  width: 75.0,
+                                  child: pw.Text(
+                                    'Fecha Fiesta',
+                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontWeight: pw.FontWeight.bold),
+                                  ),
+                                ),
+                                pw.SizedBox(
+                                  width: 10.0,
+                                  child: pw.Text(
+                                    ':',
+                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                                  ),
+                                ),
+                                pw.SizedBox(
+                                  width: 140.0,
+                                  child: pw.Text(
+                                    _formatearFechaYHora(fiestaDate, fiestaTime),
+                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontWeight: pw.FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      } else {
+                        // Reserva normal
+                        dateWidgets.add(
+                          pw.Row(
+                            children: [
+                              pw.SizedBox(
+                                width: 75.0,
+                                child: pw.Text(
+                                  'Fecha de reservación',
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                                ),
+                              ),
+                              pw.SizedBox(
+                                width: 10.0,
+                                child: pw.Text(
+                                  ':',
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                                ),
+                              ),
+                              pw.SizedBox(
+                                width: 140.0,
+                                child: pw.Text(
+                                  _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time']),
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }
+                    
+                    return dateWidgets;
+                  }(),
 
                   pw.SizedBox(height: 2),
 

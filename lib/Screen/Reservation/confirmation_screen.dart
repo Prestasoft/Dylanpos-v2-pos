@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
-import 'package:salespro_admin/Screen/Reservation/clothes_reservation_screen.dart';
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import 'package:salespro_admin/model/customer_model.dart';
 import '../../Provider/reservation_provider.dart';
@@ -53,15 +52,32 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
   String _formatTime(TimeOfDay time) {
     return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
-  }
-
-  void _confirmReservation() async {
+  }  void _confirmReservation() async {
     setState(() {
       isSubmitting = true;
     });
 
     final String formattedDate = _formatDate(widget.selectedDate);
     final String formattedTime = _formatTime(widget.selectedTime);
+
+    // Verificar si es un plan PRE-QUINCE FIESTA
+    String _normalize(String s) {
+      final withNoSpaces = s.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      final withNoAccents = withNoSpaces
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u');
+      final withoutPlan = withNoAccents.replaceFirst(RegExp(r'^plan [a-z]\s*'), '');
+      return withoutPlan;
+    }
+    final normalizedName = _normalize(widget.packageName);
+    final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta') ||
+                             normalizedName.contains('pre-quince fiesta') ||
+                             normalizedName.contains('pre quince y fiesta') ||
+                             normalizedName.contains('pre quince fiesta') ||
+                             normalizedName.contains('quinceanera y fiesta');
 
     double packagePrice = 0.0;
 
@@ -70,12 +86,10 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       final package = packages.value!.firstWhere(
         (p) => p.id == widget.packageId,
       );
-      if (package != null) {
-        packagePrice = package.price;
-      }
+      packagePrice = package.price;
     }
 
-    // Verificar una vez más que esté disponible
+    // Verificar disponibilidad para la fecha principal
     bool isAvailable = true;
 
     if (widget.dressReservations.isEmpty) {
@@ -99,22 +113,57 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
         }
 
         if (!available) {
-          // Si alguno no está disponible, se puede actuar
           isAvailable = false;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('El vestido "${dress.name}" ya fue reservado.'),
+              content: Text('El vestido "${dress.name}" ya fue reservado para la sesión de pre-quince.'),
             ),
           );
           break;
-        } else {
-          // Si está disponible, se puede proceder
-          print('El vestido "${dress.name}" está disponible.');
         }
       }
     }
 
-    if (!isAvailable) {
+    // Si es PRE-QUINCE FIESTA, verificar también la disponibilidad para la fecha de la fiesta
+    bool isFiestaAvailable = true;
+    if (isPreQuinceFiesta && widget.fiestaDate != null && widget.fiestaTime != null) {
+      final String formattedFiestaDate = _formatDate(widget.fiestaDate!);
+      final String formattedFiestaTime = _formatTime(widget.fiestaTime!);
+
+      if (widget.dressReservations.isEmpty) {
+        isFiestaAvailable = await ref.read(isDressAvailableProvider({
+          'dressId': widget.dressId,
+          'date': formattedFiestaDate,
+          'time': formattedFiestaTime,
+        }).future);
+      } else {
+        for (var dress in widget.dressReservations) {
+          bool available = true;
+
+          if (dress.componentName != "Sin Vestimenta") {
+            available = await ref.read(
+              isDressAvailableProvider({
+                'dressId': dress.id,
+                'date': formattedFiestaDate,
+                'time': formattedFiestaTime,
+              }).future,
+            );
+          }
+
+          if (!available) {
+            isFiestaAvailable = false;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('El vestido "${dress.name}" ya fue reservado para la fecha de la fiesta.'),
+              ),
+            );
+            break;
+          }
+        }
+      }
+    }
+
+    if (!isAvailable || !isFiestaAvailable) {
       setState(() {
         isSubmitting = false;
       });
@@ -149,8 +198,8 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       }).toList();
     }
 
-    // Crear la reserva
-    final success = await ref.read(crearReservaProvider({
+    // Preparar datos para la reserva
+    final Map<String, dynamic> reservationData = {
       'serviceId': widget.packageId,
       'clientId': widget.clientId,
       'dressId': dressIdTmp,
@@ -160,11 +209,23 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       'multiple_dress': multipleDress,
       'estado_factura': false,
       'note': noteController.text,
-      'reservation_associated': '',
-      'package_price': packagePrice.toString(),
+      'package_price': packagePrice.toString(), // Precio completo, sin dividir
       'place': lugarController.text,
-      'seller_name': isSubUser ? constSubUserTitle : 'Admin'
-    }).future);
+      'seller_name': isSubUser ? constSubUserTitle : 'Admin',
+      'session_type': isPreQuinceFiesta ? 'pre-quince-fiesta' : 'normal',
+    };
+
+    // Si es PRE-QUINCE FIESTA, agregar los campos de fecha fiesta
+    if (isPreQuinceFiesta && widget.fiestaDate != null && widget.fiestaTime != null) {
+      final String formattedFiestaDate = _formatDate(widget.fiestaDate!);
+      final String formattedFiestaTime = _formatTime(widget.fiestaTime!);
+      
+      reservationData['fiesta_date'] = formattedFiestaDate;
+      reservationData['fiesta_time'] = formattedFiestaTime;
+    }
+
+    // Crear la reserva única
+    final success = await ref.read(crearReservaProvider(reservationData).future);
 
     setState(() {
       isSubmitting = false;
@@ -172,9 +233,13 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
     if (success.statusReservation) {
       // Show success message
+      String successMessage = isPreQuinceFiesta 
+        ? "¡Reserva de PRE-QUINCE y FIESTA registrada exitosamente!"
+        : "¡Reserva registrada exitosamente!";
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("¡Reserva registrada exitosamente!"),
+          content: Text(successMessage),
           backgroundColor: Colors.green,
         ),
       );
@@ -197,7 +262,6 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
                   // Navega a la pantalla
                   Navigator.of(context).popUntil((route) => route.isFirst);
-
                   //Navigator.of(context).pop(); // Cierra el diálogo de confirmación
                   final customerList = ref.watch(allCustomerProvider);
                   String clientName = "";
@@ -276,7 +340,11 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
       return withoutPlan;
     }
     final normalizedName = _normalize(widget.packageName);
-    final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta');
+    final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta') ||
+                             normalizedName.contains('pre-quince fiesta') ||
+                             normalizedName.contains('pre quince y fiesta') ||
+                             normalizedName.contains('pre quince fiesta') ||
+                             normalizedName.contains('quinceanera y fiesta');
 
     return Scaffold(
       appBar: AppBar(

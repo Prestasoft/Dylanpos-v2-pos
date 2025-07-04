@@ -378,11 +378,12 @@ List<SidebarItemModel> get topMenus {
       type: "sales",
       navigationPath: '/sales',
       submenus: [
-        SidebarSubmenuModel(
-          name: 'Pos',
-          type: "pos_sales",
-          navigationPath: '/pos-sales',
-        ),
+        // Submenú "Pos" - COMENTADO
+        // SidebarSubmenuModel(
+        //   name: 'Pos',
+        //   type: "pos_sales",
+        //   navigationPath: '/pos-sales',
+        // ),
         SidebarSubmenuModel(
           name: lang.S.current.inventorySales,
           type: "inventory_sales",
@@ -410,6 +411,24 @@ List<SidebarItemModel> get topMenus {
       iconPath: 'images/dashboard_icon/reports.svg',
       type: "sales_return",
       navigationPath: '/sale-confirmations',
+    ),
+    SidebarItemModel(
+      name: lang.S.current.dueList,
+      iconPath: 'images/dashboard_icon/due_list.svg',
+      type: "dues",
+      navigationPath: '/due-list',
+    ),
+    SidebarItemModel(
+      name: lang.S.current.reports,
+      iconPath: 'images/dashboard_icon/reports.svg',
+      type: "reports",
+      navigationPath: '/reports',
+    ),
+    SidebarItemModel(
+      name: lang.S.current.expense,
+      iconPath: 'images/dashboard_icon/expense.svg',
+      type: "expense",
+      navigationPath: '/expense',
     ),
     SidebarItemModel(
       name: lang.S.current.purchase,
@@ -466,12 +485,6 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/customer-list',
     ),
     SidebarItemModel(
-      name: lang.S.current.dueList,
-      iconPath: 'images/dashboard_icon/due_list.svg',
-      type: "dues",
-      navigationPath: '/due-list',
-    ),
-    SidebarItemModel(
       name: lang.S.current.ledger,
       iconPath: 'images/dashboard_icon/leder.svg',
       type: "ledger",
@@ -482,12 +495,6 @@ List<SidebarItemModel> get topMenus {
       iconPath: 'images/dashboard_icon/loss_profit.svg',
       type: "loss_profit",
       navigationPath: '/loss-profit',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.expense,
-      iconPath: 'images/dashboard_icon/expense.svg',
-      type: "expense",
-      navigationPath: '/expense',
     ),
     SidebarItemModel(
       name: lang.S.current.income,
@@ -501,18 +508,12 @@ List<SidebarItemModel> get topMenus {
       type: "inventory_list",
       navigationPath: '/equipment-stock-list',
     ),
-    SidebarItemModel(
-      name: lang.S.current.transaction,
-      iconPath: 'images/dashboard_icon/transaction.svg',
-      type: "transaction",
-      navigationPath: '/transaction',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.reports,
-      iconPath: 'images/dashboard_icon/reports.svg',
-      type: "reports",
-      navigationPath: '/reports',
-    ),
+    // SidebarItemModel(
+    //   name: lang.S.current.transaction,
+    //   iconPath: 'images/dashboard_icon/transaction.svg',
+    //   type: "transaction",
+    //   navigationPath: '/transaction',
+    // ),
     SidebarItemModel(
       name: 'Lista de Inventario',
       iconPath: 'images/dashboard_icon/stock_list.svg',

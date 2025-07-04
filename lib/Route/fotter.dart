@@ -20,13 +20,14 @@ class FooterWidget extends StatelessWidget {
       ).value,
     );
 
+    // Detectar si estamos en la pantalla de login
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    final isLoginPage = currentRoute == '/' || currentRoute.contains('login');
+
     return Consumer(
       builder: (_, ref, watch) {
         final settingProver = ref.watch(generalSettingProvider);
         return settingProver.when(data: (setting) {
-          final companyName = setting.companyName.isNotEmpty == true
-              ? setting.companyName
-              : 'Victor Guzman Fotografia DEV';
           return LayoutBuilder(
             builder: (context, constraints) => Container(
               padding: rf.ResponsiveValue<EdgeInsetsGeometry?>(
@@ -43,14 +44,16 @@ class FooterWidget extends StatelessWidget {
                   vertical: 18,
                 ),
               ).value,
-              color: Colors.white,
+              color: isLoginPage ? Colors.transparent : Colors.white,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(
                       'COPYRIGHT © 2025 Victor Guzman Fotografia SRL${constraints.maxWidth <= BreakpointName.SM.start ? '' : ', Todos los Derechos Reservados'}',
-                      style: _textStyle,
+                      style: _textStyle?.copyWith(
+                        color: isLoginPage ? Colors.white : _textStyle.color,
+                      ),
                     ),
                   ),
                   Text.rich(
@@ -61,12 +64,14 @@ class FooterWidget extends StatelessWidget {
                           text: 'Miguel Castillo',
                           style: _textStyle?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: _theme.primaryColor,
+                            color: isLoginPage ? Colors.white : _theme.primaryColor,
                           ),
                         ),
                       ],
                     ),
-                    style: _textStyle,
+                    style: _textStyle?.copyWith(
+                      color: isLoginPage ? Colors.white : _textStyle.color,
+                    ),
                   )
                 ],
               ),

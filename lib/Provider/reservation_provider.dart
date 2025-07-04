@@ -87,8 +87,6 @@ final reservationsByDateProvider =
     StreamProvider.family<List<ReservationModel>, String>((ref, date) {
   return FirebaseDatabase.instance
       .ref('Admin Panel/reservations')
-      .orderByChild('reservation_date')
-      .equalTo(date)
       .onValue
       .map((event) {
     final snapshot = event.snapshot;
@@ -98,8 +96,25 @@ final reservationsByDateProvider =
       final Map<dynamic, dynamic> data =
           snapshot.value as Map<dynamic, dynamic>;
       return data.entries
-          .where((entry) =>
-              entry.value is Map && _isValidReservation(entry.value as Map))
+          .where((entry) {
+            if (!(entry.value is Map && _isValidReservation(entry.value as Map))) {
+              return false;
+            }
+            
+            final reservation = entry.value as Map;
+            
+            // Verificar si la fecha solicitada coincide con reservation_date
+            bool matchesMainDate = reservation['reservation_date'] == date;
+            
+            // Verificar si la fecha solicitada coincide con fiesta_date (para planes PRE-QUINCE FIESTA)
+            bool matchesFiestaDate = false;
+            if (reservation['session_type'] == 'pre-quince-fiesta') {
+              final fiestaDate = reservation['fiesta_date']?.toString();
+              matchesFiestaDate = fiestaDate != null && fiestaDate.isNotEmpty && fiestaDate == date;
+            }
+            
+            return matchesMainDate || matchesFiestaDate;
+          })
           .map((entry) {
         return ReservationModel.fromMap(
             Map<String, dynamic>.from(entry.value as Map),
@@ -982,12 +997,30 @@ final isDressAvailableProvider =
           if (dresses is List) {
             for (var dress in dresses) {
               if (dress is Map && dress.containsKey('dress_id')) {
+                // Agregar entrada para la fecha principal
                 allDresses.add({
                   'dress_id': dress['dress_id'].toString(),
                   'service_id': reservationData['service_id'].toString(),
                   'reservation_date': reservationData['reservation_date'],
                   'reservation_time': reservationData['reservation_time'],
+                  'session_type': reservationData['session_type']?.toString() ?? 'normal',
                 });
+                
+                // Si es PRE-QUINCE FIESTA, agregar también entrada para la fecha de fiesta
+                if (reservationData['session_type'] == 'pre-quince-fiesta') {
+                  final fiestaDate = reservationData['fiesta_date']?.toString();
+                  final fiestaTime = reservationData['fiesta_time']?.toString();
+                  if (fiestaDate != null && fiestaDate.isNotEmpty && 
+                      fiestaTime != null && fiestaTime.isNotEmpty) {
+                    allDresses.add({
+                      'dress_id': dress['dress_id'].toString(),
+                      'service_id': reservationData['service_id'].toString(),
+                      'reservation_date': fiestaDate,
+                      'reservation_time': fiestaTime,
+                      'session_type': 'pre-quince-fiesta',
+                    });
+                  }
+                }
               }
             }
           }
@@ -1089,10 +1122,23 @@ final isDressAvailableProvider =
       final Map<dynamic, dynamic> data =
           snapshot.value as Map<dynamic, dynamic>;
 
-      return !data.values.any((reservation) =>
-          reservation['reservation_date'] == date &&
-          reservation['reservation_time'] == time &&
-          reservation['status'] != 'cancelado');
+      return !data.values.any((reservation) {
+        if (reservation['status'] == 'cancelado') return false;
+        
+        // Verificar conflicto con fecha principal de la reserva
+        bool conflictWithMainDate = reservation['reservation_date'] == date && 
+                                   reservation['reservation_time'] == time;
+        
+        // Verificar conflicto con fecha de fiesta (para reservas PRE-QUINCE FIESTA)
+        bool conflictWithFiestaDate = false;
+        if (reservation['session_type'] == 'pre-quince-fiesta') {
+          final fiestaDate = reservation['fiesta_date']?.toString();
+          final fiestaTime = reservation['fiesta_time']?.toString();
+          conflictWithFiestaDate = fiestaDate == date && fiestaTime == time;
+        }
+        
+        return conflictWithMainDate || conflictWithFiestaDate;
+      });
     }
 
     return true;
@@ -1127,13 +1173,16 @@ final crearReservaProvider =
       'reservation_associated': params['reservation_associated'] ?? '',
       'package_price': params['package_price'] ?? 0,
       'seller_name': params['seller_name'],
+      'session_type': params['session_type'] ?? 'normal', // Tipo de sesión (normal, pre-quince-fiesta)
+      'fiesta_date': params['fiesta_date'] ?? '', // Fecha de la fiesta (solo para planes PRE-QUINCE FIESTA)
+      'fiesta_time': params['fiesta_time'] ?? '', // Hora de la fiesta (solo para planes PRE-QUINCE FIESTA)
     };
     await newReservationRef.set(reservationData);
 
     final reservationId = newReservationRef.key;
 
     // Refresh the reservations provider
-    ref.refresh(reservationsProvider);
+    final _ = ref.refresh(reservationsProvider);
 
     return reservationCreation(
       statusReservation: true,
@@ -1145,6 +1194,26 @@ final crearReservaProvider =
       statusReservation: false,
       reservationId: '',
     );
+  }
+});
+
+final actualizarReservaAssociatedProvider =
+    FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+  try {
+    final String reservationId = params['reservationId'];
+    final String associatedId = params['associatedId'];
+    
+    await FirebaseDatabase.instance
+        .ref('Admin Panel/reservations/$reservationId')
+        .update({
+      'reservation_associated': associatedId,
+      'updated_at': ServerValue.timestamp,
+    });
+    
+    return true;
+  } catch (e) {
+    print('Error al actualizar reserva asociada: $e');
+    return false;
   }
 });
 

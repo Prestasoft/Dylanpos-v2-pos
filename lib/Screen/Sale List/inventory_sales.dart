@@ -967,7 +967,7 @@ class _InventorySalesState extends State<InventorySales> {
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (element.warehouseName == 'SANTIAGO') {
+      if (element.warehouseName == 'SANTO DOMINGO') {
         selectedWareHouse = element;
       }
       i++;

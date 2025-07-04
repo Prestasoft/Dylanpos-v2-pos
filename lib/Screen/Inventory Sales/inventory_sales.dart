@@ -140,16 +140,16 @@ class _InventorySalesState extends State<InventorySales> {
         ''';
       
       final body = {
-        // 'token': '5i36w829nb1ljkj7', //token santo domingo
-        'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': '5i36w829nb1ljkj7', //token santo domingo
+        //'token': '5gs146cmkgu6y5vw', //token santiago
         'to': phoneNumber,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
         'caption': safeMessage,
       };
 
-       // final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
+      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -197,14 +197,14 @@ Para llamadas: 8098982876 ☎️
 ''';
 
       final body = {
-        // 'token': '5i36w829nb1ljkj7', //token santo domingo
-        'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': '5i36w829nb1ljkj7', //token santo domingo
+        //'token': '5gs146cmkgu6y5vw', //token santiago
         'to': phoneNumber,
         'body': message,
       };
 
-       // final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat'); //instancia santo domingo
+      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/chat'); //instancia santiago
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
       final response = await http.post(
@@ -1031,7 +1031,7 @@ Para llamadas: 8098982876 ☎️
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (element.warehouseName == 'SANTIAGO') {
+      if (element.warehouseName == 'SANTO DOMINGO') {
         selectedWareHouse = element;
       }
       i++;
@@ -2458,8 +2458,8 @@ Para llamadas: 8098982876 ☎️
                                                 final confirmRef = FirebaseDatabase.instance.ref('$userId/SaleConfirmations');
                                                 await confirmRef.push().set(confirmation.toJson());
 
-                                                //final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santo domingo
-                                                final link = 'https://stg.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santiago
+                                                final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santo domingo
+                                                //final link = 'https://stg.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santiago
 
 
                                                 await _sendConfirmationLinkViaWhatsApp(

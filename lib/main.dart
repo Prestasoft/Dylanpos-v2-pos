@@ -67,8 +67,8 @@ class _MyAppState extends State<MyApp> {
 
     // Obtiene el token FCM
     String? token = await messaging.getToken(
-      // vapidKey: 'BE356sfDxE_ue2ju2QB8ZpoWMSlmnPAExkdyoxdy34xwaw3QluB51SU9W2Rz5T8kpQYDlyxR53Xm9-q2EnO259w' //key santo domingo
-      vapidKey: 'BGNqh0uT5XjU36uZosNSQbAJ-J0_V6kyPcMwQ_PE6WpoqKn4kkKpES-mc7caR6V8XEYZjQ3Dbz4AFZhpS-dMUcQ' //key santiago
+       vapidKey: 'BE356sfDxE_ue2ju2QB8ZpoWMSlmnPAExkdyoxdy34xwaw3QluB51SU9W2Rz5T8kpQYDlyxR53Xm9-q2EnO259w' //key santo domingo
+      //vapidKey: 'BGNqh0uT5XjU36uZosNSQbAJ-J0_V6kyPcMwQ_PE6WpoqKn4kkKpES-mc7caR6V8XEYZjQ3Dbz4AFZhpS-dMUcQ' //key santiago
     );
 
     if (token != null) {

@@ -266,7 +266,7 @@ class _SaleListState extends State<SaleList> {
                                                 DataColumn(label: Text(lang.S.of(context).date, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).invoice, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).partyName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
-                                                DataColumn(label: Text(lang.S.of(context).paymentType, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
+                                                // DataColumn(label: Text(lang.S.of(context).paymentType, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).amount, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).due, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).status, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
@@ -333,14 +333,14 @@ class _SaleListState extends State<SaleList> {
                                                       overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                                  //___________Party Type______________________________________________
-                                                  DataCell(
-                                                    Text(
-                                                      paginatedTransactions[index].paymentType.toString(),
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
+                                                  //___________Party Type (Payment Type) - COMENTADO______________________________________________
+                                                  // DataCell(
+                                                  //   Text(
+                                                  //     paginatedTransactions[index].paymentType.toString(),
+                                                  //     maxLines: 2,
+                                                  //     overflow: TextOverflow.ellipsis,
+                                                  //   ),
+                                                  // ),
                                                   //___________Amount____________________________________________________
                                                   DataCell(
                                                     Text(
@@ -868,8 +868,8 @@ class _SaleListState extends State<SaleList> {
       
       // Crear cuerpo de la petición
       final body = {
-        // 'token': '5i36w829nb1ljkj7', //token santo domingo
-        'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': '5i36w829nb1ljkj7', //token santo domingo
+        //'token': '5gs146cmkgu6y5vw', //token santiago
         'to': phoneNumber,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
@@ -877,8 +877,8 @@ class _SaleListState extends State<SaleList> {
       };
 
       // Configurar la petición HTTP
-      // final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
+      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -928,7 +928,40 @@ class _SaleListState extends State<SaleList> {
                   }
                 }
 
+                // Debug: Información detallada sobre las transacciones encontradas
+                print('DEBUG - paysDetails: Factura $invoiceNumber, encontradas ${reTransaction.length} transacciones');
+                for (int i = 0; i < reTransaction.length; i++) {
+                  var trans = reTransaction[i];
+                  print('DEBUG - Transacción $i:');
+                  print('  - Type: ${trans.type}');
+                  print('  - PaymentIn: ${trans.paymentIn}');
+                  print('  - PaymentOut: ${trans.paymentOut}');
+                  print('  - ID: ${trans.id}');
+                  print('  - Name: ${trans.name}');
+                  print('  - Date: ${trans.date}');
+                  
+                  if (trans.dueTransactionModel != null) {
+                    var dueModel = trans.dueTransactionModel!;
+                    print('  - DueTransaction existe:');
+                    print('    * PaymentType: ${dueModel.paymentType}');
+                    print('    * PayDueAmount: ${dueModel.payDueAmount}');
+                    print('    * CustomerName: ${dueModel.customerName}');
+                    print('    * InvoiceNumber: ${dueModel.invoiceNumber}');
+                    print('    * IsPaid: ${dueModel.isPaid}');
+                  } else {
+                    print('  - DueTransaction: null');
+                  }
+                  
+                  // También verificar otros modelos por si acaso
+                  if (trans.saleTransactionModel != null) {
+                    print('  - SaleTransaction existe: ${trans.saleTransactionModel!.paymentType}');
+                  }
+                  
+                  print('  ---');
+                }
+
                 double totalAbonado = reTransaction.fold(0.0, (sum, payment) => sum + payment.paymentIn);
+                print('DEBUG - Total abonado calculado: $totalAbonado');
 
                 return Dialog(
                   surfaceTintColor: kWhite,
@@ -1018,13 +1051,75 @@ class _SaleListState extends State<SaleList> {
                                   columns: const [
                                     DataColumn(label: Text('Fecha')),
                                     DataColumn(label: Text('Pago Registrado')),
+                                    DataColumn(label: Text('Método de Pago')),
                                   ],
                                   rows: reTransaction.map<DataRow>((payment) {
+                                    // Debug detallado para cada fila
+                                    print('DEBUG - Procesando fila de pago:');
+                                    print('  - ID: ${payment.id}');
+                                    print('  - Type: ${payment.type}');
+                                    print('  - Date: ${payment.date}');
+                                    print('  - PaymentIn: ${payment.paymentIn}');
+                                    print('  - DueTransactionModel es null: ${payment.dueTransactionModel == null}');
+                                    
+                                    // Obtener el método de pago desde dueTransactionModel
+                                    String metodoPago = 'N/A';
+                                    String metodoPagoOriginal = 'null';
+                                    
+                                    if (payment.dueTransactionModel != null) {
+                                      print('  - DueTransactionModel existe');
+                                      var dueModel = payment.dueTransactionModel!;
+                                      metodoPagoOriginal = dueModel.paymentType?.toString() ?? 'null';
+                                      print('  - PaymentType original: "$metodoPagoOriginal"');
+                                      
+                                      if (dueModel.paymentType != null && dueModel.paymentType!.isNotEmpty) {
+                                        metodoPago = dueModel.paymentType!;
+                                        
+                                        // Mejorar la presentación del método de pago
+                                        switch (metodoPago.toLowerCase().trim()) {
+                                          case 'cash':
+                                          case 'efectivo':
+                                            metodoPago = 'Efectivo';
+                                            break;
+                                          case 'card':
+                                          case 'tarjeta':
+                                            metodoPago = 'Tarjeta';
+                                            break;
+                                          case 'bank':
+                                          case 'transferencia':
+                                            metodoPago = 'Transferencia';
+                                            break;
+                                          case 'check':
+                                          case 'cheque':
+                                            metodoPago = 'Cheque';
+                                            break;
+                                          default:
+                                            // Mantener el valor original si no coincide con los casos conocidos
+                                            break;
+                                        }
+                                      }
+                                    } else {
+                                      print('  - DueTransactionModel es null');
+                                    }
+                                    
+                                    print('  - Método final: "$metodoPago" (original: "$metodoPagoOriginal")');
+                                    print('  ---');
+                                    
                                     return DataRow(cells: [
                                       DataCell(_fechaConvertida(payment.date)),
                                       DataCell(Padding(
                                         padding: const EdgeInsets.only(left: 20),
                                         child: Text('$currency${myFormat.format(double.tryParse(payment.paymentIn.toString()) ?? 0)}'),
+                                      )),
+                                      DataCell(Padding(
+                                        padding: const EdgeInsets.only(left: 20),
+                                        child: Text(
+                                          metodoPago,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: metodoPago == 'N/A' ? Colors.grey : null,
+                                          ),
+                                        ),
                                       )),
                                     ]);
                                   }).toList(),
