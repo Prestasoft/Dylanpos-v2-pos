@@ -247,7 +247,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         RichText(
-                                            text: TextSpan(text: 'Santo Domingo ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
+                                            text: TextSpan(text: 'Santiago ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
                                           TextSpan(
                                             text: dynamicAppsName,
                                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: const Color.fromRGBO(0, 167, 250, 1), fontWeight: FontWeight.bold),

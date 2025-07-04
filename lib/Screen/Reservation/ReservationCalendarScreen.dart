@@ -1,5 +1,3 @@
-// import 'package:firebase_storage/firebase_storage.dart';
-// import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,23 +10,252 @@ import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import 'package:salespro_admin/Provider/dress_with_reservations.dart';
 import 'package:table_calendar/table_calendar.dart';
-
 import '../Due List/due_popUp.dart';
 import 'ReservationTypeLegend.dart';
+
+//------------------- ENUM Y CARD -------------------
+enum ReservationStatus {
+  past,
+  upcoming,
+  aboutToExpire,
+}
+
+class ReservationCard extends ConsumerWidget {
+  final ReservationModel reservation;
+  final ReservationStatus status;
+  final VoidCallback onTap;
+
+  Widget _buildDressName(String dressName, dynamic dressComposite) {
+    if (dressComposite is List && dressComposite.isNotEmpty) {
+      return Text('Múltiples vestidos', style: const TextStyle(fontSize: 14));
+    } else {
+      return Text('Vestido: $dressName', style: const TextStyle(fontSize: 14));
+    }
+  }
+
+  const ReservationCard({
+    Key? key,
+    required this.reservation,
+    required this.status,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Color statusColor;
+    IconData statusIcon;
+    String statusText;
+    Color? cardBgColor;
+    Color iconColor = Colors.white;
+
+    final packagesAsync = ref.read(servicePackagesProvider);
+    String? serviceName;
+    if (packagesAsync is AsyncData && packagesAsync.value != null) {
+      final packageList = packagesAsync.value!;
+      final package = packageList.where((pkg) => pkg.id == reservation.serviceId).toList();
+      if (package.isNotEmpty) {
+        serviceName = package.first.name;
+      }
+    }
+    final lowerName = serviceName?.toLowerCase() ?? '';
+    final isFiesta = lowerName.contains('fiesta');
+    final isEstudio = lowerName.contains('estudio');
+    final isExterior = lowerName.contains('exterior');
+
+    switch (status) {
+      case ReservationStatus.past:
+        if (isFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = Icons.celebration;
+          statusText = 'Fiesta pasada';
+          cardBgColor = Colors.amber.withOpacity(0.10);
+        } else if (isEstudio) {
+          statusColor = Colors.blue;
+          statusIcon = Icons.camera_alt;
+          statusText = 'Estudio pasado';
+          cardBgColor = Colors.blue.withOpacity(0.10);
+        } else if (isExterior) {
+          statusColor = Colors.purple;
+          statusIcon = Icons.landscape;
+          statusText = 'Exterior pasado';
+          cardBgColor = Colors.purple.withOpacity(0.10);
+        } else {
+          statusColor = Colors.grey;
+          statusIcon = Icons.history;
+          statusText = 'Pasada';
+          cardBgColor = Colors.grey.withOpacity(0.08);
+        }
+        break;
+      case ReservationStatus.aboutToExpire:
+        if (isFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = Icons.celebration;
+          statusText = 'Fiesta por vencer';
+          cardBgColor = Colors.amber.withOpacity(0.10);
+        } else if (isEstudio) {
+          statusColor = Colors.blue;
+          statusIcon = Icons.camera_alt;
+          statusText = 'Estudio por vencer';
+          cardBgColor = Colors.blue.withOpacity(0.10);
+        } else if (isExterior) {
+          statusColor = Colors.purple;
+          statusIcon = Icons.landscape;
+          statusText = 'Exterior por vencer';
+          cardBgColor = Colors.purple.withOpacity(0.10);
+        } else {
+          statusColor = Colors.orange;
+          statusIcon = Icons.warning_amber_rounded;
+          statusText = 'Por vencer';
+          cardBgColor = Colors.orange.withOpacity(0.10);
+        }
+        break;
+      case ReservationStatus.upcoming:
+        if (isFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = Icons.celebration;
+          statusText = 'Fiesta próxima';
+          cardBgColor = Colors.amber.withOpacity(0.10);
+        } else if (isEstudio) {
+          statusColor = Colors.blue;
+          statusIcon = Icons.camera_alt;
+          statusText = 'Estudio próximo';
+          cardBgColor = Colors.blue.withOpacity(0.10);
+        } else if (isExterior) {
+          statusColor = Colors.purple;
+          statusIcon = Icons.landscape;
+          statusText = 'Exterior próximo';
+          cardBgColor = Colors.purple.withOpacity(0.10);
+        } else {
+          statusColor = Colors.green;
+          statusIcon = Icons.event_available;
+          statusText = 'Próxima';
+          cardBgColor = Colors.green.withOpacity(0.10);
+        }
+        break;
+    }
+
+    final fullReservationAsync = ref.watch(fullReservationByIdProviderVQ(reservation.id));
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      color: cardBgColor,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: fullReservationAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Text('Error al cargar datos: $error', style: TextStyle(color: Colors.red)),
+            data: (fullReservation) {
+              final clientName = fullReservation?.client?.customerName ?? 'Cliente desconocido';
+              String dressName = '';
+              final dressComposite = fullReservation?.reservation['multiple_dress'] ?? [];
+              if (dressComposite.isEmpty) {
+                dressName = fullReservation?.dress?['name'] ?? 'Vestido no especificado';
+              }
+              final serviceName = fullReservation?.service?['name'] ?? 'Servicio no especificado';
+              final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
+              final place = fullReservation?.reservation['place'] ?? 'Sin lugar';
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${reservation.reservationDate} - ${reservation.reservationTime}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Chip(
+                        label: Text(statusText),
+                        avatar: Icon(statusIcon, size: 16, color: iconColor),
+                        backgroundColor: statusColor,
+                        labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.person, size: 16, color: iconColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Cliente: $clientName', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.checkroom, size: 16, color: iconColor),
+                      const SizedBox(width: 8),
+                      _buildDressName(dressName, dressComposite),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.engineering, size: 16, color: iconColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Servicio: $serviceName', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.place, size: 16, color: iconColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Lugar: $place', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.textsms_outlined, size: 16, color: iconColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Nota: $note', style: const TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class ReservationCalendarScreen extends ConsumerStatefulWidget {
   const ReservationCalendarScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<ReservationCalendarScreen> createState() =>
-      _ReservationCalendarScreenState();
+  ConsumerState<ReservationCalendarScreen> createState() => _ReservationCalendarScreenState();
 }
 
-class _ReservationCalendarScreenState
-    extends ConsumerState<ReservationCalendarScreen> {
+class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  CalendarFormat _calendarFormat = CalendarFormat.month;
   Map<DateTime, List<ReservationModel>> _reservationsByDay = {};
   String? packageRentaId;
 
@@ -67,55 +294,39 @@ class _ReservationCalendarScreenState
 
     return Padding(
       padding: EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Custom Header
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-            color: Theme.of(context).primaryColor,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Builder(
+        builder: (context) {
+          // Si está en vista "Día", el scroll y la lista se manejan en _buildCalendar
+          if (_calendarView == 'dia') {
+            // Mostrar solo el calendario (con los botones y la lista de reservas dentro)
+            return Expanded(
+              child: _buildCalendar(reservationsAsyncValue),
+            );
+          } else {
+            // Semana/Mes: mostrar calendario y lista general
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Reservaciones',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.refresh, color: Colors.white),
-                      onPressed: () => ref.refresh(reservationsProvider),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.filter_list, color: Colors.white),
-                      onPressed: _showFilterOptions,
-                    ),
-                  ],
+                _buildCalendar(reservationsAsyncValue),
+                const Divider(),
+                Expanded(
+                  child: _buildReservationsList(reservationsAsyncValue),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const ReservationTypeLegend(),
-          const SizedBox(height: 8),
-          _buildCalendar(reservationsAsyncValue),
-
-          const Divider(),
-          Expanded(
-            child: _buildReservationsList(reservationsAsyncValue),
-          ),
-        ],
+            );
+          }
+        },
       ),
     );
   }
 
+
+
+
+  // Estado para el filtro de vista: 'dia', 'semana', 'mes'
+  String _calendarView = 'mes';
+
   Widget _buildCalendar(AsyncValue<List<ReservationModel>> reservationsValue) {
-    // final rentas = ref.watch(servicePackagesProvider.notifier).searchPackages("Renta de Vestimenta");
-    // final String id = rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
     return reservationsValue.when(
       data: (reservations) {
         // Agrupar reservas por día
@@ -142,147 +353,270 @@ class _ReservationCalendarScreenState
           }
         }
 
-        return TableCalendar(
-          firstDay: DateTime.now().subtract(const Duration(days: 365)),
-          lastDay: DateTime.now().add(const Duration(days: 365)),
-          focusedDay: _focusedDay,
-          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-          calendarFormat: _calendarFormat,
-          eventLoader: (day) {
-            final dateKey = DateTime(day.year, day.month, day.day);
-            return _reservationsByDay[dateKey] ?? [];
-          },
-          calendarStyle: CalendarStyle(
-            todayDecoration: BoxDecoration(
-              color: Colors.transparent,
-            ),
-            selectedDecoration: BoxDecoration(
-              color: Colors.transparent,
-            ),
-            cellMargin: const EdgeInsets.all(6),
-            markersAlignment: Alignment.center,
-          ),
-          calendarBuilders: CalendarBuilders(
-            markerBuilder: (context, day, events) {
-              if (events.isEmpty) return const SizedBox();
+        // Botones de formato de calendario: Día, Semana, Mes
+        Widget formatButtons = Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildCustomViewButton('Día', 'dia'),
+            const SizedBox(width: 8),
+            _buildCustomViewButton('Semana', 'semana'),
+            const SizedBox(width: 8),
+            _buildCustomViewButton('Mes', 'mes'),
+          ],
+        );
 
-              // Filtrar solo eventos válidos
-              final validEvents = events.whereType<ReservationModel>().toList();
+        List<Widget> children = [
+          formatButtons,
+        ];
 
-              return Align(
-                alignment: Alignment.bottomCenter,
-                child: Wrap(
-                  spacing: 2, // espacio entre puntos
-                  alignment: WrapAlignment.center,
-                  children: validEvents.map((event) {
-                    // Buscar el nombre del servicio usando el serviceId y la lista de paquetes
-                    Color dotColor = Theme.of(context).primaryColor;
-                    final packagesAsync = ref.read(servicePackagesProvider);
-                    String? serviceName;
-                    if (packagesAsync is AsyncData && packagesAsync.value != null) {
-                      final packageList = packagesAsync.value!;
-                      final package = packageList.where((pkg) => pkg.id == event.serviceId).toList();
-                      if (package.isNotEmpty) {
-                        serviceName = package.first.name;
-                      }
-                    }
-                    // Si es renta, verde
-                    if (event.serviceId == packageRentaId) {
-                      dotColor = Colors.green;
-                    } else if (serviceName != null) {
-                      final lowerName = serviceName.toLowerCase();
-                      if (lowerName.contains('fiesta')) {
-                        dotColor = Colors.amber;
-                      } else if (lowerName.contains('estudio')) {
-                        dotColor = Colors.blue;
-                      } else if (lowerName.contains('exterior')) {
-                        dotColor = Colors.purple;
-                      }
-                    }
-                    // Debug
-                    print('[CALENDAR] serviceId: ' + event.serviceId + ' | serviceName: ' + (serviceName ?? 'null'));
-                    return Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: dotColor,
+        if (_calendarView == 'dia') {
+          // Mostrar solo la lista de eventos del día seleccionado y aprovechar el espacio en blanco
+          final selectedDayKey = DateTime(
+            _selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
+          final reservations = List<ReservationModel>.from(_reservationsByDay[selectedDayKey] ?? []);
+          children.add(
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: reservations.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No hay reservaciones para este día',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: reservations.length,
+                        padding: EdgeInsets.zero,
+                        itemBuilder: (context, index) {
+                          final reservation = reservations[index];
+                          final now = DateTime.now();
+                          final reservationDate = _parseDate(reservation.reservationDate);
+                          final reservationTime = _parseTime(reservation.reservationTime);
+                          final reservationDateTime =
+                              reservationDate != null && reservationTime != null
+                                  ? DateTime(
+                                      reservationDate.year,
+                                      reservationDate.month,
+                                      reservationDate.day,
+                                      reservationTime.hour,
+                                      reservationTime.minute,
+                                    )
+                                  : null;
+                          ReservationStatus status = ReservationStatus.upcoming;
+                          if (reservationDateTime != null) {
+                            if (reservationDateTime.isBefore(now)) {
+                              status = ReservationStatus.past;
+                            } else if (reservationDateTime.difference(now).inHours < 24) {
+                              status = ReservationStatus.aboutToExpire;
+                            }
+                          }
+                          return ReservationCard(
+                            reservation: reservation,
+                            status: status,
+                            onTap: () => showDialog(
+                              context: context,
+                              builder: (context) => ReservationDetailView(
+                                reservation: reservation,
+                                onEdit: () {
+                                  Navigator.pop(context);
+                                },
+                                onCancel: () {
+                                  Navigator.pop(context);
+                                  _showCancelConfirmation(reservation);
+                                },
+                                onClose: () => Navigator.pop(context),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  }).toList(),
+              ),
+            ),
+          );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          );
+        } else {
+          // Mostrar TableCalendar en modo semana o mes
+          children.add(
+            TableCalendar(
+              firstDay: DateTime.now().subtract(const Duration(days: 365)),
+              lastDay: DateTime.now().add(const Duration(days: 365)),
+              focusedDay: _focusedDay,
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              calendarFormat: _calendarView == 'semana' ? CalendarFormat.week : CalendarFormat.month,
+              eventLoader: (day) {
+                final dateKey = DateTime(day.year, day.month, day.day);
+                return _reservationsByDay[dateKey] ?? [];
+              },
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Colors.transparent,
                 ),
-              );
-            },
-            todayBuilder: (context, day, focusedDay) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.camera_alt,
-                      color: Theme.of(context).primaryColor,
-                      size: 16,
-                    ),
-                    Text(
-                      '${day.day}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ],
+                selectedDecoration: BoxDecoration(
+                  color: Colors.transparent,
                 ),
-              );
-            },
-            selectedBuilder: (context, day, focusedDay) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.checkroom,
-                      color: Colors.pinkAccent,
-                      size: 16,
+                cellMargin: const EdgeInsets.all(6),
+                markersAlignment: Alignment.center,
+              ),
+              calendarBuilders: CalendarBuilders(
+                markerBuilder: (context, day, events) {
+                  if (events.isEmpty) return const SizedBox();
+
+                  // Filtrar solo eventos válidos
+                  final validEvents = events.whereType<ReservationModel>().toList();
+
+                  return Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Wrap(
+                      spacing: 2, // espacio entre puntos
+                      alignment: WrapAlignment.center,
+                      children: validEvents.map((event) {
+                        // Buscar el nombre del servicio usando el serviceId y la lista de paquetes
+                        Color dotColor = Theme.of(context).primaryColor;
+                        final packagesAsync = ref.read(servicePackagesProvider);
+                        String? serviceName;
+                        if (packagesAsync is AsyncData && packagesAsync.value != null) {
+                          final packageList = packagesAsync.value!;
+                          final package = packageList.where((pkg) => pkg.id == event.serviceId).toList();
+                          if (package.isNotEmpty) {
+                            serviceName = package.first.name;
+                          }
+                        }
+                        // Si es renta, verde
+                        if (event.serviceId == packageRentaId) {
+                          dotColor = Colors.green;
+                        } else if (serviceName != null) {
+                          final lowerName = serviceName.toLowerCase();
+                          if (lowerName.contains('fiesta')) {
+                            dotColor = Colors.amber;
+                          } else if (lowerName.contains('estudio')) {
+                            dotColor = Colors.blue;
+                          } else if (lowerName.contains('exterior')) {
+                            dotColor = Colors.purple;
+                          }
+                        }
+                        // Debug
+                        print('[CALENDAR] serviceId: ' + event.serviceId + ' | serviceName: ' + (serviceName ?? 'null'));
+                        return Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: dotColor,
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    Text(
+                  );
+                },
+                todayBuilder: (context, day, focusedDay) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.camera_alt,
+                          color: Theme.of(context).primaryColor,
+                          size: 16,
+                        ),
+                        Text(
+                          '${day.day}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                selectedBuilder: (context, day, focusedDay) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.checkroom,
+                          color: Colors.pinkAccent,
+                          size: 16,
+                        ),
+                        Text(
+                          '${day.day}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.pinkAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                defaultBuilder: (context, day, focusedDay) {
+                  return Center(
+                    child: Text(
                       '${day.day}',
                       style: const TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.pinkAccent,
+                        color: Colors.black,
                       ),
                     ),
-                  ],
-                ),
-              );
-            },
-            defaultBuilder: (context, day, focusedDay) {
-              return Center(
-                child: Text(
-                  '${day.day}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black,
-                  ),
-                ),
-              );
-            },
-          ),
-          onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-              _focusedDay = focusedDay;
-            });
-          },
-          onFormatChanged: (format) {
-            setState(() {
-              _calendarFormat = format;
-            });
-          },
-          onPageChanged: (focusedDay) {
-            _focusedDay = focusedDay;
-          },
+                  );
+                },
+              ),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+              },
+              onFormatChanged: null, // Oculta el botón de cambiar formato
+              onPageChanged: (focusedDay) {
+                _focusedDay = focusedDay;
+              },
+              locale: 'es',
+              daysOfWeekHeight: 24,
+              availableCalendarFormats: const {
+                CalendarFormat.month: 'Mes',
+                CalendarFormat.week: 'Semana',
+              },
+              daysOfWeekStyle: DaysOfWeekStyle(
+                dowTextFormatter: (date, locale) {
+                  // Formato corto en español
+                  switch (date.weekday) {
+                    case DateTime.monday:
+                      return 'Lun';
+                    case DateTime.tuesday:
+                      return 'Mar';
+                    case DateTime.wednesday:
+                      return 'Mié';
+                    case DateTime.thursday:
+                      return 'Jue';
+                    case DateTime.friday:
+                      return 'Vie';
+                    case DateTime.saturday:
+                      return 'Sáb';
+                    case DateTime.sunday:
+                      return 'Dom';
+                    default:
+                      return '';
+                  }
+                },
+              ),
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+              ),
+            ),
+          );
+        }
+
+        // Solución: el widget padre ya es un Expanded, aquí solo devolvemos un Column
+        return Column(
+          children: children,
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -292,13 +626,48 @@ class _ReservationCalendarScreenState
     );
   }
 
+  // Botón personalizado para cambiar la vista (día, semana, mes)
+  Widget _buildCustomViewButton(String label, String view) {
+    final bool isSelected = _calendarView == view;
+    return OutlinedButton(
+      onPressed: () {
+        if (!isSelected) {
+          setState(() {
+            _calendarView = view;
+          });
+          // Si cambiamos a la vista "Día", cerramos el Drawer si está abierto
+          if (view == 'dia') {
+            // Espera un frame para evitar errores si no hay Drawer
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                Navigator.of(context).maybePop();
+              }
+            });
+          }
+        }
+      },
+      style: OutlinedButton.styleFrom(
+        backgroundColor: isSelected ? Theme.of(context).primaryColor : Colors.white,
+        foregroundColor: isSelected ? Colors.white : Theme.of(context).primaryColor,
+        side: BorderSide(color: Theme.of(context).primaryColor),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+      child: Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+    );
+  }
+
+  // Botón personalizado para cambiar el formato del calendario
+
   Widget _buildReservationsList(
       AsyncValue<List<ReservationModel>> reservationsValue) {
     return reservationsValue.when(
       data: (allReservations) {
-        // Filter reservations for selected day
         final selectedDayKey = DateTime(
-            _selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
+          _selectedDay?.year ?? DateTime.now().year,
+          _selectedDay?.month ?? DateTime.now().month,
+          _selectedDay?.day ?? DateTime.now().day,
+        );
         final reservations = List<ReservationModel>.from(_reservationsByDay[selectedDayKey] ?? []);
 
         // Ordenar por hora ascendente
@@ -440,10 +809,8 @@ class _ReservationCalendarScreenState
           TextButton(
             onPressed: () async {
               await ref.read(cancelReservationProvider(reservation.id).future);
-
-              // ref.read(ActualizarEstadoReservaProvider({
-              //   'id': [reservation.id],
-              //   'estado': 'cancelado'
+              // Aquí podrías refrescar el provider si es necesario
+              // ref.refresh(reservationsProvider);
               // }));
               Navigator.of(context).pop(); // Cierra el diálogo de confirmación
             },
@@ -471,336 +838,8 @@ class _ReservationCalendarScreenState
       return null;
     }
   }
-}
 
-enum ReservationStatus {
-  past,
-  upcoming,
-  aboutToExpire,
-}
-
-class ReservationCard extends ConsumerWidget {
-  final ReservationModel reservation;
-  final ReservationStatus status;
-  final VoidCallback onTap;
-
-  const ReservationCard({
-    Key? key,
-    required this.reservation,
-    required this.status,
-    required this.onTap,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Asigna color, icono y texto según el estado
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-    Color? cardBgColor;
-    Color iconColor = Colors.white;
-
-    // Buscar el nombre del servicio usando el serviceId y la lista de paquetes
-    final packagesAsync = ref.read(servicePackagesProvider);
-    String? serviceName;
-    if (packagesAsync is AsyncData && packagesAsync.value != null) {
-      final packageList = packagesAsync.value!;
-      final package = packageList.where((pkg) => pkg.id == reservation.serviceId).toList();
-      if (package.isNotEmpty) {
-        serviceName = package.first.name;
-      }
-    }
-    final lowerName = serviceName?.toLowerCase() ?? '';
-    final isFiesta = lowerName.contains('fiesta');
-    final isEstudio = lowerName.contains('estudio');
-    final isExterior = lowerName.contains('exterior');
-
-    switch (status) {
-      case ReservationStatus.past:
-        if (isFiesta) {
-          statusColor = Colors.amber;
-          statusIcon = Icons.celebration;
-          statusText = 'Fiesta pasada';
-          cardBgColor = Colors.amber.withOpacity(0.10);
-        } else if (isEstudio) {
-          statusColor = Colors.blue;
-          statusIcon = Icons.camera_alt;
-          statusText = 'Estudio pasado';
-          cardBgColor = Colors.blue.withOpacity(0.10);
-        } else if (isExterior) {
-          statusColor = Colors.purple;
-          statusIcon = Icons.landscape;
-          statusText = 'Exterior pasado';
-          cardBgColor = Colors.purple.withOpacity(0.10);
-        } else {
-          statusColor = Colors.grey;
-          statusIcon = Icons.history;
-          statusText = 'Pasada';
-          cardBgColor = Colors.grey.withOpacity(0.08);
-        }
-        break;
-      case ReservationStatus.aboutToExpire:
-        if (isFiesta) {
-          statusColor = Colors.amber;
-          statusIcon = Icons.celebration;
-          statusText = 'Fiesta por vencer';
-          cardBgColor = Colors.amber.withOpacity(0.10);
-        } else if (isEstudio) {
-          statusColor = Colors.blue;
-          statusIcon = Icons.camera_alt;
-          statusText = 'Estudio por vencer';
-          cardBgColor = Colors.blue.withOpacity(0.10);
-        } else if (isExterior) {
-          statusColor = Colors.purple;
-          statusIcon = Icons.landscape;
-          statusText = 'Exterior por vencer';
-          cardBgColor = Colors.purple.withOpacity(0.10);
-        } else {
-          statusColor = Colors.orange;
-          statusIcon = Icons.warning_amber_rounded;
-          statusText = 'Por vencer';
-          cardBgColor = Colors.orange.withOpacity(0.10);
-        }
-        break;
-      case ReservationStatus.upcoming:
-        if (isFiesta) {
-          statusColor = Colors.amber;
-          statusIcon = Icons.celebration;
-          statusText = 'Fiesta próxima';
-          cardBgColor = Colors.amber.withOpacity(0.10);
-        } else if (isEstudio) {
-          statusColor = Colors.blue;
-          statusIcon = Icons.camera_alt;
-          statusText = 'Estudio próximo';
-          cardBgColor = Colors.blue.withOpacity(0.10);
-        } else if (isExterior) {
-          statusColor = Colors.purple;
-          statusIcon = Icons.landscape;
-          statusText = 'Exterior próximo';
-          cardBgColor = Colors.purple.withOpacity(0.10);
-        } else {
-          statusColor = Colors.green;
-          statusIcon = Icons.event_available;
-          statusText = 'Próxima';
-          cardBgColor = Colors.green.withOpacity(0.10);
-        }
-        break;
-    }
-
-    // Obtenemos los datos completos de la reservación
-    final fullReservationAsync =
-        ref.watch(fullReservationByIdProviderVQ(reservation.id));
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      color: cardBgColor,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: fullReservationAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Text('Error al cargar datos: $error',
-                style: TextStyle(color: Colors.red)),
-            data: (fullReservation) {
-              final clientName = fullReservation?.client?.customerName ??
-                  'Cliente desconocido';
-
-              String dressName = '';
-
-              // Verifica si el vestido es de reserva simple o no
-              final dressComposite =
-                  fullReservation?.reservation['multiple_dress'] ?? [];
-
-              if (dressComposite.isEmpty) {
-                dressName = fullReservation?.dress?['name'] ??
-                    'Vestido no especificado';
-              }
-
-              final serviceName = fullReservation?.service?['name'] ??
-                  'Servicio no especificado';
-
-              final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
-
-              final place =
-                  fullReservation?.reservation['place'] ?? 'Sin lugar';
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${reservation.reservationDate} - ${reservation.reservationTime}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Chip(
-                        label: Text(statusText),
-                        avatar: Icon(statusIcon, size: 16, color: iconColor),
-                        backgroundColor: statusColor,
-                        labelStyle:
-                            const TextStyle(color: Colors.white, fontSize: 12),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.person, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Cliente: $clientName',
-                            style: const TextStyle(fontSize: 14)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.checkroom, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      _buildDressName(dressName, dressComposite),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.engineering, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Servicio: $serviceName',
-                            style: const TextStyle(fontSize: 14)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.place, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Lugar: $place',
-                            style: const TextStyle(fontSize: 14)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.textsms_outlined, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Nota: $note',
-                            style: const TextStyle(fontSize: 14)),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDressName(String dressName, dynamic dress) {
-    // Verifica si el vestido es de reserva simple o no
-    if (dress.isEmpty) {
-      return Text('Vestido: ' + dressName,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ));
-    } else if (dress.isNotEmpty) {
-      // Si no es de reserva simple, muestra la lista de vestidos
-      return Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Vestimenta',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                )),
-            ...dress.map<Widget>((item) {
-              final dressName = item['dress_name'] ?? 'Sin nombre';
-              final branchId = item['branch_id'] ?? 'Sin sucursal';
-              final dressState = item['state']?.toString();
-              final isSesion = dressState != null && dressState.toLowerCase().trim() == 'sesión';
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('* $dressName', style: const TextStyle(fontSize: 13)),
-                  const SizedBox(width: 8),
-                  Text(branchId.toString(), style: const TextStyle(fontSize: 12, color: Color.fromARGB(255, 10, 10, 10))),
-                  if (isSesion)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red[700],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'En Sesión',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            }).toList(),
-          ],
-        ),
-      );
-    } else {
-      return const Text('Vestido: Vestido no especificado',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ));
-    }
-  }
-}
-
-Widget _showDressesOption(dynamic dress) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: dress.map<Widget>((item) {
-      final dressName = item['dress_name'] ?? 'Sin nombre';
-      return _buildInfoItem(dressName); // Asegúrate que retorne un Widget
-    }).toList(),
-  );
-}
-
-Widget _buildInfoItem(String dress) {
-  return Text('* ' + dress,
-      style: TextStyle(
-        fontSize: 13,
-        color: Colors.grey[700], // Esto no puede ser const
-      ));
+  // _buildDressName se usa en ReservationCard, no es necesario eliminarlo
 }
 
 class ReservationDetailView extends ConsumerWidget {
@@ -810,12 +849,11 @@ class ReservationDetailView extends ConsumerWidget {
   final VoidCallback onClose;
 
   const ReservationDetailView({
-    Key? key,
     required this.reservation,
     required this.onEdit,
     required this.onCancel,
     required this.onClose,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1228,7 +1266,7 @@ class ReservationDetailView extends ConsumerWidget {
                 }
 
                 // Lógica para mostrar el estado "En Sesión" solo si la hora ya llegó
-                String? showState;
+                // Eliminada variable local no usada showState;
                 if (dressState != null && dressState.toLowerCase() == 'sesión') {
                   // Buscar la hora de la sesión
                   String? sessionTime = item['session_time']?.toString();
@@ -1248,13 +1286,13 @@ class ReservationDetailView extends ConsumerWidget {
                         int.parse(timeParts[0]),
                         int.parse(timeParts[1]),
                       );
-                      if (now.isAfter(sessionDateTime)) {
-                        showState = 'En Sesión';
-                      }
+                  if (now.isAfter(sessionDateTime)) {
+                    // Solo mostrar el estado, no usar variable showState
+                  }
                     } catch (_) {}
                   }
                 } else if (dressState != null && dressState.isNotEmpty && dressState.toLowerCase() != 'disponible') {
-                  showState = dressState;
+                  // Solo mostrar el estado, no usar variable showState
                 }
 
                 return Padding(

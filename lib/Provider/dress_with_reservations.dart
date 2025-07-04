@@ -150,6 +150,26 @@ List<DressModel> _filterByStatus(
           .where((dress) => !reservedIds.contains(dress.id) && dress.available)
           .toList();
     default:
-      return dresses;
+      // Filtrado flexible: coincidencia parcial y normalización
+      String normalize(String s) {
+        s = s.toLowerCase().trim();
+        if (s.startsWith('en ')) s = s.substring(3);
+        // Quitar tildes
+        s = s
+            .replaceAll('á', 'a')
+            .replaceAll('é', 'e')
+            .replaceAll('í', 'i')
+            .replaceAll('ó', 'o')
+            .replaceAll('ú', 'u')
+            .replaceAll('ü', 'u')
+            .replaceAll('ñ', 'n');
+        s = s.replaceAll(RegExp(r'[^a-z0-9]'), ''); // quita espacios y símbolos
+        return s;
+      }
+      final normalizedStatus = normalize(status);
+      return dresses.where((dress) {
+        final normalizedState = normalize(dress.state);
+        return normalizedState.contains(normalizedStatus) || normalizedStatus.contains(normalizedState);
+      }).toList();
   }
 }

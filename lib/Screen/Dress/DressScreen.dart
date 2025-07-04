@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
+import 'package:salespro_admin/Provider/dress_with_reservations.dart';
 import 'package:salespro_admin/Provider/product_provider.dart';
 import 'package:salespro_admin/Screen/WareHouse/warehouse_model.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
@@ -1270,6 +1271,9 @@ class _DressScreenState extends State<DressScreen> {
     EasyLoading.dismiss();
 
     if (result) {
+      // Refresca los providers para que la UI y el calendario se actualicen automáticamente
+      ref.invalidate(dressesProvider);
+      ref.invalidate(dressesByStatusProvider('Todos'));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
@@ -1284,8 +1288,16 @@ class _DressScreenState extends State<DressScreen> {
 
 //Change state dress
   void _changeDressAvailability(BuildContext context, WidgetRef ref,
-      DressModel dress, bool value, String state) async {
+      DressModel dress, bool _unusedValue, String state) async {
     final _lang = lang.S.of(context);
+
+    // Lógica automática de disponibilidad
+    bool value;
+    if (state == 'Disponible') {
+      value = true;
+    } else {
+      value = false;
+    }
 
     EasyLoading.show(status: _lang.updating);
 
@@ -1295,12 +1307,15 @@ class _DressScreenState extends State<DressScreen> {
     EasyLoading.dismiss();
 
     if (result) {
+      // Refresca los providers para que la UI y el calendario se actualicen automáticamente
+      ref.invalidate(dressesProvider);
+      ref.invalidate(dressesByStatusProvider('Todos'));
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Estado de vestido cambiado a: $state')),
+        SnackBar(content: Text('Estado de vestimenta cambiado a: $state')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ocurrio un error al actualizar el estado')));
+          SnackBar(content: Text('Ocurrió un error al actualizar el estado')));
     }
   }
 
