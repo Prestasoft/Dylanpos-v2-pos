@@ -12,6 +12,8 @@ ios/Flutter/Flutter.framework
 ios/Flutter/Flutter.podspec
 ios/Runner/GeneratedPluginRegistrant.*
 linux/flutter
+pubspec.yaml
+lib/firebase_options.dart
 
 # OS generated
 .DS_Store
