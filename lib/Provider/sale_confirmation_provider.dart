@@ -44,7 +44,7 @@ class SaleConfirmationsNotifier extends AsyncNotifier<List<SaleConfirmationModel
           try {
             if (value is Map) {
               final confirmationData = Map<String, dynamic>.from(value);
-              confirmationData['token'] = key;
+              // confirmationData['token'] = key;
               final confirmation = SaleConfirmationModel.fromJson(confirmationData);
               confirmations.add(confirmation);
             }

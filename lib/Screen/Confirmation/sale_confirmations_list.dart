@@ -7,6 +7,8 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
 import '../../Provider/general_setting_provider.dart';
 import '../../Provider/sale_confirmation_provider.dart';
@@ -377,6 +379,7 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
                             DataColumn(label: Text('F. Facturación')),
                             DataColumn(label: Text('F. Reserva')),
                             DataColumn(label: Text('Estado')),
+                            DataColumn(label: Text('Acción')), // Nueva columna al final
                           ],
                           rows: List.generate(paginated.length, (index) {
                             final confirmation = paginated[index];
@@ -526,6 +529,27 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
                                   ),
                                 ),
                               ),
+                              DataCell(
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: kMainColor.withOpacity(0.15), // Fondo suave
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(Icons.forward_to_inbox, color: kMainColor, size: 22),
+                                    tooltip: 'Reenviar',
+                                    splashRadius: 22,
+                                    onPressed: () async {
+                                      final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}';
+                                      await _sendConfirmationLinkViaWhatsApp(
+                                        phoneNumber: sale.customerPhone,
+                                        customerName: sale.customerName,
+                                        confirmationLink: link,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
                             ]);
                           }),
                         ),
@@ -614,6 +638,59 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
     }
   }
 
+  Future<void> _sendConfirmationLinkViaWhatsApp({
+    required String phoneNumber,
+    required String customerName,
+    required String confirmationLink,
+  }) async {
+    try {
+      EasyLoading.show(status: 'Enviando confirmación...');
+
+      final message = '''
+Hola $customerName 👋🏼
+
+Tu reserva está pendiente de confirmación.
+
+Haz clic en el siguiente enlace para confirmar tu reserva: 👇🏼
+$confirmationLink
+
+Este enlace expira en 24 horas. ¡Gracias por tu preferencia!
+
+Con aprecio,
+Equipo Víctor Guzmán Fotografía
+Para llamadas: 8098982876 ☎️
+''';
+
+      final body = {
+        'token': '5i36w829nb1ljkj7', //token santo domingo
+        //'token': '5gs146cmkgu6y5vw', //token santiago
+        'to': phoneNumber,
+        'body': message,
+      };
+
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat'); //instancia santo domingo
+      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/chat'); //instancia santiago
+      final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        EasyLoading.showSuccess('Mensaje de confirmación enviado');
+      } else {
+        throw Exception('Error en WhatsApp API: \\${response.body}');
+      }
+    } catch (e) {
+      EasyLoading.showError('Error al enviar link: \\${e.toString()}');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 500));
+      EasyLoading.dismiss();
+    }
+  }
+
   Widget _buildPaginationControls(int totalItems, int totalPages) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
@@ -644,29 +721,25 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
                   child: const Center(child: Text('Anterior')),
                 ),
               ),
-              Container(
-                height: 32,
-                width: 32,
-                decoration: BoxDecoration(
-                  border: Border.all(color: kBorderColorTextField),
-                  color: kMainColor,
-                ),
-                child: Center(
-                  child: Text(
-                    '$_currentPage',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-              if (totalPages > 1)
+              // Números de página dinámicos
+              for (int i = 1; i <= totalPages; i++)
                 Container(
                   height: 32,
                   width: 32,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
                     border: Border.all(color: kBorderColorTextField),
+                    color: i == _currentPage ? kMainColor : null,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Center(
-                    child: Text('$totalPages'),
+                  child: InkWell(
+                    onTap: i == _currentPage ? null : () => setState(() => _currentPage = i),
+                    child: Center(
+                      child: Text(
+                        '$i',
+                        style: TextStyle(color: i == _currentPage ? Colors.white : kTitleColor),
+                      ),
+                    ),
                   ),
                 ),
               InkWell(
