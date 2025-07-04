@@ -127,6 +127,7 @@ flutter:
   assets:
     - images/
     - images/dashboard_icon/
+    - images/dinero/
   fonts:
     - family: NotoSans
       fonts:

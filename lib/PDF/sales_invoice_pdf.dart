@@ -47,7 +47,6 @@ FutureOr<Uint8List> generateSaleDocument({
 
 // Extraer el nombre del vendedor de la reservación
 final reservationSellerName = fullReservation?.reservation['seller_name']?.toString() ?? 'No especificado';
-  //print("TRANSACCTION === ${transactions.key}");
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero
   final List<FullReservation?> reservaciones = await Future.wait(idReservaciones.map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
@@ -96,7 +95,6 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
 
   for (int i = 0; i < transactions.productList!.length; i++) {
     final item = transactions.productList![i];
-    print("PRODUCT ITEM ===== ${item.productId}");
     final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
     final serviceDescription = fullReservation?.service?['description'] ?? '';
 

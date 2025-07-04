@@ -18,7 +18,7 @@ class ExportButton extends StatelessWidget {
         Container(
           height: 40.0,
           width: 300,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), border: Border.all(color: kGreyTextColor.withOpacity(0.1))),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), border: Border.all(color: kGreyTextColor.withValues(alpha: 0.1))),
           child: AppTextField(
             showCursor: true,
             cursorColor: kTitleColor,
@@ -34,7 +34,7 @@ class ExportButton extends StatelessWidget {
                     padding: const EdgeInsets.all(2.0),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8.0),
-                      color: kGreyTextColor.withOpacity(0.1),
+                      color: kGreyTextColor.withValues(alpha: 0.1),
                     ),
                     child: const Icon(
                       FeatherIcons.search,

@@ -2,12 +2,12 @@ import 'dart:developer';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart';
+
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
-import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
+
 import 'package:salespro_admin/model/FullReservation.dart';
 import 'package:salespro_admin/model/customer_model.dart';
-import '../model/dress_model.dart';
+
 import '../model/reservation_model.dart';
 import 'customer_provider.dart';
 
@@ -142,7 +142,6 @@ final ActualizarEstadoReservaProvider =
     }
     return true;
   } catch (e) {
-    print('Error al actualizar estado de múltiples reservas: $e');
     return false;
   }
 });
@@ -521,7 +520,6 @@ final isDressAvailableForRangeProvider =
 
     return true; // Está disponible
   } catch (e) {
-    print('Error verificando disponibilidad del vestido: $e');
     return false; // En caso de error, asumimos que no está disponible
   }
 });
@@ -729,7 +727,6 @@ final isClothesAvailableForRangeProvider =
 
     return true; // Está disponible
   } catch (e) {
-    print('Error verificando disponibilidad del vestido: $e');
     return false; // En caso de error, asumimos que no está disponible
   }
 });
@@ -765,7 +762,6 @@ final updateReservationProvider =
 
     return true;
   } catch (e) {
-    print('Error updating reservation: $e');
     return false;
   }
 });
@@ -773,7 +769,6 @@ final updateReservationProvider =
 final cancelReservationProvider =
     FutureProvider.family<bool, String>((ref, reservationId) async {
   if (reservationId.trim().isEmpty) {
-    print('Reservation ID is empty. Skipping deletion.');
     return false;
   }
 
@@ -783,7 +778,6 @@ final cancelReservationProvider =
         .remove();
     return true;
   } catch (e) {
-    print('Error canceling reservation: $e');
     return false;
   }
 });
@@ -1143,7 +1137,6 @@ final isDressAvailableProvider =
 
     return true;
   } catch (e) {
-    print('Error checking dress availability: $e');
     return true; // Fallback a disponible en caso de error
   }
 });
@@ -1189,7 +1182,6 @@ final crearReservaProvider =
       reservationId: reservationId ?? '',
     );
   } catch (e) {
-    print('Error creating reservation: $e');
     return reservationCreation(
       statusReservation: false,
       reservationId: '',
@@ -1212,7 +1204,6 @@ final actualizarReservaAssociatedProvider =
     
     return true;
   } catch (e) {
-    print('Error al actualizar reserva asociada: $e');
     return false;
   }
 });
@@ -1390,7 +1381,6 @@ final fullReservationsByDressProvider2 =
 // final dressesByStatusProvider =
 //     FutureProvider.family<List<DressModel>, Map<String, String>>(
 //         (ref, params) async {
-//   print("Call provider");
 //   final search = params['search']?.trim().toLowerCase() ?? '';
 //   final status = params['status'] ?? 'Todos';
 

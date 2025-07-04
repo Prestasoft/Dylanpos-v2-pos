@@ -31,8 +31,7 @@ class ServicePackageNotifier
       state = const AsyncValue.loading(); // Mostrar estado de carga
 
       final snapshot = await _dbRef.get();
-      print(
-          'Snapshot: ${snapshot.value}'); // Ver qué datos están siendo devueltos
+      
       if (snapshot.exists) {
         final packages = <ServicePackageModel>[];
 
@@ -44,18 +43,15 @@ class ServicePackageNotifier
             );
             packages.add(data);
           } catch (e) {
-            print('Error parsing package ${element.key}: $e');
           }
         }
         // Ordenar por fecha de creación (más recientes primero)
         packages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         state = AsyncValue.data(packages);
       } else {
-        print('No data found at the specified reference.');
         state = const AsyncValue.data([]); // No hay datos
       }
     } catch (e) {
-      print('Error loading packages: $e');
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
@@ -98,7 +94,6 @@ class ServicePackageNotifier
 
       return true;
     } catch (e) {
-      print('Error adding package: $e');
       rethrow;
     }
   }
@@ -137,7 +132,6 @@ class ServicePackageNotifier
 
       return true;
     } catch (e) {
-      print('Error updating package: $e');
       rethrow;
     }
   }
@@ -159,7 +153,6 @@ class ServicePackageNotifier
 
       return true;
     } catch (e) {
-      print('Error deleting package: $e');
       rethrow;
     }
   }

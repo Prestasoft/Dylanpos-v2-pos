@@ -593,7 +593,6 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   void dispose() {
     // TODO: implement dispose
     if (kDebugMode) {
-      print('---------confirm---------------');
     }
     super.dispose();
   }
@@ -700,7 +699,6 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                             dailySale[saleDate.day - 1] +=
                                 element.totalAmount!.round();
                           } else {
-                            print("Invalid day: ${saleDate.day}");
                           }
                           // dailySale[saleDate.day - 1] += element.totalAmount!.round();
                           totalSaleOfYear.add(element);

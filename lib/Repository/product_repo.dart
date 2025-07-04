@@ -14,7 +14,6 @@ class ProductRepo {
     List<ProductModel> productList = [];
     final result = await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get();
     for (var element in result.children) {
-      print(element.value);
       productList.add(ProductModel.fromJson(jsonDecode(jsonEncode(element.value))));
     }
     return productList;
@@ -98,10 +97,8 @@ class ProductRepo {
       final snapshot = await FirebaseDatabase.instance.ref('Admin Panel/Bank Info').orderByKey().get();
 
       if (snapshot.exists) {
-        print('Datos encontrados: ${snapshot.children.length}');
 
         for (var element in snapshot.children) {
-          print('Elemento: ${element.value}');
 
           if (element.value is Map<dynamic, dynamic>) {
             final mapValue = element.value as Map<dynamic, dynamic>;
@@ -109,19 +106,14 @@ class ProductRepo {
             if (mapValue.containsKey('accountName') && mapValue.containsKey('bankName')) {
               brandList.add(BrandsModel.fromJson(mapValue));
             } else {
-              print('Elemento no tiene las claves necesarias: $mapValue');
             }
           } else if (element.value == null || (element.value is Map && (element.value as Map).isEmpty) || (element.value is String && (element.value as String).isEmpty) || (element.value is List && (element.value as List).isEmpty)) {
-            print('Elemento vacío o inesperado: ${element.value}');
           } else {
-            print('Elemento no es un mapa válido: ${element.value}');
           }
         }
       } else {
-        print('No se encontraron datos en la ruta especificada.');
       }
     } catch (e) {
-      print('Error al obtener datos: $e');
     }
 
     return brandList;

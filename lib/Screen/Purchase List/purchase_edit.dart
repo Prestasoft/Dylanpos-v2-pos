@@ -1407,7 +1407,7 @@ class _PurchaseEditState extends State<PurchaseEdit> {
                                                       ? Colors.transparent
                                                       : isSelected == 'Categories'
                                                           ? kBlueTextColor
-                                                          : kBlueTextColor.withOpacity(0.1)),
+                                                          : kBlueTextColor.withValues(alpha: 0.1)),
                                               padding: EdgeInsets.only(left: screenWidth < 1240 ? 0 : 15, right: 8, top: screenWidth < 1240 ? 0 : 5, bottom: screenWidth < 1240 ? 0 : 5),
                                               alignment: Alignment.centerLeft,
                                               child: Row(
@@ -1462,7 +1462,7 @@ class _PurchaseEditState extends State<PurchaseEdit> {
                                                     padding: EdgeInsets.only(top: 5, bottom: 5, right: screenWidth < 1240 ? 10 : 0),
                                                     child: Container(
                                                       padding: const EdgeInsets.only(left: 15.0, right: 8.0, top: 8.0, bottom: 8.0),
-                                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: isSelected == category[i].categoryName ? kBlueTextColor : kBlueTextColor.withOpacity(0.1)),
+                                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: isSelected == category[i].categoryName ? kBlueTextColor : kBlueTextColor.withValues(alpha: 0.1)),
                                                       child: Row(
                                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                         children: [

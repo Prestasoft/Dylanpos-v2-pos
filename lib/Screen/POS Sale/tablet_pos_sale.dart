@@ -371,7 +371,6 @@
 //         this.image = imageTemporary;
 //       });
 //     } on PlatformException catch (e) {
-//       print('Faield to pick image: $e');
 //     }
 //   }
 //
@@ -916,7 +915,7 @@
 //                       const SizedBox(height: 20.0),
 //                       Divider(
 //                         thickness: 1.0,
-//                         color: kGreyTextColor.withOpacity(0.2),
+//                         color: kGreyTextColor.withValues(alpha: 0.2),
 //                       ),
 //                       const SizedBox(height: 10.0),
 //                       Row(
@@ -945,7 +944,7 @@
 //                       const SizedBox(height: 10.0),
 //                       Divider(
 //                         thickness: 1.0,
-//                         color: kGreyTextColor.withOpacity(0.2),
+//                         color: kGreyTextColor.withValues(alpha: 0.2),
 //                       ),
 //                       const SizedBox(height: 5.0),
 //                       Row(
@@ -1031,7 +1030,7 @@
 //                       const SizedBox(height: 20.0),
 //                       Divider(
 //                         thickness: 1.0,
-//                         color: kGreyTextColor.withOpacity(0.2),
+//                         color: kGreyTextColor.withValues(alpha: 0.2),
 //                       ),
 //                       const SizedBox(height: 10.0),
 //                       Row(
@@ -1168,7 +1167,7 @@
 //                       const SizedBox(height: 5.0),
 //                       Divider(
 //                         thickness: 1.0,
-//                         color: kGreyTextColor.withOpacity(0.2),
+//                         color: kGreyTextColor.withValues(alpha: 0.2),
 //                       ),
 //                       const SizedBox(height: 5.0),
 //                       Row(
@@ -1252,7 +1251,7 @@
 //                     const SizedBox(height: 20.0),
 //                     Divider(
 //                       thickness: 1.0,
-//                       color: kGreyTextColor.withOpacity(0.2),
+//                       color: kGreyTextColor.withValues(alpha: 0.2),
 //                     ),
 //                     const SizedBox(height: 10.0),
 //                     Row(
@@ -1305,7 +1304,7 @@
 //                     const SizedBox(height: 5.0),
 //                     Divider(
 //                       thickness: 1.0,
-//                       color: kGreyTextColor.withOpacity(0.2),
+//                       color: kGreyTextColor.withValues(alpha: 0.2),
 //                     ),
 //                     const SizedBox(height: 5.0),
 //                     Row(
@@ -1525,7 +1524,6 @@
 //                                           } else {
 //                                             nameCodeCategoryController.clear();
 //                                             nameFocus.requestFocus();
-//                                             print('Already Added');
 //                                           }
 //                                         });
 //                                         break;
@@ -1535,8 +1533,6 @@
 //                                         nameFocus.requestFocus();
 //                                         EasyLoading.showError('Not found');
 //                                       }
-//                                       print(i);
-//                                       print(product.length);
 //                                     }
 //                                   },
 //                                   textFieldType: TextFieldType.NAME,
@@ -1671,7 +1667,6 @@
 //                                                 if (!uniqueCheck(products[i].productCode)) {
 //                                                   cartList.add(addToCartModel);
 //                                                 } else {
-//                                                   print('Already Added');
 //                                                 }
 //                                               });
 //                                             });

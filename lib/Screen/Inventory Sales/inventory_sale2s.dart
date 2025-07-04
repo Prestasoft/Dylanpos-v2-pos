@@ -4656,7 +4656,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                 //         //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                                 //       }
                                                 //     }
-                                                //     print('-----------------------connected-----------------');
                                                 //   }
                                                 // } on SocketException catch (_) {
                                                 //   setState(() {
@@ -4677,7 +4676,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                 //           );
                                                 //         });
                                                 //   });
-                                                //   print('-----------------not connected---------------');
                                                 // }
 
                                                 // ShowPaymentPopUp(

@@ -47,7 +47,6 @@ Future<String> uploadImageToFirebase(dynamic imageFile) async {
 
     return await storageRef.getDownloadURL();
   } catch (e) {
-    print('Error uploading image: $e');
     rethrow;
   }
 }
@@ -112,7 +111,6 @@ final addDressProvider =
 
     return true;
   } catch (e) {
-    print('Error saving dress with images: $e');
     return false;
   }
 });
@@ -162,7 +160,6 @@ final updateDressProvider =
 
     return true;
   } catch (e) {
-    print('Error updating dress: $e');
     return false;
   }
 });
@@ -191,7 +188,6 @@ final deleteDressProvider =
     }
     return false;
   } catch (e) {
-    print('Error deleting dress: $e');
     return false;
   }
 });
@@ -210,7 +206,6 @@ final toggleDressAvailabilityProvider =
 
     return true;
   } catch (e) {
-    print('Error toggling dress availability: $e');
     return false;
   }
 });
@@ -230,7 +225,6 @@ final changeStateProvider =
 
     return true;
   } catch (e) {
-    print('Error changing state dress availability: $e');
     return false;
   }
 });
@@ -245,7 +239,6 @@ final dressesProvider = StreamProvider<List<DressModel>>((ref) {
     if (snapshot.value == null) return [];
 
     // Aquí imprimes el JSON completo
-    print('JSON de Firebase: ${snapshot.value}');
 
     Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
     List<DressModel> dresses = [];
@@ -275,7 +268,6 @@ final availableDressesByComponentsProvider =
       .timeout(
     Duration(seconds: 15), // Timeout de 15 segundos
     onTimeout: (sink) {
-      print('Firebase query timeout: Category $category');
       sink.addError(
           'Tiempo de espera agotado. Verifica tu conexión a internet.');
       sink.close();
@@ -285,7 +277,6 @@ final availableDressesByComponentsProvider =
 
     // 3. Manejo adecuado de valores nulos
     if (snapshot.value == null) {
-      print('No dresses found for category: $category');
       return <DressModel>[];
     }
 
@@ -304,7 +295,6 @@ final availableDressesByComponentsProvider =
               dresses.add(DressModel.fromRealtimeDB(value, key));
             }
           } catch (e) {
-            print('Error parsing dress with key $key: $e');
             // Continuamos con el siguiente vestido en caso de error
           }
         }
@@ -316,7 +306,6 @@ final availableDressesByComponentsProvider =
 
       return dresses;
     } catch (e) {
-      print('Error processing dresses: $e');
       throw 'Error al procesar los datos de vestidos. Intenta de nuevo.';
     }
   });
@@ -348,7 +337,6 @@ final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>(
 
     return dresses;
   } catch (e) {
-    print('Error fetching dresses: $e');
     throw 'Error al cargar los vestidos. Por favor, intenta de nuevo.';
   }
 });

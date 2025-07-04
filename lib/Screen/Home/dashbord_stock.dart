@@ -37,7 +37,7 @@ class _StatisticsDataState extends State<DashboardStockWidget> {
         final product = ref.watch(productProvider);
         return Container(
           height: 400,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: whiteColor, boxShadow: [BoxShadow(color: kBorderColorTextField.withOpacity(0.7), blurRadius: 4, blurStyle: BlurStyle.inner, spreadRadius: 1, offset: const Offset(0, 1))]),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10.0), color: whiteColor, boxShadow: [BoxShadow(color: kBorderColorTextField.withValues(alpha: 0.7), blurRadius: 4, blurStyle: BlurStyle.inner, spreadRadius: 1, offset: const Offset(0, 1))]),
           child: product.when(
             data: (productLis) {
               for (var element in productLis) {

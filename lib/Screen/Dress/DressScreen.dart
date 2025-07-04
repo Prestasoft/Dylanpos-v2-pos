@@ -78,7 +78,6 @@ class _DressScreenState extends State<DressScreen> {
         });
       }
     } catch (e) {
-      print('Error picking images: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to pick images: $e')),
       );
@@ -420,7 +419,6 @@ class _DressScreenState extends State<DressScreen> {
                                                                   );
                                                                 },
                                                                 errorBuilder: (context, error, stackTrace) {
-                                                                  print('Error con Image.network: $error');
                                                                   return Container(
                                                                     width: 50,
                                                                     height: 50,
@@ -470,21 +468,21 @@ class _DressScreenState extends State<DressScreen> {
                                                         color: dress.state ==
                                                                 'Disponible'
                                                             ? Colors.green
-                                                                .withOpacity(
+                                                                .withValues(alpha: 
                                                                     0.2)
                                                             : dress.state ==
                                                                     'Averiado'
                                                                 ? Colors.orange
-                                                                    .withOpacity(
+                                                                    .withValues(alpha: 
                                                                         0.2)
                                                                 : dress.state ==
                                                                         'Lavandería'
                                                                     ? Colors
                                                                         .blue
-                                                                        .withOpacity(
+                                                                        .withValues(alpha: 
                                                                             0.2)
                                                                     : Colors.red
-                                                                        .withOpacity(
+                                                                        .withValues(alpha: 
                                                                             0.2),
                                                         borderRadius:
                                                             BorderRadius
@@ -857,7 +855,7 @@ class _DressScreenState extends State<DressScreen> {
                                         ),
                                         InkWell(
                                           hoverColor:
-                                              Colors.blue.withOpacity(0.1),
+                                              Colors.blue.withValues(alpha: 0.1),
                                           overlayColor:
                                               MaterialStateProperty.all<Color>(
                                                   Colors.blue),

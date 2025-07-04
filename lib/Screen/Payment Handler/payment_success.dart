@@ -103,7 +103,7 @@ class _PaymentSuccessState extends State<PaymentSuccess> {
                         ),
                         Divider(
                           thickness: 1.0,
-                          color: kGreyTextColor.withOpacity(0.1),
+                          color: kGreyTextColor.withValues(alpha: 0.1),
                         ),
                         const SizedBox(height: 10.0),
                         Text(

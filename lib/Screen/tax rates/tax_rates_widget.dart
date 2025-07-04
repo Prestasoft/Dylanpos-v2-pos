@@ -459,7 +459,7 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                           //             ),
                                           //             backgroundColor: kMainColor,
                                           //             elevation: 1.0,
-                                          //             foregroundColor: kGreyTextColor.withOpacity(0.1),
+                                          //             foregroundColor: kGreyTextColor.withValues(alpha: 0.1),
                                           //             shadowColor: kMainColor,
                                           //             animationDuration: const Duration(milliseconds: 300),
                                           //             textStyle: const TextStyle(color: Colors.white, fontFamily: 'Display', fontSize: 16, fontWeight: FontWeight.bold),
@@ -515,7 +515,7 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                           //             ),
                                           //             backgroundColor: Colors.red,
                                           //             elevation: 1.0,
-                                          //             foregroundColor: Colors.white.withOpacity(0.1),
+                                          //             foregroundColor: Colors.white.withValues(alpha: 0.1),
                                           //             shadowColor: Colors.red,
                                           //             animationDuration: const Duration(milliseconds: 300),
                                           //             textStyle: kTextStyle.copyWith(color: kWhite),
@@ -564,9 +564,9 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                           //                                               borderRadius: BorderRadius.circular(8.0), side: const BorderSide(color: kMainColor)),
                                           //                                         ),
                                           //                                         overlayColor: MaterialStateProperty.all<Color>(
-                                          //                                           kMainColor.withOpacity(0.1),
+                                          //                                           kMainColor.withValues(alpha: 0.1),
                                           //                                         ),
-                                          //                                         shadowColor: MaterialStateProperty.all<Color>(kMainColor.withOpacity(0.1)),
+                                          //                                         shadowColor: MaterialStateProperty.all<Color>(kMainColor.withValues(alpha: 0.1)),
                                           //                                         minimumSize: MaterialStateProperty.all<Size>(
                                           //                                           const Size(150, 50),
                                           //                                         ),
@@ -603,9 +603,9 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
                                           //                                           ),
                                           //                                         ),
                                           //                                         overlayColor: MaterialStateProperty.all<Color>(
-                                          //                                           kWhite.withOpacity(0.1),
+                                          //                                           kWhite.withValues(alpha: 0.1),
                                           //                                         ),
-                                          //                                         shadowColor: MaterialStateProperty.all<Color>(kMainColor.withOpacity(0.1)),
+                                          //                                         shadowColor: MaterialStateProperty.all<Color>(kMainColor.withValues(alpha: 0.1)),
                                           //                                         minimumSize: MaterialStateProperty.all<Size>(Size(150, 50)),
                                           //                                         backgroundColor: MaterialStateProperty.all<Color>(kMainColor),
                                           //                                         // Change background color

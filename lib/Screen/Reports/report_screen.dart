@@ -24,7 +24,7 @@ import '../../PDF/sales_invoice_pdf.dart';
 import '../../Provider/profile_provider.dart';
 import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
-import '../../model/daily_transaction_model.dart';
+
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
 import '../currency/currency_provider.dart';
@@ -41,6 +41,7 @@ class SaleReports extends StatefulWidget {
 }
 
 class _SaleReportsState extends State<SaleReports> {
+  // --- ESTADO Y MÉTODOS DE FILTRO ---
   List<String> categoryList = [
     'Ventas',
     'Transaccion Diaria',
@@ -54,151 +55,138 @@ class _SaleReportsState extends State<SaleReports> {
   ];
 
   String selected = 'Ventas';
-
-  String selectedMonth = 'Este mes';
-
+  String selectedMonth = 'Hoy';
   DateTimeRange selectedDate = DateTimeRange(
-    start: DateTime(DateTime.now().year, DateTime.now().month, 1),
-    end: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day,
-        23, 59, 59),
+    start: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+    end: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 23, 59, 59),
   );
+  String searchItem = '';
 
-  //DateTime selected2ndDate = DateTime.now();
+  List<String> month = [
+    'Hoy',
+    'Este mes',
+    'Ultimo mes',
+    'Ultimos 6 meses',
+    'Este año',
+    'Ver todo',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    checkCurrentUserAndRestartApp();
+    final now = DateTime.now();
+    selectedMonth = 'Hoy';
+    selectedDate = DateTimeRange(
+      start: DateTime(now.year, now.month, now.day),
+      end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+    );
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTimeRange? picked = await showDateRangePicker(
-        context: context,
-        initialDateRange: selectedDate,
-        firstDate: DateTime(2015, 8),
-        lastDate: DateTime(2101),
-        initialEntryMode: DatePickerEntryMode.calendar,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                onPrimary: Colors.white,
-                secondary: Colors.grey.shade400,
-                onSecondary: Colors.white,
-              ),
+      context: context,
+      initialDateRange: selectedDate,
+      firstDate: DateTime(2015, 8),
+      lastDate: DateTime(2101),
+      initialEntryMode: DatePickerEntryMode.calendar,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              onPrimary: Colors.white,
+              secondary: Colors.grey.shade400,
+              onSecondary: Colors.white,
             ),
-            child: Column(
-              children: [
-                Material(
-                  borderRadius: BorderRadius.circular(16),
-                  clipBehavior: Clip.hardEdge,
-                  child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(maxWidth: 400.0, maxHeight: 600),
-                    child: child,
-                  ),
-                )
-              ],
-            ),
-          );
-        });
-
+          ),
+          child: Column(
+            children: [
+              Material(
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.hardEdge,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 400.0, maxHeight: 600),
+                  child: child,
+                ),
+              )
+            ],
+          ),
+        );
+      },
+    );
     if (picked != null && picked != selectedDate) {
-      final DateTime start =
-          DateTime(picked.start.year, picked.start.month, picked.start.day);
-
-      final DateTime end = DateTime(
-          picked.end.year, picked.end.month, picked.end.day, 23, 59, 59);
+      final DateTime start = DateTime(picked.start.year, picked.start.month, picked.start.day);
+      final DateTime end = DateTime(picked.end.year, picked.end.month, picked.end.day, 23, 59, 59);
       setState(() {
         selectedDate = DateTimeRange(start: start, end: end);
       });
     }
   }
 
-  List<String> month = [
-  'Hoy',           // Nueva opción
-  'Este mes',
-  'Ultimo mes',
-  'Ultimos 6 meses',
-  'Este año',
-  'Ver todo',
-];
-
-DropdownButton<String> getMonth() {
-  List<DropdownMenuItem<String>> dropDownItems = [];
-  for (String des in month) {
-    var item = DropdownMenuItem(
-      value: des,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(des),
-      ),
-    );
-    dropDownItems.add(item);
-  }
-  return DropdownButton(
-    isExpanded: true,
-    items: dropDownItems,
-    value: selectedMonth,
-    onChanged: (value) {
-      setState(() {
-        selectedMonth = value!;
-        switch (selectedMonth) {
-          case 'Hoy':
-            {
-              final now = DateTime.now();
+  DropdownButton<String> getMonth() {
+    List<DropdownMenuItem<String>> dropDownItems = [];
+    for (String des in month) {
+      var item = DropdownMenuItem(
+        value: des,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(des),
+        ),
+      );
+      dropDownItems.add(item);
+    }
+    return DropdownButton(
+      isExpanded: true,
+      items: dropDownItems,
+      value: selectedMonth,
+      onChanged: (value) {
+        setState(() {
+          selectedMonth = value!;
+          DateTime now = DateTime.now();
+          switch (selectedMonth) {
+            case 'Hoy':
               selectedDate = DateTimeRange(
-                start: DateTime(now.year, now.month, now.day), // Inicio del día (00:00:00)
-                end: now, // Hasta el momento actual
+                start: DateTime(now.year, now.month, now.day),
+                end: DateTime(now.year, now.month, now.day, 23, 59, 59),
               );
-            }
-            break;
-          case 'Este mes':
-            {
+              break;
+            case 'Este mes':
               selectedDate = DateTimeRange(
-                start: DateTime(DateTime.now().year, DateTime.now().month, 1),
-                end: DateTime.now(),
+                start: DateTime(now.year, now.month, 1),
+                end: DateTime(now.year, now.month, now.day, 23, 59, 59),
               );
-            }
-            break;
-          case 'Ultimo mes':
-            {
+              break;
+            case 'Ultimo mes':
+              final prevMonth = DateTime(now.year, now.month - 1, 1);
+              final lastDayPrevMonth = DateTime(now.year, now.month, 0);
               selectedDate = DateTimeRange(
-                start: DateTime(DateTime.now().year, DateTime.now().month - 1, 1),
-                end: DateTime(DateTime.now().year, DateTime.now().month, 0),
+                start: prevMonth,
+                end: lastDayPrevMonth,
               );
-            }
-            break;
-          case 'Ultimos 6 meses':
-            {
+              break;
+            case 'Ultimos 6 meses':
+              final sixMonthsAgo = DateTime(now.year, now.month - 6, 1);
               selectedDate = DateTimeRange(
-                start: DateTime(DateTime.now().year, DateTime.now().month - 6, 1),
-                end: DateTime.now(),
+                start: sixMonthsAgo,
+                end: DateTime(now.year, now.month, now.day, 23, 59, 59),
               );
-            }
-            break;
-          case 'Este año':
-            {
+              break;
+            case 'Este año':
               selectedDate = DateTimeRange(
-                start: DateTime(DateTime.now().year, 1, 1),
-                end: DateTime.now(),
+                start: DateTime(now.year, 1, 1),
+                end: DateTime(now.year, now.month, now.day, 23, 59, 59),
               );
-            }
-            break;
-          case 'Ver todo':
-            {
+              break;
+            case 'Ver todo':
               selectedDate = DateTimeRange(
                 start: DateTime(1900, 1, 1),
-                end: DateTime.now(),
+                end: DateTime(now.year, now.month, now.day, 23, 59, 59),
               );
-            }
-            break;
-        }
-      });
-    },
-  );
-}
-
-  String searchItem = '';
-
-  @override
-  void initState() {
-    super.initState();
-    checkCurrentUserAndRestartApp();
+              break;
+          }
+        });
+      },
+    );
   }
 
   double getTotalDue(List<SaleTransactionModel> transitionModel) {
@@ -244,50 +232,51 @@ DropdownButton<String> getMonth() {
   }
 
   // Luego modifica tus métodos de cálculo así:
-  double calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
-    double total = 0.0;
-    
-    dailyTransactions.forEach((key, value) {
-      final type = value['type'];
-      final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
-      
-      if (paymentType == 'Efectivo') {
-        total += (value['paymentIn'] as num).toDouble();
-      }
-    });
-    
-    return total;
-  }
 
-  double calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
-    double total = 0.0;
-    
-    dailyTransactions.forEach((key, value) {
-      final type = value['type'];
-      final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
-      
-      if (paymentType == 'Transferencia') {
-        total += (value['paymentIn'] as num).toDouble();
-      }
-    });
-    
-    return total;
-  }
+// --- Lógica unificada de métodos de pago ---
+String categorizarMetodoPago(String? paymentType) {
+  final tipo = (paymentType ?? '').toLowerCase();
+  if (tipo.contains('cash') || tipo.contains('efectivo')) return 'Efectivo';
+  if (tipo.contains('card') || tipo.contains('tarjeta') || tipo.contains('bank')) return 'Tarjeta';
+  if (tipo.contains('transfer') || tipo.contains('transferencia') || tipo.contains('mobile')) return 'Transferencia';
+  return 'Otro';
+}
 
-  double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
-    double total = 0.0;
-    
-    dailyTransactions.forEach((key, value) {
-      final type = value['type'];
-      final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
-      
-      if (paymentType == 'Tarjeta') {
-        total += (value['paymentIn'] as num).toDouble();
-      }
-    });
-    
-    return total;
-  }
+double calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
+  double total = 0.0;
+  dailyTransactions.forEach((key, value) {
+    final type = value['type'];
+    final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
+    if (categorizarMetodoPago(paymentType) == 'Efectivo') {
+      total += (value['paymentIn'] as num).toDouble();
+    }
+  });
+  return total;
+}
+
+double calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
+  double total = 0.0;
+  dailyTransactions.forEach((key, value) {
+    final type = value['type'];
+    final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
+    if (categorizarMetodoPago(paymentType) == 'Transferencia') {
+      total += (value['paymentIn'] as num).toDouble();
+    }
+  });
+  return total;
+}
+
+double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
+  double total = 0.0;
+  dailyTransactions.forEach((key, value) {
+    final type = value['type'];
+    final paymentType = value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']?['paymentType'];
+    if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
+      total += (value['paymentIn'] as num).toDouble();
+    }
+  });
+  return total;
+}
 
   final _horizontalScroll = ScrollController();
   int _saleReportPerPage = 10; // Default number of items to display
@@ -383,7 +372,7 @@ DropdownButton<String> getMonth() {
                             topLeft: Radius.circular(10.0),
                             topRight: Radius.circular(10.0),
                           ),
-                          color: kGreyTextColor.withOpacity(0.1),
+                          color: kGreyTextColor.withValues(alpha: 0.1),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -463,7 +452,6 @@ DropdownButton<String> getMonth() {
                     return transactionReport.when(data: (transaction) {
                       List<SaleTransactionModel> reTransaction = [];
                       for (var element in transaction.reversed.toList()) {
-                        print(element);
                         if ((element.invoiceNumber
                                     .toLowerCase()
                                     .contains(searchItem.toLowerCase()) ||
@@ -1070,7 +1058,7 @@ DropdownButton<String> getMonth() {
                                               BorderRadius.circular(8.0),
                                           border: Border.all(
                                               color: kGreyTextColor
-                                                  .withOpacity(0.1))),
+                                                  .withValues(alpha: 0.1))),
                                       child: AppTextField(
                                         showCursor: true,
                                         cursorColor: kTitleColor,
@@ -1108,7 +1096,7 @@ DropdownButton<String> getMonth() {
                                                       BorderRadius.circular(
                                                           8.0),
                                                   color: kGreyTextColor
-                                                      .withOpacity(0.1),
+                                                      .withValues(alpha: 0.1),
                                                 ),
                                                 child: const Icon(
                                                   FeatherIcons.search,
@@ -1253,9 +1241,10 @@ DropdownButton<String> getMonth() {
                                                               paginatedList
                                                                   .length,
                                                               (index) {
-                                                                final reservationIds = paginatedList[index].reservationIds ?? [];
+                                                                final reservationIds = paginatedList[index].reservationIds;
                                                                 final firstReservationId = reservationIds.isNotEmpty ? reservationIds.first : null;
-                                                            return DataRow(
+                                                                
+                                                                return DataRow(
                                                                 cells: [
                                                                   ///______________S.L__________________________________________________
                                                                   DataCell(
@@ -1316,18 +1305,19 @@ DropdownButton<String> getMonth() {
 
                                                                   ///___________Seller Name______________________________________________
                                                                   DataCell(
-                                                                      Consumer(builder: (context, ref, _) {
-                                                                        return ref.watch(fullReservationByIdProviderVQ(firstReservationId!)).when(
-                                                                          loading: () => const SizedBox(
-                                                                            width: 20,
-                                                                            height: 20,
-                                                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                                                          ),
-                                                                          error: (error, stack) => Text('Error'),
-                                                                          data: (fullReservation) => Text(fullReservation?.reservation?['seller_name'] ?? 'N/A'),
-                                                                        );
-                                                                      },
-                                                                    ),
+                                                                    firstReservationId != null
+                                                                        ? Consumer(builder: (context, ref, _) {
+                                                                            return ref.watch(fullReservationByIdProviderVQ(firstReservationId)).when(
+                                                                              loading: () => const SizedBox(
+                                                                                width: 20,
+                                                                                height: 20,
+                                                                                child: CircularProgressIndicator(strokeWidth: 2),
+                                                                              ),
+                                                                              error: (error, stack) => const Text('Error'),
+                                                                              data: (fullReservation) => Text(fullReservation?.reservation != null ? fullReservation!.reservation['seller_name'] ?? 'N/A' : 'N/A'),
+                                                                            );
+                                                                          })
+                                                                        : const Text('N/A'),
                                                                   ),
 
                                                                   ///___________Party Type (COMENTADO)______________________________________________
@@ -1344,6 +1334,7 @@ DropdownButton<String> getMonth() {
                                                                   DataCell(
                                                                     Text(
                                                                       '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].totalAmount.toString()) ?? 0)}',
+                                                                      style: const TextStyle(fontWeight: FontWeight.w500),
                                                                     ),
                                                                   ),
 
@@ -1577,7 +1568,7 @@ DropdownButton<String> getMonth() {
                                                     ),
                                                     InkWell(
                                                       hoverColor: Colors.blue
-                                                          .withOpacity(0.1),
+                                                          .withValues(alpha: 0.1),
                                                       overlayColor:
                                                           MaterialStateProperty
                                                               .all<Color>(

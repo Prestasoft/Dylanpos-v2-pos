@@ -8,10 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/Repository/profile_details_repo.dart';
-import 'package:salespro_admin/Screen/Home/home_screen.dart';
 
 import '../Screen/Authentication/add_profile.dart';
-import '../Screen/blank_home.dart';
+
 import '../const.dart';
 import '../model/user_role_model.dart';
 
@@ -100,12 +99,10 @@ class LogInRepo extends ChangeNotifier {
       for (var element in value.children) {
         var data =
             UserRoleModel.fromJson(jsonDecode(jsonEncode(element.value)));
-        print(email);
         if (data.email == email &&
             data.databaseId != null &&
             data.databaseId != '') {
           prefs.setString('userPermission', json.encode(data));
-          print(data);
           finalUserRoleModel = data;
 
           constUserId = data.databaseId ?? '';
@@ -124,8 +121,6 @@ Future<void> sendEmailVerification() async {
 
   try {
     await user?.sendEmailVerification();
-    print('Email verification link sent');
   } catch (e) {
-    print('Error sending email verification link: $e');
   }
 }

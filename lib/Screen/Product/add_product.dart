@@ -48,7 +48,6 @@ class AddProduct extends StatefulWidget {
 class _AddProductState extends State<AddProduct> {
   bool checkProductName({required String name, required String id}) {
     for (var element in widget.warehouseBasedProductModel) {
-      print('name: ${element.productName}, id: ${element.productID}');
       if (element.productName.toLowerCase() == name.toLowerCase() &&
           element.productID == id) {
         return false;
@@ -158,7 +157,7 @@ class _AddProductState extends State<AddProduct> {
                       const SizedBox(height: 20.0),
                       Divider(
                         thickness: 1.0,
-                        color: kGreyTextColor.withOpacity(0.2),
+                        color: kGreyTextColor.withValues(alpha: 0.2),
                       ),
                       const SizedBox(height: 10.0),
                       Row(
@@ -336,7 +335,7 @@ class _AddProductState extends State<AddProduct> {
                       const SizedBox(height: 5.0),
                       Divider(
                         thickness: 1.0,
-                        color: kGreyTextColor.withOpacity(0.2),
+                        color: kGreyTextColor.withValues(alpha: 0.2),
                       ),
                       const SizedBox(height: 5.0),
                       Row(
@@ -497,7 +496,7 @@ class _AddProductState extends State<AddProduct> {
                       const SizedBox(height: 20.0),
                       Divider(
                         thickness: 1.0,
-                        color: kGreyTextColor.withOpacity(0.2),
+                        color: kGreyTextColor.withValues(alpha: 0.2),
                       ),
                       const SizedBox(height: 10.0),
                       Row(
@@ -544,7 +543,7 @@ class _AddProductState extends State<AddProduct> {
                       const SizedBox(height: 10.0),
                       Divider(
                         thickness: 1.0,
-                        color: kGreyTextColor.withOpacity(0.2),
+                        color: kGreyTextColor.withValues(alpha: 0.2),
                       ),
                       const SizedBox(height: 5.0),
                       Row(
@@ -677,7 +676,7 @@ class _AddProductState extends State<AddProduct> {
                     const SizedBox(height: 20.0),
                     Divider(
                       thickness: 1.0,
-                      color: kGreyTextColor.withOpacity(0.2),
+                      color: kGreyTextColor.withValues(alpha: 0.2),
                     ),
                     const SizedBox(height: 10.0),
                     Row(
@@ -723,7 +722,7 @@ class _AddProductState extends State<AddProduct> {
                     const SizedBox(height: 5.0),
                     Divider(
                       thickness: 1.0,
-                      color: kGreyTextColor.withOpacity(0.2),
+                      color: kGreyTextColor.withValues(alpha: 0.2),
                     ),
                     const SizedBox(height: 5.0),
                     Row(

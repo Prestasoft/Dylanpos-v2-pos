@@ -822,7 +822,7 @@ class _PurchasePlanState extends State<PurchasePlan> {
                                       children: [
                                         Container(
                                           decoration: BoxDecoration(
-                                            color: data[index].subscriptionName == selectedPlan.subscriptionName ? kPremiumPlanColor2.withOpacity(0.1) : Colors.white,
+                                            color: data[index].subscriptionName == selectedPlan.subscriptionName ? kPremiumPlanColor2.withValues(alpha: 0.1) : Colors.white,
                                             borderRadius: const BorderRadius.all(
                                               Radius.circular(10),
                                             ),
@@ -902,7 +902,7 @@ class _PurchasePlanState extends State<PurchasePlan> {
                                   child: Container(
                                     padding: const EdgeInsets.all(10.0),
                                     decoration: BoxDecoration(
-                                      color: data[index].subscriptionName == selectedPlan.subscriptionName ? kPremiumPlanColor2.withOpacity(0.1) : Colors.white,
+                                      color: data[index].subscriptionName == selectedPlan.subscriptionName ? kPremiumPlanColor2.withValues(alpha: 0.1) : Colors.white,
                                       borderRadius: const BorderRadius.all(
                                         Radius.circular(10),
                                       ),

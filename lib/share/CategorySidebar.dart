@@ -44,7 +44,7 @@ class CategorySidebar extends ConsumerWidget {
           decoration: BoxDecoration(
               color: kWhite,
               border:
-                  Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)),
+                  Border.all(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)),
               borderRadius: const BorderRadius.all(Radius.circular(15))),
           child: SingleChildScrollView(
             child: Column(
@@ -58,7 +58,7 @@ class CategorySidebar extends ConsumerWidget {
                             ? Colors.transparent
                             : isSelected == 'Categories'
                                 ? kBlueTextColor
-                                : kBlueTextColor.withOpacity(0.1)),
+                                : kBlueTextColor.withValues(alpha: 0.1)),
                     padding: EdgeInsets.only(
                         left: screenWidth < 1240 ? 0 : 15,
                         right: 8,
@@ -119,7 +119,7 @@ class CategorySidebar extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(5.0),
                                 color: isSelected == category[i].categoryName
                                     ? kBlueTextColor
-                                    : kBlueTextColor.withOpacity(0.1)),
+                                    : kBlueTextColor.withValues(alpha: 0.1)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [

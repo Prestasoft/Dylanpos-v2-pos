@@ -1945,7 +1945,7 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                   //               Container(
                                   //                 width: double.infinity,
                                   //                 height: 1,
-                                  //                 color: kGreyTextColor.withOpacity(0.3),
+                                  //                 color: kGreyTextColor.withValues(alpha: 0.3),
                                   //               )
                                   //             ],
                                   //           );
@@ -2732,7 +2732,6 @@ class _QuotationScreenState extends State<QuotationScreen> {
                         //     //             //         //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                         //     //             //       }
                         //     //             //     }
-                        //     //             //     print('-----------------------connected-----------------');
                         //     //             //   }
                         //     //             // } on SocketException catch (_) {
                         //     //             //   setState(() {
@@ -2753,7 +2752,6 @@ class _QuotationScreenState extends State<QuotationScreen> {
                         //     //             //           );
                         //     //             //         });
                         //     //             //   });
-                        //     //             //   print('-----------------not connected---------------');
                         //     //             // }
                         //     //
                         //     //             // ShowPaymentPopUp(

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:mime/mime.dart';
+
 import 'dart:typed_data';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';

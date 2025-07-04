@@ -83,7 +83,7 @@ class _NewIncomeState extends State<NewIncome> {
                       const SizedBox(height: 20.0),
                       Divider(
                         thickness: 1.0,
-                        color: kGreyTextColor.withOpacity(0.2),
+                        color: kGreyTextColor.withValues(alpha: 0.2),
                       ),
                       const SizedBox(height: 10.0),
                       Row(
@@ -114,7 +114,7 @@ class _NewIncomeState extends State<NewIncome> {
                       const SizedBox(height: 10.0),
                       Divider(
                         thickness: 1.0,
-                        color: kGreyTextColor.withOpacity(0.2),
+                        color: kGreyTextColor.withValues(alpha: 0.2),
                       ),
                       const SizedBox(height: 5.0),
                       Row(

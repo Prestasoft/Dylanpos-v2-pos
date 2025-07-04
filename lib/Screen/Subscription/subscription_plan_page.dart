@@ -168,7 +168,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                               padding: const EdgeInsets.all(10.0),
                               // height: 80,
                               decoration: BoxDecoration(
-                                  color: kMainColor.withOpacity(0.2),
+                                  color: kMainColor.withValues(alpha: 0.2),
                                   borderRadius: const BorderRadius.all(
                                       Radius.circular(10))),
                               child: Row(
@@ -406,7 +406,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   //                     Container(
                   //                       padding: const EdgeInsets.all(8.0),
                   //                       decoration: BoxDecoration(
-                  //                         color: colorList[i].withOpacity(0.1),
+                  //                         color: colorList[i].withValues(alpha: 0.1),
                   //                         shape: BoxShape.rectangle,
                   //                         borderRadius: BorderRadius.circular(4),
                   //                       ),

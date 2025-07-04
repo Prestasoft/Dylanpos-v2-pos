@@ -3,7 +3,7 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
-import 'package:nb_utils/nb_utils.dart';
+
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -14,9 +14,9 @@ import '../../Provider/profile_provider.dart';
 import '../../PDF/print_pdf.dart';
 import '../../model/sale_confirmation_model.dart';
 import '../../model/reservation_model.dart';
-import '../../model/sale_transaction_model.dart';
+
 import '../Widgets/Constant Data/constant.dart';
-import '../Widgets/noDataFound.dart';
+
 
 class SaleConfirmationsScreen extends ConsumerStatefulWidget {
   const SaleConfirmationsScreen({super.key});
@@ -359,7 +359,7 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
                         constraints: BoxConstraints(minWidth: constraints.maxWidth),
                         child: DataTable(
                           headingRowColor: MaterialStateColor.resolveWith(
-                              (states) => kMainColor.withOpacity(0.95)),
+                              (states) => kMainColor.withValues(alpha: 0.95)),
                           headingTextStyle: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -444,7 +444,7 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
                                             duration: Duration(milliseconds: 150),
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: isHovering ? kMainColor.withOpacity(0.25) : kMainColor.withOpacity(0.1),
+                                              color: isHovering ? kMainColor.withValues(alpha: 0.25) : kMainColor.withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(4),
                                             ),
                                             child: Text(
@@ -514,7 +514,7 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.15),
+                                    color: statusColor.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Text(

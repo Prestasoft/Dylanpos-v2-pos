@@ -26,7 +26,7 @@ class TableWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -175,7 +175,7 @@ class TabletTableWidget extends StatelessWidget {
           width: context.width(),
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -324,7 +324,7 @@ class SmallTableWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               physics: const NeverScrollableScrollPhysics(),
@@ -475,7 +475,7 @@ class TabletSmallTableWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               physics: const NeverScrollableScrollPhysics(),
@@ -626,7 +626,7 @@ class DayBookWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -775,7 +775,7 @@ class TabletDayBookWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -924,7 +924,7 @@ class AllTransactionWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -1073,7 +1073,7 @@ class TabletAllTransactionWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -1222,7 +1222,7 @@ class CustomerListTableWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -1383,7 +1383,7 @@ class TabletCustomerListTableWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -1544,7 +1544,7 @@ class TabletCustomerListTableWidget extends StatelessWidget {
 //         Container(
 //           padding: const EdgeInsets.all(10.0),
 //           decoration: BoxDecoration(
-//             color: kGreyTextColor.withOpacity(0.2),
+//             color: kGreyTextColor.withValues(alpha: 0.2),
 //           ),
 //           child: HorizontalList(
 //               padding: EdgeInsets.zero,
@@ -1694,7 +1694,7 @@ class TabletExpensesTableWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -1843,7 +1843,7 @@ class ExpensesCategoryListWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -1992,7 +1992,7 @@ class TabletExpensesCategoryListWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -2143,7 +2143,7 @@ class StockReportWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,
@@ -2292,7 +2292,7 @@ class TableStockReportWidget extends StatelessWidget {
           width: MediaQuery.of(context).size.width,
           padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
-            color: kGreyTextColor.withOpacity(0.2),
+            color: kGreyTextColor.withValues(alpha: 0.2),
           ),
           child: HorizontalList(
               padding: EdgeInsets.zero,

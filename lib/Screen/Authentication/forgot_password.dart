@@ -249,12 +249,14 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                                                       .route);
                                                               // Navigator.pushNamed(context, EmailLogIn.route);
                                                             } on FirebaseAuthException catch (e) {
+                                                              if (!mounted) return;
                                                               if (e.code ==
                                                                   'user-not-found') {
                                                                 // EasyLoading.showError('No user found for that email.');
                                                                 EasyLoading
                                                                     .showError(
                                                                         '${lang.S.of(context).noUserFoundForThatEmail}.');
+                                                                if (!mounted) return;
                                                                 ScaffoldMessenger.of(
                                                                         context)
                                                                     .showSnackBar(
@@ -270,6 +272,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                                               } else if (e
                                                                       .code ==
                                                                   'wrong-password') {
+                                                                if (!mounted) return;
                                                                 ScaffoldMessenger.of(
                                                                         context)
                                                                     .showSnackBar(
@@ -287,6 +290,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                                               EasyLoading
                                                                   .showError(e
                                                                       .toString());
+                                                              if (!mounted) return;
                                                               ScaffoldMessenger
                                                                       .of(context)
                                                                   .showSnackBar(

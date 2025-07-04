@@ -21,7 +21,6 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import '../../Provider/dress_with_reservations.dart';
 import '../../model/FullReservation.dart';
-import '../../model/args_dress.dart';
 
 class CalendarDressScreen extends StatefulWidget {
   const CalendarDressScreen({super.key});
@@ -95,7 +94,6 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
         });
       }
     } catch (e) {
-      print('Error picking images: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to pick images: $e')),
       );
@@ -113,7 +111,8 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
         body: Consumer(builder: (_, ref, watch) {
           AsyncValue<List<DressModel>> dressesAsync =
               ref.watch(dressesByStatusProvider(itemStatus));
-          return dressesAsync.when(data: (list) {
+          return dressesAsync.when(
+            data: (list) {
             // Estados válidos y únicos, sin duplicados y con formato consistente
             final List<String> validStates = ["Averiado", "Disponible", "En Sesión", "En Lavandería"];
             dynamicStates = ["Todos", ...validStates, "Reservados"];
@@ -547,8 +546,6 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                                                     (context,
                                                                         error,
                                                                         stackTrace) {
-                                                                  print(
-                                                                      'Error con Image.network: $error');
                                                                   return Container(
                                                                     width: 50,
                                                                     height: 50,
@@ -601,12 +598,12 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                       decoration: BoxDecoration(
                                                         color: dress.state == 'Disponible'
-                                                            ? Colors.green.withOpacity(0.2)
+                                                            ? Colors.green.withValues(alpha: 0.2)
                                                             : dress.state == 'Averiado'
-                                                                ? Colors.orange.withOpacity(0.2)
+                                                                ? Colors.orange.withValues(alpha: 0.2)
                                                                 : dress.state == 'Lavandería'
-                                                                    ? Colors.blue.withOpacity(0.2)
-                                                                    : Colors.red.withOpacity(0.2),
+                                                                    ? Colors.blue.withValues(alpha: 0.2)
+                                                                    : Colors.red.withValues(alpha: 0.2),
                                                         borderRadius: BorderRadius.circular(12),
                                                       ),
                                                       child: Text(
@@ -808,7 +805,7 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                         ),
                                         InkWell(
                                           hoverColor:
-                                              Colors.blue.withOpacity(0.1),
+                                              Colors.blue.withValues(alpha: 0.1),
                                           overlayColor:
                                               MaterialStateProperty.all<Color>(
                                                   Colors.blue),

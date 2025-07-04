@@ -1,8 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
-import 'dart:developer';
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:mime/mime.dart';
+
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
@@ -15,7 +15,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconly/iconly.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/customer_provider.dart';
@@ -23,14 +23,11 @@ import 'package:salespro_admin/Provider/daily_transaction_provider.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_edit.dart';
-import 'package:salespro_admin/Screen/currency/currency_provider.dart';
+
 import 'package:salespro_admin/currency.dart';
 import 'package:salespro_admin/delete_invoice_functions.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-import 'package:salespro_admin/model/customer_model.dart';
-import 'package:salespro_admin/model/personal_information_model.dart';
-import 'package:salespro_admin/model/purchase_transation_model.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+
 import '../../PDF/print_pdf.dart';
 import '../../Provider/product_provider.dart';
 import '../../Provider/profile_provider.dart';
@@ -378,7 +375,6 @@ class _SaleListState extends State<SaleList> {
                                                             itemBuilder: (BuildContext bc) => [
                                                               PopupMenuItem(
                                                                 onTap: () async {
-                                                                  print("Item index ======  ${paginatedTransactions[index].invoiceNumber}");
                                                                   
                                                                   // 1. Diálogo para seleccionar tipo de impresión (sin loader)
                                                                   final printType = await showDialog<String>(
@@ -929,39 +925,21 @@ class _SaleListState extends State<SaleList> {
                 }
 
                 // Debug: Información detallada sobre las transacciones encontradas
-                print('DEBUG - paysDetails: Factura $invoiceNumber, encontradas ${reTransaction.length} transacciones');
                 for (int i = 0; i < reTransaction.length; i++) {
                   var trans = reTransaction[i];
-                  print('DEBUG - Transacción $i:');
-                  print('  - Type: ${trans.type}');
-                  print('  - PaymentIn: ${trans.paymentIn}');
-                  print('  - PaymentOut: ${trans.paymentOut}');
-                  print('  - ID: ${trans.id}');
-                  print('  - Name: ${trans.name}');
-                  print('  - Date: ${trans.date}');
                   
                   if (trans.dueTransactionModel != null) {
                     var dueModel = trans.dueTransactionModel!;
-                    print('  - DueTransaction existe:');
-                    print('    * PaymentType: ${dueModel.paymentType}');
-                    print('    * PayDueAmount: ${dueModel.payDueAmount}');
-                    print('    * CustomerName: ${dueModel.customerName}');
-                    print('    * InvoiceNumber: ${dueModel.invoiceNumber}');
-                    print('    * IsPaid: ${dueModel.isPaid}');
                   } else {
-                    print('  - DueTransaction: null');
                   }
                   
                   // También verificar otros modelos por si acaso
                   if (trans.saleTransactionModel != null) {
-                    print('  - SaleTransaction existe: ${trans.saleTransactionModel!.paymentType}');
                   }
                   
-                  print('  ---');
                 }
 
                 double totalAbonado = reTransaction.fold(0.0, (sum, payment) => sum + payment.paymentIn);
-                print('DEBUG - Total abonado calculado: $totalAbonado');
 
                 return Dialog(
                   surfaceTintColor: kWhite,
@@ -1055,22 +1033,14 @@ class _SaleListState extends State<SaleList> {
                                   ],
                                   rows: reTransaction.map<DataRow>((payment) {
                                     // Debug detallado para cada fila
-                                    print('DEBUG - Procesando fila de pago:');
-                                    print('  - ID: ${payment.id}');
-                                    print('  - Type: ${payment.type}');
-                                    print('  - Date: ${payment.date}');
-                                    print('  - PaymentIn: ${payment.paymentIn}');
-                                    print('  - DueTransactionModel es null: ${payment.dueTransactionModel == null}');
                                     
                                     // Obtener el método de pago desde dueTransactionModel
                                     String metodoPago = 'N/A';
                                     String metodoPagoOriginal = 'null';
                                     
                                     if (payment.dueTransactionModel != null) {
-                                      print('  - DueTransactionModel existe');
                                       var dueModel = payment.dueTransactionModel!;
                                       metodoPagoOriginal = dueModel.paymentType?.toString() ?? 'null';
-                                      print('  - PaymentType original: "$metodoPagoOriginal"');
                                       
                                       if (dueModel.paymentType != null && dueModel.paymentType!.isNotEmpty) {
                                         metodoPago = dueModel.paymentType!;
@@ -1099,11 +1069,8 @@ class _SaleListState extends State<SaleList> {
                                         }
                                       }
                                     } else {
-                                      print('  - DueTransactionModel es null');
                                     }
                                     
-                                    print('  - Método final: "$metodoPago" (original: "$metodoPagoOriginal")');
-                                    print('  ---');
                                     
                                     return DataRow(cells: [
                                       DataCell(_fechaConvertida(payment.date)),

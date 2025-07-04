@@ -68,7 +68,7 @@ class TotalCountWidget extends StatelessWidget {
               //   padding: const EdgeInsets.only(left: 4.0, right: 4.0),
               //   decoration: BoxDecoration(
               //     borderRadius: BorderRadius.circular(30.0),
-              //     color: changes <0 ? kRedTextColor.withOpacity(0.2) : kGreenTextColor.withOpacity(0.2) ,
+              //     color: changes <0 ? kRedTextColor.withValues(alpha: 0.2) : kGreenTextColor.withValues(alpha: 0.2) ,
               //   ),
               //   child: Text(
               //     '${changes.toString()}%',
@@ -81,7 +81,7 @@ class TotalCountWidget extends StatelessWidget {
             padding: const EdgeInsets.all(10.0),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: iconColor.withOpacity(0.2),
+              color: iconColor.withValues(alpha: 0.2),
             ),
             child: Icon(
               icon,
@@ -374,8 +374,6 @@ class _StatisticsDataState extends State<StatisticsData> {
     final int daysInMonth = getDaysInMonth(currentYear, currentMonth);
     double freePercentage = ((widget.freeUser * 100) / widget.totalSaleCount);
     double paidPercentage = 100 - freePercentage;
-    print(freePercentage);
-    print(paidPercentage);
     final maxYValue = data
         .map((e) => e.sales)
         .followedBy(data.map((e) => e.expense))
@@ -391,7 +389,7 @@ class _StatisticsDataState extends State<StatisticsData> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 4,
                 blurStyle: BlurStyle.inner,
                 spreadRadius: 1,
@@ -1147,7 +1145,7 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
                           stops: const [100, 80],
                           tileMode: TileMode.decal,
                           colors: [
-                            _incomeColor.withOpacity(0.075),
+                            _incomeColor.withValues(alpha: 0.075),
                             Colors.white,
                           ],
                         ),
@@ -1170,7 +1168,7 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
                           stops: const [100, 80],
                           tileMode: TileMode.decal,
                           colors: [
-                            _expenseColor.withOpacity(0.15),
+                            _expenseColor.withValues(alpha: 0.15),
                             Colors.white,
                           ],
                         ),

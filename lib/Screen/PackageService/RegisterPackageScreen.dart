@@ -419,7 +419,7 @@ class _ServicePackageListState extends State<ServicePackageList> {
                                           ),
                                         ),
                                         InkWell(
-                                          hoverColor: Colors.blue.withOpacity(0.1),
+                                          hoverColor: Colors.blue.withValues(alpha: 0.1),
                                           overlayColor: MaterialStateProperty.all<Color>(Colors.blue),
                                           onTap: _currentPage * _itemsPerPage < showAblePackages.length ? () => setState(() => _currentPage++) : null,
                                           child: Container(

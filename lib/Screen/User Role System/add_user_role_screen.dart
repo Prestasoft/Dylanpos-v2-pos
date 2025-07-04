@@ -124,10 +124,6 @@ class _AddUserRoleState extends State<AddUserRole> {
     titleController.text = widget.userRoleModel?.userTitle ?? '';
     userRoleName.text = widget.userRoleModel?.userRoleName ?? '';
     if (widget.userRoleModel == null) return;
-    print(widget.userRoleModel!.permissions);
-    print(widget.userRoleModel!.databaseId);
-    print(widget.userRoleModel!.userRoleName);
-    print(widget.userRoleModel!.userKey);
     if (widget.userRoleModel!.permissions.isNotEmpty) {
       // Migrar permisos faltantes antes de asignar
       migrateExistingPermissions();
@@ -145,18 +141,18 @@ class _AddUserRoleState extends State<AddUserRole> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.15),
-            color.withOpacity(0.05),
+            color.withValues(alpha: 0.15),
+            color.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -167,8 +163,8 @@ class _AddUserRoleState extends State<AddUserRole> {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(16),
-          splashColor: color.withOpacity(0.2),
-          highlightColor: color.withOpacity(0.1),
+          splashColor: color.withValues(alpha: 0.2),
+          highlightColor: color.withValues(alpha: 0.1),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -179,11 +175,11 @@ class _AddUserRoleState extends State<AddUserRole> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: color.withOpacity(0.2),
+                        color: color.withValues(alpha: 0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -522,7 +518,6 @@ class _AddUserRoleState extends State<AddUserRole> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    print("Const user id: $constUserId");
     return Consumer(builder: (context, ref, __) {
       return SingleChildScrollView(
         child: Column(
@@ -886,8 +881,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
                                   colors: [
-                                    categoryColor.withOpacity(0.1),
-                                    categoryColor.withOpacity(0.05),
+                                    categoryColor.withValues(alpha: 0.1),
+                                    categoryColor.withValues(alpha: 0.05),
                                   ],
                                 ),
                                 border: Border(
@@ -921,7 +916,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [
-                                            categoryColor.withOpacity(0.3),
+                                            categoryColor.withValues(alpha: 0.3),
                                             Colors.transparent,
                                           ],
                                         ),
@@ -941,12 +936,12 @@ class _AddUserRoleState extends State<AddUserRole> {
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                     colors: [
-                                      kMainColor.withOpacity(isDashboardPermission ? 0.08 : 0.06),
-                                      kMainColor.withOpacity(isDashboardPermission ? 0.02 : 0.01),
+                                      kMainColor.withValues(alpha: isDashboardPermission ? 0.08 : 0.06),
+                                      kMainColor.withValues(alpha: isDashboardPermission ? 0.02 : 0.01),
                                     ],
                                   ),
                                   border: Border.all(
-                                    color: kMainColor.withOpacity(isDashboardPermission ? 0.3 : 0.2),
+                                    color: kMainColor.withValues(alpha: isDashboardPermission ? 0.3 : 0.2),
                                     width: 1,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -960,7 +955,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                                 ? Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: kMainColor.withOpacity(0.15),
+                                      color: kMainColor.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
@@ -986,7 +981,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                                         style: isPrincipalPermission
                                           ? theme.textTheme.titleMedium?.copyWith(
                                               fontWeight: FontWeight.w600,
-                                              color: kMainColor.withOpacity(0.9),
+                                              color: kMainColor.withValues(alpha: 0.9),
                                             )
                                           : theme.textTheme.titleMedium,
                                         maxLines: 2,
@@ -1000,7 +995,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                                           vertical: 2
                                         ),
                                         decoration: BoxDecoration(
-                                          color: kMainColor.withOpacity(0.9),
+                                          color: kMainColor.withValues(alpha: 0.9),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Text(
@@ -1019,7 +1014,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                                           vertical: 2
                                         ),
                                         decoration: BoxDecoration(
-                                          color: kMainColor.withOpacity(0.7),
+                                          color: kMainColor.withValues(alpha: 0.7),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Text(
@@ -1108,11 +1103,11 @@ class _AddUserRoleState extends State<AddUserRole> {
                     Colors.white,
                   ],
                 ),
-                border: Border.all(color: kNeutral300.withOpacity(0.5)),
+                border: Border.all(color: kNeutral300.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.08),
+                    color: Colors.grey.withValues(alpha: 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -1126,7 +1121,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: kMainColor.withOpacity(0.1),
+                          color: kMainColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -1471,7 +1466,6 @@ class _AddUserRoleState extends State<AddUserRole> {
                       // userRolePermissionModel.databaseId =
                       //     widget.userRoleModel!.databaseId;
                       userRolePermissionModel.databaseId = constUserId;
-                      print(userRolePermissionModel.toJson());
                       await dataRef.update(userRolePermissionModel.toJson());
                       await adminDataRef
                           .update(userRolePermissionModel.toJson());
@@ -1505,8 +1499,6 @@ class _AddUserRoleState extends State<AddUserRole> {
                     userRolePermissionModel.databaseId =
                         FirebaseAuth.instance.currentUser!.uid;
                     userRolePermissionModel.userRoleName = userRoleName.text;
-                    // print(FirebaseAuth.instance.currentUser!.uid);
-                    print(userRolePermissionModel.toJson());
                     signUp(
                       context: context,
                       email: emailController.text,
@@ -1748,7 +1740,6 @@ class _AddUserRoleState extends State<AddUserRole> {
           edit: false,
           delete: false,
         ));
-        print('🔄 Agregado permiso faltante: $requiredPermissionType');
       }
     }
     
@@ -1765,6 +1756,5 @@ class _AddUserRoleState extends State<AddUserRole> {
     // Actualizar defaultPermissions con los permisos migrados y ordenados
     defaultPermissions = orderedPermissions;
     
-    print('✅ Migración de permisos completada. Total permisos: ${defaultPermissions.length}');
   }
 }

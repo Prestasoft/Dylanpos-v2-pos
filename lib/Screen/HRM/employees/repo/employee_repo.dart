@@ -21,7 +21,6 @@ class EmployeeRepository {
         employees.add(data);
       }
     } catch (e) {
-      print('Error fetching employees: $e');
     }
 
     return employees;

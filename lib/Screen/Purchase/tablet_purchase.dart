@@ -357,7 +357,6 @@
 //         this.image = imageTemporary;
 //       });
 //     } on PlatformException catch (e) {
-//       print('Faield to pick image: $e');
 //     }
 //   }
 //
@@ -732,7 +731,6 @@
 //                                           } else {
 //                                             nameCodeCategoryController.clear();
 //                                             nameFocus.requestFocus();
-//                                             print('Already Added');
 //                                           }
 //                                         });
 //                                         break;
@@ -742,8 +740,6 @@
 //                                         nameFocus.requestFocus();
 //                                         EasyLoading.showError('Not found');
 //                                       }
-//                                       print(i);
-//                                       print(product.length);
 //                                     }
 //                                   },
 //                                   showCursor: true,
@@ -883,7 +879,6 @@
 //                                               if (!uniqueCheck(products[i].productCode)) {
 //                                                 cartList.add(productModel);
 //                                               } else {
-//                                                 print('Already Added');
 //                                               }
 //                                             });
 //                                           });

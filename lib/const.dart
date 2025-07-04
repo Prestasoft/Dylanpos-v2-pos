@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:restart_app/restart_app.dart';
@@ -35,7 +35,6 @@ String calculateProductVat({required AddToCartModel product}) {
   if (product.taxType == 'Inclusive') {
     //double taxAmount = purchasePrice / (1 + taxRate) * taxRate;
     double taxRate = product.groupTaxRate / 100;
-    print(product.groupTaxRate);
     return (((double.tryParse(product.productPurchasePrice.toString()) ?? 0) /
                 (taxRate + 1) *
                 taxRate) *

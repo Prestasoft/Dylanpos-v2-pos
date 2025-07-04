@@ -11,7 +11,7 @@ import 'package:restart_app/restart_app.dart';
 import 'package:salespro_admin/Route/sidebar_item_model.dart';
 import 'package:salespro_admin/Route/static_string.dart';
 import 'package:salespro_admin/const.dart';
-import 'package:salespro_admin/global_language.dart';
+
 import '../Provider/general_setting_provider.dart';
 import '../Provider/subacription_plan_provider.dart';
 import '../Screen/Widgets/Constant Data/constant.dart';
@@ -73,7 +73,6 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    print("Final user: ${finalUserRoleModel.toJson()}");
     final filteredMenus = getTopMenusForUser(finalUserRoleModel);
     final _selectedInfoHome = _isSelected(context,  homeTab 
 );
@@ -207,10 +206,10 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                               color: const Color(0xFF15CD75)),
                                           surfaceTintColor: kWhite,
                                           shadowColor: const Color(0xFF15CD75)
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                           foregroundColor:
                                               const Color(0xFF15CD75)
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                         ),
                                         onPressed: () {
                                           // Navigator.pushNamed(context, PurchaseList.route);
@@ -309,7 +308,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                                               color: kWhite),
                                           surfaceTintColor: lightGreyColor,
                                           shadowColor:
-                                              lightGreyColor.withOpacity(0.1),
+                                              lightGreyColor.withValues(alpha: 0.1),
                                         ),
                                         onPressed: () {
                                           // Navigator.pushNamed(context, InventorySales.route);

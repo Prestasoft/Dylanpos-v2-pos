@@ -247,8 +247,8 @@
 //                 backgroundColor: const Color(0xFF8424FF),
 //                 // side: const BorderSide(color: kBorderColorTextField, width: 1),
 //                 textStyle: kTextStyle.copyWith(color: kWhite),
-//                 surfaceTintColor: const Color(0xFF8424FF).withOpacity(0.5),
-//                 shadowColor: const Color(0xFF8424FF).withOpacity(0.1),
+//                 surfaceTintColor: const Color(0xFF8424FF).withValues(alpha: 0.5),
+//                 shadowColor: const Color(0xFF8424FF).withValues(alpha: 0.1),
 //               ),
 //               onPressed: () {
 //                 Navigator.pushNamed(context, '/pos-sales');
@@ -271,7 +271,7 @@
 //                 side: const BorderSide(color: kMainColor, width: 1),
 //                 textStyle: kTextStyle.copyWith(color: kWhite),
 //                 surfaceTintColor: lightGreyColor,
-//                 shadowColor: lightGreyColor.withOpacity(0.1),
+//                 shadowColor: lightGreyColor.withValues(alpha: 0.1),
 //               ),
 //               onPressed: () {
 //                 Navigator.pushNamed(context, '/inventory-sales');
@@ -322,8 +322,8 @@
 //                 side: const BorderSide(color: Color(0xFFFF2525), width: 1),
 //                 textStyle: kTextStyle.copyWith(color: const Color(0xFFFF2525)),
 //                 surfaceTintColor: kWhite,
-//                 shadowColor: const Color(0xFFFF2525).withOpacity(0.1),
-//                 foregroundColor: const Color(0xFFFF2525).withOpacity(0.1),
+//                 shadowColor: const Color(0xFFFF2525).withValues(alpha: 0.1),
+//                 foregroundColor: const Color(0xFFFF2525).withValues(alpha: 0.1),
 //               ),
 //               onPressed: () {
 //                 Navigator.pushNamed(context, Product.route);
@@ -346,8 +346,8 @@
 //                 side: const BorderSide(color: Color(0xFF15CD75), width: 1),
 //                 textStyle: kTextStyle.copyWith(color: const Color(0xFF15CD75)),
 //                 surfaceTintColor: kWhite,
-//                 shadowColor: const Color(0xFF15CD75).withOpacity(0.1),
-//                 foregroundColor: const Color(0xFF15CD75).withOpacity(0.1),
+//                 shadowColor: const Color(0xFF15CD75).withValues(alpha: 0.1),
+//                 foregroundColor: const Color(0xFF15CD75).withValues(alpha: 0.1),
 //               ),
 //               onPressed: () {
 //                 Navigator.pushNamed(context, PurchaseList.route);
@@ -368,7 +368,7 @@
 //                 decoration: BoxDecoration(
 //                   borderRadius: BorderRadius.circular(30.0),
 //                   color: Colors.white,
-//                   border: Border.all(color: const Color(0xFF828282).withOpacity(0.3)),
+//                   border: Border.all(color: const Color(0xFF828282).withValues(alpha: 0.3)),
 //                 ),
 //                 padding: const EdgeInsets.fromLTRB(13.0, 5.0, 13.0, 5.0),
 //                 child: Theme(
@@ -594,7 +594,7 @@
 //                 decoration: BoxDecoration(
 //                   borderRadius: BorderRadius.circular(30.0),
 //                   color: Colors.white,
-//                   border: Border.all(color: const Color(0xFF828282).withOpacity(0.3)),
+//                   border: Border.all(color: const Color(0xFF828282).withValues(alpha: 0.3)),
 //                 ),
 //                 padding: const EdgeInsets.fromLTRB(13.0, 5.0, 13.0, 5.0),
 //                 child: Theme(
@@ -757,7 +757,6 @@
 //                       };
 //
 //                       if (currencySymbols.containsKey(newValue)) {
-//                         print(currencySymbols[newValue]!);
 //                         currency = currencySymbols[newValue]!;
 //                         await prefs.setString('currency', currency);
 //                         final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
@@ -798,7 +797,7 @@
 //                     height: 70,
 //                     width: 70,
 //                     decoration: BoxDecoration(
-//                       color: const Color(0xFF2DB0F6).withOpacity(0.1),
+//                       color: const Color(0xFF2DB0F6).withValues(alpha: 0.1),
 //                       shape: BoxShape.rectangle,
 //                     ),
 //                     child: const Icon(Icons.settings, color: Color(0xFF2DB0F6), size: 30.0),

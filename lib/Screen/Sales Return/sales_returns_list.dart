@@ -338,7 +338,7 @@ class _SalesReturnState extends State<SalesReturn> {
                     //                 padding: const EdgeInsets.all(2.0),
                     //                 decoration: BoxDecoration(
                     //                   borderRadius: BorderRadius.circular(30.0),
-                    //                   color: kGreyTextColor.withOpacity(0.1),
+                    //                   color: kGreyTextColor.withValues(alpha: 0.1),
                     //                 ),
                     //                 child: const Icon(
                     //                   FeatherIcons.search,
@@ -1019,7 +1019,7 @@ class _SalesReturnState extends State<SalesReturn> {
                               //                 Container(
                               //                   width: double.infinity,
                               //                   height: 1,
-                              //                   color: kGreyTextColor.withOpacity(0.2),
+                              //                   color: kGreyTextColor.withValues(alpha: 0.2),
                               //                 )
                               //               ],
                               //             );

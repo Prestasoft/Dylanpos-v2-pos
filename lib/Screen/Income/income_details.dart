@@ -40,7 +40,7 @@ class IncomeDetails extends StatelessWidget {
               const SizedBox(height: 5.0),
               Divider(
                 thickness: 1.0,
-                color: kGreyTextColor.withOpacity(0.2),
+                color: kGreyTextColor.withValues(alpha: 0.2),
               ),
               const SizedBox(height: 20.0),
 

@@ -847,7 +847,7 @@ class _ProfileAddState extends State<ProfileAdd> {
                           ),
                           Divider(
                             thickness: 1.0,
-                            color: kGreyTextColor.withOpacity(0.1),
+                            color: kGreyTextColor.withValues(alpha: 0.1),
                           ),
                           // Text(
                           //   'Setup Your Profile',

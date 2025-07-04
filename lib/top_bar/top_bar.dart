@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as ri;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -77,49 +76,24 @@ class _TopBarWidgetState extends State<TopBarWidget> {
     return checkUserRoleViewPermissionV2(type: 'dashboard'); // Acceso básico al perfil
   }
 
-  // Función para obtener los totales de ventas y gastos del día actual
-  Future<Map<String, double>> _getTodaysSalesTotals() async {
+  // Función para obtener la lista de ventas del día y el total de gastos
+  Future<Map<String, dynamic>> _getTodaysSalesData() async {
     final userId = await getUserID();
-    print('🔑 User ID obtenido: "$userId"');
-    
     if (userId.isEmpty) {
-      print('❌ Error: User ID está vacío');
-      return {'efectivo': 0.0, 'tarjeta': 0.0, 'transferencia': 0.0, 'gastos': 0.0};
+      return {'ventasDelDia': <Map<String, dynamic>>[], 'gastos': 0.0};
     }
-    
     final today = DateTime.now();
     final todayStart = DateTime(today.year, today.month, today.day);
     final todayEnd = todayStart.add(const Duration(days: 1));
-    
-    print('🔍 Buscando ventas y gastos del día: ${todayStart.toString()} hasta ${todayEnd.toString()}');
-    
-    Map<String, double> totals = {
-      'efectivo': 0.0,
-      'tarjeta': 0.0,
-      'transferencia': 0.0,
-      'gastos': 0.0,
-    };
-
+    List<Map<String, dynamic>> ventasDelDia = [];
+    double gastos = 0.0;
     try {
       final databaseRef = FirebaseDatabase.instance.ref("$userId/Sales Transition");
-      print('📡 Consultando Firebase en: $userId/Sales Transition');
-      
       final snapshot = await databaseRef.get();
-      
       if (snapshot.exists) {
         final salesData = snapshot.value as Map<dynamic, dynamic>;
-        print('📊 Total de ventas encontradas: ${salesData.length}');
-        
-        int ventasDelDia = 0;
         for (var saleEntry in salesData.entries) {
           final saleData = saleEntry.value as Map<dynamic, dynamic>;
-          
-          // Debug: mostrar estructura de datos (solo para la primera venta)
-          if (ventasDelDia == 0) {
-            print('📝 Campos disponibles: ${saleData.keys.toList()}');
-          }
-          
-          // Verificar si la venta es del día actual - revisar múltiples campos de fecha
           String? dateField;
           if (saleData['purchaseDate'] != null) {
             dateField = saleData['purchaseDate'].toString();
@@ -130,147 +104,78 @@ class _TopBarWidgetState extends State<TopBarWidget> {
           } else if (saleData['timestamp'] != null) {
             dateField = saleData['timestamp'].toString();
           }
-          
           if (dateField != null) {
             try {
               DateTime saleDate;
-              
-              // Intentar diferentes formatos de fecha
               if (dateField.contains('/')) {
-                // Formato dd/MM/yyyy
                 final parts = dateField.split('/');
                 if (parts.length >= 3) {
                   saleDate = DateTime(
-                    int.parse(parts[2]), // año
-                    int.parse(parts[1]), // mes
-                    int.parse(parts[0]), // día
+                    int.parse(parts[2]),
+                    int.parse(parts[1]),
+                    int.parse(parts[0]),
                   );
                 } else {
                   continue;
                 }
               } else if (dateField.contains('-')) {
-                // Formato ISO (YYYY-MM-DD) o DateTime.toString()
-                // Primero extraer solo la parte de fecha si tiene hora
                 String datePart = dateField.split(' ')[0];
                 if (datePart.split('-').length >= 3) {
                   final parts = datePart.split('-');
                   saleDate = DateTime(
-                    int.parse(parts[0]), // año
-                    int.parse(parts[1]), // mes
-                    int.parse(parts[2]), // día
+                    int.parse(parts[0]),
+                    int.parse(parts[1]),
+                    int.parse(parts[2]),
                   );
                 } else {
-                  // Intentar parse directo
                   saleDate = DateTime.parse(dateField);
                 }
               } else {
-                // Formato timestamp o parse directo
                 saleDate = DateTime.parse(dateField);
               }
-              
               final isToday = saleDate.isAfter(todayStart.subtract(Duration(seconds: 1))) && saleDate.isBefore(todayEnd);
-              print('📅 Fecha de venta: ${saleDate.toString()}, ¿Es hoy?: $isToday');
-              
               if (isToday) {
-                ventasDelDia++;
-                final totalAmount = double.tryParse(saleData['totalAmount']?.toString() ?? '0') ?? 0.0;
-                final paymentType = saleData['paymentType']?.toString().toLowerCase() ?? '';
-                final invoiceNumber = saleData['invoiceNumber']?.toString() ?? 'N/A';
-                
-                print('💰 Venta #$ventasDelDia encontrada:');
-                print('   📄 Factura: $invoiceNumber');
-                print('   💵 Monto: $totalAmount');
-                print('   🏷️ Método: $paymentType');
-                print('   📅 Fecha: ${saleDate.toString()}');
-                
-                // Categorizar por método de pago - ampliar criterios
-                if (paymentType.contains('cash') || 
-                    paymentType.contains('efectivo') || 
-                    paymentType.contains('Cash') ||
-                    paymentType.contains('Efectivo')) {
-                  totals['efectivo'] = (totals['efectivo'] ?? 0.0) + totalAmount;
-                  print('   ✅ Categorizado como EFECTIVO. Total efectivo: ${totals['efectivo']}');
-                } else if (paymentType.contains('card') || 
-                          paymentType.contains('tarjeta') ||
-                          paymentType.contains('Card') ||
-                          paymentType.contains('Tarjeta') ||
-                          paymentType.contains('bank') ||
-                          paymentType.contains('Bank')) {
-                  totals['tarjeta'] = (totals['tarjeta'] ?? 0.0) + totalAmount;
-                  print('   ✅ Categorizado como TARJETA. Total tarjeta: ${totals['tarjeta']}');
-                } else if (paymentType.contains('transfer') || 
-                          paymentType.contains('transferencia') ||
-                          paymentType.contains('Transfer') ||
-                          paymentType.contains('Transferencia') ||
-                          paymentType.contains('mobile') ||
-                          paymentType.contains('Mobile')) {
-                  totals['transferencia'] = (totals['transferencia'] ?? 0.0) + totalAmount;
-                  print('   ✅ Categorizado como TRANSFERENCIA. Total transferencia: ${totals['transferencia']}');
-                } else {
-                  print('   ⚠️ Método de pago no reconocido: $paymentType - agregando a efectivo por defecto');
-                  totals['efectivo'] = (totals['efectivo'] ?? 0.0) + totalAmount;
-                  print('   ✅ Agregado a EFECTIVO por defecto. Total efectivo: ${totals['efectivo']}');
-                }
+                ventasDelDia.add({
+                  'paymentType': saleData['paymentType']?.toString() ?? '',
+                  'amount': double.tryParse(saleData['totalAmount']?.toString() ?? '0') ?? 0.0,
+                });
               }
-            } catch (e) {
-              print('❌ Error parsing date for sale: $e, fecha: $dateField');
-            }
-          } else {
-            print('⚠️ Venta sin fecha encontrada');
+            } catch (e) {}
           }
         }
-        print('📈 Total de ventas del día encontradas: $ventasDelDia');
-      } else {
-        print('⚠️ No se encontraron datos de ventas en Firebase');
-        print('🔍 Verificar que exista la ruta: $userId/Sales Transition');
       }
-    } catch (e) {
-      print('❌ Error fetching today\'s sales: $e');
-    }
-    
+    } catch (e) {}
     // Obtener gastos del día
     try {
-      print('💸 Obteniendo gastos del día...');
       final expensesRef = FirebaseDatabase.instance.ref("$userId/Expense");
       final expensesSnapshot = await expensesRef.get();
-      
       if (expensesSnapshot.exists) {
         final expensesData = expensesSnapshot.value as Map<dynamic, dynamic>;
-        print('📊 Total de gastos encontrados: ${expensesData.length}');
-        
-        int gastosDelDia = 0;
         for (var expenseEntry in expensesData.entries) {
           final expenseData = expenseEntry.value as Map<dynamic, dynamic>;
-          
-          // Verificar si el gasto es del día actual
           String? dateField = expenseData['expenseDate']?.toString();
-          
           if (dateField != null) {
             try {
               DateTime expenseDate;
-              
-              // Intentar diferentes formatos de fecha para gastos
               if (dateField.contains('/')) {
-                // Formato dd/MM/yyyy
                 final parts = dateField.split('/');
                 if (parts.length >= 3) {
                   expenseDate = DateTime(
-                    int.parse(parts[2]), // año
-                    int.parse(parts[1]), // mes
-                    int.parse(parts[0]), // día
+                    int.parse(parts[2]),
+                    int.parse(parts[1]),
+                    int.parse(parts[0]),
                   );
                 } else {
                   continue;
                 }
               } else if (dateField.contains('-')) {
-                // Formato ISO (YYYY-MM-DD) o DateTime.toString()
                 String datePart = dateField.split(' ')[0];
                 if (datePart.split('-').length >= 3) {
                   final parts = datePart.split('-');
                   expenseDate = DateTime(
-                    int.parse(parts[0]), // año
-                    int.parse(parts[1]), // mes
-                    int.parse(parts[2]), // día
+                    int.parse(parts[0]),
+                    int.parse(parts[1]),
+                    int.parse(parts[2]),
                   );
                 } else {
                   expenseDate = DateTime.parse(dateField);
@@ -278,94 +183,37 @@ class _TopBarWidgetState extends State<TopBarWidget> {
               } else {
                 expenseDate = DateTime.parse(dateField);
               }
-              
               final isToday = expenseDate.isAfter(todayStart.subtract(Duration(seconds: 1))) && expenseDate.isBefore(todayEnd);
-              print('📅 Fecha de gasto: ${expenseDate.toString()}, ¿Es hoy?: $isToday');
-              
               if (isToday) {
-                gastosDelDia++;
                 final amount = double.tryParse(expenseData['amount']?.toString() ?? '0') ?? 0.0;
-                final expenseFor = expenseData['expanseFor']?.toString() ?? '';
-                final category = expenseData['category']?.toString() ?? '';
-                final paymentType = expenseData['paymentType']?.toString() ?? '';
-                
-                print('💸 Gasto #$gastosDelDia encontrado:');
-                print('   💰 Monto: $amount');
-                print('   📝 Para: $expenseFor');
-                print('   🏷️ Categoría: $category');
-                print('   💳 Método pago: $paymentType');
-                print('   📅 Fecha: ${expenseDate.toString()}');
-                
-                totals['gastos'] = (totals['gastos'] ?? 0.0) + amount;
-                print('   ✅ Agregado a gastos. Total gastos: ${totals['gastos']}');
+                gastos += amount;
               }
-            } catch (e) {
-              print('❌ Error parsing date for expense: $e, fecha: $dateField');
-            }
-          } else {
-            print('⚠️ Gasto sin fecha encontrado');
+            } catch (e) {}
           }
         }
-        print('💸 Total de gastos del día encontrados: $gastosDelDia');
-        print('💸 Total gastos acumulado: ${totals['gastos']}');
-      } else {
-        print('⚠️ No se encontraron datos de gastos en Firebase');
-        print('🔍 Verificar que exista la ruta: $userId/Expense');
       }
-    } catch (e) {
-      print('❌ Error fetching today\'s expenses: $e');
-    }
-    
-    print('📈 RESUMEN FINAL DE TOTALES:');
-    print('🏪 VENTAS DEL DÍA:');
-    print('   💵 Efectivo: RD${totals['efectivo']?.toStringAsFixed(2)}');
-    print('   💳 Tarjeta: RD${totals['tarjeta']?.toStringAsFixed(2)}');
-    print('   📱 Transferencia: RD${totals['transferencia']?.toStringAsFixed(2)}');
-    final totalVentas = (totals['efectivo'] ?? 0) + (totals['tarjeta'] ?? 0) + (totals['transferencia'] ?? 0);
-    print('   🏦 Total Ventas: RD${totalVentas.toStringAsFixed(2)}');
-    print('');
-    print('💸 GASTOS DEL DÍA:');
-    print('   💰 Total Gastos: RD${totals['gastos']?.toStringAsFixed(2)}');
-    print('');
-    print('🏆 BALANCE FINAL:');
-    final balanceNeto = totalVentas - (totals['gastos'] ?? 0);
-    print('   💎 Balance Neto: RD${balanceNeto.toStringAsFixed(2)} ${balanceNeto >= 0 ? '✅' : '❌'}');
-    print('');
-    print('📊 Datos completos: $totals');
-    return totals;
+    } catch (e) {}
+    return {'ventasDelDia': ventasDelDia, 'gastos': gastos};
   }
 
   void _showCuadreModal(BuildContext context) async {
-    print('🎯 Usuario clickeó el botón de cuadre de caja');
     
     // Mostrar loading mientras se obtienen los datos
     EasyLoading.show(status: 'Obteniendo datos del día...');
     
     try {
-      print('📡 Iniciando obtención de datos de ventas...');
-      final todaysTotals = await _getTodaysSalesTotals();
-      print('📊 Datos obtenidos del servidor: $todaysTotals');
+      final todaysData = await _getTodaysSalesData();
       EasyLoading.dismiss();
-      
       if (context.mounted) {
-        print('🎨 Mostrando modal con los siguientes valores:');
-        print('💵 Efectivo: ${todaysTotals['efectivo']}');
-        print('💳 Tarjeta: ${todaysTotals['tarjeta']}');
-        print('📱 Transferencia: ${todaysTotals['transferencia']}');
-        print('💸 Gastos: ${todaysTotals['gastos']}');
-        
         showDialog(
           context: context,
           builder: (context) => CuadreModal(
-            totalEfectivo: todaysTotals['efectivo'] ?? 0.0,
-            totalTarjeta: todaysTotals['tarjeta'] ?? 0.0,
-            totalTransferencia: todaysTotals['transferencia'] ?? 0.0,
-            totalGastos: todaysTotals['gastos'] ?? 0.0,
+            ventasDelDia: (todaysData['ventasDelDia'] as List<Map<String, dynamic>>?) ?? [],
+            totalGastos: (todaysData['gastos'] as double?) ?? 0.0,
           ),
         );
       }
     } catch (e) {
-      print('❌ Error en _showCuadreModal: $e');
       EasyLoading.dismiss();
       EasyLoading.showError('Error al obtener datos: ${e.toString()}');
     }
@@ -535,7 +383,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                                             child: InkWell(
                                               borderRadius: BorderRadius.circular(4),
                                               onTap: () async {
-                                                final ref = ri.ProviderScope.containerOf(rowContext);
+                                                final ref = ProviderScope.containerOf(rowContext);
                                                 final setting = await ref.read(generalSettingProvider.future);
                                                 final profileInfo = await ref.read(profileDetailsProvider.future);
                                                 final saleData = notification.saleData;
@@ -560,7 +408,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                                                 duration: Duration(milliseconds: 150),
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: isHovering ? kMainColor.withOpacity(0.25) : kMainColor.withOpacity(0.1),
+                                                  color: isHovering ? kMainColor.withValues(alpha: 0.25) : kMainColor.withValues(alpha: 0.1),
                                                   borderRadius: BorderRadius.circular(4),
                                                 ),
                                                 child: Text(
@@ -709,7 +557,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    return ri.Consumer(builder: (context, ref, __) {
+    return Consumer(builder: (context, ref, __) {
       AsyncValue<PersonalInformationModel> userProfileDetails =
           ref.watch(profileDetailsProvider);
       
@@ -743,7 +591,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
           ],
         ).value,
         surfaceTintColor: Colors.transparent,
-        title: ri.Consumer(builder: (context, ref, __) {
+        title: Consumer(builder: (context, ref, __) {
           AsyncValue<PersonalInformationModel> userProfileDetails =
               ref.watch(profileDetailsProvider);
 
@@ -801,7 +649,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                               side: const BorderSide(color: kMainColor, width: 1),
                               textStyle: kTextStyle.copyWith(color: kWhite),
                               surfaceTintColor: lightGreyColor,
-                              shadowColor: lightGreyColor.withOpacity(0.1),
+                              shadowColor: lightGreyColor.withValues(alpha: 0.1),
                             ),
                             onPressed: () {
                               context.go('/sales/inventory-sales');
@@ -935,7 +783,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                     Container(
                       margin: const EdgeInsets.only(right: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF15CD75).withOpacity(0.15),
+                        color: const Color(0xFF15CD75).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: const Color(0xFF15CD75),
@@ -978,8 +826,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                               textStyle: kTextStyle.copyWith(
                                   color: const Color(0xFFFF2525)),
                               surfaceTintColor: kWhite,
-                              shadowColor: kMainColor.withOpacity(0.1),
-                              foregroundColor: kMainColor.withOpacity(0.1),
+                              shadowColor: kMainColor.withValues(alpha: 0.1),
+                              foregroundColor: kMainColor.withValues(alpha: 0.1),
                             ),
                             onPressed: () {
                               context.go('/service-package/dresses');
@@ -1021,9 +869,9 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                               textStyle: kTextStyle.copyWith(
                                   color: const Color(0xFF15CD75)),
                               surfaceTintColor: kWhite,
-                              shadowColor: const Color(0xFF15CD75).withOpacity(0.1),
+                              shadowColor: const Color(0xFF15CD75).withValues(alpha: 0.1),
                               foregroundColor:
-                                  const Color(0xFF15CD75).withOpacity(0.1),
+                                  const Color(0xFF15CD75).withValues(alpha: 0.1),
                             ),
                             onPressed: () {
                               context.go('/calendario-reservas');
@@ -1077,7 +925,7 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                   height: 70,
                   width: 70,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2DB0F6).withOpacity(0.1),
+                    color: const Color(0xFF2DB0F6).withValues(alpha: 0.1),
                     shape: BoxShape.rectangle,
                   ),
                   child: const Icon(Icons.settings,

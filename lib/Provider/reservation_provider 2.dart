@@ -1,19 +1,14 @@
-import 'dart:async';
+
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
+
 import 'package:salespro_admin/model/FullReservation.dart';
-import 'package:salespro_admin/model/ReservationProductModel.dart';
-import 'package:salespro_admin/model/ServicePackageModel.dart';
+
 import 'package:salespro_admin/model/customer_model.dart';
-import 'package:salespro_admin/model/dress_model.dart';
+
 import '../model/reservation_model.dart';
 import 'customer_provider.dart';
-import 'dress_provider.dart';
-import 'package:rxdart/rxdart.dart';
-
-
 
 final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
   return FirebaseDatabase.instance
@@ -48,8 +43,6 @@ final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
     return <ReservationModel>[];
   });
 });
-
-
 
 // Helper function to check if a map represents a valid reservation
 bool _isValidReservation(Map<dynamic, dynamic> map) {
@@ -99,7 +92,6 @@ final ActualizarEstadoReservaProvider = FutureProvider.family<bool, Map<String, 
     }
     return true;
   } catch (e) {
-    print('Error al actualizar estado de múltiples reservas: $e');
     return false;
   }
 });
@@ -174,7 +166,6 @@ final ReservaPendientProvider = StreamProvider.family<List<FullReservation>, Str
   });
 });
 
-
 final reservationsByClientProvider = StreamProvider.family<List<ReservationModel>, String>((ref, clientId) {
   return FirebaseDatabase.instance
       .ref('Admin Panel/reservations')
@@ -225,11 +216,7 @@ final reservationsByBranchProvider = StreamProvider.family<List<ReservationModel
   });
 });
 
-
-
-
 // Provider actualizado
-
 
 // En tu provider de reservaciones, añade un método para verificar disponibilidad
 final isDressAvailableForRangeProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
@@ -309,7 +296,6 @@ final isDressAvailableForRangeProvider = FutureProvider.family<bool, Map<String,
 
     return true; // Está disponible
   } catch (e) {
-    print('Error verificando disponibilidad del vestido: $e');
     return false; // En caso de error, asumimos que no está disponible
   }
 });
@@ -344,7 +330,6 @@ final updateReservationProvider = FutureProvider.family<bool, Map<String, dynami
 
     return true;
   } catch (e) {
-    print('Error updating reservation: $e');
     return false;
   }
 });
@@ -357,7 +342,6 @@ final cancelReservationProvider = FutureProvider.family<bool, String>((ref, rese
 
     return true;
   } catch (e) {
-    print('Error canceling reservation: $e');
     return false;
   }
 });
@@ -494,7 +478,6 @@ final fullReservationByIdProvider = StreamProvider.family<FullReservation?, Stri
   });
 });
 
-
 final fullReservationsByClientProvider = StreamProvider.family<List<FullReservation>, String>((ref, clientId) {
   final today = DateTime.now();
   final formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
@@ -564,9 +547,6 @@ final fullReservationsByClientProvider = StreamProvider.family<List<FullReservat
   });
 });
 
-
-
-
 final sidebarProvider = StateNotifierProvider<SidebarNotifier, SidebarState>((ref) {
   return SidebarNotifier();
 });
@@ -600,7 +580,6 @@ class SidebarNotifier extends StateNotifier<SidebarState> {
   }
 }
 
-
 final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   final String dressId = params['dressId'];
   final String date = params['date'];
@@ -628,7 +607,6 @@ final isDressAvailableProvider = FutureProvider.family<bool, Map<String, dynamic
 
     return true;
   } catch (e) {
-    print('Error checking dress availability: $e');
     return true; // Fallback a disponible en caso de error
   }
 });
@@ -655,7 +633,6 @@ final crearReservaProvider = FutureProvider.family<bool, Map<String, dynamic>>((
     ref.refresh(reservationsProvider);
     return true;
   } catch (e) {
-    print('Error creating reservation: $e');
     return false;
   }
 });

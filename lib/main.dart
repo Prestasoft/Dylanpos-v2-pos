@@ -11,7 +11,7 @@ import 'package:responsive_framework/responsive_framework.dart' as rf;
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Language/language_provider.dart';
 import 'package:salespro_admin/Route/app_routes.dart';
-import 'package:salespro_admin/Screen/Payment%20Handler/payment_success.dart';
+
 import 'package:salespro_admin/const.dart';
 import 'package:url_strategy/url_strategy.dart';
 import 'package:http/http.dart' as http;
@@ -24,7 +24,6 @@ import 'generated/l10n.dart';
 import 'model/paypal_info_model.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('🔕 Background FCM message: ${message.notification?.title}');
 }
 
 Future<void> main() async {
@@ -72,22 +71,18 @@ class _MyAppState extends State<MyApp> {
     );
 
     if (token != null) {
-      print('📲 Token FCM generado: $token');
 
       // Guarda el token directamente en Firebase Realtime Database
       try {
         final userId = await getUserID();
         final databaseRef = FirebaseDatabase.instance.ref('$userId/fcmToken');
         await databaseRef.set(token);
-        print('✅ Token FCM guardado en Firebase');
       } catch (e) {
-        print('❌ Error al guardar token en Firebase: $e');
       }
     }
 
     // Escucha notificaciones mientras la app está activa (foreground)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('📨 Notificación en primer plano: ${message.notification?.title}');
       // Aquí puedes disparar un modal, alerta, badge, etc.
     });
   }

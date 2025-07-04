@@ -14,7 +14,6 @@ class ServicePackageRepository {
           .map((doc) => ServicePackageModel.fromMap(doc.data(), doc.id))
           .toList();
     } catch (e) {
-      print('Error al cargar los paquetes: $e');
       return [];
     }
   }
@@ -35,7 +34,6 @@ class ServicePackageRepository {
 
       return true;
     } catch (e) {
-      print('Error al agregar el paquete: $e');
       return false;
     }
   }
@@ -58,7 +56,6 @@ class ServicePackageRepository {
 
       return true;
     } catch (e) {
-      print('Error al actualizar el paquete: $e');
       return false;
     }
   }
@@ -69,7 +66,6 @@ class ServicePackageRepository {
       await _firebaseFirestore.collection('services').doc(packageId).delete();
       return true;
     } catch (e) {
-      print('Error al eliminar el paquete: $e');
       return false;
     }
   }

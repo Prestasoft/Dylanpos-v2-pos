@@ -501,7 +501,7 @@ class _WareHouseDetailsState extends State<WareHouseDetails> {
                                                   ),
                                                   InkWell(
                                                     hoverColor: Colors.blue
-                                                        .withOpacity(0.1),
+                                                        .withValues(alpha: 0.1),
                                                     overlayColor:
                                                         MaterialStateProperty
                                                             .all<Color>(

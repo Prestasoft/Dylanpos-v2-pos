@@ -758,7 +758,7 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
                   //   child: Container(
                   //     decoration: BoxDecoration(
                   //       color: kWhite,
-                  //       border: Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)),
+                  //       border: Border.all(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)),
                   //       borderRadius: const BorderRadius.all(
                   //         Radius.circular(15),
                   //       ),
@@ -770,14 +770,14 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
                   //           width: context.width(),
                   //           height: 350,
                   //           // height: context.height() < 720 ? 720 - 410 : context.height(),
-                  //           decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withOpacity(0.3)))),
+                  //           decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)))),
                   //           child: SingleChildScrollView(
                   //             child: Column(
                   //               mainAxisSize: MainAxisSize.min,
                   //               children: [
                   //                 Container(
                   //                   padding: const EdgeInsets.all(15),
-                  //                   decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withOpacity(0.3)))),
+                  //                   decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)))),
                   //                   child: Row(
                   //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   //                     children: [
@@ -961,7 +961,7 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
                   //                         Container(
                   //                           width: double.infinity,
                   //                           height: 1,
-                  //                           color: kGreyTextColor.withOpacity(0.3),
+                  //                           color: kGreyTextColor.withValues(alpha: 0.3),
                   //                         ),
                   //                       ],
                   //                     );

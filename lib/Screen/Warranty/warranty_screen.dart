@@ -118,7 +118,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                           Container(
                                             height: 40.0,
                                             width: 300,
-                                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(30.0), border: Border.all(color: kGreyTextColor.withOpacity(0.1))),
+                                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(30.0), border: Border.all(color: kGreyTextColor.withValues(alpha: 0.1))),
                                             child: AppTextField(
                                               showCursor: true,
                                               cursorColor: kTitleColor,
@@ -139,7 +139,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                                       padding: const EdgeInsets.all(2.0),
                                                       decoration: BoxDecoration(
                                                         borderRadius: BorderRadius.circular(30.0),
-                                                        color: kGreyTextColor.withOpacity(0.1),
+                                                        color: kGreyTextColor.withValues(alpha: 0.1),
                                                       ),
                                                       child: const Icon(
                                                         FeatherIcons.search,
@@ -154,7 +154,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                       const SizedBox(height: 5.0),
                                       Divider(
                                         thickness: 1.0,
-                                        color: kGreyTextColor.withOpacity(0.2),
+                                        color: kGreyTextColor.withValues(alpha: 0.2),
                                       ),
 
                                       ///_______sale_List_____________________________________________________
@@ -172,7 +172,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                                         const SizedBox(height: 10),
                                                         Container(
                                                           padding: const EdgeInsets.all(15),
-                                                          decoration: BoxDecoration(color: kGreyTextColor.withOpacity(0.3)),
+                                                          decoration: BoxDecoration(color: kGreyTextColor.withValues(alpha: 0.3)),
                                                           child: Row(
                                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                             children: [
@@ -281,7 +281,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                                                 Container(
                                                                   width: double.infinity,
                                                                   height: 1,
-                                                                  color: kGreyTextColor.withOpacity(0.2),
+                                                                  color: kGreyTextColor.withValues(alpha: 0.2),
                                                                 )
                                                               ],
                                                             );
@@ -300,7 +300,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                                         const SizedBox(height: 10),
                                                         Container(
                                                           padding: const EdgeInsets.all(15),
-                                                          decoration: BoxDecoration(color: kGreyTextColor.withOpacity(0.3)),
+                                                          decoration: BoxDecoration(color: kGreyTextColor.withValues(alpha: 0.3)),
                                                           child: Row(
                                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                             children: [
@@ -403,7 +403,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                                                                 Container(
                                                                   width: double.infinity,
                                                                   height: 1,
-                                                                  color: kGreyTextColor.withOpacity(0.2),
+                                                                  color: kGreyTextColor.withValues(alpha: 0.2),
                                                                 )
                                                               ],
                                                             );

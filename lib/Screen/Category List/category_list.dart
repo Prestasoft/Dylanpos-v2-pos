@@ -1252,7 +1252,6 @@ class _CategoryListState extends State<CategoryList> {
 
                                                                                                       context.go(CategoryList.route);
                                                                                                     } catch (e) {
-                                                                                                      print('---------------${e.toString()}------------');
                                                                                                       EasyLoading.showError(lang.S.of(context).error);
                                                                                                     }
                                                                                                   }
@@ -1297,7 +1296,6 @@ class _CategoryListState extends State<CategoryList> {
                                                                                                 //       GoRouter.of(context).pop(bc);
                                                                                                 //       context.go(CategoryList.route);
                                                                                                 //     } catch (e) {
-                                                                                                //       print('---------------${e.toString()}------------');
                                                                                                 //       EasyLoading.showError(lang.S.of(context).error);
                                                                                                 //     }
                                                                                                 //   }
@@ -1576,7 +1574,7 @@ class _CategoryListState extends State<CategoryList> {
                                           ),
                                           InkWell(
                                             hoverColor:
-                                                Colors.blue.withOpacity(0.1),
+                                                Colors.blue.withValues(alpha: 0.1),
                                             overlayColor: MaterialStateProperty
                                                 .all<Color>(Colors.blue),
                                             onTap: _currentPage *

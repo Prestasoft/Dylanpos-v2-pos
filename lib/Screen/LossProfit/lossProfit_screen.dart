@@ -882,7 +882,7 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
                                     color: const Color(0xFF2DB0F6)
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -920,7 +920,7 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
                                     color: const Color(0xFF15CD75)
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -958,7 +958,7 @@ class _LossProfitScreenState extends State<LossProfitScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10.0),
                                     color:
-                                        const Color(0xFFFF2525).withOpacity(.5),
+                                        const Color(0xFFFF2525).withValues(alpha: .5),
                                   ),
                                   child: Column(
                                     crossAxisAlignment:

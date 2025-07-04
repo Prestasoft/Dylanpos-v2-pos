@@ -23,7 +23,6 @@ class SalaryRepository {
         salaries.add(data);
       }
     } catch (e) {
-      print('Error fetching paid Salary: $e');
     }
 
     return salaries;

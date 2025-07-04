@@ -521,7 +521,6 @@ class _ShowPaymentPopUpState extends State<ShowPaymentPopUp> {
 
                                                         await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: data, saleTransactionModel: widget.transitionModel, context: context, setting: setting);
                                                       } catch (e, stack) {
-                                                        print(stack);
                                                         setState(() {
                                                           saleButtonClicked = false;
                                                         });

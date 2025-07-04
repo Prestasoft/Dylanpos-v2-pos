@@ -908,7 +908,7 @@ class _QuotationReportWidgetState extends State<QuotationReportWidget> {
                             //         Container(
                             //           width: double.infinity,
                             //           height: 1,
-                            //           color: kGreyTextColor.withOpacity(0.2),
+                            //           color: kGreyTextColor.withValues(alpha: 0.2),
                             //         )
                             //       ],
                             //     );

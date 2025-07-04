@@ -1,4 +1,4 @@
-import 'dart:developer';
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,7 +72,6 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
         });
       }
     } catch (e) {
-      print('Error cargando detalles del paquete: $e');
       setState(() {
         packageDuration = {'value': 1, 'unit': 'days'};
         isLoadingPackage = false;
@@ -309,7 +308,6 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
     final normalizedName = _normalize(widget.packageName);
     final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta');
     // Debug: imprime el nombre recibido y normalizado
-    print('packageName recibido: "${widget.packageName}" (normalizado: "$normalizedName")');
     return Scaffold(
       appBar: AppBar(
         title: Text("Agenda tu Sesión"),

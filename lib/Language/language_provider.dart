@@ -9,7 +9,6 @@ class LanguageChangeProvider with ChangeNotifier {
 
   void changeLocale(String locale) {
     _currentLocale = Locale(locale);
-    // print(_currentLocale);
     notifyListeners();
   }
 }

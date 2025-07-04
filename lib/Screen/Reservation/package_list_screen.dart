@@ -1,4 +1,4 @@
-import 'dart:math';
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -185,7 +185,7 @@ class PackageListScreen extends ConsumerWidget {
         color: colorScheme.primary,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -207,7 +207,7 @@ class PackageListScreen extends ConsumerWidget {
             children: [
               Text(
                 "Disponible: ",
-                style: TextStyle(color: colorScheme.onPrimary.withOpacity(0.7)),
+                style: TextStyle(color: colorScheme.onPrimary.withValues(alpha: 0.7)),
               ),
               ref.watch(servicePackagesProvider).when(
                     loading: () => SizedBox(
@@ -225,7 +225,7 @@ class PackageListScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: colorScheme.onPrimary.withOpacity(0.2),
+                        color: colorScheme.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
@@ -300,7 +300,7 @@ class PackageListScreen extends ConsumerWidget {
                   label: const Text('Todos'),
                   selected: selectedCategory == null,
                   selectedColor:
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                   checkmarkColor: Theme.of(context).colorScheme.primary,
                   labelStyle: TextStyle(
                     color: selectedCategory == null
@@ -322,7 +322,7 @@ class PackageListScreen extends ConsumerWidget {
                       selectedColor: Theme.of(context)
                           .colorScheme
                           .primary
-                          .withOpacity(0.2),
+                          .withValues(alpha: 0.2),
                       checkmarkColor: Theme.of(context).colorScheme.primary,
                       labelStyle: TextStyle(
                         color: isSelected
@@ -362,7 +362,7 @@ class PackageListScreen extends ConsumerWidget {
                 label: Text(type),
                 selected: isSelected,
                 selectedColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                 checkmarkColor: Theme.of(context).colorScheme.primary,
                 labelStyle: TextStyle(
                   color:

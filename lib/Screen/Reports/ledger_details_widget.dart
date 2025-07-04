@@ -203,7 +203,7 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                     //             padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                     //             decoration: BoxDecoration(
                     //               borderRadius: BorderRadius.circular(10.0),
-                    //               color: const Color(0xFF2DB0F6).withOpacity(0.5),
+                    //               color: const Color(0xFF2DB0F6).withValues(alpha: 0.5),
                     //             ),
                     //             child: Column(
                     //               crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,7 +226,7 @@ class _LedgerDetailsState extends State<LedgerDetails> {
                     //             padding: const EdgeInsets.only(left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
                     //             decoration: BoxDecoration(
                     //               borderRadius: BorderRadius.circular(10.0),
-                    //               color: const Color(0xFF15CD75).withOpacity(0.5),
+                    //               color: const Color(0xFF15CD75).withValues(alpha: 0.5),
                     //             ),
                     //             child: Column(
                     //               crossAxisAlignment: CrossAxisAlignment.start,

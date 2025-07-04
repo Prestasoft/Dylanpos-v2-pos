@@ -12,7 +12,6 @@ class RTest extends StatefulWidget {
 class _RTestState extends State<RTest> {
   @override
   Widget build(BuildContext context) {
-    print(window.physicalSize.width);
     return Scaffold(
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,

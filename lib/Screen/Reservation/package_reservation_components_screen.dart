@@ -157,7 +157,6 @@ class _PackageReservationScreen extends ConsumerState<PackageReservationScreen> 
                                         );
                                       }).toList();
                                     });
-                                    print('Seleccionados: $codigosSeleccionados');
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(

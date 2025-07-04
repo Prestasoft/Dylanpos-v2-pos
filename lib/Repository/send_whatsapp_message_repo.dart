@@ -28,8 +28,6 @@ class WhatsappInfoRepo {
     } else {
       isTwillio = data['twillio']['isActive'] ?? true;
       isUltraMsg = data['ultraMsg']['isActive'] ?? true;
-      print('isTwillio: $isTwillio');
-      print('isUltraMsg: $isUltraMsg');
       return WhatsappMarketing.fromJson(data);
     }
   }
@@ -49,7 +47,6 @@ class WhatsappInfoRepo {
 
     //API Call
     final response = await http.post(Uri.parse(url), body: body, headers: <String, String>{'authorization': basicAuth});
-    print('Response: ${response.body} ${response.statusCode}');
     if (response.statusCode == 201) {
       return true;
     } else {
@@ -67,9 +64,7 @@ class WhatsappInfoRepo {
     var bodyData = {'token': model.ultraMsg?.apiSecret, 'to': phoneNumber, 'body': message, 'priority': '10'};
     var response = await http.post(Uri.parse('${model.ultraMsg?.apiUrl}/messages/chat'), headers: headers, body: bodyData);
 
-    print(response.body);
     //var response = await http.get(Uri.parse(apiUrl));
-    print('Response: ${response.body} ${response.statusCode}');
     if (response.statusCode == 200) {
       return true;
     } else {

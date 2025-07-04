@@ -327,7 +327,6 @@ class _BulkProductUploadPopupState extends State<BulkProductUploadPopup> {
       anchor.click();
       anchor.remove();
     } catch (error) {
-      print(error); // Handle any errors
     }
   }
 

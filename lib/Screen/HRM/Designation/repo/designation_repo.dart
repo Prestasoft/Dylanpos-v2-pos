@@ -21,10 +21,8 @@ class DesignationRepository {
         designations.add(data);
       }
     } catch (e) {
-      print('Error fetching expense categories: $e');
     }
 
-    print(designations);
 
     return designations;
   }

@@ -474,7 +474,7 @@ class _DueReportWidgetState extends State<DueReportWidget> {
                   // Container(
                   //   height: 40.0,
                   //   width: 300,
-                  //   decoration: BoxDecoration(borderRadius: BorderRadius.circular(30.0), border: Border.all(color: kGreyTextColor.withOpacity(0.1))),
+                  //   decoration: BoxDecoration(borderRadius: BorderRadius.circular(30.0), border: Border.all(color: kGreyTextColor.withValues(alpha: 0.1))),
                   //   child: AppTextField(
                   //     showCursor: true,
                   //     cursorColor: kTitleColor,
@@ -503,7 +503,7 @@ class _DueReportWidgetState extends State<DueReportWidget> {
                   //           padding: const EdgeInsets.all(2.0),
                   //           decoration: BoxDecoration(
                   //             borderRadius: BorderRadius.circular(30.0),
-                  //             color: kGreyTextColor.withOpacity(0.1),
+                  //             color: kGreyTextColor.withValues(alpha: 0.1),
                   //           ),
                   //           child: const Icon(
                   //             FeatherIcons.search,

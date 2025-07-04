@@ -1452,7 +1452,7 @@ class _PosSaleState extends State<PosSale> {
                                   color: kWhite,
                                   border: Border.all(
                                       width: 1,
-                                      color: kGreyTextColor.withOpacity(0.3)),
+                                      color: kGreyTextColor.withValues(alpha: 0.3)),
                                   borderRadius: const BorderRadius.all(
                                     Radius.circular(15),
                                   ),
@@ -2814,8 +2814,6 @@ class _PosSaleState extends State<PosSale> {
                                                               // vat: double.parse(vatGst.toStringAsFixed(2)),
                                                               vat: 0,
                                                             );
-                                                            print(
-                                                                transitionModel);
                                                             // ShowPaymentPopUp(
                                                             //   transitionModel: transitionModel,
                                                             //   isFromQuotation: widget.quotation == null ? false : true,
@@ -2880,7 +2878,7 @@ class _PosSaleState extends State<PosSale> {
                                           border: Border.all(
                                               width: 1,
                                               color: kGreyTextColor
-                                                  .withOpacity(0.3)),
+                                                  .withValues(alpha: 0.3)),
                                           borderRadius: const BorderRadius.all(
                                               Radius.circular(15))),
                                       child: SingleChildScrollView(
@@ -2900,7 +2898,7 @@ class _PosSaleState extends State<PosSale> {
                                                                 'Categories'
                                                             ? kBlueTextColor
                                                             : kBlueTextColor
-                                                                .withOpacity(
+                                                                .withValues(alpha: 
                                                                     0.1)),
                                                 padding: EdgeInsets.only(
                                                     left: screenWidth < 1240
@@ -3016,7 +3014,7 @@ class _PosSaleState extends State<PosSale> {
                                                                         .categoryName
                                                                 ? kBlueTextColor
                                                                 : kBlueTextColor
-                                                                    .withOpacity(
+                                                                    .withValues(alpha: 
                                                                         0.1)),
                                                         child: Row(
                                                           mainAxisAlignment:

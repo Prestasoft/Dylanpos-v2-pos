@@ -248,7 +248,6 @@
 //                   await personalInformationRef.update({'currency': newCurrencySymbol});
 //
 //                   ref.invalidate(profileDetailsProvider);
-//                   print("Updating currency to: $globalCurrency");
 //                   Future.delayed(const Duration(milliseconds: 600)).then((value) => context.go('/dashboard'));
 //                 }
 //               },

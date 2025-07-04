@@ -134,7 +134,8 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
       builder: (context, consumerRef, __) {
         final personalData = consumerRef.watch(profileDetailsProvider);
         final settingProvider = consumerRef.watch(generalSettingProvider);
-        return personalData.when(data: (data) {
+        return personalData.when(
+          data: (data) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -897,9 +898,6 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
                                                     {'due': '$totalDue'});
                                               }
 
-                                              print(
-                                                  '---------First step -----------');
-
                                               await GeneratePdfAndPrint()
                                                   .uploadSaleInvoice(
                                                       personalInformationModel:
@@ -908,9 +906,6 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
                                                           myTransitionModel,
                                                       setting: setting,
                                                       context: context);
-
-                                              print(
-                                                  '---------Second step -----------');
 
                                               // ignore: unused_result
                                               consumerRef
@@ -956,7 +951,6 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
                                               }
                                             } catch (e) {
                                               EasyLoading.dismiss();
-                                              print(e.toString());
                                               //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                             }
                                           }
@@ -1158,3 +1152,5 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
     );
   }
 }
+
+// End of file

@@ -166,7 +166,6 @@ class _AddCustomerState extends State<AddCustomer> {
               // El usuario puede decidir guardarla o no
             });
           } catch (e) {
-            print('Error decoding image: $e');
           }
         }
       } else {

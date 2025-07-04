@@ -26,13 +26,11 @@
 //         // Apply the updates
 //         await ref.update(updates);
 
-//         print("Database cleanup completed successfully");
 //         return true;
 //       }
 
 //       return false;
 //     } catch (e) {
-//       print("Error cleaning up database: $e");
 //       return false;
 //     }
 //   }

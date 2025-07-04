@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'package:salespro_admin/model/dress_model.dart';
-import 'date_time_selection_screen.dart';
 
 class DressSelectionPackageScreen extends ConsumerStatefulWidget {
   final ServicePackageModel packagesAsync;
@@ -354,7 +353,7 @@ class _DressSelectionPackageScreenState
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 4,
                                 offset: Offset(0, 2),
                               ),
@@ -397,7 +396,7 @@ class _DressSelectionPackageScreenState
                                         Container(
                                           decoration: BoxDecoration(
                                             color:
-                                                Colors.black.withOpacity(0.4),
+                                                Colors.black.withValues(alpha: 0.4),
                                             borderRadius: BorderRadius.vertical(
                                                 top: Radius.circular(8)),
                                           ),

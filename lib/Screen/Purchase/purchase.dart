@@ -200,7 +200,6 @@ class _PurchaseState extends State<Purchase> {
       });
     } on PlatformException catch (e) {
       if (kDebugMode) {
-        print('Field to pick image: $e');
       }
     }
   }
@@ -1381,7 +1380,7 @@ class _PurchaseState extends State<Purchase> {
                                                     bottom: BorderSide(
                                                         width: 1,
                                                         color: kGreyTextColor
-                                                            .withOpacity(
+                                                            .withValues(alpha: 
                                                                 0.3)))),
                                             child: Theme(
                                               data: theme.copyWith(
@@ -2295,7 +2294,7 @@ class _PurchaseState extends State<Purchase> {
                                         border: Border.all(
                                             width: 1,
                                             color: kGreyTextColor
-                                                .withOpacity(0.3)),
+                                                .withValues(alpha: 0.3)),
                                         borderRadius: const BorderRadius.all(
                                             Radius.circular(15))),
                                     child: Column(
@@ -2312,7 +2311,7 @@ class _PurchaseState extends State<Purchase> {
                                                     : isSelected == 'Categories'
                                                         ? kBlueTextColor
                                                         : kBlueTextColor
-                                                            .withOpacity(0.1)),
+                                                            .withValues(alpha: 0.1)),
                                             padding: EdgeInsets.only(
                                                 left:
                                                     screenWidth < 1240 ? 0 : 15,
@@ -2413,7 +2412,7 @@ class _PurchaseState extends State<Purchase> {
                                                                     .categoryName
                                                             ? kBlueTextColor
                                                             : kBlueTextColor
-                                                                .withOpacity(
+                                                                .withValues(alpha: 
                                                                     0.1)),
                                                     child: Row(
                                                       mainAxisAlignment:

@@ -3,8 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nb_utils/nb_utils.dart';
-import 'package:responsive_grid/responsive_grid.dart';
+
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
@@ -475,12 +474,12 @@ class _AreasEquipmentsScreenState extends ConsumerState<AreasEquipmentsScreen>
                                               horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: e.state == 'Disponible'
-                                                ? Colors.green.withOpacity(0.2)
+                                                ? Colors.green.withValues(alpha: 0.2)
                                                 : e.state == 'Averiado'
                                                     ? Colors.orange
-                                                        .withOpacity(0.2)
+                                                        .withValues(alpha: 0.2)
                                                     : Colors.red
-                                                        .withOpacity(0.2),
+                                                        .withValues(alpha: 0.2),
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                           ),
@@ -618,7 +617,7 @@ class _AreasEquipmentsScreenState extends ConsumerState<AreasEquipmentsScreen>
                             offset: Offset(0, 2),
                           ),
                         ],
-                        border: Border.all(color: kMainColor.withOpacity(0.2)),
+                        border: Border.all(color: kMainColor.withValues(alpha: 0.2)),
                       ),
                       constraints: const BoxConstraints(minWidth: 300),
                       child: Row(

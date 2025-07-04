@@ -10,7 +10,6 @@
  */
 
 import 'dart:io';
-import 'dart:convert';
 
 void main() async {
   print('🚀 INICIANDO PRUEBA FINAL DEL SISTEMA POS');

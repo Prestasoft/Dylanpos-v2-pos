@@ -764,7 +764,6 @@ class _ProductState extends State<Product> {
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
     final globalCurrency = currencyProvider.currency ?? '\$';
     final theme = Theme.of(context);
-    print('Build Called');
     List<String> allProductsNameList = [];
     List<String> allProductsCodeList = [];
     List<WarehouseBasedProductModel> warehouseBasedProductModel = [];
@@ -1662,7 +1661,7 @@ class _ProductState extends State<Product> {
                       // const SizedBox(height: 5.0),
                       // Divider(
                       //   thickness: 1.0,
-                      //   color: kGreyTextColor.withOpacity(0.2),
+                      //   color: kGreyTextColor.withValues(alpha: 0.2),
                       // ),
 
                       ///_______product_list______________________________________________________
@@ -2118,7 +2117,7 @@ class _ProductState extends State<Product> {
                                           ),
                                           InkWell(
                                             hoverColor:
-                                                Colors.blue.withOpacity(0.1),
+                                                Colors.blue.withValues(alpha: 0.1),
                                             overlayColor: MaterialStateProperty
                                                 .all<Color>(Colors.blue),
                                             onTap: _currentPage *

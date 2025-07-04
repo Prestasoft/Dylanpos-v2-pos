@@ -67,22 +67,22 @@ class ReservationCard extends ConsumerWidget {
           statusColor = Colors.amber;
           statusIcon = Icons.celebration;
           statusText = 'Fiesta pasada';
-          cardBgColor = Colors.amber.withOpacity(0.10);
+          cardBgColor = Colors.amber.withValues(alpha: 0.10);
         } else if (isEstudio) {
           statusColor = Colors.blue;
           statusIcon = Icons.camera_alt;
           statusText = 'Estudio pasado';
-          cardBgColor = Colors.blue.withOpacity(0.10);
+          cardBgColor = Colors.blue.withValues(alpha: 0.10);
         } else if (isExterior) {
           statusColor = Colors.purple;
           statusIcon = Icons.landscape;
           statusText = 'Exterior pasado';
-          cardBgColor = Colors.purple.withOpacity(0.10);
+          cardBgColor = Colors.purple.withValues(alpha: 0.10);
         } else {
           statusColor = Colors.grey;
           statusIcon = Icons.history;
           statusText = 'Pasada';
-          cardBgColor = Colors.grey.withOpacity(0.08);
+          cardBgColor = Colors.grey.withValues(alpha: 0.08);
         }
         break;
       case ReservationStatus.aboutToExpire:
@@ -90,22 +90,22 @@ class ReservationCard extends ConsumerWidget {
           statusColor = Colors.amber;
           statusIcon = Icons.celebration;
           statusText = 'Fiesta por vencer';
-          cardBgColor = Colors.amber.withOpacity(0.10);
+          cardBgColor = Colors.amber.withValues(alpha: 0.10);
         } else if (isEstudio) {
           statusColor = Colors.blue;
           statusIcon = Icons.camera_alt;
           statusText = 'Estudio por vencer';
-          cardBgColor = Colors.blue.withOpacity(0.10);
+          cardBgColor = Colors.blue.withValues(alpha: 0.10);
         } else if (isExterior) {
           statusColor = Colors.purple;
           statusIcon = Icons.landscape;
           statusText = 'Exterior por vencer';
-          cardBgColor = Colors.purple.withOpacity(0.10);
+          cardBgColor = Colors.purple.withValues(alpha: 0.10);
         } else {
           statusColor = Colors.orange;
           statusIcon = Icons.warning_amber_rounded;
           statusText = 'Por vencer';
-          cardBgColor = Colors.orange.withOpacity(0.10);
+          cardBgColor = Colors.orange.withValues(alpha: 0.10);
         }
         break;
       case ReservationStatus.upcoming:
@@ -113,22 +113,22 @@ class ReservationCard extends ConsumerWidget {
           statusColor = Colors.amber;
           statusIcon = Icons.celebration;
           statusText = 'Fiesta próxima';
-          cardBgColor = Colors.amber.withOpacity(0.10);
+          cardBgColor = Colors.amber.withValues(alpha: 0.10);
         } else if (isEstudio) {
           statusColor = Colors.blue;
           statusIcon = Icons.camera_alt;
           statusText = 'Estudio próximo';
-          cardBgColor = Colors.blue.withOpacity(0.10);
+          cardBgColor = Colors.blue.withValues(alpha: 0.10);
         } else if (isExterior) {
           statusColor = Colors.purple;
           statusIcon = Icons.landscape;
           statusText = 'Exterior próximo';
-          cardBgColor = Colors.purple.withOpacity(0.10);
+          cardBgColor = Colors.purple.withValues(alpha: 0.10);
         } else {
           statusColor = Colors.green;
           statusIcon = Icons.event_available;
           statusText = 'Próxima';
-          cardBgColor = Colors.green.withOpacity(0.10);
+          cardBgColor = Colors.green.withValues(alpha: 0.10);
         }
         break;
     }
@@ -278,7 +278,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           packageRentaId = rentas.first.id;
         });
       } else {
-        print("Paquete 'Renta de Vestimenta' no encontrado");
       }
     } else {
       // Esperar a que cargue, o volver a intentarlo
@@ -504,7 +503,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                           }
                         }
                         // Debug
-                        print('[CALENDAR] serviceId: ' + event.serviceId + ' | serviceName: ' + (serviceName ?? 'null'));
                         return Container(
                           width: 6,
                           height: 6,
@@ -831,7 +829,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           }
         }
       } catch (e) {
-        print('Error procesando fecha de fiesta para reserva ${reservation.id}: $e');
       }
     }
     
@@ -872,7 +869,7 @@ class ReservationDetailView extends ConsumerWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 10,
                 spreadRadius: 5,
               ),

@@ -2171,7 +2171,7 @@ class _SaleEditState extends State<SaleEdit> {
                                                   : isSelected == 'Categories'
                                                       ? kBlueTextColor
                                                       : kBlueTextColor
-                                                          .withOpacity(0.1)),
+                                                          .withValues(alpha: 0.1)),
                                           padding: EdgeInsets.only(
                                               left: screenWidth < 1240 ? 0 : 15,
                                               right: 8,
@@ -2266,7 +2266,7 @@ class _SaleEditState extends State<SaleEdit> {
                                                                   .categoryName
                                                           ? kBlueTextColor
                                                           : kBlueTextColor
-                                                              .withOpacity(
+                                                              .withValues(alpha: 
                                                                   0.1)),
                                                   child: Row(
                                                     mainAxisAlignment:
@@ -2686,7 +2686,7 @@ class _SaleEditState extends State<SaleEdit> {
                     //       child: Container(
                     //         decoration: BoxDecoration(
                     //           color: kWhite,
-                    //           border: Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)),
+                    //           border: Border.all(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)),
                     //           borderRadius: const BorderRadius.all(
                     //             Radius.circular(15),
                     //           ),
@@ -2697,13 +2697,13 @@ class _SaleEditState extends State<SaleEdit> {
                     //             Container(
                     //               width: context.width() < 1260 ? 630 : context.width() * 0.5,
                     //               height: context.height() < 720 ? 720 - 410 : context.height() - 410,
-                    //               decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withOpacity(0.3)))),
+                    //               decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)))),
                     //               child: SingleChildScrollView(
                     //                 child: Column(
                     //                   children: [
                     //                     Container(
                     //                       padding: const EdgeInsets.all(15),
-                    //                       decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withOpacity(0.3)))),
+                    //                       decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)))),
                     //                       child: Row(
                     //                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     //                         children: [
@@ -2888,7 +2888,7 @@ class _SaleEditState extends State<SaleEdit> {
                     //                             Container(
                     //                               width: double.infinity,
                     //                               height: 1,
-                    //                               color: kGreyTextColor.withOpacity(0.3),
+                    //                               color: kGreyTextColor.withValues(alpha: 0.3),
                     //                             )
                     //                           ],
                     //                         );
@@ -3381,14 +3381,14 @@ class _SaleEditState extends State<SaleEdit> {
                     //             height: context.height() < 720 ? 720 - 142 : context.height() - 142,
                     //             padding: const EdgeInsets.all(8.0),
                     //             decoration: BoxDecoration(
-                    //                 color: kWhite, border: Border.all(width: 1, color: kGreyTextColor.withOpacity(0.3)), borderRadius: const BorderRadius.all(Radius.circular(15))),
+                    //                 color: kWhite, border: Border.all(width: 1, color: kGreyTextColor.withValues(alpha: 0.3)), borderRadius: const BorderRadius.all(Radius.circular(15))),
                     //             child: SingleChildScrollView(
                     //               child: Column(
                     //                 children: [
                     //                   GestureDetector(
                     //                     child: Container(
                     //                       decoration: BoxDecoration(
-                    //                           borderRadius: BorderRadius.circular(5.0), color: isSelected == 'Categories' ? kBlueTextColor : kBlueTextColor.withOpacity(0.1)),
+                    //                           borderRadius: BorderRadius.circular(5.0), color: isSelected == 'Categories' ? kBlueTextColor : kBlueTextColor.withValues(alpha: 0.1)),
                     //                       height: 35,
                     //                       width: 150,
                     //                       padding: const EdgeInsets.only(left: 15, right: 8),
@@ -3435,7 +3435,7 @@ class _SaleEditState extends State<SaleEdit> {
                     //                             padding: const EdgeInsets.only(left: 15.0, right: 8.0, top: 8.0, bottom: 8.0),
                     //                             decoration: BoxDecoration(
                     //                                 borderRadius: BorderRadius.circular(5.0),
-                    //                                 color: isSelected == category[i].categoryName ? kBlueTextColor : kBlueTextColor.withOpacity(0.1)),
+                    //                                 color: isSelected == category[i].categoryName ? kBlueTextColor : kBlueTextColor.withValues(alpha: 0.1)),
                     //                             child: Row(
                     //                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     //                               children: [

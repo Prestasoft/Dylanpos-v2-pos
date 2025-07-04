@@ -5,7 +5,6 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nb_utils/nb_utils.dart';
 
-import '../model/args_dress.dart';
 import '../model/dress_model.dart';
 
 final dressesByStatusProvider = FutureProvider.family<List<DressModel>, String>(
@@ -24,8 +23,6 @@ final dressesByStatusProvider = FutureProvider.family<List<DressModel>, String>(
           return _filterByStatus(dressesResult, params, reservedIds);
       }
     } catch (e) {
-      //print('Error in dressesByStatusProvider: $e');
-      //print('StackTrace: $stackTrace');
       return <DressModel>[];
     }
   },
@@ -42,7 +39,6 @@ Future<List<DressModel>> _fetchDresses() async {
     if (value == null) return [];
 
     if (value is! Map) {
-      //print('Warning: Expected Map but got ${value.runtimeType}');
       return [];
     }
 
@@ -54,16 +50,13 @@ Future<List<DressModel>> _fetchDresses() async {
           dresses.add(DressModel.fromRealtimeDB(data, key));
         }
       } catch (e) {
-        // print('Error parsing dress $key: $e');
       }
     });
 
     return dresses;
   } on TimeoutException {
-    //print('Timeout fetching dresses');
     throw Exception('Timeout al cargar vestidos');
   } catch (e) {
-    //print('Error fetching dresses: $e');
     rethrow;
   }
 }
@@ -99,13 +92,11 @@ Future<Set<String>> _getReservedDressIds() async {
 
         _processMultipleReservations(resData, now, endOfYear, reservedDressIds);
       } catch (e) {
-        //print('Error processing reservation $resId: $e');
       }
     });
 
     return reservedDressIds;
   } catch (e) {
-    //print('Error fetching reservations: $e');
     return <String>{};
   }
 }

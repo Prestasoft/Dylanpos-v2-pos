@@ -1081,7 +1081,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
                                   color:
-                                      const Color(0xFF15CD75).withOpacity(0.5),
+                                      const Color(0xFF15CD75).withValues(alpha: 0.5),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

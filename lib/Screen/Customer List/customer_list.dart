@@ -457,10 +457,10 @@ class _CustomerListState extends State<CustomerList> {
                                                                     0) ==
                                                                 0
                                                             ? Colors.green
-                                                                .withOpacity(
+                                                                .withValues(alpha: 
                                                                     0.2)
                                                             : Colors.red
-                                                                .withOpacity(
+                                                                .withValues(alpha: 
                                                                     0.2),
                                                         borderRadius:
                                                             BorderRadius
@@ -627,7 +627,6 @@ class _CustomerListState extends State<CustomerList> {
                                                                                               lang.S.of(context).delete,
                                                                                             ),
                                                                                             onPressed: () {
-                                                                                              print("FUNCION DELETE ===================================> ${checkUserRoleDeletePermissionV2(type: 'customers')}");
                                                                                               if (!checkUserRoleDeletePermissionV2(type: 'customers')) {
                                                                                                 EasyLoading.showError(userPermissionErrorText);
                                                                                                 return;
@@ -790,7 +789,7 @@ class _CustomerListState extends State<CustomerList> {
                                         ),
                                         InkWell(
                                           hoverColor:
-                                              Colors.blue.withOpacity(0.1),
+                                              Colors.blue.withValues(alpha: 0.1),
                                           overlayColor:
                                               MaterialStateProperty.all<Color>(
                                                   Colors.blue),

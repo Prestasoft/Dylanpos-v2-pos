@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:mime/mime.dart';
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -47,7 +46,6 @@ import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../model/sale_confirmation_model.dart';
-import 'package:intl/intl.dart';
 
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation});
@@ -352,8 +350,6 @@ Para llamadas: 8098982876 ☎️
                                   'descricpion': service?['description'] ?? '',
                                 });
 
-                                print( reservationModel.descricpion);
-
                                 // Verifico si es Adicional de Reserva para poner algo que lo identifique y ademas el precio
 
                                 return InkWell(
@@ -430,7 +426,7 @@ Para llamadas: 8098982876 ☎️
                                             Container(
                                               padding: const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(20),
                                               ),
                                               child: Icon(
@@ -461,8 +457,6 @@ Para llamadas: 8098982876 ☎️
                                   'package_price': double.tryParse(reservation['package_price'] ?? '0.0'),
                                   'descricpion': service?['description'] ?? '',
                                 });
-
-                                print( reservationModel.descricpion);
 
                                 return InkWell(
                                   onTap: () {
@@ -540,7 +534,7 @@ Para llamadas: 8098982876 ☎️
                                             Container(
                                               padding: const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(20),
                                               ),
                                               child: Icon(
@@ -788,7 +782,7 @@ Para llamadas: 8098982876 ☎️
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -2144,7 +2138,6 @@ Para llamadas: 8098982876 ☎️
                                                                 ),
                                                                 onPressed: () async {
                                                                   var invoice_number_variable = await getLastInvoiceNumber();
-                                                                  print("llego aqui: " + invoice_number_variable.toString());
 
                                                                   SaleTransactionModel transitionModel = SaleTransactionModel(
                                                                     customerName: selectedUserName?.customerName ?? '',
@@ -2296,10 +2289,8 @@ Para llamadas: 8098982876 ☎️
                                             // });
 
                                             // debugger();
-                                            // print("llego aqui1: " + invoiceNumberGenerated.toString());
 
                                             var invoice_number_variable = await getLastInvoiceNumber();
-                                            print("llego aqui: " + invoice_number_variable.toString());
 
                                             SaleTransactionModel transitionModel = SaleTransactionModel(
                                               customerName: selectedUserName?.customerName ?? '',
@@ -2389,7 +2380,6 @@ Para llamadas: 8098982876 ☎️
 
                                                 EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
 
-                                                print("TIPO DE DE IMPRESION $printType");
                                                 EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
                                                 DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
@@ -2428,7 +2418,6 @@ Para llamadas: 8098982876 ☎️
                                                   }
                                                 }
 
-                                                print("llego aqui: " + post.toJson().toString());
                                                 if (printType == 'normal' || printType == 'both') {
                                                   await GeneratePdfAndPrint().printSaleInvoice(
                                                     personalInformationModel: data, 
@@ -2460,7 +2449,6 @@ Para llamadas: 8098982876 ☎️
 
                                                 final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santo domingo
                                                 //final link = 'https://stg.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santiago
-
 
                                                 await _sendConfirmationLinkViaWhatsApp(
                                                   phoneNumber: post.customerPhone,
@@ -2543,7 +2531,6 @@ Para llamadas: 8098982876 ☎️
                                                   });
                                                 }
 
-                                                print("llegaaaaaaaaaaaaaa aqui ");
                                                 // ignore: unused_result
                                                 consumerRef.refresh(allCustomerProvider);
                                                 // ignore: unused_result
@@ -2606,7 +2593,6 @@ Para llamadas: 8098982876 ☎️
 
   void limpiarCarro() {
     setState(() {
-      print("limpiando carro");
 
       cartList.clear(); // Limpia la lista de productos
       productFocusNode.clear(); // Limpia los focus nodes

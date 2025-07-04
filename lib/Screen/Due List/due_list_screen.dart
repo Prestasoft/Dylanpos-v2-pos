@@ -869,7 +869,7 @@ class _DueListState extends State<DueList> {
                                                 ),
                                                 InkWell(
                                                   hoverColor: Colors.blue
-                                                      .withOpacity(0.1),
+                                                      .withValues(alpha: 0.1),
                                                   overlayColor:
                                                       MaterialStateProperty.all<
                                                           Color>(Colors.blue),

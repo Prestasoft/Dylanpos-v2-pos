@@ -85,7 +85,6 @@ class _SupplierListState extends State<SupplierList> {
         .ref("${await getUserID()}/Customers/$customerKey");
     await ref.remove();
     final refreshedCustomers = updateRef.refresh(allCustomerProvider);
-    print(refreshedCustomers);
     // ignore: use_build_context_synchronously
     // Navigator.pop(context);
     GoRouter.of(context).pop();
@@ -117,7 +116,8 @@ class _SupplierListState extends State<SupplierList> {
         body: Consumer(builder: (_, ref, watch) {
           AsyncValue<List<CustomerModel>> allCustomers =
               ref.watch(allCustomerProvider);
-          return allCustomers.when(data: (allList) {
+          return allCustomers.when(
+            data: (allList) {
             List<CustomerModel> allCustomers = allList.reversed.toList();
             List<String> listOfPhoneNumber = [];
             List<CustomerModel> showAbleSuppliers = [];
@@ -388,8 +388,6 @@ class _SupplierListState extends State<SupplierList> {
                                             rows: List.generate(
                                               showAbleSuppliers.length,
                                               (index) {
-                                                print(showAbleSuppliers[index]
-                                                    .profilePicture);
                                                 return DataRow(
                                                   cells: [
                                                     DataCell(Text(
@@ -762,7 +760,7 @@ class _SupplierListState extends State<SupplierList> {
                                         ),
                                         InkWell(
                                           hoverColor:
-                                              Colors.blue.withOpacity(0.1),
+                                              Colors.blue.withValues(alpha: 0.1),
                                           overlayColor:
                                               MaterialStateProperty.all<Color>(
                                                   Colors.blue),

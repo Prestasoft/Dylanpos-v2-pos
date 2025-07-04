@@ -257,7 +257,7 @@ class _QuotationListState extends State<QuotationList> {
                     const SizedBox(height: 5.0),
                     Divider(
                       thickness: 1.0,
-                      color: kGreyTextColor.withOpacity(0.2),
+                      color: kGreyTextColor.withValues(alpha: 0.2),
                     ),
 
                     ///_______sale_List_____________________________________________________
@@ -967,7 +967,7 @@ class _QuotationListState extends State<QuotationList> {
                                             //           Container(
                                             //             width: double.infinity,
                                             //             height: 1,
-                                            //             color: kGreyTextColor.withOpacity(0.2),
+                                            //             color: kGreyTextColor.withValues(alpha: 0.2),
                                             //           )
                                             //         ],
                                             //       );

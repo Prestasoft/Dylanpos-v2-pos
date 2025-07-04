@@ -37,7 +37,6 @@ class _InvoiceRedirectPageState extends State<InvoiceRedirectPage> {
         // Redirect the user to the download URL
         html.window.location.href = downloadUrl;
       } catch (e) {
-        print('Error fetching download link: $e');
         // Optionally, redirect to an error page or show an alert
       }
     } else {

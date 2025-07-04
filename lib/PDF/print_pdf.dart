@@ -44,11 +44,9 @@ class GeneratePdfAndPrint {
       await uploadTask.whenComplete(() {
         //Print download url
         ref.getDownloadURL().then((value) {
-          print('PDF Download URL: $value');
         });
       });
     } catch (e) {
-      print('Error uploading PDF: $e');
     }
   }
 
@@ -66,11 +64,9 @@ class GeneratePdfAndPrint {
         await sendSalesSms(saleTransactionModel);
         EasyLoading.dismiss();
       } catch (e) {
-        print('Error sending message: $e');
         EasyLoading.dismiss();
       }
     } else {
-      print('Whatsapp Marketing is disabled');
     }
     // EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generateSaleDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting.companyName as GeneralSettingModel, context: context);
@@ -92,11 +88,9 @@ class GeneratePdfAndPrint {
         await sendSalesReturnSms(saleTransactionModel);
         EasyLoading.dismiss();
       } catch (e) {
-        print('Error sending message: $e');
         EasyLoading.dismiss();
       }
     } else {
-      print('Whatsapp Marketing is disabled');
     }
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generateSaleReturnDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting);
@@ -113,11 +107,9 @@ class GeneratePdfAndPrint {
         await sendQuotationSms(saleTransactionModel);
         EasyLoading.dismiss();
       } catch (e) {
-        print('Error sending message: $e');
         EasyLoading.dismiss();
       }
     } else {
-      print('Whatsapp Marketing is disabled');
     }
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generateQuotationDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel);
@@ -134,11 +126,9 @@ class GeneratePdfAndPrint {
         await sendPurchaseSms(purchaseTransactionModel);
         EasyLoading.dismiss();
       } catch (e) {
-        print('Error sending message: $e');
         EasyLoading.dismiss();
       }
     } else {
-      print('Whatsapp Marketing is disabled');
     }
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generatePurchaseDocument(personalInformation: personalInformationModel, transactions: purchaseTransactionModel, setting: setting);
@@ -155,11 +145,9 @@ class GeneratePdfAndPrint {
         await sendPurchaseReturnSms(purchaseTransactionModel);
         EasyLoading.dismiss();
       } catch (e) {
-        print('Error sending message: $e');
         EasyLoading.dismiss();
       }
     } else {
-      print('Whatsapp Marketing is disabled');
     }
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generatePurchaseReturnDocument(personalInformation: personalInformationModel, transactions: purchaseTransactionModel, setting: setting);
@@ -176,11 +164,9 @@ class GeneratePdfAndPrint {
         await sendDueCollectionSms(dueTransactionModel);
         EasyLoading.dismiss();
       } catch (e) {
-        print('Error sending message: $e');
         EasyLoading.dismiss();
       }
     } else {
-      print('Whatsapp Marketing is disabled');
     }
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generateDueDocument(personalInformation: personalInformationModel, transactions: dueTransactionModel, setting: setting);

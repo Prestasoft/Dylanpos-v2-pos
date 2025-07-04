@@ -21,12 +21,10 @@ class _CalcButtonState extends State<CalcButton> {
       autofocus: true,
       onChanged: (key, value, expression) {
         if (kDebugMode) {
-          print('$key\t$value\t$expression');
         }
       },
       onTappedDisplay: (value, details) {
         if (kDebugMode) {
-          print('$value\t${details.localPosition}');
         }
       },
     );

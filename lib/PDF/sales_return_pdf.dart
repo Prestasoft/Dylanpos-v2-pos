@@ -34,7 +34,6 @@ FutureOr<Uint8List> generateSaleReturnDocument(
       margin: pw.EdgeInsets.zero,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       header: (pw.Context context) {
-        print('pdf step 1');
         return pw.Padding(
           padding: const pw.EdgeInsets.only(
               left: 20.0, right: 20, bottom: 20, top: 5),
@@ -431,7 +430,6 @@ FutureOr<Uint8List> generateSaleReturnDocument(
         );
       },
       footer: (pw.Context context) {
-        print('pdf step 2');
         return pw.Column(children: [
           pw.Padding(
             padding: const pw.EdgeInsets.all(10.0),

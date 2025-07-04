@@ -327,7 +327,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 4,
                                 offset: Offset(0, 2),
                               ),
@@ -370,7 +370,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
                                         Container(
                                           decoration: BoxDecoration(
                                             color:
-                                                Colors.black.withOpacity(0.4),
+                                                Colors.black.withValues(alpha: 0.4),
                                             borderRadius: BorderRadius.vertical(
                                                 top: Radius.circular(8)),
                                           ),

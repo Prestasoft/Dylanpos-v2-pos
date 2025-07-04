@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:mime/mime.dart';
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -369,7 +368,7 @@ class _InventorySalesState extends State<InventorySales> {
                                             Container(
                                               padding: const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(20),
                                               ),
                                               child: Icon(
@@ -476,7 +475,7 @@ class _InventorySalesState extends State<InventorySales> {
                                             Container(
                                               padding: const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(20),
                                               ),
                                               child: Icon(
@@ -724,7 +723,7 @@ class _InventorySalesState extends State<InventorySales> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -2063,7 +2062,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                                 ),
                                                                 onPressed: () async {
                                                                   var invoice_number_variable = await getLastInvoiceNumber();
-                                                                  print("llego aqui: " + invoice_number_variable.toString());
 
                                                                   SaleTransactionModel transitionModel = SaleTransactionModel(
                                                                     customerName: selectedUserName?.customerName ?? '',
@@ -2215,10 +2213,8 @@ class _InventorySalesState extends State<InventorySales> {
                                             // });
 
                                             // debugger();
-                                            // print("llego aqui1: " + invoiceNumberGenerated.toString());
 
                                             var invoice_number_variable = await getLastInvoiceNumber();
-                                            print("llego aqui: " + invoice_number_variable.toString());
 
                                             SaleTransactionModel transitionModel = SaleTransactionModel(
                                               customerName: selectedUserName?.customerName ?? '',
@@ -2308,7 +2304,6 @@ class _InventorySalesState extends State<InventorySales> {
 
                                                 EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
 
-                                                print("TIPO DE DE IMPRESION $printType");
                                                 EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
                                                 DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
@@ -2347,7 +2342,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                   }
                                                 }
 
-                                                print("llego aqui: " + post.toJson().toString());
                                                 if (printType == 'normal' || printType == 'both') {
                                                   await GeneratePdfAndPrint().printSaleInvoice(
                                                     personalInformationModel: data, 
@@ -2371,7 +2365,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                 //     post: post,
                                                 //   );
 
-                                                //   print("llego uoo ");
                                                 // }
 
                                                 limpiarCarro();
@@ -2439,7 +2432,6 @@ class _InventorySalesState extends State<InventorySales> {
                                                   });
                                                 }
 
-                                                print("llegaaaaaaaaaaaaaa aqui ");
                                                 // ignore: unused_result
                                                 consumerRef.refresh(allCustomerProvider);
                                                 // ignore: unused_result
@@ -2502,7 +2494,6 @@ class _InventorySalesState extends State<InventorySales> {
 
   void limpiarCarro() {
     setState(() {
-      print("limpiando carro");
 
       cartList.clear(); // Limpia la lista de productos
       productFocusNode.clear(); // Limpia los focus nodes
