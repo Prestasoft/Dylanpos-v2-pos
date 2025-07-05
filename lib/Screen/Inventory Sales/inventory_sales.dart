@@ -1322,7 +1322,14 @@ Para llamadas: 8098982876 ☎️
                               return Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: TypeAheadField(
+                                  hideOnEmpty: true,
+                                  hideOnLoading: true,
+                                  hideOnError: true,
                                   suggestionsCallback: (pattern) {
+                                    // No mostrar sugerencias si el patrón está vacío o es muy corto
+                                    if (pattern.isEmpty || pattern.length < 2) {
+                                      return Future.value([]);
+                                    }
                                     ProductRepo pr = ProductRepo();
                                     return pr.getAllProductByJsonWarehouse(searchData: pattern, warehouseId: selectedWareHouse!);
                                   },
@@ -1413,10 +1420,11 @@ Para llamadas: 8098982876 ☎️
                                     return TextField(
                                         controller: controller,
                                         focusNode: focusNode,
-                                        autofocus: true,
+                                        autofocus: false,
                                         decoration: InputDecoration(
                                           labelText: lang.S.of(context).selectProduct,
                                           hintText: lang.S.of(context).searchWithProductName,
+                                          prefixIcon: Icon(Icons.search, color: kNeutral700),
                                         ));
                                   },
                                 ),
