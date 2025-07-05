@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,7 +9,6 @@ import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
 import 'package:salespro_admin/Provider/dress_with_reservations.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../Due List/due_popUp.dart';
 
 //------------------- ENUM Y CARD -------------------
 enum ReservationStatus {
@@ -369,8 +367,33 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           ],
         );
 
+        // Leyenda de colores para los tipos de eventos
+        Widget colorLegend = Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLegendItem(Colors.green, 'Renta'),
+                const SizedBox(width: 16),
+                _buildLegendItem(Colors.amber, 'Fiesta'),
+                const SizedBox(width: 16),
+                _buildLegendItem(Colors.blue, 'Estudio'),
+                const SizedBox(width: 16),
+                _buildLegendItem(Colors.purple, 'Exterior'),
+              ],
+            ),
+          ),
+        );
+
         List<Widget> children = [
           formatButtons,
+          colorLegend,
         ];
 
         if (_calendarView == 'dia') {
@@ -763,18 +786,74 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             const Text('¿Estás seguro que deseas cancelar esta reservación?'),
         actions: [
           TextButton(
+            key: const Key('cancel_reservation_no_button'),
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('No'),
           ),
           TextButton(
-            onPressed: () async {
-              await ref.read(cancelReservationProvider(reservation.id).future);
-              // Aquí podrías refrescar el provider si es necesario
-              // ref.refresh(reservationsProvider);
-              // }));
+            key: const Key('cancel_reservation_confirm_button'),
+            onPressed: () {
+              // En lugar de cancelar directamente, mostramos el diálogo de contraseña
               Navigator.of(context).pop(); // Cierra el diálogo de confirmación
+              _showPasswordDialog(context, reservation);
             },
             child: const Text('Sí, Cancelar'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Método para verificar la contraseña antes de cancelar
+  void _showPasswordDialog(BuildContext context, ReservationModel reservation) {
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    // Contraseña estática para cancelar reservaciones
+    const String staticPassword = "22400600452";
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ingrese la contraseña'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Contraseña',
+              border: OutlineInputBorder(),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Por favor ingrese la contraseña';
+              }
+              if (value != staticPassword) {
+                return 'Contraseña incorrecta';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                Navigator.of(context).pop(); // Cierra el diálogo de contraseña
+                
+                // Procede a cancelar la reservación
+                await ref.read(cancelReservationProvider(reservation.id).future);
+                if (context.mounted) {
+                  Navigator.of(context).pop(); // Cierra el diálogo de confirmación
+                }
+              }
+            },
+            child: const Text('Confirmar'),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
           ),
         ],
@@ -836,6 +915,27 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
     if (needsRefresh && mounted) {
       setState(() {});
     }
+  }
+
+  // Método para construir un elemento de la leyenda de colores
+  Widget _buildLegendItem(Color color, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
+    );
   }
 }
 
@@ -956,33 +1056,7 @@ class ReservationDetailView extends ConsumerWidget {
                                   color: Colors.red,
                                 ),
                           ),
-                          const SizedBox(height: 12),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return Dialog(
-                                    surfaceTintColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(5.0),
-                                    ),
-                                    child: ShowDuePaymentPopUp(
-                                        customerModel: client),
-                                  );
-                                },
-                              );
-                            },
-                            icon: const Icon(Icons.payment, size: 20),
-                            label: const Text('Añadir Pago'),
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Theme.of(context).primaryColor,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 16),
-                            ),
-                          ),
+                          // Botón "Añadir Pago" oculto
                         ],
 
                         const SizedBox(height: 12),
@@ -1110,6 +1184,7 @@ class ReservationDetailView extends ConsumerWidget {
                                     children: [
                                       Expanded(
                                         child: ElevatedButton.icon(
+                                          key: const Key('reservation_edit_button'),
                                           onPressed: onEdit,
                                           icon:
                                               const Icon(Icons.edit, size: 20),
@@ -1126,6 +1201,7 @@ class ReservationDetailView extends ConsumerWidget {
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: ElevatedButton.icon(
+                                          key: const Key('reservation_cancel_button'),
                                           onPressed: onCancel,
                                           icon: const Icon(Icons.cancel,
                                               size: 20),

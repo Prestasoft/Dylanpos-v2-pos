@@ -1,0 +1,53 @@
+diff --git a/lib/Screen/Inventory Sales/inventory_sales.dart b/lib/Screen/Inventory Sales/inventory_sales.dart
+index xxxxxxxxx..xxxxxxxxx 100644
+--- a/lib/Screen/Inventory Sales/inventory_sales.dart
++++ b/lib/Screen/Inventory Sales/inventory_sales.dart
+@@ -2278,10 +2278,19 @@ class _InventorySalesState extends State<InventorySales> {
+                                     backgroundColor: kMainColor,
+                                   ),
+                                   onPressed: () async {
++                                    // Evitar múltiples clics
++                                    if (saleButtonClicked) {
++                                      print('DEBUG: Botón ya presionado, ignorando clic');
++                                      return;
++                                    }
++                                    
+                                     print('DEBUG: Botón de pago presionado');
+                                     if (checkUserRoleEditPermissionV2(type: 'sales')) {
+                                       print('DEBUG: Usuario tiene permisos de venta');
+                                       if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                         print('DEBUG: Verificación de suscripción exitosa');
+                                         if (cartList.isEmpty) {
+                                           print('DEBUG: Error - Carrito vacío');
+                                           EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
+@@ -2374,14 +2383,19 @@ class _InventorySalesState extends State<InventorySales> {
+ 
+                                               EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+                                               print('DEBUG: Guardando transacción en Firebase');
++                                              
++                                              // Declarar las variables fuera del bloque try para que estén disponibles en todo el ámbito
++                                              DatabaseReference ref;
++                                              SaleTransactionModel post;
++                                              
+                                               try {
+-                                                DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
++                                                ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
+                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
+                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
+                                                 (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
+                                                 transitionModel.paymentType = selectedPaymentOption;
+                                                 transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
+-                                                SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
++                                                post = checkLossProfit(transitionModel: transitionModel);
+                                                 await ref.push().set(post.toJson());
+                                                 print('DEBUG: Transacción guardada exitosamente');
+                                               } catch (e) {
+@@ -2390,8 +2404,6 @@ class _InventorySalesState extends State<InventorySales> {
+                                                 setState(() => saleButtonClicked = false);
+                                                 return;
+                                               }
+-                                              await ref.push().set(post.toJson());
+-
+                                               //imprimir factura
+                                               if (sendWhatsApp) {
+                                                 try {

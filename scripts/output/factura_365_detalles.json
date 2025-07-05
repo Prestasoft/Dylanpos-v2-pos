@@ -1,0 +1,28 @@
+{
+  "customerAddress": "",
+  "customerGst": "40220259879",
+  "customerImage": "https://firebasestorage.googleapis.com/v0/b/dylanpos-victorfoto-stodgo.firebasestorage.app/o/Profile%20Picture%2F1750452380312?alt=media&token=cdc5a574-cd9a-409d-87e8-b6a7c9612937",
+  "customerName": "MIGUEL VLADIMIR DE JESUS CASTILLO",
+  "customerPhone": "+18492220819",
+  "customerType": "Regular",
+  "discountAmount": 0,
+  "dueAmount": "135000",
+  "invoiceNumber": "365",
+  "isPaid": false,
+  "lossProfit": 150000,
+  "paymentType": "Efectivo",
+  "productList": [
+    "{\"uuid\":null,\"product_id\":\"-OUIx45ocdowz2ad7wBu\",\"product_name\":\"Plan B Pre-quince y Fiesta  - VG033 Rosa, VG036 Rosa, VG-S008, VG-S013, VG-C012, VG-R016, VG-C016, VG-R012\",\"warehouseName\":\" Incluye:\\n\\n- Album De Fotos 10x12\\n- Vestido Largo a seleccionar  (Fiesta y/o exterior).\\n- Vestido Corto a seleccionar (Fiesta y/o exterior).\\n- Ramo de flores\\n- Corona a seleccionar\\n- Cretona Profesional\\n- 20 Fotografías en la sesión pre-quince\\n- 80 Fotografías en la fiesta\\n- Foto enmarcada 16x20\\n- Maquillaje Profesional a la quinceañera (Fiesta y/o exterior). En la fiesta el cliente cubre el transporte de la maquillista.\\n- Peinado profesional en ondas (Fiesta y/o exterior).\\n- Arreglo de globo de piso pre-quince\\n- Bomba de confetti pre-quince\\n- Video Profesional con drone en la pre-quince y fiesta.\\n- 2 Hora de sesion pre-quince\\n- Tiempo en la fiesta: de 6:00 pm a 12:00 am\",\"warehouseId\":\"reserva-warehouse\",\"unit_price\":150000,\"sub_total\":\"150000\",\"unique_check\":null,\"quantity\":1,\"item_cart_index\":-1,\"stock\":null,\"productPurchasePrice\":0,\"product_details\":null,\"serialNumber\":null,\"productWarranty\":null,\"productImage\":\"https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672\",\"taxType\":\"none\",\"margin\":0,\"excTax\":0,\"incTax\":0,\"groupTaxName\":\"Sin impuesto\",\"groupTaxRate\":0,\"subTax\":[],\"isReservation\":true,\"reservationId\":\"-OUIx45ocdowz2ad7wBu\",\"dressId\":\"VG033 Rosa, VG036 Rosa, VG-S008, VG-S013, VG-C012, VG-R016, VG-C016, VG-R012\",\"serviceId\":\"\",\"descricpion\":\" Incluye:\\n\\n- Album De Fotos 10x12\\n- Vestido Largo a seleccionar  (Fiesta y/o exterior).\\n- Vestido Corto a seleccionar (Fiesta y/o exterior).\\n- Ramo de flores\\n- Corona a seleccionar\\n- Cretona Profesional\\n- 20 Fotografías en la sesión pre-quince\\n- 80 Fotografías en la fiesta\\n- Foto enmarcada 16x20\\n- Maquillaje Profesional a la quinceañera (Fiesta y/o exterior). En la fiesta el cliente cubre el transporte de la maquillista.\\n- Peinado profesional en ondas (Fiesta y/o exterior).\\n- Arreglo de globo de piso pre-quince\\n- Bomba de confetti pre-quince\\n- Video Profesional con drone en la pre-quince y fiesta.\\n- 2 Hora de sesion pre-quince\\n- Tiempo en la fiesta: de 6:00 pm a 12:00 am\"}"
+  ],
+  "purchaseDate": "2025-07-05 15:00:44.196",
+  "reservationIds": [
+    "-OUIx45ocdowz2ad7wBu"
+  ],
+  "returnAmount": 0,
+  "sellerName": "Victor",
+  "sendWhatsappMessage": false,
+  "serviceCharge": 0,
+  "totalAmount": 150000,
+  "totalQuantity": 1,
+  "vat": 0
+}

@@ -24,6 +24,8 @@ import '../../PDF/sales_invoice_pdf.dart';
 import '../../Provider/profile_provider.dart';
 import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
+import '../../Provider/due_transaction_provider.dart';
+import '../../model/due_transaction_model.dart';
 
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
@@ -1722,5 +1724,44 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
         ),
       ),
     );
+  }
+
+  // Método para combinar transacciones de ventas y pagos de cuentas por cobrar
+  List<dynamic> combinarTransacciones(List<SaleTransactionModel> transaccionesVenta, List<DueTransactionModel> transaccionesDue) {
+    List<dynamic> transaccionesCombinadas = [];
+    
+    // Añadir transacciones de venta
+    for (var venta in transaccionesVenta) {
+      transaccionesCombinadas.add({
+        'tipo': 'venta',
+        'fecha': venta.purchaseDate,
+        'cliente': venta.customerName,
+        'monto': venta.totalAmount,
+        'factura': venta.invoiceNumber,
+        'metodoPago': venta.paymentType,
+        'original': venta
+      });
+    }
+    
+    // Añadir transacciones de cuentas por cobrar
+    for (var pago in transaccionesDue) {    transaccionesCombinadas.add({
+      'tipo': 'pago_deuda',
+      'fecha': pago.purchaseDate,
+      'cliente': pago.customerName,
+      'monto': pago.payDueAmount,
+      'factura': pago.invoiceNumber,
+      'metodoPago': pago.paymentType,
+      'original': pago
+    });
+    }
+    
+    // Ordenar por fecha, más reciente primero
+    transaccionesCombinadas.sort((a, b) {
+      DateTime fechaA = DateTime.tryParse(a['fecha'] ?? '') ?? DateTime(1900);
+      DateTime fechaB = DateTime.tryParse(b['fecha'] ?? '') ?? DateTime(1900);
+      return fechaB.compareTo(fechaA); // Orden descendente
+    });
+    
+    return transaccionesCombinadas;
   }
 }

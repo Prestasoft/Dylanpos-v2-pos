@@ -598,15 +598,22 @@ Para llamadas: 8098982876 ☎️
 
     String typeOfInvoice = 'saleInvoiceCounter';
 
-    final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
+    try {
+      final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
 
-    // Ver el Nro de Ultima Factura
-    final snapshot = await personalInformationRef.child(typeOfInvoice).get();
+      // Ver el Nro de Ultima Factura
+      final snapshot = await personalInformationRef.child(typeOfInvoice).get();
 
-    lastInvoiceNumber = (snapshot.value != null ? int.tryParse(snapshot.value.toString()) ?? 0 : 0);
-    lastInvoiceNumber += 1;
-
-    return lastInvoiceNumber;
+      lastInvoiceNumber = (snapshot.value != null ? int.tryParse(snapshot.value.toString()) ?? 0 : 0);
+      lastInvoiceNumber += 1;
+      
+      print('DEBUG: Número de factura obtenido: $lastInvoiceNumber');
+      return lastInvoiceNumber;
+    } catch (e) {
+      print('ERROR al obtener número de factura: $e');
+      // Si falla, asegurarnos de que tengamos al menos un número
+      return lastInvoiceNumber > 0 ? lastInvoiceNumber : DateTime.now().millisecondsSinceEpoch % 100000;
+    }
   }
 
   bool isAlertSet = false;
@@ -727,10 +734,10 @@ Para llamadas: 8098982876 ☎️
     );
   }
 
-// Añade al pubspec.yaml:
-// searchable_dropdown: ^1.1.3
+  // Añade al pubspec.yaml:
+  // searchable_dropdown: ^1.1.3
 
-// Implementation of the search dialog with a modern look
+  // Implementation of the search dialog with a modern look
   Future<CustomerModel?> _showCustomerSearchDialog(
     BuildContext context,
     List<CustomerModel> customers,
@@ -2277,20 +2284,38 @@ Para llamadas: 8098982876 ☎️
                                       backgroundColor: kMainColor,
                                     ),
                                     onPressed: () async {
+                                      print('DEBUG: Botón de pago presionado');
+                                      
+                                      // Evitar múltiples clics
+                                      if (saleButtonClicked) {
+                                        print('DEBUG: Botón ya presionado, ignorando clic');
+                                        return;
+                                      }
+                                      
                                       if (checkUserRoleEditPermissionV2(type: 'sales')) {
+                                        print('DEBUG: Usuario tiene permisos de venta');
                                         if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                          print('DEBUG: Verificación de suscripción exitosa');
                                           if (cartList.isEmpty) {
+                                            print('DEBUG: Error - Carrito vacío');
                                             EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
+                                          } else if (selectedUserId == null) {
+                                            print('DEBUG: Error - No se seleccionó cliente');
+                                            EasyLoading.showError('Por favor seleccione un cliente');
+                                          } else if (selectedWareHouse == null) {
+                                            print('DEBUG: Error - No se seleccionó almacén');
+                                            EasyLoading.showError('Por favor seleccione un almacén');
                                           } else {
-                                            // getLastInvoiceNumber().then((valor) {
-                                            //   setState(() {
-                                            //     invoiceNumberGenerated = valor.toString();
-                                            //   });
-                                            // });
-
-                                            // debugger();
-
+                                            print('DEBUG: Intentando obtener número de factura');
                                             var invoice_number_variable = await getLastInvoiceNumber();
+                                            print('DEBUG: Número de factura obtenido: $invoice_number_variable');
+                                            
+                                            // Validar que el monto pagado sea un número válido
+                                            if (payingAmountController.text.isEmpty || double.tryParse(payingAmountController.text) == null) {
+                                              print('DEBUG: Error - Monto pagado inválido');
+                                              EasyLoading.showError('Por favor ingrese un monto pagado válido');
+                                              return;
+                                            }
 
                                             SaleTransactionModel transitionModel = SaleTransactionModel(
                                               customerName: selectedUserName?.customerName ?? '',
@@ -2316,12 +2341,15 @@ Para llamadas: 8098982876 ☎️
                                             );
 
                                             if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
+                                              print('DEBUG: Error - Cliente Guest no puede tener monto pendiente');
                                               EasyLoading.showError(lang.S.of(context).dueIsNotAvailableForGuest);
+                                              setState(() => saleButtonClicked = false);
                                             } else {
                                               try {
                                                 setState(() {
                                                   saleButtonClicked = true;
                                                 });
+                                                print('DEBUG: Mostrando diálogo de formato de impresión');
 
                                                 final printType = await showDialog<String>(
                                                   context: context,
@@ -2381,14 +2409,28 @@ Para llamadas: 8098982876 ☎️
                                                 EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
 
                                                 EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
-                                                (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
-                                                (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
-                                                (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
-                                                transitionModel.paymentType = selectedPaymentOption;
-                                                transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
-                                                SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
-                                                await ref.push().set(post.toJson());
+                                                print('DEBUG: Guardando transacción en Firebase');
+                                                
+                                                // Declarar las variables fuera del bloque try para que estén disponibles en todo el ámbito
+                                                DatabaseReference ref;
+                                                SaleTransactionModel post;
+                                                
+                                                try {
+                                                  ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
+                                                  (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
+                                                  (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
+                                                  (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
+                                                  transitionModel.paymentType = selectedPaymentOption;
+                                                  transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
+                                                  post = checkLossProfit(transitionModel: transitionModel);
+                                                  await ref.push().set(post.toJson());
+                                                  print('DEBUG: Transacción guardada exitosamente');
+                                                } catch (e) {
+                                                  print('ERROR al guardar transacción: $e');
+                                                  EasyLoading.showError('Error al guardar la venta: ${e.toString()}');
+                                                  setState(() => saleButtonClicked = false);
+                                                  return;
+                                                }
 
                                                 //imprimir factura
                                                 if (sendWhatsApp) {
@@ -2547,11 +2589,14 @@ Para llamadas: 8098982876 ☎️
                                                 consumerRef.refresh(dailyTransactionProvider);
 
                                                 EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
+                                                setState(() => saleButtonClicked = false);
                                               } catch (e) {
+                                                print('ERROR durante el proceso de pago: $e');
                                                 setState(() {
                                                   saleButtonClicked = false;
                                                 });
                                                 EasyLoading.dismiss();
+                                                EasyLoading.showError('Error: ${e.toString()}');
                                               }
                                             }
                                           }

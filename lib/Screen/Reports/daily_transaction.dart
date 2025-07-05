@@ -48,8 +48,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
   String selectedTypeFilter = 'Todos'; // Nuevo filtro por tipo
 
   DateTimeRange selectedDate = DateTimeRange(
-    start: DateTime(DateTime.now().year, DateTime.now().month, 1),
-    end: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 23, 59, 59),
+    start: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+    end: DateTime.now(),
   );
 
   Future<void> _selectDate(BuildContext context) async {
@@ -99,7 +99,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
     'Due Collection': 'Cuentas x Cobrar',
   };
 
-  String selectedMonth = 'Este mes';
+  String selectedMonth = 'Hoy';
 
   DropdownButton<String> getMonth() {
     List<DropdownMenuItem<String>> dropDownItems = [];

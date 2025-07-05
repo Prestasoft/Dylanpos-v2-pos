@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -5,9 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart' as pro;
 import 'package:responsive_grid/responsive_grid.dart';
-import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/customer_model.dart';
+import 'package:salespro_admin/model/sale_transaction_model.dart';
+import 'package:salespro_admin/model/add_to_cart_model.dart'; // Importar modelo de carrito
 import 'package:intl/intl.dart'; // Añadir para manejo de fechas
 
 import '../../Provider/customer_provider.dart';
@@ -116,6 +118,536 @@ class _DueListState extends State<DueList> {
     }
   }
 
+  // Añadir esta función para mostrar las facturas pendientes del cliente
+  void _mostrarFacturasPendientes(BuildContext context, String clienteId, String clienteNombre) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Facturas pendientes de $clienteNombre'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 500,
+                child: FutureBuilder<List<SaleTransactionModel>>(
+                  future: _obtenerFacturasPendientes(clienteId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+                           final facturas = snapshot.data ?? [];
+                  
+                  if (facturas.isEmpty) {
+                    return const Center(child: Text('No se encontraron facturas pendientes'));
+                  }
+                    
+                    return ListView.builder(
+                      itemCount: facturas.length,
+                      itemBuilder: (context, index) {
+                        final factura = facturas[index];
+                        return Card(
+                          elevation: 3,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            title: Text('Factura #${factura.invoiceNumber}'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                Text('Fecha: ${_formatearFecha(factura.purchaseDate)}'),
+                                Text('Monto pendiente: RD\$${_formatearMonto(factura.dueAmount ?? 0)}'),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.visibility, color: kGreenTextColor),
+                                  onPressed: () {
+                                    _verDetalleFactura(context, factura);
+                                  },
+                                  tooltip: 'Ver detalle',
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(lang.S.of(context).cancel),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Función para obtener las facturas pendientes del cliente
+  Future<List<SaleTransactionModel>> _obtenerFacturasPendientes(String clienteId) async {
+    List<SaleTransactionModel> facturasPendientes = [];
+    try {
+      final userId = await getUserID();
+      final ventasRef = FirebaseDatabase.instance.ref().child(userId).child('Sales Transition');
+      final snapshot = await ventasRef.get();
+      
+      if (snapshot.exists) {
+        Map<dynamic, dynamic> ventas = snapshot.value as Map<dynamic, dynamic>;
+        ventas.forEach((key, value) {
+          SaleTransactionModel factura = SaleTransactionModel.fromJson(value);
+          if (factura.customerPhone == clienteId && 
+              (factura.dueAmount != null && factura.dueAmount! > 0)) {
+            factura.key = key;
+            facturasPendientes.add(factura);
+          }
+        });
+      }
+    } catch (e) {
+      print('Error al obtener facturas pendientes: $e');
+    }
+    
+    // Ordenar por fecha (más recientes primero)
+    facturasPendientes.sort((a, b) {
+      DateTime fechaA = DateTime.tryParse(a.purchaseDate) ?? DateTime(1900);
+      DateTime fechaB = DateTime.tryParse(b.purchaseDate) ?? DateTime(1900);
+      return fechaB.compareTo(fechaA);
+    });
+    
+    return facturasPendientes;
+  }
+
+  // Función para formatear la fecha
+  String _formatearFecha(String fecha) {
+    try {
+      final dateTime = DateTime.parse(fecha);
+      return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+    } catch (e) {
+      return fecha;
+    }
+  }
+
+  // Función para ver el detalle de la factura
+  void _verDetalleFactura(BuildContext context, SaleTransactionModel factura) {
+    // Calcular el total pagado para usarlo en varios lugares
+    final double totalPagado = (factura.totalAmount ?? 0) - (factura.dueAmount ?? 0);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          elevation: 5,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Encabezado
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: const BoxDecoration(
+                    color: kBlueTextColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16.0),
+                      topRight: Radius.circular(16.0),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.receipt_long, color: Colors.white, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Detalle de Factura #${factura.invoiceNumber}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Contenido
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Información del cliente
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.person_outline, size: 20, color: kGreyTextColor),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      factura.customerName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.phone_outlined, size: 20, color: kGreyTextColor),
+                                  const SizedBox(width: 8),
+                                  Text(factura.customerPhone),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today_outlined, size: 20, color: kGreyTextColor),
+                                  const SizedBox(width: 8),
+                                  Text(_formatearFecha(factura.purchaseDate)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Resumen financiero
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Resumen Financiero',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Monto total:'),
+                                  Text(
+                                    'RD\$${_formatearMonto(factura.totalAmount ?? 0)}',
+                                    style: const TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                              const Divider(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Total pagado:'),
+                                  Text(
+                                    'RD\$${_formatearMonto(totalPagado)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: totalPagado > 0 ? Colors.green.shade700 : Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Monto pendiente:'),
+                                  Text(
+                                    'RD\$${_formatearMonto(factura.dueAmount ?? 0)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: (factura.dueAmount ?? 0) > 0 ? Colors.red.shade700 : Colors.green.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Lista de productos
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.shopping_bag_outlined, size: 20, color: kGreyTextColor),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Productos',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              
+                              // Encabezados de tabla
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: Padding(
+                                        padding: EdgeInsets.only(left: 8.0),
+                                        child: Text(
+                                          'Producto',
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        'Cantidad',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        'Precio',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        'Subtotal',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        textAlign: TextAlign.right,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                  ],
+                                ),
+                              ),
+                              
+                              // Lista de productos
+                              ...factura.productList?.map((producto) => Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: const BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Colors.black12,
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(left: 8.0),
+                                        child: Text(
+                                          producto.productName ?? 'Producto sin nombre',
+                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        producto.quantity.toString(),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        'RD\$${_calcularPrecioUnitario(producto)}',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        'RD\$${_formatearMonto(producto.subTotal)}',
+                                        textAlign: TextAlign.right,
+                                        style: const TextStyle(fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                ),
+                              )).toList() ?? [],
+                              
+                              // Total
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(4),
+                                    bottomRight: Radius.circular(4),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    const Text(
+                                      'Total:',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'RD\$${_formatearMonto(factura.totalAmount ?? 0)}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Botones de acción
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16.0),
+                      bottomRight: Radius.circular(16.0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kBlueTextColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        child: const Text(
+                          'Cerrar',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // No se elimina esta función porque sigue siendo utilizada en otras partes del código
+  Widget _detalleItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  // Función para calcular el precio unitario de un producto de forma segura
+  String _calcularPrecioUnitario(AddToCartModel producto) {
+    try {
+      // Asegurarse de que tanto subTotal como quantity sean números
+      final subTotal = producto.subTotal is num 
+          ? producto.subTotal 
+          : double.tryParse(producto.subTotal?.toString() ?? '0') ?? 0.0;
+      
+      // La cantidad ya es de tipo num en el modelo, pero aseguramos que sea > 0
+      final quantity = producto.quantity > 0 ? producto.quantity : 1;
+      
+      // Calcular el precio unitario
+      final precioUnitario = subTotal / quantity;
+      
+      // Formatear el número como String con el formato adecuado
+      return NumberFormat("#,##0.00", "es_ES").format(precioUnitario);
+    } catch (e) {
+      print('Error calculando precio unitario: $e');
+      return '0.00';
+    }
+  }
+
+  // Función para formatear montos de forma segura
+  String _formatearMonto(dynamic monto) {
+    try {
+      // Convertir a número si es string o mantener si ya es número
+      final montoNumerico = monto is num 
+          ? monto 
+          : double.tryParse(monto?.toString() ?? '0') ?? 0.0;
+      
+      // Formatear el número
+      return NumberFormat("#,##0.00", "es_ES").format(montoNumerico);
+    } catch (e) {
+      print('Error formateando monto: $e');
+      return '0.00';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
@@ -146,8 +678,8 @@ class _DueListState extends State<DueList> {
 
               ///___________customer_filter______________________________________________________
               for (var element in customerList) {
-                final name = element.customerName?.replaceAll(' ', '').toLowerCase() ?? '';
-                final phone = element.phoneNumber ?? '';
+                final name = element.customerName.replaceAll(' ', '').toLowerCase();
+                final phone = element.phoneNumber;
 
                 final search = searchItem.toLowerCase();
 
@@ -551,7 +1083,7 @@ class _DueListState extends State<DueList> {
                                         CrossAxisAlignment.center,
                                     children: [
                                       Text(
-                                        '$globalCurrency ${myFormat.format(double.tryParse(totalCustomerDue(customers: selectedParties == 'Clientes' ? showAbleCustomer : showAbleSupplier, selectedCustomerType: selectedParties).toStringAsFixed(2)) ?? 0)}',
+                                        '$globalCurrency ${_formatearMonto(totalCustomerDue(customers: selectedParties == 'Clientes' ? showAbleCustomer : showAbleSupplier, selectedCustomerType: selectedParties))}',
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
                                           fontSize: 18,
@@ -651,6 +1183,8 @@ class _DueListState extends State<DueList> {
                                                             label: Text(lang.S
                                                                 .of(context)
                                                                 .collectDue)),
+                                                        DataColumn(
+                                                            label: Text('Facturas')),
                                                       ],
                                                       rows: List.generate(
                                                           selectedParties ==
@@ -723,8 +1257,8 @@ class _DueListState extends State<DueList> {
                                                           DataCell(Text(
                                                             selectedParties ==
                                                                     'Proveedores'
-                                                                ? '$globalCurrency${myFormat.format(double.tryParse(paginatedSupplierList[index].dueAmount) ?? 0)}'
-                                                                : '$globalCurrency${myFormat.format(double.tryParse(paginatedCustomerList[index].dueAmount))}',
+                                                                ? '$globalCurrency${_formatearMonto(paginatedSupplierList[index].dueAmount)}'
+                                                                : '$globalCurrency${_formatearMonto(paginatedCustomerList[index].dueAmount)}',
                                                           )),
                                                           DataCell(
                                                             GestureDetector(
@@ -772,6 +1306,51 @@ class _DueListState extends State<DueList> {
                                                                 style: TextStyle(
                                                                     color: Colors
                                                                         .blue),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            GestureDetector(
+                                                              onTap: () {
+                                                                _mostrarFacturasPendientes(
+                                                                    context,
+                                                                    selectedParties ==
+                                                                            'Proveedores'
+                                                                        ? paginatedSupplierList[
+                                                                            index]
+                                                                            .phoneNumber
+                                                                        : paginatedCustomerList[
+                                                                            index]
+                                                                            .phoneNumber,
+                                                                    selectedParties ==
+                                                                            'Proveedores'
+                                                                        ? paginatedSupplierList[
+                                                                            index]
+                                                                            .customerName
+                                                                        : paginatedCustomerList[
+                                                                            index]
+                                                                            .customerName);
+                                                              },
+                                                              child: Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                                decoration: BoxDecoration(
+                                                                  color: kGreenTextColor.withOpacity(0.2),
+                                                                  borderRadius: BorderRadius.circular(4),
+                                                                ),
+                                                                child: const Row(
+                                                                  mainAxisSize: MainAxisSize.min,
+                                                                  children: [
+                                                                    Icon(Icons.receipt_long, size: 16, color: kGreenTextColor),
+                                                                    SizedBox(width: 4),
+                                                                    Text(
+                                                                      'Ver facturas',
+                                                                      style: TextStyle(
+                                                                        color: kGreenTextColor,
+                                                                        fontWeight: FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
                                                               ),
                                                             ),
                                                           ),

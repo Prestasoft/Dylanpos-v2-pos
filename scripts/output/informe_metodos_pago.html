@@ -1,0 +1,319 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe de Métodos de Pago - DylanPOS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .header {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 5px 5px 0 0;
+            margin-bottom: 20px;
+        }
+        .resumen {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #bce8f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .problematica {
+            background-color: #ffebee !important;
+        }
+        .problematica:hover {
+            background-color: #ffcdd2 !important;
+        }
+        .chart-container {
+            margin: 20px 0;
+            height: 300px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #777;
+            font-size: 12px;
+        }
+        .error {
+            color: #d9534f;
+        }
+        .success {
+            color: #5cb85c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Informe de Métodos de Pago - DylanPOS</h1>
+            <p>Proyecto: dylanpos-victorfoto-stodgo | Usuario: 1sNp9iHiGKRxpmqgNsr2S5712uw2</p>
+        </div>
+        
+        <div class="resumen">
+            <h2>Resumen</h2>
+            <p><strong>Total de ventas analizadas:</strong> 289</p>
+            <p><strong>Ventas sin método de pago:</strong> 
+                <span class="success">0 (0.00%)</span>
+            </p>
+            <p><strong>Estado del sistema:</strong> 
+                <span class="success">✅ Todos los métodos de pago están correctamente definidos</span>
+            </p>
+        </div>
+        
+        <h2>Métodos de Pago Utilizados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Método de Pago</th>
+                    <th>Cantidad</th>
+                    <th>Porcentaje</th>
+                </tr>
+            </thead>
+            <tbody>
+  
+                <tr>
+                    <td>Efectivo</td>
+                    <td>139</td>
+                    <td>48.10%</td>
+                </tr>
+    
+                <tr>
+                    <td>Tarjeta</td>
+                    <td>8</td>
+                    <td>2.77%</td>
+                </tr>
+    
+                <tr>
+                    <td>Transferencia</td>
+                    <td>142</td>
+                    <td>49.13%</td>
+                </tr>
+    
+            </tbody>
+        </table>
+        
+        <h2>Transacciones Recientes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Factura #</th>
+                    <th>Cliente</th>
+                    <th>Total</th>
+                    <th>Método de Pago</th>
+                </tr>
+            </thead>
+            <tbody>
+  
+                <tr>
+                    <td>7/5/2025, 3:00:44 PM</td>
+                    <td>365</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 150,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/5/2025, 2:48:10 PM</td>
+                    <td>364</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 25,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/5/2025, 11:57:00 AM</td>
+                    <td>362</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 8,500.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 9:16:21 PM</td>
+                    <td>361</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 75,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 9:13:45 PM</td>
+                    <td>360</td>
+                    <td>GABRIEL ABREU</td>
+                    <td>RD$ 25,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 2:45:56 AM</td>
+                    <td>359</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 150,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 1:56:51 AM</td>
+                    <td>358</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 150,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 1:56:20 AM</td>
+                    <td>357</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 75,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 1:45:05 AM</td>
+                    <td>356</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 150,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 1:30:37 AM</td>
+                    <td>355</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 75,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/4/2025, 12:07:52 AM</td>
+                    <td>354</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 25,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 11:50:24 PM</td>
+                    <td>353</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 200,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 10:58:12 PM</td>
+                    <td>352</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 125,000.00</td>
+                    <td>Tarjeta</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 8:33:36 PM</td>
+                    <td>351</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 35,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 12:43:19 PM</td>
+                    <td>350</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 25,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 12:34:44 PM</td>
+                    <td>349</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 25,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 11:28:39 AM</td>
+                    <td>348</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 25,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 11:14:25 AM</td>
+                    <td>347</td>
+                    <td>VICTOR GUZMAN</td>
+                    <td>RD$ 35,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/3/2025, 10:48:41 AM</td>
+                    <td>346</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 25,000.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+                <tr>
+                    <td>7/1/2025, 4:15:43 PM</td>
+                    <td>344</td>
+                    <td>MIGUEL VLADIMIR DE JESUS CASTILLO</td>
+                    <td>RD$ 8,500.00</td>
+                    <td>Efectivo</td>
+                </tr>
+    
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            <p>Informe generado el: 7/5/2025, 4:02:34 PM</p>
+            <p>Validador de Métodos de Pago v2.0 - DylanPOS</p>
+        </div>
+    </div>
+</body>
+</html>
+  

@@ -25,6 +25,8 @@ class _CuadreModalState extends State<CuadreModal> {
   double _totalTarjeta = 0.0;
   double _totalTransferencia = 0.0;
   double _totalPagos = 0.0; // Total de pagos (salidas de dinero)
+  double _totalVentasDia = 0.0; // Total de ventas del día
+  double _totalPendiente = 0.0; // Total de montos pendientes del día
   
   // Desglose de pagos por método
   double _pagoEfectivo = 0.0;
@@ -51,6 +53,7 @@ class _CuadreModalState extends State<CuadreModal> {
     debugPrint('  - Pagos Transferencia: \t$_pagoTransferencia');
     debugPrint('totalGastos:     ${widget.totalGastos}');
     debugPrint('totalVentasDelDia: $totalVentasDelDia');
+    debugPrint('totalPendiente:    $totalPendiente');
     debugPrint('totalNetoPorDia:   $totalNetoPorDia');
     debugPrint('totalContado:      $totalContado');
     debugPrint('cantidades:        $cantidades');
@@ -145,6 +148,8 @@ class _CuadreModalState extends State<CuadreModal> {
     double pagoEfectivo = 0.0;
     double pagoTarjeta = 0.0;
     double pagoTransferencia = 0.0;
+    double ventasDia = 0.0; // Variable temporal para el total de ventas del día
+    double totalPendiente = 0.0; // Variable temporal para el total pendiente
     
     debugPrint('[CuadreModal] INICIANDO CÁLCULO DE TOTALES DESDE VENTAS');
     debugPrint('[CuadreModal] Total de ventas a procesar: ${widget.ventasDelDia.length}');
@@ -167,6 +172,7 @@ class _CuadreModalState extends State<CuadreModal> {
         final double montoPagado = montoTotal - montoPendiente;
         
         debugPrint('[CuadreModal]   - Monto calculado real pagado: $montoPagado');
+        debugPrint('[CuadreModal]   - Monto pendiente: $montoPendiente');
         
         final metodoPago = categorizarMetodoPago(paymentType);
         
@@ -189,16 +195,23 @@ class _CuadreModalState extends State<CuadreModal> {
           continue;
         }
         
-        // Si es una venta normal, usar la misma lógica de categorización
-        // pero considerando solo el monto realmente pagado
+        // Primero sumamos al total de ventas del día y acumulamos pendientes
+        ventasDia += montoPagado; // Sumamos sólo lo realmente pagado
+        
+        if (montoPendiente > 0) {
+          totalPendiente += montoPendiente; // Acumulamos los montos pendientes
+          debugPrint('[CuadreModal] ✓ Pendiente detectado: $montoPendiente, Total Acumulado: $totalPendiente');
+        }
+        
+        // Luego distribuimos por método de pago
         if (metodoPago == 'Efectivo') {
-          efectivo += montoPagado;
+          efectivo += montoPagado; // Restamos el monto pendiente
           debugPrint('[CuadreModal] ✓ Venta en Efectivo - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $efectivo');
         } else if (metodoPago == 'Tarjeta') {
-          tarjeta += montoPagado;
+          tarjeta += montoPagado; // Restamos el monto pendiente
           debugPrint('[CuadreModal] ✓ Venta con Tarjeta - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $tarjeta');
         } else if (metodoPago == 'Transferencia') {
-          transferencia += montoPagado;
+          transferencia += montoPagado; // Restamos el monto pendiente
           debugPrint('[CuadreModal] ✓ Venta por Transferencia - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $transferencia');
         }
       }
@@ -213,16 +226,19 @@ class _CuadreModalState extends State<CuadreModal> {
       _pagoEfectivo = pagoEfectivo;
       _pagoTarjeta = pagoTarjeta;
       _pagoTransferencia = pagoTransferencia;
+      _totalVentasDia = ventasDia; // Actualiza el total de ventas del día
+      _totalPendiente = totalPendiente; // Actualiza el total pendiente
     });
     
     // Imprimir resumen final para depuración
     debugPrint('=================================================');
-    debugPrint('[CuadreModal] RESUMEN FINAL DE TOTALES CALCULADOS:');
-    debugPrint('  Ventas en Efectivo (real): $_totalEfectivo');
-    debugPrint('  Ventas con Tarjeta (real): $_totalTarjeta');
-    debugPrint('  Ventas por Transferencia (real): $_totalTransferencia');
-    debugPrint('  Total Ventas del Día (real): ${_totalEfectivo + _totalTarjeta + _totalTransferencia}');
-    debugPrint('  Pagos (salidas): $_totalPagos');
+    debugPrint('[CuadreModal] RESUMEN DE TOTALES CALCULADOS:');
+    debugPrint('    - Total Ventas del Día: $_totalVentasDia');
+    debugPrint('    - Total Pendiente: $_totalPendiente');
+    debugPrint('    - Efectivo: $_totalEfectivo');
+    debugPrint('    - Tarjeta: $_totalTarjeta');
+    debugPrint('    - Transferencia: $_totalTransferencia');
+    debugPrint('    - Total Pagos: $_totalPagos');
     debugPrint('    - Pagos Efectivo: $_pagoEfectivo');
     debugPrint('    - Pagos Tarjeta: $_pagoTarjeta');
     debugPrint('    - Pagos Transferencia: $_pagoTransferencia');
@@ -300,6 +316,8 @@ class _CuadreModalState extends State<CuadreModal> {
               _totalTarjeta = tarjetaFB;
               _totalTransferencia = transferenciaFB;
               _totalPagos = pagosFB;
+              // Mantener el valor de totalPendiente calculado previamente
+              // _totalPendiente no se modifica desde Firebase
             });
             
             debugPrint('[CuadreModal] Totales actualizados desde Firebase:');
@@ -307,6 +325,7 @@ class _CuadreModalState extends State<CuadreModal> {
             debugPrint('  Tarjeta: $_totalTarjeta');
             debugPrint('  Transferencia: $_totalTransferencia');
             debugPrint('  Pagos: $_totalPagos');
+            debugPrint('  Total Pendiente (mantenido): $_totalPendiente');
           } else {
             debugPrint('[CuadreModal] Todos los totales de Firebase son 0, manteniendo totales directos');
           }
@@ -338,14 +357,14 @@ class _CuadreModalState extends State<CuadreModal> {
           final double montoPendiente = (value['saleTransactionModel']?['dueAmount'] as num? ?? 0).toDouble();
           final double montoPagado = montoTotal - montoPendiente;
           total += montoPagado;
-          debugPrint('[CuadreModal] Firebase - Venta Efectivo ID $id: Total=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
+          debugPrint('[CuadreModal] Firebase - Venta Efectivo ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
         }
       } else {
         final paymentType = value['dueTransactionModel']?['paymentType'];
         if (categorizarMetodoPago(paymentType) == 'Efectivo') {
           final monto = (value['paymentIn'] as num? ?? 0).toDouble();
           total += monto;
-          debugPrint('[CuadreModal] Firebase - Otro movimiento Efectivo ID $id: $monto, Acumulado=$total');
+          debugPrint('[CuadreModal] Firebase - Otro movimiento Efectivo ID $id: PaymentIn=$monto, Acumulado=$total');
         }
       }
     });
@@ -370,14 +389,14 @@ class _CuadreModalState extends State<CuadreModal> {
           final double montoPendiente = (value['saleTransactionModel']?['dueAmount'] as num? ?? 0).toDouble();
           final double montoPagado = montoTotal - montoPendiente;
           total += montoPagado;
-          debugPrint('[CuadreModal] Firebase - Venta Tarjeta ID $id: Total=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
+          debugPrint('[CuadreModal] Firebase - Venta Tarjeta ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
         }
       } else {
         final paymentType = value['dueTransactionModel']?['paymentType'];
         if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
           final monto = (value['paymentIn'] as num? ?? 0).toDouble();
           total += monto;
-          debugPrint('[CuadreModal] Firebase - Otro movimiento Tarjeta ID $id: $monto, Acumulado=$total');
+          debugPrint('[CuadreModal] Firebase - Otro movimiento Tarjeta ID $id: PaymentIn=$monto, Acumulado=$total');
         }
       }
     });
@@ -402,14 +421,14 @@ class _CuadreModalState extends State<CuadreModal> {
           final double montoPendiente = (value['saleTransactionModel']?['dueAmount'] as num? ?? 0).toDouble();
           final double montoPagado = montoTotal - montoPendiente;
           total += montoPagado;
-          debugPrint('[CuadreModal] Firebase - Venta Transferencia ID $id: Total=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
+          debugPrint('[CuadreModal] Firebase - Venta Transferencia ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
         }
       } else {
         final paymentType = value['dueTransactionModel']?['paymentType'];
         if (categorizarMetodoPago(paymentType) == 'Transferencia') {
           final monto = (value['paymentIn'] as num? ?? 0).toDouble();
           total += monto;
-          debugPrint('[CuadreModal] Firebase - Otro movimiento Transferencia ID $id: $monto, Acumulado=$total');
+          debugPrint('[CuadreModal] Firebase - Otro movimiento Transferencia ID $id: PaymentIn=$monto, Acumulado=$total');
         }
       }
     });
@@ -475,12 +494,13 @@ class _CuadreModalState extends State<CuadreModal> {
   double get pagoEfectivo => _pagoEfectivo;
   double get pagoTarjeta => _pagoTarjeta;
   double get pagoTransferencia => _pagoTransferencia;
+  double get totalPendiente => _totalPendiente;
+  double get totalVentasDia => _totalVentasDia; // Aseguramos que el getter esté definido
 
 
   double get totalVentasDelDia {
-    // Ya estamos usando los totales actualizados que reflejan 
-    // montos reales pagados (excluyendo pendientes)
-    return totalEfectivo + totalTarjeta + totalTransferencia;
+    // Ya estamos usando el valor calculado directamente
+    return _totalVentasDia;
   }
   
   double get totalVentasNetoDelDia {
@@ -534,6 +554,36 @@ class _CuadreModalState extends State<CuadreModal> {
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.summarize, color: Colors.blue),
+                              const SizedBox(width: 6),
+                              Text('Total de Ventas del Día: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 4),
+                              Tooltip(
+                                message: 'Monto total de ventas para el día actual',
+                                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4), // Pequeño espacio entre las filas
+                          // Mostrar siempre el total pendiente, incluso si es cero
+                          Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                              const SizedBox(width: 6),
+                              Text('Total Pendiente por Cobrar: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                              Text('RD\$${formatCurrency(totalPendiente)}', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 4),
+                              Tooltip(
+                                message: 'Monto pendiente por cobrar de las ventas del día',
+                                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Divider(thickness: 1, color: Colors.grey),
                           Row(
                             children: [
                               const Icon(Icons.attach_money, color: Colors.green),
@@ -606,7 +656,7 @@ class _CuadreModalState extends State<CuadreModal> {
                               const Icon(Icons.arrow_circle_up, color: Colors.green),
                               const SizedBox(width: 6),
                               Text('Entradas Totales: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                              Text('RD\$${formatCurrency(totalVentasDelDia)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 15)),
+                              Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 15)),
                             ],
                           ),
                           Row(
@@ -753,26 +803,21 @@ class _CuadreModalState extends State<CuadreModal> {
           onPressed: () {
             // Log extra al presionar "Cuadrar"
             logDebugData();
+            // Mostramos un resumen en SnackBar
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
+                backgroundColor: Colors.green.shade800,
                 content: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('📊 Cuadre de Caja Realizado', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('💰 Ventas del día (importes pagados): RD\$${formatCurrency(totalVentasDelDia)}'),
-                    Text('🔄 Salidas (Pagos): RD\$${formatCurrency(totalPagos)}'),
-                    Text('💵 Efectivo cobrado (real): RD\$${formatCurrency(totalEfectivo)}'),
-                    if (pagoEfectivo > 0) 
-                      Text('💵 Efectivo: Entradas RD\$${formatCurrency(totalEfectivo)} - Salidas RD\$${formatCurrency(pagoEfectivo)} = Neto RD\$${formatCurrency(efectivoNeto)}'),
-                    Text('💸 Total gastos del día: RD\$${formatCurrency(widget.totalGastos)}'),
-                    Text('🏆 Balance neto del día: RD\$${formatCurrency(totalNetoPorDia)}'),
-                    Text('💵 Efectivo contado: RD\$${formatCurrency(totalContado)}'),
-                    Text('💳 Tarjetas + Transferencias (real): RD\$${formatCurrency(totalTarjeta + totalTransferencia)}'),
-                    Text('ℹ️ Los montos reales son los importes efectivamente cobrados (restando pendientes)'),
+                    Text('Cuadre confirmado correctamente', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text('Ventas del día: RD\$${formatCurrency(totalVentasDia)}'),
+                    Text('Pendientes por cobrar: RD\$${formatCurrency(totalPendiente)}'),
+                    Text('Total en caja: RD\$${formatCurrency(totalContado)}'),
                   ],
                 ),
-                backgroundColor: totalNetoPorDia >= 0 ? Colors.green : Colors.orange,
                 duration: const Duration(seconds: 5),
               ),
             );
