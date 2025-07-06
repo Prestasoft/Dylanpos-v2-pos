@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../commas.dart';
+import '../../const.dart';
+import '../../model/sale_transaction_model.dart';
 
 class CuadreModal extends StatefulWidget {
-  final List<Map<String, dynamic>> ventasDelDia;
+  final List<SaleTransactionModel> ventasDelDia;
   final double totalGastos;
 
   const CuadreModal({
@@ -26,13 +28,14 @@ class _CuadreModalState extends State<CuadreModal> {
   double _totalTransferencia = 0.0;
   double _totalPagos = 0.0; // Total de pagos (salidas de dinero)
   double _totalVentasDia = 0.0; // Total de ventas del día
+  double _totalVentasDiaPagado = 0.0; // Total de ventas del día
   double _totalPendiente = 0.0; // Total de montos pendientes del día
-  
+
   // Desglose de pagos por método
   double _pagoEfectivo = 0.0;
-  double _pagoTarjeta = 0.0; 
+  double _pagoTarjeta = 0.0;
   double _pagoTransferencia = 0.0;
-  
+
   // Eliminados filtros de fecha y variables asociadas, solo se usará la fecha de hoy
   late DateTime _hoy;
 
@@ -64,12 +67,18 @@ class _CuadreModalState extends State<CuadreModal> {
   String categorizarMetodoPago(String? paymentType) {
     final tipo = (paymentType ?? '').toLowerCase();
     if (tipo.contains('cash') || tipo.contains('efectivo')) return 'Efectivo';
-    if (tipo.contains('card') || tipo.contains('tarjeta') || tipo.contains('bank')) return 'Tarjeta';
-    if (tipo.contains('transfer') || tipo.contains('transferencia') || tipo.contains('mobile')) return 'Transferencia';
+    if (tipo.contains('card') ||
+        tipo.contains('tarjeta') ||
+        tipo.contains('bank')) {
+      return 'Tarjeta';
+    }
+    if (tipo.contains('transfer') ||
+        tipo.contains('transferencia') ||
+        tipo.contains('mobile')) {
+      return 'Transferencia';
+    }
     return 'Otro';
   }
-
-  List<Map<String, dynamic>> _ventasFiltradas = [];
 
   // Denominaciones de RD$
   final List<int> billetes = [2000, 1000, 500, 200, 100, 50];
@@ -93,48 +102,53 @@ class _CuadreModalState extends State<CuadreModal> {
   @override
   void initState() {
     super.initState();
-    _hoy = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    debugPrint('[CuadreModal] initState ejecutado. ventasDelDia: \\${widget.ventasDelDia.length}');
+    _hoy =
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    debugPrint(
+        '[CuadreModal] initState ejecutado. ventasDelDia: \\${widget.ventasDelDia.length}');
     for (var d in [...billetes, ...monedas]) {
       cantidades[d] = 0;
     }
-    
+
     // IMPORTANTE: Asumimos que todas las ventas son de hoy si no tienen fecha
-    _ventasFiltradas = widget.ventasDelDia.where((v) {
-      final fechaStr = v['date'];
-      if (fechaStr == null || fechaStr is! String || fechaStr.isEmpty) {
-        // Asumimos que ventas sin fecha son de hoy
-        debugPrint('[CuadreModal] Venta sin fecha incluida: $v');
-        return true;
-      }
-      
-      DateTime? fecha;
-      bool coincideHoy = false;
-      try {
-        fecha = DateTime.parse(fechaStr);
-        final fechaVenta = DateTime(fecha.year, fecha.month, fecha.day);
-        coincideHoy = fechaVenta == _hoy;
-      } catch (e) {
-        // Intentar parseo solo yyyy-MM-dd
-        try {
-          final partes = fechaStr.split('T')[0].split('-');
-          if (partes.length == 3) {
-            fecha = DateTime(int.parse(partes[0]), int.parse(partes[1]), int.parse(partes[2]));
-            coincideHoy = fecha == _hoy;
-          }
-        } catch (e2) {
-          debugPrint('[CuadreModal] Venta ignorada por error de parseo: fechaStr=$fechaStr, venta=$v');
-        }
-      }
-      if (!coincideHoy) {
-        debugPrint('[CuadreModal] Venta ignorada por no ser de hoy: fechaStr=$fechaStr, venta=$v');
-      }
-      return coincideHoy;
-    }).toList();
-    
+    // _ventasFiltradas = widget.ventasDelDia.where((v) {
+    //   final fechaStr = v['date'];
+    //   if (fechaStr == null || fechaStr is! String || fechaStr.isEmpty) {
+    //     // Asumimos que ventas sin fecha son de hoy
+    //     debugPrint('[CuadreModal] Venta sin fecha incluida: $v');
+    //     return true;
+    //   }
+
+    //   DateTime? fecha;
+    //   bool coincideHoy = false;
+    //   try {
+    //     fecha = DateTime.parse(fechaStr);
+    //     final fechaVenta = DateTime(fecha.year, fecha.month, fecha.day);
+    //     coincideHoy = fechaVenta == _hoy;
+    //   } catch (e) {
+    //     // Intentar parseo solo yyyy-MM-dd
+    //     try {
+    //       final partes = fechaStr.split('T')[0].split('-');
+    //       if (partes.length == 3) {
+    //         fecha = DateTime(int.parse(partes[0]), int.parse(partes[1]),
+    //             int.parse(partes[2]));
+    //         coincideHoy = fecha == _hoy;
+    //       }
+    //     } catch (e2) {
+    //       debugPrint(
+    //           '[CuadreModal] Venta ignorada por error de parseo: fechaStr=$fechaStr, venta=$v');
+    //     }
+    //   }
+    //   if (!coincideHoy) {
+    //     debugPrint(
+    //         '[CuadreModal] Venta ignorada por no ser de hoy: fechaStr=$fechaStr, venta=$v');
+    //   }
+    //   return coincideHoy;
+    // }).toList();
+
     // Usar directamente las ventas sin filtrar para calcular los totales
     _calcularTotalesDirectamente();
-    
+
     // Obtener datos adicionales de Firebase
     _fetchPagosDesdeFirebase();
   }
@@ -149,74 +163,86 @@ class _CuadreModalState extends State<CuadreModal> {
     double pagoTarjeta = 0.0;
     double pagoTransferencia = 0.0;
     double ventasDia = 0.0; // Variable temporal para el total de ventas del día
+    double ventasTotal = 0.0;
     double totalPendiente = 0.0; // Variable temporal para el total pendiente
-    
+
     debugPrint('[CuadreModal] INICIANDO CÁLCULO DE TOTALES DESDE VENTAS');
-    debugPrint('[CuadreModal] Total de ventas a procesar: ${widget.ventasDelDia.length}');
-    
+    debugPrint(
+        '[CuadreModal] Total de ventas a procesar: ${widget.ventasDelDia.length}');
+
     for (var venta in widget.ventasDelDia) {
-      final paymentType = venta['paymentType'];
-      final amount = venta['amount']; // Importe total de la venta
-      final pendiente = venta['dueAmount'] ?? venta['pendiente'] ?? 0; // Importe pendiente
-      final tipo = venta['type']; // Para distinguir entre ventas y pagos
-      final id = venta['id'] ?? venta['invoiceNumber'];
-      
+      final paymentType = venta.paymentType;
+      final amount = venta.totalAmount; // Importe total de la venta
+      final pendiente = venta.dueAmount ?? 0; // Importe pendiente
+      final tipo = venta.paymentType; // Para distinguir entre ventas y pagos
+      final id = venta.invoiceNumber;
+
       debugPrint('[CuadreModal] Procesando venta/pago ID: $id');
-      debugPrint('[CuadreModal]   - Tipo: $tipo, Método Pago: $paymentType, Total: $amount, Pendiente: $pendiente');
-      
+      debugPrint(
+          '[CuadreModal]   - Tipo: $tipo, Método Pago: $paymentType, Total: $amount, Pendiente: $pendiente');
+
       if (amount != null) {
-        final double montoTotal = amount is int ? amount.toDouble() : (amount is double ? amount : 0.0);
-        final double montoPendiente = pendiente is int ? pendiente.toDouble() : (pendiente is double ? pendiente : 0.0);
-        
+        final double montoTotal = amount;
+        final double montoPendiente = pendiente;
+
         // Calculamos el monto realmente pagado (total - pendiente)
         final double montoPagado = montoTotal - montoPendiente;
-        
-        debugPrint('[CuadreModal]   - Monto calculado real pagado: $montoPagado');
+
+        debugPrint(
+            '[CuadreModal]   - Monto calculado real pagado: $montoPagado');
         debugPrint('[CuadreModal]   - Monto pendiente: $montoPendiente');
-        
+
         final metodoPago = categorizarMetodoPago(paymentType);
-        
+
         // Si es un pago (salida de dinero)
         if (tipo != null && tipo.toString().toLowerCase() == 'payment') {
           pagos += montoTotal;
-          
+
           // Desglosar el pago por método
           if (metodoPago == 'Efectivo') {
             pagoEfectivo += montoTotal;
-            debugPrint('[CuadreModal] ✓ Pago en Efectivo: $montoTotal, Total Acumulado: $pagoEfectivo');
+            debugPrint(
+                '[CuadreModal] ✓ Pago en Efectivo: $montoTotal, Total Acumulado: $pagoEfectivo');
           } else if (metodoPago == 'Tarjeta') {
             pagoTarjeta += montoTotal;
-            debugPrint('[CuadreModal] ✓ Pago con Tarjeta: $montoTotal, Total Acumulado: $pagoTarjeta');
+            debugPrint(
+                '[CuadreModal] ✓ Pago con Tarjeta: $montoTotal, Total Acumulado: $pagoTarjeta');
           } else if (metodoPago == 'Transferencia') {
             pagoTransferencia += montoTotal;
-            debugPrint('[CuadreModal] ✓ Pago por Transferencia: $montoTotal, Total Acumulado: $pagoTransferencia');
+            debugPrint(
+                '[CuadreModal] ✓ Pago por Transferencia: $montoTotal, Total Acumulado: $pagoTransferencia');
           }
-          
+
           continue;
         }
-        
+
         // Primero sumamos al total de ventas del día y acumulamos pendientes
         ventasDia += montoPagado; // Sumamos sólo lo realmente pagado
-        
+        ventasTotal += montoTotal;
+
         if (montoPendiente > 0) {
           totalPendiente += montoPendiente; // Acumulamos los montos pendientes
-          debugPrint('[CuadreModal] ✓ Pendiente detectado: $montoPendiente, Total Acumulado: $totalPendiente');
+          debugPrint(
+              '[CuadreModal] ✓ Pendiente detectado: $montoPendiente, Total Acumulado: $totalPendiente');
         }
-        
+
         // Luego distribuimos por método de pago
         if (metodoPago == 'Efectivo') {
           efectivo += montoPagado; // Restamos el monto pendiente
-          debugPrint('[CuadreModal] ✓ Venta en Efectivo - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $efectivo');
+          debugPrint(
+              '[CuadreModal] ✓ Venta en Efectivo - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $efectivo');
         } else if (metodoPago == 'Tarjeta') {
           tarjeta += montoPagado; // Restamos el monto pendiente
-          debugPrint('[CuadreModal] ✓ Venta con Tarjeta - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $tarjeta');
+          debugPrint(
+              '[CuadreModal] ✓ Venta con Tarjeta - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $tarjeta');
         } else if (metodoPago == 'Transferencia') {
           transferencia += montoPagado; // Restamos el monto pendiente
-          debugPrint('[CuadreModal] ✓ Venta por Transferencia - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $transferencia');
+          debugPrint(
+              '[CuadreModal] ✓ Venta por Transferencia - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $transferencia');
         }
       }
     }
-    
+
     // Actualizar los totales
     setState(() {
       _totalEfectivo = efectivo;
@@ -226,10 +252,11 @@ class _CuadreModalState extends State<CuadreModal> {
       _pagoEfectivo = pagoEfectivo;
       _pagoTarjeta = pagoTarjeta;
       _pagoTransferencia = pagoTransferencia;
-      _totalVentasDia = ventasDia; // Actualiza el total de ventas del día
+      _totalVentasDia = ventasTotal; // Actualiza el total de ventas del día
+      _totalVentasDiaPagado = ventasDia;
       _totalPendiente = totalPendiente; // Actualiza el total pendiente
     });
-    
+
     // Imprimir resumen final para depuración
     debugPrint('=================================================');
     debugPrint('[CuadreModal] RESUMEN DE TOTALES CALCULADOS:');
@@ -249,68 +276,55 @@ class _CuadreModalState extends State<CuadreModal> {
   Future<void> _fetchPagosDesdeFirebase() async {
     setState(() => _loadingPagos = true);
     try {
-      // Obtener el userID desde ventasDelDia (asume que todas las ventas son del mismo usuario)
-      String? userID;
-      if (widget.ventasDelDia.isNotEmpty && widget.ventasDelDia.first['userID'] != null) {
-        userID = widget.ventasDelDia.first['userID'].toString();
-      } else {
-        debugPrint('[CuadreModal] No se pudo obtener userID de las ventas');
-        setState(() => _loadingPagos = false);
-        return;
-      }
-      
-      final ref = FirebaseDatabase.instance.ref(userID).child('Daily Transaction');
+      final ref = FirebaseDatabase.instance
+          .ref(await getUserID())
+          .child('Daily Transaction');
       final snapshot = await ref.get();
-      
+
       if (snapshot.exists) {
-        Map<String, dynamic> allDailyTransactions = Map<String, dynamic>.from(snapshot.value as Map);
-        
-        // Obtener los invoiceNumbers de las ventas del día (todas, no solo las filtradas)
-        final Set<dynamic> invoiceNumbers = widget.ventasDelDia.map((v) => v['invoiceNumber'] ?? v['id']).toSet();
-        
-        int totalRegistros = 0;
-        int usadosPorId = 0;
-        
-        // Si no hay IDs para filtrar, usar directamente los totales ya calculados
-        if (invoiceNumbers.isEmpty) {
-          debugPrint('[CuadreModal] No hay IDs para filtrar en Firebase, usando totales directos');
-          setState(() => _loadingPagos = false);
-          return;
-        }
-        
+        Map<String, dynamic> allDailyTransactions =
+            Map<String, dynamic>.from(snapshot.value as Map);
+
         // Filtrar por IDs
         Map<String, dynamic> filteredTransactions = {};
-        for (var entry in allDailyTransactions.entries) {
-          totalRegistros++;
-          final value = entry.value;
-          final id = value['id'] ?? value['invoiceNumber'];
-          if (id != null && invoiceNumbers.contains(id)) {
-            filteredTransactions[entry.key] = value;
-            usadosPorId++;
+
+        for (var transaction in widget.ventasDelDia) {
+          final matchingEntries = allDailyTransactions.entries
+              .where((entry) => entry.value['id'] == transaction.invoiceNumber);
+
+          for (var entry in matchingEntries) {
+            filteredTransactions[entry.key] = entry.value;
           }
         }
-        
-        debugPrint('[CuadreModal] Total registros en Firebase: $totalRegistros, usados por id: $usadosPorId');
-        
+
         // Si encontramos movimientos en Firebase, usar esos totales
         if (filteredTransactions.isNotEmpty) {
           _dailyTransactions = filteredTransactions;
-          
+
           // Solo sobrescribimos los valores si encontramos algo en Firebase
-          debugPrint('[CuadreModal] =================================================');
-          debugPrint('[CuadreModal] INICIANDO CÁLCULO DE TOTALES DESDE FIREBASE');
-          double efectivoFB = _calculateTotalMoney(_dailyTransactions);
-          double tarjetaFB = _calculateTotalCard(_dailyTransactions);
-          double transferenciaFB = _calculateTotalTransfer(_dailyTransactions);
+          debugPrint(
+              '[CuadreModal] =================================================');
+          debugPrint(
+              '[CuadreModal] INICIANDO CÁLCULO DE TOTALES DESDE FIREBASE');
+          double efectivoFB = calculateTotalMoney(_dailyTransactions);
+          double tarjetaFB = calculateTotalCard(_dailyTransactions);
+          double transferenciaFB = calculateTotalTransfer(_dailyTransactions);
           double pagosFB = _calculateTotalPayments(_dailyTransactions);
-          
+
           debugPrint('[CuadreModal] COMPARACIÓN DE TOTALES:');
-          debugPrint('[CuadreModal]   Efectivo - Directo: $_totalEfectivo, Firebase: $efectivoFB');
-          debugPrint('[CuadreModal]   Tarjeta - Directo: $_totalTarjeta, Firebase: $tarjetaFB');
-          debugPrint('[CuadreModal]   Transferencia - Directo: $_totalTransferencia, Firebase: $transferenciaFB');
-          debugPrint('[CuadreModal]   Pagos - Directo: $_totalPagos, Firebase: $pagosFB');
-          
-          if (efectivoFB > 0 || tarjetaFB > 0 || transferenciaFB > 0 || pagosFB > 0) {
+          debugPrint(
+              '[CuadreModal]   Efectivo - Directo: $_totalEfectivo, Firebase: $efectivoFB');
+          debugPrint(
+              '[CuadreModal]   Tarjeta - Directo: $_totalTarjeta, Firebase: $tarjetaFB');
+          debugPrint(
+              '[CuadreModal]   Transferencia - Directo: $_totalTransferencia, Firebase: $transferenciaFB');
+          debugPrint(
+              '[CuadreModal]   Pagos - Directo: $_totalPagos, Firebase: $pagosFB');
+
+          if (efectivoFB > 0 ||
+              tarjetaFB > 0 ||
+              transferenciaFB > 0 ||
+              pagosFB > 0) {
             setState(() {
               _totalEfectivo = efectivoFB;
               _totalTarjeta = tarjetaFB;
@@ -319,7 +333,7 @@ class _CuadreModalState extends State<CuadreModal> {
               // Mantener el valor de totalPendiente calculado previamente
               // _totalPendiente no se modifica desde Firebase
             });
-            
+
             debugPrint('[CuadreModal] Totales actualizados desde Firebase:');
             debugPrint('  Efectivo: $_totalEfectivo');
             debugPrint('  Tarjeta: $_totalTarjeta');
@@ -327,13 +341,16 @@ class _CuadreModalState extends State<CuadreModal> {
             debugPrint('  Pagos: $_totalPagos');
             debugPrint('  Total Pendiente (mantenido): $_totalPendiente');
           } else {
-            debugPrint('[CuadreModal] Todos los totales de Firebase son 0, manteniendo totales directos');
+            debugPrint(
+                '[CuadreModal] Todos los totales de Firebase son 0, manteniendo totales directos');
           }
         } else {
-          debugPrint('[CuadreModal] No se encontraron transacciones en Firebase que coincidan con las ventas');
+          debugPrint(
+              '[CuadreModal] No se encontraron transacciones en Firebase que coincidan con las ventas');
         }
       } else {
-        debugPrint('[CuadreModal] No existen transacciones en Firebase para este usuario');
+        debugPrint(
+            '[CuadreModal] No existen transacciones en Firebase para este usuario');
       }
     } catch (e) {
       debugPrint('Error al consultar pagos desde Firebase: $e');
@@ -341,149 +358,208 @@ class _CuadreModalState extends State<CuadreModal> {
     setState(() => _loadingPagos = false);
   }
 
-  double _calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
+  // double _calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
+  //   // double total = 0.0;
+  //   // debugPrint('[CuadreModal] CALCULANDO EFECTIVO DESDE FIREBASE:');
+  //   // dailyTransactions.forEach((key, value) {
+  //   //   final type = value['type'];
+  //   //   final id = value['id'] ?? value['invoiceNumber'];
+  //   //   // Para ventas, necesitamos considerar el monto pendiente
+  //   //   if (type == 'Sale') {
+  //   //     final paymentType = value['saleTransactionModel']?['paymentType'];
+  //   //     if (categorizarMetodoPago(paymentType) == 'Efectivo') {
+  //   //       final double montoTotal =
+  //   //           (value['paymentIn'] as num? ?? 0).toDouble();
+  //   //       final double montoPendiente =
+  //   //           (value['saleTransactionModel']?['dueAmount'] as num? ?? 0)
+  //   //               .toDouble();
+  //   //       final double montoPagado = montoTotal - montoPendiente;
+  //   //       total += montoPagado;
+  //   //       debugPrint(
+  //   //           '[CuadreModal] Firebase - Venta Efectivo ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
+  //   //     }
+  //   //   } else {
+  //   //     final paymentType = value['dueTransactionModel']?['paymentType'];
+  //   //     if (categorizarMetodoPago(paymentType) == 'Efectivo') {
+  //   //       final monto = (value['paymentIn'] as num? ?? 0).toDouble();
+  //   //       total += monto;
+  //   //       debugPrint(
+  //   //           '[CuadreModal] Firebase - Otro movimiento Efectivo ID $id: PaymentIn=$monto, Acumulado=$total');
+  //   //     }
+  //   //   }
+  //   // });
+  //   // debugPrint('[CuadreModal] TOTAL EFECTIVO DESDE FIREBASE: $total');
+  //   // return total;
+  //   double total = 0.0;
+  //   dailyTransactions.forEach((key, value) {
+  //     final type = value['type'];
+  //     final paymentType =
+  //         value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
+  //             ?['paymentType'];
+  //     if (categorizarMetodoPago(paymentType) == 'Efectivo') {
+  //       total += (value['paymentIn'] as num).toDouble();
+  //     }
+  //   });
+  //   return total;
+  // }
+  // double _calculateTotalCard(Map<String, dynamic> dailyTransactions) {
+  //   double total = 0.0;
+  //   debugPrint('[CuadreModal] CALCULANDO TARJETA DESDE FIREBASE:');
+  //   dailyTransactions.forEach((key, value) {
+  //     final type = value['type'];
+  //     final id = value['id'] ?? value['invoiceNumber'];
+  //     // Para ventas, necesitamos considerar el monto pendiente
+  //     if (type == 'Sale') {
+  //       final paymentType = value['saleTransactionModel']?['paymentType'];
+  //       if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
+  //         final double montoTotal =
+  //             (value['paymentIn'] as num? ?? 0).toDouble();
+  //         final double montoPendiente =
+  //             (value['saleTransactionModel']?['dueAmount'] as num? ?? 0)
+  //                 .toDouble();
+  //         final double montoPagado = montoTotal - montoPendiente;
+  //         total += montoPagado;
+  //         debugPrint(
+  //             '[CuadreModal] Firebase - Venta Tarjeta ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
+  //       }
+  //     } else {
+  //       final paymentType = value['dueTransactionModel']?['paymentType'];
+  //       if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
+  //         final monto = (value['paymentIn'] as num? ?? 0).toDouble();
+  //         total += monto;
+  //         debugPrint(
+  //             '[CuadreModal] Firebase - Otro movimiento Tarjeta ID $id: PaymentIn=$monto, Acumulado=$total');
+  //       }
+  //     }
+  //   });
+  //   debugPrint('[CuadreModal] TOTAL TARJETA DESDE FIREBASE: $total');
+  //   return total;
+  // }
+  // double _calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
+  //   double total = 0.0;
+  //   debugPrint('[CuadreModal] CALCULANDO TRANSFERENCIA DESDE FIREBASE:');
+  //   dailyTransactions.forEach((key, value) {
+  //     final type = value['type'];
+  //     final id = value['id'] ?? value['invoiceNumber'];
+  //     // Para ventas, necesitamos considerar el monto pendiente
+  //     if (type == 'Sale') {
+  //       final paymentType = value['saleTransactionModel']?['paymentType'];
+  //       if (categorizarMetodoPago(paymentType) == 'Transferencia') {
+  //         final double montoTotal =
+  //             (value['paymentIn'] as num? ?? 0).toDouble();
+  //         final double montoPendiente =
+  //             (value['saleTransactionModel']?['dueAmount'] as num? ?? 0)
+  //                 .toDouble();
+  //         final double montoPagado = montoTotal - montoPendiente;
+  //         total += montoPagado;
+  //         debugPrint(
+  //             '[CuadreModal] Firebase - Venta Transferencia ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
+  //       }
+  //     } else {
+  //       final paymentType = value['dueTransactionModel']?['paymentType'];
+  //       if (categorizarMetodoPago(paymentType) == 'Transferencia') {
+  //         final monto = (value['paymentIn'] as num? ?? 0).toDouble();
+  //         total += monto;
+  //         debugPrint(
+  //             '[CuadreModal] Firebase - Otro movimiento Transferencia ID $id: PaymentIn=$monto, Acumulado=$total');
+  //       }
+  //     }
+  //   });
+
+  //   debugPrint('[CuadreModal] TOTAL TRANSFERENCIA DESDE FIREBASE: $total');
+  //   return total;
+  // }
+  double calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
     double total = 0.0;
-    debugPrint('[CuadreModal] CALCULANDO EFECTIVO DESDE FIREBASE:');
-    
     dailyTransactions.forEach((key, value) {
       final type = value['type'];
-      final id = value['id'] ?? value['invoiceNumber'];
-      
-      // Para ventas, necesitamos considerar el monto pendiente
-      if (type == 'Sale') {
-        final paymentType = value['saleTransactionModel']?['paymentType'];
-        if (categorizarMetodoPago(paymentType) == 'Efectivo') {
-          final double montoTotal = (value['paymentIn'] as num? ?? 0).toDouble();
-          final double montoPendiente = (value['saleTransactionModel']?['dueAmount'] as num? ?? 0).toDouble();
-          final double montoPagado = montoTotal - montoPendiente;
-          total += montoPagado;
-          debugPrint('[CuadreModal] Firebase - Venta Efectivo ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
-        }
-      } else {
-        final paymentType = value['dueTransactionModel']?['paymentType'];
-        if (categorizarMetodoPago(paymentType) == 'Efectivo') {
-          final monto = (value['paymentIn'] as num? ?? 0).toDouble();
-          total += monto;
-          debugPrint('[CuadreModal] Firebase - Otro movimiento Efectivo ID $id: PaymentIn=$monto, Acumulado=$total');
-        }
+      final paymentType =
+          value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
+              ?['paymentType'];
+      if (categorizarMetodoPago(paymentType) == 'Efectivo') {
+        total += (value['paymentIn'] as num).toDouble();
       }
     });
-    
-    debugPrint('[CuadreModal] TOTAL EFECTIVO DESDE FIREBASE: $total');
     return total;
   }
 
-  double _calculateTotalCard(Map<String, dynamic> dailyTransactions) {
+  double calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
     double total = 0.0;
-    debugPrint('[CuadreModal] CALCULANDO TARJETA DESDE FIREBASE:');
-    
     dailyTransactions.forEach((key, value) {
       final type = value['type'];
-      final id = value['id'] ?? value['invoiceNumber'];
-      
-      // Para ventas, necesitamos considerar el monto pendiente
-      if (type == 'Sale') {
-        final paymentType = value['saleTransactionModel']?['paymentType'];
-        if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
-          final double montoTotal = (value['paymentIn'] as num? ?? 0).toDouble();
-          final double montoPendiente = (value['saleTransactionModel']?['dueAmount'] as num? ?? 0).toDouble();
-          final double montoPagado = montoTotal - montoPendiente;
-          total += montoPagado;
-          debugPrint('[CuadreModal] Firebase - Venta Tarjeta ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
-        }
-      } else {
-        final paymentType = value['dueTransactionModel']?['paymentType'];
-        if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
-          final monto = (value['paymentIn'] as num? ?? 0).toDouble();
-          total += monto;
-          debugPrint('[CuadreModal] Firebase - Otro movimiento Tarjeta ID $id: PaymentIn=$monto, Acumulado=$total');
-        }
+      final paymentType =
+          value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
+              ?['paymentType'];
+      if (categorizarMetodoPago(paymentType) == 'Transferencia') {
+        total += (value['paymentIn'] as num).toDouble();
       }
     });
-    
-    debugPrint('[CuadreModal] TOTAL TARJETA DESDE FIREBASE: $total');
     return total;
   }
 
-  double _calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
+  double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
     double total = 0.0;
-    debugPrint('[CuadreModal] CALCULANDO TRANSFERENCIA DESDE FIREBASE:');
-    
     dailyTransactions.forEach((key, value) {
       final type = value['type'];
-      final id = value['id'] ?? value['invoiceNumber'];
-      
-      // Para ventas, necesitamos considerar el monto pendiente
-      if (type == 'Sale') {
-        final paymentType = value['saleTransactionModel']?['paymentType'];
-        if (categorizarMetodoPago(paymentType) == 'Transferencia') {
-          final double montoTotal = (value['paymentIn'] as num? ?? 0).toDouble();
-          final double montoPendiente = (value['saleTransactionModel']?['dueAmount'] as num? ?? 0).toDouble();
-          final double montoPagado = montoTotal - montoPendiente;
-          total += montoPagado;
-          debugPrint('[CuadreModal] Firebase - Venta Transferencia ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
-        }
-      } else {
-        final paymentType = value['dueTransactionModel']?['paymentType'];
-        if (categorizarMetodoPago(paymentType) == 'Transferencia') {
-          final monto = (value['paymentIn'] as num? ?? 0).toDouble();
-          total += monto;
-          debugPrint('[CuadreModal] Firebase - Otro movimiento Transferencia ID $id: PaymentIn=$monto, Acumulado=$total');
-        }
+      final paymentType =
+          value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
+              ?['paymentType'];
+      if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
+        total += (value['paymentIn'] as num).toDouble();
       }
     });
-    
-    debugPrint('[CuadreModal] TOTAL TRANSFERENCIA DESDE FIREBASE: $total');
     return total;
   }
-
 
   double _calculateTotalPayments(Map<String, dynamic> dailyTransactions) {
     double total = 0.0;
     double efectivo = 0.0;
     double tarjeta = 0.0;
     double transferencia = 0.0;
-    
+
     debugPrint('[CuadreModal] CALCULANDO PAGOS (SALIDAS) DESDE FIREBASE:');
-    
+
     dailyTransactions.forEach((key, value) {
       final type = value['type']?.toString().toLowerCase() ?? '';
       final id = value['id'] ?? value['invoiceNumber'];
-      
+
       if (type == 'payment') {
         final double monto = (value['paymentOut'] as num? ?? 0).toDouble();
         total += monto;
-        
+
         // Desglosar por método de pago
         final paymentType = value['paymentTransactionModel']?['paymentType'];
         final metodoPago = categorizarMetodoPago(paymentType);
-        
+
         if (metodoPago == 'Efectivo') {
           efectivo += monto;
-          debugPrint('[CuadreModal] Firebase - Pago Efectivo ID $id: $monto, Acumulado=$efectivo');
+          debugPrint(
+              '[CuadreModal] Firebase - Pago Efectivo ID $id: $monto, Acumulado=$efectivo');
         } else if (metodoPago == 'Tarjeta') {
           tarjeta += monto;
-          debugPrint('[CuadreModal] Firebase - Pago Tarjeta ID $id: $monto, Acumulado=$tarjeta');
+          debugPrint(
+              '[CuadreModal] Firebase - Pago Tarjeta ID $id: $monto, Acumulado=$tarjeta');
         } else if (metodoPago == 'Transferencia') {
           transferencia += monto;
-          debugPrint('[CuadreModal] Firebase - Pago Transferencia ID $id: $monto, Acumulado=$transferencia');
+          debugPrint(
+              '[CuadreModal] Firebase - Pago Transferencia ID $id: $monto, Acumulado=$transferencia');
         }
       }
     });
-    
+
     // Guardar los desgloses
     setState(() {
       _pagoEfectivo = efectivo;
       _pagoTarjeta = tarjeta;
       _pagoTransferencia = transferencia;
     });
-    
+
     debugPrint('[CuadreModal] RESUMEN PAGOS DESDE FIREBASE:');
     debugPrint('  Total Pagos: $total');
     debugPrint('  - Efectivo: $efectivo');
     debugPrint('  - Tarjeta: $tarjeta');
     debugPrint('  - Transferencia: $transferencia');
-    
+
     return total;
   }
 
@@ -495,22 +571,15 @@ class _CuadreModalState extends State<CuadreModal> {
   double get pagoTarjeta => _pagoTarjeta;
   double get pagoTransferencia => _pagoTransferencia;
   double get totalPendiente => _totalPendiente;
-  double get totalVentasDia => _totalVentasDia; // Aseguramos que el getter esté definido
+  double get totalVentasDia => _totalVentasDia;
+  double get totalVentasDiaPagado => _totalVentasDiaPagado;
 
+  double get totalVentasDelDia => _totalVentasDia;
 
-  double get totalVentasDelDia {
-    // Ya estamos usando el valor calculado directamente
-    return _totalVentasDia;
-  }
-  
-  double get totalVentasNetoDelDia {
-    return totalVentasDelDia - totalPagos;
-  }
-  
+  double get totalVentasNetoDelDia => totalVentasDelDia - totalPagos;
+
   // Efectivo neto = ingreso efectivo - pagos en efectivo
-  double get efectivoNeto {
-    return totalEfectivo - pagoEfectivo;
-  }
+  double get efectivoNeto => totalEfectivo - pagoEfectivo;
 
   double get totalContado {
     double total = 0;
@@ -524,378 +593,1251 @@ class _CuadreModalState extends State<CuadreModal> {
     return totalVentasNetoDelDia - widget.totalGastos;
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   debugPrint('[CuadreModal] build ejecutado. ventasFiltradas: \\${_ventasFiltradas.length}');
+  //   logDebugData(); // Log en cada build para ver los datos en tiempo real
+  //   // Filtro visual y mensajes de ventas vacías eliminados para limpiar la UI
+  //   return AlertDialog(
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+  //     title: Row(
+  //       children: [
+  //         const Icon(Icons.calculate, color: Colors.blueAccent),
+  //         const SizedBox(width: 8),
+  //         const Text('Cuadre de Caja', style: TextStyle(fontWeight: FontWeight.bold)),
+  //       ],
+  //     ),
+  //     content: SingleChildScrollView(
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           // Filtro de rango de fechas eliminado
+  //           // Detalle de ventas filtradas eliminado
+  //           Card(
+  //             color: Colors.blue.shade50,
+  //             margin: const EdgeInsets.only(bottom: 12),
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(10.0),
+  //               child: _loadingPagos
+  //                   ? const Center(child: CircularProgressIndicator())
+  //                   : Column(
+  //                       crossAxisAlignment: CrossAxisAlignment.start,
+  //                       children: [
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.summarize, color: Colors.blue),
+  //                             const SizedBox(width: 6),
+  //                             Text('Total de Ventas del Día: ', style: TextStyle(fontWeight: FontWeight.bold)),
+  //                             Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+  //                             const SizedBox(width: 4),
+  //                             Tooltip(
+  //                               message: 'Monto total de ventas para el día actual',
+  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                         const SizedBox(height: 4), // Pequeño espacio entre las filas
+  //                         // Mostrar siempre el total pendiente, incluso si es cero
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+  //                             const SizedBox(width: 6),
+  //                             Text('Total Pendiente por Cobrar: ', style: TextStyle(fontWeight: FontWeight.w600)),
+  //                             Text('RD\$${formatCurrency(totalPendiente)}', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+  //                             const SizedBox(width: 4),
+  //                             Tooltip(
+  //                               message: 'Monto pendiente por cobrar de las ventas del día',
+  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                         const SizedBox(height: 8),
+  //                         const Divider(thickness: 1, color: Colors.grey),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.attach_money, color: Colors.green),
+  //                             const SizedBox(width: 6),
+  //                             Text('Pagos en Efectivo (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
+  //                             Text('RD\$${formatCurrency(totalEfectivo)}', style: const TextStyle(color: Colors.green)),
+  //                             const SizedBox(width: 4),
+  //                             Tooltip(
+  //                               message: 'Total pagado restando montos pendientes',
+  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                         if (pagoEfectivo > 0)
+  //                           Row(
+  //                             children: [
+  //                               const SizedBox(width: 24),  // Indentación para mostrar que es un subítem
+  //                               const Icon(Icons.arrow_circle_down_outlined, color: Colors.redAccent, size: 18),
+  //                               const SizedBox(width: 6),
+  //                               Text('Pagos salida efectivo: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+  //                               Text('-RD\$${formatCurrency(pagoEfectivo)}', style: const TextStyle(color: Colors.redAccent, fontSize: 14)),
+  //                             ],
+  //                           ),
+  //                         if (pagoEfectivo > 0)
+  //                           Row(
+  //                             children: [
+  //                               const SizedBox(width: 24),  // Indentación para mostrar que es un subítem
+  //                               const Icon(Icons.check_circle_outline, color: Colors.teal, size: 18),
+  //                               const SizedBox(width: 6),
+  //                               Text('Efectivo neto: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+  //                               Text('RD\$${formatCurrency(efectivoNeto)}', style: const TextStyle(color: Colors.teal, fontSize: 14, fontWeight: FontWeight.w600)),
+  //                             ],
+  //                           ),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.credit_card, color: Colors.deepPurple),
+  //                             const SizedBox(width: 6),
+  //                             Text('Pagos con Tarjeta (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
+  //                             Text('RD\$${formatCurrency(totalTarjeta)}', style: const TextStyle(color: Colors.deepPurple)),
+  //                             const SizedBox(width: 4),
+  //                             Tooltip(
+  //                               message: 'Total pagado restando montos pendientes',
+  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.swap_horiz, color: Colors.orange),
+  //                             const SizedBox(width: 6),
+  //                             Text('Pagos por Transferencia (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
+  //                             Text('RD\$${formatCurrency(totalTransferencia)}', style: const TextStyle(color: Colors.orange)),
+  //                             const SizedBox(width: 4),
+  //                             Tooltip(
+  //                               message: 'Total pagado restando montos pendientes',
+  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                         const SizedBox(height: 8),
+  //                         const Divider(thickness: 1, color: Colors.grey),
+  //                         // Resumen de Entradas y Salidas
+  //                         Padding(
+  //                           padding: const EdgeInsets.symmetric(vertical: 8.0),
+  //                           child: Text('Resumen de Movimientos:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+  //                         ),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.arrow_circle_up, color: Colors.green),
+  //                             const SizedBox(width: 6),
+  //                             Text('Entradas Totales: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+  //                             Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 15)),
+  //                           ],
+  //                         ),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.arrow_circle_down, color: Colors.red),
+  //                             const SizedBox(width: 6),
+  //                             Text('Salidas (Pagos): ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+  //                             Text('RD\$${formatCurrency(totalPagos)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 15)),
+  //                           ],
+  //                         ),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.account_balance, color: Colors.teal),
+  //                             const SizedBox(width: 6),
+  //                             Text('Total Neto de Ventas: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+  //                             Text('RD\$${formatCurrency(totalVentasNetoDelDia)}', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 16)),
+  //                           ],
+  //                         ),
+  //                         const SizedBox(height: 8),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.remove_circle, color: Colors.red),
+  //                             const SizedBox(width: 6),
+  //                             Text('Total Gastos del Día: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+  //                             Text('RD\$${formatCurrency(widget.totalGastos)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 15)),
+  //                           ],
+  //                         ),
+  //                         const SizedBox(height: 8),
+  //                         const Divider(thickness: 2, color: Colors.green),
+  //                         Row(
+  //                           children: [
+  //                             const Icon(Icons.trending_up, color: Colors.green),
+  //                             const SizedBox(width: 6),
+  //                             Text('Balance Neto del Día: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
+  //                             Text('RD\$${formatCurrency(totalNetoPorDia)}', style: TextStyle(color: totalNetoPorDia >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
+  //                           ],
+  //                         ),
+  //                       ],
+  //                     ),
+  //             ),
+  //           ),
+  //           const SizedBox(height: 10),
+  //           const Text('Ingrese la cantidad de cada denominación:', style: TextStyle(fontWeight: FontWeight.w600)),
+  //           const SizedBox(height: 8),
+  //           Container(
+  //             decoration: BoxDecoration(
+  //               color: Colors.grey.shade100,
+  //               borderRadius: BorderRadius.circular(12),
+  //             ),
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(8.0),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   // Sección de billetes
+  //                   const Text('Billetes:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+  //                   const SizedBox(height: 4),
+  //                   Column(
+  //                     children: [
+  //                       Row(
+  //                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //                         children: billetes.sublist(0, 3).map((denominacion) =>
+  //                           SizedBox(
+  //                             width: MediaQuery.of(context).size.width * 0.25,
+  //                             child: _buildDenInputCompacto(denominacion, 'Billete', imagenesBilletes[denominacion])
+  //                           )
+  //                         ).toList(),
+  //                       ),
+  //                       const SizedBox(height: 8),
+  //                       Row(
+  //                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //                         children: billetes.sublist(3).map((denominacion) =>
+  //                           SizedBox(
+  //                             width: MediaQuery.of(context).size.width * 0.25,
+  //                             child: _buildDenInputCompacto(denominacion, 'Billete', imagenesBilletes[denominacion])
+  //                           )
+  //                         ).toList(),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   const SizedBox(height: 12),
+  //                   // Sección de monedas
+  //                   const Text('Monedas:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+  //                   const SizedBox(height: 4),
+  //                   Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //                     children: monedas.map((denominacion) =>
+  //                       SizedBox(
+  //                         width: MediaQuery.of(context).size.width * 0.2,
+  //                         child: _buildDenInputCompacto(denominacion, 'Moneda', imagenesMonedas[denominacion])
+  //                       )
+  //                     ).toList(),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(height: 16),
+  //           Center(
+  //             child: Column(
+  //               children: [
+  //                 Text('Total contado en efectivo: RD\$${formatCurrency(totalContado)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+  //                 const SizedBox(height: 4),
+  //                 Text('(Solo se cuenta el efectivo físico)', style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
+  //                 const SizedBox(height: 8),
+  //                 AnimatedContainer(
+  //                   duration: const Duration(milliseconds: 300),
+  //                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  //                   decoration: BoxDecoration(
+  //                     color: totalContado == efectivoNeto ? Colors.green.shade100 : Colors.red.shade100,
+  //                     borderRadius: BorderRadius.circular(8),
+  //                   ),
+  //                   child: Text(
+  //                     totalContado == efectivoNeto
+  //                         ? '¡El cuadre de efectivo coincide!'
+  //                         : 'Diferencia en efectivo: RD\$${formatCurrency(totalContado - efectivoNeto)}',
+  //                     style: TextStyle(
+  //                       color: totalContado == efectivoNeto ? Colors.green : Colors.red,
+  //                       fontWeight: FontWeight.bold,
+  //                       fontSize: 16,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           // Mensaje de ventas vacías eliminado
+  //         ],
+  //       ),
+  //     ),
+  //     actions: [
+  //       TextButton(
+  //         onPressed: () => Navigator.of(context).pop(),
+  //         child: const Text('Cerrar'),
+  //       ),
+  //       ElevatedButton(
+  //         style: ElevatedButton.styleFrom(
+  //           backgroundColor: Colors.blueAccent,
+  //           foregroundColor: Colors.white,
+  //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  //         ),
+  //         onPressed: () {
+  //           // Log extra al presionar "Cuadrar"
+  //           logDebugData();
+  //           // Mostramos un resumen en SnackBar
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             SnackBar(
+  //               backgroundColor: Colors.green.shade800,
+  //               content: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   Text('Cuadre confirmado correctamente', style: TextStyle(fontWeight: FontWeight.bold)),
+  //                   const SizedBox(height: 4),
+  //                   Text('Ventas del día: RD\$${formatCurrency(totalVentasDia)}'),
+  //                   Text('Pendientes por cobrar: RD\$${formatCurrency(totalPendiente)}'),
+  //                   Text('Total en caja: RD\$${formatCurrency(totalContado)}'),
+  //                 ],
+  //               ),
+  //               duration: const Duration(seconds: 5),
+  //             ),
+  //           );
+  //         },
+  //         child: const Text('Cuadrar'),
+  //       ),
+  //     ],
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
-    debugPrint('[CuadreModal] build ejecutado. ventasFiltradas: \\${_ventasFiltradas.length}');
-    logDebugData(); // Log en cada build para ver los datos en tiempo real
-    // Filtro visual y mensajes de ventas vacías eliminados para limpiar la UI
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: Row(
-        children: [
-          const Icon(Icons.calculate, color: Colors.blueAccent),
-          const SizedBox(width: 8),
-          const Text('Cuadre de Caja', style: TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-      content: SingleChildScrollView(
+    logDebugData();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.95,
+        height: MediaQuery.of(context).size.height * 0.9,
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Filtro de rango de fechas eliminado
-            // Detalle de ventas filtradas eliminado
-            Card(
-              color: Colors.blue.shade50,
-              margin: const EdgeInsets.only(bottom: 12),
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: _loadingPagos
-                    ? const Center(child: CircularProgressIndicator())
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.summarize, color: Colors.blue),
-                              const SizedBox(width: 6),
-                              Text('Total de Ventas del Día: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 4),
-                              Tooltip(
-                                message: 'Monto total de ventas para el día actual',
-                                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4), // Pequeño espacio entre las filas
-                          // Mostrar siempre el total pendiente, incluso si es cero
-                          Row(
-                            children: [
-                              const Icon(Icons.warning_amber_rounded, color: Colors.amber),
-                              const SizedBox(width: 6),
-                              Text('Total Pendiente por Cobrar: ', style: TextStyle(fontWeight: FontWeight.w600)),
-                              Text('RD\$${formatCurrency(totalPendiente)}', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 4),
-                              Tooltip(
-                                message: 'Monto pendiente por cobrar de las ventas del día',
-                                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Divider(thickness: 1, color: Colors.grey),
-                          Row(
-                            children: [
-                              const Icon(Icons.attach_money, color: Colors.green),
-                              const SizedBox(width: 6),
-                              Text('Pagos en Efectivo (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
-                              Text('RD\$${formatCurrency(totalEfectivo)}', style: const TextStyle(color: Colors.green)),
-                              const SizedBox(width: 4),
-                              Tooltip(
-                                message: 'Total pagado restando montos pendientes',
-                                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-                              ),
-                            ],
-                          ),
-                          if (pagoEfectivo > 0)
-                            Row(
-                              children: [
-                                const SizedBox(width: 24),  // Indentación para mostrar que es un subítem
-                                const Icon(Icons.arrow_circle_down_outlined, color: Colors.redAccent, size: 18),
-                                const SizedBox(width: 6),
-                                Text('Pagos salida efectivo: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                                Text('-RD\$${formatCurrency(pagoEfectivo)}', style: const TextStyle(color: Colors.redAccent, fontSize: 14)),
-                              ],
-                            ),
-                          if (pagoEfectivo > 0)
-                            Row(
-                              children: [
-                                const SizedBox(width: 24),  // Indentación para mostrar que es un subítem
-                                const Icon(Icons.check_circle_outline, color: Colors.teal, size: 18),
-                                const SizedBox(width: 6),
-                                Text('Efectivo neto: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                                Text('RD\$${formatCurrency(efectivoNeto)}', style: const TextStyle(color: Colors.teal, fontSize: 14, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                          Row(
-                            children: [
-                              const Icon(Icons.credit_card, color: Colors.deepPurple),
-                              const SizedBox(width: 6),
-                              Text('Pagos con Tarjeta (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
-                              Text('RD\$${formatCurrency(totalTarjeta)}', style: const TextStyle(color: Colors.deepPurple)),
-                              const SizedBox(width: 4),
-                              Tooltip(
-                                message: 'Total pagado restando montos pendientes',
-                                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.swap_horiz, color: Colors.orange),
-                              const SizedBox(width: 6),
-                              Text('Pagos por Transferencia (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
-                              Text('RD\$${formatCurrency(totalTransferencia)}', style: const TextStyle(color: Colors.orange)),
-                              const SizedBox(width: 4),
-                              Tooltip(
-                                message: 'Total pagado restando montos pendientes',
-                                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Divider(thickness: 1, color: Colors.grey),
-                          
-                          // Resumen de Entradas y Salidas
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text('Resumen de Movimientos:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.arrow_circle_up, color: Colors.green),
-                              const SizedBox(width: 6),
-                              Text('Entradas Totales: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                              Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 15)),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.arrow_circle_down, color: Colors.red),
-                              const SizedBox(width: 6),
-                              Text('Salidas (Pagos): ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                              Text('RD\$${formatCurrency(totalPagos)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 15)),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.account_balance, color: Colors.teal),
-                              const SizedBox(width: 6),
-                              Text('Total Neto de Ventas: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              Text('RD\$${formatCurrency(totalVentasNetoDelDia)}', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 16)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.remove_circle, color: Colors.red),
-                              const SizedBox(width: 6),
-                              Text('Total Gastos del Día: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                              Text('RD\$${formatCurrency(widget.totalGastos)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 15)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Divider(thickness: 2, color: Colors.green),
-                          Row(
-                            children: [
-                              const Icon(Icons.trending_up, color: Colors.green),
-                              const SizedBox(width: 6),
-                              Text('Balance Neto del Día: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
-                              Text('RD\$${formatCurrency(totalNetoPorDia)}', style: TextStyle(color: totalNetoPorDia >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
-                            ],
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text('Ingrese la cantidad de cada denominación:', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
+            // Header
+            _buildHeader(),
+            const SizedBox(height: 20),
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Sección de billetes
-                    const Text('Billetes:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 4),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: billetes.sublist(0, 3).map((denominacion) => 
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.25,
-                              child: _buildDenInputCompacto(denominacion, 'Billete', imagenesBilletes[denominacion])
-                            )
-                          ).toList(),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: billetes.sublist(3).map((denominacion) => 
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.25,
-                              child: _buildDenInputCompacto(denominacion, 'Billete', imagenesBilletes[denominacion])
-                            )
-                          ).toList(),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Sección de monedas
-                    const Text('Monedas:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: monedas.map((denominacion) => 
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.2,
-                          child: _buildDenInputCompacto(denominacion, 'Moneda', imagenesMonedas[denominacion])
-                        )
-                      ).toList(),
-                    ),
+                    // Resumen de ventas
+                    _buildVentasResumen(),
+                    const SizedBox(height: 20),
+
+                    // Métodos de pago
+                    _buildMetodosPago(),
+                    const SizedBox(height: 20),
+
+                    // Balance del día
+                    _buildBalanceDelDia(),
+                    const SizedBox(height: 20),
+
+                    // Contador de efectivo
+                    _buildContadorEfectivo(),
+                    const SizedBox(height: 20),
+
+                    // Verificación de cuadre
+                    _buildVerificacionCuadre(),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Center(
-              child: Column(
-                children: [
-                  Text('Total contado en efectivo: RD\$${formatCurrency(totalContado)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  const SizedBox(height: 4),
-                  Text('(Solo se cuenta el efectivo físico)', style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
-                  const SizedBox(height: 8),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: totalContado == efectivoNeto ? Colors.green.shade100 : Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      totalContado == efectivoNeto
-                          ? '¡El cuadre de efectivo coincide!'
-                          : 'Diferencia en efectivo: RD\$${formatCurrency(totalContado - efectivoNeto)}',
-                      style: TextStyle(
-                        color: totalContado == efectivoNeto ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Mensaje de ventas vacías eliminado
+
+            // Actions
+            const SizedBox(height: 20),
+            _buildActions(),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cerrar'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueAccent,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
           ),
-          onPressed: () {
-            // Log extra al presionar "Cuadrar"
-            logDebugData();
-            // Mostramos un resumen en SnackBar
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.green.shade800,
-                content: Column(
+          child: Icon(
+            Icons.dashboard,
+            color: Colors.blue.shade600,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Cuadre de Caja',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                'Panel de control diario',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.grey.shade100,
+            shape: const CircleBorder(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVentasResumen() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade50, Colors.blue.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.trending_up, color: Colors.blue.shade600, size: 24),
+              const SizedBox(width: 12),
+              const Text(
+                'Resumen de Ventas',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricCard(
+                  'Total Ventas',
+                  'RD\$${formatCurrency(totalVentasDia)}',
+                  Icons.attach_money,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMetricCard(
+                  'Pendiente',
+                  'RD\$${formatCurrency(totalPendiente)}',
+                  Icons.schedule,
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetodosPago() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payment, color: Colors.purple.shade600, size: 24),
+              const SizedBox(width: 12),
+              const Text(
+                'Métodos de Pago',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildPaymentMethodRow(
+            'Efectivo',
+            totalEfectivo,
+            Icons.money,
+            Colors.green,
+            showSubItems: pagoEfectivo > 0,
+          ),
+          if (pagoEfectivo > 0) ...[
+            const SizedBox(height: 8),
+            _buildPaymentSubItem(
+              'Salida efectivo',
+              pagoEfectivo,
+              Icons.remove_circle_outline,
+              Colors.red,
+              isNegative: true,
+            ),
+            const SizedBox(height: 8),
+            _buildPaymentSubItem(
+              'Efectivo neto',
+              efectivoNeto,
+              Icons.check_circle,
+              Colors.teal,
+            ),
+          ],
+          const SizedBox(height: 12),
+          _buildPaymentMethodRow(
+            'Tarjeta',
+            totalTarjeta,
+            Icons.credit_card,
+            Colors.purple,
+          ),
+          const SizedBox(height: 12),
+          _buildPaymentMethodRow(
+            'Transferencia',
+            totalTransferencia,
+            Icons.swap_horiz,
+            Colors.orange,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceDelDia() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.teal.shade50, Colors.teal.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.teal.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.account_balance,
+                  color: Colors.teal.shade600, size: 24),
+              const SizedBox(width: 12),
+              const Text(
+                'Balance del Día',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildBalanceRow(
+            'Entradas',
+            totalVentasDiaPagado,
+            Icons.arrow_upward,
+            Colors.green,
+          ),
+          const SizedBox(height: 8),
+          _buildBalanceRow(
+            'Salidas',
+            totalPagos,
+            Icons.arrow_downward,
+            Colors.red,
+          ),
+          const SizedBox(height: 8),
+          _buildBalanceRow(
+            'Gastos',
+            widget.totalGastos,
+            Icons.shopping_cart,
+            Colors.red,
+          ),
+          const SizedBox(height: 12),
+          const Divider(thickness: 2),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: totalVentasNetoDelDia >= 0
+                  ? Colors.green.shade50
+                  : Colors.red.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: totalVentasNetoDelDia >= 0
+                    ? Colors.green.shade300
+                    : Colors.red.shade300,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  totalVentasNetoDelDia >= 0
+                      ? Icons.trending_up
+                      : Icons.trending_down,
+                  color: totalVentasNetoDelDia >= 0 ? Colors.green : Colors.red,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Cuadre confirmado correctamente', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text('Ventas del día: RD\$${formatCurrency(totalVentasDia)}'),
-                    Text('Pendientes por cobrar: RD\$${formatCurrency(totalPendiente)}'),
-                    Text('Total en caja: RD\$${formatCurrency(totalContado)}'),
+                    const Text(
+                      'Balance Neto',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      'RD\$${formatCurrency(totalVentasNetoDelDia)}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: totalVentasNetoDelDia >= 0
+                            ? Colors.green
+                            : Colors.red,
+                      ),
+                    ),
                   ],
                 ),
-                duration: const Duration(seconds: 5),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContadorEfectivo() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calculate, color: Colors.indigo.shade600, size: 24),
+              const SizedBox(width: 12),
+              const Text(
+                'Contador de Efectivo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
-            );
-          },
-          child: const Text('Cuadrar'),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Billetes
+          _buildDenominationSection('Billetes', billetes, imagenesBilletes),
+          const SizedBox(height: 16),
+
+          // Monedas
+          _buildDenominationSection('Monedas', monedas, imagenesMonedas),
+          const SizedBox(height: 16),
+
+          // Total contado
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.account_balance_wallet, color: Colors.blue.shade600),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Total Contado',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      'RD\$${formatCurrency(totalContado)}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificacionCuadre() {
+    final bool cuadreOk = totalContado == efectivoNeto;
+    final double diferencia = totalContado - efectivoNeto;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cuadreOk ? Colors.green.shade50 : Colors.red.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: cuadreOk ? Colors.green.shade300 : Colors.red.shade300,
+          width: 2,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                cuadreOk ? Icons.check_circle : Icons.warning,
+                color: cuadreOk ? Colors.green : Colors.red,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      cuadreOk ? 'Cuadre Perfecto' : 'Diferencia Detectada',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: cuadreOk ? Colors.green : Colors.red,
+                      ),
+                    ),
+                    Text(
+                      cuadreOk
+                          ? 'El efectivo contado coincide con el sistema'
+                          : 'Diferencia: RD\$${formatCurrency(diferencia.abs())}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: cuadreOk
+                            ? Colors.green.shade700
+                            : Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Cancelar'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              logDebugData();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.green.shade600,
+                  content: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Cuadre Confirmado',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Ventas: RD\$${formatCurrency(totalVentasDia)}'),
+                      Text('Pendientes: RD\$${formatCurrency(totalPendiente)}'),
+                      Text('Efectivo: RD\$${formatCurrency(totalContado)}'),
+                    ],
+                  ),
+                  duration: const Duration(seconds: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade600,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Confirmar Cuadre',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+// Métodos auxiliares para construir componentes
+  Widget _buildMetricCard(
+      String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodRow(
+      String method, double amount, IconData icon, Color color,
+      {bool showSubItems = false}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              method,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Text(
+            'RD\$${formatCurrency(amount)}',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentSubItem(
+      String label, double amount, IconData icon, Color color,
+      {bool isNegative = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            '${isNegative ? '-' : ''}RD\$${formatCurrency(amount)}',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceRow(
+      String label, double amount, IconData icon, Color color) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        Text(
+          'RD\$${formatCurrency(amount)}',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: color,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildDenInputCompacto(int denominacion, String tipo, String? imagen) {
+    final cantidad = cantidades[denominacion] ?? 0;
+    final valor = denominacion * cantidad;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Row(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Imagen de la denominación
             if (imagen != null)
               Container(
-                width: 36,
-                height: 28,
-                margin: const EdgeInsets.only(right: 6),                  child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                width: 120,
+                height: 80,
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
                   child: SvgPicture.asset(
                     imagen,
                     fit: BoxFit.contain,
-                    placeholderBuilder: (context) => const Icon(Icons.money, color: Colors.grey, size: 18),
-                    // Añadimos manejo de errores explícito
-                    width: 30,
-                    height: 24,
+                    placeholderBuilder: (context) => Icon(
+                      tipo == 'Billete' ? Icons.money : Icons.monetization_on,
+                      color: Colors.grey.shade400,
+                      size: 24,
+                    ),
                   ),
                 ),
               ),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('RD$denominacion', 
-                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(
-                    height: 20,
-                    child: TextFormField(
-                      initialValue: cantidades[denominacion]?.toString() ?? '0',
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(4),
-                          borderSide: BorderSide(color: Colors.grey.shade400),
-                        ),
-                        fillColor: Colors.grey.shade50,
-                        filled: true,
-                      ),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-                      onChanged: (val) {
-                        final newValue = int.tryParse(val) ?? 0;
-                        if (mounted) {
-                          setState(() {
-                            cantidades[denominacion] = newValue;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                ],
+
+            // Denominación
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                'RD\$$denominacion',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.blue.shade700,
+                ),
               ),
             ),
+
+            const SizedBox(height: 8),
+
+            // Input de cantidad
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: TextFormField(
+                initialValue: cantidad.toString(),
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  border: InputBorder.none,
+                  hintText: '0',
+                  hintStyle: TextStyle(color: Colors.grey),
+                ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+                onChanged: (val) {
+                  final newValue = int.tryParse(val) ?? 0;
+                  if (mounted) {
+                    setState(() {
+                      cantidades[denominacion] = newValue;
+                    });
+                  }
+                },
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            // Valor calculado
+            if (valor > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'RD\$${formatCurrency(valor.toDouble())}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              )
+            else
+              Container(
+                height: 16,
+                child: Text(
+                  'RD\$0',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
+
+// Actualización para el método _buildDenominationSection
+  Widget _buildDenominationSection(
+      String title, List<dynamic> denominations, Map<dynamic, String> images) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Opción 1: Grid layout (recomendado para billetes)
+        if (title == 'Billetes')
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: denominations
+                .map((denominacion) => SizedBox(
+                    width: 250,
+                    child: _buildDenInputCompacto(
+                        denominacion,
+                        title.substring(0, title.length - 1),
+                        images[denominacion])))
+                .toList(),
+          )
+        else
+          // Opción 2: Horizontal layout (para monedas)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: denominations
+                .map((denominacion) => SizedBox(
+                      width: 90,
+                      child: _buildDenInputCompacto(
+                          denominacion,
+                          title.substring(0, title.length - 1),
+                          images[denominacion]),
+                    ))
+                .toList(),
+          ),
+
+        // Opción 3: Lista vertical (alternativa)
+        // Column(
+        //   children: denominations.map((denominacion) =>
+        //     _buildDenInputHorizontal(denominacion, title.substring(0, title.length - 1), images[denominacion])
+        //   ).toList(),
+        // ),
+      ],
+    );
+  }
+  // Widget _buildDenInputCompacto(int denominacion, String tipo, String? imagen) {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(8),
+  //       border: Border.all(color: Colors.grey.shade300),
+  //     ),
+  //     child: Padding(
+  //       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+  //       child: Row(
+  //         children: [
+  //           if (imagen != null)
+  //             Container(
+  //               width: 36,
+  //               height: 28,
+  //               margin: const EdgeInsets.only(right: 6),                  child: ClipRRect(
+  //                 borderRadius: BorderRadius.circular(4),
+  //                 child: SvgPicture.asset(
+  //                   imagen,
+  //                   fit: BoxFit.contain,
+  //                   placeholderBuilder: (context) => const Icon(Icons.money, color: Colors.grey, size: 18),
+  //                   // Añadimos manejo de errores explícito
+  //                   width: 30,
+  //                   height: 24,
+  //                 ),
+  //               ),
+  //             ),
+  //           Expanded(
+  //             child: Column(
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text('RD$denominacion',
+  //                   style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+  //                   overflow: TextOverflow.ellipsis,
+  //                 ),
+  //                 SizedBox(
+  //                   height: 20,
+  //                   child: TextFormField(
+  //                     initialValue: cantidades[denominacion]?.toString() ?? '0',
+  //                     keyboardType: TextInputType.number,
+  //                     decoration: InputDecoration(
+  //                       isDense: true,
+  //                       contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+  //                       border: OutlineInputBorder(
+  //                         borderRadius: BorderRadius.circular(4),
+  //                         borderSide: BorderSide(color: Colors.grey.shade400),
+  //                       ),
+  //                       fillColor: Colors.grey.shade50,
+  //                       filled: true,
+  //                     ),
+  //                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+  //                     onChanged: (val) {
+  //                       final newValue = int.tryParse(val) ?? 0;
+  //                       if (mounted) {
+  //                         setState(() {
+  //                           cantidades[denominacion] = newValue;
+  //                         });
+  //                       }
+  //                     },
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }

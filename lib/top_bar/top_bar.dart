@@ -15,6 +15,7 @@ import '../Provider/notification_provider.dart';
 import '../Provider/profile_provider.dart';
 import '../Provider/general_setting_provider.dart';
 import '../PDF/print_pdf.dart';
+import '../Provider/transactions_provider.dart';
 import '../Screen/Widgets/Constant Data/constant.dart';
 import '../Screen/currency/global_currency.dart';
 import '../const.dart';
@@ -22,18 +23,18 @@ import '../model/personal_information_model.dart';
 import '../model/sale_confirmation_model.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../Screen/Reports/cuadre_modal.dart';
+import '../model/sale_transaction_model.dart';
 
-class TopBarWidget extends StatefulWidget {
+class TopBarWidget extends ConsumerStatefulWidget {
   const TopBarWidget({super.key, this.onMenuTap});
 
   final void Function()? onMenuTap;
 
   @override
-  State<TopBarWidget> createState() => _TopBarWidgetState();
+  ConsumerState<TopBarWidget> createState() => _TopBarWidgetState();
 }
 
-class _TopBarWidgetState extends State<TopBarWidget> {
-  
+class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
   // Funciones de verificación de permisos para cada botón del header
   bool _canAccessRentClothing() {
     if (!isSubUser) return true;
@@ -42,38 +43,39 @@ class _TopBarWidgetState extends State<TopBarWidget> {
 
   bool _canAccessSales() {
     if (!isSubUser) return true;
-    return checkUserRoleViewPermissionV2(type: 'sales') || 
-           checkUserRoleViewPermissionV2(type: 'inventory_sales');
+    return checkUserRoleViewPermissionV2(type: 'sales') ||
+        checkUserRoleViewPermissionV2(type: 'inventory_sales');
   }
 
   bool _canAccessClothingStatus() {
     if (!isSubUser) return true;
     return checkUserRoleViewPermissionV2(type: 'services') ||
-           checkUserRoleViewPermissionV2(type: 'register_clothing');
+        checkUserRoleViewPermissionV2(type: 'register_clothing');
   }
 
   bool _canAccessAvailabilityCalendar() {
     if (!isSubUser) return true;
     return checkUserRoleViewPermissionV2(type: 'reservation_calendar') ||
-           checkUserRoleViewPermissionV2(type: 'reservations');
+        checkUserRoleViewPermissionV2(type: 'reservations');
   }
 
   bool _canAccessNotifications() {
     if (!isSubUser) return true;
     // Las notificaciones pueden ser accesibles para usuarios con permisos de ventas o reservas
     return checkUserRoleViewPermissionV2(type: 'sales') ||
-           checkUserRoleViewPermissionV2(type: 'reservations');
+        checkUserRoleViewPermissionV2(type: 'reservations');
   }
 
   bool _canAccessCashRegisterSquare() {
     if (!isSubUser) return true;
     return checkUserRoleViewPermissionV2(type: 'reports') ||
-           checkUserRoleViewPermissionV2(type: 'transaction');
+        checkUserRoleViewPermissionV2(type: 'transaction');
   }
 
   bool _canAccessProfile() {
     if (!isSubUser) return true;
-    return checkUserRoleViewPermissionV2(type: 'dashboard'); // Acceso básico al perfil
+    return checkUserRoleViewPermissionV2(
+        type: 'dashboard'); // Acceso básico al perfil
   }
 
   // Función para obtener la lista de ventas del día y el total de gastos
@@ -85,65 +87,83 @@ class _TopBarWidgetState extends State<TopBarWidget> {
     final today = DateTime.now();
     final todayStart = DateTime(today.year, today.month, today.day);
     final todayEnd = todayStart.add(const Duration(days: 1));
-    List<Map<String, dynamic>> ventasDelDia = [];
+    //List<Map<String, dynamic>> ventasDelDia = [];
+    List<SaleTransactionModel> reTransaction = [];
     double gastos = 0.0;
     try {
-      final databaseRef = FirebaseDatabase.instance.ref("$userId/Sales Transition");
-      final snapshot = await databaseRef.get();
-      if (snapshot.exists) {
-        final salesData = snapshot.value as Map<dynamic, dynamic>;
-        for (var saleEntry in salesData.entries) {
-          final saleData = saleEntry.value as Map<dynamic, dynamic>;
-          String? dateField;
-          if (saleData['purchaseDate'] != null) {
-            dateField = saleData['purchaseDate'].toString();
-          } else if (saleData['saleDate'] != null) {
-            dateField = saleData['saleDate'].toString();
-          } else if (saleData['date'] != null) {
-            dateField = saleData['date'].toString();
-          } else if (saleData['timestamp'] != null) {
-            dateField = saleData['timestamp'].toString();
-          }
-          if (dateField != null) {
-            try {
-              DateTime saleDate;
-              if (dateField.contains('/')) {
-                final parts = dateField.split('/');
-                if (parts.length >= 3) {
-                  saleDate = DateTime(
-                    int.parse(parts[2]),
-                    int.parse(parts[1]),
-                    int.parse(parts[0]),
-                  );
-                } else {
-                  continue;
-                }
-              } else if (dateField.contains('-')) {
-                String datePart = dateField.split(' ')[0];
-                if (datePart.split('-').length >= 3) {
-                  final parts = datePart.split('-');
-                  saleDate = DateTime(
-                    int.parse(parts[0]),
-                    int.parse(parts[1]),
-                    int.parse(parts[2]),
-                  );
-                } else {
-                  saleDate = DateTime.parse(dateField);
-                }
-              } else {
-                saleDate = DateTime.parse(dateField);
-              }
-              final isToday = saleDate.isAfter(todayStart.subtract(Duration(seconds: 1))) && saleDate.isBefore(todayEnd);
-              if (isToday) {
-                ventasDelDia.add({
-                  'paymentType': saleData['paymentType']?.toString() ?? '',
-                  'amount': double.tryParse(saleData['totalAmount']?.toString() ?? '0') ?? 0.0,
-                });
-              }
-            } catch (e) {}
-          }
+      List<SaleTransactionModel> transaction =
+          await ref.read(transitionProvider.future);
+      // final databaseRef =
+      //     FirebaseDatabase.instance.ref("$userId/Sales Transition");
+      // final snapshot = await databaseRef.get();
+
+      for (var element in transaction.reversed.toList()) {
+        final purchaseDate = DateTime.parse(element.purchaseDate);
+        if (purchaseDate
+                .isAfter(todayStart.subtract(const Duration(seconds: 1))) &&
+            purchaseDate.isBefore(todayEnd)) {
+          reTransaction.add(element);
         }
       }
+
+      // if (snapshot.exists) {
+      //   final salesData = snapshot.value as Map<dynamic, dynamic>;
+      //   for (var saleEntry in salesData.entries) {
+      //     final saleData = saleEntry.value as Map<dynamic, dynamic>;
+      //     String? dateField;
+      //     if (saleData['purchaseDate'] != null) {
+      //       dateField = saleData['purchaseDate'].toString();
+      //     } else if (saleData['saleDate'] != null) {
+      //       dateField = saleData['saleDate'].toString();
+      //     } else if (saleData['date'] != null) {
+      //       dateField = saleData['date'].toString();
+      //     } else if (saleData['timestamp'] != null) {
+      //       dateField = saleData['timestamp'].toString();
+      //     }
+      //     if (dateField != null) {
+      //       try {
+      //         DateTime saleDate;
+      //         if (dateField.contains('/')) {
+      //           final parts = dateField.split('/');
+      //           if (parts.length >= 3) {
+      //             saleDate = DateTime(
+      //               int.parse(parts[2]),
+      //               int.parse(parts[1]),
+      //               int.parse(parts[0]),
+      //             );
+      //           } else {
+      //             continue;
+      //           }
+      //         } else if (dateField.contains('-')) {
+      //           String datePart = dateField.split(' ')[0];
+      //           if (datePart.split('-').length >= 3) {
+      //             final parts = datePart.split('-');
+      //             saleDate = DateTime(
+      //               int.parse(parts[0]),
+      //               int.parse(parts[1]),
+      //               int.parse(parts[2]),
+      //             );
+      //           } else {
+      //             saleDate = DateTime.parse(dateField);
+      //           }
+      //         } else {
+      //           saleDate = DateTime.parse(dateField);
+      //         }
+      //         final isToday =
+      //             saleDate.isAfter(todayStart.subtract(Duration(seconds: 1))) &&
+      //                 saleDate.isBefore(todayEnd);
+      //         if (isToday) {
+      //           ventasDelDia.add({
+      //             'paymentType': saleData['paymentType']?.toString() ?? '',
+      //             'amount': double.tryParse(
+      //                     saleData['totalAmount']?.toString() ?? '0') ??
+      //                 0.0,
+      //           });
+      //         }
+      //       } catch (e) {}
+      //     }
+      //   }
+      // }
     } catch (e) {}
     // Obtener gastos del día
     try {
@@ -183,9 +203,13 @@ class _TopBarWidgetState extends State<TopBarWidget> {
               } else {
                 expenseDate = DateTime.parse(dateField);
               }
-              final isToday = expenseDate.isAfter(todayStart.subtract(Duration(seconds: 1))) && expenseDate.isBefore(todayEnd);
+              final isToday = expenseDate
+                      .isAfter(todayStart.subtract(Duration(seconds: 1))) &&
+                  expenseDate.isBefore(todayEnd);
               if (isToday) {
-                final amount = double.tryParse(expenseData['amount']?.toString() ?? '0') ?? 0.0;
+                final amount =
+                    double.tryParse(expenseData['amount']?.toString() ?? '0') ??
+                        0.0;
                 gastos += amount;
               }
             } catch (e) {}
@@ -193,14 +217,13 @@ class _TopBarWidgetState extends State<TopBarWidget> {
         }
       }
     } catch (e) {}
-    return {'ventasDelDia': ventasDelDia, 'gastos': gastos};
+    return {'ventasDelDia': reTransaction, 'gastos': gastos};
   }
 
   void _showCuadreModal(BuildContext context) async {
-    
     // Mostrar loading mientras se obtienen los datos
     EasyLoading.show(status: 'Obteniendo datos del día...');
-    
+
     try {
       final todaysData = await _getTodaysSalesData();
       EasyLoading.dismiss();
@@ -208,7 +231,9 @@ class _TopBarWidgetState extends State<TopBarWidget> {
         showDialog(
           context: context,
           builder: (context) => CuadreModal(
-            ventasDelDia: (todaysData['ventasDelDia'] as List<Map<String, dynamic>>?) ?? [],
+            ventasDelDia:
+                (todaysData['ventasDelDia'] as List<SaleTransactionModel>?) ??
+                    [],
             totalGastos: (todaysData['gastos'] as double?) ?? 0.0,
           ),
         );
@@ -228,52 +253,53 @@ class _TopBarWidgetState extends State<TopBarWidget> {
     super.initState();
   }
 
-  Future<void> _markAllAsRead(BuildContext context, 
-    List<SaleConfirmationModel> notifications, 
-    WidgetRef ref) async {
-      
-  final userId = await getUserID();
-  final databaseRef = FirebaseDatabase.instance.ref("$userId/SaleConfirmations");
+  Future<void> _markAllAsRead(BuildContext context,
+      List<SaleConfirmationModel> notifications, WidgetRef ref) async {
+    final userId = await getUserID();
+    final databaseRef =
+        FirebaseDatabase.instance.ref("$userId/SaleConfirmations");
 
-  try {
-    // Primero obtenemos todos los registros para encontrar los que coinciden
-    final snapshot = await databaseRef.get();
-    final Map<dynamic, dynamic> allRecords = snapshot.value as Map<dynamic, dynamic>? ?? {};
+    try {
+      // Primero obtenemos todos los registros para encontrar los que coinciden
+      final snapshot = await databaseRef.get();
+      final Map<dynamic, dynamic> allRecords =
+          snapshot.value as Map<dynamic, dynamic>? ?? {};
 
-    final updates = <String, dynamic>{};
+      final updates = <String, dynamic>{};
 
-    for (final notification in notifications) {
-      // Buscamos el registro que coincida con el token
-      final recordEntry = allRecords.entries.firstWhere(
-        (entry) => entry.value['token'] == notification.token,
-        orElse: () => const MapEntry(null, null),
-      );
+      for (final notification in notifications) {
+        // Buscamos el registro que coincida con el token
+        final recordEntry = allRecords.entries.firstWhere(
+          (entry) => entry.value['token'] == notification.token,
+          orElse: () => const MapEntry(null, null),
+        );
 
-      if (recordEntry.key != null) {
-        updates['${recordEntry.key}/notified'] = true;
+        if (recordEntry.key != null) {
+          updates['${recordEntry.key}/notified'] = true;
+        }
       }
-    }
 
-    if (updates.isNotEmpty) {
-      await databaseRef.update(updates);
+      if (updates.isNotEmpty) {
+        await databaseRef.update(updates);
+        if (mounted) {
+          EasyLoading.showSuccess('Notificaciones marcadas como leídas');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al marcar como leídas: $e');
       if (mounted) {
-        EasyLoading.showSuccess('Notificaciones marcadas como leídas');
+        EasyLoading.showError('Error al actualizar notificaciones');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
       }
-    }
-  } catch (e) {
-    debugPrint('Error al marcar como leídas: $e');
-    if (mounted) {
-      EasyLoading.showError('Error al actualizar notificaciones');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
     }
   }
-}
 
-  void _showNotificationsDialog(BuildContext context, List<SaleConfirmationModel> notifications, WidgetRef ref) {
+  void _showNotificationsDialog(BuildContext context,
+      List<SaleConfirmationModel> notifications, WidgetRef ref) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -331,9 +357,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Column(
                     children: [
-                      Icon(Icons.notifications_off, 
-                          size: 48, 
-                          color: Colors.grey.shade400),
+                      Icon(Icons.notifications_off,
+                          size: 48, color: Colors.grey.shade400),
                       const SizedBox(height: 16),
                       Text(
                         'No hay notificaciones nuevas',
@@ -350,7 +375,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: notifications.length,
-                    separatorBuilder: (context, index) => const Divider(height: 16),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 16),
                     itemBuilder: (context, index) {
                       final notification = notifications[index];
                       return Container(
@@ -373,26 +399,43 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                                     builder: (rowContext) {
                                       bool isHovering = false;
                                       return StatefulBuilder(
-                                        builder: (context, setState) => MouseRegion(
-                                          onEnter: (_) => setState(() => isHovering = true),
-                                          onExit: (_) => setState(() => isHovering = false),
+                                        builder: (context, setState) =>
+                                            MouseRegion(
+                                          onEnter: (_) =>
+                                              setState(() => isHovering = true),
+                                          onExit: (_) => setState(
+                                              () => isHovering = false),
                                           cursor: SystemMouseCursors.click,
                                           child: Tooltip(
                                             message: 'Ver factura',
-                                            waitDuration: Duration(milliseconds: 200),
+                                            waitDuration:
+                                                Duration(milliseconds: 200),
                                             child: InkWell(
-                                              borderRadius: BorderRadius.circular(4),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                               onTap: () async {
-                                                final ref = ProviderScope.containerOf(rowContext);
-                                                final setting = await ref.read(generalSettingProvider.future);
-                                                final profileInfo = await ref.read(profileDetailsProvider.future);
-                                                final saleData = notification.saleData;
+                                                final ref =
+                                                    ProviderScope.containerOf(
+                                                        rowContext);
+                                                final setting = await ref.read(
+                                                    generalSettingProvider
+                                                        .future);
+                                                final profileInfo = await ref
+                                                    .read(profileDetailsProvider
+                                                        .future);
+                                                final saleData =
+                                                    notification.saleData;
                                                 try {
-                                                  EasyLoading.show(status: 'Preparando vista previa...');
-                                                  await GeneratePdfAndPrint().printSaleInvoice(
+                                                  EasyLoading.show(
+                                                      status:
+                                                          'Preparando vista previa...');
+                                                  await GeneratePdfAndPrint()
+                                                      .printSaleInvoice(
                                                     setting: setting,
-                                                    personalInformationModel: profileInfo,
-                                                    saleTransactionModel: saleData,
+                                                    personalInformationModel:
+                                                        profileInfo,
+                                                    saleTransactionModel:
+                                                        saleData,
                                                     context: rowContext,
                                                     printType: 'normal',
                                                     fromSaleReports: true,
@@ -401,15 +444,25 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                                                   EasyLoading.dismiss();
                                                 } catch (e) {
                                                   EasyLoading.dismiss();
-                                                  EasyLoading.showError('No se pudo generar el PDF: \n${e.toString()}');
+                                                  EasyLoading.showError(
+                                                      'No se pudo generar el PDF: \n${e.toString()}');
                                                 }
                                               },
                                               child: AnimatedContainer(
-                                                duration: Duration(milliseconds: 150),
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                duration:
+                                                    Duration(milliseconds: 150),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: isHovering ? kMainColor.withValues(alpha: 0.25) : kMainColor.withValues(alpha: 0.1),
-                                                  borderRadius: BorderRadius.circular(4),
+                                                  color: isHovering
+                                                      ? kMainColor.withValues(
+                                                          alpha: 0.25)
+                                                      : kMainColor.withValues(
+                                                          alpha: 0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
                                                 ),
                                                 child: Text(
                                                   'Factura de Reserva #${notification.saleData.invoiceNumber.toString().isNotEmpty ? notification.saleData.invoiceNumber : 'N/A'}',
@@ -417,7 +470,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 14,
                                                     color: kMainColor,
-                                                    decoration: TextDecoration.underline,
+                                                    decoration: TextDecoration
+                                                        .underline,
                                                   ),
                                                 ),
                                               ),
@@ -428,9 +482,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                                     },
                                   ),
                                   const Spacer(),
-                                  Icon(Icons.circle, 
-                                      size: 12, 
-                                      color: Colors.green.shade400),
+                                  Icon(Icons.circle,
+                                      size: 12, color: Colors.green.shade400),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Confirmada',
@@ -468,12 +521,12 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  Icon(Icons.access_time, 
-                                      size: 16, 
-                                      color: Colors.grey.shade500),
+                                  Icon(Icons.access_time,
+                                      size: 16, color: Colors.grey.shade500),
                                   const SizedBox(width: 4),
                                   Text(
-                                    dateFormat.format(DateTime.parse(notification.createdAt)),
+                                    dateFormat.format(
+                                        DateTime.parse(notification.createdAt)),
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       color: Colors.grey.shade600,
@@ -521,7 +574,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                         ),
-                        onPressed: () => _markAllAsRead(context, notifications, ref),
+                        onPressed: () =>
+                            _markAllAsRead(context, notifications, ref),
                         child: Text(
                           'Marcar como leídas',
                           style: GoogleFonts.poppins(
@@ -560,10 +614,11 @@ class _TopBarWidgetState extends State<TopBarWidget> {
     return Consumer(builder: (context, ref, __) {
       AsyncValue<PersonalInformationModel> userProfileDetails =
           ref.watch(profileDetailsProvider);
-      
+
       // Obtener las notificaciones no notificadas
-      final unnotifiedConfirmations = ref.watch(unnotifiedConfirmationsProvider);
-      
+      final unnotifiedConfirmations =
+          ref.watch(unnotifiedConfirmationsProvider);
+
       return AppBar(
         backgroundColor: Colors.white,
         leadingWidth: 40,
@@ -645,18 +700,22 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.0)),
                               padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                              backgroundColor: kMainColor.withValues(alpha: 0.1),
-                              side: const BorderSide(color: kMainColor, width: 1),
+                              backgroundColor:
+                                  kMainColor.withValues(alpha: 0.1),
+                              side:
+                                  const BorderSide(color: kMainColor, width: 1),
                               textStyle: kTextStyle.copyWith(color: kWhite),
                               surfaceTintColor: lightGreyColor,
-                              shadowColor: lightGreyColor.withValues(alpha: 0.1),
+                              shadowColor:
+                                  lightGreyColor.withValues(alpha: 0.1),
                             ),
                             onPressed: () {
                               context.go('/sales/inventory-sales');
                             },
                             child: Row(
                               children: [
-                                const Icon(Icons.add_rounded, color: kMainColor),
+                                const Icon(Icons.add_rounded,
+                                    color: kMainColor),
                                 Text(
                                   'Facturar',
                                   style: Theme.of(context)
@@ -705,79 +764,83 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                   if (_canAccessNotifications())
                     unnotifiedConfirmations.when(
                       data: (notifications) {
-                      final hasNotifications = notifications.isNotEmpty;
-                      return Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(25),
-                            onTap: () {
-                              if (hasNotifications) {
-                                _showNotificationsDialog(context, notifications, ref);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('No hay notificaciones nuevas'),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(6.0),
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  const Icon(
-                                    Icons.notifications_none,
-                                    color: kMainColor,
-                                    size: 30,
-                                  ),
-                                  if (hasNotifications)
-                                    Positioned(
-                                      right: -2,
-                                      top: -2,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        constraints: const BoxConstraints(
-                                          minWidth: 18,
-                                          minHeight: 18,
-                                        ),
-                                        child: Text(
-                                          notifications.length.toString(),
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                        final hasNotifications = notifications.isNotEmpty;
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(25),
+                              onTap: () {
+                                if (hasNotifications) {
+                                  _showNotificationsDialog(
+                                      context, notifications, ref);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('No hay notificaciones nuevas'),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    const Icon(
+                                      Icons.notifications_none,
+                                      color: kMainColor,
+                                      size: 30,
+                                    ),
+                                    if (hasNotifications)
+                                      Positioned(
+                                        right: -2,
+                                        top: -2,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 5, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 18,
+                                            minHeight: 18,
+                                          ),
+                                          child: Text(
+                                            notifications.length.toString(),
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
+                        );
+                      },
+                      loading: () => const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      );
-                    },
-                    loading: () => const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      error: (error, stack) => const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Icon(Icons.error, color: Colors.red),
                       ),
                     ),
-                    error: (error, stack) => const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.error, color: Colors.red),
-                    ),
-                  ),
                   // Botón de cuadre de caja
                   if (_canAccessCashRegisterSquare())
                     Container(
@@ -791,11 +854,8 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                         ),
                       ),
                       child: IconButton(
-                        icon: const Icon(
-                          Icons.point_of_sale, 
-                          color: Color(0xFF15CD75), 
-                          size: 28
-                        ),
+                        icon: const Icon(Icons.point_of_sale,
+                            color: Color(0xFF15CD75), size: 28),
                         tooltip: 'Cuadrar Caja',
                         style: IconButton.styleFrom(
                           foregroundColor: const Color(0xFF15CD75),
@@ -821,20 +881,24 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.0)),
                               padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                              backgroundColor: kMainColor.withValues(alpha: 0.05),
-                              side: const BorderSide(color: kMainColor, width: 1),
+                              backgroundColor:
+                                  kMainColor.withValues(alpha: 0.05),
+                              side:
+                                  const BorderSide(color: kMainColor, width: 1),
                               textStyle: kTextStyle.copyWith(
                                   color: const Color(0xFFFF2525)),
                               surfaceTintColor: kWhite,
                               shadowColor: kMainColor.withValues(alpha: 0.1),
-                              foregroundColor: kMainColor.withValues(alpha: 0.1),
+                              foregroundColor:
+                                  kMainColor.withValues(alpha: 0.1),
                             ),
                             onPressed: () {
                               context.go('/service-package/dresses');
                             },
                             child: Row(
                               children: [
-                                const Icon(Icons.add_rounded, color: kMainColor),
+                                const Icon(Icons.add_rounded,
+                                    color: kMainColor),
                                 Text(
                                   'Estado de Vestimentas',
                                   style: Theme.of(context)
@@ -862,16 +926,17 @@ class _TopBarWidgetState extends State<TopBarWidget> {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.0)),
                               padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                              backgroundColor:
-                                  const Color(0xFF15CD75).withValues(alpha: 0.05),
+                              backgroundColor: const Color(0xFF15CD75)
+                                  .withValues(alpha: 0.05),
                               side: const BorderSide(
                                   color: Color(0xFF15CD75), width: 1),
                               textStyle: kTextStyle.copyWith(
                                   color: const Color(0xFF15CD75)),
                               surfaceTintColor: kWhite,
-                              shadowColor: const Color(0xFF15CD75).withValues(alpha: 0.1),
-                              foregroundColor:
-                                  const Color(0xFF15CD75).withValues(alpha: 0.1),
+                              shadowColor: const Color(0xFF15CD75)
+                                  .withValues(alpha: 0.1),
+                              foregroundColor: const Color(0xFF15CD75)
+                                  .withValues(alpha: 0.1),
                             ),
                             onPressed: () {
                               context.go('/calendario-reservas');
@@ -901,9 +966,9 @@ class _TopBarWidgetState extends State<TopBarWidget> {
               screenWidth < 1260
                   ? const SizedBox.shrink()
                   : /* const GlobalLanguage(isDrawer: false), */
-              screenWidth < 1430
-                  ? const SizedBox.shrink()
-                  : const SizedBox(width: 10.0),
+                  screenWidth < 1430
+                      ? const SizedBox.shrink()
+                      : const SizedBox(width: 10.0),
               screenWidth < 1430
                   ? const SizedBox.shrink()
                   : const GlobalCurrency(isDrawer: false)
