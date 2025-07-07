@@ -16,6 +16,7 @@ import 'package:salespro_admin/const.dart';
 import 'package:url_strategy/url_strategy.dart';
 import 'package:http/http.dart' as http;
 import 'Route/static_string.dart';
+import 'Screen/Reports/widget/cuadre_report_provider.dart';
 import 'Screen/Widgets/Constant Data/constant.dart';
 import 'Screen/Widgets/Constant Data/theme.dart';
 import 'Screen/currency/currency_provider.dart';
@@ -23,8 +24,7 @@ import 'firebase_options.dart';
 import 'generated/l10n.dart';
 import 'model/paypal_info_model.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-}
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,19 +66,18 @@ class _MyAppState extends State<MyApp> {
 
     // Obtiene el token FCM
     String? token = await messaging.getToken(
-       vapidKey: 'BE356sfDxE_ue2ju2QB8ZpoWMSlmnPAExkdyoxdy34xwaw3QluB51SU9W2Rz5T8kpQYDlyxR53Xm9-q2EnO259w' //key santo domingo
-      //vapidKey: 'BGNqh0uT5XjU36uZosNSQbAJ-J0_V6kyPcMwQ_PE6WpoqKn4kkKpES-mc7caR6V8XEYZjQ3Dbz4AFZhpS-dMUcQ' //key santiago
-    );
+        vapidKey:
+            'BE356sfDxE_ue2ju2QB8ZpoWMSlmnPAExkdyoxdy34xwaw3QluB51SU9W2Rz5T8kpQYDlyxR53Xm9-q2EnO259w' //key santo domingo
+        //vapidKey: 'BGNqh0uT5XjU36uZosNSQbAJ-J0_V6kyPcMwQ_PE6WpoqKn4kkKpES-mc7caR6V8XEYZjQ3Dbz4AFZhpS-dMUcQ' //key santiago
+        );
 
     if (token != null) {
-
       // Guarda el token directamente en Firebase Realtime Database
       try {
         final userId = await getUserID();
         final databaseRef = FirebaseDatabase.instance.ref('$userId/fcmToken');
         await databaseRef.set(token);
-      } catch (e) {
-      }
+      } catch (e) {}
     }
 
     // Escucha notificaciones mientras la app está activa (foreground)
@@ -98,18 +97,37 @@ class _MyAppState extends State<MyApp> {
         pro.ChangeNotifierProvider<CurrencyProvider>(
           create: (context) => CurrencyProvider(),
         ),
+        pro.ChangeNotifierProvider<CuadreReportProvider>(
+            create: (context) => CuadreReportProvider()),
       ],
       child: Builder(
         builder: (context) => rf.ResponsiveBreakpoints.builder(
           breakpoints: [
-            rf.Breakpoint(start: BreakpointName.XS.start, end: BreakpointName.XS.end, name: BreakpointName.XS.name),
-            rf.Breakpoint(start: BreakpointName.SM.start, end: BreakpointName.SM.end, name: BreakpointName.SM.name),
-            rf.Breakpoint(start: BreakpointName.MD.start, end: BreakpointName.MD.end, name: BreakpointName.MD.name),
-            rf.Breakpoint(start: BreakpointName.LG.start, end: BreakpointName.LG.end, name: BreakpointName.LG.name),
-            rf.Breakpoint(start: BreakpointName.XL.start, end: BreakpointName.XL.end, name: BreakpointName.XL.name),
+            rf.Breakpoint(
+                start: BreakpointName.XS.start,
+                end: BreakpointName.XS.end,
+                name: BreakpointName.XS.name),
+            rf.Breakpoint(
+                start: BreakpointName.SM.start,
+                end: BreakpointName.SM.end,
+                name: BreakpointName.SM.name),
+            rf.Breakpoint(
+                start: BreakpointName.MD.start,
+                end: BreakpointName.MD.end,
+                name: BreakpointName.MD.name),
+            rf.Breakpoint(
+                start: BreakpointName.LG.start,
+                end: BreakpointName.LG.end,
+                name: BreakpointName.LG.name),
+            rf.Breakpoint(
+                start: BreakpointName.XL.start,
+                end: BreakpointName.XL.end,
+                name: BreakpointName.XL.name),
           ],
           child: MaterialApp.router(
-            locale: pro.Provider.of<LanguageChangeProvider>(context, listen: true).currentLocale,
+            locale:
+                pro.Provider.of<LanguageChangeProvider>(context, listen: true)
+                    .currentLocale,
             localizationsDelegates: const [
               S.delegate,
               GlobalMaterialLocalizations.delegate,
@@ -129,10 +147,12 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> getPaypalInfo() async {
-    DatabaseReference paypalRef = FirebaseDatabase.instance.ref('Admin Panel/Paypal Info');
+    DatabaseReference paypalRef =
+        FirebaseDatabase.instance.ref('Admin Panel/Paypal Info');
 
     final paypalData = await paypalRef.get();
-    PaypalInfoModel paypalInfoModel = PaypalInfoModel.fromJson(jsonDecode(jsonEncode(paypalData.value)));
+    PaypalInfoModel paypalInfoModel =
+        PaypalInfoModel.fromJson(jsonDecode(jsonEncode(paypalData.value)));
 
     paypalClientId = paypalInfoModel.paypalClientId;
     paypalClientSecret = paypalInfoModel.paypalClientSecret;

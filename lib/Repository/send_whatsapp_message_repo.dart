@@ -13,6 +13,7 @@ class WhatsappInfoRepo {
   Future<WhatsappMarketing> getWhatsappMarketingInfo() async {
     DatabaseReference ref = FirebaseDatabase.instance.ref();
     final model = await ref.child('Admin Panel/Whatsapp Marketing').get();
+    print(model.value);
     var data = jsonDecode(jsonEncode(model.value));
     if (data == null) {
       return WhatsappMarketing(
@@ -33,11 +34,14 @@ class WhatsappInfoRepo {
   }
 
   //api call with basic auth
-  Future<bool> sendWhatsappMessage(String phoneNumber, String message, WhatsappMarketing model) async {
+  Future<bool> sendWhatsappMessage(
+      String phoneNumber, String message, WhatsappMarketing model) async {
     //Basic auth
-    String basicAuth = 'Basic ${base64Encode(utf8.encode('${model.twillio?.accountSid}:${model.twillio?.authToken}'))}';
+    String basicAuth =
+        'Basic ${base64Encode(utf8.encode('${model.twillio?.accountSid}:${model.twillio?.authToken}'))}';
     //API URL
-    String url = 'https://api.twilio.com/2010-04-01/Accounts/${model.twillio?.accountSid}/Messages.json';
+    String url =
+        'https://api.twilio.com/2010-04-01/Accounts/${model.twillio?.accountSid}/Messages.json';
     //API Body
     Map<String, dynamic> body = {
       'To': 'whatsapp:$phoneNumber',
@@ -46,7 +50,8 @@ class WhatsappInfoRepo {
     };
 
     //API Call
-    final response = await http.post(Uri.parse(url), body: body, headers: <String, String>{'authorization': basicAuth});
+    final response = await http.post(Uri.parse(url),
+        body: body, headers: <String, String>{'authorization': basicAuth});
     if (response.statusCode == 201) {
       return true;
     } else {
@@ -54,15 +59,24 @@ class WhatsappInfoRepo {
     }
   }
 
-  Future<bool> sendUltraMsg(String phoneNumber, String message, WhatsappMarketing model) async {
+  Future<bool> sendUltraMsg(
+      String phoneNumber, String message, WhatsappMarketing model) async {
     //String body = message.replaceAll(' ', '+');
 
     //API URL
     //String apiUrl = "${model.ultraMsg?.apiUrl}/messages/chat?token=${model.ultraMsg?.apiSecret}&to=$phoneNumber&body=$body&priority=10";
 
     var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-    var bodyData = {'token': model.ultraMsg?.apiSecret, 'to': phoneNumber, 'body': message, 'priority': '10'};
-    var response = await http.post(Uri.parse('${model.ultraMsg?.apiUrl}/messages/chat'), headers: headers, body: bodyData);
+    var bodyData = {
+      'token': model.ultraMsg?.apiSecret,
+      'to': phoneNumber,
+      'body': message,
+      'priority': '10'
+    };
+    var response = await http.post(
+        Uri.parse('${model.ultraMsg?.apiUrl}/messages/chat'),
+        headers: headers,
+        body: bodyData);
 
     //var response = await http.get(Uri.parse(apiUrl));
     if (response.statusCode == 200) {
