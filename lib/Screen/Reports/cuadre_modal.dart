@@ -460,9 +460,9 @@ class _CuadreModalState extends State<CuadreModal> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.95,
-        height: MediaQuery.of(context).size.height * 0.9,
-        padding: const EdgeInsets.all(24),
+        width: MediaQuery.of(context).size.width * (MediaQuery.of(context).size.width < 600 ? 0.98 : 0.95),
+        height: MediaQuery.of(context).size.height * (MediaQuery.of(context).size.width < 600 ? 0.95 : 0.9),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -512,7 +512,7 @@ class _CuadreModalState extends State<CuadreModal> {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 8 : 12),
           decoration: BoxDecoration(
             color: Colors.blue.shade50,
             borderRadius: BorderRadius.circular(12),
@@ -520,18 +520,18 @@ class _CuadreModalState extends State<CuadreModal> {
           child: Icon(
             Icons.dashboard,
             color: Colors.blue.shade600,
-            size: 24,
+            size: MediaQuery.of(context).size.width < 600 ? 20 : 24,
           ),
         ),
-        const SizedBox(width: 16),
-        const Expanded(
+        SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 16),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Cuadre de Caja',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 20 : 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
@@ -539,7 +539,7 @@ class _CuadreModalState extends State<CuadreModal> {
               Text(
                 'Panel de control diario',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 14,
                   color: Colors.grey,
                 ),
               ),
@@ -798,8 +798,9 @@ class _CuadreModalState extends State<CuadreModal> {
   }
 
   Widget _buildContadorEfectivo() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -816,7 +817,7 @@ class _CuadreModalState extends State<CuadreModal> {
         children: [
           Row(
             children: [
-              Icon(Icons.calculate, color: Colors.indigo.shade600, size: 24),
+              Icon(Icons.calculate, color: Colors.indigo.shade600, size: isMobile ? 20 : 24),
               const SizedBox(width: 12),
               const Text(
                 'Contador de Efectivo',
@@ -1077,17 +1078,18 @@ class _CuadreModalState extends State<CuadreModal> {
   Widget _buildPaymentSubItem(
       String label, double amount, IconData icon, Color color,
       {bool isNegative = false}) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Padding(
-      padding: const EdgeInsets.only(left: 32),
+      padding: EdgeInsets.only(left: isMobile ? 16 : 32),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 8),
+          Icon(icon, color: color, size: isMobile ? 14 : 16),
+          SizedBox(width: isMobile ? 6 : 8),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: isMobile ? 12 : 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1096,7 +1098,7 @@ class _CuadreModalState extends State<CuadreModal> {
             '${isNegative ? '-' : ''}RD\$${formatCurrency(amount)}',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 14,
+              fontSize: isMobile ? 12 : 14,
               color: color,
             ),
           ),
@@ -1135,6 +1137,7 @@ class _CuadreModalState extends State<CuadreModal> {
   Widget _buildDenInputCompacto(int denominacion, String tipo, String? imagen) {
     final cantidad = cantidades[denominacion] ?? 0;
     final valor = denominacion * cantidad;
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Container(
       decoration: BoxDecoration(
@@ -1150,16 +1153,16 @@ class _CuadreModalState extends State<CuadreModal> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(isMobile ? 8 : 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Imagen de la denominación
             if (imagen != null)
               Container(
-                width: 120,
-                height: 80,
-                margin: const EdgeInsets.only(bottom: 8),
+                width: isMobile ? 90 : 120,
+                height: isMobile ? 60 : 80,
+                margin: EdgeInsets.only(bottom: isMobile ? 6 : 8),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
@@ -1209,10 +1212,12 @@ class _CuadreModalState extends State<CuadreModal> {
                 initialValue: cantidad.toString(),
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: MediaQuery.of(context).size.width < 600 ? 6 : 8, 
+                    horizontal: MediaQuery.of(context).size.width < 600 ? 2 : 4
+                  ),
                   border: InputBorder.none,
                   hintText: '0',
                   hintStyle: TextStyle(color: Colors.grey),

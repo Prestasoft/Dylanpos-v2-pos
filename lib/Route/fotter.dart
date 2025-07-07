@@ -61,7 +61,7 @@ class FooterWidget extends StatelessWidget {
                       text: 'Desarrollado por ',
                       children: [
                         TextSpan(
-                          text: 'Miguel Castillo',
+                          text: 'PrestaSoft SRL',
                           style: _textStyle?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isLoginPage ? Colors.white : _theme.primaryColor,
