@@ -120,11 +120,13 @@ class _InventorySalesState extends State<InventorySales> {
   }) async {
     try {
       // Validar número de teléfono
-      // final cleanedPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
-      // if (!cleanedPhone.startsWith('+')) {
-      //   throw Exception('El número debe incluir código de país (ej: +1...)');
-      // }
-
+      final cleanedPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+      if (cleanedPhone.isEmpty) {
+        print('ERROR: Número de teléfono inválido: $phoneNumber');
+        throw Exception('Número de teléfono inválido');
+      }
+      
+      print('DEBUG: Enviando PDF por WhatsApp a $cleanedPhone');
       EasyLoading.show(status: 'Preparando envío...');
       
       // Codificar PDF en Base64
@@ -137,17 +139,17 @@ class _InventorySalesState extends State<InventorySales> {
         Gracias por su preferencia!
         ''';
       
+      // Token y URL para Santo Domingo
+      final token = '5i36w829nb1ljkj7';
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document');
+      
       final body = {
-        'token': '5i36w829nb1ljkj7', //token santo domingo
-        //'token': '5gs146cmkgu6y5vw', //token santiago
-        'to': phoneNumber,
+        'token': token,
+        'to': cleanedPhone,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
         'caption': safeMessage,
       };
-
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -2292,325 +2294,322 @@ Para llamadas: 8098982876 ☎️
                                       backgroundColor: kMainColor,
                                     ),
                                     onPressed: () async {
-                                      print('DEBUG: Botón de pago presionado');
-                                      
-                                      // Evitar múltiples clics
+                                      print('DEBUG: [INICIO] onPressed pago');
                                       if (saleButtonClicked) {
                                         print('DEBUG: Botón ya presionado, ignorando clic');
                                         return;
                                       }
                                       
-                                      if (checkUserRoleEditPermissionV2(type: 'sales')) {
-                                        print('DEBUG: Usuario tiene permisos de venta');
-                                        if (await Subscription.subscriptionChecker(item: 'Sales')) {
-                                          print('DEBUG: Verificación de suscripción exitosa');
-                                          if (cartList.isEmpty) {
-                                            print('DEBUG: Error - Carrito vacío');
-                                            EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
-                                          } else if (selectedUserId == null) {
-                                            print('DEBUG: Error - No se seleccionó cliente');
-                                            EasyLoading.showError('Por favor seleccione un cliente');
-                                          } else if (selectedWareHouse == null) {
-                                            print('DEBUG: Error - No se seleccionó almacén');
-                                            EasyLoading.showError('Por favor seleccione un almacén');
-                                          } else {
-                                            print('DEBUG: Intentando obtener número de factura');
-                                            var invoice_number_variable = await getLastInvoiceNumber();
-                                            print('DEBUG: Número de factura obtenido: $invoice_number_variable');
-                                            
-                                            // Validar que el monto pagado sea un número válido
-                                            if (payingAmountController.text.isEmpty || double.tryParse(payingAmountController.text) == null) {
-                                              print('DEBUG: Error - Monto pagado inválido');
-                                              EasyLoading.showError('Por favor ingrese un monto pagado válido');
-                                              return;
-                                            }
-
-                                            SaleTransactionModel transitionModel = SaleTransactionModel(
-                                              customerName: selectedUserName?.customerName ?? '',
-                                              customerType: selectedUserName?.type ?? '',
-                                              customerImage: selectedUserName?.profilePicture ?? '',
-                                              customerAddress: selectedUserName?.customerAddress ?? '',
-                                              customerPhone: selectedUserName?.phoneNumber ?? '',
-                                              customerGst: selectedUserName?.gst ?? '',
-                                              // Se agrega validador en el momento
-                                              invoiceNumber: invoice_number_variable.toString(),
-
-                                              // data
-                                              //     .saleInvoiceCounter
-                                              //     .toString(),
-                                              sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
-                                              purchaseDate: DateTime.now().toString(),
-                                              productList: cartList,
-                                              totalAmount: double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)),
-                                              discountAmount: discountAmount,
-                                              serviceCharge: serviceCharge,
-                                              vat: vatGst,
-                                              reservationIds: cartList.where((item) => item.reservationId != null).map((item) => item.reservationId!).toList(),
-                                            );
-
-                                            if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
-                                              print('DEBUG: Error - Cliente Guest no puede tener monto pendiente');
-                                              EasyLoading.showError(lang.S.of(context).dueIsNotAvailableForGuest);
-                                              setState(() => saleButtonClicked = false);
-                                            } else {
-                                              try {
-                                                setState(() {
-                                                  saleButtonClicked = true;
-                                                });
-                                                print('DEBUG: Mostrando diálogo de formato de impresión');
-
-                                                final printType = await showDialog<String>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: Text('Seleccionar formato de impresión'),
-                                                    content: Column(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        ListTile(
-                                                          leading: Icon(Icons.receipt, color: Colors.blue),
-                                                          title: Text('Factura térmica'),
-                                                          subtitle: Text('Para impresora de 58-80mm'),
-                                                          onTap: () => Navigator.pop(context, 'thermal'),
-                                                        ),
-                                                        Divider(),
-                                                        ListTile(
-                                                          leading: Icon(Icons.description, color: Colors.green),
-                                                          title: Text('Factura normal'),
-                                                          subtitle: Text('Formato completo A4/Letter'),
-                                                          onTap: () => Navigator.pop(context, 'normal'),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        child: Text('Cancelar'),
-                                                        onPressed: () => Navigator.pop(context),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-
-                                                if (printType == null) {
-                                                  EasyLoading.dismiss();
-                                                  setState(() => saleButtonClicked = false);
-                                                  return;
-                                                }
-
-                                                final sendWhatsApp = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: Text('Enviar por WhatsApp'),
-                                                    content: Text('¿Desea enviar el comprobante por WhatsApp al cliente?'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, false),
-                                                        child: Text('No'),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, true),
-                                                        child: Text('Sí, enviar'),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ) ?? false;
-
-                                                EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
-
-                                                EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                print('DEBUG: Guardando transacción en Firebase');
-                                                
-                                                // Declarar las variables fuera del bloque try para que estén disponibles en todo el ámbito
-                                                DatabaseReference ref;
-                                                SaleTransactionModel post;
-                                                
-                                                try {
-                                                  ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
-                                                  (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
-                                                  (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
-                                                  (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
-                                                  transitionModel.paymentType = selectedPaymentOption;
-                                                  transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
-                                                  post = checkLossProfit(transitionModel: transitionModel);
-                                                  await ref.push().set(post.toJson());
-                                                  print('DEBUG: Transacción guardada exitosamente');
-                                                } catch (e) {
-                                                  print('ERROR al guardar transacción: $e');
-                                                  EasyLoading.showError('Error al guardar la venta: ${e.toString()}');
-                                                  setState(() => saleButtonClicked = false);
-                                                  return;
-                                                }
-
-                                                //imprimir factura
-                                                if (sendWhatsApp) {
-                                                  try {
-                                                    // Generar PDF para WhatsApp
-                                                    final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
-                                                      personalInformationModel: data,
-                                                      saleTransactionModel: transitionModel,
-                                                      context: context,
-                                                      fromInventorySale: true,
-                                                      setting: setting,
-                                                      printType: 'normal',
-                                                      post: post,
-                                                      returnPdfData: true,
-                                                    );
-
-                                                    if (pdfData != null) {
-                                                      await _sendPdfViaWhatsApp(
-                                                        phoneNumber: transitionModel.customerPhone,
-                                                        pdfData: pdfData,
-                                                        invoiceNumber: transitionModel.invoiceNumber,
-                                                        customerName: transitionModel.customerName,
-                                                      );
-                                                    }
-                                                  } catch (e) {
-                                                    EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
-                                                  }
-                                                }
-
-                                                if (printType == 'normal' || printType == 'both') {
-                                                  await GeneratePdfAndPrint().printSaleInvoice(
-                                                    personalInformationModel: data, 
-                                                    saleTransactionModel: transitionModel, 
-                                                    context: context, 
-                                                    fromInventorySale: true, 
-                                                    setting: setting, 
-                                                    printType: 'normal', 
-                                                    post: post
-                                                  );
-                                                }
-
-                                                final token = const Uuid().v4();
-
-                                                final userId = await getUserID();
-
-                                                final confirmation = SaleConfirmationModel(
-                                                  token: token,
-                                                  saleId: ref.push().key ?? '',
-                                                  userId: userId,
-                                                  confirmed: false,
-                                                  createdAt: DateTime.now().toIso8601String(),
-                                                  expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
-                                                  saleData: post,
-                                                );
-
-                                                final confirmRef = FirebaseDatabase.instance.ref('$userId/SaleConfirmations');
-                                                await confirmRef.push().set(confirmation.toJson());
-
-                                                final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santo domingo
-                                                //final link = 'https://stg.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santiago
-
-                                                await _sendConfirmationLinkViaWhatsApp(
-                                                  phoneNumber: post.customerPhone,
-                                                  customerName: post.customerName,
-                                                  confirmationLink: link,
-                                                );
-
-                                                // if (printType == 'thermal' || printType == 'both') {
-                                                //   await GeneratePdfAndPrint().printSaleInvoice(
-                                                //     personalInformationModel: data,
-                                                //     saleTransactionModel: transitionModel,
-                                                //     context: context,
-                                                //     fromInventorySale: true,
-                                                //     setting: setting,
-                                                //     printType: 'thermal',
-                                                //     post: post,
-                                                //   );
-
-                                                limpiarCarro();
-
-                                                final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
-                                                for (var element in transitionModel.productList!) {
-                                                  var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
-                                                  final data2 = jsonDecode(jsonEncode(data.snapshot.value));
-                                                  String productPath = data.snapshot.value.toString().substring(1, 21);
-
-                                                  var data1 = await stockRef.child('$productPath/productStock').get();
-                                                  num stock = num.parse(data1.value.toString());
-                                                  num remainStock = stock - element.quantity;
-
-                                                  stockRef.child(productPath).update({'productStock': '$remainStock'});
-
-                                                  if (element.serialNumber?.isNotEmpty ?? false) {
-                                                    var productOldSerialList = data2[productPath]['serialNumber'];
-
-                                                    List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
-                                                    stockRef.child(productPath).update({
-                                                      'serialNumber': result.map((e) => e).toList(),
-                                                    });
-                                                  }
-                                                }
-
-                                                updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
-
-                                                Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
-
-                                                DailyTransactionModel dailyTransaction = DailyTransactionModel(
-                                                  name: post.customerName,
-                                                  date: post.purchaseDate,
-                                                  type: 'Sale',
-                                                  total: post.totalAmount!.toDouble(),
-                                                  paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
-                                                  paymentOut: 0,
-                                                  remainingBalance: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
-                                                  id: post.invoiceNumber,
-                                                  saleTransactionModel: post,
-                                                );
-                                                postDailyTransaction(dailyTransactionModel: dailyTransaction);
-
-                                                if (transitionModel.customerName != 'Guest') {
-                                                  final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-                                                  String? key;
-
-                                                  await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
-                                                    for (var element in value.children) {
-                                                      var data = jsonDecode(jsonEncode(element.value));
-                                                      if (data['phoneNumber'] == transitionModel.customerPhone) {
-                                                        key = element.key;
-                                                      }
-                                                    }
-                                                  });
-                                                  
-                                                  var data1 = await dueUpdateRef.child('$key/due').get();
-                                                  int previousDue = data1.value.toString().toInt();
-                                                  int totalDue = previousDue + transitionModel.dueAmount!.toInt();
-                                                  
-                                                  await dueUpdateRef.child(key!).update({
-                                                    'due': '$totalDue',
-                                                    'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
-                                                  });
-                                                }
-
-                                                // ignore: unused_result
-                                                consumerRef.refresh(allCustomerProvider);
-                                                // ignore: unused_result
-                                                consumerRef.refresh(transitionProvider);
-                                                // ignore: unused_result
-                                                consumerRef.refresh(productProvider);
-                                                // ignore: unused_result
-                                                consumerRef.refresh(purchaseTransitionProvider);
-                                                // ignore: unused_result
-                                                consumerRef.refresh(dueTransactionProvider);
-                                                // ignore: unused_result
-                                                consumerRef.refresh(profileDetailsProvider);
-                                                // ignore: unused_result
-                                                consumerRef.refresh(dailyTransactionProvider);
-
-                                                EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
-                                                setState(() => saleButtonClicked = false);
-                                              } catch (e) {
-                                                print('ERROR durante el proceso de pago: $e');
-                                                setState(() {
-                                                  saleButtonClicked = false;
-                                                });
-                                                EasyLoading.dismiss();
-                                                EasyLoading.showError('Error: ${e.toString()}');
-                                              }
-                                            }
-                                          }
-                                        } else {
-                                          EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
+                                      setState(() { saleButtonClicked = true; });
+                                      
+                                      try {
+                                        // Validación de permisos
+                                        if (!checkUserRoleEditPermissionV2(type: 'sales')) {
+                                          print('DEBUG: Usuario sin permisos de venta');
+                                          EasyLoading.showError('No tiene permisos para realizar ventas');
+                                          return;
                                         }
+                                        print('DEBUG: Usuario tiene permisos de venta');
+                                        
+                                        // Validación de suscripción
+                                        if (!await Subscription.subscriptionChecker(item: 'Sales')) {
+                                          print('DEBUG: Suscripción no válida');
+                                          EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
+                                          return;
+                                        }
+                                        print('DEBUG: Verificación de suscripción exitosa');
+                                        
+                                        // Validaciones básicas
+                                        if (cartList.isEmpty) {
+                                          print('DEBUG: Error - Carrito vacío');
+                                          EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
+                                          return;
+                                        }
+                                        if (selectedUserId == null) {
+                                          print('DEBUG: Error - No se seleccionó cliente');
+                                          EasyLoading.showError('Por favor seleccione un cliente');
+                                          return;
+                                        }
+                                        if (selectedWareHouse == null) {
+                                          print('DEBUG: Error - No se seleccionó almacén');
+                                          EasyLoading.showError('Por favor seleccione un almacén');
+                                          return;
+                                        }
+                                        
+                                        // Obtener número de factura
+                                        print('DEBUG: Intentando obtener número de factura');
+                                        var invoice_number_variable = await getLastInvoiceNumber();
+                                        print('DEBUG: Número de factura obtenido: $invoice_number_variable');
+                                        
+                                        // Validar monto de pago
+                                        if (payingAmountController.text.isEmpty || double.tryParse(payingAmountController.text) == null) {
+                                          print('DEBUG: Error - Monto pagado inválido');
+                                          EasyLoading.showError('Por favor ingrese un monto pagado válido');
+                                          return;
+                                        }
+                                        
+                                        // Crear modelo de transacción
+                                        SaleTransactionModel transitionModel = SaleTransactionModel(
+                                          customerName: selectedUserName?.customerName ?? '',
+                                          customerType: selectedUserName?.type ?? '',
+                                          customerImage: selectedUserName?.profilePicture ?? '',
+                                          customerAddress: selectedUserName?.customerAddress ?? '',
+                                          customerPhone: selectedUserName?.phoneNumber ?? '',
+                                          customerGst: selectedUserName?.gst ?? '',
+                                          invoiceNumber: invoice_number_variable.toString(),
+                                          sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
+                                          purchaseDate: DateTime.now().toString(),
+                                          productList: cartList,
+                                          totalAmount: double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)),
+                                          discountAmount: discountAmount,
+                                          serviceCharge: serviceCharge,
+                                          vat: vatGst,
+                                          reservationIds: cartList.where((item) => item.reservationId != null).map((item) => item.reservationId!).toList(),
+                                        );
+                                        
+                                        // Validar tipo de cliente y monto pendiente
+                                        if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
+                                          print('DEBUG: Error - Cliente Guest no puede tener monto pendiente');
+                                          EasyLoading.showError(lang.S.of(context).dueIsNotAvailableForGuest);
+                                          return;
+                                        }
+                                        
+                                        // Seleccionar formato de impresión
+                                        print('DEBUG: Mostrando diálogo de formato de impresión');
+                                        final printType = await showDialog<String>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text('Seleccionar formato de impresión'),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                ListTile(
+                                                  leading: Icon(Icons.receipt, color: Colors.blue),
+                                                  title: Text('Factura térmica'),
+                                                  subtitle: Text('Para impresora de 58-80mm'),
+                                                  onTap: () => Navigator.pop(context, 'thermal'),
+                                                ),
+                                                Divider(),
+                                                ListTile(
+                                                  leading: Icon(Icons.description, color: Colors.green),
+                                                  title: Text('Factura normal'),
+                                                  subtitle: Text('Formato completo A4/Letter'),
+                                                  onTap: () => Navigator.pop(context, 'normal'),
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                child: Text('Cancelar'),
+                                                onPressed: () => Navigator.pop(context),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        
+                                        if (printType == null) {
+                                          print('DEBUG: Cancelado por usuario (formato impresión)');
+                                          EasyLoading.dismiss();
+                                          return;
+                                        }
+                                        
+                                        // Preguntar por envío de WhatsApp
+                                        final sendWhatsApp = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text('Enviar por WhatsApp'),
+                                            content: Text('¿Desea enviar el comprobante por WhatsApp al cliente?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, false),
+                                                child: Text('No'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, true),
+                                                child: Text('Sí, enviar'),
+                                              ),
+                                            ],
+                                          ),
+                                        ) ?? false;
+                                        
+                                        EasyLoading.show(status: 'Procesando venta...', dismissOnTap: false);
+                                        print('DEBUG: Guardando transacción en Firebase');
+                                        
+                                        // Declarar variables con alcance adecuado
+                                        DatabaseReference ref;
+                                        SaleTransactionModel post;
+                                        
+                                        // Guardar transacción en Firebase
+                                        ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
+                                        print('DEBUG: Configurando datos de la transacción');
+                                        
+                                        // Configurar detalles de pago
+                                        (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
+                                        (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
+                                        (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
+                                        transitionModel.paymentType = selectedPaymentOption;
+                                        transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
+                                        
+                                        post = checkLossProfit(transitionModel: transitionModel);
+                                        print('DEBUG: Intentando guardar transacción en Firebase');
+                                        
+                                        // Guardar transacción (una sola vez)
+                                        final pushRef = ref.push();
+                                        await pushRef.set(post.toJson());
+                                        print('DEBUG: Transacción guardada exitosamente con ID: ${pushRef.key}');
+                                        
+                                        // Enviar por WhatsApp si se solicitó
+                                        if (sendWhatsApp) {
+                                          try {
+                                            final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
+                                              personalInformationModel: data,
+                                              saleTransactionModel: transitionModel,
+                                              context: context,
+                                              fromInventorySale: true,
+                                              setting: setting,
+                                              printType: 'normal',
+                                              post: post,
+                                              returnPdfData: true,
+                                            );
+                                            if (pdfData != null) {
+                                              await _sendPdfViaWhatsApp(
+                                                phoneNumber: transitionModel.customerPhone,
+                                                pdfData: pdfData,
+                                                invoiceNumber: transitionModel.invoiceNumber,
+                                                customerName: transitionModel.customerName,
+                                              );
+                                            }
+                                          } catch (e) {
+                                            print('ERROR WhatsApp: ${e.toString()}');
+                                            EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
+                                          }
+                                        }
+                                        
+                                        // Imprimir factura
+                                        if (printType == 'normal' || printType == 'both') {
+                                          await GeneratePdfAndPrint().printSaleInvoice(
+                                            personalInformationModel: data, 
+                                            saleTransactionModel: transitionModel, 
+                                            context: context, 
+                                            fromInventorySale: true, 
+                                            setting: setting, 
+                                            printType: 'normal', 
+                                            post: post
+                                          );
+                                        }
+                                        
+                                        // Crear confirmación de venta
+                                        final token = const Uuid().v4();
+                                        final userId = await getUserID();
+                                        final confirmation = SaleConfirmationModel(
+                                          token: token,
+                                          saleId: pushRef.key ?? '', // Usar el key existente en lugar de crear uno nuevo
+                                          userId: userId,
+                                          confirmed: false,
+                                          createdAt: DateTime.now().toIso8601String(),
+                                          expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+                                          saleData: post,
+                                        );
+                                        final confirmRef = FirebaseDatabase.instance.ref('$userId/SaleConfirmations');
+                                        await confirmRef.push().set(confirmation.toJson());
+                                        
+                                        // Enviar link de confirmación
+                                        final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}';
+                                        await _sendConfirmationLinkViaWhatsApp(
+                                          phoneNumber: post.customerPhone,
+                                          customerName: post.customerName,
+                                          confirmationLink: link,
+                                        );
+                                        
+                                        // Limpiar carrito
+                                        limpiarCarro();
+                                        
+                                        // Actualizar stock
+                                        final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
+                                        for (var element in transitionModel.productList!) {
+                                          try {
+                                            var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
+                                            final data2 = jsonDecode(jsonEncode(data.snapshot.value));
+                                            String productPath = data.snapshot.value.toString().substring(1, 21);
+                                            var data1 = await stockRef.child('$productPath/productStock').get();
+                                            num stock = num.parse(data1.value.toString());
+                                            num remainStock = stock - element.quantity;
+                                            stockRef.child(productPath).update({'productStock': '$remainStock'});
+                                            if (element.serialNumber?.isNotEmpty ?? false) {
+                                              var productOldSerialList = data2[productPath]['serialNumber'];
+                                              List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
+                                              stockRef.child(productPath).update({
+                                                'serialNumber': result.map((e) => e).toList(),
+                                              });
+                                            }
+                                          } catch (e) {
+                                            print('ERROR actualizando stock: ${e.toString()}');
+                                          }
+                                        }
+                                        
+                                        // Actualizar contador de factura y suscripción
+                                        updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
+                                        Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
+                                        
+                                        // Crear transacción diaria
+                                        DailyTransactionModel dailyTransaction = DailyTransactionModel(
+                                          name: post.customerName,
+                                          date: post.purchaseDate,
+                                          type: 'Sale',
+                                          total: post.totalAmount!.toDouble(),
+                                          paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
+                                          paymentOut: 0,
+                                          remainingBalance: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
+                                          id: post.invoiceNumber,
+                                          saleTransactionModel: post,
+                                        );
+                                        postDailyTransaction(dailyTransactionModel: dailyTransaction);
+                                        
+                                        // Actualizar saldo pendiente del cliente
+                                        if (transitionModel.customerName != 'Guest') {
+                                          try {
+                                            final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
+                                            String? key;
+                                            await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
+                                              for (var element in value.children) {
+                                                var data = jsonDecode(jsonEncode(element.value));
+                                                if (data['phoneNumber'] == transitionModel.customerPhone) {
+                                                  key = element.key;
+                                                }
+                                              }
+                                            });
+                                            var data1 = await dueUpdateRef.child('$key/due').get();
+                                            int previousDue = data1.value.toString().toInt();
+                                            int totalDue = previousDue + transitionModel.dueAmount!.toInt();
+                                            await dueUpdateRef.child(key!).update({
+                                              'due': '$totalDue',
+                                              'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+                                            });
+                                          } catch (e) {
+                                            print('ERROR actualizando due cliente: ${e.toString()}');
+                                          }
+                                        }
+                                        
+                                        // Refrescar providers
+                                        final _ = consumerRef.refresh(allCustomerProvider);
+                                        final __ = consumerRef.refresh(transitionProvider);
+                                        final ___ = consumerRef.refresh(productProvider);
+                                        final ____ = consumerRef.refresh(purchaseTransitionProvider);
+                                        final _____ = consumerRef.refresh(dueTransactionProvider);
+                                        final ______ = consumerRef.refresh(profileDetailsProvider);
+                                        final _______ = consumerRef.refresh(dailyTransactionProvider);
+                                        
+                                        // Mostrar mensaje de éxito
+                                        EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
+                                        print('DEBUG: [FIN] onPressed pago OK');
+                                      } catch (e) {
+                                        // Manejar errores
+                                        print('ERROR durante el proceso de pago: ${e.toString()}');
+                                        EasyLoading.dismiss();
+                                        EasyLoading.showError('Error: ${e.toString()}');
+                                      } finally {
+                                        // Siempre restablecer el estado del botón
+                                        setState(() { saleButtonClicked = false; });
                                       }
                                     },
                                     child: Text(
@@ -2625,7 +2624,6 @@ Para llamadas: 8098982876 ☎️
                                   child: CircularProgressIndicator(),
                                 );
                               })),
-                          if (screenWidth > 1240) ResponsiveGridCol(lg: 3, xs: 0, md: 0, child: const SizedBox.shrink()),
                         ]),
                       ],
                     ),
