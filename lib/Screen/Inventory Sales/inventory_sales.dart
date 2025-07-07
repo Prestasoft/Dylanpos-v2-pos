@@ -47,6 +47,8 @@ import '../currency/currency_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../model/sale_confirmation_model.dart';
 
+import '../../utils/firebase_key_util.dart';
+
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation});
 
@@ -132,6 +134,9 @@ class _InventorySalesState extends State<InventorySales> {
       // Codificar PDF en Base64
       final pdfBase64 = base64Encode(pdfData);
       
+      // Sanitizar número de factura para el nombre del archivo
+      final safeInvoiceNumber = invoiceNumber.replaceAll(RegExp(r'[.#$\[\]]'), '_');
+      
       // Crear mensaje
       final safeMessage = '''
         Hola ${customerName},
@@ -146,7 +151,7 @@ class _InventorySalesState extends State<InventorySales> {
       final body = {
         'token': token,
         'to': cleanedPhone,
-        'filename': 'Comprobante_${invoiceNumber}.pdf',
+        'filename': 'Comprobante_${safeInvoiceNumber}.pdf',
         'document': pdfBase64,
         'caption': safeMessage,
       };
@@ -2167,7 +2172,7 @@ Para llamadas: 8098982876 ☎️
                                                                     invoiceNumber: invoice_number_variable.toString(),
 
                                                                     sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
-                                                                    purchaseDate: DateTime.now().toString(),
+                                                                    purchaseDate: DateTime.now().toIso8601String(),
                                                                     productList: cartList,
                                                                     totalAmount: double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)),
                                                                     discountAmount: discountAmount,
@@ -2358,7 +2363,7 @@ Para llamadas: 8098982876 ☎️
                                           customerGst: selectedUserName?.gst ?? '',
                                           invoiceNumber: invoice_number_variable.toString(),
                                           sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
-                                          purchaseDate: DateTime.now().toString(),
+                                          purchaseDate: DateTime.now().toIso8601String(),
                                           productList: cartList,
                                           totalAmount: double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)),
                                           discountAmount: discountAmount,
@@ -2450,13 +2455,37 @@ Para llamadas: 8098982876 ☎️
                                         transitionModel.paymentType = selectedPaymentOption;
                                         transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
                                         
-                                        post = checkLossProfit(transitionModel: transitionModel);
+                                        post = checkLossProfit(transitionModel: transitionModel);                                          // Sanitizar fecha para evitar errores de Firebase
+                                        if (post.purchaseDate.contains(".") || post.purchaseDate.contains(" ")) {
+                                          post = SaleTransactionModel.fromJson(post.toJson());
+                                          post.purchaseDate = DateTime.parse(post.purchaseDate)
+                                              .toIso8601String()
+                                              .replaceAll('.', '_')
+                                              .replaceAll(' ', '_')
+                                              .replaceAll(':', '_');
+                                        }
+                                        
                                         print('DEBUG: Intentando guardar transacción en Firebase');
                                         
                                         // Guardar transacción (una sola vez)
-                                        final pushRef = ref.push();
-                                        await pushRef.set(post.toJson());
-                                        print('DEBUG: Transacción guardada exitosamente con ID: ${pushRef.key}');
+                                        String? transactionKey;
+                                        try {
+                                          // Asegurarnos de que se puede serializar correctamente
+                                          final postJson = post.toJson();
+                                          // Verificar que todos los campos críticos estén correctamente serializados
+                                          if (postJson['productList'] is! List) {
+                                            throw Exception('productList no es una lista válida: ${postJson['productList'].runtimeType}');
+                                          }
+                                          
+                                          final pushRef = ref.push();
+                                          await pushRef.set(postJson);
+                                          transactionKey = pushRef.key;
+                                          print('DEBUG: Transacción guardada exitosamente con ID: $transactionKey');
+                                        } catch (e) {
+                                          print('ERROR guardando transacción principal: ${e.toString()}');
+                                          EasyLoading.showError('Error al guardar la transacción: ${e.toString()}');
+                                          throw e; // Re-lanzar para interrumpir el flujo
+                                        }
                                         
                                         // Enviar por WhatsApp si se solicitó
                                         if (sendWhatsApp) {
@@ -2501,25 +2530,74 @@ Para llamadas: 8098982876 ☎️
                                         // Crear confirmación de venta
                                         final token = const Uuid().v4();
                                         final userId = await getUserID();
+                                        
+                                        // Asegurarnos de que todos los datos estén correctamente serializados
+                                        // Validamos la serialización del objeto post
+                                        try {
+                                          // Verificar que post se pueda serializar correctamente
+                                          post.toJson();
+                                        } catch (e) {
+                                          print('ERROR al serializar SaleTransactionModel: ${e.toString()}');
+                                          // Continuar con el flujo aunque haya un error
+                                        }
+                                        
                                         final confirmation = SaleConfirmationModel(
                                           token: token,
-                                          saleId: pushRef.key ?? '', // Usar el key existente en lugar de crear uno nuevo
+                                          saleId: transactionKey ?? '', // Usar el key de la transacción
                                           userId: userId,
                                           confirmed: false,
                                           createdAt: DateTime.now().toIso8601String(),
                                           expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
                                           saleData: post,
                                         );
-                                        final confirmRef = FirebaseDatabase.instance.ref('$userId/SaleConfirmations');
-                                        await confirmRef.push().set(confirmation.toJson());
                                         
-                                        // Enviar link de confirmación
-                                        final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}';
-                                        await _sendConfirmationLinkViaWhatsApp(
-                                          phoneNumber: post.customerPhone,
-                                          customerName: post.customerName,
-                                          confirmationLink: link,
-                                        );
+                                        // Validar que la confirmación se pueda serializar correctamente
+                                        final confirmationJson = confirmation.toJson();
+                                        
+                                        // Guardar en Firebase con manejo de errores
+                                          try {
+                                          final confirmRef = FirebaseDatabase.instance.ref('$userId/SaleConfirmations');
+                                          
+                                          // Crear un JSON sanitizado con fechas seguras para Firebase
+                                          final Map<String, dynamic> sanitizedJson = Map<String, dynamic>.from(confirmationJson);
+                                          
+                                          // Generar fechas seguras usando nuestra utilidad
+                                          final now = DateTime.now();
+                                          final expires = now.add(const Duration(hours: 24));
+                                          
+                                          sanitizedJson['createdAt'] = FirebaseKeyUtil.dateToSafeKey(now);
+                                          sanitizedJson['expiresAt'] = FirebaseKeyUtil.dateToSafeKey(expires);
+                                          
+                                          // Sanitizar fechas dentro del objeto saleData si existe
+                                          if (sanitizedJson['saleData'] is Map) {
+                                            final saleData = sanitizedJson['saleData'] as Map<String, dynamic>;
+                                            if (saleData['purchaseDate'] != null) {
+                                              try {
+                                                final purchaseDate = DateTime.parse(saleData['purchaseDate'].toString());
+                                                saleData['purchaseDate'] = FirebaseKeyUtil.dateToSafeKey(purchaseDate);
+                                              } catch (e) {
+                                                print('Error al parsear fecha de compra: $e');
+                                                // Sanitizar manualmente si falla el parsing
+                                                saleData['purchaseDate'] = FirebaseKeyUtil.sanitizeKey(
+                                                    saleData['purchaseDate']?.toString() ?? '');
+                                              }
+                                            }
+                                          }
+                                          
+                                          // Usar el JSON sanitizado para guardar en Firebase
+                                          await confirmRef.push().set(sanitizedJson);
+                                          
+                                          // Enviar link de confirmación
+                                          final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}';
+                                          await _sendConfirmationLinkViaWhatsApp(
+                                            phoneNumber: post.customerPhone,
+                                            customerName: post.customerName,
+                                            confirmationLink: link,
+                                          );
+                                        } catch (e) {
+                                          print('ERROR guardando confirmación: ${e.toString()}');
+                                          // Continuar con el flujo aunque falle la confirmación
+                                        }
                                         
                                         // Limpiar carrito
                                         limpiarCarro();
@@ -2551,10 +2629,25 @@ Para llamadas: 8098982876 ☎️
                                         updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
                                         Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
                                         
+                                        // Sanitizar fecha para evitar errores de Firebase
+                                        String safePurchaseDate = post.purchaseDate;
+                                        try {
+                                          // Primero parsear a DateTime
+                                          DateTime parsedDate = DateTime.parse(safePurchaseDate);
+                                          // Luego convertir a un formato seguro para Firebase
+                                          safePurchaseDate = FirebaseKeyUtil.dateToSafeKey(parsedDate);
+                                          post.purchaseDate = safePurchaseDate;
+                                        } catch (e) {
+                                          print('ERROR al parsear fecha: $e');
+                                          // Si falla el parsing, sanitizar manualmente
+                                          safePurchaseDate = FirebaseKeyUtil.sanitizeKey(safePurchaseDate);
+                                          post.purchaseDate = safePurchaseDate;
+                                        }
+                                        
                                         // Crear transacción diaria
                                         DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                           name: post.customerName,
-                                          date: post.purchaseDate,
+                                          date: safePurchaseDate,
                                           type: 'Sale',
                                           total: post.totalAmount!.toDouble(),
                                           paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
@@ -2583,7 +2676,7 @@ Para llamadas: 8098982876 ☎️
                                             int totalDue = previousDue + transitionModel.dueAmount!.toInt();
                                             await dueUpdateRef.child(key!).update({
                                               'due': '$totalDue',
-                                              'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+                                              'updated_at': FirebaseKeyUtil.dateToSafeKey(DateTime.now()),
                                             });
                                           } catch (e) {
                                             print('ERROR actualizando due cliente: ${e.toString()}');
@@ -2605,8 +2698,23 @@ Para llamadas: 8098982876 ☎️
                                       } catch (e) {
                                         // Manejar errores
                                         print('ERROR durante el proceso de pago: ${e.toString()}');
+                                        String errorMsg = e.toString();
+                                        
+                                        // Detección específica de tipos de errores
+                                        if (errorMsg.contains("IdentityMap<String, dynamic>") && 
+                                            errorMsg.contains("not a subtype of type 'String'")) {
+                                          errorMsg = "Error de serialización: Un mapa está siendo tratado como texto. Contacte al soporte técnico.";
+                                        } 
+                                        else if (errorMsg.contains("No such method 'toJson'")) {
+                                          errorMsg = "Error de serialización: Un objeto no tiene método toJson. Contacte al soporte técnico.";
+                                        }
+                                        else if (errorMsg.contains("invalid path") || 
+                                                errorMsg.contains("can't contain")) {
+                                          errorMsg = "Error: Ruta de Firebase inválida. Los nombres no pueden contener '.', '#', '\$', '[', or ']'.";
+                                        }
+                                        
                                         EasyLoading.dismiss();
-                                        EasyLoading.showError('Error: ${e.toString()}');
+                                        EasyLoading.showError('Error: $errorMsg');
                                       } finally {
                                         // Siempre restablecer el estado del botón
                                         setState(() { saleButtonClicked = false; });

@@ -36,7 +36,11 @@ class GeneratePdfAndPrint {
   Future<void> uploadPdfToFirebase(Uint8List pdfData, String fileType, String invoiceNumber) async {
     // Get a reference to the Firebase Storage bucket
     FirebaseStorage storage = FirebaseStorage.instance;
-    Reference ref = storage.ref().child('$constUserId/$fileType/invoice-$invoiceNumber.pdf');
+    
+    // Sanitizar el número de factura para usarlo en la ruta
+    String safeInvoiceNumber = invoiceNumber.replaceAll(RegExp(r'[.#$\[\]]'), '_');
+    
+    Reference ref = storage.ref().child('$constUserId/$fileType/invoice-$safeInvoiceNumber.pdf');
 
     // Upload the PDF file
     try {

@@ -1,5 +1,6 @@
 // sale_confirmation_model.dart
 import 'sale_transaction_model.dart';
+import '../utils/firebase_key_util.dart';
 
 class SaleConfirmationModel {
   final String token;
@@ -39,15 +40,21 @@ class SaleConfirmationModel {
   }
 
   Map<String, dynamic> toJson() {
+    // Sanitizar fechas para que sean seguras en Firebase
+    final sanitizedCreatedAt = FirebaseKeyUtil.sanitizeKey(createdAt);
+    final sanitizedExpiresAt = FirebaseKeyUtil.sanitizeKey(expiresAt);
+    final sanitizedConfirmationDate = confirmationDate != null ? 
+        FirebaseKeyUtil.sanitizeKey(confirmationDate!) : null;
+    
     return {
       'token': token,
       'saleId': saleId,
       'userId': userId,
       'confirmed': confirmed,
-      'confirmationDate': confirmationDate,
-      'createdAt': createdAt,
-      'expiresAt': expiresAt,
-      'saleData': saleData.toJson(),
+      'confirmationDate': sanitizedConfirmationDate,
+      'createdAt': sanitizedCreatedAt,
+      'expiresAt': sanitizedExpiresAt,
+      'saleData': saleData.toJson(), // Aseguramos que esto es un Map<String, dynamic>
       'notified': notified,
     };
   }

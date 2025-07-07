@@ -1,13 +1,15 @@
 import 'package:salespro_admin/Screen/HRM/salaries%20list/model/pay_salary_model.dart';
 import 'package:salespro_admin/model/purchase_transation_model.dart';
 import 'package:salespro_admin/model/sale_transaction_model.dart';
+import 'package:salespro_admin/utils/firebase_key_util.dart';
 
 import 'due_transaction_model.dart';
 import 'expense_model.dart';
 import 'income_modle.dart';
 
 class DailyTransactionModel {
-  late String name, date, type, id;
+  late String name, type, id;
+  late String date; // Marcar como late
   late double total, paymentIn, paymentOut, remainingBalance;
   SaleTransactionModel? saleTransactionModel;
   PurchaseTransactionModel? purchaseTransactionModel;
@@ -18,7 +20,7 @@ class DailyTransactionModel {
 
   DailyTransactionModel({
     required this.name,
-    required this.date,
+    required String date, // Cambiar a String para poder sanitizar
     required this.type,
     required this.total,
     required this.paymentIn,
@@ -31,11 +33,15 @@ class DailyTransactionModel {
     this.incomeModel,
     this.expenseModel,
     this.paySalary,
-  });
+  }) {
+    // Sanitizar la fecha en el constructor para garantizar que siempre sea segura
+    this.date = _sanitizeDate(date);
+  }
 
   DailyTransactionModel.fromJson(Map<String, dynamic> json) {
     name = json['name'].toString();
-    date = json['date'].toString();
+    // Sanitizar fecha al deserializar
+    date = _sanitizeDate(json['date'].toString());
     type = json['type'].toString();
     total = double.parse(json['total'].toString());
     paymentIn = double.parse(json['paymentIn'].toString());
@@ -64,7 +70,7 @@ class DailyTransactionModel {
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'name': name,
-        'date': date,
+        'date': _sanitizeDate(date), // Sanitizar nuevamente al serializar
         'type': type,
         'total': total,
         'paymentIn': paymentIn,
@@ -78,4 +84,25 @@ class DailyTransactionModel {
         'expenseModel': expenseModel?.toJson(),
         'paySalaryModel': paySalary?.toJson(),
       };
+      
+  // Método privado para sanitizar fechas
+  String _sanitizeDate(String dateStr) {
+    // Verificar si la fecha contiene caracteres no permitidos
+    if (dateStr.contains('.') || dateStr.contains('#') || 
+        dateStr.contains('\$') || dateStr.contains('[') || 
+        dateStr.contains(']') || dateStr.contains(' ')) {
+      
+      // Intentar parsear como DateTime si tiene formato de fecha
+      try {
+        final DateTime parsedDate = DateTime.parse(dateStr);
+        return FirebaseKeyUtil.dateToSafeKey(parsedDate);
+      } catch (e) {
+        // Si no se puede parsear, sanitizar manualmente
+        return FirebaseKeyUtil.sanitizeKey(dateStr);
+      }
+    }
+    
+    // Si ya está sanitizada, devolverla tal cual
+    return dateStr;
+  }
 }

@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
+import 'package:salespro_admin/utils/firebase_key_util.dart';
 
 import '../../../const.dart';
 
@@ -198,13 +199,48 @@ Future<void> postDailyTransaction(
   }
 
   dailyTransactionModel.remainingBalance = remainingBalance;
+  
+  // Sanitizar fecha para garantizar que sea segura para Firebase
+  try {
+    // Primero intentar parsear como DateTime si tiene formato de fecha
+    if (dailyTransactionModel.date.contains('.') || dailyTransactionModel.date.contains(' ') || 
+        dailyTransactionModel.date.contains('-') || dailyTransactionModel.date.contains(':')) {
+      final DateTime parsedDate = DateTime.parse(dailyTransactionModel.date);
+      // Utilizar el utilitario para convertir a formato seguro para Firebase
+      dailyTransactionModel.date = FirebaseKeyUtil.dateToSafeKey(parsedDate);
+    } else {
+      // Si no parece una fecha, sanitizar como string normal
+      dailyTransactionModel.date = FirebaseKeyUtil.sanitizeKey(dailyTransactionModel.date);
+    }
+  } catch (e) {
+    // Si falla el parsing, sanitizar manualmente
+    print('Error sanitizando fecha en postDailyTransaction: ${e.toString()}');
+    dailyTransactionModel.date = FirebaseKeyUtil.sanitizeKey(dailyTransactionModel.date);
+  }
 
   ///________post_remaining Balance_on_personal_information___________________________________________________
   await personalInformationRef
       .update({'remainingShopBalance': remainingBalance});
 
   ///_________dailyTransaction_Posting________________________________________________________________________
-  DatabaseReference dailyTransactionRef =
-      FirebaseDatabase.instance.ref("${await getUserID()}/Daily Transaction");
-  await dailyTransactionRef.push().set(dailyTransactionModel.toJson());
+  try {
+    // Sanitizar el id y la fecha para evitar errores de Firebase
+    dailyTransactionModel.id = FirebaseKeyUtil.sanitizeKey(dailyTransactionModel.id);
+    dailyTransactionModel.date = FirebaseKeyUtil.sanitizeKey(dailyTransactionModel.date);
+    
+    // Crear la referencia segura con la ruta sanitizada
+    final String userId = await getUserID();
+    final String sanitizedPath = "${FirebaseKeyUtil.sanitizeKey(userId)}/Daily Transaction";
+    
+    // Utilizar el utilitario Firebase para crear una referencia segura
+    DatabaseReference dailyTransactionRef =
+        FirebaseDatabase.instance.ref(sanitizedPath);
+    
+    // Usar push() para generar un ID aleatorio seguro
+    await dailyTransactionRef.push().set(dailyTransactionModel.toJson());
+    
+    print('DEBUG: Transacción diaria guardada correctamente');
+  } catch (e) {
+    print('ERROR guardando transacción diaria: ${e.toString()}');
+  }
 }

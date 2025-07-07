@@ -84,8 +84,7 @@ class _BulkProductUploadPopupState extends State<BulkProductUploadPopup> {
       return true;
     }
 
-    String productPicture =
-        'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672';
+    String productPicture = 'asset:///images/blank_image.svg';
 
     ProductModel productModel = ProductModel(
       '',
