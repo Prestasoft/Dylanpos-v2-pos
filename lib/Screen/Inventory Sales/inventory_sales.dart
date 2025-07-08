@@ -1382,12 +1382,16 @@ Para llamadas: 8098982876 ☎️
                                     );
                                   },
                                   onSelected: (suggestion) {
-                                    ProductModel product = ProductModel.fromJson(jsonDecode(jsonEncode(suggestion)));
+                                    // Para Realtime Database
+                                    final productData = Map<String, dynamic>.from(suggestion as Map);
+                                    
+                                    ProductModel product = ProductModel.fromJson(productData);
+                                    
                                     AddToCartModel addToCartModel = AddToCartModel(
                                         productName: product.productName,
                                         warehouseName: product.warehouseName,
                                         warehouseId: product.warehouseId,
-                                        productId: product.productCode,
+                                        productId: suggestion['firebaseId'] ?? product.productCode,
                                         quantity: 1,
                                         productImage: product.productPicture,
                                         stock: int.tryParse(product.productStock) ?? 0,
@@ -2303,6 +2307,7 @@ Para llamadas: 8098982876 ☎️
                                       if (checkUserRoleEditPermissionV2(type: 'sales')) {
                                         print('DEBUG: Usuario tiene permisos de venta');
                                         if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                          print('Carrito actual: ${jsonEncode(cartList)}');
                                           print('DEBUG: Verificación de suscripción exitosa');
                                           if (cartList.isEmpty) {
                                             print('DEBUG: Error - Carrito vacío');

@@ -62,7 +62,7 @@ class DefaultFirebaseOptions {
       apiKey: "AIzaSyCm5cqfIUlV3wll49QA36IRwUrbnww__lo",
       authDomain: "dylanpos-victorfoto-stodgo.firebaseapp.com",
       databaseURL:
-          "https://dylanpos-victorfoto-stodgo-default-rtdb.firebaseio.com",
+          "https://dylanpos-victorfoto-stodgo-dev2.firebaseio.com",
       projectId: "dylanpos-victorfoto-stodgo",
       storageBucket: "dylanpos-victorfoto-stodgo.firebasestorage.app",
       messagingSenderId: "892139987413",

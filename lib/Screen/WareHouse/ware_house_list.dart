@@ -14,7 +14,7 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Screen/WareHouse/warehouse_model.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/product_model.dart';
-
+import 'package:uuid/uuid.dart';
 import '../../Provider/product_provider.dart';
 import '../../commas.dart';
 import '../../const.dart';
@@ -391,15 +391,29 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                                 ElevatedButton(
                                                                               onPressed: () async {
                                                                                 if (warehouseName != '' && !names.contains(warehouseName.toLowerCase().removeAllWhiteSpace())) {
-                                                                                  WareHouseModel warehouse = WareHouseModel(warehouseName: warehouseName, warehouseAddress: address, id: id.toString());
                                                                                   try {
                                                                                     EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                                                    final DatabaseReference productInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Warehouse List');
-                                                                                    await productInformationRef.push().set(warehouse.toJson());
+                                                                                    final DatabaseReference productInformationRef = FirebaseDatabase.instance
+                                                                                        .ref()
+                                                                                        .child(await getUserID())
+                                                                                        .child('Warehouse List');
+                                                                                    
+                                                                                    DatabaseReference newRef = productInformationRef.push();
+                                                                                    
+                                                                                    // Asegurar que el key no es nulo
+                                                                                    final String newId = newRef.key ?? const Uuid().v4(); // Usamos el key o generamos uno alternativo
+                                                                                    
+                                                                                    WareHouseModel warehouse = WareHouseModel(
+                                                                                      warehouseName: warehouseName, 
+                                                                                      warehouseAddress: address, 
+                                                                                      id: newId // Usamos el ID asegurado
+                                                                                    );
+                                                                                    
+                                                                                    await newRef.set(warehouse.toJson());
+                                                                                    
                                                                                     EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
-
-                                                                                    ///____provider_refresh____________________________________________
-                                                                                    // ignore: unused_result
+                                                                                    
+                                                                                    // Refresh provider
                                                                                     await ref.refresh(warehouseProvider);
 
                                                                                     Future.delayed(const Duration(milliseconds: 100), () {
@@ -407,13 +421,10 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                                     });
                                                                                   } catch (e) {
                                                                                     EasyLoading.dismiss();
-                                                                                    //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
                                                                                   }
                                                                                 } else if (names.contains(warehouseName.toLowerCase().removeAllWhiteSpace())) {
-                                                                                  //EasyLoading.showError('Category Name Already Exists');
                                                                                   EasyLoading.showError(lang.S.of(context).categoryNameAlreadyExists);
                                                                                 } else {
-                                                                                  // EasyLoading.showError('Enter Warehouse Name');
                                                                                   EasyLoading.showError(lang.S.of(context).enterWarehouseName);
                                                                                 }
                                                                               },

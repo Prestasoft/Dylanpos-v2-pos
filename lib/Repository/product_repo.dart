@@ -63,16 +63,21 @@ class ProductRepo {
     required WareHouseModel warehouseId,
   }) async {
     List<dynamic> productList = [];
-    final snapshot = await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get();
+    final snapshot = await FirebaseDatabase.instance
+        .ref(await getUserID())
+        .child('Products')
+        .orderByKey()
+        .get();
 
     for (var element in snapshot.children) {
       final product = jsonDecode(jsonEncode(element.value));
+      // Agregar el ID del documento (key) al objeto producto
+      product['firebaseId'] = element.key; // <- Esta es la línea clave
+      
       final name = product['productName'].toString().toLowerCase();
       final matchesName = searchData.isEmpty || name.contains(searchData.toLowerCase());
-      //final matchesWarehouse = (product['warehouseId'] == '' && warehouseId.warehouseName == 'InHouse') || product['warehouseId'].toString() == warehouseId.id;
 
       if (matchesName) {
-        // && matchesWarehouse) {
         productList.add(product);
       }
     }
