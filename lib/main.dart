@@ -23,7 +23,6 @@ import 'Screen/currency/currency_provider.dart';
 import 'firebase_options.dart';
 import 'generated/l10n.dart';
 import 'model/paypal_info_model.dart';
-import 'utils/fix_firebase_paths.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
 
@@ -39,9 +38,6 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // Ejecutar el corrector de rutas de Firebase
-  await FirebasePathFixer.ensureSafePaths();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 

@@ -45,7 +45,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   String searchItem = '';
-  String selectedTypeFilter = 'Todos'; // Nuevo filtro por tipo
+  String selectedTypeFilter = 'Todos'; // Filtro inicial: Todos
 
   DateTimeRange selectedDate = DateTimeRange(
     start: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
@@ -123,9 +123,11 @@ class _DailyTransactionState extends State<DailyTransaction> {
           switch (selectedMonth) {
             case 'Hoy':
               {
+                // Para "Hoy", configurar el inicio del día actual y el final del día actual
+                final hoy = DateTime.now();
                 selectedDate = DateTimeRange(
-                    start: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-                    end: DateTime.now());
+                    start: DateTime(hoy.year, hoy.month, hoy.day, 0, 0, 0),
+                    end: DateTime(hoy.year, hoy.month, hoy.day, 23, 59, 59));
               }
               break;
             case 'Este mes':
@@ -237,19 +239,56 @@ class _DailyTransactionState extends State<DailyTransaction> {
             if (element.date.isNotEmpty) {
               DateTime? parsedDate;
               try {
+                // Intentar parsear la fecha en varios formatos
                 parsedDate = DateTime.parse(element.date);
               } catch (e) {
-                continue;
+                // Intentar parsear en formato alternativo
+                try {
+                  // Intentar extraer la fecha si está en un formato diferente
+                  final dateString = element.date.split('T')[0];
+                  parsedDate = DateTime.parse(dateString);
+                } catch (_) {
+                  print('Error al parsear fecha: ${element.date} - ${e.toString()}');
+                  // Incluir la transacción de todos modos para diagnosticar
+                  reTransaction.add(element);
+                  continue;
+                }
               }
 
-              if ((selectedDate.start.isBefore(parsedDate) ||
-                      parsedDate.isAtSameMomentAs(selectedDate.start)) &&
-                  (selectedDate.end.isAfter(parsedDate) ||
-                      parsedDate.isAtSameMomentAs(selectedDate.end))) {
+              // Si llegamos aquí, la fecha se parseó correctamente
+              
+              // Convertir las fechas a medianoche para comparar solo el día (para "Hoy")
+              bool isInDateRange = false;
+              
+              if (selectedMonth == 'Hoy') {
+                // Para "Hoy", comparamos solo las partes de año/mes/día
+                final transactionDate = DateTime(parsedDate.year, parsedDate.month, parsedDate.day);
+                final rangeStartDay = DateTime(selectedDate.start.year, selectedDate.start.month, selectedDate.start.day);
+                
+                // Si el día coincide exactamente con hoy
+                isInDateRange = transactionDate.isAtSameMomentAs(rangeStartDay);
+                
+                // Imprimimos para diagnóstico
+                print('Filtro HOY - Transacción: ${element.name} - Fecha: ${transactionDate.toString()} - Es hoy: $isInDateRange');
+              } else {
+                // Para otros filtros, usamos el rango completo con horas
+                isInDateRange = (selectedDate.start.isBefore(parsedDate) || 
+                    parsedDate.isAtSameMomentAs(selectedDate.start)) &&
+                    (selectedDate.end.isAfter(parsedDate) || 
+                    parsedDate.isAtSameMomentAs(selectedDate.end));
+              }
+              
+              // Si está en el rango de fechas o el rango es "Ver todo"
+              if (isInDateRange || selectedMonth == 'Ver todo') {
                 // Aplicar filtro por tipo si no es "Todos"
                 if (selectedTypeFilter == 'Todos' || element.type == selectedTypeFilter) {
                   reTransaction.add(element);
                 }
+              }
+            } else {
+              // Si no tiene fecha, incluirla de todos modos
+              if (selectedTypeFilter == 'Todos' || element.type == selectedTypeFilter) {
+                reTransaction.add(element);
               }
             }
           }
@@ -739,11 +778,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                         .paymentOut,
                                                   ),
                                                 ),
-                                                // DataColumn(
-                                                //   label: Text(
-                                                //     lang.S.of(context).balance,
-                                                //   ),
-                                                // ),
                                                 DataColumn(
                                                   label: Text(
                                                     lang.S.of(context).action,
@@ -803,10 +837,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                     : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ?? 0)}',
                                                               ),
                                                             ),
-                                                            // DataCell(
-                                                            //   Text(
-                                                            //       '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].remainingBalance.toStringAsFixed(2)) ?? 0)}'),
-                                                            // ),
                                                             DataCell(
                                                                 settingProvider
                                                                     .when(data:
@@ -971,9 +1001,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                             const DataCell(
                                                               Text(''),
                                                             ),
-                                                            // const DataCell(
-                                                            //   Text(''),
-                                                            // ),
                                                             const DataCell(
                                                               Text(''),
                                                             ),
@@ -1114,8 +1141,40 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 ),
                               ],
                             )
-                          : EmptyWidget(
-                              title: lang.S.of(context).noTransactionFound),
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                EmptyWidget(
+                                    title: lang.S.of(context).noTransactionFound),
+                                
+                                SizedBox(height: 20),
+                                
+                                // Información de depuración
+                                Container(
+                                  padding: EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade50,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.orange.shade200),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Información para Diagnóstico:', 
+                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                      SizedBox(height: 10),
+                                      Text('• No se encontraron transacciones para el período seleccionado.'),
+                                      Text('• Filtro actual: $selectedMonth'),
+                                      Text('• Filtro de tipo: $selectedTypeFilter'),
+                                      Text('• Rango de fechas: ${selectedDate.start.toString().substring(0, 19)} - ${selectedDate.end.toString().substring(0, 19)}'),
+                                      SizedBox(height: 10),
+                                      Text('Para crear transacciones de prueba, vaya a la pestaña "Diagnóstico".', 
+                                          style: TextStyle(fontStyle: FontStyle.italic)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                     ],
                   ),
                 )

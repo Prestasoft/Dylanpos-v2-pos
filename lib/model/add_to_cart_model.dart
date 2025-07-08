@@ -241,10 +241,7 @@ class AddToCartModel {
         "item_cart_index": itemCartIndex,
         "stock": stock,
         "productPurchasePrice": productPurchasePrice,
-        "product_details": productDetails == null ? null : 
-          (productDetails is Map<String, dynamic>) ? productDetails : 
-          (productDetails.toJson is Function) ? productDetails.toJson() : 
-          productDetails.toString(),
+        "product_details": productDetails,
         'serialNumber': serialNumber?.map((e) => e).toList(),
         'productWarranty': productWarranty,
         'productImage': productImage,
@@ -256,9 +253,9 @@ class AddToCartModel {
         'groupTaxRate': groupTaxRate,
         'subTax': subTaxes.map((e) => e.toJson()).toList(),
         "isReservation": isReservation,
-        'reservationId': reservationId != null ? reservationId!.replaceAll(RegExp(r'[.#$\[\]]'), '_') : null,
-        "dressId": dressId != null ? dressId!.replaceAll(RegExp(r'[.#$\[\]]'), '_') : null,
-        "serviceId": serviceId != null ? serviceId!.replaceAll(RegExp(r'[.#$\[\]]'), '_') : null,
-        "descricpion": descricpion, // NUEVO CAMPO
+        'reservationId': reservationId,
+        "dressId": dressId,
+        "serviceId": serviceId,
+        "descricpion": descricpion,
       };
 }

@@ -109,93 +109,31 @@ class SaleTransactionModel {
   }
 
   Map<String, dynamic> toJson() {
-    try {
-        // Sanitizar fechas para Firebase (que no acepta '.', ' ', etc. en las rutas)
-        String safePurchaseDate = purchaseDate;
-        if (safePurchaseDate.contains('.') || safePurchaseDate.contains(' ')) {
-          try {
-            // Para uso en Firebase, necesitamos eliminar caracteres especiales
-            // pero mantener el formato para otras partes del código
-            DateTime parsedDate = DateTime.parse(safePurchaseDate);
-            String isoDate = parsedDate.toIso8601String();
-            
-            // Crear una versión segura para Firebase
-            safePurchaseDate = isoDate;
-          } catch (e) {
-            // Si falla el parsing, mantener la fecha original
-            print('Error al parsear fecha en SaleTransactionModel: $e');
-          }
-        }
-
-        final result = {
-          'customerName': customerName,
-          'customerPhone': customerPhone,
-          'customerAddress': customerAddress,
-          'customerGst': customerGst,
-          'customerType': customerType,
-          'customerImage': customerImage,
-          'invoiceNumber': invoiceNumber,
-          'purchaseDate': safePurchaseDate,
-        'discountAmount': discountAmount,
-        'vat': vat,
-        'serviceCharge': serviceCharge,
-        'totalAmount': totalAmount,
-        'dueAmount': dueAmount,
-        'sellerName': sellerName,
-        'returnAmount': returnAmount,
-        'lossProfit': lossProfit,
-        'totalQuantity': totalQuantity,
-        'isPaid': isPaid,
-        'paymentType': paymentType,
-        'sendWhatsappMessage': sendWhatsappMessage ?? false,
-        'pdfUrl': pdfUrl,
-      };
-      
-      // Manejo especial para productList - esto evita el error de IdentityMap
-      if (productList != null) {
-        try {
-          // Convertir explícitamente a Lista de Mapas
-          final List<Map<String, dynamic>> productListJson = productList!.map((item) {
-            try {
-              return item.toJson(); // Usa el método mejorado que creamos
-            } catch (e) {
-              print('ERROR serializando producto en transacción: $e');
-              // Versión mínima segura
-              return {
-                "product_id": item.productId.toString(),
-                "product_name": item.productName ?? 'Unknown',
-                "quantity": item.quantity.toString(),
-              };
-            }
-          }).toList();
-          
-          result['productList'] = productListJson;
-        } catch (e) {
-          print('ERROR serializando lista de productos: $e');
-          result['productList'] = [];
-        }
-      } else {
-        result['productList'] = [];
-      }
-      
-      // Manejo seguro de reservationIds
-      if (reservationIds.isNotEmpty) {
-        result['reservationIds'] = reservationIds.map((id) => id.toString()).toList();
-      } else {
-        result['reservationIds'] = [];
-      }
-      
-      return result;
-    } catch (e) {
-      print('ERROR en SaleTransactionModel.toJson: $e');
-      // Retornar versión mínima segura
-      return {
-        'customerName': customerName,
-        'customerPhone': customerPhone,
-        'invoiceNumber': invoiceNumber,
-        'purchaseDate': DateTime.now().toIso8601String(),
-        'productList': [],
-      };
-    }
+    return {
+      'customerName': customerName,
+      'customerType': customerType,
+      'customerAddress': customerAddress,
+      'customerPhone': customerPhone,
+      'customerGst': customerGst,
+      'customerImage': customerImage,
+      'invoiceNumber': invoiceNumber,
+      'purchaseDate': purchaseDate,
+      'totalAmount': totalAmount,
+      'dueAmount': dueAmount,
+      'returnAmount': returnAmount,
+      'vat': vat,
+      'serviceCharge': serviceCharge,
+      'discountAmount': discountAmount,
+      'isPaid': isPaid,
+      'paymentType': paymentType,
+      'lossProfit': lossProfit,
+      'totalQuantity': totalQuantity,
+      'sellerName': sellerName,
+      'key': key,
+      'productList': productList?.map((item) => item.toJson()).toList(),
+      'reservationIds': reservationIds,
+      'sendWhatsappMessage': sendWhatsappMessage ?? false,
+      'pdfUrl': pdfUrl,
+    };
   }
 }

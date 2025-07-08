@@ -11,7 +11,9 @@ import 'package:provider/provider.dart' as pro;
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/Provider/transactions_provider.dart';
+import 'package:salespro_admin/Screen/Reports/crear_transacciones_prueba.dart';
 import 'package:salespro_admin/Screen/Reports/daily_transaction.dart';
+import 'package:salespro_admin/Screen/Reports/diagnostico_transacciones.dart';
 import 'package:salespro_admin/Screen/Reports/purchase_report_widget.dart';
 import 'package:salespro_admin/Screen/Reports/purchase_return_widget.dart';
 import 'package:salespro_admin/Screen/Reports/quotation_reports_wedget.dart';
@@ -47,6 +49,7 @@ class _SaleReportsState extends State<SaleReports> {
   List<String> categoryList = [
     'Ventas',
     'Transaccion Diaria',
+    'Diagnóstico',
     'Devolucion',
     'Compra',
     'Devolucion de compra',
@@ -1694,6 +1697,17 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                     padding: const EdgeInsets.all(10.0),
                     child: const DailyTransaction()
                         .visible(selected == 'Transaccion Diaria'),
+                  )),
+
+              ///___________Diagnóstico_________________________________________________________
+              ResponsiveGridCol(
+                  xs: selected == 'Diagnóstico' ? 12 : 0,
+                  md: selected == 'Diagnóstico' ? 9 : 0,
+                  lg: selected == 'Diagnóstico' ? 9 : 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: const CrearTransaccionesPrueba()
+                        .visible(selected == 'Diagnóstico'),
                   )),
 
               ///___________Quotation_report___________________________________________________

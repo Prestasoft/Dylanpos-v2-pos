@@ -47,8 +47,6 @@ import '../currency/currency_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../model/sale_confirmation_model.dart';
 
-import '../../utils/firebase_key_util.dart';
-
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation});
 
@@ -2561,25 +2559,24 @@ Para llamadas: 8098982876 ☎️
                                           // Crear un JSON sanitizado con fechas seguras para Firebase
                                           final Map<String, dynamic> sanitizedJson = Map<String, dynamic>.from(confirmationJson);
                                           
-                                          // Generar fechas seguras usando nuestra utilidad
+                                          // Generar fechas
                                           final now = DateTime.now();
                                           final expires = now.add(const Duration(hours: 24));
                                           
-                                          sanitizedJson['createdAt'] = FirebaseKeyUtil.dateToSafeKey(now);
-                                          sanitizedJson['expiresAt'] = FirebaseKeyUtil.dateToSafeKey(expires);
+                                          sanitizedJson['createdAt'] = now.toIso8601String();
+                                          sanitizedJson['expiresAt'] = expires.toIso8601String();
                                           
-                                          // Sanitizar fechas dentro del objeto saleData si existe
+                                          // Fechas dentro del objeto saleData si existe
                                           if (sanitizedJson['saleData'] is Map) {
                                             final saleData = sanitizedJson['saleData'] as Map<String, dynamic>;
                                             if (saleData['purchaseDate'] != null) {
                                               try {
                                                 final purchaseDate = DateTime.parse(saleData['purchaseDate'].toString());
-                                                saleData['purchaseDate'] = FirebaseKeyUtil.dateToSafeKey(purchaseDate);
+                                                saleData['purchaseDate'] = purchaseDate.toIso8601String();
                                               } catch (e) {
                                                 print('Error al parsear fecha de compra: $e');
-                                                // Sanitizar manualmente si falla el parsing
-                                                saleData['purchaseDate'] = FirebaseKeyUtil.sanitizeKey(
-                                                    saleData['purchaseDate']?.toString() ?? '');
+                                                // Mantener la fecha original si falla el parsing
+                                                saleData['purchaseDate'] = saleData['purchaseDate']?.toString() ?? '';
                                               }
                                             }
                                           }
@@ -2629,25 +2626,11 @@ Para llamadas: 8098982876 ☎️
                                         updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
                                         Subscription.decreaseSubscriptionLimits(itemType: 'saleNumber', context: context);
                                         
-                                        // Sanitizar fecha para evitar errores de Firebase
-                                        String safePurchaseDate = post.purchaseDate;
-                                        try {
-                                          // Primero parsear a DateTime
-                                          DateTime parsedDate = DateTime.parse(safePurchaseDate);
-                                          // Luego convertir a un formato seguro para Firebase
-                                          safePurchaseDate = FirebaseKeyUtil.dateToSafeKey(parsedDate);
-                                          post.purchaseDate = safePurchaseDate;
-                                        } catch (e) {
-                                          print('ERROR al parsear fecha: $e');
-                                          // Si falla el parsing, sanitizar manualmente
-                                          safePurchaseDate = FirebaseKeyUtil.sanitizeKey(safePurchaseDate);
-                                          post.purchaseDate = safePurchaseDate;
-                                        }
-                                        
+                                        // Usar la fecha original de compra
                                         // Crear transacción diaria
                                         DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                           name: post.customerName,
-                                          date: safePurchaseDate,
+                                          date: post.purchaseDate,
                                           type: 'Sale',
                                           total: post.totalAmount!.toDouble(),
                                           paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
@@ -2676,7 +2659,7 @@ Para llamadas: 8098982876 ☎️
                                             int totalDue = previousDue + transitionModel.dueAmount!.toInt();
                                             await dueUpdateRef.child(key!).update({
                                               'due': '$totalDue',
-                                              'updated_at': FirebaseKeyUtil.dateToSafeKey(DateTime.now()),
+                                              'updated_at': DateTime.now().toIso8601String(),
                                             });
                                           } catch (e) {
                                             print('ERROR actualizando due cliente: ${e.toString()}');

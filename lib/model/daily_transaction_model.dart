@@ -1,7 +1,6 @@
 import 'package:salespro_admin/Screen/HRM/salaries%20list/model/pay_salary_model.dart';
 import 'package:salespro_admin/model/purchase_transation_model.dart';
 import 'package:salespro_admin/model/sale_transaction_model.dart';
-import 'package:salespro_admin/utils/firebase_key_util.dart';
 
 import 'due_transaction_model.dart';
 import 'expense_model.dart';
@@ -20,7 +19,7 @@ class DailyTransactionModel {
 
   DailyTransactionModel({
     required this.name,
-    required String date, // Cambiar a String para poder sanitizar
+    required this.date,
     required this.type,
     required this.total,
     required this.paymentIn,
@@ -33,44 +32,64 @@ class DailyTransactionModel {
     this.incomeModel,
     this.expenseModel,
     this.paySalary,
-  }) {
-    // Sanitizar la fecha en el constructor para garantizar que siempre sea segura
-    this.date = _sanitizeDate(date);
-  }
+  });
 
   DailyTransactionModel.fromJson(Map<String, dynamic> json) {
-    name = json['name'].toString();
-    // Sanitizar fecha al deserializar
-    date = _sanitizeDate(json['date'].toString());
-    type = json['type'].toString();
-    total = double.parse(json['total'].toString());
-    paymentIn = double.parse(json['paymentIn'].toString());
-    paymentOut = double.parse(json['paymentOut'].toString());
-    remainingBalance = double.parse(json['remainingBalance'].toString());
-    id = json['id'].toString();
+    name = json['name']?.toString() ?? '';
+    date = json['date']?.toString() ?? '';
+    type = json['type']?.toString() ?? '';
+    total = double.tryParse(json['total']?.toString() ?? '0') ?? 0.0;
+    paymentIn = double.tryParse(json['paymentIn']?.toString() ?? '0') ?? 0.0;
+    paymentOut = double.tryParse(json['paymentOut']?.toString() ?? '0') ?? 0.0;
+    remainingBalance = double.tryParse(json['remainingBalance']?.toString() ?? '0') ?? 0.0;
+    id = json['id']?.toString() ?? '';
     if (json['saleTransactionModel'] != null) {
-      saleTransactionModel = SaleTransactionModel.fromJson(json['saleTransactionModel']);
+      try {
+        saleTransactionModel = SaleTransactionModel.fromJson(json['saleTransactionModel']);
+      } catch (e) {
+        print('Error al parsear saleTransactionModel: $e');
+      }
     }
     if (json['purchaseTransactionModel'] != null) {
-      purchaseTransactionModel = PurchaseTransactionModel.fromJson(json['purchaseTransactionModel']);
+      try {
+        purchaseTransactionModel = PurchaseTransactionModel.fromJson(json['purchaseTransactionModel']);
+      } catch (e) {
+        print('Error al parsear purchaseTransactionModel: $e');
+      }
     }
     if (json['dueTransactionModel'] != null) {
-      dueTransactionModel = DueTransactionModel.fromJson(json['dueTransactionModel']);
+      try {
+        dueTransactionModel = DueTransactionModel.fromJson(json['dueTransactionModel']);
+      } catch (e) {
+        print('Error al parsear dueTransactionModel: $e');
+      }
     }
     if (json['incomeModel'] != null) {
-      incomeModel = IncomeModel.fromJson(json['incomeModel']);
+      try {
+        incomeModel = IncomeModel.fromJson(json['incomeModel']);
+      } catch (e) {
+        print('Error al parsear incomeModel: $e');
+      }
     }
     if (json['expenseModel'] != null) {
-      expenseModel = ExpenseModel.fromJson(json['expenseModel']);
+      try {
+        expenseModel = ExpenseModel.fromJson(json['expenseModel']);
+      } catch (e) {
+        print('Error al parsear expenseModel: $e');
+      }
     }
     if (json['paySalaryModel'] != null) {
-      paySalary = PaySalaryModel.fromJson(json['paySalaryModel']);
+      try {
+        paySalary = PaySalaryModel.fromJson(json['paySalaryModel']);
+      } catch (e) {
+        print('Error al parsear paySalaryModel: $e');
+      }
     }
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'name': name,
-        'date': _sanitizeDate(date), // Sanitizar nuevamente al serializar
+        'date': date,
         'type': type,
         'total': total,
         'paymentIn': paymentIn,
@@ -84,25 +103,4 @@ class DailyTransactionModel {
         'expenseModel': expenseModel?.toJson(),
         'paySalaryModel': paySalary?.toJson(),
       };
-      
-  // Método privado para sanitizar fechas
-  String _sanitizeDate(String dateStr) {
-    // Verificar si la fecha contiene caracteres no permitidos
-    if (dateStr.contains('.') || dateStr.contains('#') || 
-        dateStr.contains('\$') || dateStr.contains('[') || 
-        dateStr.contains(']') || dateStr.contains(' ')) {
-      
-      // Intentar parsear como DateTime si tiene formato de fecha
-      try {
-        final DateTime parsedDate = DateTime.parse(dateStr);
-        return FirebaseKeyUtil.dateToSafeKey(parsedDate);
-      } catch (e) {
-        // Si no se puede parsear, sanitizar manualmente
-        return FirebaseKeyUtil.sanitizeKey(dateStr);
-      }
-    }
-    
-    // Si ya está sanitizada, devolverla tal cual
-    return dateStr;
-  }
 }
