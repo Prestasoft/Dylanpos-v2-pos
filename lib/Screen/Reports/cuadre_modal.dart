@@ -497,12 +497,14 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
       const phoneNumber = '+59168774551';
 
       final body = {
-        'token': '5i36w829nb1ljkj7',
+        'token': '5i36w829nb1ljkj7', //token santo domingo
+        //'token': '5gs146cmkgu6y5vw', //token santiago
         'to': phoneNumber,
         'body': message,
       };
 
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat');
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat'); //instancia santo domingo
+      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/chat'); //instancia santiago
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
       final response = await http.post(
