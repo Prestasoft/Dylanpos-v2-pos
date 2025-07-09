@@ -1,6 +1,8 @@
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 import '../../commas.dart';
 import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
@@ -109,42 +111,6 @@ class _CuadreModalState extends State<CuadreModal> {
     for (var d in [...billetes, ...monedas]) {
       cantidades[d] = 0;
     }
-
-    // IMPORTANTE: Asumimos que todas las ventas son de hoy si no tienen fecha
-    // _ventasFiltradas = widget.ventasDelDia.where((v) {
-    //   final fechaStr = v['date'];
-    //   if (fechaStr == null || fechaStr is! String || fechaStr.isEmpty) {
-    //     // Asumimos que ventas sin fecha son de hoy
-    //     debugPrint('[CuadreModal] Venta sin fecha incluida: $v');
-    //     return true;
-    //   }
-
-    //   DateTime? fecha;
-    //   bool coincideHoy = false;
-    //   try {
-    //     fecha = DateTime.parse(fechaStr);
-    //     final fechaVenta = DateTime(fecha.year, fecha.month, fecha.day);
-    //     coincideHoy = fechaVenta == _hoy;
-    //   } catch (e) {
-    //     // Intentar parseo solo yyyy-MM-dd
-    //     try {
-    //       final partes = fechaStr.split('T')[0].split('-');
-    //       if (partes.length == 3) {
-    //         fecha = DateTime(int.parse(partes[0]), int.parse(partes[1]),
-    //             int.parse(partes[2]));
-    //         coincideHoy = fecha == _hoy;
-    //       }
-    //     } catch (e2) {
-    //       debugPrint(
-    //           '[CuadreModal] Venta ignorada por error de parseo: fechaStr=$fechaStr, venta=$v');
-    //     }
-    //   }
-    //   if (!coincideHoy) {
-    //     debugPrint(
-    //         '[CuadreModal] Venta ignorada por no ser de hoy: fechaStr=$fechaStr, venta=$v');
-    //   }
-    //   return coincideHoy;
-    // }).toList();
 
     // Usar directamente las ventas sin filtrar para calcular los totales
     _calcularTotalesDirectamente();
@@ -358,117 +324,6 @@ class _CuadreModalState extends State<CuadreModal> {
     setState(() => _loadingPagos = false);
   }
 
-  // double _calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
-  //   // double total = 0.0;
-  //   // debugPrint('[CuadreModal] CALCULANDO EFECTIVO DESDE FIREBASE:');
-  //   // dailyTransactions.forEach((key, value) {
-  //   //   final type = value['type'];
-  //   //   final id = value['id'] ?? value['invoiceNumber'];
-  //   //   // Para ventas, necesitamos considerar el monto pendiente
-  //   //   if (type == 'Sale') {
-  //   //     final paymentType = value['saleTransactionModel']?['paymentType'];
-  //   //     if (categorizarMetodoPago(paymentType) == 'Efectivo') {
-  //   //       final double montoTotal =
-  //   //           (value['paymentIn'] as num? ?? 0).toDouble();
-  //   //       final double montoPendiente =
-  //   //           (value['saleTransactionModel']?['dueAmount'] as num? ?? 0)
-  //   //               .toDouble();
-  //   //       final double montoPagado = montoTotal - montoPendiente;
-  //   //       total += montoPagado;
-  //   //       debugPrint(
-  //   //           '[CuadreModal] Firebase - Venta Efectivo ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
-  //   //     }
-  //   //   } else {
-  //   //     final paymentType = value['dueTransactionModel']?['paymentType'];
-  //   //     if (categorizarMetodoPago(paymentType) == 'Efectivo') {
-  //   //       final monto = (value['paymentIn'] as num? ?? 0).toDouble();
-  //   //       total += monto;
-  //   //       debugPrint(
-  //   //           '[CuadreModal] Firebase - Otro movimiento Efectivo ID $id: PaymentIn=$monto, Acumulado=$total');
-  //   //     }
-  //   //   }
-  //   // });
-  //   // debugPrint('[CuadreModal] TOTAL EFECTIVO DESDE FIREBASE: $total');
-  //   // return total;
-  //   double total = 0.0;
-  //   dailyTransactions.forEach((key, value) {
-  //     final type = value['type'];
-  //     final paymentType =
-  //         value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
-  //             ?['paymentType'];
-  //     if (categorizarMetodoPago(paymentType) == 'Efectivo') {
-  //       total += (value['paymentIn'] as num).toDouble();
-  //     }
-  //   });
-  //   return total;
-  // }
-  // double _calculateTotalCard(Map<String, dynamic> dailyTransactions) {
-  //   double total = 0.0;
-  //   debugPrint('[CuadreModal] CALCULANDO TARJETA DESDE FIREBASE:');
-  //   dailyTransactions.forEach((key, value) {
-  //     final type = value['type'];
-  //     final id = value['id'] ?? value['invoiceNumber'];
-  //     // Para ventas, necesitamos considerar el monto pendiente
-  //     if (type == 'Sale') {
-  //       final paymentType = value['saleTransactionModel']?['paymentType'];
-  //       if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
-  //         final double montoTotal =
-  //             (value['paymentIn'] as num? ?? 0).toDouble();
-  //         final double montoPendiente =
-  //             (value['saleTransactionModel']?['dueAmount'] as num? ?? 0)
-  //                 .toDouble();
-  //         final double montoPagado = montoTotal - montoPendiente;
-  //         total += montoPagado;
-  //         debugPrint(
-  //             '[CuadreModal] Firebase - Venta Tarjeta ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
-  //       }
-  //     } else {
-  //       final paymentType = value['dueTransactionModel']?['paymentType'];
-  //       if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
-  //         final monto = (value['paymentIn'] as num? ?? 0).toDouble();
-  //         total += monto;
-  //         debugPrint(
-  //             '[CuadreModal] Firebase - Otro movimiento Tarjeta ID $id: PaymentIn=$monto, Acumulado=$total');
-  //       }
-  //     }
-  //   });
-  //   debugPrint('[CuadreModal] TOTAL TARJETA DESDE FIREBASE: $total');
-  //   return total;
-  // }
-  // double _calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
-  //   double total = 0.0;
-  //   debugPrint('[CuadreModal] CALCULANDO TRANSFERENCIA DESDE FIREBASE:');
-  //   dailyTransactions.forEach((key, value) {
-  //     final type = value['type'];
-  //     final id = value['id'] ?? value['invoiceNumber'];
-  //     // Para ventas, necesitamos considerar el monto pendiente
-  //     if (type == 'Sale') {
-  //       final paymentType = value['saleTransactionModel']?['paymentType'];
-  //       if (categorizarMetodoPago(paymentType) == 'Transferencia') {
-  //         final double montoTotal =
-  //             (value['paymentIn'] as num? ?? 0).toDouble();
-  //         final double montoPendiente =
-  //             (value['saleTransactionModel']?['dueAmount'] as num? ?? 0)
-  //                 .toDouble();
-  //         final double montoPagado = montoTotal - montoPendiente;
-  //         total += montoPagado;
-  //         debugPrint(
-  //             '[CuadreModal] Firebase - Venta Transferencia ID $id: PaymentIn=$montoTotal, Pendiente=$montoPendiente, Pagado=$montoPagado, Acumulado=$total');
-  //       }
-  //     } else {
-  //       final paymentType = value['dueTransactionModel']?['paymentType'];
-  //       if (categorizarMetodoPago(paymentType) == 'Transferencia') {
-  //         final monto = (value['paymentIn'] as num? ?? 0).toDouble();
-  //         total += monto;
-  //         debugPrint(
-  //             '[CuadreModal] Firebase - Otro movimiento Transferencia ID $id: PaymentIn=$monto, Acumulado=$total');
-  //       }
-  //     }
-  //   });
-
-  //   debugPrint('[CuadreModal] TOTAL TRANSFERENCIA DESDE FIREBASE: $total');
-  //   return total;
-  // }
   double calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
     double total = 0.0;
     dailyTransactions.forEach((key, value) {
@@ -593,306 +448,111 @@ class _CuadreModalState extends State<CuadreModal> {
     return totalVentasNetoDelDia - widget.totalGastos;
   }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   debugPrint('[CuadreModal] build ejecutado. ventasFiltradas: \\${_ventasFiltradas.length}');
-  //   logDebugData(); // Log en cada build para ver los datos en tiempo real
-  //   // Filtro visual y mensajes de ventas vacías eliminados para limpiar la UI
-  //   return AlertDialog(
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-  //     title: Row(
-  //       children: [
-  //         const Icon(Icons.calculate, color: Colors.blueAccent),
-  //         const SizedBox(width: 8),
-  //         const Text('Cuadre de Caja', style: TextStyle(fontWeight: FontWeight.bold)),
-  //       ],
-  //     ),
-  //     content: SingleChildScrollView(
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           // Filtro de rango de fechas eliminado
-  //           // Detalle de ventas filtradas eliminado
-  //           Card(
-  //             color: Colors.blue.shade50,
-  //             margin: const EdgeInsets.only(bottom: 12),
-  //             child: Padding(
-  //               padding: const EdgeInsets.all(10.0),
-  //               child: _loadingPagos
-  //                   ? const Center(child: CircularProgressIndicator())
-  //                   : Column(
-  //                       crossAxisAlignment: CrossAxisAlignment.start,
-  //                       children: [
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.summarize, color: Colors.blue),
-  //                             const SizedBox(width: 6),
-  //                             Text('Total de Ventas del Día: ', style: TextStyle(fontWeight: FontWeight.bold)),
-  //                             Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-  //                             const SizedBox(width: 4),
-  //                             Tooltip(
-  //                               message: 'Monto total de ventas para el día actual',
-  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                         const SizedBox(height: 4), // Pequeño espacio entre las filas
-  //                         // Mostrar siempre el total pendiente, incluso si es cero
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.warning_amber_rounded, color: Colors.amber),
-  //                             const SizedBox(width: 6),
-  //                             Text('Total Pendiente por Cobrar: ', style: TextStyle(fontWeight: FontWeight.w600)),
-  //                             Text('RD\$${formatCurrency(totalPendiente)}', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-  //                             const SizedBox(width: 4),
-  //                             Tooltip(
-  //                               message: 'Monto pendiente por cobrar de las ventas del día',
-  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                         const SizedBox(height: 8),
-  //                         const Divider(thickness: 1, color: Colors.grey),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.attach_money, color: Colors.green),
-  //                             const SizedBox(width: 6),
-  //                             Text('Pagos en Efectivo (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
-  //                             Text('RD\$${formatCurrency(totalEfectivo)}', style: const TextStyle(color: Colors.green)),
-  //                             const SizedBox(width: 4),
-  //                             Tooltip(
-  //                               message: 'Total pagado restando montos pendientes',
-  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                         if (pagoEfectivo > 0)
-  //                           Row(
-  //                             children: [
-  //                               const SizedBox(width: 24),  // Indentación para mostrar que es un subítem
-  //                               const Icon(Icons.arrow_circle_down_outlined, color: Colors.redAccent, size: 18),
-  //                               const SizedBox(width: 6),
-  //                               Text('Pagos salida efectivo: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-  //                               Text('-RD\$${formatCurrency(pagoEfectivo)}', style: const TextStyle(color: Colors.redAccent, fontSize: 14)),
-  //                             ],
-  //                           ),
-  //                         if (pagoEfectivo > 0)
-  //                           Row(
-  //                             children: [
-  //                               const SizedBox(width: 24),  // Indentación para mostrar que es un subítem
-  //                               const Icon(Icons.check_circle_outline, color: Colors.teal, size: 18),
-  //                               const SizedBox(width: 6),
-  //                               Text('Efectivo neto: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-  //                               Text('RD\$${formatCurrency(efectivoNeto)}', style: const TextStyle(color: Colors.teal, fontSize: 14, fontWeight: FontWeight.w600)),
-  //                             ],
-  //                           ),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.credit_card, color: Colors.deepPurple),
-  //                             const SizedBox(width: 6),
-  //                             Text('Pagos con Tarjeta (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
-  //                             Text('RD\$${formatCurrency(totalTarjeta)}', style: const TextStyle(color: Colors.deepPurple)),
-  //                             const SizedBox(width: 4),
-  //                             Tooltip(
-  //                               message: 'Total pagado restando montos pendientes',
-  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.swap_horiz, color: Colors.orange),
-  //                             const SizedBox(width: 6),
-  //                             Text('Pagos por Transferencia (real): ', style: TextStyle(fontWeight: FontWeight.w600)),
-  //                             Text('RD\$${formatCurrency(totalTransferencia)}', style: const TextStyle(color: Colors.orange)),
-  //                             const SizedBox(width: 4),
-  //                             Tooltip(
-  //                               message: 'Total pagado restando montos pendientes',
-  //                               child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                         const SizedBox(height: 8),
-  //                         const Divider(thickness: 1, color: Colors.grey),
-  //                         // Resumen de Entradas y Salidas
-  //                         Padding(
-  //                           padding: const EdgeInsets.symmetric(vertical: 8.0),
-  //                           child: Text('Resumen de Movimientos:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-  //                         ),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.arrow_circle_up, color: Colors.green),
-  //                             const SizedBox(width: 6),
-  //                             Text('Entradas Totales: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-  //                             Text('RD\$${formatCurrency(totalVentasDia)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 15)),
-  //                           ],
-  //                         ),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.arrow_circle_down, color: Colors.red),
-  //                             const SizedBox(width: 6),
-  //                             Text('Salidas (Pagos): ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-  //                             Text('RD\$${formatCurrency(totalPagos)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 15)),
-  //                           ],
-  //                         ),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.account_balance, color: Colors.teal),
-  //                             const SizedBox(width: 6),
-  //                             Text('Total Neto de Ventas: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-  //                             Text('RD\$${formatCurrency(totalVentasNetoDelDia)}', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 16)),
-  //                           ],
-  //                         ),
-  //                         const SizedBox(height: 8),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.remove_circle, color: Colors.red),
-  //                             const SizedBox(width: 6),
-  //                             Text('Total Gastos del Día: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-  //                             Text('RD\$${formatCurrency(widget.totalGastos)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 15)),
-  //                           ],
-  //                         ),
-  //                         const SizedBox(height: 8),
-  //                         const Divider(thickness: 2, color: Colors.green),
-  //                         Row(
-  //                           children: [
-  //                             const Icon(Icons.trending_up, color: Colors.green),
-  //                             const SizedBox(width: 6),
-  //                             Text('Balance Neto del Día: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
-  //                             Text('RD\$${formatCurrency(totalNetoPorDia)}', style: TextStyle(color: totalNetoPorDia >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
-  //                           ],
-  //                         ),
-  //                       ],
-  //                     ),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 10),
-  //           const Text('Ingrese la cantidad de cada denominación:', style: TextStyle(fontWeight: FontWeight.w600)),
-  //           const SizedBox(height: 8),
-  //           Container(
-  //             decoration: BoxDecoration(
-  //               color: Colors.grey.shade100,
-  //               borderRadius: BorderRadius.circular(12),
-  //             ),
-  //             child: Padding(
-  //               padding: const EdgeInsets.all(8.0),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   // Sección de billetes
-  //                   const Text('Billetes:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-  //                   const SizedBox(height: 4),
-  //                   Column(
-  //                     children: [
-  //                       Row(
-  //                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //                         children: billetes.sublist(0, 3).map((denominacion) =>
-  //                           SizedBox(
-  //                             width: MediaQuery.of(context).size.width * 0.25,
-  //                             child: _buildDenInputCompacto(denominacion, 'Billete', imagenesBilletes[denominacion])
-  //                           )
-  //                         ).toList(),
-  //                       ),
-  //                       const SizedBox(height: 8),
-  //                       Row(
-  //                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //                         children: billetes.sublist(3).map((denominacion) =>
-  //                           SizedBox(
-  //                             width: MediaQuery.of(context).size.width * 0.25,
-  //                             child: _buildDenInputCompacto(denominacion, 'Billete', imagenesBilletes[denominacion])
-  //                           )
-  //                         ).toList(),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                   const SizedBox(height: 12),
-  //                   // Sección de monedas
-  //                   const Text('Monedas:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-  //                   const SizedBox(height: 4),
-  //                   Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //                     children: monedas.map((denominacion) =>
-  //                       SizedBox(
-  //                         width: MediaQuery.of(context).size.width * 0.2,
-  //                         child: _buildDenInputCompacto(denominacion, 'Moneda', imagenesMonedas[denominacion])
-  //                       )
-  //                     ).toList(),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 16),
-  //           Center(
-  //             child: Column(
-  //               children: [
-  //                 Text('Total contado en efectivo: RD\$${formatCurrency(totalContado)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-  //                 const SizedBox(height: 4),
-  //                 Text('(Solo se cuenta el efectivo físico)', style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
-  //                 const SizedBox(height: 8),
-  //                 AnimatedContainer(
-  //                   duration: const Duration(milliseconds: 300),
-  //                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-  //                   decoration: BoxDecoration(
-  //                     color: totalContado == efectivoNeto ? Colors.green.shade100 : Colors.red.shade100,
-  //                     borderRadius: BorderRadius.circular(8),
-  //                   ),
-  //                   child: Text(
-  //                     totalContado == efectivoNeto
-  //                         ? '¡El cuadre de efectivo coincide!'
-  //                         : 'Diferencia en efectivo: RD\$${formatCurrency(totalContado - efectivoNeto)}',
-  //                     style: TextStyle(
-  //                       color: totalContado == efectivoNeto ? Colors.green : Colors.red,
-  //                       fontWeight: FontWeight.bold,
-  //                       fontSize: 16,
-  //                     ),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           // Mensaje de ventas vacías eliminado
-  //         ],
-  //       ),
-  //     ),
-  //     actions: [
-  //       TextButton(
-  //         onPressed: () => Navigator.of(context).pop(),
-  //         child: const Text('Cerrar'),
-  //       ),
-  //       ElevatedButton(
-  //         style: ElevatedButton.styleFrom(
-  //           backgroundColor: Colors.blueAccent,
-  //           foregroundColor: Colors.white,
-  //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-  //         ),
-  //         onPressed: () {
-  //           // Log extra al presionar "Cuadrar"
-  //           logDebugData();
-  //           // Mostramos un resumen en SnackBar
-  //           ScaffoldMessenger.of(context).showSnackBar(
-  //             SnackBar(
-  //               backgroundColor: Colors.green.shade800,
-  //               content: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 children: [
-  //                   Text('Cuadre confirmado correctamente', style: TextStyle(fontWeight: FontWeight.bold)),
-  //                   const SizedBox(height: 4),
-  //                   Text('Ventas del día: RD\$${formatCurrency(totalVentasDia)}'),
-  //                   Text('Pendientes por cobrar: RD\$${formatCurrency(totalPendiente)}'),
-  //                   Text('Total en caja: RD\$${formatCurrency(totalContado)}'),
-  //                 ],
-  //               ),
-  //               duration: const Duration(seconds: 5),
-  //             ),
-  //           );
-  //         },
-  //         child: const Text('Cuadrar'),
-  //       ),
-  //     ],
-  //   );
-  // }
+  // Método para generar el reporte de cuadre en formato de texto
+  String _generateReportText() {
+  final now = DateTime.now();
+  final formattedDate = '${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}';
+  final bool cuadreOk = totalContado == efectivoNeto;
+  final diferencia = (totalContado - efectivoNeto).abs();
+  
+  return '''🏪 CUADRE DE CAJA
+📅 ${_getFormattedDate(now)}
+
+📊 RESUMEN DEL DÍA
+💰 Total Ventas: \$${formatCurrency(totalVentasDia)} RD\$
+⏰ Pendiente: \$${formatCurrency(totalPendiente)} RD\$
+💵 Efectivo Neto: \$${formatCurrency(efectivoNeto)} RD\$
+🛒 Total Gastos: \$${formatCurrency(widget.totalGastos)} RD\$
+
+💳 MÉTODOS DE PAGO
+💵 Efectivo: \$${formatCurrency(totalEfectivo)} RD\$
+💳 Tarjeta: \$${formatCurrency(totalTarjeta)} RD\$
+🔄 Transferencia: \$${formatCurrency(totalTransferencia)} RD\$
+
+💰 EFECTIVO FÍSICO
+📦 Total Contado: \$${formatCurrency(totalContado)} RD\$
+${cuadreOk ? '✅ Cuadre Perfecto' : '⚠️ Diferencia: \$${formatCurrency(diferencia)} RD\$'}
+
+📈 BALANCE FINAL
+💰 Balance Neto: \$${formatCurrency(totalNetoPorDia)} RD\$
+
+---
+Generado: $formattedDate
+Sistema: VICTOR GUZMAN FOTOGRAFIA''';
+}
+
+  // Método auxiliar para formatear la fecha
+  String _getFormattedDate(DateTime date) {
+    final days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    final months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    
+    return '${days[date.weekday]}, ${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  Future<void> _sendReportViaWhatsApp(BuildContext context) async {
+    try {
+      EasyLoading.show(status: 'Enviando reporte de cuadre...');
+
+      final message = _generateReportText();
+      const phoneNumber = '+59168774551';
+
+      final body = {
+        'token': '5i36w829nb1ljkj7',
+        'to': phoneNumber,
+        'body': message,
+      };
+
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat');
+      final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        EasyLoading.showSuccess('Reporte de cuadre enviado');
+        // Mostrar el SnackBar usando el contexto del Scaffold padre
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(); // Cierra el diálogo primero
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green.shade600,
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Cuadre Confirmado',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text('Ventas: RD\$${formatCurrency(totalVentasDia)}'),
+                Text('Pendientes: RD\$${formatCurrency(totalPendiente)}'),
+                Text('Efectivo: RD\$${formatCurrency(totalContado)}'),
+              ],
+            ),
+            duration: const Duration(seconds: 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      } else {
+        throw Exception('Error en WhatsApp API: ${response.body}');
+      }
+    } catch (e) {
+      EasyLoading.showError('Error al enviar reporte: ${e.toString()}');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 500));
+      EasyLoading.dismiss();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1398,32 +1058,7 @@ class _CuadreModalState extends State<CuadreModal> {
           child: ElevatedButton(
             onPressed: () {
               logDebugData();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.green.shade600,
-                  content: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Cuadre Confirmado',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text('Ventas: RD\$${formatCurrency(totalVentasDia)}'),
-                      Text('Pendientes: RD\$${formatCurrency(totalPendiente)}'),
-                      Text('Efectivo: RD\$${formatCurrency(totalContado)}'),
-                    ],
-                  ),
-                  duration: const Duration(seconds: 4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
+              _sendReportViaWhatsApp(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue.shade600,
@@ -1443,7 +1078,7 @@ class _CuadreModalState extends State<CuadreModal> {
     );
   }
 
-// Métodos auxiliares para construir componentes
+  // Métodos auxiliares para construir componentes
   Widget _buildMetricCard(
       String title, String value, IconData icon, Color color) {
     return Container(
@@ -1720,7 +1355,6 @@ class _CuadreModalState extends State<CuadreModal> {
     );
   }
 
-// Actualización para el método _buildDenominationSection
   Widget _buildDenominationSection(
       String title, List<dynamic> denominations, Map<dynamic, String> images) {
     return Column(
@@ -1765,84 +1399,7 @@ class _CuadreModalState extends State<CuadreModal> {
                     ))
                 .toList(),
           ),
-
-        // Opción 3: Lista vertical (alternativa)
-        // Column(
-        //   children: denominations.map((denominacion) =>
-        //     _buildDenInputHorizontal(denominacion, title.substring(0, title.length - 1), images[denominacion])
-        //   ).toList(),
-        // ),
       ],
     );
   }
-  // Widget _buildDenInputCompacto(int denominacion, String tipo, String? imagen) {
-  //   return Container(
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(8),
-  //       border: Border.all(color: Colors.grey.shade300),
-  //     ),
-  //     child: Padding(
-  //       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-  //       child: Row(
-  //         children: [
-  //           if (imagen != null)
-  //             Container(
-  //               width: 36,
-  //               height: 28,
-  //               margin: const EdgeInsets.only(right: 6),                  child: ClipRRect(
-  //                 borderRadius: BorderRadius.circular(4),
-  //                 child: SvgPicture.asset(
-  //                   imagen,
-  //                   fit: BoxFit.contain,
-  //                   placeholderBuilder: (context) => const Icon(Icons.money, color: Colors.grey, size: 18),
-  //                   // Añadimos manejo de errores explícito
-  //                   width: 30,
-  //                   height: 24,
-  //                 ),
-  //               ),
-  //             ),
-  //           Expanded(
-  //             child: Column(
-  //               mainAxisAlignment: MainAxisAlignment.center,
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text('RD$denominacion',
-  //                   style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-  //                   overflow: TextOverflow.ellipsis,
-  //                 ),
-  //                 SizedBox(
-  //                   height: 20,
-  //                   child: TextFormField(
-  //                     initialValue: cantidades[denominacion]?.toString() ?? '0',
-  //                     keyboardType: TextInputType.number,
-  //                     decoration: InputDecoration(
-  //                       isDense: true,
-  //                       contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-  //                       border: OutlineInputBorder(
-  //                         borderRadius: BorderRadius.circular(4),
-  //                         borderSide: BorderSide(color: Colors.grey.shade400),
-  //                       ),
-  //                       fillColor: Colors.grey.shade50,
-  //                       filled: true,
-  //                     ),
-  //                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-  //                     onChanged: (val) {
-  //                       final newValue = int.tryParse(val) ?? 0;
-  //                       if (mounted) {
-  //                         setState(() {
-  //                           cantidades[denominacion] = newValue;
-  //                         });
-  //                       }
-  //                     },
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }

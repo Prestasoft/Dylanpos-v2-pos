@@ -297,232 +297,436 @@ final reservationsByBranchProvider =
 // Provider actualizado
 
 // En tu provider de reservaciones, añade un método para verificar disponibilidad
+// final isDressAvailableForRangeProvider =
+//     FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
+//   final String dressId = params['dressId'];
+//   final String startDate =
+//       params['startDate']; // Fecha de inicio formato 'YYYY-MM-DD'
+//   final Map<String, dynamic> durationMap =
+//       params['duration']; // Duración como Map
+
+//   try {
+//     // Convertir fecha de inicio a DateTime
+//     final startDateTime = DateTime.parse(startDate);
+
+//     // Calcular fecha de fin basada en la duración
+//     DateTime endDateTime;
+//     if (durationMap['unit'] == 'days') {
+//       endDateTime = startDateTime.add(Duration(days: durationMap['value']));
+//     } else if (durationMap['unit'] == 'hours') {
+//       // Para duraciones cortas en horas, podemos asumir que es el mismo día
+//       endDateTime = startDateTime.add(Duration(hours: durationMap['value']));
+//     } else {
+//       // Valor predeterminado: considerar un día
+//       endDateTime = startDateTime.add(Duration(days: 1));
+//     }
+
+//     // Obtener todas las reservas para este vestido
+//     final DatabaseReference dbRef =
+//         FirebaseDatabase.instance.ref('Admin Panel/reservations');
+//     final DatabaseEvent event =
+//         await dbRef.orderByChild('dress_id').equalTo(dressId).once();
+
+//     // Logica nueva para verificar disponibilidad en Reservas Compuestas
+//     final snapshotC = await dbRef.once();
+//     final data = snapshotC.snapshot.value;
+//     List<Map<String, String>> allDresses = [];
+//     List<Map<dynamic, dynamic>> allDressReservation = [];
+
+//     if (data is Map) {
+//       data.forEach((reservationId, reservationData) {
+//         if (reservationData is Map) {
+//           final dresses = reservationData['multiple_dress'];
+//           if (dresses is List) {
+//             for (var dress in dresses) {
+//               if (dress is Map && dress.containsKey('dress_id')) {
+//                 allDresses.add({
+//                   'dress_id': dress['dress_id'].toString(),
+//                   'service_id': reservationData['service_id'].toString(),
+//                   'reservation_date': reservationData['reservation_date'],
+//                   'reservation_time': reservationData['reservation_time'],
+//                 });
+//               }
+//             }
+//           }
+//         }
+//       });
+//     }
+
+//     if (allDresses.isNotEmpty) {
+//       for (var dress in allDresses) {
+//         if (dress is Map && dress['dress_id'] == dressId) {
+//           // Guardamos la reserva entera
+//           allDressReservation.add(dress);
+//         }
+//       }
+
+//       if (allDressReservation.isNotEmpty) {
+//         for (var _reservation in allDressReservation) {
+//           // Convertir fecha de reserva a DateTime
+//           final String reservationDateStr = _reservation['reservation_date'];
+//           final DateTime reservationStart = DateTime.parse(reservationDateStr);
+
+//           // Obtener la duración de esa reserva (del paquete asociado)
+//           final String serviceId = _reservation['service_id'];
+
+//           // Obtener el paquete directamente
+//           final serviceSnapshot = await FirebaseDatabase.instance
+//               .ref('Admin Panel/services/$serviceId')
+//               .get();
+
+//           if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
+//             final Map<dynamic, dynamic> serviceData =
+//                 serviceSnapshot.value as Map<dynamic, dynamic>;
+//             final Map<String, dynamic> reservationDurationMap =
+//                 (serviceData['duration'] is Map)
+//                     ? Map<String, dynamic>.from(serviceData['duration'])
+//                     : {'value': 1, 'unit': 'days'};
+
+//             final rentas = ref
+//                 .read(servicePackagesProvider.notifier)
+//                 .searchPackages("Renta de Vestimenta");
+//             final String packageRentaId =
+//                 rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
+
+//             DateTime reservationUseStart;
+//             DateTime reservationUseEnd;
+
+//             // Verifico si el vestido es una renta
+//             if (packageRentaId == _reservation['service_id']) {
+//               reservationUseStart = DateTime(
+//                   reservationStart.year,
+//                   reservationStart.month,
+//                   reservationStart.day - 1, // Día siguiente
+//                   00,
+//                   00,
+//                   00);
+
+//               reservationUseEnd = DateTime(
+//                   reservationStart.year,
+//                   reservationStart.month,
+//                   reservationStart.day + 1, // Día siguiente
+//                   23,
+//                   59,
+//                   59);
+//             } else {
+//               // Calcular la fecha de fin de la reserva existente
+
+//               reservationUseStart = reservationStart;
+
+//               if (reservationDurationMap['unit'] == 'days') {
+//                 reservationUseEnd = reservationStart
+//                     .add(Duration(days: reservationDurationMap['value']));
+//               } else if (reservationDurationMap['unit'] == 'hours') {
+//                 reservationUseEnd = reservationStart
+//                     .add(Duration(hours: reservationDurationMap['value']));
+//               } else {
+//                 reservationUseEnd = reservationStart.add(Duration(days: 1));
+//               }
+//             }
+
+//             // Verificar superposición
+//             if (!(endDateTime.isBefore(reservationUseStart) ||
+//                 startDateTime.isAfter(reservationUseEnd))) {
+//               return false; // Hay superposición, no está disponible
+//             }
+//           }
+//         }
+//       }
+//     }
+
+//     // Logica para verificar disponibilidad en Reservas Simples
+//     final snapshot = event.snapshot;
+//     if (snapshot.value == null)
+//       return true; // No hay reservas para este vestido
+
+//     if (snapshot.value is Map) {
+//       final Map<dynamic, dynamic> data =
+//           snapshot.value as Map<dynamic, dynamic>;
+
+//       // Verificar si alguna reserva existente se superpone con el período deseado
+//       for (var reservation in data.values) {
+//         if (reservation is Map) {
+//           // Convertir fecha de reserva a DateTime
+//           final String reservationDateStr = reservation['reservation_date'];
+//           final DateTime reservationStart = DateTime.parse(reservationDateStr);
+
+//           // Obtener la duración de esa reserva (del paquete asociado)
+//           final String serviceId = reservation['service_id'];
+
+//           // Obtener el paquete directamente
+//           final serviceSnapshot = await FirebaseDatabase.instance
+//               .ref('Admin Panel/services/$serviceId')
+//               .get();
+
+//           if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
+//             final Map<dynamic, dynamic> serviceData =
+//                 serviceSnapshot.value as Map<dynamic, dynamic>;
+//             final Map<String, dynamic> reservationDurationMap =
+//                 (serviceData['duration'] is Map)
+//                     ? Map<String, dynamic>.from(serviceData['duration'])
+//                     : {'value': 1, 'unit': 'days'};
+
+//             final rentas = ref
+//                 .read(servicePackagesProvider.notifier)
+//                 .searchPackages("Renta de Vestimenta");
+//             final String packageRentaId =
+//                 rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
+//             DateTime reservationUseStart;
+//             DateTime reservationUseEnd;
+
+//             // Verifico si el vestido es una renta
+//             if (packageRentaId == reservation['service_id']) {
+//               reservationUseStart = DateTime(
+//                   reservationStart.year,
+//                   reservationStart.month,
+//                   reservationStart.day - 1, // Día siguiente
+//                   00,
+//                   00,
+//                   00);
+
+//               reservationUseEnd = DateTime(
+//                   reservationStart.year,
+//                   reservationStart.month,
+//                   reservationStart.day + 1, // Día siguiente
+//                   23,
+//                   59,
+//                   59);
+//             } else {
+//               // Calcular la fecha de fin de la reserva existente
+
+//               reservationUseStart = reservationStart;
+
+//               if (reservationDurationMap['unit'] == 'days') {
+//                 reservationUseEnd = reservationStart
+//                     .add(Duration(days: reservationDurationMap['value']));
+//               } else if (reservationDurationMap['unit'] == 'hours') {
+//                 reservationUseEnd = reservationStart
+//                     .add(Duration(hours: reservationDurationMap['value']));
+//               } else {
+//                 reservationUseEnd = reservationStart.add(Duration(days: 1));
+//               }
+//             }
+
+//             // Verificar superposición
+//             if (!(endDateTime.isBefore(reservationUseStart) ||
+//                 startDateTime.isAfter(reservationUseEnd))) {
+//               return false; // Hay superposición, no está disponible
+//             }
+//           }
+//         }
+//       }
+//     }
+
+//     return true; // Está disponible
+//   } catch (e) {
+//     return false; // En caso de error, asumimos que no está disponible
+//   }
+// });
 final isDressAvailableForRangeProvider =
     FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
   final String dressId = params['dressId'];
-  final String startDate =
-      params['startDate']; // Fecha de inicio formato 'YYYY-MM-DD'
-  final Map<String, dynamic> durationMap =
-      params['duration']; // Duración como Map
+  final String startDate = params['startDate'];
+  final Map<String, dynamic> durationMap = params['duration'];
 
   try {
-    // Convertir fecha de inicio a DateTime
     final startDateTime = DateTime.parse(startDate);
+    DateTime endDateTime = _calculateEndDateTime(startDateTime, durationMap);
 
-    // Calcular fecha de fin basada en la duración
-    DateTime endDateTime;
-    if (durationMap['unit'] == 'days') {
-      endDateTime = startDateTime.add(Duration(days: durationMap['value']));
-    } else if (durationMap['unit'] == 'hours') {
-      // Para duraciones cortas en horas, podemos asumir que es el mismo día
-      endDateTime = startDateTime.add(Duration(hours: durationMap['value']));
-    } else {
-      // Valor predeterminado: considerar un día
-      endDateTime = startDateTime.add(Duration(days: 1));
+    final DatabaseReference dbRef = FirebaseDatabase.instance.ref('Admin Panel/reservations');
+    
+    // 1. Verificar disponibilidad en reservas principales (dress_id directo)
+    final simpleReservations = await dbRef.orderByChild('dress_id').equalTo(dressId).once();
+    if (!await _checkSimpleReservations(simpleReservations, startDateTime, endDateTime)) {
+      return false;
     }
 
-    // Obtener todas las reservas para este vestido
-    final DatabaseReference dbRef =
-        FirebaseDatabase.instance.ref('Admin Panel/reservations');
-    final DatabaseEvent event =
-        await dbRef.orderByChild('dress_id').equalTo(dressId).once();
-
-    // Logica nueva para verificar disponibilidad en Reservas Compuestas
-    final snapshotC = await dbRef.once();
-    final data = snapshotC.snapshot.value;
-    List<Map<String, String>> allDresses = [];
-    List<Map<dynamic, dynamic>> allDressReservation = [];
-
-    if (data is Map) {
-      data.forEach((reservationId, reservationData) {
-        if (reservationData is Map) {
-          final dresses = reservationData['multiple_dress'];
-          if (dresses is List) {
-            for (var dress in dresses) {
-              if (dress is Map && dress.containsKey('dress_id')) {
-                allDresses.add({
-                  'dress_id': dress['dress_id'].toString(),
-                  'service_id': reservationData['service_id'].toString(),
-                  'reservation_date': reservationData['reservation_date'],
-                  'reservation_time': reservationData['reservation_time'],
-                });
-              }
-            }
-          }
-        }
-      });
+    // 2. Verificar disponibilidad en multiple_dress de reservas principales
+    if (!await _checkMultipleDressInMainReservations(dbRef, dressId, startDateTime, endDateTime)) {
+      return false;
     }
 
-    if (allDresses.isNotEmpty) {
-      for (var dress in allDresses) {
-        if (dress is Map && dress['dress_id'] == dressId) {
-          // Guardamos la reserva entera
-          allDressReservation.add(dress);
-        }
-      }
-
-      if (allDressReservation.isNotEmpty) {
-        for (var _reservation in allDressReservation) {
-          // Convertir fecha de reserva a DateTime
-          final String reservationDateStr = _reservation['reservation_date'];
-          final DateTime reservationStart = DateTime.parse(reservationDateStr);
-
-          // Obtener la duración de esa reserva (del paquete asociado)
-          final String serviceId = _reservation['service_id'];
-
-          // Obtener el paquete directamente
-          final serviceSnapshot = await FirebaseDatabase.instance
-              .ref('Admin Panel/services/$serviceId')
-              .get();
-
-          if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
-            final Map<dynamic, dynamic> serviceData =
-                serviceSnapshot.value as Map<dynamic, dynamic>;
-            final Map<String, dynamic> reservationDurationMap =
-                (serviceData['duration'] is Map)
-                    ? Map<String, dynamic>.from(serviceData['duration'])
-                    : {'value': 1, 'unit': 'days'};
-
-            final rentas = ref
-                .read(servicePackagesProvider.notifier)
-                .searchPackages("Renta de Vestimenta");
-            final String packageRentaId =
-                rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
-
-            DateTime reservationUseStart;
-            DateTime reservationUseEnd;
-
-            // Verifico si el vestido es una renta
-            if (packageRentaId == _reservation['service_id']) {
-              reservationUseStart = DateTime(
-                  reservationStart.year,
-                  reservationStart.month,
-                  reservationStart.day - 1, // Día siguiente
-                  00,
-                  00,
-                  00);
-
-              reservationUseEnd = DateTime(
-                  reservationStart.year,
-                  reservationStart.month,
-                  reservationStart.day + 1, // Día siguiente
-                  23,
-                  59,
-                  59);
-            } else {
-              // Calcular la fecha de fin de la reserva existente
-
-              reservationUseStart = reservationStart;
-
-              if (reservationDurationMap['unit'] == 'days') {
-                reservationUseEnd = reservationStart
-                    .add(Duration(days: reservationDurationMap['value']));
-              } else if (reservationDurationMap['unit'] == 'hours') {
-                reservationUseEnd = reservationStart
-                    .add(Duration(hours: reservationDurationMap['value']));
-              } else {
-                reservationUseEnd = reservationStart.add(Duration(days: 1));
-              }
-            }
-
-            // Verificar superposición
-            if (!(endDateTime.isBefore(reservationUseStart) ||
-                startDateTime.isAfter(reservationUseEnd))) {
-              return false; // Hay superposición, no está disponible
-            }
-          }
-        }
-      }
+    // 3. Verificar disponibilidad en aditionals
+    if (!await _checkAditionals(dbRef, dressId, startDateTime, endDateTime)) {
+      return false;
     }
 
-    // Logica para verificar disponibilidad en Reservas Simples
-    final snapshot = event.snapshot;
-    if (snapshot.value == null)
-      return true; // No hay reservas para este vestido
-
-    if (snapshot.value is Map) {
-      final Map<dynamic, dynamic> data =
-          snapshot.value as Map<dynamic, dynamic>;
-
-      // Verificar si alguna reserva existente se superpone con el período deseado
-      for (var reservation in data.values) {
-        if (reservation is Map) {
-          // Convertir fecha de reserva a DateTime
-          final String reservationDateStr = reservation['reservation_date'];
-          final DateTime reservationStart = DateTime.parse(reservationDateStr);
-
-          // Obtener la duración de esa reserva (del paquete asociado)
-          final String serviceId = reservation['service_id'];
-
-          // Obtener el paquete directamente
-          final serviceSnapshot = await FirebaseDatabase.instance
-              .ref('Admin Panel/services/$serviceId')
-              .get();
-
-          if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
-            final Map<dynamic, dynamic> serviceData =
-                serviceSnapshot.value as Map<dynamic, dynamic>;
-            final Map<String, dynamic> reservationDurationMap =
-                (serviceData['duration'] is Map)
-                    ? Map<String, dynamic>.from(serviceData['duration'])
-                    : {'value': 1, 'unit': 'days'};
-
-            final rentas = ref
-                .read(servicePackagesProvider.notifier)
-                .searchPackages("Renta de Vestimenta");
-            final String packageRentaId =
-                rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
-            DateTime reservationUseStart;
-            DateTime reservationUseEnd;
-
-            // Verifico si el vestido es una renta
-            if (packageRentaId == reservation['service_id']) {
-              reservationUseStart = DateTime(
-                  reservationStart.year,
-                  reservationStart.month,
-                  reservationStart.day - 1, // Día siguiente
-                  00,
-                  00,
-                  00);
-
-              reservationUseEnd = DateTime(
-                  reservationStart.year,
-                  reservationStart.month,
-                  reservationStart.day + 1, // Día siguiente
-                  23,
-                  59,
-                  59);
-            } else {
-              // Calcular la fecha de fin de la reserva existente
-
-              reservationUseStart = reservationStart;
-
-              if (reservationDurationMap['unit'] == 'days') {
-                reservationUseEnd = reservationStart
-                    .add(Duration(days: reservationDurationMap['value']));
-              } else if (reservationDurationMap['unit'] == 'hours') {
-                reservationUseEnd = reservationStart
-                    .add(Duration(hours: reservationDurationMap['value']));
-              } else {
-                reservationUseEnd = reservationStart.add(Duration(days: 1));
-              }
-            }
-
-            // Verificar superposición
-            if (!(endDateTime.isBefore(reservationUseStart) ||
-                startDateTime.isAfter(reservationUseEnd))) {
-              return false; // Hay superposición, no está disponible
-            }
-          }
-        }
-      }
-    }
-
-    return true; // Está disponible
+    return true;
   } catch (e) {
-    return false; // En caso de error, asumimos que no está disponible
+    return false;
   }
 });
+
+// Función auxiliar para calcular fecha final
+DateTime _calculateEndDateTime(DateTime startDateTime, Map<String, dynamic> durationMap) {
+  if (durationMap['unit'] == 'days') {
+    return startDateTime.add(Duration(days: durationMap['value']));
+  } else if (durationMap['unit'] == 'hours') {
+    return startDateTime.add(Duration(hours: durationMap['value']));
+  }
+  return startDateTime.add(Duration(days: 1));
+}
+
+// Función para verificar reservas simples (modificada)
+Future<bool> _checkSimpleReservations(
+    DatabaseEvent event, DateTime startDateTime, DateTime endDateTime) async {
+  final snapshot = event.snapshot;
+  if (snapshot.value == null) return true;
+
+  if (snapshot.value is Map) {
+    final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+    
+    for (var reservation in data.values) {
+      if (reservation is Map) {
+        final isAvailable = await _checkReservationAvailability(
+          reservation, 
+          startDateTime, 
+          endDateTime,
+        );
+        if (!isAvailable) return false;
+      }
+    }
+  }
+  return true;
+}
+
+// Función para verificar multiple_dress en reservas principales (modificada)
+Future<bool> _checkMultipleDressInMainReservations(
+    DatabaseReference dbRef, String dressId, DateTime startDateTime, DateTime endDateTime) async {
+  final snapshotC = await dbRef.once();
+  final data = snapshotC.snapshot.value;
+  
+  if (data is Map) {
+    for (var reservation in data.values) {
+      if (reservation is Map) {
+        final dresses = reservation['multiple_dress'];
+        if (dresses is List) {
+          for (var dress in dresses) {
+            if (dress is Map && dress['dress_id'] == dressId) {
+              final isAvailable = await _checkReservationAvailability(
+                reservation, 
+                startDateTime, 
+                endDateTime,
+              );
+              if (!isAvailable) return false;
+            }
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// Función para verificar aditionals (modificada)
+Future<bool> _checkAditionals(
+    DatabaseReference dbRef, String dressId, DateTime startDateTime, DateTime endDateTime) async {
+  final snapshot = await dbRef.once();
+  final data = snapshot.snapshot.value;
+  
+  if (data is Map) {
+    for (var reservation in data.values) {
+      if (reservation is Map) {
+        final aditionals = reservation['aditionals'];
+        if (aditionals is List) {
+          for (var additional in aditionals) {
+            if (additional is Map) {
+              // Verificar dress_id directo en adicional
+              if (additional['dress_id'] == dressId) {
+                final isAvailable = await _checkAdditionalAvailability(
+                  additional, 
+                  startDateTime, 
+                  endDateTime,
+                );
+                if (!isAvailable) return false;
+              }
+              
+              // Verificar multiple_dress en adicional
+              final multipleDress = additional['multiple_dress'];
+              if (multipleDress is List) {
+                for (var dress in multipleDress) {
+                  if (dress is Map && dress['dress_id'] == dressId) {
+                    final isAvailable = await _checkAdditionalAvailability(
+                      additional, 
+                      startDateTime, 
+                      endDateTime,
+                    );
+                    if (!isAvailable) return false;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// Función para verificar disponibilidad de una reserva adicional (modificada)
+Future<bool> _checkAdditionalAvailability(
+    Map additional, DateTime startDateTime, DateTime endDateTime) async {
+  try {
+    final String reservationDateStr = additional['reservation_date'];
+    final DateTime reservationStart = DateTime.parse(reservationDateStr);
+    
+    // Duración fija para adicionales (1 día por defecto)
+    final durationMap = {'value': 1, 'unit': 'days'};
+    
+    DateTime reservationUseStart = reservationStart;
+    DateTime reservationUseEnd = _calculateEndDateTime(reservationStart, durationMap);
+    
+    // Verificar superposición
+    return endDateTime.isBefore(reservationUseStart) || startDateTime.isAfter(reservationUseEnd);
+  } catch (e) {
+    return false;
+  }
+}
+
+// Función para verificar disponibilidad de una reserva (modificada)
+Future<bool> _checkReservationAvailability(
+    Map reservation, DateTime startDateTime, DateTime endDateTime) async {
+  try {
+    final String reservationDateStr = reservation['reservation_date'];
+    final DateTime reservationStart = DateTime.parse(reservationDateStr);
+    final String serviceId = reservation['service_id'];
+
+    final serviceSnapshot = await FirebaseDatabase.instance
+        .ref('Admin Panel/services/$serviceId')
+        .get();
+
+    if (serviceSnapshot.exists && serviceSnapshot.value is Map) {
+      final Map<dynamic, dynamic> serviceData = serviceSnapshot.value as Map<dynamic, dynamic>;
+      final Map<String, dynamic> reservationDurationMap = (serviceData['duration'] is Map)
+          ? Map<String, dynamic>.from(serviceData['duration'])
+          : {'value': 1, 'unit': 'days'};
+
+      // Verificar si es una renta de vestimenta (lógica especial)
+      if (serviceId == "ID_DEL_PAQUETE_RENTA") { // Reemplaza con el ID real
+        final reservationUseStart = DateTime(
+            reservationStart.year,
+            reservationStart.month,
+            reservationStart.day - 1,
+            00, 00, 00);
+        final reservationUseEnd = DateTime(
+            reservationStart.year,
+            reservationStart.month,
+            reservationStart.day + 1,
+            23, 59, 59);
+        
+        return endDateTime.isBefore(reservationUseStart) || startDateTime.isAfter(reservationUseEnd);
+      } else {
+        final reservationUseStart = reservationStart;
+        final reservationUseEnd = _calculateEndDateTime(reservationStart, reservationDurationMap);
+        return endDateTime.isBefore(reservationUseStart) || startDateTime.isAfter(reservationUseEnd);
+      }
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 final isClothesAvailableForRangeProvider =
     FutureProvider.family<bool, Map<String, dynamic>>((ref, params) async {
@@ -1141,46 +1345,140 @@ final isDressAvailableProvider =
   }
 });
 
-final crearReservaProvider =
-    FutureProvider.family<reservationCreation, Map<String, dynamic>>(
-        (ref, params) async {
+// final crearReservaProvider =
+//     FutureProvider.family<reservationCreation, Map<String, dynamic>>(
+//         (ref, params) async {
+//   try {
+//     final newReservationRef =
+//         FirebaseDatabase.instance.ref('Admin Panel/reservations').push();
+
+//     final Map<String, dynamic> reservationData = {
+//       'service_id': params['serviceId'],
+//       'client_id': params['clientId'],
+//       'dress_id': params['dressId'],
+//       'branch_id': params['branchId'],
+//       'reservation_date': params['date'],
+//       'reservation_time': params['time'],
+//       'created_at': ServerValue.timestamp,
+//       'updated_at': ServerValue.timestamp,
+//       'estado_factura': params['estado_factura'],
+//       'estado': 'pendiente',
+//       'nota': params['note'],
+//       'place': params['place'],
+//       'multiple_dress': params['multiple_dress'] ?? [],
+//       'notas': params['notas'] ?? '', // Guardar notas si existen
+//       'reservation_associated': params['reservation_associated'] ?? '',
+//       'package_price': params['package_price'] ?? 0,
+//       'seller_name': params['seller_name'],
+//       'session_type': params['session_type'] ?? 'normal', // Tipo de sesión (normal, pre-quince-fiesta)
+//       'fiesta_date': params['fiesta_date'] ?? '', // Fecha de la fiesta (solo para planes PRE-QUINCE FIESTA)
+//       'fiesta_time': params['fiesta_time'] ?? '', // Hora de la fiesta (solo para planes PRE-QUINCE FIESTA)
+//     };
+//     await newReservationRef.set(reservationData);
+
+//     final reservationId = newReservationRef.key;
+
+//     // Refresh the reservations provider
+//     final _ = ref.refresh(reservationsProvider);
+
+//     return reservationCreation(
+//       statusReservation: true,
+//       reservationId: reservationId ?? '',
+//     );
+//   } catch (e) {
+//     return reservationCreation(
+//       statusReservation: false,
+//       reservationId: '',
+//     );
+//   }
+// });
+final crearReservaProvider = FutureProvider.family<reservationCreation, Map<String, dynamic>>(
+    (ref, params) async {
   try {
-    final newReservationRef =
-        FirebaseDatabase.instance.ref('Admin Panel/reservations').push();
-
-    final Map<String, dynamic> reservationData = {
-      'service_id': params['serviceId'],
-      'client_id': params['clientId'],
-      'dress_id': params['dressId'],
-      'branch_id': params['branchId'],
-      'reservation_date': params['date'],
-      'reservation_time': params['time'],
-      'created_at': ServerValue.timestamp,
-      'updated_at': ServerValue.timestamp,
-      'estado_factura': params['estado_factura'],
-      'estado': 'pendiente',
-      'nota': params['note'],
-      'place': params['place'],
-      'multiple_dress': params['multiple_dress'] ?? [],
-      'notas': params['notas'] ?? '', // Guardar notas si existen
-      'reservation_associated': params['reservation_associated'] ?? '',
-      'package_price': params['package_price'] ?? 0,
-      'seller_name': params['seller_name'],
-      'session_type': params['session_type'] ?? 'normal', // Tipo de sesión (normal, pre-quince-fiesta)
-      'fiesta_date': params['fiesta_date'] ?? '', // Fecha de la fiesta (solo para planes PRE-QUINCE FIESTA)
-      'fiesta_time': params['fiesta_time'] ?? '', // Hora de la fiesta (solo para planes PRE-QUINCE FIESTA)
-    };
-    await newReservationRef.set(reservationData);
-
-    final reservationId = newReservationRef.key;
-
-    // Refresh the reservations provider
-    final _ = ref.refresh(reservationsProvider);
-
-    return reservationCreation(
-      statusReservation: true,
-      reservationId: reservationId ?? '',
-    );
+    DatabaseReference newReservationRef;
+    
+    // Si es una reserva adicional, actualizamos la reserva principal
+    if (params['isAdditional'] == true && params['reservation_associated'].isNotEmpty) {
+      newReservationRef = FirebaseDatabase.instance.ref('Admin Panel/reservations/${params['reservation_associated']}');
+      
+      // Obtenemos los datos actuales de la reserva
+      final snapshot = await newReservationRef.get();
+      final currentData = snapshot.value as Map<dynamic, dynamic>? ?? {};
+      
+      // Convertimos a Map<String, dynamic> para evitar problemas de tipos
+      final Map<String, dynamic> updatedData = Map<String, dynamic>.from(currentData);
+      
+      // Inicializamos el array de adicionales si no existe
+      if (!updatedData.containsKey('aditionals')) {
+        updatedData['aditionals'] = [];
+      }
+      
+      // Creamos el objeto adicional
+      final Map<String, dynamic> additionalData = {
+        'service_id': params['serviceId'],
+        'dress_id': params['dressId'],
+        'branch_id': params['branchId'],
+        'reservation_date': params['date'],
+        'reservation_time': params['time'],
+        'created_at': ServerValue.timestamp,
+        'nota': params['note'],
+        'multiple_dress': params['multiple_dress'] ?? [],
+        'package_price': params['package_price'] ?? 0,
+      };
+      
+      // Agregamos el adicional
+      (updatedData['aditionals'] as List).add(additionalData);
+      
+      // Actualizamos la reserva principal
+      await newReservationRef.update({
+        'aditionals': updatedData['aditionals'],
+        'updated_at': ServerValue.timestamp,
+      });
+      
+      return reservationCreation(
+        statusReservation: true,
+        reservationId: params['reservation_associated'],
+      );
+    } 
+    // Si es una reserva normal, creamos una nueva
+    else {
+      newReservationRef = FirebaseDatabase.instance.ref('Admin Panel/reservations').push();
+      
+      final Map<String, dynamic> reservationData = {
+        'service_id': params['serviceId'],
+        'client_id': params['clientId'],
+        'dress_id': params['dressId'],
+        'branch_id': params['branchId'],
+        'reservation_date': params['date'],
+        'reservation_time': params['time'],
+        'created_at': ServerValue.timestamp,
+        'updated_at': ServerValue.timestamp,
+        'estado_factura': params['estado_factura'],
+        'estado': 'pendiente',
+        'nota': params['note'],
+        'place': params['place'],
+        'multiple_dress': params['multiple_dress'] ?? [],
+        'notas': params['notas'] ?? '',
+        'reservation_associated': params['reservation_associated'] ?? '',
+        'package_price': params['package_price'] ?? 0,
+        'seller_name': params['seller_name'],
+        'session_type': params['session_type'] ?? 'normal',
+        'fiesta_date': params['fiesta_date'] ?? '',
+        'fiesta_time': params['fiesta_time'] ?? '',
+        'aditionals': [], // Inicializamos el array de adicionales vacío
+      };
+      
+      await newReservationRef.set(reservationData);
+      final reservationId = newReservationRef.key;
+      
+      // Refresh the reservations provider
+      final _ = ref.refresh(reservationsProvider);
+      
+      return reservationCreation(
+        statusReservation: true,
+        reservationId: reservationId ?? '',
+      );
+    }
   } catch (e) {
     return reservationCreation(
       statusReservation: false,

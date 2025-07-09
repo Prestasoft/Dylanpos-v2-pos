@@ -16,6 +16,9 @@ class ReservationModel {
   final String reservation_associated;
   final String package_price;
   final String sellerName;
+  final String? fiestaDate;
+  final String? fiestaTime;
+  final bool isFiestaDate;
 
   ReservationModel({
     String? id,
@@ -35,6 +38,9 @@ class ReservationModel {
     this.nota = '',
     this.place = '',
     this.sellerName = '',
+    this.fiestaDate,
+    this.fiestaTime,
+    this.isFiestaDate = false,
   })  : id = id ?? '',
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
@@ -63,6 +69,8 @@ class ReservationModel {
       reservation_associated: map['reservation_associated'] ?? '',
       package_price: map['package_price'] ?? '',
       sellerName: map['seller_name'] ?? '',
+      fiestaDate: map['fiesta_date'] ?? '',
+      fiestaTime: map['fiesta_time'] ?? '',
     );
   }
 
@@ -83,6 +91,37 @@ class ReservationModel {
       }
     }
     return DateTime.now();
+  }
+
+  ReservationModel copyWith({
+    String? reservationDate,
+    String? reservationTime,
+    bool? isFiestaDate,
+    String? fiestaDate,
+    String? fiestaTime,
+  }) {
+    return ReservationModel(
+      id: id,
+      serviceId: serviceId,
+      clientId: clientId,
+      dressId: dressId,
+      branchId: branchId,
+      reservationDate: reservationDate ?? this.reservationDate,
+      reservationTime: reservationTime ?? this.reservationTime,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      multipleDress: multipleDress,
+      estadoFactura: estadoFactura,
+      estado: estado,
+      reservation_associated: reservation_associated,
+      package_price: package_price,
+      nota: nota,
+      place: place,
+      sellerName: sellerName,
+      fiestaDate: fiestaDate ?? this.fiestaDate,
+      fiestaTime: fiestaTime ?? this.fiestaTime,
+      isFiestaDate: isFiestaDate ?? this.isFiestaDate,
+    );
   }
 
   Map<String, dynamic> toMap() {
@@ -108,6 +147,8 @@ class ReservationModel {
       'reservation_associated': reservation_associated,
       'package_price': package_price,
       'seller_name': sellerName,
+      'fiesta_date': fiestaDate,
+      'fiesta_time': fiestaTime,
     };
   }
 }

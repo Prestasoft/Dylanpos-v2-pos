@@ -27,11 +27,13 @@ class AddToCartModel {
     required this.groupTaxName,
     required this.groupTaxRate,
     required this.subTaxes,
-    this.isReservation,
+    this.isReservation = false,
     this.reservationId,
     this.dressId,
     this.serviceId,
-    this.descricpion, // NUEVO CAMPO
+    this.descricpion,
+    this.isAdditional = false,
+    this.mainReservationId,
   });
 
   // Campos del modelo
@@ -60,14 +62,18 @@ class AddToCartModel {
   late num groupTaxRate;
   late List<TaxModel> subTaxes;
 
-  // NUEVO CAMPO
+  // Campos de descripción
   String? descricpion;
 
   // Campos de reserva
-  bool? isReservation;
+  bool isReservation;
   String? reservationId;
   String? dressId;
   String? serviceId;
+  
+  // Campos para adicionales
+  bool isAdditional;
+  String? mainReservationId;
 
   factory AddToCartModel.fromJson(String str) =>
       AddToCartModel.fromMap(json.decode(str));
@@ -103,11 +109,13 @@ class AddToCartModel {
             ? List<TaxModel>.from(
                 json['subTax'].map((x) => TaxModel.fromJson(x)))
             : [],
-        isReservation: json["isReservation"],
+        isReservation: json["isReservation"] ?? false,
         reservationId: json['reservationId'],
         dressId: json["dressId"],
         serviceId: json["serviceId"],
-        descricpion: json['descricpion'], // NUEVO CAMPO
+        descricpion: json['descricpion'],
+        isAdditional: json['isAdditional'] ?? false,
+        mainReservationId: json['mainReservationId'],
       );
 
   Map<String, dynamic> toMap() => {
@@ -139,6 +147,8 @@ class AddToCartModel {
         'reservationId': reservationId,
         "dressId": dressId,
         "serviceId": serviceId,
-        "descricpion": descricpion, // NUEVO CAMPO
+        "descricpion": descricpion,
+        "isAdditional": isAdditional,
+        "mainReservationId": mainReservationId,
       };
 }

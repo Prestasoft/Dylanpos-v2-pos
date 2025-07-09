@@ -241,349 +241,485 @@ Para llamadas: 8098982876 ☎️
   }
 
   void showReservationSelection(String clientId) {
-    final TextStyle smallGreyTextStyle = TextStyle(
-      fontSize: 13,
-      color: Colors.grey[700], // Esto no puede ser const
-    );
+  final TextStyle smallGreyTextStyle = TextStyle(
+    fontSize: 13,
+    color: Colors.grey[700],
+  );
 
-    final TextStyle smallGreyTextStyleBold = TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.bold,
-      color: Colors.black, // Esto no puede ser const
-    );
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final reservations = ref.watch(ReservaPendientProvider(clientId));
-            return reservations.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error: $e'),
-              data: (reservations) {
-                return Dialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+  final TextStyle smallGreyTextStyleBold = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+  );
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Consumer(
+        builder: (context, ref, _) {
+          final reservations = ref.watch(ReservaPendientProvider(clientId));
+          return reservations.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
+            data: (reservations) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.9,
+                    maxWidth: 500,
                   ),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.9,
-                      maxWidth: 500, // Limit maximum width
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Header with close button
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Seleccionar Reserva',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryTextTheme.titleLarge?.color,
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Seleccionar Reserva',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryTextTheme.titleLarge?.color,
-                                ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.close,
+                                color: Theme.of(context).primaryTextTheme.titleLarge?.color,
                               ),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.close,
-                                  color: Theme.of(context).primaryTextTheme.titleLarge?.color,
-                                ),
-                                onPressed: () => Navigator.pop(context),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                            ],
-                          ),
+                              onPressed: () => Navigator.pop(context),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
                         ),
+                      ),
 
-                        // Content
-                        Flexible(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            itemCount: reservations.length,
-                            separatorBuilder: (context, index) => const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final full = reservations[index];
-                              final reservation = full.reservation;
-                              final dress = full.dress;
-                              final service = full.service;
+                      // Content
+                      Flexible(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: reservations.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final full = reservations[index];
+                            final reservation = full.reservation;
+                            final dress = full.dress;
+                            final service = full.service;
+                            final hasAdditionals = reservation['aditionals'] != null && 
+                                (reservation['aditionals'] as List).isNotEmpty;
 
-                              
+                            final rawImages = dress?['images'] ?? '';
+                            final dressImageUrl = rawImages.toString().split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
 
-                              // Get dress image URL or use default
-                              // Obtener la primera imagen del campo 'images'
-                              final rawImages = dress?['images'] ?? '';
-                              final dressImageUrl = rawImages.toString().split(',').first.trim().replaceAll(RegExp(r'[\[\]"]'), '');
+                            bool isCommonReservation = full.multipleDress.isEmpty;
 
-                              // Verificar si no es reserva de paquetes compuestos
-                              bool isCommonReservation = full.multipleDress.isEmpty;
+                            if (isCommonReservation) {
+                              final reservationModel = ReservationProductModel.fromMap({
+                                'id': full.id,
+                                'service_id': service?['id'] ?? '',
+                                'service_name': service?['name'] ?? 'Servicio',
+                                'client_id': clientId,
+                                'dress_id': dress?['id'] ?? '',
+                                'dress_name': dress?['name'] ?? 'Vestido',
+                                'branch_id': reservation['branch_id'] ?? '',
+                                'reservation_date': reservation['reservation_date'] ?? '',
+                                'reservation_time': reservation['reservation_time'] ?? '',
+                                'price': service != null && service['price'] != null ? 
+                                    (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0,
+                                'created_at': reservation['created_at'],
+                                'updated_at': reservation['updated_at'],
+                                'duration': service?['duration'] ?? {},
+                                'package_price': double.tryParse(reservation['package_price'] ?? '0.0'),
+                                'descricpion': service?['description'] ?? '',
+                              });
 
-                              // Mapeo Nuevo de acuerdo a la estructura de vestidos
-                              if (isCommonReservation) {
-                                final reservationModel = ReservationProductModel.fromMap({
-                                  'id': full.id,
-                                  'service_id': service?['id'] ?? '',
-                                  'service_name': service?['name'] ?? 'Servicio',
-                                  'client_id': clientId,
-                                  'dress_id': dress?['id'] ?? '',
-                                  'dress_name': dress?['name'] ?? 'Vestido',
-                                  'branch_id': reservation['branch_id'] ?? '',
-                                  'reservation_date': reservation['reservation_date'] ?? '',
-                                  'reservation_time': reservation['reservation_time'] ?? '',
-                                  'price': service != null && service['price'] != null ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0,
-                                  'created_at': reservation['created_at'],
-                                  'updated_at': reservation['updated_at'],
-                                  'duration': service?['duration'] ?? {},
-                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0'),
-                                  'descricpion': service?['description'] ?? '',
-                                });
-
-                                // Verifico si es Adicional de Reserva para poner algo que lo identifique y ademas el precio
-
-                                return InkWell(
-                                  onTap: () {
-                                    _addReservationToCart(reservationModel);
-                                    Navigator.pop(context);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                    child: Row(
-                                      children: [
-                                        // Dress image
-                                        SizedBox(
-                                          width: 60,
-                                          height: 60,
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: Image.network(
-                                              dressImageUrl,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) => Container(
-                                                color: Colors.grey[200],
-                                                child: Icon(Icons.image_not_supported, color: Colors.grey[400], size: 30),
-                                              ),
+                              return InkWell(
+                                onTap: () {
+                                  _addReservationToCart(reservationModel);
+                                  if (hasAdditionals) {
+                                    _addReservationAdditionalsToCart(full.id);
+                                  }
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                  child: Row(
+                                    children: [
+                                      // Dress image
+                                      SizedBox(
+                                        width: 60,
+                                        height: 60,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.network(
+                                            dressImageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Container(
+                                              color: Colors.grey[200],
+                                              child: Icon(Icons.image_not_supported, color: Colors.grey[400], size: 30),
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Vestido'}',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text('📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('🏬 Sucursal: ${reservation['branch_id']}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('👗 Vestido: ${dress?['name'] ?? 'Sin Vestimenta'}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('🔖 Categoría: ${dress?['category'] ?? '-'}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('🛎️ Servicio: ${service?['name'] ?? '-'}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              const SizedBox(height: 2),
-                                              Text('⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('📝 Descripción:\n${service?['description'] ?? '-'}', style: smallGreyTextStyle),
-                                            ],
-                                          ),
-                                        ),
-
-                                        // Price and add icon
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              reservationModel.packagePrice > 0 ? '\$${reservationModel.packagePrice.toStringAsFixed(2)}' : '\$${reservationModel.price.toStringAsFixed(2)}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).primaryColor,
-                                                fontSize: 16,
-                                              ),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Vestido'}',
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (hasAdditionals)
+                                                  Container(
+                                                    margin: EdgeInsets.only(left: 8),
+                                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.orange[100],
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Text(
+                                                      'Con adicionales',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.orange[800],
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
-                                            const SizedBox(height: 6),
-                                            Container(
-                                              padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(20),
-                                              ),
-                                              child: Icon(
-                                                Icons.add_shopping_cart,
-                                                size: 18,
-                                                color: Theme.of(context).primaryColor,
-                                              ),
-                                            ),
+                                            const SizedBox(height: 4),
+                                            Text('📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('🏬 Sucursal: ${reservation['branch_id']}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('👗 Vestido: ${dress?['name'] ?? 'Sin Vestimenta'}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('🔖 Categoría: ${dress?['category'] ?? '-'}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('🛎️ Servicio: ${service?['name'] ?? '-'}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('📝 Descripción:\n${service?['description'] ?? '-'}', style: smallGreyTextStyle),
                                           ],
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            reservationModel.packagePrice > 0 ? 
+                                                '\$${reservationModel.packagePrice.toStringAsFixed(2)}' : 
+                                                '\$${reservationModel.price.toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context).primaryColor,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Icon(
+                                              Icons.add_shopping_cart,
+                                              size: 18,
+                                              color: Theme.of(context).primaryColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                );
-                              } else {
-                                final reservationModel = ReservationProductCompositeModel.fromMap({
-                                  'id': full.id,
-                                  'service_id': service?['id'] ?? '',
-                                  'service_name': service?['name'] ?? 'Servicio',
-                                  'client_id': clientId,
-                                  'reservation_date': reservation['reservation_date'] ?? '',
-                                  'reservation_time': reservation['reservation_time'] ?? '',
-                                  'price': service != null && service['price'] != null ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0,
-                                  'created_at': reservation['created_at'],
-                                  'updated_at': reservation['updated_at'],
-                                  'duration': service?['duration'] ?? {},
-                                  'dress_info': full.multipleDress,
-                                  'package_price': double.tryParse(reservation['package_price'] ?? '0.0'),
-                                  'descricpion': service?['description'] ?? '',
-                                });
+                                ),
+                              );
+                            } else {
+                              final reservationModel = ReservationProductCompositeModel.fromMap({
+                                'id': full.id,
+                                'service_id': service?['id'] ?? '',
+                                'service_name': service?['name'] ?? 'Servicio',
+                                'client_id': clientId,
+                                'reservation_date': reservation['reservation_date'] ?? '',
+                                'reservation_time': reservation['reservation_time'] ?? '',
+                                'price': service != null && service['price'] != null ? 
+                                    (service['price'] is num ? (service['price'] as num).toDouble() : 0.0) : 0.0,
+                                'created_at': reservation['created_at'],
+                                'updated_at': reservation['updated_at'],
+                                'duration': service?['duration'] ?? {},
+                                'dress_info': full.multipleDress,
+                                'package_price': double.tryParse(reservation['package_price'] ?? '0.0'),
+                                'descricpion': service?['description'] ?? '',
+                              });
 
-                                return InkWell(
-                                  onTap: () {
-                                    _addReservationCompositeToCart(reservationModel);
-                                    Navigator.pop(context);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                    child: Row(
-                                      children: [
-                                        // Dress image
-                                        SizedBox(
-                                          width: 60,
-                                          height: 60,
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: Image.network(
-                                              dressImageUrl,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) => Container(
-                                                color: Colors.grey[200],
-                                                child: Icon(Icons.image_not_supported, color: Colors.grey[400], size: 30),
-                                              ),
+                              return InkWell(
+                                onTap: () {
+                                  _addReservationCompositeToCart(reservationModel);
+                                  if (hasAdditionals) {
+                                    _addReservationAdditionalsToCart(full.id);
+                                  }
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 60,
+                                        height: 60,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.network(
+                                            dressImageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Container(
+                                              color: Colors.grey[200],
+                                              child: Icon(Icons.image_not_supported, color: Colors.grey[400], size: 30),
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Combo de Vestimentas'}',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text('📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('👗 Vestimentas Reservadas:', style: smallGreyTextStyleBold),
-                                              const SizedBox(height: 2),
-                                              Padding(
-                                                padding: const EdgeInsets.only(left: 8, right: 8),
-                                                child: _showDressesOption(full.multipleDress),
-                                              ),
-                                              Text('🔖 Categoría: ${service?['category'] ?? '-'}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('🛎️ Servicio: ${service?['name'] ?? '-'}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              const SizedBox(height: 2),
-                                              Text('⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}', style: smallGreyTextStyle),
-                                              const SizedBox(height: 2),
-                                              Text('📝 Descripción:\n${service?['description'] ?? '-'}', style: smallGreyTextStyle),
-                                            ],
-                                          ),
-                                        ),
-
-                                        // Price and add icon
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              reservationModel.packagePrice > 0 ? '\$${reservationModel.packagePrice.toStringAsFixed(2)}' : '\$${reservationModel.price.toStringAsFixed(2)}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).primaryColor,
-                                                fontSize: 16,
-                                              ),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    '${service?['name'] ?? 'Servicio'} - ${dress?['name'] ?? 'Combo de Vestimentas'}',
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (hasAdditionals)
+                                                  Container(
+                                                    margin: EdgeInsets.only(left: 8),
+                                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.orange[100],
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Text(
+                                                      'Con adicionales',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.orange[800],
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
-                                            const SizedBox(height: 6),
-                                            Container(
-                                              padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(20),
-                                              ),
-                                              child: Icon(
-                                                Icons.add_shopping_cart,
-                                                size: 18,
-                                                color: Theme.of(context).primaryColor,
-                                              ),
+                                            const SizedBox(height: 4),
+                                            Text('📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('👗 Vestimentas Reservadas:', style: smallGreyTextStyleBold),
+                                            const SizedBox(height: 2),
+                                            Padding(
+                                              padding: const EdgeInsets.only(left: 8, right: 8),
+                                              child: _showDressesOption(full.multipleDress),
                                             ),
+                                            Text('🔖 Categoría: ${service?['category'] ?? '-'}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('🛎️ Servicio: ${service?['name'] ?? '-'}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('⏱️ Duración: ${ReservationUtils.formatDuration(service?['duration'])}', style: smallGreyTextStyle),
+                                            const SizedBox(height: 2),
+                                            Text('📝 Descripción:\n${service?['description'] ?? '-'}', style: smallGreyTextStyle),
                                           ],
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            reservationModel.packagePrice > 0 ? 
+                                                '\$${reservationModel.packagePrice.toStringAsFixed(2)}' : 
+                                                '\$${reservationModel.price.toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context).primaryColor,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Icon(
+                                              Icons.add_shopping_cart,
+                                              size: 18,
+                                              color: Theme.of(context).primaryColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                );
-                              }
-                            },
-                          ),
+                                ),
+                              );
+                            }
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
+                ),
+              );
+            },
+          );
+        },
+      );
+    },
+  );
+}
 
+  // void _addReservationToCart(ReservationProductModel reservation) {
+  //   setState(() {
+  //     cartList.add(
+  //       reservation.toCartItem()..reservationId = reservation.id, // Asignar ID
+  //     );
+  //     addFocus();
+  //     updateDueAmount();
+  //   });
+  // }
+
+  // void _addReservationCompositeToCart(ReservationProductCompositeModel reservation) {
+  //   setState(() {
+  //     cartList.add(
+  //       reservation.toCartCompositeItem()..reservationId = reservation.id, // Asignar ID
+  //     );
+  //     addFocus();
+  //     updateDueAmount();
+  //   });
+  // }
   void _addReservationToCart(ReservationProductModel reservation) {
-    setState(() {
-      cartList.add(
-        reservation.toCartItem()..reservationId = reservation.id, // Asignar ID
-      );
-      addFocus();
-      updateDueAmount();
-    });
+  setState(() {
+    cartList.add(
+      reservation.toCartItem()..reservationId = reservation.id,
+    );
+    // Agregar un nuevo FocusNode para el nuevo item
+    productFocusNode.add(FocusNode());
+    addFocus();
+    updateDueAmount();
+  });
+}
+
+void _addReservationCompositeToCart(ReservationProductCompositeModel reservation) {
+  setState(() {
+    cartList.add(
+      reservation.toCartCompositeItem()..reservationId = reservation.id,
+    );
+    // Agregar un nuevo FocusNode para el nuevo item
+    productFocusNode.add(FocusNode());
+    addFocus();
+    updateDueAmount();
+  });
+}
+
+Future<void> _addReservationAdditionalsToCart(String reservationId) async {
+  try {
+    final dbRef = FirebaseDatabase.instance.ref('Admin Panel/reservations/$reservationId');
+    final snapshot = await dbRef.get();
+
+    if (snapshot.exists && snapshot.value is Map) {
+      final reservationData = snapshot.value as Map<dynamic, dynamic>;
+      final aditionals = reservationData['aditionals'] as List<dynamic>?;
+
+      if (aditionals != null && aditionals.isNotEmpty) {
+        setState(() {
+          for (var additional in aditionals) {
+            if (additional is Map) {
+              final additionalModel = _createAdditionalModel(additional, reservationId);
+              cartList.add(additionalModel);
+              // Agregar un FocusNode por cada adicional
+              productFocusNode.add(FocusNode());
+            }
+          }
+          updateDueAmount();
+        });
+      }
+    }
+  } catch (e) {
+    print('Error al cargar adicionales: $e');
+  }
+}
+
+AddToCartModel _createAdditionalModel(Map additionalData, String mainReservationId) {
+  // Obtener información del vestido
+  String dressName = 'Vestido adicional';
+  String dressId = '';
+  
+  if (additionalData['multiple_dress'] is List && (additionalData['multiple_dress'] as List).isNotEmpty) {
+    final firstDress = (additionalData['multiple_dress'] as List).first;
+    dressName = firstDress['dress_name'] ?? dressName;
+    dressId = firstDress['dress_id'] ?? dressId;
+  } else if (additionalData['dress_id'] != null) {
+    dressId = additionalData['dress_id'].toString();
+    dressName = additionalData['dress_name']?.toString() ?? 'Vestido adicional';
   }
 
-  void _addReservationCompositeToCart(ReservationProductCompositeModel reservation) {
-    setState(() {
-      cartList.add(
-        reservation.toCartCompositeItem()..reservationId = reservation.id, // Asignar ID
-      );
-      addFocus();
-      updateDueAmount();
-    });
-  }
+  return AddToCartModel(
+    productName: 'Adicional - $dressName',
+    productId: mainReservationId, // Usamos el ID de la reserva principal como productId
+    quantity: 1,
+    subTotal: additionalData['package_price']?.toString() ?? '0.0',
+    productPurchasePrice: 0,
+    warehouseName: additionalData['note']?.toString() ?? '(Item adicional de reserva)',
+    warehouseId: 'reserva-warehouse',
+    unitPrice: double.tryParse(additionalData['package_price']?.toString() ?? '0.0') ?? 0.0,
+    productImage: 'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
+    taxType: 'none',
+    margin: 0,
+    excTax: 0,
+    incTax: 0,
+    groupTaxName: 'Sin impuesto',
+    groupTaxRate: 0,
+    subTaxes: [],
+    isReservation: true,
+    isAdditional: true,
+    mainReservationId: mainReservationId,
+    reservationId: mainReservationId,
+    dressId: dressId,
+    serviceId: additionalData['service_id']?.toString() ?? '',
+    descricpion: additionalData['note']?.toString() ?? '(Item adicional de reserva)',
+  );
+}
 
   Future<void> checkInternet() async {
     bool isDeviceConnected = await InternetConnection().hasInternetAccess;
@@ -1676,8 +1812,10 @@ Para llamadas: 8098982876 ☎️
                                                 child: GestureDetector(
                                                   onTap: () {
                                                     setState(() {
-                                                      cartList.removeAt(index);
+                                                      // Primero eliminar el FocusNode correspondiente
                                                       productFocusNode.removeAt(index);
+                                                      // Luego eliminar el item del carrito
+                                                      cartList.removeAt(index);
                                                       updateDueAmount();
                                                     });
                                                   },

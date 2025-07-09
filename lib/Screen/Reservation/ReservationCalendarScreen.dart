@@ -155,6 +155,9 @@ class ReservationCard extends ConsumerWidget {
               final serviceName = fullReservation?.service?['name'] ?? 'Servicio no especificado';
               final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
               final place = fullReservation?.reservation['place'] ?? 'Sin lugar';
+              final hasAditionals = (fullReservation?.reservation['aditionals'] != null && 
+                                   (fullReservation!.reservation['aditionals'] as List).isNotEmpty);
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -167,20 +170,46 @@ class ReservationCard extends ConsumerWidget {
                             const Icon(Icons.calendar_today),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                '${reservation.reservationDate} - ${reservation.reservationTime}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${reservation.reservationDate} - ${reservation.reservationTime}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                                  if (reservation.isFiestaDate)
+                                    Text(
+                                      '(Fecha de fiesta)',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.blue[700],
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Chip(
-                        label: Text(statusText),
-                        avatar: Icon(statusIcon, size: 16, color: iconColor),
-                        backgroundColor: statusColor,
-                        labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
-                        padding: EdgeInsets.zero,
+                      Row(
+                        children: [
+                          if (hasAditionals)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Tooltip(
+                                message: 'Esta reserva tiene adicionales',
+                                child: Icon(Icons.add_circle_outline, color: Colors.blue, size: 20),
+                              ),
+                            ),
+                          Chip(
+                            label: Text(statusText),
+                            avatar: Icon(statusIcon, size: 16, color: iconColor),
+                            backgroundColor: statusColor,
+                            labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -330,6 +359,9 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
         
         for (var reservation in reservations) {
           final date = _parseDate(reservation.reservationDate);
+          final fiestaDate = _parseDate(reservation.fiestaDate ?? '');
+          
+          // Agregar la fecha principal de reserva
           if (date != null) {
             // Si es del paquete de renta, añadir +-1 día también
             if (reservation.serviceId == packageRentaId) {
@@ -347,6 +379,18 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                   .putIfAbsent(dateKey, () => [])
                   .add(reservation);
             }
+          }
+          
+          // Agregar también la fecha de fiesta si existe
+          if (fiestaDate != null) {
+            final fiestaDateKey = DateTime(fiestaDate.year, fiestaDate.month, fiestaDate.day);
+            _reservationsByDay
+                .putIfAbsent(fiestaDateKey, () => [])
+                .add(reservation.copyWith(
+                  isFiestaDate: true,
+                  reservationDate: reservation.fiestaDate!,
+                  reservationTime: reservation.fiestaTime ?? reservation.reservationTime,
+                ));
           }
         }
         
@@ -952,6 +996,23 @@ class ReservationDetailView extends ConsumerWidget {
     required this.onClose,
   });
 
+  void _showImageDialog(BuildContext context, String imageUrl) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      child: InteractiveViewer(
+        panEnabled: true,
+        minScale: 0.5,
+        maxScale: 4,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
+          fit: BoxFit.contain,
+        ),
+      ),
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fullReservationAsync =
@@ -1005,6 +1066,8 @@ class ReservationDetailView extends ConsumerWidget {
                     }
 
                     final reservationData = fullReservation.reservation;
+                    final aditionals = reservationData['aditionals'] as List<dynamic>? ?? [];
+                    final hasAditionals = aditionals.isNotEmpty;
                     final dress = fullReservation.dress;
                     final service = fullReservation.service;
                     final client = fullReservation.client;
@@ -1075,7 +1138,6 @@ class ReservationDetailView extends ConsumerWidget {
                                   const SizedBox(height: 16),
                                 ],
 
-// Sección de reservación
                                 _buildSection(
                                   context,
                                   title: 'Información de la Reservación',
@@ -1151,6 +1213,174 @@ class ReservationDetailView extends ConsumerWidget {
                                               : ''),
                                     ],
                                   ),
+
+                                  if (hasAditionals)
+                                    _buildSection(
+                                      context,
+                                      title: 'Adicionales',
+                                      children: [
+                                        ...aditionals.map((aditional) {
+                                          final nota = aditional['nota']?.toString() ?? 'Sin notas';
+                                          final packagePrice = aditional['package_price']?.toString() ?? '0';
+                                          final reservationDate = aditional['reservation_date']?.toString() ?? '';
+                                          final reservationTime = aditional['reservation_time']?.toString() ?? '';
+                                          final dressComposite = aditional['multiple_dress'] as List<dynamic>? ?? [];
+
+                                          return Padding(
+                                            padding: const EdgeInsets.only(bottom: 12),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Icon(Icons.add_circle_outline, size: 22, color: Colors.blue),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            'Adicional de vestimenta - \$$packagePrice', // Aquí agregamos el precio
+                                                            style: const TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 4),
+                                                          if (reservationDate.isNotEmpty && reservationTime.isNotEmpty)
+                                                            Text(
+                                                              'Fecha: $reservationDate - $reservationTime',
+                                                              style: TextStyle(
+                                                                fontSize: 14,
+                                                                color: Colors.grey[600],
+                                                              ),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                
+                                                if (nota.isNotEmpty && nota != 'Sin notas')
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 4, left: 34),
+                                                    child: Text(
+                                                      'Notas: $nota',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.grey[600],
+                                                        fontStyle: FontStyle.italic,
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                if (dressComposite.isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 8, left: 34),
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        const Text(
+                                                          'Items incluidos:',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight: FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                        ...dressComposite.map((dress) {
+                                                          final dressName = dress['dress_name']?.toString() ?? 'Sin nombre';
+                                                          final branchId = dress['branch_id']?.toString() ?? 'Sin sucursal';
+                                                          
+                                                          return Consumer(
+                                                            builder: (context, ref, _) {
+                                                              final dressesAsync = ref.watch(dressesByStatusProvider('Todos'));
+                                                              
+                                                              return dressesAsync.when(
+                                                                loading: () => const CircularProgressIndicator(),
+                                                                error: (e, _) => Text('Error: $e'),
+                                                                data: (dressesList) {
+                                                                  DressModel? matchedDress;
+                                                                  try {
+                                                                    matchedDress = dressesList.firstWhere(
+                                                                      (d) =>
+                                                                          d.name.toString().removeAllWhiteSpace().toLowerCase() ==
+                                                                          dressName.removeAllWhiteSpace().toLowerCase() &&
+                                                                          d.branchId.toString() == branchId,
+                                                                    );
+                                                                  } catch (_) {
+                                                                    matchedDress = null;
+                                                                  }
+                                                                  
+                                                                  String imageUrl = '';
+                                                                  if (matchedDress != null && matchedDress.images.isNotEmpty) {
+                                                                    imageUrl = matchedDress.images.first;
+                                                                  }
+
+                                                                  return Padding(
+                                                                    padding: const EdgeInsets.only(top: 8),
+                                                                    child: Row(
+                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        if (imageUrl.isNotEmpty)
+                                                                          GestureDetector(
+                                                                            onTap: () => _showImageDialog(context, imageUrl),
+                                                                            child: ClipRRect(
+                                                                              borderRadius: BorderRadius.circular(6),
+                                                                              child: CachedNetworkImage(
+                                                                                imageUrl: imageUrl,
+                                                                                width: 40,
+                                                                                height: 40,
+                                                                                fit: BoxFit.cover,
+                                                                                errorWidget: (_, __, ___) => Icon(
+                                                                                  Icons.image_not_supported,
+                                                                                  color: Colors.grey[400],
+                                                                                  size: 24,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        if (imageUrl.isNotEmpty) const SizedBox(width: 10),
+                                                                        Expanded(
+                                                                          child: Column(
+                                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                                            children: [
+                                                                              Text(
+                                                                                '• $dressName',
+                                                                                style: TextStyle(
+                                                                                  fontSize: 14,
+                                                                                  color: Colors.grey[600],
+                                                                                ),
+                                                                              ),
+                                                                              Text(
+                                                                                branchId,
+                                                                                style: TextStyle(
+                                                                                  fontSize: 12,
+                                                                                  color: Colors.grey[500],
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              );
+                                                            },
+                                                          );
+                                                        }).toList(),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                const Divider(height: 20),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ],
+  ),
+                                
                                 if (service != null)
                                   _buildSection(
                                     context,

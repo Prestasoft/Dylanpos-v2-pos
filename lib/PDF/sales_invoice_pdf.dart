@@ -95,17 +95,32 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
 
   for (int i = 0; i < transactions.productList!.length; i++) {
     final item = transactions.productList![i];
-    final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
-    final serviceDescription = fullReservation?.service?['description'] ?? '';
-
-    rows.add(<String>[
-      '${i + 1}',
-      '''${item.productName}\n$serviceDescription''',
-      myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
-      myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
-      calculateProductVat(product: item),
-      myFormat.format(double.tryParse((double.parse(item.subTotal) * item.quantity.toInt()).toStringAsFixed(2)) ?? 0),
-    ]);
+    
+    // Usar la descripción del item directamente para adicionales
+    if (item.isAdditional == true) {
+      rows.add(<String>[
+        '${i + 1}',
+        '''${item.productName}\n${item.descricpion ?? 'Adicional de reserva'}''',
+        myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
+        myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
+        calculateProductVat(product: item),
+        myFormat.format(double.tryParse((double.parse(item.subTotal) * item.quantity.toInt()).toStringAsFixed(2)) ?? 0),
+      ]);
+    } 
+    // Para reservas normales, usar la descripción del servicio
+    else {
+      final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+      final serviceDescription = fullReservation?.service?['description'] ?? item.descricpion ?? '';
+      
+      rows.add(<String>[
+        '${i + 1}',
+        '''${item.productName}\n$serviceDescription''',
+        myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
+        myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
+        calculateProductVat(product: item),
+        myFormat.format(double.tryParse((double.parse(item.subTotal) * item.quantity.toInt()).toStringAsFixed(2)) ?? 0),
+      ]);
+    }
   }
 
   doc.addPage(

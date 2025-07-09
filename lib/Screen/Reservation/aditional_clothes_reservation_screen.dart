@@ -132,89 +132,166 @@ class _AdditionalClothesReservationScreen extends ConsumerState<AdditionalClothe
     return true;
   }
 
+  // void _confirmReservation() async {
+  //   setState(() {
+  //     isSubmitting = true;
+  //   });
+
+  //   final String note = "Adicionales de vestimenta, reserva ${_packageName}";
+  //   final a = ref.read(servicePackagesProvider.notifier).searchPackages("Adicionales de Reserva");
+  //   final String packageId = a.firstWhere((e) => e.name == "Adicionales de Reserva").id;
+
+  //   // Variables temporales para guardar el vestido y la sucursal
+  //   List<Map<String, String>> multipleDress = [];
+
+  //   // Logica que guarda segun un o varios vestidos
+  //   if (dressReservations.isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text("Por favor selecciona al menos un vestido."),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     setState(() {
+  //       isSubmitting = false;
+  //     });
+  //     return;
+  //   } else {
+  //     multipleDress = dressReservations.map((dress) {
+  //       return {
+  //         'dress_id': dress.id,
+  //         'branch_id': dress.branchId,
+  //         'dress_name': dress.name,
+  //       };
+  //     }).toList();
+  //   }
+
+  //   double totalReservationPrice = selectedValues.values.where((e) => e['vestidoPrice'] != null).map((e) => double.tryParse(e['vestidoPrice'].toString()) ?? 0.0).fold(0.0, (a, b) => a + b);
+
+  //   // Crear la reserva
+  //   final success = await ref.read(crearReservaProvider({
+  //     'serviceId': packageId,
+  //     'clientId': _clientId,
+  //     'dressId': '',
+  //     'branchId': '',
+  //     'date': _formatDate(_selectedDate ?? DateTime.now()),
+  //     'time': _formatTime(_selectedTime ?? TimeOfDay.now()),
+  //     'multiple_dress': multipleDress,
+  //     'note': note,
+  //     'reservation_associated': _reservationId,
+  //     'package_price': totalReservationPrice.toString(),
+  //   }).future);
+
+  //   setState(() {
+  //     isSubmitting = false;
+  //   });
+
+  //   if (success.statusReservation) {
+  //     // Show success message
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text("Se han agregados adicionales a la reserva exitosamente!"),
+  //         backgroundColor: Colors.green,
+  //       ),
+  //     );
+
+  //     // Navigate to the POS sales screen
+  //     if (mounted) {
+  //       // Actualiza el estado del menú lateral
+  //       ref.read(sidebarProvider.notifier)
+  //         ..expandMenu('/sales') // Expande el menú de Ventas
+  //         ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
+
+  //       // Navega a la pantalla
+  //       Navigator.of(context).popUntil((route) => route.isFirst);
+  //       context.go('/sales/inventory-sales');
+  //     }
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text("Error al crear la reserva. Por favor intenta de nuevo."),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   }
+  // }
   void _confirmReservation() async {
-    setState(() {
-      isSubmitting = true;
-    });
+  setState(() {
+    isSubmitting = true;
+  });
 
-    final String note = "Adicionales de vestimenta, reserva ${_packageName}";
-    final a = ref.read(servicePackagesProvider.notifier).searchPackages("Adicionales de Reserva");
-    final String packageId = a.firstWhere((e) => e.name == "Adicionales de Reserva").id;
-
-    // Variables temporales para guardar el vestido y la sucursal
-    List<Map<String, String>> multipleDress = [];
-
-    // Logica que guarda segun un o varios vestidos
-    if (dressReservations.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Por favor selecciona al menos un vestido."),
-          backgroundColor: Colors.red,
-        ),
-      );
-      setState(() {
-        isSubmitting = false;
-      });
-      return;
-    } else {
-      multipleDress = dressReservations.map((dress) {
-        return {
-          'dress_id': dress.id,
-          'branch_id': dress.branchId,
-          'dress_name': dress.name,
-        };
-      }).toList();
-    }
-
-    double totalReservationPrice = selectedValues.values.where((e) => e['vestidoPrice'] != null).map((e) => double.tryParse(e['vestidoPrice'].toString()) ?? 0.0).fold(0.0, (a, b) => a + b);
-
-    // Crear la reserva
-    final success = await ref.read(crearReservaProvider({
-      'serviceId': packageId,
-      'clientId': _clientId,
-      'dressId': '',
-      'branchId': '',
-      'date': _formatDate(_selectedDate ?? DateTime.now()),
-      'time': _formatTime(_selectedTime ?? TimeOfDay.now()),
-      'multiple_dress': multipleDress,
-      'note': note,
-      'reservation_associated': _reservationId,
-      'package_price': totalReservationPrice.toString(),
-    }).future);
-
+  final String note = "Adicionales de vestimenta, reserva ${_packageName}";
+  
+  if (dressReservations.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Por favor selecciona al menos un vestido."),
+        backgroundColor: Colors.red,
+      ),
+    );
     setState(() {
       isSubmitting = false;
     });
-
-    if (success.statusReservation) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Se han agregados adicionales a la reserva exitosamente!"),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Navigate to the POS sales screen
-      if (mounted) {
-        // Actualiza el estado del menú lateral
-        ref.read(sidebarProvider.notifier)
-          ..expandMenu('/sales') // Expande el menú de Ventas
-          ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
-
-        // Navega a la pantalla
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        context.go('/sales/inventory-sales');
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error al crear la reserva. Por favor intenta de nuevo."),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    return;
   }
+
+  List<Map<String, String>> multipleDress = dressReservations.map((dress) {
+    return {
+      'dress_id': dress.id,
+      'branch_id': dress.branchId,
+      'dress_name': dress.name,
+    };
+  }).toList();
+
+  double totalReservationPrice = selectedValues.values
+      .where((e) => e['vestidoPrice'] != null)
+      .map((e) => double.tryParse(e['vestidoPrice'].toString()) ?? 0.0)
+      .fold(0.0, (a, b) => a + b);
+
+  // Crear la reserva adicional
+  final success = await ref.read(crearReservaProvider({
+    'isAdditional': true, // Indicamos que es un adicional
+    'serviceId': 'additional_clothes', // Puedes usar un ID especial o dejarlo vacío
+    'clientId': _clientId,
+    'dressId': '',
+    'branchId': '',
+    'date': _formatDate(_selectedDate ?? DateTime.now()),
+    'time': _formatTime(_selectedTime ?? TimeOfDay.now()),
+    'multiple_dress': multipleDress,
+    'note': note,
+    'reservation_associated': _reservationId, // ID de la reserva principal
+    'package_price': totalReservationPrice.toString(),
+  }).future);
+
+  setState(() {
+    isSubmitting = false;
+  });
+
+  if (success.statusReservation) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("¡Adicionales agregados a la reserva exitosamente!"),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    if (mounted) {
+      ref.read(sidebarProvider.notifier)
+        ..expandMenu('/sales')
+        ..selectItem('/sales/inventory-sales');
+
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      context.go('/sales/inventory-sales');
+    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Error al agregar los adicionales. Por favor intenta de nuevo."),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
