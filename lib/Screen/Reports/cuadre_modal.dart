@@ -21,66 +21,30 @@ class CuadreModal extends StatefulWidget {
   State<CuadreModal> createState() => _CuadreModalState();
 }
 
-class _CuadreModalState extends State<CuadreModal> {
-  // --- Estado para totales de métodos de pago desde Firebase ---
+class _CuadreModalState extends State<CuadreModal> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  
+  // --- Estado para transacciones diarias ---
   Map<String, dynamic> _dailyTransactions = {};
-  bool _loadingPagos = false;
+  bool _loading = true;
+  
+  // Totales generales
   double _totalEfectivo = 0.0;
   double _totalTarjeta = 0.0;
   double _totalTransferencia = 0.0;
-  double _totalPagos = 0.0; // Total de pagos (salidas de dinero)
-  double _totalVentasDia = 0.0; // Total de ventas del día
-  double _totalVentasDiaPagado = 0.0; // Total de ventas del día
-  double _totalPendiente = 0.0; // Total de montos pendientes del día
-
+  double _totalPagos = 0.0;
+  double _totalVentas = 0.0;
+  double _totalCobros = 0.0;
+  double _totalPendiente = 0.0;
+  
   // Desglose de pagos por método
   double _pagoEfectivo = 0.0;
   double _pagoTarjeta = 0.0;
   double _pagoTransferencia = 0.0;
 
-  // Eliminados filtros de fecha y variables asociadas, solo se usará la fecha de hoy
+  // Filtros
   late DateTime _hoy;
-
-  // Función helper para formatear montos con comas de millar
-  String formatCurrency(double amount) {
-    return myFormat.format(amount);
-  }
-
-  // Log de depuración para validar los datos en tiempo real
-  void logDebugData() {
-    debugPrint('--- [CuadreModal] Debug Data ---');
-    debugPrint('totalEfectivo: \t$totalEfectivo');
-    debugPrint('totalTarjeta: \t$totalTarjeta');
-    debugPrint('totalTransferencia: $totalTransferencia');
-    debugPrint('totalPagos: \t$_totalPagos');
-    debugPrint('  - Pagos Efectivo: \t$_pagoEfectivo');
-    debugPrint('  - Pagos Tarjeta: \t$_pagoTarjeta');
-    debugPrint('  - Pagos Transferencia: \t$_pagoTransferencia');
-    debugPrint('totalGastos:     ${widget.totalGastos}');
-    debugPrint('totalVentasDelDia: $totalVentasDelDia');
-    debugPrint('totalPendiente:    $totalPendiente');
-    debugPrint('totalNetoPorDia:   $totalNetoPorDia');
-    debugPrint('totalContado:      $totalContado');
-    debugPrint('cantidades:        $cantidades');
-    debugPrint('--------------------------------');
-  }
-
-  /// Función utilitaria para categorizar métodos de pago de forma robusta (idéntica a report_screen.dart)
-  String categorizarMetodoPago(String? paymentType) {
-    final tipo = (paymentType ?? '').toLowerCase();
-    if (tipo.contains('cash') || tipo.contains('efectivo')) return 'Efectivo';
-    if (tipo.contains('card') ||
-        tipo.contains('tarjeta') ||
-        tipo.contains('bank')) {
-      return 'Tarjeta';
-    }
-    if (tipo.contains('transfer') ||
-        tipo.contains('transferencia') ||
-        tipo.contains('mobile')) {
-      return 'Transferencia';
-    }
-    return 'Otro';
-  }
+  late String _hoyFormatted;
 
   // Denominaciones de RD$
   final List<int> billetes = [2000, 1000, 500, 200, 100, 50];
@@ -104,336 +68,163 @@ class _CuadreModalState extends State<CuadreModal> {
   @override
   void initState() {
     super.initState();
-    _hoy =
-        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    debugPrint(
-        '[CuadreModal] initState ejecutado. ventasDelDia: \\${widget.ventasDelDia.length}');
+    _tabController = TabController(length: 2, vsync: this);
+    
+    _hoy = DateTime.now();
+    _hoyFormatted = '${_hoy.year}-${_hoy.month.toString().padLeft(2, '0')}-${_hoy.day.toString().padLeft(2, '0')}';
+    
     for (var d in [...billetes, ...monedas]) {
       cantidades[d] = 0;
     }
-
-    // Usar directamente las ventas sin filtrar para calcular los totales
-    _calcularTotalesDirectamente();
-
-    // Obtener datos adicionales de Firebase
-    _fetchPagosDesdeFirebase();
+    
+    _fetchDailyTransactions();
   }
 
-  // Calcular totales directamente de las ventas sin depender de Firebase
-  void _calcularTotalesDirectamente() {
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchDailyTransactions() async {
+    setState(() => _loading = true);
+    try {
+      final ref = FirebaseDatabase.instance
+          .ref(await getUserID())
+          .child('Daily Transaction');
+      
+      final snapshot = await ref.get();
+      
+      if (snapshot.exists) {
+        Map<String, dynamic> allTransactions = 
+            Map<String, dynamic>.from(snapshot.value as Map);
+        
+        // Filtrar por fecha de hoy
+       _dailyTransactions = Map.fromEntries(
+          allTransactions.entries.where((entry) {
+            final date = entry.value['date']?.toString() ?? '';
+            return date.contains(_hoyFormatted);
+          }),
+        );
+        
+        _calcularTotales();
+      }
+    } catch (e) {
+      debugPrint('Error al cargar transacciones diarias: $e');
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  void _calcularTotales() {
     double efectivo = 0.0;
     double tarjeta = 0.0;
     double transferencia = 0.0;
     double pagos = 0.0;
+    double ventas = 0.0;
+    double cobros = 0.0;
+    double pendiente = 0.0;
+    
     double pagoEfectivo = 0.0;
     double pagoTarjeta = 0.0;
     double pagoTransferencia = 0.0;
-    double ventasDia = 0.0; // Variable temporal para el total de ventas del día
-    double ventasTotal = 0.0;
-    double totalPendiente = 0.0; // Variable temporal para el total pendiente
 
-    debugPrint('[CuadreModal] INICIANDO CÁLCULO DE TOTALES DESDE VENTAS');
-    debugPrint(
-        '[CuadreModal] Total de ventas a procesar: ${widget.ventasDelDia.length}');
+    _dailyTransactions.forEach((key, value) {
+      final type = value['type']?.toString().toLowerCase() ?? '';
+      final paymentIn = (value['paymentIn'] as num?)?.toDouble() ?? 0.0;
+      final paymentOut = (value['paymentOut'] as num?)?.toDouble() ?? 0.0;
+      final total = (value['total'] as num?)?.toDouble() ?? 0.0;
+      final remainingBalance = (value['remainingBalance'] as num?)?.toDouble() ?? 0.0;
+      
+      // Determinar método de pago
+      String paymentType = '';
+      if (value['saleTransactionModel'] != null) {
+        paymentType = value['saleTransactionModel']['paymentType'] ?? '';
+      } else if (value['dueTransactionModel'] != null) {
+        paymentType = value['dueTransactionModel']['paymentType'] ?? '';
+      } else if (value['paymentTransactionModel'] != null) {
+        paymentType = value['paymentTransactionModel']['paymentType'] ?? '';
+      }
+      
+      final metodoPago = _categorizarMetodoPago(paymentType);
 
-    for (var venta in widget.ventasDelDia) {
-      final paymentType = venta.paymentType;
-      final amount = venta.totalAmount; // Importe total de la venta
-      final pendiente = venta.dueAmount ?? 0; // Importe pendiente
-      final tipo = venta.paymentType; // Para distinguir entre ventas y pagos
-      final id = venta.invoiceNumber;
-
-      debugPrint('[CuadreModal] Procesando venta/pago ID: $id');
-      debugPrint(
-          '[CuadreModal]   - Tipo: $tipo, Método Pago: $paymentType, Total: $amount, Pendiente: $pendiente');
-
-      if (amount != null) {
-        final double montoTotal = amount;
-        final double montoPendiente = pendiente;
-
-        // Calculamos el monto realmente pagado (total - pendiente)
-        final double montoPagado = montoTotal - montoPendiente;
-
-        debugPrint(
-            '[CuadreModal]   - Monto calculado real pagado: $montoPagado');
-        debugPrint('[CuadreModal]   - Monto pendiente: $montoPendiente');
-
-        final metodoPago = categorizarMetodoPago(paymentType);
-
-        // Si es un pago (salida de dinero)
-        if (tipo != null && tipo.toString().toLowerCase() == 'payment') {
-          pagos += montoTotal;
-
-          // Desglosar el pago por método
-          if (metodoPago == 'Efectivo') {
-            pagoEfectivo += montoTotal;
-            debugPrint(
-                '[CuadreModal] ✓ Pago en Efectivo: $montoTotal, Total Acumulado: $pagoEfectivo');
-          } else if (metodoPago == 'Tarjeta') {
-            pagoTarjeta += montoTotal;
-            debugPrint(
-                '[CuadreModal] ✓ Pago con Tarjeta: $montoTotal, Total Acumulado: $pagoTarjeta');
-          } else if (metodoPago == 'Transferencia') {
-            pagoTransferencia += montoTotal;
-            debugPrint(
-                '[CuadreModal] ✓ Pago por Transferencia: $montoTotal, Total Acumulado: $pagoTransferencia');
-          }
-
-          continue;
-        }
-
-        // Primero sumamos al total de ventas del día y acumulamos pendientes
-        ventasDia += montoPagado; // Sumamos sólo lo realmente pagado
-        ventasTotal += montoTotal;
-
-        if (montoPendiente > 0) {
-          totalPendiente += montoPendiente; // Acumulamos los montos pendientes
-          debugPrint(
-              '[CuadreModal] ✓ Pendiente detectado: $montoPendiente, Total Acumulado: $totalPendiente');
-        }
-
-        // Luego distribuimos por método de pago
+      if (type == 'sale') {
+        ventas += total;
+        pendiente += remainingBalance;
+        
         if (metodoPago == 'Efectivo') {
-          efectivo += montoPagado; // Restamos el monto pendiente
-          debugPrint(
-              '[CuadreModal] ✓ Venta en Efectivo - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $efectivo');
+          efectivo += paymentIn;
         } else if (metodoPago == 'Tarjeta') {
-          tarjeta += montoPagado; // Restamos el monto pendiente
-          debugPrint(
-              '[CuadreModal] ✓ Venta con Tarjeta - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $tarjeta');
+          tarjeta += paymentIn;
         } else if (metodoPago == 'Transferencia') {
-          transferencia += montoPagado; // Restamos el monto pendiente
-          debugPrint(
-              '[CuadreModal] ✓ Venta por Transferencia - Total: $montoTotal, Pendiente: $montoPendiente, Pagado: $montoPagado, Acumulado: $transferencia');
+          transferencia += paymentIn;
+        }
+      } 
+      else if (type == 'due collection') {
+        cobros += paymentIn;
+        
+        if (metodoPago == 'Efectivo') {
+          efectivo += paymentIn;
+        } else if (metodoPago == 'Tarjeta') {
+          tarjeta += paymentIn;
+        } else if (metodoPago == 'Transferencia') {
+          transferencia += paymentIn;
         }
       }
-    }
+      else if (type == 'payment') {
+        pagos += paymentOut;
+        
+        if (metodoPago == 'Efectivo') {
+          pagoEfectivo += paymentOut;
+        } else if (metodoPago == 'Tarjeta') {
+          pagoTarjeta += paymentOut;
+        } else if (metodoPago == 'Transferencia') {
+          pagoTransferencia += paymentOut;
+        }
+      }
+    });
 
-    // Actualizar los totales
     setState(() {
       _totalEfectivo = efectivo;
       _totalTarjeta = tarjeta;
       _totalTransferencia = transferencia;
       _totalPagos = pagos;
+      _totalVentas = ventas;
+      _totalCobros = cobros;
+      _totalPendiente = pendiente;
       _pagoEfectivo = pagoEfectivo;
       _pagoTarjeta = pagoTarjeta;
       _pagoTransferencia = pagoTransferencia;
-      _totalVentasDia = ventasTotal; // Actualiza el total de ventas del día
-      _totalVentasDiaPagado = ventasDia;
-      _totalPendiente = totalPendiente; // Actualiza el total pendiente
     });
-
-    // Imprimir resumen final para depuración
-    debugPrint('=================================================');
-    debugPrint('[CuadreModal] RESUMEN DE TOTALES CALCULADOS:');
-    debugPrint('    - Total Ventas del Día: $_totalVentasDia');
-    debugPrint('    - Total Pendiente: $_totalPendiente');
-    debugPrint('    - Efectivo: $_totalEfectivo');
-    debugPrint('    - Tarjeta: $_totalTarjeta');
-    debugPrint('    - Transferencia: $_totalTransferencia');
-    debugPrint('    - Total Pagos: $_totalPagos');
-    debugPrint('    - Pagos Efectivo: $_pagoEfectivo');
-    debugPrint('    - Pagos Tarjeta: $_pagoTarjeta');
-    debugPrint('    - Pagos Transferencia: $_pagoTransferencia');
-    debugPrint('  Efectivo Neto: ${_totalEfectivo - _pagoEfectivo}');
-    debugPrint('=================================================');
   }
 
-  Future<void> _fetchPagosDesdeFirebase() async {
-    setState(() => _loadingPagos = true);
-    try {
-      final ref = FirebaseDatabase.instance
-          .ref(await getUserID())
-          .child('Daily Transaction');
-      final snapshot = await ref.get();
-
-      if (snapshot.exists) {
-        Map<String, dynamic> allDailyTransactions =
-            Map<String, dynamic>.from(snapshot.value as Map);
-
-        // Filtrar por IDs
-        Map<String, dynamic> filteredTransactions = {};
-
-        for (var transaction in widget.ventasDelDia) {
-          final matchingEntries = allDailyTransactions.entries
-              .where((entry) => entry.value['id'] == transaction.invoiceNumber);
-
-          for (var entry in matchingEntries) {
-            filteredTransactions[entry.key] = entry.value;
-          }
-        }
-
-        // Si encontramos movimientos en Firebase, usar esos totales
-        if (filteredTransactions.isNotEmpty) {
-          _dailyTransactions = filteredTransactions;
-
-          // Solo sobrescribimos los valores si encontramos algo en Firebase
-          debugPrint(
-              '[CuadreModal] =================================================');
-          debugPrint(
-              '[CuadreModal] INICIANDO CÁLCULO DE TOTALES DESDE FIREBASE');
-          double efectivoFB = calculateTotalMoney(_dailyTransactions);
-          double tarjetaFB = calculateTotalCard(_dailyTransactions);
-          double transferenciaFB = calculateTotalTransfer(_dailyTransactions);
-          double pagosFB = _calculateTotalPayments(_dailyTransactions);
-
-          debugPrint('[CuadreModal] COMPARACIÓN DE TOTALES:');
-          debugPrint(
-              '[CuadreModal]   Efectivo - Directo: $_totalEfectivo, Firebase: $efectivoFB');
-          debugPrint(
-              '[CuadreModal]   Tarjeta - Directo: $_totalTarjeta, Firebase: $tarjetaFB');
-          debugPrint(
-              '[CuadreModal]   Transferencia - Directo: $_totalTransferencia, Firebase: $transferenciaFB');
-          debugPrint(
-              '[CuadreModal]   Pagos - Directo: $_totalPagos, Firebase: $pagosFB');
-
-          if (efectivoFB > 0 ||
-              tarjetaFB > 0 ||
-              transferenciaFB > 0 ||
-              pagosFB > 0) {
-            setState(() {
-              _totalEfectivo = efectivoFB;
-              _totalTarjeta = tarjetaFB;
-              _totalTransferencia = transferenciaFB;
-              _totalPagos = pagosFB;
-              // Mantener el valor de totalPendiente calculado previamente
-              // _totalPendiente no se modifica desde Firebase
-            });
-
-            debugPrint('[CuadreModal] Totales actualizados desde Firebase:');
-            debugPrint('  Efectivo: $_totalEfectivo');
-            debugPrint('  Tarjeta: $_totalTarjeta');
-            debugPrint('  Transferencia: $_totalTransferencia');
-            debugPrint('  Pagos: $_totalPagos');
-            debugPrint('  Total Pendiente (mantenido): $_totalPendiente');
-          } else {
-            debugPrint(
-                '[CuadreModal] Todos los totales de Firebase son 0, manteniendo totales directos');
-          }
-        } else {
-          debugPrint(
-              '[CuadreModal] No se encontraron transacciones en Firebase que coincidan con las ventas');
-        }
-      } else {
-        debugPrint(
-            '[CuadreModal] No existen transacciones en Firebase para este usuario');
-      }
-    } catch (e) {
-      debugPrint('Error al consultar pagos desde Firebase: $e');
+  String _categorizarMetodoPago(String? paymentType) {
+    final tipo = (paymentType ?? '').toLowerCase();
+    if (tipo.contains('cash') || tipo.contains('efectivo')) return 'Efectivo';
+    if (tipo.contains('card') || tipo.contains('tarjeta') || tipo.contains('bank')) {
+      return 'Tarjeta';
     }
-    setState(() => _loadingPagos = false);
+    if (tipo.contains('transfer') || tipo.contains('transferencia') || tipo.contains('mobile')) {
+      return 'Transferencia';
+    }
+    return 'Otro';
   }
 
-  double calculateTotalMoney(Map<String, dynamic> dailyTransactions) {
-    double total = 0.0;
-    dailyTransactions.forEach((key, value) {
-      final type = value['type'];
-      final paymentType =
-          value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
-              ?['paymentType'];
-      if (categorizarMetodoPago(paymentType) == 'Efectivo') {
-        total += (value['paymentIn'] as num).toDouble();
-      }
-    });
-    return total;
-  }
-
-  double calculateTotalTransfer(Map<String, dynamic> dailyTransactions) {
-    double total = 0.0;
-    dailyTransactions.forEach((key, value) {
-      final type = value['type'];
-      final paymentType =
-          value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
-              ?['paymentType'];
-      if (categorizarMetodoPago(paymentType) == 'Transferencia') {
-        total += (value['paymentIn'] as num).toDouble();
-      }
-    });
-    return total;
-  }
-
-  double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
-    double total = 0.0;
-    dailyTransactions.forEach((key, value) {
-      final type = value['type'];
-      final paymentType =
-          value[type == 'Sale' ? 'saleTransactionModel' : 'dueTransactionModel']
-              ?['paymentType'];
-      if (categorizarMetodoPago(paymentType) == 'Tarjeta') {
-        total += (value['paymentIn'] as num).toDouble();
-      }
-    });
-    return total;
-  }
-
-  double _calculateTotalPayments(Map<String, dynamic> dailyTransactions) {
-    double total = 0.0;
-    double efectivo = 0.0;
-    double tarjeta = 0.0;
-    double transferencia = 0.0;
-
-    debugPrint('[CuadreModal] CALCULANDO PAGOS (SALIDAS) DESDE FIREBASE:');
-
-    dailyTransactions.forEach((key, value) {
-      final type = value['type']?.toString().toLowerCase() ?? '';
-      final id = value['id'] ?? value['invoiceNumber'];
-
-      if (type == 'payment') {
-        final double monto = (value['paymentOut'] as num? ?? 0).toDouble();
-        total += monto;
-
-        // Desglosar por método de pago
-        final paymentType = value['paymentTransactionModel']?['paymentType'];
-        final metodoPago = categorizarMetodoPago(paymentType);
-
-        if (metodoPago == 'Efectivo') {
-          efectivo += monto;
-          debugPrint(
-              '[CuadreModal] Firebase - Pago Efectivo ID $id: $monto, Acumulado=$efectivo');
-        } else if (metodoPago == 'Tarjeta') {
-          tarjeta += monto;
-          debugPrint(
-              '[CuadreModal] Firebase - Pago Tarjeta ID $id: $monto, Acumulado=$tarjeta');
-        } else if (metodoPago == 'Transferencia') {
-          transferencia += monto;
-          debugPrint(
-              '[CuadreModal] Firebase - Pago Transferencia ID $id: $monto, Acumulado=$transferencia');
-        }
-      }
-    });
-
-    // Guardar los desgloses
-    setState(() {
-      _pagoEfectivo = efectivo;
-      _pagoTarjeta = tarjeta;
-      _pagoTransferencia = transferencia;
-    });
-
-    debugPrint('[CuadreModal] RESUMEN PAGOS DESDE FIREBASE:');
-    debugPrint('  Total Pagos: $total');
-    debugPrint('  - Efectivo: $efectivo');
-    debugPrint('  - Tarjeta: $tarjeta');
-    debugPrint('  - Transferencia: $transferencia');
-
-    return total;
+  String formatCurrency(double amount) {
+    return myFormat.format(amount);
   }
 
   double get totalEfectivo => _totalEfectivo;
   double get totalTarjeta => _totalTarjeta;
   double get totalTransferencia => _totalTransferencia;
   double get totalPagos => _totalPagos;
+  double get totalVentas => _totalVentas;
+  double get totalCobros => _totalCobros;
+  double get totalPendiente => _totalPendiente;
   double get pagoEfectivo => _pagoEfectivo;
   double get pagoTarjeta => _pagoTarjeta;
   double get pagoTransferencia => _pagoTransferencia;
-  double get totalPendiente => _totalPendiente;
-  double get totalVentasDia => _totalVentasDia;
-  double get totalVentasDiaPagado => _totalVentasDiaPagado;
 
-  double get totalVentasDelDia => _totalVentasDia;
-
-  double get totalVentasNetoDelDia => totalVentasDelDia - totalPagos;
-
-  // Efectivo neto = ingreso efectivo - pagos en efectivo
   double get efectivoNeto => totalEfectivo - pagoEfectivo;
 
   double get totalContado {
@@ -445,21 +236,21 @@ class _CuadreModalState extends State<CuadreModal> {
   }
 
   double get totalNetoPorDia {
-    return totalVentasNetoDelDia - widget.totalGastos;
+    return (totalVentas + totalCobros) - (totalPagos + widget.totalGastos);
   }
 
-  // Método para generar el reporte de cuadre en formato de texto
   String _generateReportText() {
-  final now = DateTime.now();
-  final formattedDate = '${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}';
-  final bool cuadreOk = totalContado == efectivoNeto;
-  final diferencia = (totalContado - efectivoNeto).abs();
-  
-  return '''🏪 CUADRE DE CAJA
+    final now = DateTime.now();
+    final formattedDate = '${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}';
+    final bool cuadreOk = totalContado == efectivoNeto;
+    final diferencia = (totalContado - efectivoNeto).abs();
+    
+    return '''🏪 CUADRE DE CAJA
 📅 ${_getFormattedDate(now)}
 
 📊 RESUMEN DEL DÍA
-💰 Total Ventas: \$${formatCurrency(totalVentasDia)} RD\$
+💰 Total Ventas: \$${formatCurrency(totalVentas)} RD\$
+💵 Total Cobros: \$${formatCurrency(totalCobros)} RD\$
 ⏰ Pendiente: \$${formatCurrency(totalPendiente)} RD\$
 💵 Efectivo Neto: \$${formatCurrency(efectivoNeto)} RD\$
 🛒 Total Gastos: \$${formatCurrency(widget.totalGastos)} RD\$
@@ -479,9 +270,8 @@ ${cuadreOk ? '✅ Cuadre Perfecto' : '⚠️ Diferencia: \$${formatCurrency(dife
 ---
 Generado: $formattedDate
 Sistema: VICTOR GUZMAN FOTOGRAFIA''';
-}
+  }
 
-  // Método auxiliar para formatear la fecha
   String _getFormattedDate(DateTime date) {
     final days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     final months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -498,13 +288,11 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
 
       final body = {
         'token': '5i36w829nb1ljkj7', //token santo domingo
-        //'token': '5gs146cmkgu6y5vw', //token santiago
         'to': phoneNumber,
         'body': message,
       };
 
       final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat'); //instancia santo domingo
-      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/chat'); //instancia santiago
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
       final response = await http.post(
@@ -515,9 +303,8 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
 
       if (response.statusCode == 200) {
         EasyLoading.showSuccess('Reporte de cuadre enviado');
-        // Mostrar el SnackBar usando el contexto del Scaffold padre
         if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop(); // Cierra el diálogo primero
+          Navigator.of(context).pop();
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -534,7 +321,8 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('Ventas: RD\$${formatCurrency(totalVentasDia)}'),
+                Text('Ventas: RD\$${formatCurrency(totalVentas)}'),
+                Text('Cobros: RD\$${formatCurrency(totalCobros)}'),
                 Text('Pendientes: RD\$${formatCurrency(totalPendiente)}'),
                 Text('Efectivo: RD\$${formatCurrency(totalContado)}'),
               ],
@@ -558,8 +346,6 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
 
   @override
   Widget build(BuildContext context) {
-    logDebugData();
-
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
@@ -572,36 +358,38 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
             // Header
             _buildHeader(),
             const SizedBox(height: 20),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Resumen de ventas
-                    _buildVentasResumen(),
-                    const SizedBox(height: 20),
-
-                    // Métodos de pago
-                    _buildMetodosPago(),
-                    const SizedBox(height: 20),
-
-                    // Balance del día
-                    _buildBalanceDelDia(),
-                    const SizedBox(height: 20),
-
-                    // Contador de efectivo
-                    _buildContadorEfectivo(),
-                    const SizedBox(height: 20),
-
-                    // Verificación de cuadre
-                    _buildVerificacionCuadre(),
-                  ],
-                ),
+            
+            // Tabs
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                labelColor: const Color.fromARGB(255, 219, 127, 21),
+                tabs: const [
+                  Tab(text: 'Ventas del Día'),
+                  Tab(text: 'Cuentas por Cobrar'),
+                ],
               ),
             ),
-
+            const SizedBox(height: 20),
+            
+            // Content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Tab de Ventas
+                  _buildVentasTab(),
+                  
+                  // Tab de Cuentas por Cobrar
+                  _buildCuentasPorCobrarTab(),
+                ],
+              ),
+            ),
+            
             // Actions
             const SizedBox(height: 20),
             _buildActions(),
@@ -661,6 +449,54 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
     );
   }
 
+  Widget _buildVentasTab() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Resumen de ventas
+          _buildVentasResumen(),
+          const SizedBox(height: 20),
+
+          // Métodos de pago
+          _buildMetodosPago(),
+          const SizedBox(height: 20),
+
+          // Balance del día
+          _buildBalanceDelDia(),
+          const SizedBox(height: 20),
+
+          // Contador de efectivo
+          _buildContadorEfectivo(),
+          const SizedBox(height: 20),
+
+          // Verificación de cuadre
+          _buildVerificacionCuadre(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCuentasPorCobrarTab() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Resumen de cuentas por cobrar
+          _buildCuentasPorCobrarResumen(),
+          const SizedBox(height: 20),
+
+          // Métodos de pago (cobros)
+          _buildMetodosPagoCobros(),
+          const SizedBox(height: 20),
+
+          // Pendientes
+          _buildPendientesResumen(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildVentasResumen() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -696,7 +532,7 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
               Expanded(
                 child: _buildMetricCard(
                   'Total Ventas',
-                  'RD\$${formatCurrency(totalVentasDia)}',
+                  'RD\$${formatCurrency(totalVentas)}',
                   Icons.attach_money,
                   Colors.green,
                 ),
@@ -707,6 +543,62 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
                   'Pendiente',
                   'RD\$${formatCurrency(totalPendiente)}',
                   Icons.schedule,
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCuentasPorCobrarResumen() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.purple.shade50, Colors.purple.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.purple.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.credit_card, color: Colors.purple.shade600, size: 24),
+              const SizedBox(width: 12),
+              const Text(
+                'Cuentas por Cobrar',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricCard(
+                  'Total Cobrado',
+                  'RD\$${formatCurrency(totalCobros)}',
+                  Icons.money,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMetricCard(
+                  'Por Cobrar',
+                  'RD\$${formatCurrency(totalPendiente)}',
+                  Icons.pending_actions,
                   Colors.orange,
                 ),
               ),
@@ -739,7 +631,7 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
               Icon(Icons.payment, color: Colors.purple.shade600, size: 24),
               const SizedBox(width: 12),
               const Text(
-                'Métodos de Pago',
+                'Métodos de Pago (Ventas)',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -792,6 +684,63 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
     );
   }
 
+  Widget _buildMetodosPagoCobros() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payment, color: Colors.purple.shade600, size: 24),
+              const SizedBox(width: 12),
+              const Text(
+                'Métodos de Pago (Cobros)',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildPaymentMethodRow(
+            'Efectivo',
+            totalEfectivo,
+            Icons.money,
+            Colors.green,
+          ),
+          const SizedBox(height: 12),
+          _buildPaymentMethodRow(
+            'Tarjeta',
+            totalTarjeta,
+            Icons.credit_card,
+            Colors.purple,
+          ),
+          const SizedBox(height: 12),
+          _buildPaymentMethodRow(
+            'Transferencia',
+            totalTransferencia,
+            Icons.swap_horiz,
+            Colors.orange,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBalanceDelDia() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -824,14 +773,21 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
           ),
           const SizedBox(height: 16),
           _buildBalanceRow(
-            'Entradas',
-            totalVentasDiaPagado,
+            'Ventas',
+            totalVentas,
             Icons.arrow_upward,
             Colors.green,
           ),
           const SizedBox(height: 8),
           _buildBalanceRow(
-            'Salidas',
+            'Cobros',
+            totalCobros,
+            Icons.arrow_upward,
+            Colors.green,
+          ),
+          const SizedBox(height: 8),
+          _buildBalanceRow(
+            'Pagos',
             totalPagos,
             Icons.arrow_downward,
             Colors.red,
@@ -849,12 +805,12 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: totalVentasNetoDelDia >= 0
+              color: totalNetoPorDia >= 0
                   ? Colors.green.shade50
                   : Colors.red.shade50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: totalVentasNetoDelDia >= 0
+                color: totalNetoPorDia >= 0
                     ? Colors.green.shade300
                     : Colors.red.shade300,
               ),
@@ -862,10 +818,10 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
             child: Row(
               children: [
                 Icon(
-                  totalVentasNetoDelDia >= 0
+                  totalNetoPorDia >= 0
                       ? Icons.trending_up
                       : Icons.trending_down,
-                  color: totalVentasNetoDelDia >= 0 ? Colors.green : Colors.red,
+                  color: totalNetoPorDia >= 0 ? Colors.green : Colors.red,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -881,11 +837,11 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
                       ),
                     ),
                     Text(
-                      'RD\$${formatCurrency(totalVentasNetoDelDia)}',
+                      'RD\$${formatCurrency(totalNetoPorDia)}',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: totalVentasNetoDelDia >= 0
+                        color: totalNetoPorDia >= 0
                             ? Colors.green
                             : Colors.red,
                       ),
@@ -900,30 +856,27 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
     );
   }
 
-  Widget _buildContadorEfectivo() {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+  Widget _buildPendientesResumen() {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          colors: [Colors.orange.shade50, Colors.orange.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.orange.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.calculate, color: Colors.indigo.shade600, size: isMobile ? 20 : 24),
+              Icon(Icons.pending_actions, color: Colors.orange.shade600, size: 24),
               const SizedBox(width: 12),
               const Text(
-                'Contador de Efectivo',
+                'Pendientes por Cobrar',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -933,55 +886,138 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
             ],
           ),
           const SizedBox(height: 16),
-
-          // Billetes
-          _buildDenominationSection('Billetes', billetes, imagenesBilletes),
-          const SizedBox(height: 16),
-
-          // Monedas
-          _buildDenominationSection('Monedas', monedas, imagenesMonedas),
-          const SizedBox(height: 16),
-
-          // Total contado
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.shade200,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ), // ← ✅ cierre correcto del BoxShadow
+              ],
             ),
-            child: Row(
+            child: Column(
               children: [
-                Icon(Icons.account_balance_wallet, color: Colors.blue.shade600),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Total Contado',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Text(
-                      'RD\$${formatCurrency(totalContado)}',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade600,
-                      ),
-                    ),
-                  ],
+                _buildPendienteRow(
+                  'Total Pendiente',
+                  totalPendiente,
+                  Icons.money_off,
+                  Colors.red,
+                ),
+                const SizedBox(height: 12),
+                _buildPendienteRowInt(
+                  'Clientes con Saldo',
+                  _countClientsWithBalance(),
+                  Icons.people,
+                  Colors.blue,
                 ),
               ],
             ),
           ),
+
         ],
       ),
     );
   }
+
+  int _countClientsWithBalance() {
+    final Set<String> clients = {};
+    for (final entry in _dailyTransactions.entries) {
+      final value = entry.value;
+      final remaining = (value['remainingBalance'] as num?)?.toDouble() ?? 0;
+      final clientId = value['id']?.toString() ?? '';
+      if (remaining > 0 && clientId.isNotEmpty) {
+        clients.add(clientId);
+      }
+    }
+    return clients.length;
+  }
+
+  Widget _buildContadorEfectivo() {
+  final isMobile = MediaQuery.of(context).size.width < 600;
+  return Container(
+    padding: EdgeInsets.all(isMobile ? 16 : 20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.shade200,
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.calculate, color: Colors.indigo.shade600, size: isMobile ? 20 : 24),
+            const SizedBox(width: 12),
+            const Text(
+              'Contador de Efectivo',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Billetes
+        _buildDenominationSection('Billetes', billetes, imagenesBilletes),
+        const SizedBox(height: 16),
+
+        // Monedas
+        _buildDenominationSection('Monedas', monedas, imagenesMonedas),
+        const SizedBox(height: 16),
+
+        // Total contado
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.account_balance_wallet, color: Colors.blue.shade600),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Total Contado',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    'RD\$${formatCurrency(totalContado)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildVerificacionCuadre() {
     final bool cuadreOk = totalContado == efectivoNeto;
@@ -1058,10 +1094,7 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
-            onPressed: () {
-              logDebugData();
-              _sendReportViaWhatsApp(context);
-            },
+            onPressed: () => _sendReportViaWhatsApp(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue.shade600,
               foregroundColor: Colors.white,
@@ -1082,46 +1115,51 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
 
   // Métodos auxiliares para construir componentes
   Widget _buildMetricCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+  String title,
+  String value,
+  IconData icon,
+  Color color,
+) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.shade200,
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ), // ✅ cierre correcto del BoxShadow
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildPaymentMethodRow(
       String method, double amount, IconData icon, Color color,
@@ -1207,6 +1245,60 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
         ),
         Text(
           'RD\$${formatCurrency(amount)}',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPendienteRow(
+      String label, double amount, IconData icon, Color color) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        Text(
+          label.contains('RD') ? 'RD\$${formatCurrency(amount)}' : amount.toString(),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPendienteRowInt(
+      String label, int amount, IconData icon, Color color) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        Text(
+          amount.toString(),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
