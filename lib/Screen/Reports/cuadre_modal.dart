@@ -369,7 +369,7 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
                 controller: _tabController,
                 labelColor: const Color.fromARGB(255, 219, 127, 21),
                 tabs: const [
-                  Tab(text: 'Ventas del Día'),
+                  Tab(text: 'Reservas del Día'),
                   Tab(text: 'Cuentas por Cobrar'),
                 ],
               ),
@@ -1271,7 +1271,7 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
           ),
         ),
         Text(
-          label.contains('RD') ? 'RD\$${formatCurrency(amount)}' : amount.toString(),
+          'RD\$${formatCurrency(amount)}',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,

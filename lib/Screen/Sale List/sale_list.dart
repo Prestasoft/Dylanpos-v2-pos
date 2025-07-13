@@ -666,13 +666,17 @@ class _SaleListState extends State<SaleList> {
                                                               ///____Sales_Return________________________________________
                                                               PopupMenuItem(
                                                                 onTap: () {
-                                                                  context.push(
-                                                                    '/sales/sales-return',
-                                                                    extra: {
-                                                                      'personalInformationModel': profile.value!,
-                                                                      'saleTransactionModel': paginatedTransactions[index],
-                                                                    },
-                                                                  );
+                                                                  if (profile.value != null) {
+                                                                    context.push(
+                                                                      '/sales/sales-return',
+                                                                      extra: {
+                                                                        'personalInformationModel': profile.value!,
+                                                                        'saleTransactionModel': paginatedTransactions[index],
+                                                                      },
+                                                                    );
+                                                                  } else {
+                                                                    EasyLoading.showError('Perfil no cargado');
+                                                                  }
                                                                 },
                                                                 child: Row(
                                                                   children: [
@@ -1113,7 +1117,7 @@ class _SaleListState extends State<SaleList> {
                   ),
                 ],
               ),
-            );
+            };
           },
         );
       },
