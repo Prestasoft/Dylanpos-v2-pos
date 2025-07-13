@@ -363,13 +363,9 @@ class _SalesReturnWidgetState extends State<SalesReturnWidget> {
                                                       .of(context)
                                                       .invoice)),
                                               DataColumn(
-                                                  label: Text(lang.S
-                                                      .of(context)
-                                                      .partyName)),
+                                                  label: Text('Nombre Cliente')), // Cambiado aquí
                                               DataColumn(
-                                                  label: Text(lang.S
-                                                      .of(context)
-                                                      .partyType)),
+                                                  label: Text('Método de Pago')),
                                               DataColumn(
                                                   label: Text(lang.S
                                                       .of(context)
@@ -426,9 +422,7 @@ class _SalesReturnWidgetState extends State<SalesReturnWidget> {
 
                                                 DataCell(
                                                   Text(
-                                                    paginatedList[index]
-                                                        .paymentType
-                                                        .toString(),
+                                                    _traducirMetodoPago(paginatedList[index].paymentType.toString()),
                                                   ),
                                                 ),
 
@@ -673,5 +667,20 @@ class _SalesReturnWidgetState extends State<SalesReturnWidget> {
         );
       });
     });
+  }
+
+  String _traducirMetodoPago(String tipo) {
+    switch (tipo.toLowerCase()) {
+      case 'cash':
+        return 'Efectivo';
+      case 'card':
+        return 'Tarjeta';
+      case 'bank':
+      case 'transfer':
+      case 'transferencia':
+        return 'Transferencia';
+      default:
+        return tipo;
+    }
   }
 }

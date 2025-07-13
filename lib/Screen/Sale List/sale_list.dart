@@ -1117,7 +1117,7 @@ class _SaleListState extends State<SaleList> {
                   ),
                 ],
               ),
-            };
+            );
           },
         );
       },
