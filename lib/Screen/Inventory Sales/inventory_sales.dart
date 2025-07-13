@@ -47,6 +47,8 @@ import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../model/sale_confirmation_model.dart';
+import '../../services/audit_service.dart';
+import '../../model/audit_model.dart';
 
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation});
@@ -2712,6 +2714,21 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                                     transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
 
                                                                     await ref.push().set(transitionModel.toJson());
+                                                                    
+                                                                    // Registrar auditoría de la cotización
+                                                                    await AuditService().logCreate(
+                                                                      module: AuditModule.sales,
+                                                                      itemName: 'Cotización',
+                                                                      itemId: transitionModel.invoiceNumber,
+                                                                      data: {
+                                                                        'customerName': transitionModel.customerName,
+                                                                        'totalAmount': transitionModel.totalAmount,
+                                                                        'productCount': cartList.length,
+                                                                        'discountAmount': transitionModel.discountAmount,
+                                                                        'serviceCharge': transitionModel.serviceCharge,
+                                                                      },
+                                                                    );
+                                                                    
                                                                     updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
                                                                     // ignore: unused_result
                                                                     consumerRef.refresh(profileDetailsProvider);
@@ -2729,7 +2746,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                                             mainAxisSize: MainAxisSize.min,
                                                                             children: [
                                                                               ElevatedButton(
-                                                                                onPressed: () {
+                                                                                onPressed: () async {
                                                                                   Navigator.pop(printDialogContext);
                                                                                   GeneratePdfAndPrint().printQuotationInvoice(
                                                                                     personalInformationModel: data,
@@ -2738,12 +2755,19 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                                                     isFromInventorySale: true,
                                                                                     printFormat: 'large', // Formato grande
                                                                                   );
+                                                                                  
+                                                                                  // Registrar auditoría de impresión de cotización
+                                                                                  await AuditService().logPrint(
+                                                                                    module: AuditModule.sales,
+                                                                                    documentType: 'Cotización',
+                                                                                    documentId: transitionModel.invoiceNumber,
+                                                                                  );
                                                                                 },
                                                                                 child: Text("Largo"),
                                                                               ),
                                                                               const SizedBox(height: 10),
                                                                               ElevatedButton(
-                                                                                onPressed: () {
+                                                                                onPressed: () async {
                                                                                   Navigator.pop(printDialogContext);
                                                                                   GeneratePdfAndPrint().printQuotationInvoice(
                                                                                     personalInformationModel: data,
@@ -2751,6 +2775,13 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                                                     context: context,
                                                                                     isFromInventorySale: true,
                                                                                     printFormat: 'small', // Formato pequeño
+                                                                                  );
+                                                                                  
+                                                                                  // Registrar auditoría de impresión de cotización
+                                                                                  await AuditService().logPrint(
+                                                                                    module: AuditModule.sales,
+                                                                                    documentType: 'Cotización',
+                                                                                    documentId: transitionModel.invoiceNumber,
                                                                                   );
                                                                                 },
                                                                                 child: Text("small"),
@@ -2956,6 +2987,21 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   post = checkLossProfit(transitionModel: transitionModel);
                                                   await ref.push().set(post.toJson());
                                                   print('DEBUG: Transacción guardada exitosamente');
+                                                  
+                                                  // Registrar auditoría de la venta
+                                                  await AuditService().logSale(
+                                                    invoiceNumber: post.invoiceNumber,
+                                                    customerName: post.customerName,
+                                                    amount: post.totalAmount ?? 0.0,
+                                                    products: cartList.map((item) => {
+                                                      'productName': item.productName,
+                                                      'productId': item.productId,
+                                                      'quantity': item.quantity,
+                                                      'unitPrice': item.unitPrice,
+                                                      'subTotal': item.subTotal,
+                                                      'isReservation': item.isReservation ?? false,
+                                                    }).toList(),
+                                                  );
                                                 } catch (e) {
                                                   print('ERROR al guardar transacción: $e');
                                                   EasyLoading.showError('Error al guardar la venta: ${e.toString()}');
@@ -3000,6 +3046,13 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                     setting: setting, 
                                                     printType: 'normal', 
                                                     post: post
+                                                  );
+                                                  
+                                                  // Registrar auditoría de impresión
+                                                  await AuditService().logPrint(
+                                                    module: AuditModule.sales,
+                                                    documentType: 'Factura de Venta',
+                                                    documentId: post.invoiceNumber,
                                                   );
                                                 }
 

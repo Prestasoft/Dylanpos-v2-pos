@@ -98,6 +98,9 @@ class _AddUserRoleState extends State<AddUserRole> {
     // ===== REPORTES =====
     Permission(type: 'reports'),
     
+    // ===== AUDITORÍA =====
+    Permission(type: 'audit'),
+    
     // ===== RECURSOS HUMANOS =====
     Permission(type: 'hrm'),
     Permission(type: 'employees'),
@@ -294,6 +297,9 @@ class _AddUserRoleState extends State<AddUserRole> {
       _setPermission('reports', view: true);
       _setPermission('transaction', view: true);
       
+      // Auditoría para supervisión
+      _setPermission('audit', view: true);
+      
       // Lista de clientes
       _setPermission('customers', view: true, edit: true);
       
@@ -427,6 +433,8 @@ class _AddUserRoleState extends State<AddUserRole> {
         return 'FINANZAS';
       case 'reports':
         return 'REPORTES';
+      case 'audit':
+        return 'AUDITORÍA';
       case 'hrm':
       case 'employees':
       case 'designations':
@@ -463,6 +471,8 @@ class _AddUserRoleState extends State<AddUserRole> {
         return Colors.red;
       case 'REPORTES':
         return Colors.brown;
+      case 'AUDITORÍA':
+        return Colors.deepPurple;
       case 'RECURSOS HUMANOS':
         return Colors.pink;
       case 'CONFIGURACIÓN':
@@ -505,6 +515,8 @@ class _AddUserRoleState extends State<AddUserRole> {
         return Icons.account_balance_rounded;
       case 'REPORTES':
         return Icons.assessment_rounded;
+      case 'AUDITORÍA':
+        return Icons.history_rounded;
       case 'RECURSOS HUMANOS':
         return Icons.people_alt_rounded;
       case 'CONFIGURACIÓN':
@@ -1599,6 +1611,8 @@ class _AddUserRoleState extends State<AddUserRole> {
         return 'Empleados';
       case 'salary_list':
         return 'Lista de Salarios';
+      case 'audit':
+        return 'Auditoría';
       default:
         return type; // fallback: puedes usar algo como `return 'Desconocido';`
     }
@@ -1724,6 +1738,7 @@ class _AddUserRoleState extends State<AddUserRole> {
       'confirmations',
       'expense', 'income', 'transaction', 'dues', 'ledger', 'loss_profit',
       'reports',
+      'audit',
       'hrm', 'employees', 'designations', 'salary_list',
       'user_roles', 'tax_rates',
     ];

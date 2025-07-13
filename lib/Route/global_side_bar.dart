@@ -17,6 +17,8 @@ import '../Provider/subacription_plan_provider.dart';
 import '../Screen/Widgets/Constant Data/constant.dart';
 import '../Screen/currency/global_currency.dart';
 import '../model/subscription_model.dart';
+import '../services/audit_service.dart';
+import '../Repository/profile_details_repo.dart';
 
 class GlobalSideBar extends StatefulWidget {
   const GlobalSideBar({
@@ -67,7 +69,43 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
     }
     checkSubscriptionData();
     getUserDataFromLocal();
+    _configureAuditService();
     super.initState();
+  }
+
+  /// Configurar AuditService con información del usuario actual si está logueado
+  void _configureAuditService() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await getUserDataFromLocal(); // Asegurar que los datos estén cargados
+      
+      String userName = 'Usuario';
+      String userEmail = user.email ?? 'email_no_disponible';
+      String userId = user.uid;
+      
+      // Si es sub-usuario, usar esa información
+      if (isSubUser && constSubUserTitle.isNotEmpty) {
+        userName = constSubUserTitle;
+        userEmail = (finalUserRoleModel.email?.isNotEmpty == true) ? finalUserRoleModel.email! : userEmail;
+        userId = constUserId.isNotEmpty ? constUserId : userId;
+      } else {
+        // Si es usuario principal, intentar obtener nombre desde el perfil
+        try {
+          final profileData = await ProfileRepo().getDetails();
+          userName = profileData.companyName.isNotEmpty ? profileData.companyName : userEmail.split('@')[0];
+        } catch (e) {
+          // Si no se puede obtener el perfil, usar el email como nombre
+          userName = userEmail.split('@')[0];
+        }
+      }
+      
+      // Configurar AuditService sin triggear un nuevo login
+      AuditService.setCurrentUser(
+        userId: userId,
+        userName: userName,
+        userEmail: userEmail,
+      );
+    }
   }
 
   @override

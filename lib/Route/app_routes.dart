@@ -35,6 +35,7 @@ import 'package:salespro_admin/Screen/User%20Role%20System/user_role_screen.dart
 import 'package:salespro_admin/Screen/Whatsapp%20Marketing/whatsapp_marketing_screen.dart';
 import 'package:salespro_admin/Screen/quatation_screen/quatation_screen.dart';
 import 'package:salespro_admin/Screen/Confirmation/sale_confirmations_list.dart';
+import 'package:salespro_admin/Screen/Audit/audit_screen.dart';
 import 'package:salespro_admin/model/income_modle.dart';
 
 import '../Screen/Authentication/log_in.dart';
@@ -595,6 +596,14 @@ abstract class AcnooAppRoutes {
             path: '/sale-confirmations',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: SaleConfirmationsScreen(),
+            ),
+          ),
+
+          ///---------------------Audit Route------------------------------------
+          GoRoute(
+            path: '/audit',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: AuditScreen(),
             ),
           ),
 

@@ -10,7 +10,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/Repository/profile_details_repo.dart';
 
 import '../Screen/Authentication/add_profile.dart';
-
+import '../services/audit_service.dart';
 import '../const.dart';
 import '../model/user_role_model.dart';
 
@@ -35,19 +35,47 @@ class LogInRepo extends ChangeNotifier {
               subUserTitle: constSubUserTitle,
               isSubUser: true);
           putUserDataImidiyate(uid: constUserId, title: '', isSubUse: true);
+          
+          // Configurar AuditService para sub-usuario
+          await AuditService().logLogin(
+            constUserId, 
+            constSubUserTitle.isNotEmpty ? constSubUserTitle : 'Sub Usuario', 
+            email
+          );
+          
           // Navigator.of(context).pushNamed(MtHomeScreen.route);
           // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => MtHomeScreen()), (Route<dynamic> route) => false);
           context.go('/blank-home');
         } else {
           EasyLoading.showSuccess('Successful');
+          final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+          final currentUserEmail = FirebaseAuth.instance.currentUser!.email ?? email;
+          
           await setUserDataOnLocalData(
-              uid: FirebaseAuth.instance.currentUser!.uid,
+              uid: currentUserId,
               subUserTitle: '',
               isSubUser: false);
           putUserDataImidiyate(
-              uid: FirebaseAuth.instance.currentUser!.uid,
+              uid: currentUserId,
               title: '',
               isSubUse: false);
+
+          // Obtener información del perfil para el nombre de usuario
+          String userName = 'Usuario Principal';
+          try {
+            final profileData = await ProfileRepo().getDetails();
+            userName = profileData.companyName.isNotEmpty ? profileData.companyName : 'Usuario Principal';
+          } catch (e) {
+            // Si no se puede obtener el perfil, usar el email como nombre
+            userName = currentUserEmail.split('@')[0];
+          }
+          
+          // Configurar AuditService para usuario principal
+          await AuditService().logLogin(
+            currentUserId, 
+            userName, 
+            currentUserEmail
+          );
 
           if (await ProfileRepo().isProfileSetupDone()) {
             // Navigator.of(context).pushNamed(MtHomeScreen.route);

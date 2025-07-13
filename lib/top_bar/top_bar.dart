@@ -24,6 +24,7 @@ import '../model/sale_confirmation_model.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../Screen/Reports/cuadre_modal.dart';
 import '../model/sale_transaction_model.dart';
+import '../services/audit_service.dart';
 
 class TopBarWidget extends ConsumerStatefulWidget {
   const TopBarWidget({super.key, this.onMenuTap});
@@ -757,6 +758,9 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Expanded(
+                child: Row(
+                  children: [
               // Usamos un enfoque más adaptativo para mostrar botones en móvil
               // Cuando la pantalla es muy pequeña, mostramos un menú desplegable en lugar de botones individuales
               screenWidth < 480
@@ -1090,6 +1094,9 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
               screenWidth < 1430
                   ? const SizedBox.shrink()
                   : const GlobalCurrency(isDrawer: false)
+                  ],
+                ),
+              ),
             ],
           );
         }),
@@ -1141,6 +1148,9 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                   ),
                   PopupMenuItem(
                     onTap: () async {
+                      // Registrar logout en auditoría antes de cerrar sesión
+                      await AuditService().logLogout();
+                      
                       await FirebaseAuth.instance.signOut();
                       EasyLoading.showSuccess('Successfully Logged Out');
                       if (context.mounted) {

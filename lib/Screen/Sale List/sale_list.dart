@@ -33,6 +33,8 @@ import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
+import '../../services/audit_service.dart';
+import '../../model/audit_model.dart';
 
 class SaleList extends StatefulWidget {
   const SaleList({super.key});
@@ -1067,6 +1069,22 @@ class _SaleListState extends State<SaleList> {
     try {
       EasyLoading.show(status: 'Eliminando venta...');
 
+      // Registrar auditoría ANTES de la eliminación
+      await AuditService().logDelete(
+        module: AuditModule.sales,
+        itemName: 'Venta',
+        itemId: transaction.invoiceNumber,
+        data: {
+          'customerName': transaction.customerName,
+          'customerPhone': transaction.customerPhone,
+          'totalAmount': transaction.totalAmount,
+          'dueAmount': transaction.dueAmount,
+          'productCount': transaction.productList?.length ?? 0,
+          'paymentMethod': transaction.paymentType,
+          'saleDate': transaction.purchaseDate,
+        },
+      );
+
       DeleteInvoice delete = DeleteInvoice();
       await delete.editStockAndSerial(saleTransactionModel: transaction);
       await delete.customerDueUpdate(
@@ -1110,6 +1128,13 @@ class _SaleListState extends State<SaleList> {
     } catch (e) {
       EasyLoading.dismiss();
       EasyLoading.showError('Error al eliminar: ${e.toString()}');
+      
+      // Registrar error en auditoría
+      await AuditService().logAction(
+        action: AuditAction.delete,
+        module: AuditModule.sales,
+        description: 'Error al eliminar venta ${transaction.invoiceNumber}: ${e.toString()}',
+      );
     }
   }
 }

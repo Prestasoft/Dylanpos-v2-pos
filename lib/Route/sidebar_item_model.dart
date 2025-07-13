@@ -1,6 +1,7 @@
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../model/user_role_model.dart';
+import '../const.dart';
 
 class SidebarItemModel {
   final String name;
@@ -556,11 +557,23 @@ List<SidebarItemModel> get topMenus {
         ),
       ],
     ),
+    SidebarItemModel(
+      name: 'Auditoría',
+      iconPath: 'images/dashboard_icon/user_role.svg',
+      type: "audit",
+      navigationPath: '/audit',
+    ),
   ];
 }
 
 List<SidebarItemModel> getTopMenusForUser(UserRoleModel user) {
   return topMenus.where((menu) {
+    // Si no es sub-usuario (es usuario principal), mostrar todos los menús
+    if (!isSubUser) {
+      return true;
+    }
+    
+    // Si es sub-usuario, aplicar filtros de permisos
     final canView = user.canView(menu.type);
     if (!canView) return false;
 
