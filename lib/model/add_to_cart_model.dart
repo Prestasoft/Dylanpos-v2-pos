@@ -34,9 +34,13 @@ class AddToCartModel {
     this.descricpion,
     this.isAdditional = false,
     this.mainReservationId,
+    this.isDress = false,
+    this.dressState,
+    this.dressAvailable,
+    this.dressCategory,
   });
 
-  // Campos del modelo
+  // Campos base del modelo
   dynamic uuid;
   dynamic productId;
   String? productName;
@@ -74,6 +78,12 @@ class AddToCartModel {
   // Campos para adicionales
   bool isAdditional;
   String? mainReservationId;
+
+  // Campos específicos para vestidos
+  bool isDress;
+  String? dressState;
+  bool? dressAvailable;
+  String? dressCategory;
 
   factory AddToCartModel.fromJson(String str) =>
       AddToCartModel.fromMap(json.decode(str));
@@ -116,6 +126,10 @@ class AddToCartModel {
         descricpion: json['descricpion'],
         isAdditional: json['isAdditional'] ?? false,
         mainReservationId: json['mainReservationId'],
+        isDress: json['isDress'] ?? false,
+        dressState: json['dressState'],
+        dressAvailable: json['dressAvailable'],
+        dressCategory: json['dressCategory'],
       );
 
   Map<String, dynamic> toMap() => {
@@ -150,5 +164,9 @@ class AddToCartModel {
         "descricpion": descricpion,
         "isAdditional": isAdditional,
         "mainReservationId": mainReservationId,
+        "isDress": isDress,
+        "dressState": dressState,
+        "dressAvailable": dressAvailable,
+        "dressCategory": dressCategory,
       };
 }

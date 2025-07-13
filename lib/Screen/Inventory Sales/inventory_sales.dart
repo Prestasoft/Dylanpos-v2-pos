@@ -39,6 +39,7 @@ import '../../model/daily_transaction_model.dart';
 import '../../model/product_model.dart';
 import '../../model/reservation_model.dart';
 import '../../model/sale_transaction_model.dart';
+import '../../model/dress_model.dart';
 import '../../subscription.dart';
 import '../Product/WarebasedProduct.dart';
 import '../WareHouse/warehouse_model.dart';
@@ -111,6 +112,343 @@ class _InventorySalesState extends State<InventorySales> {
       selectedUserName?.type = widget.quotation!.customerType;
     }
   }
+
+  Future<List<DressModel>> _fetchDresses() async {
+    try {
+      final snapshot = await FirebaseDatabase.instance
+          .ref('Admin Panel/dresses')
+          .get()
+          .timeout(const Duration(seconds: 10));
+
+      if (!snapshot.exists || snapshot.value == null) {
+        return [];
+      }
+
+      final value = snapshot.value as Map<dynamic, dynamic>;
+      final List<DressModel> dresses = [];
+
+      value.forEach((key, data) {
+        try {
+          if (data is Map && data.containsKey('name')) {
+            dresses.add(DressModel.fromRealtimeDB(data, key));
+          }
+        } catch (e) {
+          print('Error al parsear vestido $key: $e');
+        }
+      });
+
+      return dresses;
+    } on TimeoutException {
+      EasyLoading.showError('Tiempo de espera agotado al cargar vestidos');
+      return [];
+    } catch (e) {
+      print('Error al cargar vestidos: $e');
+      EasyLoading.showError('Error al cargar vestidos');
+      return [];
+    }
+  }
+
+  void _addDressToCart(DressModel dress) {
+  final existingIndex = cartList.indexWhere(
+    (item) => item.productId == dress.id && item.isDress == true
+  );
+
+  setState(() {
+    if (existingIndex >= 0) {
+      cartList[existingIndex].quantity += 1;
+      cartList[existingIndex].subTotal = 
+          (cartList[existingIndex].quantity * dress.price).toString();
+    } else {
+      cartList.add(dress.toCartItem());
+      productFocusNode.add(FocusNode());
+    }
+    updateDueAmount();
+  });
+}
+
+  Future<void> _showDressSelectionDialog() async {
+  EasyLoading.show(status: 'Cargando vestidos...');
+  
+  try {
+    final allDresses = await _fetchDresses();
+    EasyLoading.dismiss();
+
+    if (allDresses.isEmpty) {
+      EasyLoading.showInfo('No se encontraron vestidos disponibles');
+      return;
+    }
+
+    // Variable para manejar la búsqueda
+    String searchQuery = '';
+    List<DressModel> filteredDresses = List.from(allDresses);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              insetPadding: const EdgeInsets.all(20),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                  maxWidth: 600,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Seleccionar Vestido',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Search bar
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por nombre, categoría o estado...',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                          suffixIcon: searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear),
+                                  onPressed: () {
+                                    setState(() {
+                                      searchQuery = '';
+                                      filteredDresses = List.from(allDresses);
+                                    });
+                                  },
+                                )
+                              : null,
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            searchQuery = value.toLowerCase();
+                            filteredDresses = allDresses.where((dress) {
+                              return dress.name.toLowerCase().contains(searchQuery) ||
+                                  dress.category.toLowerCase().contains(searchQuery) ||
+                                  dress.state.toLowerCase().contains(searchQuery) ||
+                                  dress.subcategory.toLowerCase().contains(searchQuery);
+                            }).toList();
+                          });
+                        },
+                      ),
+                    ),
+
+                    // Filtros rápidos
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          FilterChip(
+                            label: Text('Disponibles'),
+                            selected: false,
+                            onSelected: (selected) {
+                              setState(() {
+                                filteredDresses = allDresses
+                                    .where((dress) => dress.available)
+                                    .toList();
+                              });
+                            },
+                          ),
+                          SizedBox(width: 8),
+                          FilterChip(
+                            label: Text(
+                              'Todos',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                            selectedColor: const Color.fromARGB(255, 204, 109, 26),
+                            selected: true,
+                            onSelected: (selected) {
+                              setState(() {
+                                filteredDresses = List.from(allDresses);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Lista de vestidos
+                    Expanded(
+                      child: filteredDresses.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.search_off, size: 50, color: Colors.grey),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No se encontraron vestidos',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  if (searchQuery.isNotEmpty)
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          searchQuery = '';
+                                          filteredDresses = List.from(allDresses);
+                                        });
+                                      },
+                                      child: Text('Limpiar búsqueda'),
+                                    ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              itemCount: filteredDresses.length,
+                              itemBuilder: (context, index) {
+                                final dress = filteredDresses[index];
+                                final primaryImage = dress.images.isNotEmpty
+                                    ? dress.images.first
+                                    : 'https://via.placeholder.com/150';
+
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 4),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(8),
+                                    leading: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        primaryImage,
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Container(
+                                          width: 60,
+                                          height: 60,
+                                          color: Colors.grey[200],
+                                          child: Icon(Icons.image_not_supported),
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      dress.name,
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '\$${dress.price.toStringAsFixed(2)}',
+                                              style: TextStyle(
+                                                color: Theme.of(context).primaryColor,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: dress.available
+                                                    ? Colors.green[50]
+                                                    : Colors.red[50],
+                                                borderRadius: BorderRadius.circular(4),
+                                                border: Border.all(
+                                                  color: dress.available
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                  width: 0.5,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                dress.available
+                                                    ? 'Disponible'
+                                                    : 'No disponible',
+                                                style: TextStyle(
+                                                  color: dress.available
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 4),
+                                        if (dress.category.isNotEmpty)
+                                          Text(
+                                            'Categoría: ${dress.category}',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                        if (dress.subcategory.isNotEmpty)
+                                          Text(
+                                            'Subcategoría: ${dress.subcategory}',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                        Text(
+                                          'Estado: ${dress.state}',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: IconButton(
+                                      icon: Icon(Icons.add_shopping_cart,
+                                          color: Theme.of(context).primaryColor),
+                                      onPressed: dress.available
+                                          ? () {
+                                              _addDressToCart(dress);
+                                              Navigator.pop(context);
+                                            }
+                                          : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  } catch (e) {
+    EasyLoading.dismiss();
+    print('Error en diálogo de vestidos: $e');
+    EasyLoading.showError('Error al cargar vestidos');
+  }
+}
 
   Future<void> _sendPdfViaWhatsApp({
     required String phoneNumber,
@@ -1228,12 +1566,36 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                         const SizedBox(height: 5.0),
                         const Divider(thickness: 1.0, color: kNeutral300),
                         Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: ElevatedButton(
-                            onPressed: () => showReservationSelection(selectedUserId!),
-                            child: Text('Agregar Reserva'),
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: Row(
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () => showReservationSelection(selectedUserId!),
+                                icon: Icon(Icons.event, size: 18), // ícono de calendario
+                                label: Text('Agregar Reserva'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.deepPurple, // Color de fondo
+                                  foregroundColor: Colors.white, // Color del texto e ícono
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              ElevatedButton.icon(
+                                onPressed: _showDressSelectionDialog,
+                                icon: Icon(Icons.checkroom, size: 18), // ícono de vestimenta
+                                label: Text('Agregar Vestimenta'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.teal, // Otro color
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+
                         ResponsiveGridRow(rowSegments: 120, children: [
                           ResponsiveGridCol(
                               xs: 120,

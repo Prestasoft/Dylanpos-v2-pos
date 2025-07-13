@@ -2,7 +2,6 @@
 
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
@@ -15,7 +14,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconly/iconly.dart';
-
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/customer_provider.dart';
@@ -23,11 +21,9 @@ import 'package:salespro_admin/Provider/daily_transaction_provider.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/Screen/Sale%20List/sale_edit.dart';
-
 import 'package:salespro_admin/currency.dart';
 import 'package:salespro_admin/delete_invoice_functions.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-
 import '../../PDF/print_pdf.dart';
 import '../../Provider/product_provider.dart';
 import '../../Provider/profile_provider.dart';
@@ -41,8 +37,6 @@ import '../Widgets/Constant Data/export_button.dart';
 class SaleList extends StatefulWidget {
   const SaleList({super.key});
 
-  // static const String route = '/saleList';
-
   @override
   State<SaleList> createState() => _SaleListState();
 }
@@ -51,14 +45,15 @@ class _SaleListState extends State<SaleList> {
   int currentPage = 1;
   late int itemsPerPage = 10;
   String searchItem = '';
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     checkCurrentUserAndRestartApp();
   }
 
   final _horizontalScroll = ScrollController();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -72,180 +67,166 @@ class _SaleListState extends State<SaleList> {
             AsyncValue<List<SaleTransactionModel>> transactionReport = consuearRef.watch(transitionProvider);
             final profile = consuearRef.watch(profileDetailsProvider);
             final settingProvider = consuearRef.watch(generalSettingProvider);
-            return transactionReport.when(data: (mainTransaction) {
-              // final reMainTransaction = mainTransaction.reversed.toList();
-              // List<SaleTransactionModel> showAbleSaleTransactions = [];
-              //
-              // for (var element in reMainTransaction) {
-              //   if (searchItem != '' &&
-              //       (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) ||
-              //           element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()))) {
-              //     showAbleSaleTransactions.add(element);
-              //   } else if (searchItem == '') {
-              //     showAbleSaleTransactions.add(element);
-              //   }
-              // }
-              //
-              // final totalPages = (showAbleSaleTransactions.length / itemsPerPage).ceil();
-              // final startIndex = (currentPage - 1) * itemsPerPage;
-              // final endIndex = itemsPerPage == -1 ? showAbleSaleTransactions.length : startIndex + itemsPerPage;
-              // final paginatedTransactions = showAbleSaleTransactions.sublist(
-              //   startIndex,
-              //   endIndex > showAbleSaleTransactions.length ? showAbleSaleTransactions.length : endIndex,
-              // );
-              // Process transactions
-              final reMainTransaction = mainTransaction.reversed.toList();
-              List<SaleTransactionModel> showAbleSaleTransactions = [];
+            
+            return transactionReport.when(
+              data: (mainTransaction) {
+                final reMainTransaction = mainTransaction.reversed.toList();
+                List<SaleTransactionModel> showAbleSaleTransactions = [];
 
-              // Filter transactions based on search
-              for (var element in reMainTransaction) {
-                if (searchItem != '' && (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) || element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()))) {
-                  showAbleSaleTransactions.add(element);
-                } else if (searchItem == '') {
-                  showAbleSaleTransactions.add(element);
+                for (var element in reMainTransaction) {
+                  if (searchItem != '' &&
+                      (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) ||
+                      element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()))) {
+                    showAbleSaleTransactions.add(element);
+                  } else if (searchItem == '') {
+                    showAbleSaleTransactions.add(element);
+                  }
                 }
-              }
 
-              // Calculate pagination
-              final totalPages = itemsPerPage == -1 ? 1 : (showAbleSaleTransactions.length / itemsPerPage).ceil();
-              final startIndex = itemsPerPage == -1 ? 0 : (currentPage - 1) * itemsPerPage;
-              final endIndex = itemsPerPage == -1 ? showAbleSaleTransactions.length : (startIndex + itemsPerPage).clamp(0, showAbleSaleTransactions.length);
 
-              // Get paginated transactions
-              final paginatedTransactions = showAbleSaleTransactions.sublist(startIndex, endIndex);
-              return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8.0),
-                  color: kWhite,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-                      child: Text(
-                        lang.S.of(context).salesList,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const Divider(
-                      height: 1,
-                      thickness: 1.0,
-                      color: kDividerColor,
-                    ),
+                final totalPages = itemsPerPage == -1 ? 1 : (showAbleSaleTransactions.length / itemsPerPage).ceil();
+                final startIndex = itemsPerPage == -1 ? 0 : (currentPage - 1) * itemsPerPage;
+                final endIndex = itemsPerPage == -1 
+                    ? showAbleSaleTransactions.length 
+                    : (startIndex + itemsPerPage).clamp(0, showAbleSaleTransactions.length);
 
-                    ///---------------------search---------------------------
-                    const SizedBox(height: 16),
-                    ResponsiveGridRow(rowSegments: 100, children: [
-                      ResponsiveGridCol(
-                        xs: screenWidth < 360
-                            ? 50
-                            : screenWidth > 430
-                                ? 33
-                                : 40,
-                        md: screenWidth < 768
-                            ? 24
-                            : screenWidth < 950
-                                ? 20
-                                : 15,
-                        lg: screenWidth < 1700 ? 15 : 10,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 48,
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8.0),
-                              border: Border.all(color: kNeutral300),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Flexible(child: Text('Show-', style: theme.textTheme.bodyLarge)),
-                                DropdownButton<int>(
-                                  isDense: true,
-                                  padding: EdgeInsets.zero,
-                                  underline: const SizedBox(),
-                                  value: itemsPerPage,
-                                  icon: const Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Colors.black,
-                                  ),
-                                  items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
-                                    return DropdownMenuItem<int>(
-                                      value: value,
-                                      child: Text(
-                                        value == -1 ? "All" : value.toString(),
-                                        style: theme.textTheme.bodyLarge,
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (int? newValue) {
-                                    setState(() {
-                                      itemsPerPage = newValue ?? 10;
-                                      currentPage = 1; // Always reset to page 1 when changing items per page
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
+                final paginatedTransactions = showAbleSaleTransactions.sublist(startIndex, endIndex);
+
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.0),
+                    color: kWhite,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                        child: Text(
+                          lang.S.of(context).salesList,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      ResponsiveGridCol(
-                        xs: 100,
-                        md: 60,
-                        lg: 35,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: AppTextField(
-                            showCursor: true,
-                            cursorColor: kTitleColor,
-                            onChanged: (value) {
-                              setState(() {
-                                searchItem = value;
-                              });
-                            },
-                            textFieldType: TextFieldType.NAME,
-                            decoration: InputDecoration(
-                              hintText: lang.S.of(context).searchByInvoiceOrName,
-                              suffixIcon: const Icon(
-                                FeatherIcons.search,
-                                color: kNeutral700,
+                      const Divider(
+                        height: 1,
+                        thickness: 1.0,
+                        color: kDividerColor,
+                      ),
+                      const SizedBox(height: 16),
+                      ResponsiveGridRow(
+                        rowSegments: 100, 
+                        children: [
+                          ResponsiveGridCol(
+                            xs: screenWidth < 360
+                                ? 50
+                                : screenWidth > 430
+                                    ? 33
+                                    : 40,
+                            md: screenWidth < 768
+                                ? 24
+                                : screenWidth < 950
+                                    ? 20
+                                    : 15,
+                            lg: screenWidth < 1700 ? 15 : 10,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                alignment: Alignment.center,
+                                height: 48,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  border: Border.all(color: kNeutral300),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Flexible(child: Text('Show-', style: theme.textTheme.bodyLarge)),
+                                    DropdownButton<int>(
+                                      isDense: true,
+                                      padding: EdgeInsets.zero,
+                                      underline: const SizedBox(),
+                                      value: itemsPerPage,
+                                      icon: const Icon(
+                                        Icons.keyboard_arrow_down,
+                                        color: Colors.black,
+                                      ),
+                                      items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                        return DropdownMenuItem<int>(
+                                          value: value,
+                                          child: Text(
+                                            value == -1 ? "All" : value.toString(),
+                                            style: theme.textTheme.bodyLarge,
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (int? newValue) {
+                                        setState(() {
+                                          itemsPerPage = newValue ?? 10;
+                                          currentPage = 1;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      )
-                    ]),
-
-                    ///_______sale_List_____________________________________________________
-                    const SizedBox(height: 20.0),
-                    paginatedTransactions.isNotEmpty
-                        ? Column(
-                            children: [
-                              Scrollbar(
-                                thickness: 8.0,
-                                thumbVisibility: true,
-                                controller: _horizontalScroll,
-                                radius: const Radius.circular(5),
-                                child: LayoutBuilder(
-                                  builder: (BuildContext context, BoxConstraints constraints) {
-                                    final kWidth = MediaQuery.of(context).size.width - 112.5;
-                                    return SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      controller: _horizontalScroll,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minWidth: kWidth,
-                                        ),
-                                        child: Theme(
-                                          data: theme.copyWith(dividerColor: Colors.transparent, dividerTheme: const DividerThemeData(color: Colors.transparent)),
-                                          child: DataTable(
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: 60,
+                            lg: 35,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: AppTextField(
+                                showCursor: true,
+                                cursorColor: kTitleColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    searchItem = value;
+                                  });
+                                },
+                                textFieldType: TextFieldType.NAME,
+                                decoration: InputDecoration(
+                                  hintText: lang.S.of(context).searchByInvoiceOrName,
+                                  suffixIcon: const Icon(
+                                    FeatherIcons.search,
+                                    color: kNeutral700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 20.0),
+                      paginatedTransactions.isNotEmpty
+                          ? Column(
+                              children: [
+                                Scrollbar(
+                                  thickness: 8.0,
+                                  thumbVisibility: true,
+                                  controller: _horizontalScroll,
+                                  radius: const Radius.circular(5),
+                                  child: LayoutBuilder(
+                                    builder: (BuildContext context, BoxConstraints constraints) {
+                                      final kWidth = MediaQuery.of(context).size.width - 112.5;
+                                      return SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        controller: _horizontalScroll,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minWidth: kWidth,
+                                          ),
+                                          child: Theme(
+                                            data: theme.copyWith(
+                                              dividerColor: Colors.transparent, 
+                                              dividerTheme: const DividerThemeData(color: Colors.transparent)
+                                            ),
+                                            child: DataTable(
                                               border: const TableBorder(
                                                 horizontalInside: BorderSide(
                                                   width: 1,
@@ -263,7 +244,6 @@ class _SaleListState extends State<SaleList> {
                                                 DataColumn(label: Text(lang.S.of(context).date, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).invoice, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).partyName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
-                                                // DataColumn(label: Text(lang.S.of(context).paymentType, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).amount, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).due, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
                                                 DataColumn(label: Text(lang.S.of(context).status, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
@@ -271,13 +251,11 @@ class _SaleListState extends State<SaleList> {
                                               ],
                                               rows: List.generate(paginatedTransactions.length, (index) {
                                                 return DataRow(cells: [
-                                                  //--------------------------------sl number--------------------------
                                                   DataCell(
                                                     Text(
                                                       (index + 1 + (currentPage - 1) * itemsPerPage).toString(),
                                                     ),
                                                   ),
-                                                  //-----------------------------date--------------------------------------
                                                   DataCell(
                                                     Text(
                                                       paginatedTransactions[index].purchaseDate.substring(0, 10),
@@ -285,7 +263,6 @@ class _SaleListState extends State<SaleList> {
                                                       maxLines: 2,
                                                     ),
                                                   ),
-                                                  //---------------------------invoice number----------------------
                                                   DataCell(
                                                     InkWell(
                                                       onTap: () async {
@@ -293,18 +270,16 @@ class _SaleListState extends State<SaleList> {
                                                         final profileInfo = profile.value;
                                                         if (setting != null && profileInfo != null) {
                                                           SaleTransactionModel post = checkLossProfit(transitionModel: paginatedTransactions[index]);
-                                                          // Mostrar loader mientras se genera el PDF
                                                           EasyLoading.show(status: 'Preparando vista previa...');
-                                                        await GeneratePdfAndPrint().printSaleInvoice(
-                                                          setting: setting,
-                                                          personalInformationModel: profileInfo,
-                                                          saleTransactionModel: paginatedTransactions[index],
-                                                          context: context,
-                                                          printType: 'normal',
-                                                          fromSaleReports: true,
-                                                          post: post,
-                                                          // El comportamiento por defecto muestra el diálogo de impresión (vista previa)
-                                                        );
+                                                          await GeneratePdfAndPrint().printSaleInvoice(
+                                                            setting: setting,
+                                                            personalInformationModel: profileInfo,
+                                                            saleTransactionModel: paginatedTransactions[index],
+                                                            context: context,
+                                                            printType: 'normal',
+                                                            fromSaleReports: true,
+                                                            post: post,
+                                                          );
                                                           EasyLoading.dismiss();
                                                         } else {
                                                           EasyLoading.showError('No se pudo cargar la configuración o el perfil');
@@ -322,7 +297,6 @@ class _SaleListState extends State<SaleList> {
                                                       ),
                                                     ),
                                                   ),
-                                                  //______Party Name___________________________________________________________
                                                   DataCell(
                                                     Text(
                                                       paginatedTransactions[index].customerName,
@@ -330,15 +304,6 @@ class _SaleListState extends State<SaleList> {
                                                       overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                                  //___________Party Type (Payment Type) - COMENTADO______________________________________________
-                                                  // DataCell(
-                                                  //   Text(
-                                                  //     paginatedTransactions[index].paymentType.toString(),
-                                                  //     maxLines: 2,
-                                                  //     overflow: TextOverflow.ellipsis,
-                                                  //   ),
-                                                  // ),
-                                                  //___________Amount____________________________________________________
                                                   DataCell(
                                                     Text(
                                                       '$currency${myFormat.format(double.tryParse(paginatedTransactions[index].totalAmount.toString()) ?? 0)}',
@@ -346,7 +311,6 @@ class _SaleListState extends State<SaleList> {
                                                       overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                                  //-------------------------due------------------------
                                                   DataCell(
                                                     Text(
                                                       "$currency${myFormat.format(double.tryParse(paginatedTransactions[index].dueAmount.toString()) ?? 0)}",
@@ -354,7 +318,6 @@ class _SaleListState extends State<SaleList> {
                                                       overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                                  //-----------------------------paid or unpaid----------------------
                                                   DataCell(
                                                     Text(
                                                       paginatedTransactions[index].isPaid! ? lang.S.of(context).paid : lang.S.of(context).due,
@@ -362,82 +325,100 @@ class _SaleListState extends State<SaleList> {
                                                       overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                                  //_______________actions_________________________________________________
                                                   DataCell(
-                                                    settingProvider.when(data: (setting) {
-                                                      return SizedBox(
-                                                        width: 30,
-                                                        child: Theme(
-                                                          data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
-                                                          child: PopupMenuButton(
-                                                            surfaceTintColor: Colors.white,
-                                                            padding: EdgeInsets.zero,
-                                                            itemBuilder: (BuildContext bc) => [
-                                                              PopupMenuItem(
-                                                                onTap: () async {
-                                                                  
-                                                                  // 1. Diálogo para seleccionar tipo de impresión (sin loader)
-                                                                  final printType = await showDialog<String>(
-                                                                    context: context,
-                                                                    builder: (context) => AlertDialog(
-                                                                      title: Text('Seleccionar formato de impresión'),
-                                                                      content: Column(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        children: [
-                                                                          // ListTile(
-                                                                          //   leading: Icon(Icons.receipt, color: Colors.blue),
-                                                                          //   title: Text('Factura térmica'),
-                                                                          //   subtitle: Text('Para impresora de 58-80mm'),
-                                                                          //   onTap: () => Navigator.pop(context, 'thermal'),
-                                                                          // ),
-                                                                          // Divider(),
-                                                                          ListTile(
-                                                                            leading: Icon(Icons.description, color: Colors.green),
-                                                                            title: Text('Factura normal'),
-                                                                            subtitle: Text('Formato completo A4/Letter'),
-                                                                            onTap: () => Navigator.pop(context, 'normal'),
+                                                    settingProvider.when(
+                                                      data: (setting) {
+                                                        return SizedBox(
+                                                          width: 30,
+                                                          child: Theme(
+                                                            data: ThemeData(
+                                                              highlightColor: dropdownItemColor, 
+                                                              focusColor: dropdownItemColor, 
+                                                              hoverColor: dropdownItemColor
+                                                            ),
+                                                            child: PopupMenuButton(
+                                                              surfaceTintColor: Colors.white,
+                                                              padding: EdgeInsets.zero,
+                                                              itemBuilder: (BuildContext bc) => [
+                                                                PopupMenuItem(
+                                                                  onTap: () async {
+                                                                    final printType = await showDialog<String>(
+                                                                      context: context,
+                                                                      builder: (context) => AlertDialog(
+                                                                        title: Text('Seleccionar formato de impresión'),
+                                                                        content: Column(
+                                                                          mainAxisSize: MainAxisSize.min,
+                                                                          children: [
+                                                                            ListTile(
+                                                                              leading: Icon(Icons.description, color: Colors.green),
+                                                                              title: Text('Factura normal'),
+                                                                              subtitle: Text('Formato completo A4/Letter'),
+                                                                              onTap: () => Navigator.pop(context, 'normal'),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                        actions: [
+                                                                          TextButton(
+                                                                            child: Text('Cancelar'),
+                                                                            onPressed: () => Navigator.pop(context),
                                                                           ),
                                                                         ],
                                                                       ),
-                                                                      actions: [
-                                                                        TextButton(
-                                                                          child: Text('Cancelar'),
-                                                                          onPressed: () => Navigator.pop(context),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  );
-                                                                  
-                                                                  if (printType == null) return;
-                                                                  
-                                                                  // 2. Diálogo para confirmar envío por WhatsApp
-                                                                  final sendWhatsApp = await showDialog<bool>(
-                                                                    context: context,
-                                                                    builder: (context) => AlertDialog(
-                                                                      title: Text('Enviar por WhatsApp'),
-                                                                      content: Text('¿Desea enviar el comprobante por WhatsApp al cliente?'),
-                                                                      actions: [
-                                                                        TextButton(
-                                                                          onPressed: () => Navigator.pop(context, false),
-                                                                          child: Text('No'),
-                                                                        ),
-                                                                        TextButton(
-                                                                          onPressed: () => Navigator.pop(context, true),
-                                                                          child: Text('Sí, enviar'),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ) ?? false;
+                                                                    );
+                                                                    
+                                                                    if (printType == null) return;
+                                                                    
+                                                                    final sendWhatsApp = await showDialog<bool>(
+                                                                      context: context,
+                                                                      builder: (context) => AlertDialog(
+                                                                        title: Text('Enviar por WhatsApp'),
+                                                                        content: Text('¿Desea enviar el comprobante por WhatsApp al cliente?'),
+                                                                        actions: [
+                                                                          TextButton(
+                                                                            onPressed: () => Navigator.pop(context, false),
+                                                                            child: Text('No'),
+                                                                          ),
+                                                                          TextButton(
+                                                                            onPressed: () => Navigator.pop(context, true),
+                                                                            child: Text('Sí, enviar'),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ) ?? false;
 
-                                                                  SaleTransactionModel post = checkLossProfit(transitionModel: paginatedTransactions[index]);
-                                                                  
-                                                                  if (sendWhatsApp) {
-                                                                    try {
-                                                                      // olo para WhatsApp - muestra loader de carga
-                                                                      EasyLoading.show(status: 'Generando PDF para enviar...');
-                                                                      
-                                                                      // Generar PDF (returnPdfData: true para obtener los bytes)
-                                                                      final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
+                                                                    SaleTransactionModel post = checkLossProfit(transitionModel: paginatedTransactions[index]);
+                                                                    
+                                                                    if (sendWhatsApp) {
+                                                                      try {
+                                                                        EasyLoading.show(status: 'Generando PDF para enviar...');
+                                                                        
+                                                                        final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
+                                                                          setting: setting,
+                                                                          personalInformationModel: profile.value!,
+                                                                          saleTransactionModel: paginatedTransactions[index],
+                                                                          context: context,
+                                                                          printType: printType,
+                                                                          fromSaleReports: true,
+                                                                          post: post,
+                                                                          returnPdfData: true,
+                                                                        );
+
+                                                                        if (pdfData != null) {
+                                                                          await _sendPdfViaWhatsApp(
+                                                                            phoneNumber: paginatedTransactions[index].customerPhone,
+                                                                            pdfData: pdfData,
+                                                                            invoiceNumber: paginatedTransactions[index].invoiceNumber,
+                                                                            customerName: paginatedTransactions[index].customerName,
+                                                                          );
+                                                                        }
+                                                                        EasyLoading.dismiss();
+                                                                      } catch (e) {
+                                                                        EasyLoading.dismiss();
+                                                                        EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
+                                                                      }
+                                                                    } else {
+                                                                      EasyLoading.show(status: 'Preparando impresión...');
+                                                                      await GeneratePdfAndPrint().printSaleInvoice(
                                                                         setting: setting,
                                                                         personalInformationModel: profile.value!,
                                                                         saleTransactionModel: paginatedTransactions[index],
@@ -445,274 +426,215 @@ class _SaleListState extends State<SaleList> {
                                                                         printType: printType,
                                                                         fromSaleReports: true,
                                                                         post: post,
-                                                                        returnPdfData: true,
                                                                       );
-
-                                                                      if (pdfData != null) {
-                                                                        // Enviar por WhatsApp
-                                                                        await _sendPdfViaWhatsApp(
-                                                                          phoneNumber: paginatedTransactions[index].customerPhone,
-                                                                          pdfData: pdfData,
-                                                                          invoiceNumber: paginatedTransactions[index].invoiceNumber,
-                                                                          customerName: paginatedTransactions[index].customerName,
-                                                                        );
-                                                                      }
                                                                       EasyLoading.dismiss();
-                                                                    } catch (e) {
-                                                                      EasyLoading.dismiss();
-                                                                      EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
                                                                     }
-                                                                  } else {
-                                                                    //Solo para impresión - muestra loader específico
-                                                                    EasyLoading.show(status: 'Preparando impresión...');
-                                                                    await GeneratePdfAndPrint().printSaleInvoice(
-                                                                      setting: setting,
-                                                                      personalInformationModel: profile.value!,
-                                                                      saleTransactionModel: paginatedTransactions[index],
-                                                                      context: context,
-                                                                      printType: printType,
-                                                                      fromSaleReports: true,
-                                                                      post: post,
-                                                                    );
-                                                                    EasyLoading.dismiss();
-                                                                  }
 
-                                                                  GoRouter.of(bc).pop();
-                                                                },
-                                                                child: Row(
-                                                                  children: [
-                                                                    HugeIcon(icon: HugeIcons.strokeRoundedPrinter, color: kGreyTextColor, size: 22.0),
-                                                                    const SizedBox(width: 4.0),
-                                                                    Text(
-                                                                      lang.S.of(context).print,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              PopupMenuItem(
-                                                                onTap: () {
-                                                                  final arg = SaleEdit(
-                                                                    transitionModel: paginatedTransactions[index],
-                                                                    personalInformationModel: profile.value!,
-                                                                    isPosScreen: false,
-                                                                    popUpContext: context,
-                                                                  );
-                                                                  context.push('/sales/sales-edit', extra: arg); // Use the full nested path
-                                                                },
-                                                                child: Row(
-                                                                  children: [
-                                                                    Icon(IconlyLight.edit, size: 22.0, color: kGreyTextColor),
-                                                                    const SizedBox(width: 4.0),
-                                                                    Text(
-                                                                      lang.S.of(context).edit,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-
-                                                              // Mostrar Resumen de Pagos
-                                                              PopupMenuItem(
-                                                                onTap: () async {
-                                                                  
-                                                                  // Obtener el primer ID de reservación (si existe)
-                                                                  final ref = ProviderScope.containerOf(context);
-                                                                  // Variables para los datos de reservación
-                                                                  final List<String> idReservaciones = paginatedTransactions[index].reservationIds ?? [];
-                                                                  
-                                                                  // 2. Obtener el primer ID
-                                                                  final firstReservationId = idReservaciones.isNotEmpty ? idReservaciones.first : null;
-
-                                                                  // 3. Obtener el objeto completo de reservación (como lo hiciste antes)
-                                                                  final fullReservation = firstReservationId != null 
-                                                                      ? await ref.read(fullReservationByIdProviderVQ(firstReservationId).future)
-                                                                      : null;
-
-                                                                  // Creamos los datos del cliente desde la fila
-                                                                  final customer = Customer(
-                                                                    customerName: paginatedTransactions[index].customerName,
-                                                                    phoneNumber: paginatedTransactions[index].customerPhone,
-                                                                    invoiceNumber: paginatedTransactions[index].invoiceNumber,
-                                                                    payments: [], // Los datos reales se cargan en el showDialog
-                                                                    remainingDebt: paginatedTransactions[index].dueAmount ?? 0,
-                                                                    totalPaid: paginatedTransactions[index].totalAmount ?? 0,
-                                                                  );
-
-                                                                  String? sellerName = fullReservation?.reservation?['seller_name']?.toString();
-
-                                                                  // Llamamos al método paysDetails con la información adicional
-                                                                  Future.microtask(() {
-                                                                    paysDetails(
-                                                                      context: context,
-                                                                      invoiceNumber: customer.invoiceNumber,
-                                                                      customer: customer,
-                                                                      reservedBy: sellerName, // Pasamos solo el string
-                                                                    );
-                                                                  });
-                                                                },
-                                                                child: Row(
-                                                                  children: [
-                                                                    SvgPicture.asset(
-                                                                      "images/dashboard_icon/transaction.svg",
-                                                                      height: 22.0,
-                                                                      width: 22.0,
-                                                                      color: kGreyTextColor,
-                                                                    ),
-                                                                    const SizedBox(width: 4.0),
-                                                                    Text(
-                                                                      'Mostrar resumen de pagos',
-                                                                      //lang.S.of(context).edit,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-
-                                                              ///________Sale List Delete_______________________________
-                                                              PopupMenuItem(
-                                                                onTap: () => showDialog(
-                                                                  context: context,
-                                                                  builder: (context2) => AlertDialog(
-                                                                    title: Text('${lang.S.of(context).areYouSureToDeleteThisSale}?'),
-                                                                    content: Text(
-                                                                      '${lang.S.of(context).theSaleWillBeDeletedAndAllTheDataWillBeDeletedAboutThisSaleAreYouSureToDeleteThis}?',
-                                                                      maxLines: 5,
-                                                                    ),
-                                                                    actions: [
-                                                                      Text(lang.S.of(context).cancel).onTap(() {
-                                                                        // Use Navigator.of(context2) to pop the dialog
-                                                                        Navigator.of(context2).pop();
-                                                                      }),
-                                                                      Padding(
-                                                                        padding: const EdgeInsets.all(20.0),
-                                                                        child: GestureDetector(
-                                                                          onTap: () async {
-                                                                            EasyLoading.show();
-
-                                                                            DeleteInvoice delete = DeleteInvoice();
-                                                                            await delete.editStockAndSerial(saleTransactionModel: paginatedTransactions[index]);
-                                                                            await delete.customerDueUpdate(
-                                                                              due: paginatedTransactions[index].dueAmount ?? 0,
-                                                                              phone: paginatedTransactions[index].customerPhone,
-                                                                            );
-                                                                            await delete.updateFromShopRemainBalance(
-                                                                              paidAmount: (paginatedTransactions[index].totalAmount ?? 0) - (paginatedTransactions[index].dueAmount ?? 0),
-                                                                              isFromPurchase: false,
-                                                                            );
-                                                                            await delete.deleteDailyTransaction(invoice: paginatedTransactions[index].invoiceNumber, status: 'Sale', field: "saleTransactionModel");
-
-                                                                            // Cancel reservation if exists
-                                                                            //final reservationId = (paginatedTransactions[index].reservationIds.isNotEmpty) ? paginatedTransactions[index].reservationIds.first : '';
-
-                                                                            final reservationId = (paginatedTransactions[index].reservationIds != null && paginatedTransactions[index].reservationIds.isNotEmpty) ? paginatedTransactions[index].reservationIds.first : '';
-
-                                                                            if (reservationId.isNotEmpty) {
-                                                                              await consuearRef.read(cancelReservationProvider(reservationId).future);
-                                                                            }
-
-                                                                            // Actualizar estado de la reserva a cancelada
-                                                                            // bool status_reserva = await consuearRef.read(ActualizarEstadoReservaProvider({
-                                                                            //   'id': reservationId.toList(),
-                                                                            //   'estado': 'cancelado',
-                                                                            // }).future);
-
-                                                                            DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${paginatedTransactions[index].key}");
-
-                                                                            await ref.remove();
-                                                                            // ignore: unused_result
-                                                                            await consuearRef.refresh(transitionProvider.future);
-                                                                            // ignore: unused_result
-                                                                            await consuearRef.refresh(productProvider.future);
-                                                                            // ignore: unused_result
-                                                                            await consuearRef.refresh(allCustomerProvider.future);
-                                                                            // ignore: unused_result
-                                                                            await consuearRef.refresh(profileDetailsProvider.future);
-                                                                            // ignore: unused_result
-                                                                            await consuearRef.refresh(dailyTransactionProvider.future);
-                                                                            // ignore: unused_result
-                                                                            await consuearRef.refresh(reservationsProvider.future);
-                                                                            EasyLoading.showSuccess(lang.S.of(context).done);
-                                                                            // Use Navigator.of(context2).pop() instead of GoRouter.of(context2).pop()
-                                                                            // Navigator.of(context2).pop();
-                                                                            // Use Navigator.of(bc).pop() instead of GoRouter.of(bc).pop()
-                                                                            // Navigator.of(bc).pop();
-                                                                            GoRouter.of(bc).pop();
-                                                                          },
-                                                                          child: Text(lang.S.of(context).yesDeleteForever),
-                                                                        ),
+                                                                    GoRouter.of(bc).pop();
+                                                                  },
+                                                                  child: Row(
+                                                                    children: [
+                                                                      HugeIcon(icon: HugeIcons.strokeRoundedPrinter, color: kGreyTextColor, size: 22.0),
+                                                                      const SizedBox(width: 4.0),
+                                                                      Text(
+                                                                        lang.S.of(context).print,
+                                                                        style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
                                                                       ),
                                                                     ],
                                                                   ),
                                                                 ),
-                                                                child: Row(
-                                                                  children: [
-                                                                    HugeIcon(
-                                                                      icon: HugeIcons.strokeRoundedDelete02,
-                                                                      color: kGreyTextColor,
-                                                                      size: 22,
-                                                                    ),
-                                                                    const SizedBox(
-                                                                      width: 10.0,
-                                                                    ),
-                                                                    Text(
-                                                                      lang.S.of(context).delete,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-
-                                                              ///____Sales_Return________________________________________
-                                                              PopupMenuItem(
-                                                                onTap: () {
-                                                                  if (profile.value != null) {
-                                                                    context.push(
-                                                                      '/sales/sales-return',
-                                                                      extra: {
-                                                                        'personalInformationModel': profile.value!,
-                                                                        'saleTransactionModel': paginatedTransactions[index],
-                                                                      },
+                                                                PopupMenuItem(
+                                                                  onTap: () {
+                                                                    final arg = SaleEdit(
+                                                                      transitionModel: paginatedTransactions[index],
+                                                                      personalInformationModel: profile.value!,
+                                                                      isPosScreen: false,
+                                                                      popUpContext: context,
                                                                     );
-                                                                  } else {
-                                                                    EasyLoading.showError('Perfil no cargado');
-                                                                  }
-                                                                },
-                                                                child: Row(
-                                                                  children: [
-                                                                    const Icon(Icons.assignment_return, size: 22.0, color: kGreyTextColor),
-                                                                    const SizedBox(width: 4.0),
-                                                                    Text(
-                                                                      lang.S.of(context).saleReturn,
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
-                                                                    ),
-                                                                  ],
+                                                                    context.push('/sales/sales-edit', extra: arg);
+                                                                  },
+                                                                  child: Row(
+                                                                    children: [
+                                                                      Icon(IconlyLight.edit, size: 22.0, color: kGreyTextColor),
+                                                                      const SizedBox(width: 4.0),
+                                                                      Text(
+                                                                        lang.S.of(context).edit,
+                                                                        style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                      ),
+                                                                    ],
+                                                                  ),
                                                                 ),
+                                                                PopupMenuItem(
+                                                                  onTap: () async {
+                                                                    final ref = ProviderScope.containerOf(context);
+                                                                    final List<String> idReservaciones = paginatedTransactions[index].reservationIds ?? [];
+                                                                    final firstReservationId = idReservaciones.isNotEmpty ? idReservaciones.first : null;
+                                                                    final fullReservation = firstReservationId != null 
+                                                                        ? await ref.read(fullReservationByIdProviderVQ(firstReservationId).future)
+                                                                        : null;
+
+                                                                    final customer = Customer(
+                                                                      customerName: paginatedTransactions[index].customerName,
+                                                                      phoneNumber: paginatedTransactions[index].customerPhone,
+                                                                      invoiceNumber: paginatedTransactions[index].invoiceNumber,
+                                                                      payments: [],
+                                                                      remainingDebt: paginatedTransactions[index].dueAmount ?? 0,
+                                                                      totalPaid: paginatedTransactions[index].totalAmount ?? 0,
+                                                                    );
+
+                                                                    String? sellerName = fullReservation?.reservation?['seller_name']?.toString();
+
+                                                                    Future.microtask(() {
+                                                                      paysDetails(
+                                                                        context: context,
+                                                                        invoiceNumber: customer.invoiceNumber,
+                                                                        customer: customer,
+                                                                        reservedBy: sellerName,
+                                                                      );
+                                                                    });
+                                                                  },
+                                                                  child: Row(
+                                                                    children: [
+                                                                      SvgPicture.asset(
+                                                                        "images/dashboard_icon/transaction.svg",
+                                                                        height: 22.0,
+                                                                        width: 22.0,
+                                                                        color: kGreyTextColor,
+                                                                      ),
+                                                                      const SizedBox(width: 4.0),
+                                                                      Text(
+                                                                        'Mostrar resumen de pagos',
+                                                                        style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                PopupMenuItem(
+                                                                  onTap: () => showDialog(
+                                                                    context: context,
+                                                                    builder: (context2) => AlertDialog(
+                                                                      title: Text('${lang.S.of(context).areYouSureToDeleteThisSale}?'),
+                                                                      content: Text(
+                                                                        '${lang.S.of(context).theSaleWillBeDeletedAndAllTheDataWillBeDeletedAboutThisSaleAreYouSureToDeleteThis}?',
+                                                                        maxLines: 5,
+                                                                      ),
+                                                                      actions: [
+                                                                        Text(lang.S.of(context).cancel).onTap(() {
+                                                                          Navigator.of(context2).pop();
+                                                                        }),
+                                                                        Padding(
+                                                                          padding: const EdgeInsets.all(20.0),
+                                                                          child: GestureDetector(
+                                                                            onTap: () async {
+                                                                              EasyLoading.show();
+
+                                                                              DeleteInvoice delete = DeleteInvoice();
+                                                                              await delete.editStockAndSerial(saleTransactionModel: paginatedTransactions[index]);
+                                                                              await delete.customerDueUpdate(
+                                                                                due: paginatedTransactions[index].dueAmount ?? 0,
+                                                                                phone: paginatedTransactions[index].customerPhone,
+                                                                              );
+                                                                              await delete.updateFromShopRemainBalance(
+                                                                                paidAmount: (paginatedTransactions[index].totalAmount ?? 0) - (paginatedTransactions[index].dueAmount ?? 0),
+                                                                                isFromPurchase: false,
+                                                                              );
+                                                                              await delete.deleteDailyTransaction(invoice: paginatedTransactions[index].invoiceNumber, status: 'Sale', field: "saleTransactionModel");
+
+                                                                              final reservationId = (paginatedTransactions[index].reservationIds != null && paginatedTransactions[index].reservationIds.isNotEmpty) 
+                                                                                  ? paginatedTransactions[index].reservationIds.first 
+                                                                                  : '';
+
+                                                                              if (reservationId.isNotEmpty) {
+                                                                                await consuearRef.read(cancelReservationProvider(reservationId).future);
+                                                                              }
+
+                                                                              DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${paginatedTransactions[index].key}");
+
+                                                                              await ref.remove();
+                                                                              await consuearRef.refresh(transitionProvider.future);
+                                                                              await consuearRef.refresh(productProvider.future);
+                                                                              await consuearRef.refresh(allCustomerProvider.future);
+                                                                              await consuearRef.refresh(profileDetailsProvider.future);
+                                                                              await consuearRef.refresh(dailyTransactionProvider.future);
+                                                                              await consuearRef.refresh(reservationsProvider.future);
+                                                                              EasyLoading.showSuccess(lang.S.of(context).done);
+                                                                              GoRouter.of(bc).pop();
+                                                                            },
+                                                                            child: Text(lang.S.of(context).yesDeleteForever),
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                  child: Row(
+                                                                    children: [
+                                                                      HugeIcon(
+                                                                        icon: HugeIcons.strokeRoundedDelete02,
+                                                                        color: kGreyTextColor,
+                                                                        size: 22,
+                                                                      ),
+                                                                      const SizedBox(width: 10.0),
+                                                                      Text(
+                                                                        lang.S.of(context).delete,
+                                                                        style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                PopupMenuItem(
+                                                                  onTap: () {
+                                                                    if (profile.value != null) {
+                                                                      context.push(
+                                                                        '/sales/sales-return',
+                                                                        extra: {
+                                                                          'personalInformationModel': profile.value!,
+                                                                          'saleTransactionModel': paginatedTransactions[index],
+                                                                        },
+                                                                      );
+                                                                    } else {
+                                                                      EasyLoading.showError('Perfil no cargado');
+                                                                    }
+                                                                  },
+                                                                  child: Row(
+                                                                    children: [
+                                                                      const Icon(Icons.assignment_return, size: 22.0, color: kGreyTextColor),
+                                                                      const SizedBox(width: 4.0),
+                                                                      Text(
+                                                                        lang.S.of(context).saleReturn,
+                                                                        style: theme.textTheme.bodyLarge?.copyWith(color: kGreyTextColor),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                              child: Center(
+                                                                child: Container(
+                                                                    height: 18,
+                                                                    width: 18,
+                                                                    alignment: Alignment.centerRight,
+                                                                    child: const Icon(
+                                                                      Icons.more_vert_sharp,
+                                                                      size: 18,
+                                                                    )),
                                                               ),
-                                                            ],
-                                                            child: Center(
-                                                              child: Container(
-                                                                  height: 18,
-                                                                  width: 18,
-                                                                  alignment: Alignment.centerRight,
-                                                                  child: const Icon(
-                                                                    Icons.more_vert_sharp,
-                                                                    size: 18,
-                                                                  )),
                                                             ),
                                                           ),
-                                                        ),
-                                                      );
-                                                    }, error: (e, stack) {
-                                                      return Text(e.toString());
-                                                    }, loading: () {
-                                                      return Center(
-                                                        child: CircularProgressIndicator(),
-                                                      );
-                                                    }),
+                                                        );
+                                                      }, 
+                                                      error: (e, stack) {
+                                                        return Text(e.toString());
+                                                      }, 
+                                                      loading: () {
+                                                        return const Center(
+                                                          child: CircularProgressIndicator(),
+                                                        );
+                                                      }
+                                                    ),
                                                   ),
                                                 ]);
-                                              })),
+                                              }
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     );
@@ -823,18 +745,21 @@ class _SaleListState extends State<SaleList> {
                             ],
                           )
                         : EmptyWidget(title: lang.S.of(context).noSaleTransaactionFound)
-                  ],
-                ),
-              );
-            }, error: (e, stack) {
-              return Center(
-                child: Text(e.toString()),
-              );
-            }, loading: () {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            });
+                    ],
+                  ),
+                );
+              }, 
+              error: (e, stack) {
+                return Center(
+                  child: Text(e.toString()),
+                );
+              }, 
+              loading: () {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+            );
           }),
         ),
       ),
@@ -848,37 +773,30 @@ class _SaleListState extends State<SaleList> {
     required String customerName,
   }) async {
     try {
-      // Validar número de teléfono
-      // final cleanedPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
-      // if (!cleanedPhone.startsWith('+')) {
-      //   throw Exception('El número debe incluir código de país (ej: +1...)');
-      // }
+      final cleanedPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+      if (!cleanedPhone.startsWith('+')) {
+        throw Exception('El número debe incluir código de país (ej: +1...)');
+      }
 
       EasyLoading.show(status: 'Preparando envío...');
       
-      // Codificar PDF en Base64
       final pdfBase64 = base64Encode(pdfData);
       
-      // Crear mensaje
       final safeMessage = '''
         Hola ${customerName},
         Adjunto su comprobante #${invoiceNumber}.
         Gracias por su preferencia!
         ''';
-      
-      // Crear cuerpo de la petición
+
       final body = {
-        'token': '5i36w829nb1ljkj7', //token santo domingo
-        //'token': '5gs146cmkgu6y5vw', //token santiago
-        'to': phoneNumber,
+        'token': '5i36w829nb1ljkj7',
+        'to': cleanedPhone,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
         'caption': safeMessage,
       };
 
-      // Configurar la petición HTTP
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
+      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document');
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -893,9 +811,9 @@ class _SaleListState extends State<SaleList> {
       } else {
         throw Exception('Error en API: ${response.statusCode} - ${response.body}');
       }
-
     } catch (e) {
       EasyLoading.showError('Error al enviar: ${e.toString().replaceAll('\n', ' ')}');
+      rethrow;
     } finally {
       await Future.delayed(const Duration(milliseconds: 500));
       EasyLoading.dismiss();
@@ -928,21 +846,6 @@ class _SaleListState extends State<SaleList> {
                   }
                 }
 
-                // Debug: Información detallada sobre las transacciones encontradas
-                for (int i = 0; i < reTransaction.length; i++) {
-                  var trans = reTransaction[i];
-                  
-                  if (trans.dueTransactionModel != null) {
-                    var dueModel = trans.dueTransactionModel!;
-                  } else {
-                  }
-                  
-                  // También verificar otros modelos por si acaso
-                  if (trans.saleTransactionModel != null) {
-                  }
-                  
-                }
-
                 double totalAbonado = reTransaction.fold(0.0, (sum, payment) => sum + payment.paymentIn);
 
                 return Dialog(
@@ -956,7 +859,6 @@ class _SaleListState extends State<SaleList> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          /// Título y botón cerrar
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -971,11 +873,9 @@ class _SaleListState extends State<SaleList> {
                             ],
                           ),
                           const Divider(),
-
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              /// Datos del cliente
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -992,11 +892,7 @@ class _SaleListState extends State<SaleList> {
                                   ],
                                 ),
                               ),
-
-                              /// Este spacer empuja la columna de totales a la derecha
                               const Spacer(),
-
-                              /// Totales (alineados a la derecha)
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -1021,8 +917,6 @@ class _SaleListState extends State<SaleList> {
                               ),
                             ],
                           ),
-
-                          /// Resto de tu código de la tabla de pagos...
                           LayoutBuilder(builder: (context, constraints) {
                             return SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
@@ -1036,9 +930,6 @@ class _SaleListState extends State<SaleList> {
                                     DataColumn(label: Text('Método de Pago')),
                                   ],
                                   rows: reTransaction.map<DataRow>((payment) {
-                                    // Debug detallado para cada fila
-                                    
-                                    // Obtener el método de pago desde dueTransactionModel
                                     String metodoPago = 'N/A';
                                     String metodoPagoOriginal = 'null';
                                     
@@ -1049,7 +940,6 @@ class _SaleListState extends State<SaleList> {
                                       if (dueModel.paymentType != null && dueModel.paymentType!.isNotEmpty) {
                                         metodoPago = dueModel.paymentType!;
                                         
-                                        // Mejorar la presentación del método de pago
                                         switch (metodoPago.toLowerCase().trim()) {
                                           case 'cash':
                                           case 'efectivo':
@@ -1068,13 +958,10 @@ class _SaleListState extends State<SaleList> {
                                             metodoPago = 'Cheque';
                                             break;
                                           default:
-                                            // Mantener el valor original si no coincide con los casos conocidos
                                             break;
                                         }
                                       }
-                                    } else {
                                     }
-                                    
                                     
                                     return DataRow(cells: [
                                       DataCell(_fechaConvertida(payment.date)),
@@ -1098,7 +985,6 @@ class _SaleListState extends State<SaleList> {
                               ),
                             );
                           }),
-
                           const SizedBox(height: 20),
                         ],
                       ),
@@ -1117,7 +1003,7 @@ class _SaleListState extends State<SaleList> {
                   ),
                 ],
               ),
-            };
+            );
           },
         );
       },
@@ -1126,17 +1012,14 @@ class _SaleListState extends State<SaleList> {
 
   Widget _fechaConvertida(String? date) {
     try {
-      // Validación básica
       if (date == null || date.trim().isEmpty) {
         return const Text('-');
       }
 
-      // Intentar parsear la fecha
       DateTime dateTime = DateTime.parse(date);
       String formattedDate = DateFormat('yyyy/MM/dd HH:mm:ss').format(dateTime);
       return Text(formattedDate);
     } catch (e) {
-      // En caso de error de formato, mostramos un valor por defecto
       return const Text('-');
     }
   }
@@ -1161,7 +1044,7 @@ class Customer {
 }
 
 class Payment {
-  final String date; // Formato: "dd/MM/yyyy"
+  final String date;
   final double amount;
 
   Payment({
