@@ -803,7 +803,7 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                             pw.SizedBox(
                               width: 100.0,
                               child: pw.Text(
-                                "Envío/Servicios",
+                                "Adicionales",
                                 style: pw.Theme.of(context).defaultTextStyle.copyWith(
                                       color: PdfColors.black,
                                       fontSize: 11,

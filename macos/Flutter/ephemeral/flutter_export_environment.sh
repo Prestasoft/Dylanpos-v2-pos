@@ -1,7 +1,7 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=C:\flutter"
-export "FLUTTER_APPLICATION_PATH=C:\laragon\www\DylanPos\Dylanpos-v2-pos"
+export "FLUTTER_ROOT=/Users/miguelcastillo/development/flutter"
+export "FLUTTER_APPLICATION_PATH=/Users/miguelcastillo/Desktop/Dylanpos-v2-pos"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_BUILD_DIR=build"
 export "FLUTTER_BUILD_NAME=1.2.0"

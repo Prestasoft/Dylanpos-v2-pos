@@ -64,6 +64,7 @@ class _InventorySalesState extends State<InventorySales> {
   double serviceCharge = 0;
   double discountAmount = 0;
   double vatGst = 0;
+  bool discountFieldsEnabled = false;
   DateTime selectedDueDate = DateTime.now();
 
   TextEditingController payingAmountController = TextEditingController();
@@ -2217,7 +2218,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                         setState(() {
                                           double total = double.parse((double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(1));
 
-                                          double paidAmount = double.parse(value);
+                                          double paidAmount = double.tryParse(value) ?? 0.0;
                                           if (paidAmount > total) {
                                             changeAmountController.text = (paidAmount - total).toString();
                                             dueAmountController.text = '0';
@@ -2430,9 +2431,22 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                             lg: 6,
                                             child: Padding(
                                               padding: EdgeInsets.only(bottom: screenWidth < 577 ? 8 : 0),
-                                              child: Text(
-                                                lang.S.of(context).discount,
-                                                style: theme.textTheme.bodyLarge,
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    lang.S.of(context).discount,
+                                                    style: theme.textTheme.bodyLarge,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  GestureDetector(
+                                                    onTap: discountFieldsEnabled ? null : _showDiscountAuthDialog,
+                                                    child: Icon(
+                                                      discountFieldsEnabled ? Icons.lock_open : Icons.lock,
+                                                      size: 16,
+                                                      color: discountFieldsEnabled ? Colors.green : Colors.red,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ),
@@ -2447,6 +2461,8 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                     height: 40,
                                                     child: TextFormField(
                                                       controller: discountPercentageEditingController,
+                                                      enabled: discountFieldsEnabled,
+                                                      onTap: !discountFieldsEnabled ? _showDiscountAuthDialog : null,
                                                       onChanged: (value) {
                                                         if (value == '') {
                                                           setState(() {
@@ -2501,6 +2517,8 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                     child: Center(
                                                       child: AppTextField(
                                                         controller: discountAmountEditingController,
+                                                        enabled: discountFieldsEnabled,
+                                                        onTap: !discountFieldsEnabled ? _showDiscountAuthDialog : null,
                                                         onChanged: (value) {
                                                           if (value == '') {
                                                             setState(() {
@@ -3162,6 +3180,98 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
       serviceCharge = 0; // Resetea el cargo por servicio
       discountAmount = 0; // Resetea el monto de descuento
       vatGst = 0; // Resetea los impuestos
+      discountFieldsEnabled = false; // Resetea la protección de descuentos
     });
+  }
+
+  Future<void> _showDiscountAuthDialog() async {
+    TextEditingController passwordController = TextEditingController();
+    const String correctPassword = "22400600452"; // Cambiar por la clave deseada
+    
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.lock, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Autenticación Requerida'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Ingrese la clave para habilitar los campos de descuento:'),
+              SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Clave de descuento',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: Icon(Icons.key),
+                ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    _validatePasswordSafe(dialogContext, value.trim());
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final password = passwordController.text.trim();
+                if (password.isNotEmpty) {
+                  _validatePasswordSafe(dialogContext, password);
+                } else {
+                  EasyLoading.showError('Ingrese la clave');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Verificar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _validatePasswordSafe(BuildContext dialogContext, String password) {
+    const String correctPassword = "22400600452"; // Cambiar por la clave deseada
+    
+    if (password == correctPassword) {
+      // Cerrar el diálogo
+      Navigator.of(dialogContext).pop();
+      
+      // Actualizar el estado después de un pequeño delay
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (mounted) {
+          setState(() {
+            discountFieldsEnabled = true;
+          });
+          EasyLoading.showSuccess('Campos de descuento habilitados');
+        }
+      });
+    } else {
+      EasyLoading.showError('Clave incorrecta');
+    }
   }
 }

@@ -14,17 +14,26 @@ class DeleteInvoice {
   }) async {
     for (var product in saleTransactionModel.productList!) {
       final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+      String? productPath;
 
-      // Buscar el producto por productCode
-      final data = await ref.orderByChild('productCode').equalTo(product.productId).once();
-
-      if (data.snapshot.value == null) {
-        continue; // No se encontró el producto
+      // Intentar acceso directo primero (más eficiente)
+      try {
+        final directData = await ref.child(product.productId).get();
+        if (directData.exists) {
+          productPath = product.productId;
+        }
+      } catch (e) {
+        // Si falla, usar consulta por productCode
+        final data = await ref.orderByChild('productCode').equalTo(product.productId).once();
+        if (data.snapshot.value != null) {
+          final dataMap = Map.from(data.snapshot.value as Map);
+          productPath = dataMap.keys.first;
+        }
       }
 
-      // Obtener la clave del producto directamente
-      final dataMap = Map.from(data.snapshot.value as Map);
-      final productPath = dataMap.keys.first;
+      if (productPath == null) {
+        continue; // No se encontró el producto
+      }
 
       // Obtener el stock actual
       var stockSnap = await ref.child('$productPath/productStock').get();
@@ -55,15 +64,26 @@ class DeleteInvoice {
   Future<void> editStockAndSerialForPurchase({required PurchaseTransactionModel saleTransactionModel}) async {
     for (var element in saleTransactionModel.productList!) {
       final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+      String? productPath;
 
-      final data = await ref.orderByChild('productCode').equalTo(element.productCode).once();
-
-      if (data.snapshot.value == null) {
-        continue; // No se encontró el producto
+      // Intentar acceso directo primero (más eficiente)
+      try {
+        final directData = await ref.child(element.productCode).get();
+        if (directData.exists) {
+          productPath = element.productCode;
+        }
+      } catch (e) {
+        // Si falla, usar consulta por productCode
+        final data = await ref.orderByChild('productCode').equalTo(element.productCode).once();
+        if (data.snapshot.value != null) {
+          final dataMap = Map.from(data.snapshot.value as Map);
+          productPath = dataMap.keys.first;
+        }
       }
 
-      final dataMap = Map.from(data.snapshot.value as Map);
-      final productPath = dataMap.keys.first;
+      if (productPath == null) {
+        continue; // No se encontró el producto
+      }
 
       var data1 = await ref.child('$productPath/productStock').get();
       int stock = int.parse(data1.value.toString());
@@ -94,18 +114,34 @@ class DeleteInvoice {
 
       await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
         for (var element in value.children) {
-          var data = jsonDecode(jsonEncode(element.value));
-          if (data['phoneNumber'] == phone) {
-            key = element.key;
+          try {
+            var data = jsonDecode(jsonEncode(element.value));
+            
+            // Validación null-safe
+            if (data == null) continue;
+            if (data['phoneNumber'] == null) continue;
+            
+            if (data['phoneNumber'] == phone) {
+              key = element.key;
+              break; // Salir del loop una vez encontrado
+            }
+          } catch (e) {
+            // Si hay error al procesar este elemento, continuar con el siguiente
+            print('Error processing customer element: $e');
+            continue;
           }
         }
       });
+      
+      if (key == null) {
+        print('Customer not found with phone: $phone');
+        return; // Salir si no se encuentra el cliente
+      }
+      
       var data1 = await ref.child('$key/due').get();
-      int previousDue = data1.value.toString().toInt();
+      int previousDue = int.tryParse(data1.value?.toString() ?? '0') ?? 0;
 
-      int totalDue;
-
-      totalDue = previousDue - due.toInt();
+      int totalDue = previousDue - due.toInt();
       await ref.child(key!).update({'due': '$totalDue'});
     }
   }
@@ -125,9 +161,26 @@ class DeleteInvoice {
 
     await FirebaseDatabase.instance.ref(await getUserID()).child('Daily Transaction').orderByKey().get().then((value) {
       for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['type'] == status && data[field]['invoiceNumber'] == invoice) {
-          key = element.key;
+        try {
+          var data = jsonDecode(jsonEncode(element.value));
+          
+          // Validaciones null-safe
+          if (data == null) continue;
+          if (data['type'] != status) continue;
+          
+          // Verificar que el campo existe y no es null
+          if (data[field] == null) continue;
+          
+          // Verificar que invoiceNumber existe en el subcampo
+          var fieldData = data[field];
+          if (fieldData is Map && fieldData['invoiceNumber'] == invoice) {
+            key = element.key;
+            break; // Salir del loop una vez encontrado
+          }
+        } catch (e) {
+          // Si hay error al procesar este elemento, continuar con el siguiente
+          print('Error processing transaction element: $e');
+          continue;
         }
       }
     });

@@ -510,62 +510,9 @@ class _SaleListState extends State<SaleList> {
                                                                   ),
                                                                 ),
                                                                 PopupMenuItem(
-                                                                  onTap: () => showDialog(
-                                                                    context: context,
-                                                                    builder: (context2) => AlertDialog(
-                                                                      title: Text('${lang.S.of(context).areYouSureToDeleteThisSale}?'),
-                                                                      content: Text(
-                                                                        '${lang.S.of(context).theSaleWillBeDeletedAndAllTheDataWillBeDeletedAboutThisSaleAreYouSureToDeleteThis}?',
-                                                                        maxLines: 5,
-                                                                      ),
-                                                                      actions: [
-                                                                        Text(lang.S.of(context).cancel).onTap(() {
-                                                                          Navigator.of(context2).pop();
-                                                                        }),
-                                                                        Padding(
-                                                                          padding: const EdgeInsets.all(20.0),
-                                                                          child: GestureDetector(
-                                                                            onTap: () async {
-                                                                              EasyLoading.show();
-
-                                                                              DeleteInvoice delete = DeleteInvoice();
-                                                                              await delete.editStockAndSerial(saleTransactionModel: paginatedTransactions[index]);
-                                                                              await delete.customerDueUpdate(
-                                                                                due: paginatedTransactions[index].dueAmount ?? 0,
-                                                                                phone: paginatedTransactions[index].customerPhone,
-                                                                              );
-                                                                              await delete.updateFromShopRemainBalance(
-                                                                                paidAmount: (paginatedTransactions[index].totalAmount ?? 0) - (paginatedTransactions[index].dueAmount ?? 0),
-                                                                                isFromPurchase: false,
-                                                                              );
-                                                                              await delete.deleteDailyTransaction(invoice: paginatedTransactions[index].invoiceNumber, status: 'Sale', field: "saleTransactionModel");
-
-                                                                              final reservationId = (paginatedTransactions[index].reservationIds != null && paginatedTransactions[index].reservationIds.isNotEmpty) 
-                                                                                  ? paginatedTransactions[index].reservationIds.first 
-                                                                                  : '';
-
-                                                                              if (reservationId.isNotEmpty) {
-                                                                                await consuearRef.read(cancelReservationProvider(reservationId).future);
-                                                                              }
-
-                                                                              DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${paginatedTransactions[index].key}");
-
-                                                                              await ref.remove();
-                                                                              await consuearRef.refresh(transitionProvider.future);
-                                                                              await consuearRef.refresh(productProvider.future);
-                                                                              await consuearRef.refresh(allCustomerProvider.future);
-                                                                              await consuearRef.refresh(profileDetailsProvider.future);
-                                                                              await consuearRef.refresh(dailyTransactionProvider.future);
-                                                                              await consuearRef.refresh(reservationsProvider.future);
-                                                                              EasyLoading.showSuccess(lang.S.of(context).done);
-                                                                              GoRouter.of(bc).pop();
-                                                                            },
-                                                                            child: Text(lang.S.of(context).yesDeleteForever),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
+                                                                  onTap: () {
+                                                                    _showDeleteAuthDialog(paginatedTransactions[index], consuearRef);
+                                                                  },
                                                                   child: Row(
                                                                     children: [
                                                                       HugeIcon(
@@ -1021,6 +968,148 @@ class _SaleListState extends State<SaleList> {
       return Text(formattedDate);
     } catch (e) {
       return const Text('-');
+    }
+  }
+
+  Future<void> _showDeleteAuthDialog(SaleTransactionModel transaction, WidgetRef ref) async {
+    TextEditingController passwordController = TextEditingController();
+    const String correctPassword = "22400600452"; // Misma clave que descuentos
+    
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.delete_forever, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Confirmar Eliminación'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Esta acción eliminará permanentemente la venta:'),
+              SizedBox(height: 8),
+              Text('Factura: ${transaction.invoiceNumber}', 
+                   style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Cliente: ${transaction.customerName}'),
+              SizedBox(height: 16),
+              Text('Ingrese la clave de autorización:'),
+              SizedBox(height: 8),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Clave de autorización',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: Icon(Icons.key),
+                ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    _validateDeletePassword(dialogContext, value.trim(), transaction, ref);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final password = passwordController.text.trim();
+                if (password.isNotEmpty) {
+                  _validateDeletePassword(dialogContext, password, transaction, ref);
+                } else {
+                  EasyLoading.showError('Ingrese la clave');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Eliminar Venta'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _validateDeletePassword(BuildContext dialogContext, String password, SaleTransactionModel transaction, WidgetRef ref) {
+    const String correctPassword = "22400600452"; // Misma clave que descuentos
+    
+    if (password == correctPassword) {
+      // Cerrar el diálogo de autenticación
+      Navigator.of(dialogContext).pop();
+      
+      // Ejecutar la eliminación después de un pequeño delay
+      Future.delayed(Duration(milliseconds: 100), () {
+        _performDeleteSale(transaction, ref);
+      });
+    } else {
+      EasyLoading.showError('Clave incorrecta');
+    }
+  }
+
+  void _performDeleteSale(SaleTransactionModel transaction, WidgetRef ref) async {
+    try {
+      EasyLoading.show(status: 'Eliminando venta...');
+
+      DeleteInvoice delete = DeleteInvoice();
+      await delete.editStockAndSerial(saleTransactionModel: transaction);
+      await delete.customerDueUpdate(
+        due: transaction.dueAmount ?? 0,
+        phone: transaction.customerPhone,
+      );
+      await delete.updateFromShopRemainBalance(
+        paidAmount: (transaction.totalAmount ?? 0) - (transaction.dueAmount ?? 0),
+        isFromPurchase: false,
+      );
+      await delete.deleteDailyTransaction(
+        invoice: transaction.invoiceNumber, 
+        status: 'Sale', 
+        field: "saleTransactionModel"
+      );
+
+      final reservationId = (transaction.reservationIds != null && transaction.reservationIds!.isNotEmpty) 
+          ? transaction.reservationIds!.first 
+          : '';
+
+      if (reservationId.isNotEmpty) {
+        final consuearRef = ProviderScope.containerOf(context);
+        await consuearRef.read(cancelReservationProvider(reservationId).future);
+      }
+
+      // Eliminar de Firebase Database
+      DatabaseReference dbRef = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${transaction.key}");
+      await dbRef.remove();
+
+      // Refresh providers
+      final consuearRef = ProviderScope.containerOf(context);
+      await consuearRef.refresh(transitionProvider.future);
+      await consuearRef.refresh(productProvider.future);
+      await consuearRef.refresh(allCustomerProvider.future);
+      await consuearRef.refresh(profileDetailsProvider.future);
+      await consuearRef.refresh(dailyTransactionProvider.future);
+      await consuearRef.refresh(reservationsProvider.future);
+
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('Venta eliminada exitosamente');
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Error al eliminar: ${e.toString()}');
     }
   }
 }
