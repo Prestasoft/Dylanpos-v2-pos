@@ -31,14 +31,11 @@ class _ExpensesListState extends State<ExpensesList> {
   DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
 
   List<String> get month => [
-        'This Month',
-        // lang.S.current.thisMonth,
-        'Last Month',
-        // lang.S.current.lastMonth,
-        'Last 6 Month',
-        // lang.S.current.last6Month,
-        'This Year',
-        // lang.S.current.thisYear
+        'Hoy',
+        'Este Mes',
+        'Mes Pasado',
+        'Últimos 6 Meses',
+        'Este Año',
       ];
 
   late String selectedMonth = month.first;
@@ -63,7 +60,14 @@ class _ExpensesListState extends State<ExpensesList> {
         setState(() {
           selectedMonth = value!;
           switch (selectedMonth) {
-            case 'This Month':
+            case 'Hoy':
+              {
+                final now = DateTime.now();
+                selectedDate = DateTime(now.year, now.month, now.day);
+                selected2ndDate = DateTime(now.year, now.month, now.day);
+              }
+              break;
+            case 'Este Mes':
               {
                 var date = DateTime(DateTime.now().year, DateTime.now().month, 1).toString();
 
@@ -71,19 +75,19 @@ class _ExpensesListState extends State<ExpensesList> {
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'Last Month':
+            case 'Mes Pasado':
               {
                 selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
                 selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, 0);
               }
               break;
-            case 'Last 6 Month':
+            case 'Últimos 6 Meses':
               {
                 selectedDate = DateTime(DateTime.now().year, DateTime.now().month - 6, 1);
                 selected2ndDate = DateTime.now();
               }
               break;
-            case 'This Year':
+            case 'Este Año':
               {
                 selectedDate = DateTime(DateTime.now().year, 1, 1);
                 selected2ndDate = DateTime.now();
@@ -734,3 +738,7 @@ class _ExpensesListState extends State<ExpensesList> {
     );
   }
 }
+      
+    
+  
+
