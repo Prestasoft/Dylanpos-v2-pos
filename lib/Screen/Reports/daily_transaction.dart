@@ -411,6 +411,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           ),
                         ),
                       ]),
+                      // Comentado: Tarjetas de Saldo Restante, Pago Total Saliente y Pago Entrante
+                      /*
                       ResponsiveGridRow(rowSegments: 100, children: [
                         ResponsiveGridCol(
                           xs: 100,
@@ -522,6 +524,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           ),
                         ),
                       ]),
+                      */
                       // Nuevas tarjetas de métricas de pagos
                       Consumer(builder: (_, ref, __) {
                         // Calcular métricas de pagos desde las transacciones filtradas
@@ -637,7 +640,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   ],
                                 ),
                               ),
-                            ),
+            ),
                           ),
                         ]);
                       }),
@@ -1077,83 +1080,127 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                     PopupMenuItem(
                                                                       onTap:
                                                                           () async {
-                                                                        if (paginatedList[index].type ==
-                                                                            'Sale') {
-                                                                          await GeneratePdfAndPrint().printSaleInvoice(
-                                                                              personalInformationModel: profile.value!,
-                                                                              setting: setting,
-                                                                              saleTransactionModel: paginatedList[index].saleTransactionModel!,
-                                                                              context: context);
-                                                                        } else if (paginatedList[index].type ==
-                                                                            'Sale Return') {
-                                                                          await GeneratePdfAndPrint().printSaleReturnInvoice(
-                                                                              setting: setting,
-                                                                              personalInformationModel: profile.value!,
-                                                                              saleTransactionModel: paginatedList[index].saleTransactionModel!);
-                                                                        } else if (paginatedList[index].type ==
-                                                                            'Purchase') {
-                                                                          await GeneratePdfAndPrint().printPurchaseInvoice(
-                                                                              setting: setting,
-                                                                              personalInformationModel: profile.value!,
-                                                                              purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
-                                                                        } else if (paginatedList[index].type ==
-                                                                            'Purchase Return') {
-                                                                          await GeneratePdfAndPrint().printPurchaseReturnInvoice(
-                                                                              setting: setting,
-                                                                              personalInformationModel: profile.value!,
-                                                                              purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
-                                                                        } else if (paginatedList[index].type ==
-                                                                                'Due Collection' ||
-                                                                            paginatedList[index].type ==
-                                                                                'Due Payment') {
-                                                                          await GeneratePdfAndPrint().printDueInvoice(
-                                                                              setting: setting,
-                                                                              personalInformationModel: profile.value!,
-                                                                              dueTransactionModel: paginatedList[index].dueTransactionModel!);
-                                                                        } else if (paginatedList[index].type ==
-                                                                            'Expense') {
-                                                                          showDialog(
-                                                                            barrierDismissible:
-                                                                                false,
-                                                                            context:
-                                                                                context,
-                                                                            builder:
-                                                                                (BuildContext context) {
-                                                                              return StatefulBuilder(
-                                                                                builder: (context, setStates) {
-                                                                                  return Dialog(
-                                                                                    surfaceTintColor: Colors.white,
-                                                                                    shape: RoundedRectangleBorder(
-                                                                                      borderRadius: BorderRadius.circular(20.0),
-                                                                                    ),
-                                                                                    child: ExpenseDetails(expense: paginatedList[index].expenseModel!, manuContext: bc),
-                                                                                  );
-                                                                                },
-                                                                              );
-                                                                            },
+                                                                        try {
+                                                                          // Mostrar indicador de carga
+                                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                                            SnackBar(
+                                                                              content: Text('Generando PDF...'),
+                                                                              duration: Duration(seconds: 2),
+                                                                              backgroundColor: Colors.blue,
+                                                                            ),
                                                                           );
-                                                                        } else if (paginatedList[index].type ==
-                                                                            'Income') {
-                                                                          showDialog(
-                                                                            barrierDismissible:
-                                                                                false,
-                                                                            context:
-                                                                                context,
-                                                                            builder:
-                                                                                (BuildContext context) {
-                                                                              return StatefulBuilder(
-                                                                                builder: (context, setStates) {
-                                                                                  return Dialog(
-                                                                                    surfaceTintColor: Colors.white,
-                                                                                    shape: RoundedRectangleBorder(
-                                                                                      borderRadius: BorderRadius.circular(20.0),
-                                                                                    ),
-                                                                                    child: IncomeDetails(income: paginatedList[index].incomeModel!, manuContext: bc),
-                                                                                  );
-                                                                                },
-                                                                              );
-                                                                            },
+
+                                                                          if (paginatedList[index].type == 'Sale') {
+                                                                            // Verificar que el modelo de venta no sea nulo
+                                                                            if (paginatedList[index].saleTransactionModel == null) {
+                                                                              throw Exception('Los datos de la venta no están disponibles');
+                                                                            }
+                                                                            
+                                                                            await GeneratePdfAndPrint().printSaleInvoice(
+                                                                                personalInformationModel: profile.value!,
+                                                                                setting: setting,
+                                                                                saleTransactionModel: paginatedList[index].saleTransactionModel!,
+                                                                                context: context,
+                                                                                fromSaleReports: true);
+                                                                          } else if (paginatedList[index].type == 'Sale Return') {
+                                                                            if (paginatedList[index].saleTransactionModel == null) {
+                                                                              throw Exception('Los datos de devolución de venta no están disponibles');
+                                                                            }
+                                                                            
+                                                                            await GeneratePdfAndPrint().printSaleReturnInvoice(
+                                                                                setting: setting,
+                                                                                personalInformationModel: profile.value!,
+                                                                                saleTransactionModel: paginatedList[index].saleTransactionModel!);
+                                                                          } else if (paginatedList[index].type == 'Purchase') {
+                                                                            if (paginatedList[index].purchaseTransactionModel == null) {
+                                                                              throw Exception('Los datos de compra no están disponibles');
+                                                                            }
+                                                                            
+                                                                            await GeneratePdfAndPrint().printPurchaseInvoice(
+                                                                                setting: setting,
+                                                                                personalInformationModel: profile.value!,
+                                                                                purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
+                                                                          } else if (paginatedList[index].type == 'Purchase Return') {
+                                                                            if (paginatedList[index].purchaseTransactionModel == null) {
+                                                                              throw Exception('Los datos de devolución de compra no están disponibles');
+                                                                            }
+                                                                            
+                                                                            await GeneratePdfAndPrint().printPurchaseReturnInvoice(
+                                                                                setting: setting,
+                                                                                personalInformationModel: profile.value!,
+                                                                                purchaseTransactionModel: paginatedList[index].purchaseTransactionModel!);
+                                                                          } else if (paginatedList[index].type == 'Due Collection' ||
+                                                                              paginatedList[index].type == 'Due Payment') {
+                                                                            if (paginatedList[index].dueTransactionModel == null) {
+                                                                              throw Exception('Los datos de cuenta por cobrar/pagar no están disponibles');
+                                                                            }
+                                                                            
+                                                                            await GeneratePdfAndPrint().printDueInvoice(
+                                                                                setting: setting,
+                                                                                personalInformationModel: profile.value!,
+                                                                                dueTransactionModel: paginatedList[index].dueTransactionModel!);
+                                                                          } else if (paginatedList[index].type == 'Expense') {
+                                                                            showDialog(
+                                                                              barrierDismissible: false,
+                                                                              context: context,
+                                                                              builder: (BuildContext context) {
+                                                                                return StatefulBuilder(
+                                                                                  builder: (context, setStates) {
+                                                                                    return Dialog(
+                                                                                      surfaceTintColor: Colors.white,
+                                                                                      shape: RoundedRectangleBorder(
+                                                                                        borderRadius: BorderRadius.circular(20.0),
+                                                                                      ),
+                                                                                      child: ExpenseDetails(expense: paginatedList[index].expenseModel!, manuContext: bc),
+                                                                                    );
+                                                                                  },
+                                                                                );
+                                                                              },
+                                                                            );
+                                                                          } else if (paginatedList[index].type == 'Income') {
+                                                                            showDialog(
+                                                                              barrierDismissible: false,
+                                                                              context: context,
+                                                                              builder: (BuildContext context) {
+                                                                                return StatefulBuilder(
+                                                                                  builder: (context, setStates) {
+                                                                                    return Dialog(
+                                                                                      surfaceTintColor: Colors.white,
+                                                                                      shape: RoundedRectangleBorder(
+                                                                                        borderRadius: BorderRadius.circular(20.0),
+                                                                                      ),
+                                                                                      child: IncomeDetails(income: paginatedList[index].incomeModel!, manuContext: bc),
+                                                                                    );
+                                                                                  },
+                                                                                );
+                                                                              },
+                                                                            );
+                                                                          } else {
+                                                                            throw Exception('Tipo de transacción "${paginatedList[index].type}" no soportado para impresión');
+                                                                          }
+
+                                                                          // Mostrar mensaje de éxito
+                                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                                            SnackBar(
+                                                                              content: Text('PDF generado exitosamente'),
+                                                                              duration: Duration(seconds: 2),
+                                                                              backgroundColor: Colors.green,
+                                                                            ),
                                                                           );
+                                                                        } catch (e) {
+                                                                          // Mostrar mensaje de error detallado
+                                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                                            SnackBar(
+                                                                              content: Text('Error al generar PDF: ${e.toString()}'),
+                                                                              duration: Duration(seconds: 4),
+                                                                              backgroundColor: Colors.red,
+                                                                            ),
+                                                                          );
+                                                                          
+                                                                          // Registrar el error para debugging
+                                                                          print('Error al imprimir transacción: $e');
+                                                                          print('Tipo de transacción: ${paginatedList[index].type}');
+                                                                          print('ID de transacción: ${paginatedList[index].id}');
                                                                         }
                                                                       },
                                                                       child:

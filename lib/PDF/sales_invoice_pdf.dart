@@ -980,6 +980,117 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
     ),
   );
 
+  // Agregar página de Términos y Condiciones
+  doc.addPage(
+    pw.Page(
+      margin: pw.EdgeInsets.all(20),
+      build: (pw.Context context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            // Título
+            pw.Center(
+              child: pw.Text(
+                'TÉRMINOS Y CONDICIONES',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            
+            // Contenido de términos y condiciones
+            pw.Text(
+              'DE SUMA IMPORTANCIA:',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            
+            pw.Text(
+              'Nota 1: Para posponer fecha, tratar de hacerlo con tiempo, y esto independientemente tiene un costo de 2500 pesos.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 2: Las fotos adicionales tienen un costo de 500 pesos cada una.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 3: Llegar puntual el día del evento, 30 minutos de tardanza se le cobrará 1,500 pesos, y pasada la hora, la sesión de fotos se cancela y obligatoriamente hay que posponer nueva fecha. ¡Recuerda que posiblemente tenemos más eventos antes o después de ti! Por tanto, la PUNTUALIDAD es de suma importancia para nosotros. Cuando un cliente nos llega 20 o 30 minutos tarde, se nos complica todo el día, ayúdanos a quedar bien, con todos nuestros clientes.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 4: Un día después de la sesión se le enviarán las fotos para su selección, esta a través de un enlace, donde el cliente debe solo de dar like o corazones a las fotos que quiere le trabajemos. La primera vez le pedirá que ingrese su correo electrónico y después de, puede dar like libremente.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 5: Después de que el cliente selecciona las fotos en digitales se le estarán enviando al cliente editadas y retocadas a nivel profesional en un periodo de 10 a 20 días laborables. Los enmarcados en un máximo de 15 días, después de la selección del cliente, y el video o álbum 2 a 3 meses después de la selección del cliente.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 6: El cliente es el responsable de su transportación y del lugar seleccionado para la sesión fotográfica.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 7: El cliente debe de regresar el vestido en un periodo máximo de 1 hora después de su sesión fotográfica.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 8: El cliente se compromete a cuidar nuestros vestuarios como si fuesen suyo.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 8),
+            
+            pw.Text(
+              'Nota 9: Recordar el dinero no es reembolsable.',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 15),
+            
+            pw.Text(
+              'Todas estas restricciones nos ayudan a poder brindar un servicio de calidad, solo le pedimos a todos nuestros clientes educación, respeto y valoración de nuestro trabajo. Es su responsabilidad ayudarnos a quedar bien con todos los demás clientes. Agradecemos en gran manera su comprensión, en todos estos puntos. Nos vemos el día de su sesión fotográfica!',
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(height: 20),
+            
+            pw.Center(
+              child: pw.Text(
+                'Equipo Víctor Guzmán Fotografía',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.Center(
+              child: pw.Text(
+                'Para llamadas: 8098982876',
+                style: pw.TextStyle(fontSize: 10),
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+
   return doc.save();
 }
 

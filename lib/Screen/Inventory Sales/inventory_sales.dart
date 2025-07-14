@@ -530,6 +530,28 @@ $confirmationLink
 
 Este enlace expira en 24 horas. ¡Gracias por tu preferencia!
 
+DE SUMA IMPORTANCIA:
+
+Nota 1: Para posponer fecha, tratar de hacerlo con tiempo, y esto independientemente tiene un costo de 2500 pesos.
+
+Nota 2: Las fotos adicionales tienen un costo de 500 pesos cada una.
+
+Nota 3: Llegar puntual el día del evento, 30 minutos de tardanza se le cobrará 1,500 pesos, y pasada la hora, la sesión de fotos se cancela y obligatoriamente hay que posponer nueva fecha. ¡Recuerda que posiblemente tenemos más eventos antes o después de ti! Por tanto, la PUNTUALIDAD es de suma importancia para nosotros. Cuando un cliente nos llega 20 o 30 minutos tarde, se nos complica todo el día, ayúdanos a quedar bien, con todos nuestros clientes.
+
+Nota 4: Un día después de la sesión se le enviarán las fotos para su selección, esta a través de un enlace, donde el cliente debe solo de dar like o corazones a las fotos que quiere le trabajemos. La primera vez le pedirá que ingrese su correo electrónico y después de, puede dar like libremente.
+
+Nota 5: Después de que el cliente selecciona las fotos en digitales se le estarán enviando al cliente editadas y retocadas a nivel profesional en un periodo de 10 a 20 días laborables. Los enmarcados en un máximo de 15 días, después de la selección del cliente, y el video o álbum 2 a 3 meses después de la selección del cliente.
+
+Nota 6: El cliente es el responsable de su transportación y del lugar seleccionado para la sesión fotográfica.
+
+Nota 7: El cliente debe de regresar el vestido en un periodo máximo de 1 hora después de su sesión fotográfica.
+
+Nota 8: El cliente se compromete a cuidar nuestros vestuarios como si fuesen suyo.
+
+Nota 9: Recordar el dinero no es reembolsable.
+
+Todas estas restricciones nos ayudan a poder brindar un servicio de calidad, solo le pedimos a todos nuestros clientes educación, respeto y valoración de nuestro trabajo. Es su responsabilidad ayudarnos a quedar bien con todos los demás clientes. Agradecemos en gran manera su comprensión, en todos estos puntos. Nos vemos el día de su sesión fotográfica!
+
 Con aprecio,
 Equipo Víctor Guzmán Fotografía
 Para llamadas: 8098982876 ☎️
