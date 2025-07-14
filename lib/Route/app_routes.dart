@@ -59,6 +59,7 @@ import '../Screen/Purchase Return/purchase_return_screen.dart';
 import '../Screen/Quotation List/quotation_list.dart';
 import '../Screen/Reports/current_stock_widget.dart';
 import '../Screen/Reports/daily_transaction.dart';
+import '../Screen/Daily Transaction Dashboard/daily_transaction_dashboard.dart';
 import '../Screen/Reports/report_screen.dart';
 import '../Screen/Sales Return/sales_return_screen.dart';
 import '../Screen/Subscription/purchase_plan.dart';
@@ -564,6 +565,14 @@ abstract class AcnooAppRoutes {
             path: '/transaction',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: DailyTransaction(),
+            ),
+          ),
+
+          ///----------------------------DailyTransactionDashboard route-----------
+          GoRoute(
+            path: '/transaction-dashboard',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: DailyTransactionDashboard(),
             ),
           ),
 

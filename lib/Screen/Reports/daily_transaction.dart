@@ -11,6 +11,7 @@ import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/daily_transaction_model.dart';
+import 'package:salespro_admin/model/daily_summary_model.dart';
 
 import '../../PDF/print_pdf.dart';
 import '../../Provider/profile_provider.dart';
@@ -521,6 +522,243 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           ),
                         ),
                       ]),
+                      // Nuevas tarjetas de métricas de pagos
+                      Consumer(builder: (_, ref, __) {
+                        // Calcular métricas de pagos desde las transacciones filtradas
+                        final summary = DailySummaryModel.fromDailyTransactions(reTransaction);
+                        
+                        return ResponsiveGridRow(rowSegments: 100, children: [
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: screenWidth < 950 ? 50 : 33,
+                            lg: 33,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+                                  border: Border.all(color: const Color(0xFF2196F3), width: 1),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.receipt_long, color: const Color(0xFF2196F3), size: 24),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '$globalCurrency ${myFormat.format(summary.totalFacturado)}',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                          color: const Color(0xFF2196F3),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 18),
+                                    ),
+                                    Text(
+                                      'Total Facturado',
+                                      style: theme.textTheme.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: screenWidth < 950 ? 50 : 33,
+                            lg: 33,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                  border: Border.all(color: const Color(0xFF4CAF50), width: 1),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.check_circle, color: const Color(0xFF4CAF50), size: 24),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '$globalCurrency ${myFormat.format(summary.totalPagado)}',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                          color: const Color(0xFF4CAF50),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 18),
+                                    ),
+                                    Text(
+                                      'Total Pagado',
+                                      style: theme.textTheme.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: screenWidth < 950 ? 50 : 33,
+                            lg: 33,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                                  border: Border.all(color: const Color(0xFFFF9800), width: 1),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.pending_actions, color: const Color(0xFFFF9800), size: 24),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '$globalCurrency ${myFormat.format(summary.totalPendiente)}',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                          color: const Color(0xFFFF9800),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 18),
+                                    ),
+                                    Text(
+                                      'Total Pendiente',
+                                      style: theme.textTheme.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]);
+                      }),
+                      Consumer(builder: (_, ref, __) {
+                        // Segunda fila con los métodos de pago
+                        final summary = DailySummaryModel.fromDailyTransactions(reTransaction);
+                        
+                        return ResponsiveGridRow(rowSegments: 100, children: [
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: screenWidth < 950 ? 50 : 33,
+                            lg: 33,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                  border: Border.all(color: const Color(0xFF4CAF50), width: 1),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.money, color: const Color(0xFF4CAF50), size: 24),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '$globalCurrency ${myFormat.format(summary.pagoEfectivo)}',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                          color: const Color(0xFF4CAF50),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 18),
+                                    ),
+                                    Text(
+                                      'Pago Efectivo',
+                                      style: theme.textTheme.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: screenWidth < 950 ? 50 : 33,
+                            lg: 33,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  color: const Color(0xFF009688).withValues(alpha: 0.1),
+                                  border: Border.all(color: const Color(0xFF009688), width: 1),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.account_balance, color: const Color(0xFF009688), size: 24),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '$globalCurrency ${myFormat.format(summary.pagoTransferencia)}',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                          color: const Color(0xFF009688),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 18),
+                                    ),
+                                    Text(
+                                      'Transferencias',
+                                      style: theme.textTheme.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: screenWidth < 950 ? 50 : 33,
+                            lg: 33,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  color: const Color(0xFF9C27B0).withValues(alpha: 0.1),
+                                  border: Border.all(color: const Color(0xFF9C27B0), width: 1),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.credit_card, color: const Color(0xFF9C27B0), size: 24),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '$globalCurrency ${myFormat.format(summary.pagoTarjetas)}',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                          color: const Color(0xFF9C27B0),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 18),
+                                    ),
+                                    Text(
+                                      'Pago Tarjetas',
+                                      style: theme.textTheme.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]);
+                      }),
                     ],
                   ),
                 ),
