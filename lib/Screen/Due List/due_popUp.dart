@@ -600,7 +600,8 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                   personalInformationModel: data,
                                                   dueTransactionModel: dueTransactionModel,
                                                   setting: setting,
-                                                  returnPdfData: true, // Nuevo parámetro para obtener bytes
+                                                  returnPdfData: true,
+                                                  skipWhatsappCheck: true, // Evitar doble envío de WhatsApp
                                                 );
 
                                                 if (pdfData != null) {
@@ -616,13 +617,15 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                               }
                                             }
 
-                                            // 3. Imprimir normalmente si no se envió por WhatsApp
-                                            if (!sendWhatsApp) {
+                                            // 3. Siempre imprimir el PDF (independientemente de si se envió por WhatsApp)
+                                            try {
                                               await GeneratePdfAndPrint().printDueInvoice(
                                                 personalInformationModel: data,
                                                 dueTransactionModel: dueTransactionModel,
                                                 setting: setting,
                                               );
+                                            } catch (e) {
+                                              EasyLoading.showError('Error al imprimir: ${e.toString()}');
                                             }
 
                                             // Resto del código para actualizar datos...
