@@ -18,6 +18,7 @@ class SaleTransactionModel {
   String? sellerName;
   String? key;
   bool? sendWhatsappMessage;
+  String? saleType; // NUEVO: 'normal', 'adicionales'
   List<String> reservationIds = []; // Inicialización directa
 
   SaleTransactionModel({
@@ -43,6 +44,7 @@ class SaleTransactionModel {
     this.sellerName,
     this.key,
     this.sendWhatsappMessage,
+    this.saleType, // NUEVO: tipo de venta
     List<String>? reservationIds, // Parámetro opcional
     this.pdfUrl,
   }) : reservationIds = reservationIds ?? []; // Asignación segura
@@ -69,6 +71,7 @@ class SaleTransactionModel {
       isPaid: json['isPaid'],
       paymentType: json['paymentType']?.toString() ?? 'Unknown',
       sendWhatsappMessage: json['sendWhatsappMessage'] ?? false,
+      saleType: json['saleType'] ?? 'normal', // NUEVO: tipo de venta con valor por defecto
       productList: json['productList'] != null
           ? (json['productList'] as List).map((v) => AddToCartModel.fromJson(v)).toList()
           : null,
@@ -101,6 +104,7 @@ class SaleTransactionModel {
       'isPaid': isPaid,
       'paymentType': paymentType,
       'sendWhatsappMessage': sendWhatsappMessage ?? false,
+      'saleType': saleType ?? 'normal', // NUEVO: tipo de venta
       'productList': productList?.map((e) => e.toJson()).toList(),
       'reservationIds': reservationIds,
       'pdfUrl': pdfUrl,

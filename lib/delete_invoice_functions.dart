@@ -190,4 +190,169 @@ class DeleteInvoice {
     }
     await ref.child(key!).remove();
   }
+
+  // NUEVO: Función para eliminar TODAS las transacciones Due Collection de una factura
+  Future<void> deleteAllDueCollections({required String invoice}) async {
+    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Daily Transaction');
+    List<String> keysToDelete = [];
+
+    await FirebaseDatabase.instance.ref(await getUserID()).child('Daily Transaction').orderByKey().get().then((value) {
+      for (var element in value.children) {
+        try {
+          var data = jsonDecode(jsonEncode(element.value));
+          
+          // Validaciones null-safe
+          if (data == null) continue;
+          if (data['type'] != 'Due Collection') continue;
+          if (data['dueTransactionModel'] == null) continue;
+          
+          // Verificar que invoiceNumber coincide
+          var fieldData = data['dueTransactionModel'];
+          if (fieldData is Map && fieldData['invoiceNumber'] == invoice) {
+            keysToDelete.add(element.key!);
+          }
+        } catch (e) {
+          print('Error processing Due Collection element: $e');
+          continue;
+        }
+      }
+    });
+
+    // Eliminar todas las transacciones encontradas
+    for (String key in keysToDelete) {
+      await ref.child(key).remove();
+      print('🗑️ Eliminada Due Collection para factura $invoice, key: $key');
+    }
+    
+    print('🗑️ Total Due Collections eliminadas para factura $invoice: ${keysToDelete.length}');
+  }
+
+  // NUEVO: Función para eliminar TODOS los registros Due Transaction de una factura
+  Future<void> deleteAllDueTransactions({required String invoice}) async {
+    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Due Transaction');
+    List<String> keysToDelete = [];
+
+    await FirebaseDatabase.instance.ref(await getUserID()).child('Due Transaction').orderByKey().get().then((value) {
+      for (var element in value.children) {
+        try {
+          var data = jsonDecode(jsonEncode(element.value));
+          
+          // Validaciones null-safe
+          if (data == null) continue;
+          if (data['invoiceNumber'] != invoice) continue;
+          
+          keysToDelete.add(element.key!);
+        } catch (e) {
+          print('Error processing Due Transaction element: $e');
+          continue;
+        }
+      }
+    });
+
+    // Eliminar todos los registros encontrados
+    for (String key in keysToDelete) {
+      await ref.child(key).remove();
+      print('🗑️ Eliminado Due Transaction para factura $invoice, key: $key');
+    }
+    
+    print('🗑️ Total Due Transactions eliminados para factura $invoice: ${keysToDelete.length}');
+  }
+
+  // NUEVO: Función para limpiar facturas huérfanas (que ya no existen en Sales pero siguen en Daily)
+  Future<void> cleanOrphanInvoicePayments({required String invoice}) async {
+    print('🧹 === LIMPIEZA DE FACTURA HUÉRFANA $invoice ===');
+    
+    // Eliminar Due Collections
+    await deleteAllDueCollections(invoice: invoice);
+    
+    // Eliminar Due Transactions  
+    await deleteAllDueTransactions(invoice: invoice);
+    
+    print('🧹 === LIMPIEZA COMPLETA DE FACTURA $invoice ===');
+  }
+
+  // NUEVO: Función para corregir saldos negativos en clientes
+  Future<void> fixNegativeCustomerBalances() async {
+    print('🔧 === INICIANDO CORRECCIÓN DE SALDOS NEGATIVOS ===');
+    
+    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
+    List<Map<String, dynamic>> customersToFix = [];
+    
+    // Buscar clientes con saldos negativos
+    await ref.orderByKey().get().then((value) {
+      for (var element in value.children) {
+        try {
+          var data = jsonDecode(jsonEncode(element.value));
+          
+          if (data == null) continue;
+          
+          int dueAmount = int.tryParse(data['due']?.toString() ?? '0') ?? 0;
+          
+          if (dueAmount < 0) {
+            customersToFix.add({
+              'key': element.key,
+              'name': data['customerName'] ?? 'Sin nombre',
+              'phone': data['phoneNumber'] ?? 'Sin teléfono',
+              'negativeDue': dueAmount,
+            });
+          }
+        } catch (e) {
+          print('Error procesando cliente: $e');
+          continue;
+        }
+      }
+    });
+    
+    print('📊 Clientes con saldos negativos encontrados: ${customersToFix.length}');
+    
+    // Corregir cada cliente
+    int correctedCount = 0;
+    for (var customer in customersToFix) {
+      try {
+        await ref.child(customer['key']).update({'due': '0'});
+        print('✅ Corregido: ${customer['name']} (${customer['phone']}) - Era: ${customer['negativeDue']} → Ahora: 0');
+        correctedCount++;
+      } catch (e) {
+        print('❌ Error corrigiendo ${customer['name']}: $e');
+      }
+    }
+    
+    print('🎉 === CORRECCIÓN COMPLETA: $correctedCount clientes corregidos ===');
+  }
+
+  // NUEVO: Función para corregir un cliente específico por teléfono
+  Future<void> fixSpecificCustomer({required String phone, required int correctAmount}) async {
+    print('🔧 Corrigiendo cliente específico: $phone');
+    
+    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
+    String? key;
+
+    await ref.orderByKey().get().then((value) {
+      for (var element in value.children) {
+        try {
+          var data = jsonDecode(jsonEncode(element.value));
+          
+          if (data == null) continue;
+          if (data['phoneNumber'] == phone) {
+            key = element.key;
+            break;
+          }
+        } catch (e) {
+          print('Error processing customer element: $e');
+          continue;
+        }
+      }
+    });
+    
+    if (key == null) {
+      print('❌ Cliente no encontrado con teléfono: $phone');
+      return;
+    }
+    
+    var data1 = await ref.child('$key/due').get();
+    int previousDue = int.tryParse(data1.value?.toString() ?? '0') ?? 0;
+    
+    await ref.child(key!).update({'due': '$correctAmount'});
+    print('✅ Cliente $phone corregido: $previousDue → $correctAmount');
+  }
 }

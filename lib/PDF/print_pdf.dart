@@ -235,7 +235,8 @@ class GeneratePdfAndPrint {
 
   EasyLoading.dismiss();
 
-  if (!(fromSaleReports ?? false) && context.mounted && !returnPdfData) {
+  // NO REDIRECCIONAR DESDE REPORTS - Eliminar redirecciones automáticas que causan problemas de navegación
+  if (!(fromSaleReports ?? false) && context.mounted && !returnPdfData && (fromInventorySale ?? false)) {
     Future.delayed(const Duration(milliseconds: 200), () {
       if (fromInventorySale ?? false) {
         context.pushReplacementNamed('/sales/inventory-sales', extra: true);
@@ -243,9 +244,8 @@ class GeneratePdfAndPrint {
         context.pushReplacement('/sales/quotation-list', extra: true);
       } else if (fromLedger ?? false) {
         context.pushReplacement('/ledger', extra: true);
-      } else {
-        context.pushReplacement('/sales/pos-sales', extra: true);
       }
+      // Eliminar redirección por defecto que causaba problemas
     });
   }
 
@@ -292,26 +292,19 @@ class GeneratePdfAndPrint {
       dynamicLayout: true,
       onLayout: (PdfPageFormat format) async => pdfData,
     );
+    // NO REDIRECCIONAR AUTOMÁTICAMENTE - Solo redireccionar si es específicamente desde inventory sales
     Future.delayed(Duration(milliseconds: 200), () {
-      context != null
-          ? (isFromInventorySale ?? false)
-              ? context.pushReplacement(
-                  '/sales/inventory-sales',
-                )
-              : (isFromQuotation ?? false)
-                  ? GoRouter.of(context).pushReplacement(
-                      '/sales/quotation-list',
-                      extra: {
-                        'resetState': true,
-                      },
-                    )
-                  : GoRouter.of(context).pushReplacement(
-                      '/sales/pos-sales',
-                      extra: {
-                        'resetState': true,
-                      },
-                    )
-          : null;
+      if (context != null && (isFromInventorySale ?? false)) {
+        context.pushReplacement('/sales/inventory-sales');
+      } else if (context != null && (isFromQuotation ?? false)) {
+        GoRouter.of(context).pushReplacement(
+          '/sales/quotation-list',
+          extra: {
+            'resetState': true,
+          },
+        );
+      }
+      // Eliminar redirección por defecto a pos-sales que causaba problemas
     });
   }
 
@@ -376,6 +369,7 @@ class GeneratePdfAndPrint {
     required GeneralSettingModel setting,
     bool returnPdfData = false,
     bool skipWhatsappCheck = false, // Nuevo parámetro para saltar verificación WhatsApp
+    bool fromSaleReports = false, // Nuevo parámetro para evitar redirección desde reportes
   }) async {
     // 1. Verificación inicial de WhatsApp (solo si no se salta)
     if (!skipWhatsappCheck) {
@@ -411,9 +405,15 @@ class GeneratePdfAndPrint {
         onLayout: (PdfPageFormat format) async => pdfData,
       );
       
-      Future.delayed(const Duration(milliseconds: 200), () {
-        context != null ? const PosSale().launch(context, isNewTask: true) : null;
-      });
+      // NO REDIRECCIONAR DESDE REPORTS
+      if (!fromSaleReports) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (context != null) {
+            // Usar GoRouter en lugar de launch() para evitar conflicto con navegación page-based
+            context.go('/sales/inventory-sales');
+          }
+        });
+      }
       
       return null;
     }
@@ -2236,7 +2236,10 @@ class GeneratePdfAndPrint {
       ),
     );
     Future.delayed(const Duration(milliseconds: 200), () {
-      context != null ? const LedgerScreen().launch(context, isNewTask: true) : null;
+      if (context != null) {
+        // Usar GoRouter en lugar de launch() para evitar conflicto con navegación page-based
+        context.go('/ledger');
+      }
     });
   }
 
@@ -2251,7 +2254,10 @@ class GeneratePdfAndPrint {
       ),
     );
     Future.delayed(const Duration(milliseconds: 200), () {
-      context != null ? const LedgerScreen().launch(context, isNewTask: true) : null;
+      if (context != null) {
+        // Usar GoRouter en lugar de launch() para evitar conflicto con navegación page-based
+        context.go('/ledger');
+      }
     });
   }
 }

@@ -673,10 +673,10 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
     if (menu.sidebarItemType == SidebarItemType.tile) {
       _route = menu.navigationPath;
     } else if (menu.sidebarItemType == SidebarItemType.submenu) {
-      final _mainRoute = menu.navigationPath;
       final _submenuRoute = submenu?.navigationPath;
-      if (_mainRoute != null && _submenuRoute != null) {
-        _route = _mainRoute + _submenuRoute;
+      if (_submenuRoute != null) {
+        // Use the submenu route directly since it already contains the full path
+        _route = _submenuRoute;
       }
     }
 

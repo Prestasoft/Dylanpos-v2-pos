@@ -1068,6 +1068,12 @@ class _SaleListState extends State<SaleList> {
   void _performDeleteSale(SaleTransactionModel transaction, WidgetRef ref) async {
     try {
       EasyLoading.show(status: 'Eliminando venta...');
+      
+      // DEBUG: Log inicial
+      debugPrint('🗑️ === INICIO ELIMINACIÓN FACTURA ${transaction.invoiceNumber} ===');
+      debugPrint('🗑️ Tipo de venta: ${transaction.saleType}');
+      debugPrint('🗑️ Monto total: ${transaction.totalAmount}');
+      debugPrint('🗑️ Monto adeudado: ${transaction.dueAmount}');
 
       // Registrar auditoría ANTES de la eliminación
       await AuditService().logDelete(
@@ -1086,35 +1092,76 @@ class _SaleListState extends State<SaleList> {
       );
 
       DeleteInvoice delete = DeleteInvoice();
+      
+      // Paso 1: Restaurar stock
+      debugPrint('🗑️ Paso 1: Restaurando stock de productos...');
       await delete.editStockAndSerial(saleTransactionModel: transaction);
+      
+      // Paso 2: Actualizar adeudo del cliente (restaurar monto TOTAL)
+      debugPrint('🗑️ Paso 2: Actualizando adeudo del cliente...');
+      debugPrint('🗑️ Monto total a restar: ${transaction.totalAmount}');
+      debugPrint('🗑️ Monto pendiente actual: ${transaction.dueAmount}');
+      
+      // ANÁLISIS: Determinar qué monto restar del cliente
+      double currentDue = transaction.dueAmount ?? 0;
+      double totalAmount = transaction.totalAmount ?? 0;
+      double paidAmount = totalAmount - currentDue;
+      
+      debugPrint('🗑️ Análisis de adeudo:');
+      debugPrint('🗑️ - Total de la factura: $totalAmount');
+      debugPrint('🗑️ - Monto ya pagado: $paidAmount');
+      debugPrint('🗑️ - Monto pendiente actual: $currentDue');
+      debugPrint('🗑️ - Monto a restar del cliente: $currentDue');
+      
+      // LÓGICA CORRECTA: Solo restar lo que realmente debe el cliente
       await delete.customerDueUpdate(
-        due: transaction.dueAmount ?? 0,
+        due: currentDue,
         phone: transaction.customerPhone,
       );
+      
+      // Paso 3: Actualizar balance de la tienda
+      debugPrint('🗑️ Paso 3: Actualizando balance de la tienda...');
       await delete.updateFromShopRemainBalance(
         paidAmount: (transaction.totalAmount ?? 0) - (transaction.dueAmount ?? 0),
         isFromPurchase: false,
       );
+      // Paso 4: Eliminar transacción diaria de venta
+      String dailyTransactionType = transaction.saleType == 'adicionales' ? 'Adicionales' : 
+                                   transaction.saleType == 'impresiones' ? 'Impresiones' : 'Sale';
+      debugPrint('🗑️ Paso 4a: Eliminando daily transaction de venta tipo: $dailyTransactionType');
+      
       await delete.deleteDailyTransaction(
         invoice: transaction.invoiceNumber, 
-        status: 'Sale', 
+        status: dailyTransactionType, 
         field: "saleTransactionModel"
       );
+      
+      // Paso 4b: Eliminar todas las transacciones Due Collection relacionadas
+      debugPrint('🗑️ Paso 4b: Eliminando TODOS los pagos de cuentas x cobrar relacionados...');
+      await delete.deleteAllDueCollections(invoice: transaction.invoiceNumber);
+      
+      // Paso 4c: Eliminar todos los registros Due Transaction relacionados
+      debugPrint('🗑️ Paso 4c: Eliminando TODOS los registros Due Transaction relacionados...');
+      await delete.deleteAllDueTransactions(invoice: transaction.invoiceNumber);
 
       final reservationId = (transaction.reservationIds != null && transaction.reservationIds!.isNotEmpty) 
           ? transaction.reservationIds!.first 
           : '';
 
+      // Paso 5: Cancelar reservación si existe
       if (reservationId.isNotEmpty) {
+        debugPrint('🗑️ Paso 5: Cancelando reservación: $reservationId');
         final consuearRef = ProviderScope.containerOf(context);
         await consuearRef.read(cancelReservationProvider(reservationId).future);
       }
 
-      // Eliminar de Firebase Database
+      // Paso 6: Eliminar de Firebase Database
+      debugPrint('🗑️ Paso 6: Eliminando de Sales Transition...');
       DatabaseReference dbRef = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${transaction.key}");
       await dbRef.remove();
 
-      // Refresh providers
+      // Paso 7: Refrescar providers
+      debugPrint('🗑️ Paso 7: Refrescando providers...');
       final consuearRef = ProviderScope.containerOf(context);
       await consuearRef.refresh(transitionProvider.future);
       await consuearRef.refresh(productProvider.future);
@@ -1123,6 +1170,7 @@ class _SaleListState extends State<SaleList> {
       await consuearRef.refresh(dailyTransactionProvider.future);
       await consuearRef.refresh(reservationsProvider.future);
 
+      debugPrint('🗑️ === ELIMINACIÓN COMPLETA FACTURA ${transaction.invoiceNumber} ===');
       EasyLoading.dismiss();
       EasyLoading.showSuccess('Venta eliminada exitosamente');
     } catch (e) {

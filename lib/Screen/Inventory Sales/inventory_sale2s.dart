@@ -4408,7 +4408,8 @@ class _InventorySalesState extends State<InventorySales> {
                                                         DailyTransactionModel(
                                                       name: post.customerName,
                                                       date: post.purchaseDate,
-                                                      type: 'Sale',
+                                                      type: post.saleType == 'adicionales' ? 'Adicionales' : 
+                                                            post.saleType == 'impresiones' ? 'Impresiones' : 'Sale',
                                                       total: post.totalAmount!
                                                           .toDouble(),
                                                       paymentIn: post

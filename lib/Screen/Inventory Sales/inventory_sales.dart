@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -68,6 +69,19 @@ class _InventorySalesState extends State<InventorySales> {
   double vatGst = 0;
   bool discountFieldsEnabled = false;
   DateTime selectedDueDate = DateTime.now();
+  bool _hasVestimentasFromDialog = false; // NUEVO: detectar si hay vestimentas del diálogo
+  bool _hasImpresionEnmarcado = false; // NUEVO: detectar si hay productos impresión/enmarcado
+
+  // NUEVO: Función para determinar el tipo de venta
+  String _getSaleType() {
+    if (_hasVestimentasFromDialog) {
+      return 'adicionales';
+    } else if (_hasImpresionEnmarcado) {
+      return 'impresiones';
+    } else {
+      return 'normal';
+    }
+  }
 
   TextEditingController payingAmountController = TextEditingController();
   TextEditingController changeAmountController = TextEditingController();
@@ -161,9 +175,11 @@ class _InventorySalesState extends State<InventorySales> {
       cartList[existingIndex].quantity += 1;
       cartList[existingIndex].subTotal = 
           (cartList[existingIndex].quantity * dress.price).toString();
+      _hasVestimentasFromDialog = true; // MARCAR: se agregó vestimenta desde diálogo
     } else {
       cartList.add(dress.toCartItem());
       productFocusNode.add(FocusNode());
+      _hasVestimentasFromDialog = true; // MARCAR: se agregó vestimenta desde diálogo
     }
     updateDueAmount();
   });
@@ -1531,7 +1547,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (element.warehouseName == 'SANTO DOMINGO') {
+      if (element.warehouseName == 'SANTIAGO') {
         selectedWareHouse = element;
       }
       i++;
@@ -1933,6 +1949,10 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                     setState(() {
                                       if (!uniqueCheck(product.productCode)) {
                                         cartList.add(addToCartModel);
+                                        
+                                        // NUEVO: Cualquier producto desde búsqueda = impresión/enmarcado
+                                        _hasImpresionEnmarcado = true;
+                                        
                                         addFocus();
                                         nameCodeCategoryController.clear();
                                         nameFocus.requestFocus();
@@ -2722,6 +2742,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                                         .where((item) => item.reservationId != null) // Filtra items con reserva
                                                                         .map((item) => item.reservationId!) // Extrae IDs
                                                                         .toList(), // Convierte a lista
+                                                                    saleType: _getSaleType(), // NUEVO: tipo de venta
                                                                   );
 
                                                                   try {
@@ -2733,6 +2754,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                                     transitionModel.lossProfit = 0;
                                                                     transitionModel.returnAmount = 0;
                                                                     transitionModel.paymentType = 'Just Quotation';
+                                                                    // Obtener el nombre real del usuario actual
                                                                     transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
 
                                                                     await ref.push().set(transitionModel.toJson());
@@ -2922,6 +2944,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                               serviceCharge: serviceCharge,
                                               vat: vatGst,
                                               reservationIds: cartList.where((item) => item.reservationId != null).map((item) => item.reservationId!).toList(),
+                                              saleType: _getSaleType(), // NUEVO: tipo de venta
                                             );
 
                                             if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
@@ -3005,6 +3028,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
                                                   (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
                                                   transitionModel.paymentType = selectedPaymentOption;
+                                                  // Obtener el nombre real del usuario actual
                                                   transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
                                                   post = checkLossProfit(transitionModel: transitionModel);
                                                   await ref.push().set(post.toJson());
@@ -3146,7 +3170,8 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                 DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                                   name: post.customerName,
                                                   date: post.purchaseDate,
-                                                  type: 'Sale',
+                                                  type: post.saleType == 'adicionales' ? 'Adicionales' : 
+                                                        post.saleType == 'impresiones' ? 'Impresiones' : 'Sale',
                                                   total: post.totalAmount!.toDouble(),
                                                   paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
                                                   paymentOut: 0,
@@ -3247,6 +3272,8 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
 
       cartList.clear(); // Limpia la lista de productos
       productFocusNode.clear(); // Limpia los focus nodes
+      _hasVestimentasFromDialog = false; // RESETEAR: limpia el indicador de vestimentas
+      _hasImpresionEnmarcado = false; // RESETEAR: limpia el indicador de impresión/enmarcado
       payingAmountController.text = '0'; // Resetea el monto pagado
       changeAmountController.text = '0'; // Resetea el cambio
       dueAmountController.text = '0'; // Resetea el adeudo

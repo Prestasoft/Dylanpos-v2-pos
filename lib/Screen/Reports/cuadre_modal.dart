@@ -414,7 +414,7 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
                 controller: _tabController,
                 labelColor: const Color.fromARGB(255, 194, 131, 16),
                 tabs: const [
-                  Tab(text: 'Ventas del Día'),
+                  Tab(text: 'Reservas y Adicionales'),
                   Tab(text: 'Cuentas por Cobrar'),
                 ],
               ),

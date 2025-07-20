@@ -45,7 +45,7 @@ class SaleReports extends StatefulWidget {
 class _SaleReportsState extends State<SaleReports> {
   // --- ESTADO Y MÉTODOS DE FILTRO ---
   List<String> categoryList = [
-    'Ventas',
+    // 'Reservas y Adicionales', // Comentado temporalmente
     'Transaccion Diaria',
     'Devolucion',
     'Compra',
@@ -56,7 +56,7 @@ class _SaleReportsState extends State<SaleReports> {
     'Informe de perdidas y ganancias',
   ];
 
-  String selected = 'Ventas';
+  String selected = 'Transaccion Diaria'; // Cambiado de 'Reservas y Adicionales' que está comentado
   String selectedMonth = 'Hoy';
   DateTimeRange selectedDate = DateTimeRange(
     start: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
@@ -441,11 +441,12 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                   ),
                 ),
               ),
-              //-----------------sale reports-----------------------
+              //-----------------sale reports (RESERVAS Y ADICIONALES - COMENTADO)-----------------------
+              /*
               ResponsiveGridCol(
-                xs: selected == 'Ventas' ? 12 : 0,
-                md: selected == 'Ventas' ? 9 : 0,
-                lg: selected == 'Ventas' ? 9 : 0,
+                xs: selected == 'Reservas y Adicionales' ? 12 : 0,
+                md: selected == 'Reservas y Adicionales' ? 9 : 0,
+                lg: selected == 'Reservas y Adicionales' ? 9 : 0,
                 child: Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: Consumer(builder: (_, ref, watch) {
@@ -454,21 +455,38 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                     return transactionReport.when(data: (transaction) {
                       List<SaleTransactionModel> reTransaction = [];
                       for (var element in transaction.reversed.toList()) {
-                        if ((element.invoiceNumber
-                                    .toLowerCase()
-                                    .contains(searchItem.toLowerCase()) ||
-                                element.customerName
-                                    .toLowerCase()
-                                    .contains(searchItem.toLowerCase())) &&
-                            (selectedDate.start.isBefore(
-                                    DateTime.parse(element.purchaseDate)) ||
-                                DateTime.parse(element.purchaseDate)
-                                    .isAtSameMomentAs(selectedDate.start)) &&
-                            (selectedDate.end.isAfter(
-                                    DateTime.parse(element.purchaseDate)) ||
-                                DateTime.parse(element.purchaseDate)
-                                    .isAtSameMomentAs(selectedDate.end))) {
-                          reTransaction.add(element);
+                        // Verificar si la transacción pasa el filtro de búsqueda por texto
+                        bool passesSearchFilter = searchItem.isEmpty ||
+                            element.invoiceNumber
+                                .toLowerCase()
+                                .contains(searchItem.toLowerCase()) ||
+                            element.customerName
+                                .toLowerCase()
+                                .contains(searchItem.toLowerCase());
+                        
+                        if (passesSearchFilter) {
+                          try {
+                            // Intentar parsear la fecha de manera segura
+                            DateTime transactionDate = DateTime.parse(element.purchaseDate);
+                            
+                            // Verificar si la fecha está dentro del rango seleccionado
+                            bool passesDateFilter = (selectedDate.start.isBefore(transactionDate) ||
+                                    transactionDate.isAtSameMomentAs(selectedDate.start)) &&
+                                (selectedDate.end.isAfter(transactionDate) ||
+                                    transactionDate.isAtSameMomentAs(selectedDate.end));
+                            
+                            if (passesDateFilter) {
+                              reTransaction.add(element);
+                            }
+                          } catch (e) {
+                            // Si no se puede parsear la fecha, incluir la transacción 
+                            // para evitar que se pierda por formato de fecha inválido
+                            // Comentar en producción: 
+                            // print('Error parseando fecha "${element.purchaseDate}" para invoice ${element.invoiceNumber}: $e');
+                            if (searchItem.isNotEmpty) {
+                              reTransaction.add(element); // Solo si coincide con búsqueda
+                            }
+                          }
                         }
                       }
                       final pages =
@@ -609,8 +627,8 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                   // Total Facturado
                                   ResponsiveGridCol(
                                     xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    md: screenWidth < 950 ? 50 : 33,
+                                    lg: 33,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Container(
@@ -620,25 +638,27 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                             top: 10.0,
                                             bottom: 10.0),
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color.fromARGB(255, 61, 234, 110),
+                                          borderRadius: BorderRadius.circular(10.0),
+                                          color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+                                          border: Border.all(color: const Color(0xFF2196F3), width: 1),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
+                                            Icon(Icons.receipt_long, color: const Color(0xFF2196F3), size: 24),
+                                            const SizedBox(height: 8),
                                             Text(
                                               '$globalCurrency${myFormat.format(double.tryParse(calculateTotalSale(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleLarge
-                                                  ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 18.0),
+                                              style: theme.textTheme.titleLarge?.copyWith(
+                                                  color: const Color(0xFF2196F3),
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 18.0),
                                             ),
                                             Text(
                                               lang.S.of(context).totalAmount,
-                                              style: theme.textTheme.bodyLarge,
+                                              style: theme.textTheme.bodyLarge?.copyWith(
+                                                  color: const Color(0xFF2196F3)),
                                             ),
                                           ],
                                         ),
@@ -649,8 +669,8 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                   // Total Pagado
                                   ResponsiveGridCol(
                                     xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    md: screenWidth < 950 ? 50 : 33,
+                                    lg: 33,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: FutureBuilder<Map<String, dynamic>>(
@@ -683,21 +703,26 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                                 bottom: 10.0),
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(10.0),
-                                              color: const Color.fromARGB(255, 226, 200, 123),
+                                              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                              border: Border.all(color: const Color(0xFF4CAF50), width: 1),
                                             ),
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
+                                                Icon(Icons.check_circle, color: const Color(0xFF4CAF50), size: 24),
+                                                const SizedBox(height: 8),
                                                 Text(
                                                   '$globalCurrency${myFormat.format(totalPagado)}',
                                                   style: theme.textTheme.titleMedium?.copyWith(
-                                                      color: kTitleColor,
+                                                      color: const Color(0xFF4CAF50),
                                                       fontWeight: FontWeight.w600,
                                                       fontSize: 18.0),
                                                 ),
                                                 Text(
                                                   'Total Pagado',
-                                                  style: theme.textTheme.bodyLarge,
+                                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                                      color: const Color(0xFF4CAF50)),
                                                 ),
                                               ],
                                             ),
@@ -710,8 +735,8 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                   // Total Adeudado
                                   ResponsiveGridCol(
                                     xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    md: screenWidth < 950 ? 50 : 33,
+                                    lg: 33,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: Container(
@@ -721,25 +746,27 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                             top: 10.0,
                                             bottom: 10.0),
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          color: const Color.fromARGB(192, 246, 66, 66),
+                                          borderRadius: BorderRadius.circular(10.0),
+                                          color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                                          border: Border.all(color: const Color(0xFFFF9800), width: 1),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
+                                            Icon(Icons.pending_actions, color: const Color(0xFFFF9800), size: 24),
+                                            const SizedBox(height: 8),
                                             Text(
                                               '$globalCurrency${myFormat.format(double.tryParse(getTotalDue(reTransaction).toString()) ?? 0)}',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                      color: kTitleColor,
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 18.0),
+                                              style: theme.textTheme.titleMedium?.copyWith(
+                                                  color: const Color(0xFFFF9800),
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 18.0),
                                             ),
                                             Text(
                                               lang.S.of(context).unPaid,
-                                              style: theme.textTheme.bodyLarge,
+                                              style: theme.textTheme.bodyLarge?.copyWith(
+                                                  color: const Color(0xFFFF9800)),
                                             ),
                                           ],
                                         ),
@@ -753,8 +780,8 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                   // Pagos en Efectivo
                                   ResponsiveGridCol(
                                     xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    md: screenWidth < 950 ? 50 : 33,
+                                    lg: 33,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: FutureBuilder<Map<String, dynamic>>(
@@ -782,21 +809,26 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                                 bottom: 10.0),
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(10.0),
-                                              color: const Color(0xFFE3F2FD),
+                                              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                              border: Border.all(color: const Color(0xFF4CAF50), width: 1),
                                             ),
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
+                                                Icon(Icons.money, color: const Color(0xFF4CAF50), size: 24),
+                                                const SizedBox(height: 8),
                                                 Text(
                                                   '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
                                                   style: theme.textTheme.titleMedium?.copyWith(
-                                                      color: kTitleColor,
+                                                      color: const Color(0xFF4CAF50),
                                                       fontWeight: FontWeight.w600,
                                                       fontSize: 18.0),
                                                 ),
                                                 Text(
                                                   'Pagos en Efectivo',
-                                                  style: theme.textTheme.bodyLarge,
+                                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                                      color: const Color(0xFF4CAF50)),
                                                 ),
                                               ],
                                             ),
@@ -809,8 +841,8 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                   // Pagos Transferencia
                                   ResponsiveGridCol(
                                     xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    md: screenWidth < 950 ? 50 : 33,
+                                    lg: 33,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: FutureBuilder<Map<String, dynamic>>(
@@ -838,21 +870,26 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                                 bottom: 10.0),
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(10.0),
-                                              color: const Color(0xFFE3F2FD),
+                                              color: const Color(0xFF009688).withValues(alpha: 0.1),
+                                              border: Border.all(color: const Color(0xFF009688), width: 1),
                                             ),
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
+                                                Icon(Icons.account_balance, color: const Color(0xFF009688), size: 24),
+                                                const SizedBox(height: 8),
                                                 Text(
                                                   '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
                                                   style: theme.textTheme.titleMedium?.copyWith(
-                                                      color: kTitleColor,
+                                                      color: const Color(0xFF009688),
                                                       fontWeight: FontWeight.w600,
                                                       fontSize: 18.0),
                                                 ),
                                                 Text(
                                                   'Pagos Transferencia',
-                                                  style: theme.textTheme.bodyLarge,
+                                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                                      color: const Color(0xFF009688)),
                                                 ),
                                               ],
                                             ),
@@ -865,8 +902,8 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                   // Pagos con Tarjetas
                                   ResponsiveGridCol(
                                     xs: 100,
-                                    md: screenWidth < 800 ? 50 : 30,
-                                    lg: screenWidth < 1500 ? 30 : 20,
+                                    md: screenWidth < 950 ? 50 : 33,
+                                    lg: 33,
                                     child: Padding(
                                       padding: const EdgeInsets.all(10.0),
                                       child: FutureBuilder<Map<String, dynamic>>(
@@ -894,21 +931,26 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                                 bottom: 10.0),
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(10.0),
-                                              color: const Color(0xFFE3F2FD),
+                                              color: const Color(0xFF9C27B0).withValues(alpha: 0.1),
+                                              border: Border.all(color: const Color(0xFF9C27B0), width: 1),
                                             ),
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
+                                                Icon(Icons.credit_card, color: const Color(0xFF9C27B0), size: 24),
+                                                const SizedBox(height: 8),
                                                 Text(
                                                   '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
                                                   style: theme.textTheme.titleMedium?.copyWith(
-                                                      color: kTitleColor,
+                                                      color: const Color(0xFF9C27B0),
                                                       fontWeight: FontWeight.w600,
                                                       fontSize: 18.0),
                                                 ),
                                                 Text(
                                                   'Pagos con Tarjetas',
-                                                  style: theme.textTheme.bodyLarge,
+                                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                                      color: const Color(0xFF9C27B0)),
                                                 ),
                                               ],
                                             ),
@@ -1629,9 +1671,11 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                         child: CircularProgressIndicator(),
                       );
                     });
-                  }).visible(selected == 'Ventas'),
+                  }).visible(selected == 'Reservas y Adicionales'),
                 ),
               ),
+              */
+              // FIN DEL BLOQUE COMENTADO DE RESERVAS Y ADICIONALES
 
               ///____________Sales_return_report_________________________________________________
               ResponsiveGridCol(
@@ -1744,15 +1788,16 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
     }
     
     // Añadir transacciones de cuentas por cobrar
-    for (var pago in transaccionesDue) {    transaccionesCombinadas.add({
-      'tipo': 'pago_deuda',
-      'fecha': pago.purchaseDate,
-      'cliente': pago.customerName,
-      'monto': pago.payDueAmount,
-      'factura': pago.invoiceNumber,
-      'metodoPago': pago.paymentType,
-      'original': pago
-    });
+    for (var pago in transaccionesDue) {
+      transaccionesCombinadas.add({
+        'tipo': 'pago_deuda',
+        'fecha': pago.purchaseDate,
+        'cliente': pago.customerName,
+        'monto': pago.payDueAmount,
+        'factura': pago.invoiceNumber,
+        'metodoPago': pago.paymentType,
+        'original': pago
+      });
     }
     
     // Ordenar por fecha, más reciente primero

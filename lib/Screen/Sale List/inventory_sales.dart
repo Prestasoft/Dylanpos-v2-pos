@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -966,7 +967,7 @@ class _InventorySalesState extends State<InventorySales> {
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (element.warehouseName == 'SANTO DOMINGO') {
+      if (element.warehouseName == 'SANTIAGO') {
         selectedWareHouse = element;
       }
       i++;
@@ -2096,7 +2097,9 @@ class _InventorySalesState extends State<InventorySales> {
                                                                     transitionModel.lossProfit = 0;
                                                                     transitionModel.returnAmount = 0;
                                                                     transitionModel.paymentType = 'Just Quotation';
-                                                                    transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
+                                                                    // Obtener el nombre real del usuario actual
+                                                                    final currentUser = FirebaseAuth.instance.currentUser;
+                                                                    transitionModel.sellerName = currentUser?.displayName ?? currentUser?.email ?? (isSubUser ? constSubUserTitle : 'Admin');
 
                                                                     await ref.push().set(transitionModel.toJson());
                                                                     updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
@@ -2310,7 +2313,9 @@ class _InventorySalesState extends State<InventorySales> {
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
                                                 (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
                                                 transitionModel.paymentType = selectedPaymentOption;
-                                                transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
+                                                // Obtener el nombre real del usuario actual
+                                                final currentUser = FirebaseAuth.instance.currentUser;
+                                                transitionModel.sellerName = currentUser?.displayName ?? currentUser?.email ?? (isSubUser ? constSubUserTitle : 'Admin');
                                                 SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
                                                 await ref.push().set(post.toJson());
 

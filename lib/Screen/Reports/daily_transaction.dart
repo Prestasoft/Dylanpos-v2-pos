@@ -1,25 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconly/iconly.dart';
+import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart' as pro;
 import 'package:responsive_grid/responsive_grid.dart';
+import 'package:salespro_admin/Screen/currency/currency_provider.dart';
 import 'package:salespro_admin/Provider/daily_transaction_provider.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
+import 'package:salespro_admin/Provider/transactions_provider.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/daily_transaction_model.dart';
 import 'package:salespro_admin/model/daily_summary_model.dart';
+import 'package:salespro_admin/model/general_setting_model.dart';
+import 'package:salespro_admin/model/personal_information_model.dart';
+import 'package:salespro_admin/model/sale_transaction_model.dart';
 
 import '../../PDF/print_pdf.dart';
 import '../../Provider/profile_provider.dart';
+import '../../const.dart';
 import '../Expenses/expense_details.dart';
 import '../Income/income_details.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
-import '../currency/currency_provider.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../../delete_invoice_functions.dart';
 
 class DailyTransaction extends StatefulWidget {
   const DailyTransaction({super.key});
@@ -29,6 +38,7 @@ class DailyTransaction extends StatefulWidget {
 }
 
 class _DailyTransactionState extends State<DailyTransaction> {
+  List<String> _problematicInvoices = [];
   double calculateTotalPaymentIn(List<DailyTransactionModel> dailyTransaction) {
     double total = 0.0;
     for (var element in dailyTransaction) {
@@ -97,7 +107,15 @@ class _DailyTransactionState extends State<DailyTransaction> {
   Map<String, String> typeFilters = {
     'Todos': 'Todos',
     'Sale': 'Reservas',
+    'Adicionales': 'Adicionales',
+    'Impresiones': 'Producto',
     'Due Collection': 'Cuentas x Cobrar',
+    'Sale Return': 'Devolución de Reserva',
+    'Purchase': 'Compras',
+    'Purchase Return': 'Devolución de Compra',
+    'Due Payment': 'Pago de Adeudo',
+    'Expense': 'Gastos',
+    'Income': 'Ingresos',
   };
 
   String selectedMonth = 'Hoy';
@@ -138,15 +156,29 @@ class _DailyTransactionState extends State<DailyTransaction> {
               break;
             case 'Ultimo mes':
               {
+                final now = DateTime.now();
+                final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+                final lastMonthEnd = DateTime(now.year, now.month, 0, 23, 59, 59);
                 selectedDate = DateTimeRange(
-                    start: DateTime(DateTime.now().year, DateTime.now().month - 1, 1),
-                    end: DateTime(DateTime.now().year, DateTime.now().month, 0));
+                    start: lastMonthStart,
+                    end: lastMonthEnd);
               }
               break;
             case 'Ultimos 6 meses':
               {
+                final now = DateTime.now();
+                // Calcular 6 meses atrás de manera segura
+                int targetYear = now.year;
+                int targetMonth = now.month - 6;
+                
+                // Ajustar año si el mes es <= 0
+                if (targetMonth <= 0) {
+                  targetYear--;
+                  targetMonth += 12;
+                }
+                
                 selectedDate = DateTimeRange(
-                    start: DateTime(DateTime.now().year, DateTime.now().month - 6, 1),
+                    start: DateTime(targetYear, targetMonth, 1),
                     end: DateTime.now());
               }
               break;
@@ -199,6 +231,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
     switch (type) {
       case 'Sale':
         return 'Reserva';
+      case 'Adicionales':
+        return 'Adicionales';
+      case 'Impresiones':
+        return 'Producto';
       case 'Sale Return':
         return 'Devolución de reserva';
       case 'Purchase':
@@ -216,6 +252,80 @@ class _DailyTransactionState extends State<DailyTransaction> {
     }
   }
 
+  // Función para obtener el tipo de pago de una transacción
+  String _getPaymentType(DailyTransactionModel transaction) {
+    String paymentType = 'N/A';
+    
+    if (transaction.saleTransactionModel != null) {
+      paymentType = transaction.saleTransactionModel!.paymentType ?? 'N/A';
+    } else if (transaction.dueTransactionModel != null) {
+      paymentType = transaction.dueTransactionModel!.paymentType ?? 'N/A';
+    } else if (transaction.purchaseTransactionModel != null) {
+      paymentType = transaction.purchaseTransactionModel!.paymentType ?? 'N/A';
+    }
+    
+    // Traducir tipos de pago comunes al español
+    switch (paymentType.toLowerCase()) {
+      case 'cash':
+        return 'Efectivo';
+      case 'card':
+        return 'Tarjeta';
+      case 'transfer':
+        return 'Transferencia';
+      case 'bank transfer':
+        return 'Transferencia';
+      case 'credit card':
+        return 'Tarjeta';
+      default:
+        return paymentType;
+    }
+  }
+
+  String _getUserName(DailyTransactionModel transaction) {
+    // Extraer el nombre del usuario según el tipo de transacción
+    switch (transaction.type) {
+      case 'Sale':
+      case 'Adicionales':
+      case 'Impresiones':
+      case 'Sale Return':
+        return transaction.saleTransactionModel?.sellerName ?? 'N/A';
+      case 'Purchase':
+      case 'Purchase Return':
+        return transaction.purchaseTransactionModel?.sellerName ?? 'N/A';
+      case 'Due Collection':
+      case 'Due Payment':
+        return transaction.dueTransactionModel?.sellerName ?? 'N/A';
+      case 'Expense':
+        // ExpenseModel - verificar si tiene campo de usuario
+        return 'N/A';
+      case 'Income':
+        // IncomeModel - verificar si tiene campo de usuario
+        return 'N/A';
+      default:
+        return 'N/A';
+    }
+  }
+
+  double _getTotalPendiente(DailyTransactionModel transaction) {
+    switch (transaction.type) {
+      case 'Sale':
+      case 'Sale Return':
+        return transaction.saleTransactionModel?.dueAmount ?? 0.0;
+      case 'Purchase':
+      case 'Purchase Return':
+        return transaction.remainingBalance;
+      case 'Due Collection':
+      case 'Due Payment':
+        // Para pagos de cuentas por cobrar, mostrar el saldo restante después del pago
+        return transaction.dueTransactionModel?.dueAmountAfterPay ?? 0.0;
+      case 'Expense':
+      case 'Income':
+        return 0.0;
+      default:
+        return transaction.remainingBalance;
+    }
+  }
+
   final _horizontalScroll = ScrollController();
   int _lossProfitPerPage = 10; // Default number of items to display
   int _currentPage = 1;
@@ -228,18 +338,103 @@ class _DailyTransactionState extends State<DailyTransaction> {
     final screenWidth = MediaQuery.of(context).size.width;
     return Consumer(builder: (_, ref, watch) {
       final dailyTransactionReport = ref.watch(dailyTransactionProvider);
+      final salesTransactionReport = ref.watch(transitionProvider);
       final profile = ref.watch(profileDetailsProvider);
       final settingProvider = ref.watch(generalSettingProvider);
       return dailyTransactionReport.when(
         data: (dailyReport) {
-          List<DailyTransactionModel> reTransaction = [];
+          return salesTransactionReport.when(
+            data: (salesReport) {
+              List<DailyTransactionModel> reTransaction = [];
+              
+              // Función para convertir SaleTransactionModel a DailyTransactionModel
+              DailyTransactionModel convertSaleToDaily(SaleTransactionModel sale) {
+                return DailyTransactionModel(
+                  name: sale.customerName,
+                  date: sale.purchaseDate,
+                  type: sale.saleType == 'adicionales' ? 'Adicionales' : 
+                        sale.saleType == 'impresiones' ? 'Impresiones' : 'Sale',
+                  total: sale.totalAmount ?? 0.0,
+                  paymentIn: sale.totalAmount ?? 0.0,
+                  paymentOut: 0.0,
+                  remainingBalance: sale.dueAmount ?? 0.0,
+                  id: sale.invoiceNumber,
+                  saleTransactionModel: sale,
+                );
+              }
 
-          for (var element in dailyReport.reversed.toList()) {
+              // LOGGING PARA VALIDACIÓN
+              debugPrint('=== ANÁLISIS DE FUENTES DE DATOS ===');
+              debugPrint('📊 Daily Transactions encontradas: ${dailyReport.length}');
+              debugPrint('📊 Sales Transitions encontradas: ${salesReport.length}');
+              debugPrint('📅 Filtro de fecha: ${selectedDate.start.toString().substring(0, 10)} a ${selectedDate.end.toString().substring(0, 10)}');
+              debugPrint('🔍 Filtro de tipo: $selectedTypeFilter');
+              
+              // Contar ventas en Daily Transactions
+              int salesInDaily = dailyReport.where((t) => t.type == 'Sale').length;
+              debugPrint('💰 Ventas en Daily Transaction: $salesInDaily');
+              
+              // Mostrar algunos ejemplos de facturas en Sales Transition
+              var recentSales = salesReport.take(5).map((s) => s.invoiceNumber).toList();
+              debugPrint('🧾 Ejemplos de facturas en Sales Transition: $recentSales');
+              
+              // 🔍 VALIDACIÓN DE FACTURAS CON ERRORES
+              _problematicInvoices.clear(); // Limpiar lista anterior
+              debugPrint('\n=== VALIDACIÓN DE FACTURAS ===');
+              for (var transaction in dailyReport.where((t) => t.type == 'Sale')) {
+                if (transaction.saleTransactionModel != null) {
+                  final saleModel = transaction.saleTransactionModel!;
+                  final hasProducts = saleModel.productList != null && saleModel.productList!.isNotEmpty;
+                  debugPrint('📋 Factura ${saleModel.invoiceNumber}: productos=${saleModel.productList?.length ?? 0}, válida=$hasProducts');
+                  
+                  if (!hasProducts) {
+                    debugPrint('❌ FACTURA PROBLEMÁTICA: ${saleModel.invoiceNumber} - SIN PRODUCTOS');
+                    // Buscar en Sales Transition si existe una versión completa
+                    final fullSale = salesReport.where((s) => s.invoiceNumber == saleModel.invoiceNumber).firstOrNull;
+                    if (fullSale != null && fullSale.productList != null && fullSale.productList!.isNotEmpty) {
+                      debugPrint('✅ Versión completa encontrada en Sales Transition con ${fullSale.productList!.length} productos');
+                    } else {
+                      debugPrint('💀 FACTURA CORRUPTA: ${saleModel.invoiceNumber} - NO EXISTE EN SALES TRANSITION O TAMBIÉN SIN PRODUCTOS');
+                      // Marcar para eliminación
+                      _problematicInvoices.add(saleModel.invoiceNumber);
+                    }
+                  }
+                } else {
+                  debugPrint('❌ TRANSACCIÓN SIN SALE MODEL: ${transaction.id}');
+                }
+              }
+              
+              // Mostrar resumen de facturas problemáticas
+              if (_problematicInvoices.isNotEmpty) {
+                debugPrint('\n🚨 RESUMEN DE FACTURAS PROBLEMÁTICAS:');
+                debugPrint('📊 Total de facturas con problemas: ${_problematicInvoices.length}');
+                debugPrint('📋 Facturas: ${_problematicInvoices.join(", ")}');
+                
+                // Mostrar botón para eliminar facturas problemáticas
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _showDeleteProblematicInvoicesDialog();
+                });
+              }
+
+              // NUEVO: Limpiar facturas huérfanas automáticamente (COMENTADO DESPUÉS DE USAR)
+              // WidgetsBinding.instance.addPostFrameCallback((_) {
+              //   _cleanOrphanInvoices();
+              // });
+
+              // NUEVO: Corregir saldos negativos automáticamente (TEMPORAL)
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _fixNegativeBalances();
+              });
+
+              // Primero agregar todas las transacciones diarias existentes
+              for (var element in dailyReport.reversed.toList()) {
             if (element.date.isNotEmpty) {
               DateTime? parsedDate;
               try {
                 parsedDate = DateTime.parse(element.date);
               } catch (e) {
+                // Log para debugging - comentar en producción
+                // print('Error parsing date: ${element.date} for ${element.name} - $e');
                 continue;
               }
 
@@ -255,24 +450,85 @@ class _DailyTransactionState extends State<DailyTransaction> {
             }
           }
 
+          debugPrint('✅ Daily Transactions procesadas: ${reTransaction.length}');
+          debugPrint('💰 Ventas en reTransaction desde Daily: ${reTransaction.where((t) => t.type == 'Sale').length}');
+
+          // Agregar ventas del transitionProvider que no estén ya en dailyReport
+          Set<String> existingInvoiceNumbers = reTransaction
+              .where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones')
+              .map((t) => t.id)
+              .toSet();
+
+          for (var sale in salesReport.reversed.toList()) {
+            // Solo agregar si no está ya en reTransaction
+            if (!existingInvoiceNumbers.contains(sale.invoiceNumber)) {
+              // Aplicar los mismos filtros de fecha y tipo
+              DateTime? parsedDate;
+              try {
+                parsedDate = DateTime.parse(sale.purchaseDate);
+              } catch (e) {
+                continue; // Saltar si la fecha no es válida
+              }
+
+              // Filtro por rango de fecha
+              if ((selectedDate.start.isBefore(parsedDate) || parsedDate.isAtSameMomentAs(selectedDate.start)) &&
+                  (selectedDate.end.isAfter(parsedDate) || parsedDate.isAtSameMomentAs(selectedDate.end))) {
+                
+                // Convertir sale a daily para obtener el tipo correcto
+                DailyTransactionModel dailyFromSale = convertSaleToDaily(sale);
+                
+                // Filtro por tipo
+                if (selectedTypeFilter == 'Todos' || 
+                    selectedTypeFilter == dailyFromSale.type) {
+                  reTransaction.add(dailyFromSale);
+                }
+              }
+            }
+          }
+
+          debugPrint('🔄 Facturas ya existentes en Daily: $existingInvoiceNumbers');
+          debugPrint('✅ Total después de agregar Sales Transition: ${reTransaction.length}');
+          debugPrint('💰 Total de ventas combinadas: ${reTransaction.where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones').length}');
+          
+          // Mostrar algunas facturas de ejemplo que se agregaron
+          var addedSales = reTransaction
+              .where((t) => (t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones') && !existingInvoiceNumbers.contains(t.id))
+              .take(3)
+              .map((t) => t.id)
+              .toList();
+          debugPrint('🆕 Ejemplos de facturas agregadas desde Sales Transition: $addedSales');
+
           // Apply search filter
           if (searchItem.isNotEmpty) {
+            final searchLower = searchItem.toLowerCase();
             reTransaction = reTransaction.where((element) {
-              return element.name
-                      .toLowerCase()
-                      .contains(searchItem.toLowerCase()) ||
-                  element.date
-                      .toLowerCase()
-                      .contains(searchItem.toLowerCase()) ||
-                  element.type
-                      .toLowerCase()
-                      .contains(searchItem.toLowerCase()) ||
-                  element.total.toString().contains(searchItem) ||
-                  element.paymentIn.toString().contains(searchItem) ||
-                  element.paymentOut.toString().contains(searchItem) ||
-                  element.remainingBalance.toString().contains(searchItem);
+              return element.name.toLowerCase().contains(searchLower) ||
+                  element.date.toLowerCase().contains(searchLower) ||
+                  translateType(element.type).toLowerCase().contains(searchLower) ||
+                  _getPaymentType(element).toLowerCase().contains(searchLower) ||
+                  _getUserName(element).toLowerCase().contains(searchLower) ||
+                  element.id.toLowerCase().contains(searchLower) ||
+                  element.total.toString().toLowerCase().contains(searchLower) ||
+                  element.paymentIn.toString().toLowerCase().contains(searchLower) ||
+                  element.paymentOut.toString().toLowerCase().contains(searchLower) ||
+                  element.remainingBalance.toString().toLowerCase().contains(searchLower) ||
+                  _getTotalPendiente(element).toString().toLowerCase().contains(searchLower);
             }).toList();
+            debugPrint('🔍 Después del filtro de búsqueda "$searchItem": ${reTransaction.length} transacciones');
+          } else {
+            debugPrint('🔍 Sin filtro de búsqueda: ${reTransaction.length} transacciones');
           }
+
+          debugPrint('📋 RESULTADO FINAL: ${reTransaction.length} transacciones mostradas');
+          debugPrint('💰 Ventas finales: ${reTransaction.where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones').length}');
+          
+          // Mostrar facturas específicas que se están buscando
+          var salesInResult = reTransaction.where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones').map((t) => t.id).toList();
+          debugPrint('🧾 Facturas mostradas: ${salesInResult.take(10).toList()}${salesInResult.length > 10 ? '... y ${salesInResult.length - 10} más' : ''}');
+          
+          // Verificar específicamente la factura 516
+          bool has516 = reTransaction.any((t) => t.id == '516');
+          debugPrint('🎯 ¿Incluye factura 516?: $has516');
 
           final pages = _lossProfitPerPage == -1
               ? 1
@@ -963,6 +1219,25 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                 ),
                                                 DataColumn(
                                                   label: Text(
+                                                    'Tipo de Pago',
+                                                  ),
+                                                ),
+                                                DataColumn(
+                                                  label: Text(
+                                                    'Usuario',
+                                                  ),
+                                                ),
+                                                DataColumn(
+                                                  label: Text(
+                                                    'Nº Factura',
+                                                    style: TextStyle(
+                                                      color: Colors.blue.shade700,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                                DataColumn(
+                                                  label: Text(
                                                     lang.S.of(context).total,
                                                   ),
                                                 ),
@@ -975,16 +1250,20 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                 ),
                                                 DataColumn(
                                                   label: Text(
+                                                    'Total Pendiente',
+                                                    style: TextStyle(
+                                                      color: Colors.red.shade700,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                                DataColumn(
+                                                  label: Text(
                                                     lang.S
                                                         .of(context)
                                                         .paymentOut,
                                                   ),
                                                 ),
-                                                // DataColumn(
-                                                //   label: Text(
-                                                //     lang.S.of(context).balance,
-                                                //   ),
-                                                // ),
                                                 DataColumn(
                                                   label: Text(
                                                     lang.S.of(context).action,
@@ -993,11 +1272,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                               ],
                                               rows: List.generate(
                                                 paginatedList.length,
-                                                (index) =>
-                                                    paginatedList.last.date !=
-                                                            paginatedList[index]
-                                                                .date
-                                                        ? DataRow(cells: [
+                                                (index) => DataRow(cells: [
                                                             DataCell(Text(
                                                                 '${startIndex + index + 1}')),
                                                             DataCell(
@@ -1023,31 +1298,66 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                             ),
                                                             DataCell(
                                                               Text(
+                                                                _getPaymentType(paginatedList[index]),
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              Text(
+                                                                _getUserName(paginatedList[index]),
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              _buildInvoiceNumberCell(paginatedList[index], context, profile, settingProvider),
+                                                            ),
+                                                            DataCell(
+                                                              Text(
                                                                 '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].total.toStringAsFixed(2)) ?? 0)}',
                                                               ),
                                                             ),
                                                             DataCell(
                                                               Text(
-                                                                myFormat.format(double.tryParse(paginatedList[index].paymentIn.toStringAsFixed(2)) ??
-                                                                            0) ==
-                                                                        '0'
+                                                                myFormat.format(double.tryParse(paginatedList[index].paymentIn.toStringAsFixed(2)) ?? 0) == '0'
                                                                     ? ''
                                                                     : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentIn.toStringAsFixed(2)) ?? 0)}',
                                                               ),
                                                             ),
                                                             DataCell(
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                                                decoration: BoxDecoration(
+                                                                  color: _getTotalPendiente(paginatedList[index]) > 0 
+                                                                      ? Colors.red.shade50 
+                                                                      : Colors.transparent,
+                                                                  borderRadius: BorderRadius.circular(6.0),
+                                                                  border: _getTotalPendiente(paginatedList[index]) > 0 
+                                                                      ? Border.all(color: Colors.red.shade200, width: 1)
+                                                                      : null,
+                                                                ),
+                                                                child: Text(
+                                                                  _getTotalPendiente(paginatedList[index]) == 0
+                                                                      ? '-'
+                                                                      : '$globalCurrency${myFormat.format(_getTotalPendiente(paginatedList[index]))}',
+                                                                  style: TextStyle(
+                                                                    color: _getTotalPendiente(paginatedList[index]) > 0 
+                                                                        ? Colors.red.shade800 
+                                                                        : Colors.grey.shade600,
+                                                                    fontWeight: _getTotalPendiente(paginatedList[index]) > 0 
+                                                                        ? FontWeight.bold 
+                                                                        : FontWeight.normal,
+                                                                    fontSize: _getTotalPendiente(paginatedList[index]) > 0 
+                                                                        ? 13 
+                                                                        : 12,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            DataCell(
                                                               Text(
-                                                                myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ??
-                                                                            0) ==
-                                                                        '0'
+                                                                myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ?? 0) == '0'
                                                                     ? ''
                                                                     : '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].paymentOut.toStringAsFixed(2)) ?? 0)}',
                                                               ),
                                                             ),
-                                                            // DataCell(
-                                                            //   Text(
-                                                            //       '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].remainingBalance.toStringAsFixed(2)) ?? 0)}'),
-                                                            // ),
                                                             DataCell(
                                                                 settingProvider
                                                                     .when(data:
@@ -1080,9 +1390,10 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                     PopupMenuItem(
                                                                       onTap:
                                                                           () async {
+                                                                        final messenger = ScaffoldMessenger.of(context);
                                                                         try {
                                                                           // Mostrar indicador de carga
-                                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                                          messenger.showSnackBar(
                                                                             SnackBar(
                                                                               content: Text('Generando PDF...'),
                                                                               duration: Duration(seconds: 2),
@@ -1090,7 +1401,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                             ),
                                                                           );
 
-                                                                          if (paginatedList[index].type == 'Sale') {
+                                                                          if (paginatedList[index].type == 'Sale' || paginatedList[index].type == 'Adicionales' || paginatedList[index].type == 'Impresiones') {
                                                                             // Verificar que el modelo de venta no sea nulo
                                                                             if (paginatedList[index].saleTransactionModel == null) {
                                                                               throw Exception('Los datos de la venta no están disponibles');
@@ -1138,7 +1449,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                             await GeneratePdfAndPrint().printDueInvoice(
                                                                                 setting: setting,
                                                                                 personalInformationModel: profile.value!,
-                                                                                dueTransactionModel: paginatedList[index].dueTransactionModel!);
+                                                                                dueTransactionModel: paginatedList[index].dueTransactionModel!,
+                                                                                fromSaleReports: true);
                                                                           } else if (paginatedList[index].type == 'Expense') {
                                                                             showDialog(
                                                                               barrierDismissible: false,
@@ -1180,7 +1492,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                           }
 
                                                                           // Mostrar mensaje de éxito
-                                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                                          messenger.showSnackBar(
                                                                             SnackBar(
                                                                               content: Text('PDF generado exitosamente'),
                                                                               duration: Duration(seconds: 2),
@@ -1189,7 +1501,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                           );
                                                                         } catch (e) {
                                                                           // Mostrar mensaje de error detallado
-                                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                                          messenger.showSnackBar(
                                                                             SnackBar(
                                                                               content: Text('Error al generar PDF: ${e.toString()}'),
                                                                               duration: Duration(seconds: 4),
@@ -1198,9 +1510,9 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                           );
                                                                           
                                                                           // Registrar el error para debugging
-                                                                          print('Error al imprimir transacción: $e');
-                                                                          print('Tipo de transacción: ${paginatedList[index].type}');
-                                                                          print('ID de transacción: ${paginatedList[index].id}');
+                                                                          debugPrint('Error al imprimir transacción: $e');
+                                                                          debugPrint('Tipo de transacción: ${paginatedList[index].type}');
+                                                                          debugPrint('ID de transacción: ${paginatedList[index].id}');
                                                                         }
                                                                       },
                                                                       child:
@@ -1224,12 +1536,77 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                         ],
                                                                       ),
                                                                     ),
+                                                                    // Nuevo botón para ver detalle de factura y pagos
+                                                                    PopupMenuItem(
+                                                                      onTap: () {
+                                                                        // Debug: verificar valores
+                                                                        debugPrint('DEBUG BUTTON: Tipo = "${paginatedList[index].type}"');
+                                                                        debugPrint('DEBUG BUTTON: ID = "${paginatedList[index].id}"');
+                                                                        debugPrint('DEBUG BUTTON: ID isEmpty = ${paginatedList[index].id.isEmpty}');
+                                                                        
+                                                                        // Solo mostrar para ventas y transacciones relacionadas que tengan invoice number
+                                                                        if ((paginatedList[index].type == 'Sale' || 
+                                                                             paginatedList[index].type == 'Adicionales' ||
+                                                                             paginatedList[index].type == 'Impresiones' ||
+                                                                             paginatedList[index].type == 'Sale Return' ||
+                                                                             paginatedList[index].type == 'Due Collection' ||
+                                                                             paginatedList[index].type == 'Due Payment') && 
+                                                                            paginatedList[index].id.isNotEmpty) {
+                                                                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                                            _showPaymentDetails(
+                                                                              context: context,
+                                                                              invoiceNumber: paginatedList[index].id,
+                                                                              transaction: paginatedList[index],
+                                                                            );
+                                                                          });
+                                                                        } else {
+                                                                          // Debug: mostrar mensaje específico
+                                                                          String debugMsg = '';
+                                                                          List<String> validTypes = ['Sale', 'Sale Return', 'Due Collection', 'Due Payment'];
+                                                                          if (!validTypes.contains(paginatedList[index].type)) {
+                                                                            debugMsg = 'Tipo de transacción: "${paginatedList[index].type}" (no válido)';
+                                                                          } else if (paginatedList[index].id.isEmpty) {
+                                                                            debugMsg = 'ID de factura está vacío';
+                                                                          }
+                                                                          
+                                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                                            SnackBar(
+                                                                              content: Text('Esta opción solo está disponible para transacciones de venta. $debugMsg'),
+                                                                              duration: Duration(seconds: 3),
+                                                                            ),
+                                                                          );
+                                                                        }
+                                                                      },
+                                                                      child: Row(
+                                                                        children: [
+                                                                          Icon(
+                                                                            Icons.receipt_long,
+                                                                            size: 22.0,
+                                                                            color: ['Sale', 'Sale Return', 'Due Collection', 'Due Payment'].contains(paginatedList[index].type)
+                                                                                ? kTitleColor 
+                                                                                : kGreyTextColor,
+                                                                          ),
+                                                                          const SizedBox(width: 4.0),
+                                                                          Text(
+                                                                            'Ver Detalle',
+                                                                            style: theme.textTheme.bodyLarge?.copyWith(
+                                                                              color: ['Sale', 'Sale Return', 'Due Collection', 'Due Payment'].contains(paginatedList[index].type)
+                                                                                  ? kTitleColor 
+                                                                                  : kGreyTextColor,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
                                                                   ],
                                                                   onSelected:
                                                                       (value) {
-                                                                    Navigator.pushNamed(
-                                                                        context,
-                                                                        '$value');
+                                                                    // Solo navegar si value no es null y es una ruta válida
+                                                                    if (value != null && value.toString().isNotEmpty && value != 'null') {
+                                                                      Navigator.pushNamed(
+                                                                          context,
+                                                                          '$value');
+                                                                    }
                                                                   },
                                                                 ),
                                                               );
@@ -1243,40 +1620,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                     CircularProgressIndicator(),
                                                               );
                                                             })),
-                                                          ])
-                                                        : DataRow(cells: [
-                                                            const DataCell(
-                                                              Text(''),
-                                                            ),
-                                                            DataCell(
-                                                              Text(lang.S
-                                                                  .of(context)
-                                                                  .openingBalance),
-                                                            ),
-                                                            const DataCell(
-                                                              Text(''),
-                                                            ),
-                                                            // const DataCell(
-                                                            //   Text(''),
-                                                            // ),
-                                                            const DataCell(
-                                                              Text(''),
-                                                            ),
-                                                            const DataCell(
-                                                              Text(''),
-                                                            ),
-                                                            const DataCell(
-                                                              Text(''),
-                                                            ),
-                                                            DataCell(
-                                                              Text(myFormat
-                                                                  .format(profile
-                                                                      .value!
-                                                                      .shopOpeningBalance)),
-                                                            ),
-                                                            const DataCell(
-                                                              Text(''),
-                                                            ),
                                                           ]),
                                               ),
                                             ),
@@ -1407,6 +1750,18 @@ class _DailyTransactionState extends State<DailyTransaction> {
               ],
             ),
           );
+            },
+            error: (e, stack) {
+              return Center(
+                child: Text('Error cargando ventas: ${e.toString()}'),
+              );
+            },
+            loading: () {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            },
+          );
         },
         error: (e, stack) {
           return Center(
@@ -1420,5 +1775,625 @@ class _DailyTransactionState extends State<DailyTransaction> {
         },
       );
     });
+  }
+
+  Widget _buildInvoiceNumberCell(
+    DailyTransactionModel transaction, 
+    BuildContext context, 
+    AsyncValue<PersonalInformationModel> profile, 
+    AsyncValue<GeneralSettingModel> settingProvider
+  ) {
+    return Consumer(
+      builder: (context, ref, child) {
+        // DEBUG: Analizar la estructura de transacciones Due Payment
+        if (transaction.type == 'Due Payment') {
+          debugPrint('🔍 ANÁLISIS Due Payment:');
+          debugPrint('   - ID: ${transaction.id}');
+          debugPrint('   - Name: ${transaction.name}');
+          debugPrint('   - Type: ${transaction.type}');
+          debugPrint('   - dueTransactionModel null?: ${transaction.dueTransactionModel == null}');
+          if (transaction.dueTransactionModel != null) {
+            debugPrint('   - Invoice Number: ${transaction.dueTransactionModel!.invoiceNumber}');
+          }
+        }
+        
+        // PARA TRANSACCIONES DE DUE PAYMENT (Cuentas por Cobrar)
+        if (transaction.type == 'Due Payment') {
+          String displayText = transaction.id.isNotEmpty ? transaction.id : 'Due Payment';
+          
+          // Si tiene dueTransactionModel, usar el invoice number
+          if (transaction.dueTransactionModel != null && transaction.dueTransactionModel!.invoiceNumber.isNotEmpty) {
+            displayText = transaction.dueTransactionModel!.invoiceNumber;
+          }
+          
+          return InkWell(
+            onTap: () async {
+              final setting = settingProvider.valueOrNull;
+              final profileInfo = profile.valueOrNull;
+              if (setting != null && profileInfo != null) {
+                debugPrint('🧾 Generando recibo de Due Payment - Display: $displayText');
+                
+                try {
+                  EasyLoading.show(status: 'Generando recibo de pago...');
+                  
+                  // Si tiene dueTransactionModel, usarlo
+                  if (transaction.dueTransactionModel != null) {
+                    await GeneratePdfAndPrint().printDueInvoice(
+                      personalInformationModel: profileInfo,
+                      dueTransactionModel: transaction.dueTransactionModel!,
+                      setting: setting,
+                      context: context,
+                      fromSaleReports: true,
+                    );
+                  } else {
+                    // Si no tiene dueTransactionModel, crear uno básico o mostrar mensaje
+                    EasyLoading.dismiss();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No se pueden generar recibos para este tipo de pago')),
+                    );
+                    return;
+                  }
+                  
+                  EasyLoading.dismiss();
+                  debugPrint('✅ Recibo de Due Payment generado exitosamente');
+                } catch (e) {
+                  EasyLoading.dismiss();
+                  debugPrint('❌ Error generando recibo de Due Payment: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error generando recibo: $e')),
+                  );
+                }
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(6.0),
+                border: Border.all(color: Colors.green.shade200, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.receipt, size: 16.0, color: Colors.green.shade700),
+                  const SizedBox(width: 4.0),
+                  Text(
+                    displayText,
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
+        // PARA TRANSACCIONES DE DUE COLLECTION (También pueden necesitar recibo)
+        if (transaction.type == 'Due Collection' && transaction.dueTransactionModel != null) {
+          final invoiceNumber = transaction.dueTransactionModel!.invoiceNumber;
+          return InkWell(
+            onTap: () async {
+              final setting = settingProvider.valueOrNull;
+              final profileInfo = profile.valueOrNull;
+              if (setting != null && profileInfo != null) {
+                debugPrint('🧾 Generando recibo de Due Collection - Factura: $invoiceNumber');
+                
+                try {
+                  EasyLoading.show(status: 'Generando recibo de cobro...');
+                  await GeneratePdfAndPrint().printDueInvoice(
+                    personalInformationModel: profileInfo,
+                    dueTransactionModel: transaction.dueTransactionModel!,
+                    setting: setting,
+                    context: context,
+                    fromSaleReports: true,
+                  );
+                  EasyLoading.dismiss();
+                  debugPrint('✅ Recibo de Due Collection generado exitosamente');
+                } catch (e) {
+                  EasyLoading.dismiss();
+                  debugPrint('❌ Error generando recibo de Due Collection: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error generando recibo: $e')),
+                  );
+                }
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(6.0),
+                border: Border.all(color: Colors.green.shade200, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.receipt_long, size: 16.0, color: Colors.green.shade700),
+                  const SizedBox(width: 4.0),
+                  Text(
+                    invoiceNumber,
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
+        // PARA TRANSACCIONES DE VENTA (SALE)
+        if (transaction.saleTransactionModel != null) {
+          final invoiceNumber = transaction.saleTransactionModel!.invoiceNumber;
+          return InkWell(
+            onTap: () async {
+              final setting = settingProvider.valueOrNull;
+              final profileInfo = profile.valueOrNull;
+              if (setting != null && profileInfo != null) {
+                // Verificar que tenga productos antes de procesar
+                final saleModel = transaction.saleTransactionModel!;
+                debugPrint('🔍 DEBUG PDF - Factura: ${saleModel.invoiceNumber}');
+                debugPrint('📦 Productos en la transacción: ${saleModel.productList?.length ?? 0}');
+                debugPrint('📋 productList es null?: ${saleModel.productList == null}');
+                if (saleModel.productList != null && saleModel.productList!.isNotEmpty) {
+                  debugPrint('✅ Primeros productos: ${saleModel.productList!.take(2).map((p) => p.productName).join(", ")}');
+                }
+                
+                if (saleModel.productList == null || saleModel.productList!.isEmpty) {
+                  debugPrint('❌ Esta venta no tiene productos - buscando en Sales Transition...');
+                  
+                  // Intentar buscar la venta completa en Sales Transition
+                  final allSalesTransitions = ref.read(transitionProvider).valueOrNull;
+                  if (allSalesTransitions != null) {
+                    final fullSale = allSalesTransitions.firstWhere(
+                      (sale) => sale.invoiceNumber == saleModel.invoiceNumber,
+                      orElse: () => saleModel,
+                    );
+                    
+                    debugPrint('🔍 Venta encontrada en Sales Transition - productos: ${fullSale.productList?.length ?? 0}');
+                    
+                    if (fullSale.productList != null && fullSale.productList!.isNotEmpty) {
+                      // Usar la venta completa de Sales Transition
+                      SaleTransactionModel post = checkLossProfit(transitionModel: fullSale);
+                      EasyLoading.show(status: 'Preparando vista previa...');
+                      await GeneratePdfAndPrint().printSaleInvoice(
+                        setting: setting,
+                        personalInformationModel: profileInfo,
+                        saleTransactionModel: fullSale,
+                        context: context,
+                        printType: 'normal',
+                        fromSaleReports: true,
+                        post: post,
+                      );
+                      EasyLoading.dismiss();
+                      return;
+                    }
+                  }
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Esta venta (${saleModel.invoiceNumber}) no tiene productos asociados')),
+                  );
+                  return;
+                }
+                
+                SaleTransactionModel post = checkLossProfit(transitionModel: saleModel);
+                EasyLoading.show(status: 'Preparando vista previa...');
+                await GeneratePdfAndPrint().printSaleInvoice(
+                  setting: setting,
+                  personalInformationModel: profileInfo,
+                  saleTransactionModel: saleModel,
+                  context: context,
+                  printType: 'normal',
+                  fromSaleReports: true,
+                  post: post,
+                );
+                EasyLoading.dismiss();
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(6.0),
+                border: Border.all(color: Colors.blue.shade200, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.picture_as_pdf, size: 16.0, color: Colors.blue.shade700),
+                  const SizedBox(width: 4.0),
+                  Text(
+                    invoiceNumber,
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return const Text('-');
+      },
+    );
+  }
+
+  void _showPaymentDetails({
+    required BuildContext context,
+    required String invoiceNumber,
+    required DailyTransactionModel transaction,
+  }) {
+    debugPrint('DEBUG: Mostrando detalles de pago para invoice: $invoiceNumber');
+    debugPrint('DEBUG: Tipo de transacción: ${transaction.type}');
+    
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
+        final globalCurrency = currencyProvider.currency ?? '\$';
+
+        return Consumer(
+          builder: (context, ref, _) {
+            final dailyTransactionReport = ref.watch(dailyTransactionProvider);
+
+            return dailyTransactionReport.when(
+              data: (transactions) {
+                // Filtrar transacciones por invoice number
+                List<DailyTransactionModel> reTransaction = [];
+                
+                for (var element in transactions.reversed.toList()) {
+                  if (element.id == invoiceNumber) {
+                    reTransaction.add(element);
+                  }
+                }
+
+                // Calcular total abonado
+                double totalAbonado = reTransaction.fold(0.0, (sum, payment) => sum + payment.paymentIn);
+                
+                // Obtener información del cliente desde la transacción de venta
+                String customerName = transaction.saleTransactionModel?.customerName ?? 'N/A';
+                String customerPhone = transaction.saleTransactionModel?.customerPhone ?? 'N/A';
+                String sellerName = transaction.saleTransactionModel?.sellerName ?? 'N/A';
+                double totalFactura = transaction.saleTransactionModel?.totalAmount ?? transaction.total;
+                double deudaActual = transaction.saleTransactionModel?.dueAmount ?? 0.0;
+
+                return Dialog(
+                  surfaceTintColor: kWhite,
+                  backgroundColor: kWhite,
+                  child: SizedBox(
+                    width: 700,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header con título y botón cerrar
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Detalles del Cliente',
+                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
+                          ),
+                          const Divider(),
+                          
+                          // Información del cliente y resumen
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Nombre: $customerName', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 8),
+                                    Text('Teléfono: $customerPhone', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 8),
+                                    Text('Factura Nº: $invoiceNumber', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 8),
+                                    Text('Vendido por: $sellerName', style: theme.textTheme.bodyLarge),
+                                    const SizedBox(height: 12),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Total de la factura:  $globalCurrency${myFormat.format(totalFactura)}',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w600, 
+                                      color: Colors.red
+                                    ),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Total Pagado:  $globalCurrency${myFormat.format(totalAbonado)}',
+                                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Deuda Actual:  $globalCurrency${myFormat.format(deudaActual)}',
+                                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          
+                          // Tabla de pagos realizados
+                          LayoutBuilder(builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                child: DataTable(
+                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F1F1)),
+                                  columns: const [
+                                    DataColumn(label: Text('Fecha')),
+                                    DataColumn(label: Text('Pago Registrado')),
+                                    DataColumn(label: Text('Método de Pago')),
+                                  ],
+                                  rows: reTransaction.map<DataRow>((payment) {
+                                    // Determinar método de pago
+                                    String metodoPago = 'N/A';
+                                    
+                                    if (payment.dueTransactionModel != null) {
+                                      var dueModel = payment.dueTransactionModel!;
+                                      
+                                      if (dueModel.paymentType != null && dueModel.paymentType!.isNotEmpty) {
+                                        metodoPago = dueModel.paymentType!;
+                                        
+                                        switch (metodoPago.toLowerCase().trim()) {
+                                          case 'cash':
+                                          case 'efectivo':
+                                            metodoPago = 'Efectivo';
+                                            break;
+                                          case 'card':
+                                          case 'tarjeta':
+                                            metodoPago = 'Tarjeta';
+                                            break;
+                                          case 'bank':
+                                          case 'transferencia':
+                                            metodoPago = 'Transferencia';
+                                            break;
+                                          case 'check':
+                                          case 'cheque':
+                                            metodoPago = 'Cheque';
+                                            break;
+                                          default:
+                                            break;
+                                        }
+                                      }
+                                    } else if (payment.saleTransactionModel != null) {
+                                      // Para la venta original, usar el método de pago de la venta
+                                      metodoPago = _getPaymentType(payment);
+                                    }
+                                    
+                                    return DataRow(cells: [
+                                      DataCell(_fechaConvertida(payment.date)),
+                                      DataCell(Padding(
+                                        padding: const EdgeInsets.only(left: 20),
+                                        child: Text('$globalCurrency${myFormat.format(payment.paymentIn)}'),
+                                      )),
+                                      DataCell(Padding(
+                                        padding: const EdgeInsets.only(left: 20),
+                                        child: Text(
+                                          metodoPago,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: metodoPago == 'N/A' ? Colors.grey : null,
+                                          ),
+                                        ),
+                                      )),
+                                    ]);
+                                  }).toList(),
+                                ),
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => AlertDialog(
+                title: const Text('Error'),
+                content: Text('No se pudieron cargar los pagos.\n$e'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cerrar'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _fechaConvertida(String? date) {
+    try {
+      if (date == null || date.trim().isEmpty) {
+        return const Text('-');
+      }
+
+      DateTime dateTime = DateTime.parse(date);
+      String formattedDate = DateFormat('yyyy/MM/dd HH:mm:ss').format(dateTime);
+      return Text(formattedDate);
+    } catch (e) {
+      return const Text('-');
+    }
+  }
+
+  // Método para mostrar diálogo de eliminación de facturas problemáticas
+  void _showDeleteProblematicInvoicesDialog() {
+    if (_problematicInvoices.isEmpty) return;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('⚠️ Facturas Problemáticas Detectadas'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Se encontraron ${_problematicInvoices.length} facturas con problemas:'),
+              const SizedBox(height: 8),
+              ...(_problematicInvoices.map((invoice) => Text('• Factura $invoice')).toList()),
+              const SizedBox(height: 16),
+              const Text(
+                'Estas facturas no tienen productos asociados y no existen en Sales Transition. ¿Desea eliminarlas de Daily Transaction?',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteProblematicInvoices();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // NUEVO: Método para corregir saldos negativos en clientes
+  Future<void> _fixNegativeBalances() async {
+    try {
+      EasyLoading.show(status: 'Corrigiendo saldos negativos...');
+      
+      DeleteInvoice delete = DeleteInvoice();
+      await delete.fixNegativeCustomerBalances();
+      
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('✅ Saldos negativos corregidos');
+      
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Error: ${e.toString()}');
+    }
+  }
+
+  // NUEVO: Método para limpiar facturas huérfanas específicas (517, 514)
+  Future<void> _cleanOrphanInvoices() async {
+    List<String> orphanInvoices = ["517", "514"];
+    
+    try {
+      EasyLoading.show(status: 'Limpiando facturas huérfanas...');
+      
+      for (String invoice in orphanInvoices) {
+        DeleteInvoice delete = DeleteInvoice();
+        await delete.cleanOrphanInvoicePayments(invoice: invoice);
+      }
+      
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('✅ Facturas huérfanas limpiadas');
+      
+      // Refrescar la página
+      setState(() {});
+      
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Error: ${e.toString()}');
+    }
+  }
+
+  // Método para eliminar facturas problemáticas
+  Future<void> _deleteProblematicInvoices() async {
+    try {
+      EasyLoading.show(status: 'Eliminando facturas problemáticas...');
+      
+      final userId = await getUserID();
+      final dailyTransactionRef = FirebaseDatabase.instance.ref('$userId/Daily Transaction');
+      
+      // Obtener todas las entradas de Daily Transaction
+      final snapshot = await dailyTransactionRef.get();
+      
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+        int deletedCount = 0;
+        
+        for (var entry in data.entries) {
+          final key = entry.key;
+          final value = entry.value as Map<dynamic, dynamic>;
+          
+          // Verificar si es una venta y tiene el invoiceNumber problemático
+          if ((value['type'] == 'Sale' || value['type'] == 'Adicionales' || value['type'] == 'Impresiones') && 
+              value['saleTransactionModel'] != null &&
+              _problematicInvoices.contains(value['saleTransactionModel']['invoiceNumber'])) {
+            
+            await dailyTransactionRef.child(key).remove();
+            deletedCount++;
+            debugPrint('🗑️ Eliminada factura problemática: ${value['saleTransactionModel']['invoiceNumber']}');
+          }
+        }
+        
+        EasyLoading.dismiss();
+        
+        // Mostrar resultado
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Eliminadas $deletedCount facturas problemáticas'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Limpiar la lista y refrescar
+        _problematicInvoices.clear();
+        setState(() {});
+        
+      } else {
+        EasyLoading.dismiss();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se encontraron datos en Daily Transaction')),
+        );
+      }
+      
+    } catch (e) {
+      EasyLoading.dismiss();
+      debugPrint('❌ Error eliminando facturas problemáticas: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 }

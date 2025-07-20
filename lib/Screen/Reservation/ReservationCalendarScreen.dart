@@ -157,6 +157,11 @@ class ReservationCard extends ConsumerWidget {
               final place = fullReservation?.reservation['place'] ?? 'Sin lugar';
               final hasAditionals = (fullReservation?.reservation['aditionals'] != null && 
                                    (fullReservation!.reservation['aditionals'] as List).isNotEmpty);
+              
+              // Verificar si es una reserva de tipo PRE-QUINCE FIESTA
+              final sessionType = fullReservation?.reservation['session_type']?.toString() ?? '';
+              final isPreQuinceFiesta = sessionType.toLowerCase().contains('pre-quince-fiesta');
+              final isPreQuinceDate = isPreQuinceFiesta && !reservation.isFiestaDate;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,8 +187,19 @@ class ReservationCard extends ConsumerWidget {
                                       '(Fecha de fiesta)',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.blue[700],
+                                        color: const Color.fromARGB(255, 73, 47, 1),
                                         fontStyle: FontStyle.italic,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  if (isPreQuinceDate)
+                                    Text(
+                                      '(Fecha pre-quince)',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.purple[700],
+                                        fontStyle: FontStyle.italic,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                 ],
@@ -350,8 +366,22 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
 
   // Estado para el filtro de vista: 'dia', 'semana', 'mes'
   String _calendarView = 'mes';
+  
+  // Flag para controlar la inicialización del estado
+  bool _isInitialized = false;
 
   Widget _buildCalendar(AsyncValue<List<ReservationModel>> reservationsValue) {
+    // Asegurar inicialización consistente del estado
+    if (!_isInitialized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+          });
+        }
+      });
+    }
+    
     return reservationsValue.when(
       data: (reservations) {
         // Agrupar reservas por día
@@ -699,9 +729,14 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   // Botón personalizado para cambiar la vista (día, semana, mes)
   Widget _buildCustomViewButton(String label, String view) {
     final bool isSelected = _calendarView == view;
+    
+    // Usar el color principal de la aplicación directamente para evitar problemas en producción
+    const Color primaryColor = Color(0xFFD59345); // kMainColor del tema de la aplicación
+        
     return OutlinedButton(
       onPressed: () {
-        if (!isSelected) {
+        // Asegurar que siempre podemos cambiar de vista
+        if (mounted) {
           setState(() {
             _calendarView = view;
           });
@@ -709,7 +744,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           if (view == 'dia') {
             // Espera un frame para evitar errores si no hay Drawer
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+              if (mounted && (Scaffold.maybeOf(context)?.isDrawerOpen ?? false)) {
                 Navigator.of(context).maybePop();
               }
             });
@@ -717,13 +752,21 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
         }
       },
       style: OutlinedButton.styleFrom(
-        backgroundColor: isSelected ? Theme.of(context).primaryColor : Colors.white,
-        foregroundColor: isSelected ? Colors.white : Theme.of(context).primaryColor,
-        side: BorderSide(color: Theme.of(context).primaryColor),
+        backgroundColor: isSelected ? primaryColor : Colors.white,
+        foregroundColor: isSelected ? Colors.white : primaryColor,
+        side: BorderSide(color: primaryColor, width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        elevation: isSelected ? 2 : 0,
+        shadowColor: primaryColor.withOpacity(0.3),
       ),
-      child: Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+      child: Text(
+        label, 
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
     );
   }
 
@@ -892,9 +935,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                 
                 // Procede a cancelar la reservación
                 await ref.read(cancelReservationProvider(reservation.id).future);
-                if (context.mounted) {
-                  Navigator.of(context).pop(); // Cierra el diálogo de confirmación
-                }
+                // No necesitamos otro pop() aquí porque ya no hay más diálogos
               }
             },
             child: const Text('Confirmar'),
