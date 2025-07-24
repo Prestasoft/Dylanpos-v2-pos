@@ -8,14 +8,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Technology Stack
 
-- **Framework**: Flutter (Web-focused with responsive design)
-- **Backend**: Firebase (Firestore, Auth, Storage, Database, Messaging)
-- **State Management**: Riverpod + Provider
-- **Navigation**: GoRouter with shell routes
-- **UI Framework**: Material Design with responsive breakpoints
-- **Internationalization**: Flutter Intl (50+ languages supported)
-- **PDF Generation**: Syncfusion PDF libraries
-- **Payment Processing**: PayPal integration
+- **Framework**: Flutter (Web-only application, no mobile support configured)
+- **Backend**: Firebase (Firestore, Auth, Realtime Database, Storage, Messaging)
+- **State Management**: Hybrid approach - Riverpod for new features, Provider for legacy code
+- **Navigation**: GoRouter with shell routes and nested routing
+- **UI Framework**: Material Design with responsive breakpoints using responsive_framework
+- **Internationalization**: Flutter Intl (50+ languages with RTL support)
+- **PDF Generation**: Syncfusion PDF libraries for invoices and reports
+- **Payment Processing**: PayPal integration with secure token handling
 
 ## Development Commands
 
@@ -24,32 +24,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 flutter pub get
 
-# Run the app (web)
+# Run the app (web only - application is web-focused)
 flutter run -d chrome --web-renderer html
 
-# Build for web
+# Build for web production
 flutter build web --web-renderer html
 
-# Analyze code
+# Analyze code quality and linting
 flutter analyze
 
-# Run tests
+# Run all tests
 flutter test
 
-# Generate localization files
+# Run specific test file
+flutter test test/widget_test.dart
+
+# Generate localization files from .arb files
 flutter gen-l10n
 
-# Clean build files
+# Clean build artifacts
 flutter clean
+
+# Format all Dart code
+dart format .
 ```
 
-### Code Quality
+### Code Quality & Analysis
 ```bash
-# Check for linting issues (uses flutter_lints)
+# Primary linting (uses flutter_lints package)
 flutter analyze
 
-# Format code
+# Code formatting
 dart format .
+
+# Check for unused dependencies
+flutter pub deps
 ```
 
 ## Project Architecture
@@ -57,45 +66,60 @@ dart format .
 ### Directory Structure
 
 **Core Business Logic**:
-- `lib/Provider/` - Business logic providers (Riverpod)
-- `lib/Repository/` - Data access layer
-- `lib/model/` - Data models and DTOs
-- `lib/services/` - Service layer implementations
+- `lib/Provider/` - Business logic providers (hybrid Provider/Riverpod pattern)
+- `lib/Repository/` - Data access layer implementing Repository pattern
+- `lib/model/` - Data models, DTOs, and Firebase document models
+- `lib/services/` - Service layer implementations (audit, payments, etc.)
 
 **UI Layer**:
-- `lib/Screen/` - Feature-based screen organization
-- `lib/Route/` - Navigation and routing logic
-- `lib/Screen/Widgets/` - Reusable UI components
+- `lib/Screen/` - Feature-based screens organized by business domains
+- `lib/Route/` - GoRouter configuration with shell routes and nested navigation
+- `lib/Screen/Widgets/` - Reusable UI components and shared widgets
 
 **Key Feature Modules**:
-- `Reservation/` - Dress reservation system with calendar
-- `Inventory Sales/` - POS and inventory management
-- `Due List/` - Accounts receivable and invoice management
-- `Reports/` - Business analytics and reporting
-- `HRM/` - Human Resource Management
-- `Authentication/` - User authentication and profiles
+- `Authentication/` - Login, signup, profile management with Firebase Auth
+- `Reservation/` - Calendar-based dress reservation system with package management
+- `Inventory Sales/` - Point of sale system with payment processing
+- `Due List/` - Accounts receivable and invoice management with PDF generation
+- `Reports/` - Business analytics, daily transactions, and financial reports
+- `HRM/` - Human resources (employees, designations, salaries)
+- `Product/` - Inventory management with barcode generation
+- `Customer List/` - Customer relationship management
+
+### Navigation Architecture
+
+Uses GoRouter with a **shell route pattern**:
+- `ShellRouteWrapper` provides consistent layout (sidebar, topbar)
+- Nested routes for feature modules (e.g., `/sales/pos-sales`, `/purchase/pos-purchase`)
+- Route parameters and state passing via `extra` parameter
+- Authentication guard implemented at router level
 
 ### Firebase Integration
 
-The app heavily relies on Firebase services:
-- **Firestore**: Primary database for all business data
-- **Authentication**: User management and role-based access
-- **Storage**: Image and document storage
-- **Database**: Real-time data synchronization
-- **Messaging**: Push notifications
+Multi-service Firebase setup:
+- **Firestore**: Primary NoSQL database for business data
+- **Realtime Database**: Real-time data sync and FCM token storage
+- **Authentication**: User management with role-based permissions
+- **Storage**: Image and document storage (dress photos, invoices)
+- **Messaging**: Push notifications with web push support
+- **App Check**: Security for production environment
+
+**Configuration**: Web-only deployment with separate environments (Santo Domingo/Santiago)
 
 ### State Management Pattern
 
-Uses a hybrid approach:
-- **Riverpod**: Modern reactive state management for new features
-- **Provider**: Legacy state management (being migrated)
-- Data flows: Repository → Provider → UI
+**Hybrid Architecture**:
+- **Riverpod**: ProviderScope at app root, used for new features
+- **Provider**: Legacy ChangeNotifier providers for existing features
+- **Data Flow**: Repository → Provider → UI with reactive updates
+- **Language/Currency**: Global providers for internationalization
 
-### Responsive Design
+### Responsive Design Framework
 
-- Breakpoints: sm: 576px, md: 1240px, lg: infinity
-- Mobile-first approach with tablet-specific screens
-- Responsive grid system for adaptive layouts
+- **Breakpoints**: XS, SM (576px), MD (1240px), LG (infinity)
+- **responsive_framework**: Adaptive layouts across screen sizes
+- **responsive_grid**: Custom grid system with defined breakpoints
+- **Tablet-specific**: Dedicated tablet screens for key workflows
 
 ## Key Features
 
@@ -110,42 +134,73 @@ Uses a hybrid approach:
 
 ## Development Notes
 
-### Testing
-- Widget tests in `test/` directory
-- Use `flutter test` for running tests
-- Multiple validation scripts found in `lib/Screen/Inventory Sales/` for payment method validation
-- Business logic validation scripts for specific features like payment flows
+### Testing Structure
+- **Widget Tests**: Basic Flutter widget tests in `test/`
+- **Specialized Tests**: `test/widget_test_reservation_calendar.dart` for calendar functionality
+- **Business Logic Validation**: Extensive validation scripts in `lib/Screen/Inventory Sales/` for payment method verification
+- **Command**: Use `flutter test` for all tests, `flutter test test/specific_file.dart` for individual tests
 
-### Code Style
-- Uses `flutter_lints` for code quality
-- Follow existing patterns for consistency
-- Provider-based architecture for state management
+### Business Logic Validation Scripts
+The codebase includes comprehensive validation scripts (primarily in `lib/Screen/Inventory Sales/`):
+- Payment method validation scripts (.dart and .sh files)
+- Invoice verification and PDF generation testing
+- Database cleanup utilities
+- Method payment analysis and debugging tools
 
-### Firebase Configuration
-- Development and production environments configured
-- Web push notifications implemented
-- Database rules defined in `database.rules.json`
+### Code Quality Standards
+- **Linting**: Uses `flutter_lints` package for code quality enforcement
+- **Formatting**: Standard Dart formatting with `dart format`
+- **Architecture**: Repository pattern with Provider/Riverpod state management
+- **Documentation**: Extensive markdown documentation files for complex features
 
-### Critical Business Logic
-- Payment flow validation in `lib/Screen/Inventory Sales/`
-- Invoice generation and PDF handling in `lib/PDF/`
-- Reservation system calendar logic in `lib/Screen/Reservation/`
-- Financial calculations in `lib/Screen/Reports/`
+### Firebase Environment Configuration
+- **Multi-environment setup**: Santo Domingo (active) and Santiago configurations
+- **Security**: Firebase App Check implemented for production
+- **Realtime Database**: Used for FCM tokens and real-time synchronization
+- **Database Rules**: Security rules defined in `database.rules.json`
+- **Web Push**: FCM web push notifications with VAPID keys
 
-## Common Development Tasks
+### Critical Business Logic Areas
+- **Payment Processing**: Complex validation in `lib/Screen/Inventory Sales/` with multiple verification layers
+- **PDF Generation**: Invoice and report generation using Syncfusion in `lib/PDF/`
+- **Reservation System**: Calendar-based booking logic in `lib/Screen/Reservation/`
+- **Financial Reporting**: Daily transactions and profit/loss calculations in `lib/Screen/Reports/`
+- **User Permissions**: Role-based access control throughout the application
 
-When working with this codebase:
+## Common Development Patterns
 
-1. **Adding new screens**: Follow the feature-folder pattern in `lib/Screen/`
-2. **Database operations**: Use the Repository pattern in `lib/Repository/`
-3. **State management**: Prefer Riverpod for new features
-4. **Routing**: Add routes to `lib/Route/app_routes.dart`
-5. **Localization**: Add strings to `lib/l10n/*.arb` files
-6. **PDF generation**: Use Syncfusion PDF libraries for consistency
+### Adding New Features
+1. **New Screens**: Create in appropriate `lib/Screen/[Feature]/` directory following existing patterns
+2. **State Management**: Use Riverpod for new features, maintain Provider for existing code
+3. **Routing**: Add routes to `lib/Route/app_routes.dart` within the ShellRoute structure
+4. **Models**: Define data models in `lib/model/` with Firebase serialization
+5. **Repository Layer**: Implement data access in `lib/Repository/` following Repository pattern
 
-## Security Notes
+### Working with Firebase
+- **Document References**: Use collection/document paths consistently
+- **Real-time Updates**: Leverage Firestore streams for live data
+- **Error Handling**: Implement proper Firebase exception handling
+- **Security**: Follow role-based access patterns established in existing screens
 
-- Firebase security rules are critical for data protection
-- User role validation is implemented throughout the app
-- Payment processing uses secure PayPal integration
-- Sensitive business data requires appropriate access controls
+### Internationalization Workflow
+- **Add Strings**: Edit appropriate `lib/l10n/intl_[locale].arb` files
+- **Generate**: Run `flutter gen-l10n` to regenerate localization files
+- **Usage**: Import `generated/l10n.dart` and use `S.of(context).stringKey`
+
+### PDF and Document Generation
+- **Invoices**: Use patterns from `lib/PDF/` directory with Syncfusion libraries
+- **Reports**: Follow existing report generation patterns for consistency
+- **Styling**: Maintain consistent branding and formatting
+
+### Payment Processing Integration
+- **PayPal**: Use established PayPal integration patterns
+- **Validation**: Implement thorough validation following patterns in `lib/Screen/Inventory Sales/`
+- **Security**: Never log or expose payment credentials
+
+## Security Considerations
+
+- **Firebase Rules**: Database security rules are critical - test changes thoroughly
+- **User Roles**: Implement role-based UI and data access controls
+- **Payment Security**: PayPal credentials stored in Firebase, never in code
+- **Data Validation**: Server-side validation required for all business-critical operations
+- **Access Control**: UI elements hidden/shown based on user permissions throughout app

@@ -7,6 +7,8 @@ class DueTransactionModel {
   String? paymentType;
   String? sellerName;
   bool? sendWhatsappMessage;
+  String? bankId;
+  String? bankName;
 
   DueTransactionModel({
     required this.customerName,
@@ -23,6 +25,8 @@ class DueTransactionModel {
     this.paymentType,
     this.sellerName,
     this.sendWhatsappMessage,
+    this.bankId,
+    this.bankName,
   });
 
   DueTransactionModel.fromJson(Map<dynamic, dynamic> json) {
@@ -40,6 +44,8 @@ class DueTransactionModel {
     isPaid = json['isPaid'];
     paymentType = json['paymentType'].toString();
     sendWhatsappMessage = json['sendWhatsappMessage'] ?? false;
+    bankId = json['bankId']?.toString();
+    bankName = json['bankName']?.toString();
   }
 
   Map<dynamic, dynamic> toJson() => <dynamic, dynamic>{
@@ -57,5 +63,7 @@ class DueTransactionModel {
         'isPaid': isPaid,
         'paymentType': paymentType,
         'sendWhatsappMessage': sendWhatsappMessage,
+        'bankId': bankId,
+        'bankName': bankName,
       };
 }

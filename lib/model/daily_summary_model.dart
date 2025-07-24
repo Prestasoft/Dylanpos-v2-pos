@@ -26,8 +26,8 @@ class DailySummaryModel {
     double pagoTarjetas = 0.0;
 
     for (final transaction in transactions) {
-      // Total Facturado - solo para ventas
-      if (transaction.type == "Sale") {
+      // Total Facturado - para todas las ventas (Sale, Adicionales, Producto)
+      if (transaction.type == "Sale" || transaction.type == "Adicionales" || transaction.type == "Impresiones") {
         totalFacturado += transaction.total;
         totalPendiente += (transaction.total - transaction.paymentIn);
       }

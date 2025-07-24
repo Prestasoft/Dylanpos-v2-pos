@@ -28,6 +28,7 @@ import '../../model/due_transaction_model.dart';
 import '../../subscription.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
+import '../../Provider/bank_provider.dart';
 
 class ShowDuePaymentPopUp extends StatefulWidget {
   const ShowDuePaymentPopUp({super.key, required this.customerModel});
@@ -61,6 +62,8 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
     'Tarjeta',
   ];
   String selectedPaymentOption = 'Efectivo';
+  String? selectedBankId;
+  String? selectedBankName;
 
   DropdownButton<String> getOption() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -524,6 +527,73 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                             ),
                           ))
                     ]),
+                    // Bank selection when transfer is selected
+                    if (selectedPaymentOption == 'Transferencia')
+                      ResponsiveGridRow(children: [
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Text(
+                                'Banco',
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            )),
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Consumer(
+                                builder: (context, ref, _) {
+                                  final banksAsync = ref.watch(allBanksProvider);
+                                  return banksAsync.when(
+                                    data: (banks) {
+                                      return SizedBox(
+                                        height: 48,
+                                        child: FormField(
+                                          builder: (FormFieldState<dynamic> field) {
+                                            return InputDecorator(
+                                              decoration: const InputDecoration(),
+                                              child: Theme(
+                                                data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                                child: DropdownButtonHideUnderline(
+                                                  child: DropdownButton<String>(
+                                                    value: selectedBankId,
+                                                    hint: Text('Seleccionar banco'),
+                                                    items: banks.map((bank) {
+                                                      return DropdownMenuItem<String>(
+                                                        value: bank.bankId,
+                                                        child: Text(
+                                                          bank.bankName ?? '',
+                                                          style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.normal),
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                    onChanged: (newValue) {
+                                                      setState(() {
+                                                        selectedBankId = newValue;
+                                                        selectedBankName = banks.firstWhere((bank) => bank.bankId == newValue).bankName;
+                                                      });
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    },
+                                    loading: () => SizedBox(height: 48, child: Center(child: CircularProgressIndicator())),
+                                    error: (error, stack) => SizedBox(height: 48, child: Center(child: Text('Error cargando bancos'))),
+                                  );
+                                },
+                              ),
+                            ))
+                      ]),
                     const SizedBox(height: 20.0),
                     ResponsiveGridRow(children: [
                       ResponsiveGridCol(
@@ -570,6 +640,13 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                             
                                             dueTransactionModel.paymentType = selectedPaymentOption;
                                             dueTransactionModel.sendWhatsappMessage = widget.customerModel.receiveWhatsappUpdates;
+                                            
+                                            // Agregar información del banco si es transferencia
+                                            if (selectedPaymentOption == 'Transferencia' && selectedBankId != null) {
+                                              dueTransactionModel.bankId = selectedBankId;
+                                              dueTransactionModel.bankName = selectedBankName;
+                                            }
+                                            
                                             await ref.push().set(dueTransactionModel.toJson());
 
                                             // 2. Preguntar si desea enviar por WhatsApp

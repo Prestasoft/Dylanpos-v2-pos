@@ -300,6 +300,10 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   DateTime? _selectedDay;
   Map<DateTime, List<ReservationModel>> _reservationsByDay = {};
   String? packageRentaId;
+  
+  // Controladores para la búsqueda
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -307,6 +311,12 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
     _selectedDay = _focusedDay;
     _reservationsByDay = {};
     Future.microtask(() => _loadRentaId());
+  }
+  
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadRentaId() async {
@@ -335,28 +345,27 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
 
     return Padding(
       padding: EdgeInsets.all(16.0),
-      child: Builder(
-        builder: (context) {
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Campo de búsqueda
+          _buildSearchBar(reservationsAsyncValue),
+          const SizedBox(height: 16),
+          
           // Si está en vista "Día", el scroll y la lista se manejan en _buildCalendar
-          if (_calendarView == 'dia') {
-            // Mostrar solo el calendario (con los botones y la lista de reservas dentro)
-            return Expanded(
+          if (_calendarView == 'dia') 
+            Expanded(
               child: _buildCalendar(reservationsAsyncValue),
-            );
-          } else {
+            )
+          else ...[
             // Semana/Mes: mostrar calendario y lista general
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildCalendar(reservationsAsyncValue),
-                const Divider(),
-                Expanded(
-                  child: _buildReservationsList(reservationsAsyncValue),
-                ),
-              ],
-            );
-          }
-        },
+            _buildCalendar(reservationsAsyncValue),
+            const Divider(),
+            Expanded(
+              child: _buildReservationsList(reservationsAsyncValue),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -383,7 +392,10 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
     }
     
     return reservationsValue.when(
-      data: (reservations) {
+      data: (allReservations) {
+        // Filtrar las reservaciones según la búsqueda
+        final reservations = _filterReservations(allReservations);
+        
         // Agrupar reservas por día
         _reservationsByDay = {};
         
@@ -447,7 +459,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: Row(
@@ -727,6 +739,76 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   }
 
   // Botón personalizado para cambiar la vista (día, semana, mes)
+  // Widget para la barra de búsqueda
+  Widget _buildSearchBar(AsyncValue<List<ReservationModel>> reservationsValue) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search, color: Colors.grey.shade600),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar en notas, lugar o vendedor...',
+                hintStyle: TextStyle(color: Colors.grey.shade600),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+          if (_searchQuery.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.clear, color: Colors.grey.shade600),
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = '';
+                });
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Función para filtrar reservaciones según la búsqueda
+  List<ReservationModel> _filterReservations(List<ReservationModel> reservations) {
+    if (_searchQuery.isEmpty) {
+      return reservations;
+    }
+    
+    final query = _searchQuery.toLowerCase().trim();
+    
+    return reservations.where((reservation) {
+      // Buscar en el ID de la reservación
+      final idMatch = reservation.id.toLowerCase().contains(query);
+      
+      // Buscar en las notas
+      final notesMatch = (reservation.nota ?? '').toLowerCase().contains(query);
+      
+      // Buscar en el lugar
+      final placeMatch = (reservation.place ?? '').toLowerCase().contains(query);
+      
+      // Buscar en el nombre del vendedor
+      final sellerMatch = reservation.sellerName.toLowerCase().contains(query);
+      
+      return idMatch || notesMatch || placeMatch || sellerMatch;
+    }).toList();
+  }
+  
+
   Widget _buildCustomViewButton(String label, String view) {
     final bool isSelected = _calendarView == view;
     
@@ -735,20 +817,35 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
         
     return OutlinedButton(
       onPressed: () {
+        // Debug para producción
+        print('DEBUG: Botón presionado - view: $view, mounted: $mounted');
+        
         // Asegurar que siempre podemos cambiar de vista
-        if (mounted) {
+        if (!mounted) {
+          print('DEBUG: Widget no está montado, no se puede cambiar vista');
+          return;
+        }
+        
+        try {
           setState(() {
             _calendarView = view;
+            print('DEBUG: Vista cambiada a: $_calendarView');
           });
+          
           // Si cambiamos a la vista "Día", cerramos el Drawer si está abierto
           if (view == 'dia') {
             // Espera un frame para evitar errores si no hay Drawer
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && (Scaffold.maybeOf(context)?.isDrawerOpen ?? false)) {
-                Navigator.of(context).maybePop();
+              if (mounted) {
+                final scaffoldState = Scaffold.maybeOf(context);
+                if (scaffoldState != null && scaffoldState.isDrawerOpen) {
+                  Navigator.of(context).maybePop();
+                }
               }
             });
           }
+        } catch (e) {
+          print('ERROR en _buildCustomViewButton: $e');
         }
       },
       style: OutlinedButton.styleFrom(
@@ -758,7 +855,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         elevation: isSelected ? 2 : 0,
-        shadowColor: primaryColor.withOpacity(0.3),
+        shadowColor: primaryColor.withValues(alpha: 0.3),
       ),
       child: Text(
         label, 
@@ -835,10 +932,12 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
               }
             }
 
-            return ReservationCard(
-              reservation: reservation,
-              status: status,
-              onTap: () => showDialog(
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ReservationCard(
+                reservation: reservation,
+                status: status,
+                onTap: () => showDialog(
                 context: context,
                 builder: (context) => ReservationDetailView(
                   reservation: reservation,
@@ -853,7 +952,8 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                   onClose: () => Navigator.pop(context), // Cierra el modal
                 ),
               ),
-            );
+            ),
+          );
           },
         );
       },

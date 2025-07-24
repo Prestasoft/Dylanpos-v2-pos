@@ -504,6 +504,12 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/income',
     ),
     SidebarItemModel(
+      name: 'Bancos',
+      iconPath: 'images/dashboard_icon/income.svg',
+      type: "income",  // Cambiado temporalmente para que aparezca
+      navigationPath: '/bank/bank-list',
+    ),
+    SidebarItemModel(
       name: 'Inventario de Equipos',
       iconPath: 'images/dashboard_icon/stock_list.svg',
       type: "inventory_list",

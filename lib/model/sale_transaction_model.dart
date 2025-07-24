@@ -20,6 +20,8 @@ class SaleTransactionModel {
   bool? sendWhatsappMessage;
   String? saleType; // NUEVO: 'normal', 'adicionales'
   List<String> reservationIds = []; // Inicialización directa
+  String? bankId; // ID del banco para transferencias
+  String? bankName; // Nombre del banco para transferencias
 
   SaleTransactionModel({
     required this.customerName,
@@ -47,6 +49,8 @@ class SaleTransactionModel {
     this.saleType, // NUEVO: tipo de venta
     List<String>? reservationIds, // Parámetro opcional
     this.pdfUrl,
+    this.bankId,
+    this.bankName,
   }) : reservationIds = reservationIds ?? []; // Asignación segura
 
   factory SaleTransactionModel.fromJson(Map<dynamic, dynamic> json) {
@@ -79,6 +83,8 @@ class SaleTransactionModel {
           ? List<String>.from(json['reservationIds'])
           : null,
       pdfUrl: json['pdfUrl'],
+      bankId: json['bankId'],
+      bankName: json['bankName'],
     );
   }
 
@@ -108,6 +114,8 @@ class SaleTransactionModel {
       'productList': productList?.map((e) => e.toJson()).toList(),
       'reservationIds': reservationIds,
       'pdfUrl': pdfUrl,
+      'bankId': bankId,
+      'bankName': bankName,
     };
   }
 }

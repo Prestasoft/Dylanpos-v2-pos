@@ -50,6 +50,8 @@ import 'package:uuid/uuid.dart';
 import '../../model/sale_confirmation_model.dart';
 import '../../services/audit_service.dart';
 import '../../model/audit_model.dart';
+import '../../Provider/bank_provider.dart';
+import '../../model/bank_model.dart';
 
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation});
@@ -101,6 +103,8 @@ class _InventorySalesState extends State<InventorySales> {
   String previousDue = "0";
   late String selectedCustomerType = customerType.first;
   late String selectedPaymentOption = paymentItem.first;
+  String? selectedBankId;
+  String? selectedBankName;
 
   WareHouseModel? selectedWareHouse;
   int i = 0;
@@ -1244,6 +1248,11 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
       onChanged: (value) {
         setState(() {
           selectedPaymentOption = value!;
+          // Reset bank selection when payment method changes
+          if (value != 'Transferencia') {
+            selectedBankId = null;
+            selectedBankName = null;
+          }
         });
       },
     );
@@ -1547,7 +1556,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (element.warehouseName == 'SANTIAGO') {
+      if (element.warehouseName == 'SANTO DOMINGO') {
         selectedWareHouse = element;
       }
       i++;
@@ -2328,7 +2337,68 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                         },
                                       ),
                                     ),
-                                  ))
+                                  )),
+                              // Bank selection dropdown - only show when Transferencia is selected
+                              if (selectedPaymentOption == 'Transferencia')
+                                ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 6,
+                                    lg: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Consumer(
+                                        builder: (context, ref, _) {
+                                          final banksAsync = ref.watch(allBanksProvider);
+                                          return banksAsync.when(
+                                            data: (banks) {
+                                              return SizedBox(
+                                                height: 48,
+                                                child: FormField(
+                                                  builder: (FormFieldState<dynamic> field) {
+                                                    return InputDecorator(
+                                                      decoration: InputDecoration(
+                                                        labelText: 'Banco *',
+                                                        hintText: 'Seleccione un banco',
+                                                      ),
+                                                      child: Theme(
+                                                        data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                                        child: DropdownButtonHideUnderline(
+                                                          child: DropdownButton<String>(
+                                                            isExpanded: true,
+                                                            value: selectedBankId,
+                                                            items: banks.map((bank) {
+                                                              return DropdownMenuItem<String>(
+                                                                value: bank.bankId,
+                                                                child: Text(bank.bankName ?? ''),
+                                                              );
+                                                            }).toList(),
+                                                            onChanged: (value) {
+                                                              setState(() {
+                                                                selectedBankId = value;
+                                                                selectedBankName = banks.firstWhere((bank) => bank.bankId == value).bankName;
+                                                              });
+                                                            },
+                                                            hint: Text('Seleccione un banco'),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                            loading: () => SizedBox(
+                                              height: 48,
+                                              child: Center(child: CircularProgressIndicator()),
+                                            ),
+                                            error: (error, stack) => SizedBox(
+                                              height: 48,
+                                              child: Center(child: Text('Error al cargar bancos')),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ))
                             ]),
                           ),
                           ResponsiveGridCol(
@@ -2911,6 +2981,9 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                           } else if (selectedWareHouse == null) {
                                             print('DEBUG: Error - No se seleccionó almacén');
                                             EasyLoading.showError('Por favor seleccione un almacén');
+                                          } else if (selectedPaymentOption == 'Transferencia' && selectedBankId == null) {
+                                            print('DEBUG: Error - No se seleccionó banco para transferencia');
+                                            EasyLoading.showError('Por favor seleccione un banco para la transferencia');
                                           } else {
                                             print('DEBUG: Intentando obtener número de factura');
                                             var invoice_number_variable = await getLastInvoiceNumber();
@@ -3028,6 +3101,11 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
                                                   (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
                                                   transitionModel.paymentType = selectedPaymentOption;
+                                                  // Agregar información del banco si es transferencia
+                                                  if (selectedPaymentOption == 'Transferencia') {
+                                                    transitionModel.bankId = selectedBankId;
+                                                    transitionModel.bankName = selectedBankName;
+                                                  }
                                                   // Obtener el nombre real del usuario actual
                                                   transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
                                                   post = checkLossProfit(transitionModel: transitionModel);

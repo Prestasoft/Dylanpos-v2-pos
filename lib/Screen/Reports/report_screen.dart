@@ -26,6 +26,7 @@ import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
 import '../../Provider/due_transaction_provider.dart';
 import '../../model/due_transaction_model.dart';
+import './transfer_details_dialog.dart';
 
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
@@ -349,98 +350,152 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: kDarkWhite,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            //_______________________________top_bar____________________________
-            // const TopBar(),
-            ResponsiveGridRow(children: [
-              //--------------for selected option-----------------
-              ResponsiveGridCol(
-                xs: 12,
-                md: 3,
-                lg: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: screenWidth,
-                        padding: const EdgeInsets.all(10.0),
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(10.0),
-                            topRight: Radius.circular(10.0),
-                          ),
-                          color: kGreyTextColor.withValues(alpha: 0.1),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              lang.S.of(context).transactionReport,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        decoration: const BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(10.0),
-                              bottomRight: Radius.circular(10.0),
-                            ),
-                            color: kWhite),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ListView.builder(
-                                itemCount: categoryList.length,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemBuilder: (_, i) {
-                                  return Container(
-                                    padding: const EdgeInsets.all(5.0),
-                                    decoration: BoxDecoration(
-                                      color: selected == categoryList[i]
-                                          ? Colors.grey.shade100
-                                          : null,
-                                      shape: BoxShape.rectangle,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        categoryList[i],
-                                        style: theme.textTheme.titleMedium,
-                                      ),
-                                    ),
-                                  ).onTap(() async {
-                                    if (categoryList[i] == 'Current Stock') {
-                                      if (checkUserRoleEditPermissionV2(
-                                          type: 'inventory_list')) {
-                                        setState(() {
-                                          selected = categoryList[i];
-                                        });
-                                      }
-                                    } else {
-                                      setState(() {
-                                        selected = categoryList[i];
-                                      });
-                                    }
-                                  });
-                                })
-                          ],
-                        ),
-                      ),
-                    ],
+      body: Row(
+        children: [
+          // Sidebar fijo con ancho de 250px
+          Container(
+            width: 250,
+            color: kWhite,
+            child: Column(
+              children: [
+                // Header del sidebar
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16.0),
+                  color: kMainColor,
+                  child: Text(
+                    'Reportes',
+                    style: kTextStyle.copyWith(
+                      color: kWhite,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
-              ),
+                // Lista de categorías
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: categoryList.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(
+                          categoryList[index],
+                          style: kTextStyle.copyWith(
+                            color: selected == categoryList[index] ? kMainColor : kNeutral600,
+                            fontWeight: selected == categoryList[index] ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                        ),
+                        selected: selected == categoryList[index],
+                        selectedTileColor: kMainColor.withOpacity(0.1),
+                        onTap: () {
+                          setState(() {
+                            selected = categoryList[index];
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Contenido principal expandido
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Contenido principal sin ResponsiveGrid
+                  Container(
+                    width: double.infinity,
+                    child: Column(
+                      children: [
+              //--------------for selected option-----------------
+              // ResponsiveGridCol(
+              //   xs: 12,
+              //   md: 3,
+              //   lg: 3,
+              //   child: Padding(
+              //     padding: const EdgeInsets.all(10.0),
+              //     child: Column(
+              //       crossAxisAlignment: CrossAxisAlignment.start,
+              //       children: [
+              //         Container(
+              //           width: screenWidth,
+              //           padding: const EdgeInsets.all(10.0),
+              //           decoration: BoxDecoration(
+              //             borderRadius: const BorderRadius.only(
+              //               topLeft: Radius.circular(10.0),
+              //               topRight: Radius.circular(10.0),
+              //             ),
+              //             color: kGreyTextColor.withValues(alpha: 0.1),
+              //           ),
+              //           child: Column(
+              //             crossAxisAlignment: CrossAxisAlignment.start,
+              //             children: [
+              //               Text(
+              //                 lang.S.of(context).transactionReport,
+              //                 style: theme.textTheme.titleMedium?.copyWith(
+              //                   fontWeight: FontWeight.w600,
+              //                   fontSize: 18,
+              //                 ),
+              //               ),
+              //             ],
+              //           ),
+              //         ),
+              //         Container(
+              //           decoration: const BoxDecoration(
+              //               borderRadius: BorderRadius.only(
+              //                 bottomLeft: Radius.circular(10.0),
+              //                 bottomRight: Radius.circular(10.0),
+              //               ),
+              //               color: kWhite),
+              //           child: Column(
+              //             crossAxisAlignment: CrossAxisAlignment.start,
+              //             children: [
+              //               ListView.builder(
+              //                   itemCount: categoryList.length,
+              //                   shrinkWrap: true,
+              //                   physics: const NeverScrollableScrollPhysics(),
+              //                   itemBuilder: (_, i) {
+              //                     return Container(
+              //                       padding: const EdgeInsets.all(5.0),
+              //                       decoration: BoxDecoration(
+              //                         color: selected == categoryList[i]
+              //                             ? Colors.grey.shade100
+              //                             : null,
+              //                         shape: BoxShape.rectangle,
+              //                       ),
+              //                       child: Padding(
+              //                         padding: const EdgeInsets.all(8.0),
+              //                         child: Text(
+              //                           categoryList[i],
+              //                           style: theme.textTheme.titleMedium,
+              //                         ),
+              //                       ),
+              //                     ).onTap(() async {
+              //                       if (categoryList[i] == 'Current Stock') {
+              //                         if (checkUserRoleEditPermissionV2(
+              //                             type: 'inventory_list')) {
+              //                           setState(() {
+              //                             selected = categoryList[i];
+              //                           });
+              //                         }
+              //                       } else {
+              //                         setState(() {
+              //                           selected = categoryList[i];
+              //                         });
+              //                       }
+              //                     });
+              //                   })
+              //             ],
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //   ),
+              // ),
               //-----------------sale reports (RESERVAS Y ADICIONALES - COMENTADO)-----------------------
               /*
               ResponsiveGridCol(
@@ -862,38 +917,75 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                                           }
                                           final dailyTransactions = snapshot.data ?? {};
                                           final totalMoney = calculateTotalTransfer(dailyTransactions);
-                                          return Container(
-                                            padding: const EdgeInsets.only(
-                                                left: 10.0,
-                                                right: 20.0,
-                                                top: 10.0,
-                                                bottom: 10.0),
-                                            decoration: BoxDecoration(
+                                          return Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: () {
+                                                print('DEBUG: Click en tarjeta de transferencias');
+                                                print('DEBUG: Datos de transferencias: ${dailyTransactions.length} transacciones');
+                                                print('DEBUG: Total transferencias: $totalMoney');
+                                                
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Mostrando detalles de transferencias...'),
+                                                    duration: Duration(seconds: 1),
+                                                  ),
+                                                );
+                                                
+                                                // Mostrar el diálogo de detalles de transferencias
+                                                showDialog(
+                                                  context: context,
+                                                  barrierDismissible: true,
+                                                  builder: (BuildContext dialogContext) {
+                                                    return TransferDetailsDialog(
+                                                      dailyTransactions: dailyTransactions,
+                                                    );
+                                                  },
+                                                );
+                                              },
                                               borderRadius: BorderRadius.circular(10.0),
-                                              color: const Color(0xFF009688).withValues(alpha: 0.1),
-                                              border: Border.all(color: const Color(0xFF009688), width: 1),
+                                              child: Container(
+                                              padding: const EdgeInsets.only(
+                                                  left: 10.0,
+                                                  right: 20.0,
+                                                  top: 10.0,
+                                                  bottom: 10.0),
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(10.0),
+                                                color: const Color(0xFF009688).withValues(alpha: 0.1),
+                                                border: Border.all(color: const Color(0xFF009688), width: 1),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.grey.withOpacity(0.1),
+                                                    spreadRadius: 1,
+                                                    blurRadius: 2,
+                                                    offset: Offset(0, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(Icons.account_balance, color: const Color(0xFF009688), size: 24),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
+                                                    style: theme.textTheme.titleMedium?.copyWith(
+                                                        color: const Color(0xFF009688),
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: 18.0),
+                                                  ),
+                                                  Text(
+                                                    'Pagos Transferencia',
+                                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                                        color: const Color(0xFF009688)),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Icon(Icons.account_balance, color: const Color(0xFF009688), size: 24),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  '$globalCurrency${myFormat.format(double.tryParse(totalMoney.toString()) ?? 0)}',
-                                                  style: theme.textTheme.titleMedium?.copyWith(
-                                                      color: const Color(0xFF009688),
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 18.0),
-                                                ),
-                                                Text(
-                                                  'Pagos Transferencia',
-                                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                                      color: const Color(0xFF009688)),
-                                                ),
-                                              ],
-                                            ),
-                                          );
+                                          ),
+                                        );
                                         },
                                       ),
                                     ),
@@ -1675,97 +1767,47 @@ double calculateTotalCard(Map<String, dynamic> dailyTransactions) {
                 ),
               ),
               */
-              // FIN DEL BLOQUE COMENTADO DE RESERVAS Y ADICIONALES
+                        // Transacción Diaria
+                        if (selected == 'Transaccion Diaria')
+                          const DailyTransaction(),
+                        
+                        // Devolución
+                        if (selected == 'Devolucion')
+                          const SalesReturnWidget(),
+                        
+                        // Compra
+                        if (selected == 'Compra')
+                          const PurchaseReportWidget(),
+                        
+                        // Devolución de compra
+                        if (selected == 'Devolucion de compra')
+                          const PurchaseReturnWidget(),
+                        
+                        // Pendiente
+                        if (selected == 'Pendiente')
+                          const DueReportWidget(),
 
-              ///____________Sales_return_report_________________________________________________
-              ResponsiveGridCol(
-                  xs: selected == 'Devolucion' ? 12 : 0,
-                  md: selected == 'Devolucion' ? 9 : 0,
-                  lg: selected == 'Devolucion' ? 9 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: const SalesReturnWidget()
-                        .visible(selected == 'Devolucion'),
-                  )),
-
-              ///____________Purchase_report_________________________________________________
-              ResponsiveGridCol(
-                  xs: selected == 'Compra' ? 12 : 0,
-                  md: selected == 'Compra' ? 9 : 0,
-                  lg: selected == 'Compra' ? 9 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: const PurchaseReportWidget()
-                        .visible(selected == 'Compra'),
-                  )),
-
-              ///____________Purchase_Return_report_________________________________________________
-              ResponsiveGridCol(
-                  xs: selected == 'Devolucion de compra' ? 12 : 0,
-                  md: selected == 'Devolucion de compra' ? 9 : 0,
-                  lg: selected == 'Devolucion de compra' ? 9 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: const PurchaseReturnWidget()
-                        .visible(selected == 'Devolucion de compra'),
-                  )),
-
-              ///___________Due_report_______________________________________________________
-              ResponsiveGridCol(
-                  xs: selected == 'Pendiente' ? 12 : 0,
-                  md: selected == 'Pendiente' ? 9 : 0,
-                  lg: selected == 'Pendiente' ? 9 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: const DueReportWidget()
-                        .visible(selected == 'Pendiente'),
-                  )),
-
-              ///__________Product_current_stocks_____________________________________________
-              ResponsiveGridCol(
-                  xs: selected == 'Stock actual' ? 12 : 0,
-                  md: selected == 'Stock actual' ? 9 : 0,
-                  lg: selected == 'Stock actual' ? 9 : 0,
-                  child: const CurrentStockWidget()
-                      .visible(selected == 'Stock actual')),
-
-              ///___________Due_report_________________________________________________________
-              ResponsiveGridCol(
-                  xs: selected == 'Transaccion Diaria' ? 12 : 0,
-                  md: selected == 'Transaccion Diaria' ? 9 : 0,
-                  lg: selected == 'Transaccion Diaria' ? 9 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: const DailyTransaction()
-                        .visible(selected == 'Transaccion Diaria'),
-                  )),
-
-              ///___________Quotation_report___________________________________________________
-              ResponsiveGridCol(
-                  xs: selected == 'Historial de ventas de cotizaciones'
-                      ? 12
-                      : 0,
-                  md: selected == 'Historial de ventas de cotizaciones' ? 9 : 0,
-                  lg: selected == 'Historial de ventas de cotizaciones' ? 9 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: const QuotationReportWidget().visible(
-                        selected == 'Historial de ventas de cotizaciones'),
-                  )),
-
-              ResponsiveGridCol(
-                  xs: selected == 'Informe de perdidas y ganancias' ? 12 : 0,
-                  md: selected == 'Informe de perdidas y ganancias' ? 9 : 0,
-                  lg: selected == 'Informe de perdidas y ganancias' ? 9 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: const LossProfitReport()
-                        .visible(selected == 'Informe de perdidas y ganancias'),
-                  )),
-            ]),
-            _buildDateRangeFilter(context),
-          ],
-        ),
+                        
+                        // Stock actual
+                        if (selected == 'Stock actual')
+                          const CurrentStockWidget(),
+                        
+                        // Historial de ventas de cotizaciones
+                        if (selected == 'Historial de ventas de cotizaciones')
+                          const QuotationReportWidget(),
+                        
+                        // Informe de pérdidas y ganancias
+                        if (selected == 'Informe de perdidas y ganancias')
+                          const LossProfitReport(),
+                      ],
+                    ),
+                  ),
+                  _buildDateRangeFilter(context),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

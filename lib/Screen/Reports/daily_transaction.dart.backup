@@ -27,9 +27,6 @@ import '../Expenses/expense_details.dart';
 import '../Income/income_details.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
-import 'package:firebase_database/firebase_database.dart';
-import './transfer_details_dialog.dart';
-import '../../delete_invoice_functions.dart';
 
 class DailyTransaction extends StatefulWidget {
   const DailyTransaction({super.key});
@@ -39,7 +36,6 @@ class DailyTransaction extends StatefulWidget {
 }
 
 class _DailyTransactionState extends State<DailyTransaction> {
-  List<String> _problematicInvoices = [];
   double calculateTotalPaymentIn(List<DailyTransactionModel> dailyTransaction) {
     double total = 0.0;
     for (var element in dailyTransaction) {
@@ -311,7 +307,16 @@ class _DailyTransactionState extends State<DailyTransaction> {
     switch (transaction.type) {
       case 'Sale':
       case 'Sale Return':
-        return transaction.saleTransactionModel?.dueAmount ?? 0.0;
+      case 'Adicionales':
+      case 'Impresiones':
+        // Calcular pendiente específico de esta factura: Total - Pagado
+        if (transaction.saleTransactionModel != null) {
+          double totalFactura = transaction.saleTransactionModel!.totalAmount ?? 0.0;
+          double pagadoFactura = (transaction.saleTransactionModel!.totalAmount ?? 0.0) - (transaction.saleTransactionModel!.dueAmount ?? 0.0);
+          double pendienteFactura = totalFactura - pagadoFactura;
+          return pendienteFactura > 0 ? pendienteFactura : 0.0;
+        }
+        return transaction.remainingBalance;
       case 'Purchase':
       case 'Purchase Return':
         return transaction.remainingBalance;
@@ -336,7 +341,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
     final globalCurrency = currencyProvider.currency ?? '\$';
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     return Consumer(builder: (_, ref, watch) {
       final dailyTransactionReport = ref.watch(dailyTransactionProvider);
       final salesTransactionReport = ref.watch(transitionProvider);
@@ -380,7 +384,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
               debugPrint('🧾 Ejemplos de facturas en Sales Transition: $recentSales');
               
               // 🔍 VALIDACIÓN DE FACTURAS CON ERRORES
-              _problematicInvoices.clear(); // Limpiar lista anterior
               debugPrint('\n=== VALIDACIÓN DE FACTURAS ===');
               for (var transaction in dailyReport.where((t) => t.type == 'Sale')) {
                 if (transaction.saleTransactionModel != null) {
@@ -396,8 +399,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                       debugPrint('✅ Versión completa encontrada en Sales Transition con ${fullSale.productList!.length} productos');
                     } else {
                       debugPrint('💀 FACTURA CORRUPTA: ${saleModel.invoiceNumber} - NO EXISTE EN SALES TRANSITION O TAMBIÉN SIN PRODUCTOS');
-                      // Marcar para eliminación
-                      _problematicInvoices.add(saleModel.invoiceNumber);
                     }
                   }
                 } else {
@@ -405,27 +406,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                 }
               }
               
-              // Mostrar resumen de facturas problemáticas
-              if (_problematicInvoices.isNotEmpty) {
-                debugPrint('\n🚨 RESUMEN DE FACTURAS PROBLEMÁTICAS:');
-                debugPrint('📊 Total de facturas con problemas: ${_problematicInvoices.length}');
-                debugPrint('📋 Facturas: ${_problematicInvoices.join(", ")}');
-                
-                // Mostrar botón para eliminar facturas problemáticas
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _showDeleteProblematicInvoicesDialog();
-                });
-              }
-
-              // NUEVO: Limpiar facturas huérfanas automáticamente (COMENTADO DESPUÉS DE USAR)
-              // WidgetsBinding.instance.addPostFrameCallback((_) {
-              //   _cleanOrphanInvoices();
-              // });
-
-              // NUEVO: Corregir saldos negativos automáticamente (TEMPORAL)
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _fixNegativeBalances();
-              });
 
               // Primero agregar todas las transacciones diarias existentes
               for (var element in dailyReport.reversed.toList()) {
@@ -544,7 +524,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
 
           final paginatedList = reTransaction.sublist(startIndex, endIndex);
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0), // Padding global optimizado
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -556,60 +536,62 @@ class _DailyTransactionState extends State<DailyTransaction> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Filtros en Row para usar ancho completo
-                      Row(
-                        children: [
-                          // Filtro de mes
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: SizedBox(
-                                height: 48,
-                                child: FormField(
-                                  builder: (FormFieldState<dynamic> field) {
-                                    return InputDecorator(
-                                      decoration: const InputDecoration(),
-                                      child: Theme(
-                                          data: ThemeData(
-                                              highlightColor: dropdownItemColor,
-                                              focusColor: dropdownItemColor,
-                                              hoverColor: dropdownItemColor),
-                                          child: DropdownButtonHideUnderline(
-                                              child: getMonth())),
-                                    );
-                                  },
-                                ),
+                      ResponsiveGridRow(rowSegments: 100, children: [
+                        ResponsiveGridCol(
+                          xs: 100,
+                          md: 35,
+                          lg: 25, // Filtros más amplios
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: SizedBox(
+                              height: 48,
+                              child: FormField(
+                                builder: (FormFieldState<dynamic> field) {
+                                  return InputDecorator(
+                                    decoration: const InputDecoration(),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getMonth())),
+                                  );
+                                },
                               ),
                             ),
                           ),
-                          // Filtro por tipo
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: SizedBox(
-                                height: 48,
-                                child: FormField(
-                                  builder: (FormFieldState<dynamic> field) {
-                                    return InputDecorator(
-                                      decoration: const InputDecoration(),
-                                      child: Theme(
-                                          data: ThemeData(
-                                              highlightColor: dropdownItemColor,
-                                              focusColor: dropdownItemColor,
-                                              hoverColor: dropdownItemColor),
-                                          child: DropdownButtonHideUnderline(
-                                              child: getTypeFilter())),
-                                    );
-                                  },
-                                ),
+                        ),
+                        // Nuevo filtro por tipo
+                        ResponsiveGridCol(
+                          xs: 100,
+                          md: 35,
+                          lg: 25, // Filtros más amplios
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: SizedBox(
+                              height: 48,
+                              child: FormField(
+                                builder: (FormFieldState<dynamic> field) {
+                                  return InputDecorator(
+                                    decoration: const InputDecoration(),
+                                    child: Theme(
+                                        data: ThemeData(
+                                            highlightColor: dropdownItemColor,
+                                            focusColor: dropdownItemColor,
+                                            hoverColor: dropdownItemColor),
+                                        child: DropdownButtonHideUnderline(
+                                            child: getTypeFilter())),
+                                  );
+                                },
                               ),
                             ),
                           ),
-                          // Filtro de fecha
-                          Expanded(
-                            flex: 3,
+                        ),
+                        ResponsiveGridCol(
+                          xs: 100,
+                          md: 50,
+                          lg: 45, // Selector de fecha mucho más amplio
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
                             child: Container(
@@ -664,9 +646,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   ],
                                 )),
                           ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ]),
                       // Comentado: Tarjetas de Saldo Restante, Pago Total Saliente y Pago Entrante
                       /*
                       ResponsiveGridRow(rowSegments: 100, children: [
@@ -781,253 +762,178 @@ class _DailyTransactionState extends State<DailyTransaction> {
                         ),
                       ]),
                       */
-                      // Nuevas tarjetas de métricas de pagos
+                      // Métricas con diseño Wrap responsivo
                       Consumer(builder: (_, ref, __) {
-                        // Calcular métricas de pagos desde las transacciones filtradas
                         final summary = DailySummaryModel.fromDailyTransactions(reTransaction);
                         
-                        return ResponsiveGridRow(rowSegments: 100, children: [
-                          ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFF2196F3).withValues(alpha: 0.1),
-                                  border: Border.all(color: const Color(0xFF2196F3), width: 1),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.receipt_long, color: const Color(0xFF2196F3), size: 24),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.totalFacturado)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFF2196F3),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
-                                    ),
-                                    Text(
-                                      'Total Facturado',
-                                      style: theme.textTheme.bodyMedium,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                                  border: Border.all(color: const Color(0xFF4CAF50), width: 1),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.check_circle, color: const Color(0xFF4CAF50), size: 24),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.totalPagado)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFF4CAF50),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
-                                    ),
-                                    Text(
-                                      'Total Pagado',
-                                      style: theme.textTheme.bodyMedium,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
-                                  border: Border.all(color: const Color(0xFFFF9800), width: 1),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.pending_actions, color: const Color(0xFFFF9800), size: 24),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.totalPendiente)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFFFF9800),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
-                                    ),
-                                    Text(
-                                      'Total Pendiente',
-                                      style: theme.textTheme.bodyMedium,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-            ),
-                          ),
-                        ]);
-                      }),
-                      Consumer(builder: (_, ref, __) {
-                        // Segunda fila con los métodos de pago
-                        final summary = DailySummaryModel.fromDailyTransactions(reTransaction);
-                        
-                        return ResponsiveGridRow(rowSegments: 100, children: [
-                          ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                                  border: Border.all(color: const Color(0xFF4CAF50), width: 1),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.money, color: const Color(0xFF4CAF50), size: 24),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.pagoEfectivo)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFF4CAF50),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
-                                    ),
-                                    Text(
-                                      'Pago Efectivo',
-                                      style: theme.textTheme.bodyMedium,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    print('DEBUG: Click en tarjeta de transferencias');
-                                    print('DEBUG: Total transferencias: ${summary.pagoTransferencia}');
-                                    
-                                    // Crear un mapa con las transacciones del día
-                                    Map<String, dynamic> dailyTransactions = {};
-                                    int transferCount = 0;
-                                    for (var transaction in reTransaction) {
-                                      // Verificar si es una transferencia
-                                      String? paymentType;
-                                      if (transaction.saleTransactionModel != null) {
-                                        paymentType = transaction.saleTransactionModel!.paymentType;
-                                      } else if (transaction.dueTransactionModel != null) {
-                                        paymentType = transaction.dueTransactionModel!.paymentType;
-                                      }
-                                      
-                                      if (paymentType != null && 
-                                          (paymentType.toLowerCase().contains('transfer') || 
-                                           paymentType.toLowerCase().contains('transferencia'))) {
-                                        transferCount++;
-                                        print('DEBUG: Transferencia encontrada - ID: ${transaction.id}, PaymentType: $paymentType');
-                                        if (transaction.saleTransactionModel != null) {
-                                          print('DEBUG: Sale - BankId: ${transaction.saleTransactionModel!.bankId}, BankName: ${transaction.saleTransactionModel!.bankName}');
-                                        }
-                                        if (transaction.dueTransactionModel != null) {
-                                          print('DEBUG: Due - BankId: ${transaction.dueTransactionModel!.bankId}, BankName: ${transaction.dueTransactionModel!.bankName}');
-                                        }
-                                      }
-                                      
-                                      dailyTransactions[transaction.id] = {
-                                        'type': transaction.type,
-                                        'saleTransactionModel': transaction.saleTransactionModel?.toJson(),
-                                        'dueTransactionModel': transaction.dueTransactionModel?.toJson(),
-                                        'purchaseTransactionModel': transaction.purchaseTransactionModel?.toJson(),
-                                        'paymentIn': transaction.paymentIn,
-                                        'paymentOut': transaction.paymentOut,
-                                        'time': transaction.date,
-                                      };
-                                    }
-                                    
-                                    print('DEBUG: Total transacciones procesadas: ${reTransaction.length}');
-                                    print('DEBUG: Total transferencias encontradas: $transferCount');
-                                    
-                                    // Imprimir una transacción de ejemplo para verificar estructura
-                                    if (reTransaction.isNotEmpty) {
-                                      var firstTransaction = reTransaction.first;
-                                      print('DEBUG: Ejemplo de transacción:');
-                                      print('  - Type: ${firstTransaction.type}');
-                                      print('  - ID: ${firstTransaction.id}');
-                                      print('  - PaymentIn: ${firstTransaction.paymentIn}');
-                                      print('  - Date: ${firstTransaction.date}');
-                                    }
-                                    
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: true,
-                                      builder: (BuildContext dialogContext) {
-                                        return TransferDetailsDialog(
-                                          dailyTransactions: dailyTransactions,
-                                        );
-                                      },
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(10.0),
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calcular ancho dinámico para las tarjetas
+                            final availableWidth = constraints.maxWidth;
+                            double cardWidth;
+                            
+                            if (availableWidth > 1200) {
+                              cardWidth = (availableWidth - 80) / 4; // 4 por fila en pantallas grandes
+                            } else if (availableWidth > 800) {
+                              cardWidth = (availableWidth - 60) / 3; // 3 por fila en pantallas medianas
+                            } else {
+                              cardWidth = (availableWidth - 40) / 2; // 2 por fila en pantallas pequeñas
+                            }
+                            
+                            return Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: [
+                                // Total Facturado
+                                SizedBox(
+                                  width: cardWidth,
                                   child: Container(
-                                    padding: const EdgeInsets.only(
-                                        left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFF2196F3), width: 1),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.receipt_long, color: const Color(0xFF2196F3), size: 28),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '$globalCurrency ${myFormat.format(summary.totalFacturado)}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFF2196F3),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Total Facturado',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Total Pagado
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFF4CAF50), width: 1),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.check_circle, color: const Color(0xFF4CAF50), size: 28),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '$globalCurrency ${myFormat.format(summary.totalPagado)}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFF4CAF50),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Total Pagado',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Total Pendiente
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFFFF9800), width: 1),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.pending_actions, color: const Color(0xFFFF9800), size: 28),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '$globalCurrency ${myFormat.format(summary.totalPendiente)}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFFFF9800),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Total Pendiente',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Pago Efectivo
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFF4CAF50), width: 1),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.money, color: const Color(0xFF4CAF50), size: 28),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '$globalCurrency ${myFormat.format(summary.pagoEfectivo)}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFF4CAF50),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Pago Efectivo',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Pago Transferencia
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16.0),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10.0),
                                       color: const Color(0xFF009688).withValues(alpha: 0.1),
                                       border: Border.all(color: const Color(0xFF009688), width: 1),
                                     ),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.account_balance, color: const Color(0xFF009688), size: 24),
+                                        Icon(Icons.account_balance, color: const Color(0xFF009688), size: 28),
                                         const SizedBox(height: 8),
                                         Text(
                                           '$globalCurrency ${myFormat.format(summary.pagoTransferencia)}',
@@ -1037,68 +943,128 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                               fontSize: 18),
                                         ),
                                         Text(
-                                          'Transferencias',
-                                          style: theme.textTheme.bodyMedium,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Click para ver detalles',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: const Color(0xFF009688),
-                                            fontSize: 12,
+                                          'Pago Transferencia',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
                                           ),
+                                          textAlign: TextAlign.center,
                                         ),
                                       ],
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ),
-                          ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFF9C27B0).withValues(alpha: 0.1),
-                                  border: Border.all(color: const Color(0xFF9C27B0), width: 1),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.credit_card, color: const Color(0xFF9C27B0), size: 24),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.pagoTarjetas)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFF9C27B0),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
+                                // Pago Tarjetas
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFF3F51B5), width: 1),
                                     ),
-                                    Text(
-                                      'Pago Tarjetas',
-                                      style: theme.textTheme.bodyMedium,
-                                      textAlign: TextAlign.center,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.credit_card, color: const Color(0xFF3F51B5), size: 28),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '$globalCurrency ${myFormat.format(summary.pagoTarjetas)}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFF3F51B5),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Pago Tarjetas',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        ]);
+                                // Total Transacciones
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFF673AB7).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFF673AB7), width: 1),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.receipt, color: const Color(0xFF673AB7), size: 28),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${reTransaction.length}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFF673AB7),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Total Transacciones',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Total Ventas
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFFFF5722).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFFFF5722), width: 1),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.trending_up, color: const Color(0xFFFF5722), size: 28),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${reTransaction.where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones').length}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFFFF5722),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Total Ventas',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
                       }),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20.0),
+                const SizedBox(height: 16.0), // Espaciado optimizado entre secciones
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10.0),
@@ -1108,15 +1074,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Text(
-                          lang.S.of(context).dailyTransaction,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                       const Divider(
                         thickness: 1.0,
                         color: kNeutral300,
@@ -1125,112 +1082,92 @@ class _DailyTransactionState extends State<DailyTransaction> {
                       const ExportButton().visible(false),
 
                       ///___________search________________________________________________-
-                      ResponsiveGridRow(rowSegments: 100, children: [
-                        ResponsiveGridCol(
-                          xs: screenWidth < 360
-                              ? 50
-                              : screenWidth > 430
-                                  ? 33
-                                  : 40,
-                          md: screenWidth < 768
-                              ? 24
-                              : screenWidth < 950
-                                  ? 20
-                                  : 15,
-                          lg: screenWidth < 1700 ? 15 : 10,
-                          child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Container(
-                              alignment: Alignment.center,
-                              height: 48,
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0),
-                                border: Border.all(color: kNeutral300),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                      child: Text(
-                                    'Mostrar-',
-                                    style: theme.textTheme.bodyLarge,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  )),
-                                  DropdownButton<int>(
-                                    isDense: true,
-                                    padding: EdgeInsets.zero,
-                                    underline: const SizedBox(),
-                                    value: _lossProfitPerPage,
-                                    icon: const Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: Colors.black,
-                                    ),
-                                    items: [
-                                      10,
-                                      20,
-                                      50,
-                                      100,
-                                      -1
-                                    ].map<DropdownMenuItem<int>>((int value) {
-                                      return DropdownMenuItem<int>(
-                                        value: value,
-                                        child: Text(
-                                          value == -1
-                                              ? "All"
-                                              : value.toString(),
-                                          style: theme.textTheme.bodyLarge,
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (int? newValue) {
-                                      setState(() {
-                                        if (newValue == -1) {
-                                          _lossProfitPerPage =
-                                              -1; // Set to -1 for "All"
-                                        } else {
-                                          _lossProfitPerPage = newValue ?? 10;
-                                        }
-                                        _currentPage = 1;
-                                      });
-                                    },
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  height: 55,
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    border: Border.all(color: kNeutral300),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        ResponsiveGridCol(
-                          xs: 100,
-                          md: 60,
-                          lg: 35,
-                          child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: TextFormField(
-                              showCursor: true,
-                              cursorColor: kTitleColor,
-                              onChanged: (value) {
-                                setState(() {
-                                  searchItem = value;
-                                });
-                              },
-                              keyboardType: TextInputType.name,
-                              decoration: kInputDecoration.copyWith(
-                                contentPadding: const EdgeInsets.all(10.0),
-                                hintText:
-                                    (lang.S.of(context).searchByInvoiceOrName),
-                                border: InputBorder.none,
-                                suffixIcon: const Icon(
-                                  FeatherIcons.search,
-                                  color: kTitleColor,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          'Mostrar-',
+                                          style: theme.textTheme.bodyLarge,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      DropdownButton<int>(
+                                        isDense: true,
+                                        padding: EdgeInsets.zero,
+                                        underline: const SizedBox(),
+                                        value: _lossProfitPerPage,
+                                        icon: const Icon(
+                                          Icons.keyboard_arrow_down,
+                                          color: Colors.black,
+                                        ),
+                                        items: [10, 20, 50, 100, -1].map<DropdownMenuItem<int>>((int value) {
+                                          return DropdownMenuItem<int>(
+                                            value: value,
+                                            child: Text(
+                                              value == -1 ? "All" : value.toString(),
+                                              style: theme.textTheme.bodyLarge,
+                                            ),
+                                          );
+                                        }).toList(),
+                                        onChanged: (int? newValue) {
+                                          setState(() {
+                                            if (newValue == -1) {
+                                              _lossProfitPerPage = -1;
+                                            } else {
+                                              _lossProfitPerPage = newValue ?? 10;
+                                            }
+                                            _currentPage = 1;
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 12.0),
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                showCursor: true,
+                                cursorColor: kTitleColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    searchItem = value;
+                                  });
+                                },
+                                keyboardType: TextInputType.name,
+                                decoration: kInputDecoration.copyWith(
+                                  contentPadding: const EdgeInsets.all(10.0),
+                                  hintText: (lang.S.of(context).searchByInvoiceOrName),
+                                  border: InputBorder.none,
+                                  suffixIcon: const Icon(
+                                    FeatherIcons.search,
+                                    color: kTitleColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ]),
+                      ),
 
                       reTransaction.isNotEmpty
                           ? Column(
@@ -1248,7 +1185,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                         scrollDirection: Axis.horizontal,
                                         child: ConstrainedBox(
                                           constraints: BoxConstraints(
-                                            minWidth: constraints.maxWidth,
+                                            minWidth: constraints.maxWidth * 1.8, // 80% más ancho para aprovechar TODO el espacio
                                           ),
                                           child: Theme(
                                             data: theme.copyWith(
@@ -1274,7 +1211,16 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                               showBottomBorder: false,
                                               dividerThickness: 0.0,
                                               headingTextStyle:
-                                                  theme.textTheme.titleMedium,
+                                                  theme.textTheme.titleMedium?.copyWith(
+                                                    fontSize: 15, // Headers más grandes
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.black87,
+                                                  ),
+                                              columnSpacing: 80, // Mucho más espacio entre columnas
+                                              horizontalMargin: 40, // Margen horizontal mucho mayor
+                                              dataRowMinHeight: 60, // Filas más altas
+                                              dataRowMaxHeight: 80, // Máximo altura de filas
+                                              headingRowHeight: 65, // Header más alto
                                               columns: [
                                                 DataColumn(
                                                     label: Text(
@@ -1369,8 +1315,15 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                               ),
                                                             ),
                                                             DataCell(
-                                                              Text(
-                                                                translateType(paginatedList[index].type),
+                                                              Padding(
+                                                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                                                child: Text(
+                                                                  translateType(paginatedList[index].type),
+                                                                  style: TextStyle(
+                                                                    fontSize: 14,
+                                                                    fontWeight: FontWeight.w500,
+                                                                  ),
+                                                                ),
                                                               ),
                                                             ),
                                                             DataCell(
@@ -1387,8 +1340,16 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                               _buildInvoiceNumberCell(paginatedList[index], context, profile, settingProvider),
                                                             ),
                                                             DataCell(
-                                                              Text(
-                                                                '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].total.toStringAsFixed(2)) ?? 0)}',
+                                                              Padding(
+                                                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                                                child: Text(
+                                                                  '$globalCurrency${myFormat.format(double.tryParse(paginatedList[index].total.toStringAsFixed(2)) ?? 0)}',
+                                                                  style: TextStyle(
+                                                                    fontSize: 14,
+                                                                    fontWeight: FontWeight.w600,
+                                                                    color: Colors.green.shade700,
+                                                                  ),
+                                                                ),
                                                               ),
                                                             ),
                                                             DataCell(
@@ -1731,8 +1692,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                     () => _currentPage--)
                                                 : null,
                                             child: Container(
-                                              height: 32,
-                                              width: 90,
+                                              height: 40, // Botones más altos
+                                              width: 110, // Botones más anchos
                                               decoration: BoxDecoration(
                                                 border: Border.all(
                                                     color:
@@ -1752,8 +1713,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                             ),
                                           ),
                                           Container(
-                                            height: 32,
-                                            width: 32,
+                                            height: 40, // Más alto
+                                            width: 40, // Más ancho
                                             decoration: BoxDecoration(
                                               border: Border.all(
                                                   color: kBorderColorTextField),
@@ -1768,8 +1729,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                             ),
                                           ),
                                           Container(
-                                            height: 32,
-                                            width: 32,
+                                            height: 40, // Más alto
+                                            width: 40, // Más ancho
                                             decoration: BoxDecoration(
                                               border: Border.all(
                                                   color: kBorderColorTextField),
@@ -1794,8 +1755,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                     () => _currentPage++)
                                                 : null,
                                             child: Container(
-                                              height: 32,
-                                              width: 90,
+                                              height: 40, // Botones más altos
+                                              width: 110, // Botones más anchos
                                               decoration: BoxDecoration(
                                                 border: Border.all(
                                                     color:
@@ -1827,22 +1788,22 @@ class _DailyTransactionState extends State<DailyTransaction> {
               ],
             ),
           );
-            },
-            error: (e, stack) {
-              return Center(
-                child: Text('Error cargando ventas: ${e.toString()}'),
-              );
-            },
-            loading: () {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            },
-          );
         },
         error: (e, stack) {
           return Center(
-            child: Text(e.toString()),
+            child: Text('Error cargando ventas: ${e.toString()}'),
+          );
+        },
+        loading: () {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+        },
+        error: (e, stack) {
+          return Center(
+            child: Text('Error cargando transacciones: ${e.toString()}'),
           );
         },
         loading: () {
@@ -2237,7 +2198,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   rows: reTransaction.map<DataRow>((payment) {
                                     // Determinar método de pago
                                     String metodoPago = 'N/A';
-                                    String bankInfo = '';
                                     
                                     if (payment.dueTransactionModel != null) {
                                       var dueModel = payment.dueTransactionModel!;
@@ -2257,10 +2217,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                           case 'bank':
                                           case 'transferencia':
                                             metodoPago = 'Transferencia';
-                                            // Agregar información del banco si está disponible
-                                            if (dueModel.bankName != null && dueModel.bankName!.isNotEmpty) {
-                                              bankInfo = ' (${dueModel.bankName})';
-                                            }
                                             break;
                                           case 'check':
                                           case 'cheque':
@@ -2273,13 +2229,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                     } else if (payment.saleTransactionModel != null) {
                                       // Para la venta original, usar el método de pago de la venta
                                       metodoPago = _getPaymentType(payment);
-                                      
-                                      // Si es transferencia, obtener información del banco
-                                      if (metodoPago.toLowerCase().contains('transfer') && 
-                                          payment.saleTransactionModel!.bankName != null && 
-                                          payment.saleTransactionModel!.bankName!.isNotEmpty) {
-                                        bankInfo = ' (${payment.saleTransactionModel!.bankName})';
-                                      }
                                     }
                                     
                                     return DataRow(cells: [
@@ -2291,7 +2240,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                       DataCell(Padding(
                                         padding: const EdgeInsets.only(left: 20),
                                         child: Text(
-                                          metodoPago + bankInfo,
+                                          metodoPago,
                                           style: TextStyle(
                                             fontWeight: FontWeight.w500,
                                             color: metodoPago == 'N/A' ? Colors.grey : null,
@@ -2329,6 +2278,28 @@ class _DailyTransactionState extends State<DailyTransaction> {
     );
   }
 
+  String _getPaymentType(DailyTransactionModel transaction) {
+    if (transaction.saleTransactionModel != null) {
+      final paymentType = transaction.saleTransactionModel!.paymentType?.toLowerCase();
+      switch (paymentType) {
+        case 'cash':
+        case 'efectivo':
+          return 'Efectivo';
+        case 'bank':
+        case 'transferencia':
+          return 'Transferencia';
+        case 'card':
+        case 'tarjeta':
+          return 'Tarjeta';
+        case 'cheque':
+          return 'Cheque';
+        default:
+          return transaction.saleTransactionModel!.paymentType ?? 'N/A';
+      }
+    }
+    return 'N/A';
+  }
+
   Widget _fechaConvertida(String? date) {
     try {
       if (date == null || date.trim().isEmpty) {
@@ -2340,149 +2311,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
       return Text(formattedDate);
     } catch (e) {
       return const Text('-');
-    }
-  }
-
-  // Método para mostrar diálogo de eliminación de facturas problemáticas
-  void _showDeleteProblematicInvoicesDialog() {
-    if (_problematicInvoices.isEmpty) return;
-    
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('⚠️ Facturas Problemáticas Detectadas'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Se encontraron ${_problematicInvoices.length} facturas con problemas:'),
-              const SizedBox(height: 8),
-              ...(_problematicInvoices.map((invoice) => Text('• Factura $invoice')).toList()),
-              const SizedBox(height: 16),
-              const Text(
-                'Estas facturas no tienen productos asociados y no existen en Sales Transition. ¿Desea eliminarlas de Daily Transaction?',
-                style: TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteProblematicInvoices();
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // NUEVO: Método para corregir saldos negativos en clientes
-  Future<void> _fixNegativeBalances() async {
-    try {
-      EasyLoading.show(status: 'Corrigiendo saldos negativos...');
-      
-      DeleteInvoice delete = DeleteInvoice();
-      await delete.fixNegativeCustomerBalances();
-      
-      EasyLoading.dismiss();
-      EasyLoading.showSuccess('✅ Saldos negativos corregidos');
-      
-    } catch (e) {
-      EasyLoading.dismiss();
-      EasyLoading.showError('Error: ${e.toString()}');
-    }
-  }
-
-  // NUEVO: Método para limpiar facturas huérfanas específicas (517, 514)
-  Future<void> _cleanOrphanInvoices() async {
-    List<String> orphanInvoices = ["517", "514"];
-    
-    try {
-      EasyLoading.show(status: 'Limpiando facturas huérfanas...');
-      
-      for (String invoice in orphanInvoices) {
-        DeleteInvoice delete = DeleteInvoice();
-        await delete.cleanOrphanInvoicePayments(invoice: invoice);
-      }
-      
-      EasyLoading.dismiss();
-      EasyLoading.showSuccess('✅ Facturas huérfanas limpiadas');
-      
-      // Refrescar la página
-      setState(() {});
-      
-    } catch (e) {
-      EasyLoading.dismiss();
-      EasyLoading.showError('Error: ${e.toString()}');
-    }
-  }
-
-  // Método para eliminar facturas problemáticas
-  Future<void> _deleteProblematicInvoices() async {
-    try {
-      EasyLoading.show(status: 'Eliminando facturas problemáticas...');
-      
-      final userId = await getUserID();
-      final dailyTransactionRef = FirebaseDatabase.instance.ref('$userId/Daily Transaction');
-      
-      // Obtener todas las entradas de Daily Transaction
-      final snapshot = await dailyTransactionRef.get();
-      
-      if (snapshot.exists) {
-        final data = snapshot.value as Map<dynamic, dynamic>;
-        int deletedCount = 0;
-        
-        for (var entry in data.entries) {
-          final key = entry.key;
-          final value = entry.value as Map<dynamic, dynamic>;
-          
-          // Verificar si es una venta y tiene el invoiceNumber problemático
-          if ((value['type'] == 'Sale' || value['type'] == 'Adicionales' || value['type'] == 'Impresiones') && 
-              value['saleTransactionModel'] != null &&
-              _problematicInvoices.contains(value['saleTransactionModel']['invoiceNumber'])) {
-            
-            await dailyTransactionRef.child(key).remove();
-            deletedCount++;
-            debugPrint('🗑️ Eliminada factura problemática: ${value['saleTransactionModel']['invoiceNumber']}');
-          }
-        }
-        
-        EasyLoading.dismiss();
-        
-        // Mostrar resultado
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ Eliminadas $deletedCount facturas problemáticas'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Limpiar la lista y refrescar
-        _problematicInvoices.clear();
-        setState(() {});
-        
-      } else {
-        EasyLoading.dismiss();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se encontraron datos en Daily Transaction')),
-        );
-      }
-      
-    } catch (e) {
-      EasyLoading.dismiss();
-      debugPrint('❌ Error eliminando facturas problemáticas: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
     }
   }
 }

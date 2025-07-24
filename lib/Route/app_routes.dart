@@ -37,6 +37,7 @@ import 'package:salespro_admin/Screen/quatation_screen/quatation_screen.dart';
 import 'package:salespro_admin/Screen/Confirmation/sale_confirmations_list.dart';
 import 'package:salespro_admin/Screen/Audit/audit_screen.dart';
 import 'package:salespro_admin/model/income_modle.dart';
+import 'package:salespro_admin/Screen/Bank/bank_list.dart';
 
 import '../Screen/Authentication/log_in.dart';
 import '../Screen/Authentication/profile_setup.dart';
@@ -559,6 +560,14 @@ abstract class AcnooAppRoutes {
                   },
                 )
               ]),
+
+          ///---------------------------Bank Route----------------------------
+          GoRoute(
+            path: '/bank/bank-list',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: BankList(),
+            ),
+          ),
 
           ///----------------------------DailyTransactionScreen route-----------
           GoRoute(
