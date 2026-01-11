@@ -120,6 +120,44 @@ class ExpenseDetails extends StatelessWidget {
             ),
             const SizedBox(height: 15),
 
+            ///__________Cliente (si es devolución)_________________________________________________
+            if (expense.customerName != null && expense.customerName!.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 150,
+                    child: Text(
+                      'Cliente',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  const Text(
+                    ':',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          expense.customerName!,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                        ),
+                        if (expense.customerPhone != null && expense.customerPhone!.isNotEmpty)
+                          Text(
+                            'Tel: ${expense.customerPhone}',
+                            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                          ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 15),
+            ],
+
             ///__________reference No_________________________________________________
             Row(
               mainAxisAlignment: MainAxisAlignment.start,

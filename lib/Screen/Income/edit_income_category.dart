@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -14,6 +11,7 @@ import 'package:salespro_admin/model/income_catehory_model.dart';
 import '../../Provider/expense_category_proivder.dart';
 import '../../const.dart';
 import '../../model/expense_category_model.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditIncomeCategory extends StatefulWidget {
@@ -36,24 +34,26 @@ class _EditIncomeCategoryState extends State<EditIncomeCategory> {
   String categoryDescription = '';
   String categoryName = '';
 
-  String expenseKey = '';
+  String? incomeCategoryId;
+  final ApiService _apiService = ApiService();
 
-  void getExpenseKey() async {
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Income Category')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['categoryName'].toString() ==
-            widget.incomeCategoryModel.categoryName) {
-          expenseKey = element.key.toString();
+  void getIncomeCategoryId() async {
+    try {
+      final response = await _apiService.get('categories/incomes', queryParams: {
+        'categoryName': widget.incomeCategoryModel.categoryName,
+        'limit': '1',
+      });
+      if (response.success && response.data != null) {
+        final categories = response.data['income_categories'] as List<dynamic>? ??
+            response.data['categories'] as List<dynamic>? ?? [];
+        if (categories.isNotEmpty) {
+          final categoryData = Map<String, dynamic>.from(categories.first);
+          incomeCategoryId = categoryData['id']?.toString();
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error obteniendo ID de categoría de ingreso: $e');
+    }
   }
 
   @override
@@ -63,7 +63,7 @@ class _EditIncomeCategoryState extends State<EditIncomeCategory> {
     checkCurrentUserAndRestartApp();
     categoryDescription = widget.incomeCategoryModel.categoryDescription;
     categoryName = widget.incomeCategoryModel.categoryName;
-    getExpenseKey();
+    getIncomeCategoryId();
   }
 
   @override
@@ -199,15 +199,12 @@ class _EditIncomeCategoryState extends State<EditIncomeCategory> {
                                       status:
                                           '${lang.S.of(context).loading}...',
                                       dismissOnTap: false);
-                                  final DatabaseReference
-                                      productInformationRef = FirebaseDatabase
-                                          .instance
-                                          .ref()
-                                          .child(await getUserID())
-                                          .child('Income Category')
-                                          .child(expenseKey);
-                                  await productInformationRef
-                                      .set(expenseCategory.toJson());
+                                  if (incomeCategoryId != null) {
+                                    await _apiService.put(
+                                      'categories/incomes/$incomeCategoryId',
+                                      Map<String, dynamic>.from(expenseCategory.toJson()),
+                                    );
+                                  }
                                   EasyLoading.showSuccess(
                                       lang.S.of(context).editSuccessfully,
                                       duration:

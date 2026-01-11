@@ -18,13 +18,15 @@ class CategoryModel {
   });
 
   CategoryModel.fromJson(Map<dynamic, dynamic> json) {
-    categoryName = json['categoryName'] as String;
-    size = json['variationSize'] as bool;
-    color = json['variationColor'] as bool;
-    capacity = json['variationCapacity'] as bool;
-    type = json['variationType'] as bool;
-    weight = json['variationWeight'] as bool;
-    warranty = json['variationWarranty'] as bool;
+    // Soporta tanto el formato PostgreSQL (name) como el formato antiguo (categoryName)
+    categoryName = json['name'] as String? ?? json['categoryName'] as String? ?? '';
+    // Soporta tanto snake_case (PostgreSQL) como camelCase (Firebase legacy)
+    size = json['variation_size'] as bool? ?? json['variationSize'] as bool? ?? false;
+    color = json['variation_color'] as bool? ?? json['variationColor'] as bool? ?? false;
+    capacity = json['variation_capacity'] as bool? ?? json['variationCapacity'] as bool? ?? false;
+    type = json['variation_type'] as bool? ?? json['variationType'] as bool? ?? false;
+    weight = json['variation_weight'] as bool? ?? json['variationWeight'] as bool? ?? false;
+    warranty = json['variation_warranty'] as bool? ?? json['variationWarranty'] as bool? ?? false;
   }
 
   Map<dynamic, dynamic> toJson() => <dynamic, dynamic>{

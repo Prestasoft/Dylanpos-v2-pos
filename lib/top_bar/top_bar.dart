@@ -1,3 +1,4 @@
+// top_bar.dart - Migrado a PostgreSQL API
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -21,10 +22,12 @@ import '../Screen/currency/global_currency.dart';
 import '../const.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_confirmation_model.dart';
-import 'package:firebase_database/firebase_database.dart';
 import '../Screen/Reports/cuadre_modal.dart';
 import '../model/sale_transaction_model.dart';
 import '../services/audit_service.dart';
+import '../services/version_check_service.dart';
+import '../services/api_service.dart';
+import '../widgets/update_dialog.dart' hide kMainColor, kTitleColor, kGreyTextColor;
 
 class TopBarWidget extends ConsumerStatefulWidget {
   const TopBarWidget({super.key, this.onMenuTap});
@@ -36,6 +39,9 @@ class TopBarWidget extends ConsumerStatefulWidget {
 }
 
 class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
+  final VersionCheckService _versionCheckService = VersionCheckService();
+  final ApiService _apiService = ApiService();
+
   // Funciones de verificación de permisos para cada botón del header
   bool _canAccessRentClothing() {
     if (!isSubUser) return true;
@@ -166,58 +172,26 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
       //   }
       // }
     } catch (e) {}
-    // Obtener gastos del día
+    // Obtener gastos del día - Usa PostgreSQL API
     try {
-      final expensesRef = FirebaseDatabase.instance.ref("$userId/Expense");
-      final expensesSnapshot = await expensesRef.get();
-      if (expensesSnapshot.exists) {
-        final expensesData = expensesSnapshot.value as Map<dynamic, dynamic>;
-        for (var expenseEntry in expensesData.entries) {
-          final expenseData = expenseEntry.value as Map<dynamic, dynamic>;
-          String? dateField = expenseData['expenseDate']?.toString();
-          if (dateField != null) {
-            try {
-              DateTime expenseDate;
-              if (dateField.contains('/')) {
-                final parts = dateField.split('/');
-                if (parts.length >= 3) {
-                  expenseDate = DateTime(
-                    int.parse(parts[2]),
-                    int.parse(parts[1]),
-                    int.parse(parts[0]),
-                  );
-                } else {
-                  continue;
-                }
-              } else if (dateField.contains('-')) {
-                String datePart = dateField.split(' ')[0];
-                if (datePart.split('-').length >= 3) {
-                  final parts = datePart.split('-');
-                  expenseDate = DateTime(
-                    int.parse(parts[0]),
-                    int.parse(parts[1]),
-                    int.parse(parts[2]),
-                  );
-                } else {
-                  expenseDate = DateTime.parse(dateField);
-                }
-              } else {
-                expenseDate = DateTime.parse(dateField);
-              }
-              final isToday = expenseDate
-                      .isAfter(todayStart.subtract(Duration(seconds: 1))) &&
-                  expenseDate.isBefore(todayEnd);
-              if (isToday) {
-                final amount =
-                    double.tryParse(expenseData['amount']?.toString() ?? '0') ??
-                        0.0;
-                gastos += amount;
-              }
-            } catch (e) {}
-          }
+      final todayStr = DateFormat('yyyy-MM-dd').format(today);
+      final response = await _apiService.get('expenses', queryParams: {
+        'startDate': todayStr,
+        'endDate': todayStr,
+        'limit': '1000',
+      });
+
+      if (response.success && response.data != null) {
+        final expenses = response.data['expenses'] as List<dynamic>? ?? [];
+        for (var expense in expenses) {
+          final expenseData = Map<String, dynamic>.from(expense);
+          final amount = double.tryParse(expenseData['amount']?.toString() ?? '0') ?? 0.0;
+          gastos += amount;
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Error obteniendo gastos: $e');
+    }
     return {'ventasDelDia': reTransaction, 'gastos': gastos};
   }
 
@@ -252,39 +226,54 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
       Restart.restartApp();
     }
     super.initState();
+    
+    // Configurar el servicio de verificación de versiones
+    _versionCheckService.onUpdateAvailable = (versionInfo) {
+      // Mostrar diálogo de actualización cuando esté disponible
+      if (mounted) {
+        showUpdateDialog(context, versionInfo);
+      }
+    };
+  }
+  
+  @override
+  void dispose() {
+    _versionCheckService.stopVersionCheck();
+    super.dispose();
   }
 
+  /// Marcar todas las notificaciones como leídas - Usa PostgreSQL API
   Future<void> _markAllAsRead(BuildContext context,
       List<SaleConfirmationModel> notifications, WidgetRef ref) async {
-    final userId = await getUserID();
-    final databaseRef =
-        FirebaseDatabase.instance.ref("$userId/SaleConfirmations");
-
     try {
-      // Primero obtenemos todos los registros para encontrar los que coinciden
-      final snapshot = await databaseRef.get();
-      final Map<dynamic, dynamic> allRecords =
-          snapshot.value as Map<dynamic, dynamic>? ?? {};
-
-      final updates = <String, dynamic>{};
-
+      int markedCount = 0;
       for (final notification in notifications) {
-        // Buscamos el registro que coincida con el token
-        final recordEntry = allRecords.entries.firstWhere(
-          (entry) => entry.value['token'] == notification.token,
-          orElse: () => const MapEntry(null, null),
-        );
+        // Buscar por token y actualizar
+        final searchResponse = await _apiService.get('sale-confirmations', queryParams: {
+          'token': notification.token,
+          'limit': '1',
+        });
 
-        if (recordEntry.key != null) {
-          updates['${recordEntry.key}/notified'] = true;
+        if (searchResponse.success && searchResponse.data != null) {
+          final confirmations = searchResponse.data['sale_confirmations'] as List<dynamic>? ??
+                               searchResponse.data['confirmations'] as List<dynamic>? ?? [];
+
+          if (confirmations.isNotEmpty) {
+            final confirmationData = Map<String, dynamic>.from(confirmations.first);
+            final confirmationId = confirmationData['id']?.toString();
+
+            if (confirmationId != null) {
+              await _apiService.put('sale-confirmations/$confirmationId', {
+                'notified': true,
+              });
+              markedCount++;
+            }
+          }
         }
       }
 
-      if (updates.isNotEmpty) {
-        await databaseRef.update(updates);
-        if (mounted) {
-          EasyLoading.showSuccess('Notificaciones marcadas como leídas');
-        }
+      if (markedCount > 0 && mounted) {
+        EasyLoading.showSuccess('Notificaciones marcadas como leídas');
       }
     } catch (e) {
       debugPrint('Error al marcar como leídas: $e');
@@ -1101,6 +1090,43 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
           );
         }),
         actions: [
+          // Badge de versión profesional
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  kMainColor.withValues(alpha: 0.1),
+                  kMainColor.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: kMainColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.verified,
+                  size: 14,
+                  color: kMainColor,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'v2.1.74',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: kMainColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
           userProfileDetails.when(data: (details) {
             return Theme(
               data: ThemeData(
@@ -1146,15 +1172,70 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                       ],
                     ),
                   ),
+                  // Botón de verificar actualizaciones
+                  PopupMenuItem(
+                    onTap: () async {
+                      EasyLoading.show(status: 'Verificando actualizaciones...');
+                      try {
+                        // Configurar callback temporal para esta verificación manual
+                        bool updateFound = false;
+                        VersionInfo? foundUpdate;
+                        
+                        _versionCheckService.onUpdateAvailable = (versionInfo) {
+                          updateFound = true;
+                          foundUpdate = versionInfo;
+                        };
+                        
+                        // Forzar verificación manual
+                        await _versionCheckService.checkForUpdates();
+                        EasyLoading.dismiss();
+                        
+                        if (updateFound && foundUpdate != null) {
+                          // Mostrar el diálogo de actualización
+                          if (mounted) {
+                            showUpdateDialog(context, foundUpdate!);
+                          }
+                        } else {
+                          EasyLoading.showSuccess('Sistema actualizado ✓');
+                        }
+                        
+                        // Restaurar el callback original
+                        _versionCheckService.onUpdateAvailable = (versionInfo) {
+                          if (mounted) {
+                            showUpdateDialog(context, versionInfo);
+                          }
+                        };
+                      } catch (e) {
+                        EasyLoading.dismiss();
+                        EasyLoading.showError('Error al verificar actualizaciones');
+                      }
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.system_update_alt,
+                            size: 18.0, color: kTitleColor),
+                        const SizedBox(width: 4.0),
+                        Text(
+                          'Verificar Actualizaciones',
+                          style: kTextStyle.copyWith(color: kTitleColor),
+                        ),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem(
                     onTap: () async {
                       // Registrar logout en auditoría antes de cerrar sesión
                       await AuditService().logLogout();
-                      
+
+                      // Limpiar token del API (PostgreSQL)
+                      await _apiService.logout();
+
+                      // Cerrar sesión de Firebase
                       await FirebaseAuth.instance.signOut();
-                      EasyLoading.showSuccess('Successfully Logged Out');
+
+                      EasyLoading.showSuccess('Sesión cerrada correctamente');
                       if (context.mounted) {
-                        context.go('/', extra: {'replace': true});
+                        context.go('/');
                       }
                     },
                     child: Row(

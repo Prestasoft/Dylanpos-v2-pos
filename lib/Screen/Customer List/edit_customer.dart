@@ -1,7 +1,8 @@
-import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+
+import '../../services/api_service.dart';
+import '../../Repository/rnc_lookup_repo.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -35,22 +36,26 @@ class EditCustomer extends StatefulWidget {
 class _EditCustomerState extends State<EditCustomer> {
   GlobalKey<FormState> addCustomer = GlobalKey<FormState>();
 
-  late String customerKey;
+  String? customerId;
 
-  void getCustomerKey(String phoneNumber) async {
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Customers')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'].toString() == phoneNumber) {
-          customerKey = element.key.toString();
+  void getCustomerId(String phoneNumber) async {
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('customers', queryParams: {
+        'phoneNumber': phoneNumber,
+        'limit': '1',
+      });
+
+      if (response.success && response.data != null) {
+        final customers = response.data['customers'] as List<dynamic>? ?? [];
+        if (customers.isNotEmpty) {
+          final customerData = Map<String, dynamic>.from(customers.first);
+          customerId = customerData['id']?.toString();
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting customer ID: $e');
+    }
   }
 
   String profilePicture = '';
@@ -121,6 +126,66 @@ class _EditCustomerState extends State<EditCustomer> {
   TextEditingController customerAddressController = TextEditingController();
   bool receiveWhatsappUpdates = false;
 
+  // Variables para información del RNC
+  bool isSearchingRnc = false;
+  RncData? foundRncData;
+
+  /// Buscar RNC en el padrón de la DGII
+  Future<void> searchByRnc({bool showMessages = true}) async {
+    String rnc = gstController.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
+    if (rnc.length < 9) {
+      if (showMessages) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('RNC debe tener al menos 9 dígitos')),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      isSearchingRnc = true;
+      foundRncData = null;
+    });
+
+    try {
+      final data = await rncLookupRepository.lookupRnc(rnc);
+
+      if (data != null) {
+        setState(() {
+          foundRncData = data;
+        });
+
+        if (showMessages) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('RNC encontrado: ${data.nombre}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (showMessages) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('RNC no encontrado en el padrón de la DGII'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (showMessages) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al buscar RNC: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        isSearchingRnc = false;
+      });
+    }
+  }
+
   @override
   void initState() {
     checkCurrentUserAndRestartApp();
@@ -145,7 +210,14 @@ class _EditCustomerState extends State<EditCustomer> {
     customerAddressController.text = widget.customerModel.customerAddress;
     gstController.text = widget.customerModel.gst;
     setWhatsapp();
-    getCustomerKey(widget.customerModel.phoneNumber);
+    getCustomerId(widget.customerModel.phoneNumber);
+
+    // Si el cliente tiene RNC, buscar información automáticamente
+    if (widget.customerModel.gst.isNotEmpty && widget.customerModel.gst.length >= 9) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        searchByRnc(showMessages: false);
+      });
+    }
     super.initState();
   }
 
@@ -475,7 +547,7 @@ class _EditCustomerState extends State<EditCustomer> {
                                     //   ],
                                     // ),
 
-                                    ///_________GST___________________________________
+                                    ///_________GST/RNC con búsqueda en DGII___________________________________
                                     ResponsiveGridRow(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.center,
@@ -487,26 +559,121 @@ class _EditCustomerState extends State<EditCustomer> {
                                               child: Padding(
                                                 padding:
                                                     const EdgeInsets.all(10.0),
-                                                child: TextFormField(
-                                                  validator: (value) {
-                                                    return null;
-                                                  },
-                                                  onSaved: (value) {
-                                                    gstController.text = value!;
-                                                  },
-                                                  controller: gstController,
-                                                  showCursor: true,
-                                                  cursorColor: kTitleColor,
-                                                  decoration: InputDecoration(
-                                                    //labelText: 'Customer GST',
-                                                    labelText: lang.S
-                                                        .of(context)
-                                                        .customerGST,
-                                                    // hintText: 'Enter customer GST number',
-                                                    hintText: lang.S
-                                                        .of(context)
-                                                        .enterCustomerGSTNumber,
-                                                  ),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Expanded(
+                                                          child: TextFormField(
+                                                            validator: (value) {
+                                                              return null;
+                                                            },
+                                                            onSaved: (value) {
+                                                              gstController.text = value!;
+                                                            },
+                                                            controller: gstController,
+                                                            showCursor: true,
+                                                            cursorColor: kTitleColor,
+                                                            decoration: const InputDecoration(
+                                                              labelText: 'RNC del Cliente',
+                                                              hintText: 'Ingrese el RNC para buscar',
+                                                              prefixIcon: Icon(Icons.business, color: Colors.blue),
+                                                            ),
+                                                            onFieldSubmitted: (value) => searchByRnc(),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        SizedBox(
+                                                          height: 48,
+                                                          child: ElevatedButton.icon(
+                                                            onPressed: isSearchingRnc ? null : searchByRnc,
+                                                            icon: isSearchingRnc
+                                                                ? const SizedBox(
+                                                                    width: 16,
+                                                                    height: 16,
+                                                                    child: CircularProgressIndicator(
+                                                                      strokeWidth: 2,
+                                                                      color: Colors.white,
+                                                                    ),
+                                                                  )
+                                                                : const Icon(Icons.search),
+                                                            label: Text(isSearchingRnc ? 'Buscando...' : 'Buscar DGII'),
+                                                            style: ElevatedButton.styleFrom(
+                                                              backgroundColor: Colors.blue,
+                                                              foregroundColor: Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    // Card con información del RNC
+                                                    if (foundRncData != null) ...[
+                                                      const SizedBox(height: 8),
+                                                      Container(
+                                                        padding: const EdgeInsets.all(10),
+                                                        decoration: BoxDecoration(
+                                                          color: foundRncData!.isActive ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          border: Border.all(
+                                                            color: foundRncData!.isActive ? Colors.green : Colors.orange,
+                                                            width: 1,
+                                                          ),
+                                                        ),
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            Row(
+                                                              children: [
+                                                                Icon(
+                                                                  foundRncData!.isActive ? Icons.check_circle : Icons.warning,
+                                                                  color: foundRncData!.isActive ? Colors.green : Colors.orange,
+                                                                  size: 18,
+                                                                ),
+                                                                const SizedBox(width: 6),
+                                                                Text(
+                                                                  'Estado: ${foundRncData!.estado}',
+                                                                  style: TextStyle(
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: foundRncData!.isActive ? Colors.green : Colors.orange,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            const SizedBox(height: 4),
+                                                            Text('Nombre: ${foundRncData!.nombre}', style: const TextStyle(fontSize: 13)),
+                                                            if (foundRncData!.nombreComercial?.isNotEmpty == true)
+                                                              Text('Nombre Comercial: ${foundRncData!.nombreComercial}', style: const TextStyle(fontSize: 13)),
+                                                            if (foundRncData!.actividad?.isNotEmpty == true)
+                                                              Text('Actividad: ${foundRncData!.actividad}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                    // Indicador de carga
+                                                    if (isSearchingRnc && foundRncData == null) ...[
+                                                      const SizedBox(height: 8),
+                                                      Container(
+                                                        padding: const EdgeInsets.all(10),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.blue.withOpacity(0.1),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: const Row(
+                                                          children: [
+                                                            SizedBox(
+                                                              width: 16,
+                                                              height: 16,
+                                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                                            ),
+                                                            SizedBox(width: 10),
+                                                            Text('Consultando información del RNC...'),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
                                                 ),
                                               )),
                                           ResponsiveGridCol(
@@ -753,12 +920,6 @@ class _EditCustomerState extends State<EditCustomer> {
                                                         status:
                                                             '${lang.S.of(context).loading}...',
                                                         dismissOnTap: false);
-                                                    DatabaseReference
-                                                        reference =
-                                                        FirebaseDatabase
-                                                            .instance
-                                                            .ref(
-                                                                "${await getUserID()}/Customers/$customerKey");
 
                                                     CustomerModel
                                                         customerModel =
@@ -792,108 +953,38 @@ class _EditCustomerState extends State<EditCustomer> {
                                                           receiveWhatsappUpdates,
                                                     );
 
-                                                    ///___________update_customer_________________________________________________________
-                                                    await reference.set(
-                                                        customerModel.toJson());
+                                                    ///___________update_customer usando PostgreSQL API_________________________________________________________
+                                                    final apiService = ApiService();
+                                                    if (customerId != null) {
+                                                      await apiService.put(
+                                                          'customers/$customerId',
+                                                          Map<String, dynamic>.from(customerModel.toJson()));
+                                                    }
 
-                                                    ///_________chanePhone in All invoice_________________________________________________
-                                                    String key = '';
-                                                    widget.customerModel
-                                                                    .phoneNumber !=
-                                                                customerModel
-                                                                    .phoneNumber ||
-                                                            widget.customerModel
-                                                                    .customerName !=
-                                                                customerModel
-                                                                    .customerName
-                                                        ? widget.customerModel
-                                                                    .type !=
-                                                                'Supplier'
-                                                            ? await FirebaseDatabase
-                                                                .instance
-                                                                .ref(
-                                                                    await getUserID())
-                                                                .child(
-                                                                    'Sales Transition')
-                                                                .orderByKey()
-                                                                .get()
-                                                                .then(
-                                                                    (value) async {
-                                                                for (var element
-                                                                    in value
-                                                                        .children) {
-                                                                  var data = jsonDecode(
-                                                                      jsonEncode(
-                                                                          element
-                                                                              .value));
-                                                                  if (data['customerPhone']
-                                                                          .toString() ==
-                                                                      widget
-                                                                          .customerModel
-                                                                          .phoneNumber) {
-                                                                    key = element
-                                                                        .key
-                                                                        .toString();
-                                                                    DatabaseReference
-                                                                        reference =
-                                                                        FirebaseDatabase
-                                                                            .instance
-                                                                            .ref("${await getUserID()}/Sales Transition/$key");
-                                                                    await reference
-                                                                        .update({
-                                                                      'customerName':
-                                                                          customerModel
-                                                                              .customerName,
-                                                                      'customerPhone':
-                                                                          customerModel
-                                                                              .phoneNumber
-                                                                    });
-                                                                  }
-                                                                }
-                                                              })
-                                                            : await FirebaseDatabase
-                                                                .instance
-                                                                .ref(
-                                                                    await getUserID())
-                                                                .child(
-                                                                    'Purchase Transition')
-                                                                .orderByKey()
-                                                                .get()
-                                                                .then(
-                                                                    (value) async {
-                                                                for (var element
-                                                                    in value
-                                                                        .children) {
-                                                                  var data = jsonDecode(
-                                                                      jsonEncode(
-                                                                          element
-                                                                              .value));
-                                                                  if (data['customerPhone']
-                                                                          .toString() ==
-                                                                      widget
-                                                                          .customerModel
-                                                                          .phoneNumber) {
-                                                                    key = element
-                                                                        .key
-                                                                        .toString();
-                                                                    DatabaseReference
-                                                                        reference =
-                                                                        FirebaseDatabase
-                                                                            .instance
-                                                                            .ref("${await getUserID()}/Purchase Transition/$key");
-                                                                    await reference
-                                                                        .update({
-                                                                      'customerName':
-                                                                          customerModel
-                                                                              .customerName,
-                                                                      'customerPhone':
-                                                                          customerModel
-                                                                              .phoneNumber
-                                                                    });
-                                                                  }
-                                                                }
-                                                              })
-                                                        : null;
+                                                    ///_________chanePhone in All invoice usando PostgreSQL API_________________________________________________
+                                                    if (widget.customerModel.phoneNumber != customerModel.phoneNumber ||
+                                                        widget.customerModel.customerName != customerModel.customerName) {
+                                                      // Actualizar nombre/teléfono en ventas o compras
+                                                      final endpoint = widget.customerModel.type != 'Supplier' ? 'sales' : 'purchases';
+                                                      final response = await apiService.get(endpoint, queryParams: {
+                                                        'customerPhone': widget.customerModel.phoneNumber,
+                                                        'limit': '1000',
+                                                      });
+
+                                                      if (response.success && response.data != null) {
+                                                        final items = response.data[endpoint] as List<dynamic>? ?? [];
+                                                        for (var item in items) {
+                                                          final itemData = Map<String, dynamic>.from(item);
+                                                          final itemId = itemData['id']?.toString();
+                                                          if (itemId != null) {
+                                                            await apiService.put('$endpoint/$itemId', {
+                                                              'customerName': customerModel.customerName,
+                                                              'customerPhone': customerModel.phoneNumber,
+                                                            });
+                                                          }
+                                                        }
+                                                      }
+                                                    }
 
                                                     //EasyLoading.showSuccess('Added Successfully!');
                                                     EasyLoading.showSuccess(

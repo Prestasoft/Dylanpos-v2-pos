@@ -1,8 +1,7 @@
 // ignore_for_file: unused_result
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -66,11 +65,10 @@ class _PurchaseReturnScreenState extends State<PurchaseReturnScreen> {
     try {
       EasyLoading.show(
           status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+      final apiService = ApiService();
 
       ///_________Push_on_Sale_return_dataBase____________________________________________________________________________
-      DatabaseReference ref =
-          FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Return");
-      await ref.push().set(purchase.toJson());
+      await apiService.post('purchase-returns', Map<String, dynamic>.from(purchase.toJson()));
 
       await GeneratePdfAndPrint().printPurchaseReturnInvoice(
           personalInformationModel: widget.personalInformationModel,
@@ -78,32 +76,25 @@ class _PurchaseReturnScreenState extends State<PurchaseReturnScreen> {
           setting: setting);
 
       ///__________StockMange_________________________________________________________________________________
-      final stockRef =
-          FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
-
       for (var element in purchase.productList!) {
-        var data = await stockRef
-            .orderByChild('productCode')
-            .equalTo(element.productCode)
-            .once();
-        String productPath = data.snapshot.value.toString().substring(1, 21);
+        final productResponse = await apiService.get('products?productCode=${element.productCode}');
+        if (productResponse.success && productResponse.data != null) {
+          final prodData = productResponse.data;
+          List<dynamic> products = [];
+          if (prodData is Map && prodData['products'] != null) {
+            products = prodData['products'] as List<dynamic>;
+          } else if (prodData is List) {
+            products = prodData;
+          }
+          if (products.isNotEmpty) {
+            final productData = Map<String, dynamic>.from(products.first);
+            final productId = productData['id']?.toString() ?? '';
+            num stock = num.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+            num remainStock = stock - element.lowerStockAlert;
 
-        var data1 = await stockRef.child('$productPath/productStock').get();
-        num stock = num.parse(data1.value.toString());
-        num remainStock = stock - element.lowerStockAlert;
-
-        stockRef.child(productPath).update({'productStock': '$remainStock'});
-
-        //________Update_Serial_Number____________________________________________________
-
-        // if (element.serialNumber.isNotEmpty) {
-        //   var productOldSerialList = data2[productPath]['serialNumber'] + element.serialNumber;
-        //
-        //   // List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
-        //   stockRef.child(productPath).update({
-        //     'serialNumber': productOldSerialList.map((e) => e).toList(),
-        //   });
-        // }
+            await apiService.put('products/$productId', {'productStock': '$remainStock'});
+          }
+        }
       }
 
       ///________daily_transactionModel_________________________________________________________________________
@@ -131,31 +122,25 @@ class _PurchaseReturnScreenState extends State<PurchaseReturnScreen> {
 
       ///_________DueUpdate___________________________________________________________________________________
       if (purchase.customerName != 'Guest' && (orginal.dueAmount ?? 0) > 0) {
-        final dueUpdateRef =
-            FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-        String? key;
-
-        await FirebaseDatabase.instance
-            .ref(await getUserID())
-            .child('Customers')
-            .orderByKey()
-            .get()
-            .then((value) {
-          for (var element in value.children) {
-            var data = jsonDecode(jsonEncode(element.value));
-            if (data['phoneNumber'] == purchase.customerPhone) {
-              key = element.key;
-            }
+        final customerResponse = await apiService.get('customers?phoneNumber=${purchase.customerPhone}');
+        if (customerResponse.success && customerResponse.data != null) {
+          final custData = customerResponse.data;
+          List<dynamic> customers = [];
+          if (custData is Map && custData['customers'] != null) {
+            customers = custData['customers'] as List<dynamic>;
+          } else if (custData is List) {
+            customers = custData;
           }
-        });
-        var data1 = await dueUpdateRef.child('$key/due').get();
-        int previousDue = data1.value.toString().toInt();
+          if (customers.isNotEmpty) {
+            final customerData = Map<String, dynamic>.from(customers.first);
+            final customerId = customerData['id']?.toString() ?? '';
+            int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
 
-        num dueNow = (orginal.dueAmount ?? 0) - (purchase.totalAmount ?? 0);
-
-        int totalDue =
-            dueNow.isNegative ? 0 : previousDue - purchase.totalAmount!.toInt();
-        dueUpdateRef.child(key!).update({'due': '$totalDue'});
+            num dueNow = (orginal.dueAmount ?? 0) - (purchase.totalAmount ?? 0);
+            int totalDue = dueNow.isNegative ? 0 : previousDue - purchase.totalAmount!.toInt();
+            await apiService.put('customers/$customerId', {'due': '$totalDue'});
+          }
+        }
       }
 
       consumerRef.refresh(allCustomerProvider);
@@ -845,40 +830,35 @@ class _PurchaseReturnScreenState extends State<PurchaseReturnScreen> {
 
                                           ///________________updateInvoice___________________________________________________________ok
                                           String? key;
-                                          await FirebaseDatabase.instance
-                                              .ref(userId)
-                                              .child('Purchase Transition')
-                                              .orderByKey()
-                                              .get()
-                                              .then((value) {
-                                            for (var element
-                                                in value.children) {
-                                              final t = PurchaseTransactionModel
-                                                  .fromJson(jsonDecode(
-                                                      jsonEncode(
-                                                          element.value)));
-                                              if (widget
-                                                      .purchaseTransactionModel
-                                                      .invoiceNumber ==
-                                                  t.invoiceNumber) {
-                                                key = element.key;
-                                              }
+                                          final apiService = ApiService();
+
+                                          // Find purchase by invoice number via API
+                                          final purchaseResponse = await apiService.get('purchases?invoiceNumber=${widget.purchaseTransactionModel.invoiceNumber}');
+                                          if (purchaseResponse.success && purchaseResponse.data != null) {
+                                            final data = purchaseResponse.data;
+                                            List<dynamic> purchases = [];
+                                            if (data is Map && data['purchases'] != null) {
+                                              purchases = data['purchases'] as List<dynamic>;
+                                            } else if (data is List) {
+                                              purchases = data;
                                             }
-                                          });
+                                            if (purchases.isNotEmpty) {
+                                              final purchaseData = Map<String, dynamic>.from(purchases.first);
+                                              key = purchaseData['id']?.toString() ?? '';
+                                            }
+                                          }
+
                                           if (newProductList.isEmpty) {
-                                            await FirebaseDatabase.instance
-                                                .ref(userId)
-                                                .child('Purchase Transition')
-                                                .child(key!)
-                                                .remove();
+                                            // Delete purchase via API
+                                            if (key != null && key!.isNotEmpty) {
+                                              await apiService.delete('purchases/$key');
+                                            }
                                           } else {
                                             ///__________total LossProfit & quantity________________________________________________________________
-                                            await FirebaseDatabase.instance
-                                                .ref(userId)
-                                                .child('Purchase Transition')
-                                                .child(key!)
-                                                .update(
-                                                    myTransitionModel.toJson());
+                                            // Update purchase via API
+                                            if (key != null && key!.isNotEmpty) {
+                                              await apiService.put('purchases/$key', myTransitionModel.toJson());
+                                            }
                                           }
                                           for (var element in returnList) {
                                             element.productStock = element

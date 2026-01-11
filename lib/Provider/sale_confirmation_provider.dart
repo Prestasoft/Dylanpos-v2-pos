@@ -1,15 +1,17 @@
-// sale_confirmation_provider.dart
+// sale_confirmation_provider.dart - Migrado a PostgreSQL API
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_database/firebase_database.dart';
 import '../model/sale_confirmation_model.dart';
-import '../const.dart';
+import '../services/api_service.dart';
 
+/// Servicio API compartido
+final ApiService _apiService = ApiService();
+
+/// Provider de confirmaciones de venta - Usa PostgreSQL API
 final saleConfirmationsProvider = AsyncNotifierProvider<SaleConfirmationsNotifier, List<SaleConfirmationModel>>(
   SaleConfirmationsNotifier.new,
 );
 
 class SaleConfirmationsNotifier extends AsyncNotifier<List<SaleConfirmationModel>> {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
   bool _forceRefresh = false;
 
   @override
@@ -21,36 +23,28 @@ class SaleConfirmationsNotifier extends AsyncNotifier<List<SaleConfirmationModel
     return _fetchConfirmations();
   }
 
+  /// Obtener todas las confirmaciones desde PostgreSQL
   Future<List<SaleConfirmationModel>> _fetchConfirmations() async {
     try {
-      final userId = await getUserID();
-      final DatabaseReference ref = _dbRef.child('$userId/SaleConfirmations');
-      
-      final snapshot = await ref.get();
-      
-      if (!snapshot.exists) {
-        return [];
-      }
+      final response = await _apiService.get('sale-confirmations', queryParams: {'limit': '5000'});
 
-      final dynamic data = snapshot.value;
-      if (data == null) {
+      if (!response.success || response.data == null) {
         return [];
       }
 
       final List<SaleConfirmationModel> confirmations = [];
-      
-      if (data is Map) {
-        data.forEach((key, value) {
-          try {
-            if (value is Map) {
-              final confirmationData = Map<String, dynamic>.from(value);
-              // confirmationData['token'] = key;
-              final confirmation = SaleConfirmationModel.fromJson(confirmationData);
-              confirmations.add(confirmation);
-            }
-          } catch (e) {
+      final confirmationsData = response.data['sale_confirmations'] as List<dynamic>? ?? [];
+
+      for (var item in confirmationsData) {
+        try {
+          if (item is Map) {
+            final confirmationData = Map<String, dynamic>.from(item);
+            final confirmation = SaleConfirmationModel.fromJson(confirmationData);
+            confirmations.add(confirmation);
           }
-        });
+        } catch (e) {
+          // Error silencioso para elementos inválidos
+        }
       }
 
       return confirmations;
@@ -59,26 +53,58 @@ class SaleConfirmationsNotifier extends AsyncNotifier<List<SaleConfirmationModel
     }
   }
 
+  /// Refrescar lista de confirmaciones
   Future<void> refreshConfirmations() async {
     _forceRefresh = true;
     ref.invalidateSelf();
   }
 
+  /// Actualizar una confirmación - Usa PostgreSQL API
   Future<void> updateConfirmation(SaleConfirmationModel confirmation) async {
     try {
-      final userId = await getUserID();
-      await _dbRef.child('$userId/SaleConfirmations/${confirmation.token}').update(confirmation.toJson());
-      await refreshConfirmations();
+      final response = await _apiService.put(
+        'sale-confirmations/${confirmation.token}',
+        confirmation.toJson(),
+      );
+
+      if (response.success) {
+        await refreshConfirmations();
+      } else {
+        throw Exception(response.message ?? 'Error al actualizar confirmación');
+      }
     } catch (e) {
       rethrow;
     }
   }
 
+  /// Eliminar una confirmación - Usa PostgreSQL API
   Future<void> deleteConfirmation(String token) async {
     try {
-      final userId = await getUserID();
-      await _dbRef.child('$userId/SaleConfirmations/$token').remove();
-      await refreshConfirmations();
+      final response = await _apiService.delete('sale-confirmations/$token');
+
+      if (response.success) {
+        await refreshConfirmations();
+      } else {
+        throw Exception(response.message ?? 'Error al eliminar confirmación');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Crear una nueva confirmación - Usa PostgreSQL API
+  Future<void> createConfirmation(SaleConfirmationModel confirmation) async {
+    try {
+      final response = await _apiService.post(
+        'sale-confirmations',
+        confirmation.toJson(),
+      );
+
+      if (response.success) {
+        await refreshConfirmations();
+      } else {
+        throw Exception(response.message ?? 'Error al crear confirmación');
+      }
     } catch (e) {
       rethrow;
     }

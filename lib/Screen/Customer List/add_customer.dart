@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+
+import '../../services/api_service.dart';
+import '../../Repository/rnc_lookup_repo.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -118,6 +120,7 @@ class _AddCustomerState extends State<AddCustomer> {
   }
 
   TextEditingController searchCedulaController = TextEditingController();
+  TextEditingController rncController = TextEditingController();
   TextEditingController customerNameController = TextEditingController();
   TextEditingController customerPhoneController = TextEditingController();
   TextEditingController customerEmailController = TextEditingController();
@@ -130,6 +133,8 @@ class _AddCustomerState extends State<AddCustomer> {
   GlobalKey<FormState> addCustomer = GlobalKey<FormState>();
 
   bool isSearching = false;
+  bool isSearchingRnc = false;
+  RncData? foundRncData;
 
   Future<void> searchByCedula() async {
     String cedula = searchCedulaController.text.trim();
@@ -176,6 +181,58 @@ class _AddCustomerState extends State<AddCustomer> {
     } finally {
       setState(() {
         isSearching = false;
+      });
+    }
+  }
+
+  /// Buscar RNC en el padrón de la DGII
+  Future<void> searchByRnc() async {
+    String rnc = rncController.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
+    if (rnc.length < 9) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('RNC debe tener al menos 9 dígitos')),
+      );
+      return;
+    }
+
+    setState(() {
+      isSearchingRnc = true;
+      foundRncData = null;
+    });
+
+    try {
+      final data = await rncLookupRepository.lookupRnc(rnc);
+
+      if (data != null) {
+        setState(() {
+          foundRncData = data;
+          // Autocompletar el nombre del cliente (usar razón social, no nombre comercial)
+          customerNameController.text = data.nombre;
+          // Guardar el RNC en el campo correspondiente
+          searchCedulaController.text = data.rnc;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('RNC encontrado: ${data.nombre}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('RNC no encontrado en el padrón de la DGII'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al buscar RNC: $e')),
+      );
+    } finally {
+      setState(() {
+        isSearchingRnc = false;
       });
     }
   }
@@ -405,24 +462,119 @@ class _AddCustomerState extends State<AddCustomer> {
                                         ))
                                   ]),
 
-                                  ///__________Cédula (GST) con botón de búsqueda___________________________________
+                                  ///__________RNC (Empresas) con búsqueda en DGII___________________________________
+                                  Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: TextFormField(
+                                                controller: rncController,
+                                                decoration: const InputDecoration(
+                                                  labelText: 'RNC (Empresas)',
+                                                  hintText: 'Ingrese el RNC para buscar',
+                                                  prefixIcon: Icon(Icons.business, color: Colors.blue),
+                                                ),
+                                                onFieldSubmitted: (value) => searchByRnc(),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            SizedBox(
+                                              height: 48,
+                                              child: ElevatedButton.icon(
+                                                onPressed: isSearchingRnc ? null : searchByRnc,
+                                                icon: isSearchingRnc
+                                                    ? const SizedBox(
+                                                        width: 16,
+                                                        height: 16,
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                      )
+                                                    : const Icon(Icons.search),
+                                                label: Text(isSearchingRnc ? 'Buscando...' : 'Buscar DGII'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.blue,
+                                                  foregroundColor: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (foundRncData != null) ...[
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: foundRncData!.isActive ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: foundRncData!.isActive ? Colors.green : Colors.orange,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      foundRncData!.isActive ? Icons.check_circle : Icons.warning,
+                                                      color: foundRncData!.isActive ? Colors.green : Colors.orange,
+                                                      size: 18,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      'Estado: ${foundRncData!.estado}',
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        color: foundRncData!.isActive ? Colors.green : Colors.orange,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text('Nombre: ${foundRncData!.nombre}', style: const TextStyle(fontSize: 13)),
+                                                if (foundRncData!.nombreComercial?.isNotEmpty == true)
+                                                  Text('Nombre Comercial: ${foundRncData!.nombreComercial}', style: const TextStyle(fontSize: 13)),
+                                                if (foundRncData!.actividad?.isNotEmpty == true)
+                                                  Text('Actividad: ${foundRncData!.actividad}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+
+                                  ///__________Cédula (Personas físicas) con botón de búsqueda___________________________________
                                   Padding(
                                     padding: const EdgeInsets.all(10.0),
                                     child: TextFormField(
                                       controller: searchCedulaController,
                                       decoration: InputDecoration(
-                                        labelText: 'Cédula',
-                                        hintText: 'Ingrese el número de cédula',
+                                        labelText: 'Cédula (Personas)',
+                                        hintText: 'Ingrese cédula para buscar persona',
+                                        prefixIcon: const Icon(Icons.person, color: Colors.green),
                                         suffixIcon: isSearching
-                                            ? Padding(
-                                                padding: const EdgeInsets.all(8.0),
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
+                                            ? const Padding(
+                                                padding: EdgeInsets.all(12.0),
+                                                child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(strokeWidth: 2),
                                                 ),
                                               )
                                             : IconButton(
-                                                icon: Icon(Icons.search),
+                                                icon: const Icon(Icons.search, color: Colors.green),
                                                 onPressed: searchByCedula,
+                                                tooltip: 'Buscar persona por cédula',
                                               ),
                                       ),
                                       onFieldSubmitted: (value) {
@@ -517,7 +669,6 @@ class _AddCustomerState extends State<AddCustomer> {
                                                             profilePicture = await snapshot.ref.getDownloadURL();
                                                           }
 
-                                                          final DatabaseReference customerInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Customers');
                                                           CustomerModel customerModel = CustomerModel(
                                                             customerName: customerNameController.text,
                                                             phoneNumber: customerPhoneController.text,
@@ -531,23 +682,37 @@ class _AddCustomerState extends State<AddCustomer> {
                                                             gst: searchCedulaController.text, // Guardamos la cédula aquí
                                                             receiveWhatsappUpdates: receiveWhatsappUpdates,
                                                           );
-                                                          await customerInformationRef.push().set(customerModel.toJson());
 
-                                                          ///________subscription_plan_update_________________________________________________
-                                                          Subscription.decreaseSubscriptionLimits(itemType: 'partiesNumber', context: context);
+                                                          // Guardar cliente usando PostgreSQL API
+                                                          final apiService = ApiService();
+                                                          final response = await apiService.post('customers', Map<String, dynamic>.from(customerModel.toJson()));
 
-                                                          EasyLoading.showSuccess('${lang.S.of(context).addedSuccessfully}!');
-                                                          ref.refresh(buyerCustomerProvider);
-                                                          ref.refresh(supplierProvider);
-                                                          ref.refresh(allCustomerProvider);
-                                                          Future.delayed(const Duration(milliseconds: 100), () {
-                                                            GoRouter.of(context).pop(customerModel);
-                                                          });
+                                                          if (response.success && response.data != null) {
+                                                            ///________subscription_plan_update_________________________________________________
+                                                            Subscription.decreaseSubscriptionLimits(itemType: 'partiesNumber', context: context);
+
+                                                            EasyLoading.showSuccess('${lang.S.of(context).addedSuccessfully}!');
+                                                            ref.invalidate(buyerCustomerProvider);
+                                                            ref.invalidate(supplierProvider);
+                                                            ref.invalidate(allCustomerProvider);
+
+                                                            // Obtener el cliente creado de la respuesta
+                                                            final createdCustomer = CustomerModel.fromJson(response.data['customer'] ?? response.data);
+                                                            Future.delayed(const Duration(milliseconds: 100), () {
+                                                              GoRouter.of(context).pop(createdCustomer);
+                                                            });
+                                                          } else {
+                                                            EasyLoading.showError(response.error ?? 'Error al crear cliente');
+                                                            setState(() {
+                                                              saleButtonClicked = false;
+                                                            });
+                                                          }
                                                         } catch (e) {
+                                                          print('[AddCustomer] Error: $e');
+                                                          EasyLoading.showError('Error al crear cliente: $e');
                                                           setState(() {
                                                             saleButtonClicked = false;
                                                           });
-                                                          EasyLoading.dismiss();
                                                         }
                                                       }
                                                     } else {

@@ -18,10 +18,13 @@ import 'package:salespro_admin/Route/static_string.dart';
 //import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
 import 'package:salespro_admin/const.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:salespro_admin/services/tenant/tenant_model.dart';
+import 'package:salespro_admin/services/tenant/tenant_cache_service.dart';
 
 import '../../Repository/signup_repo.dart';
 import '../Widgets/Constant Data/constant.dart';
 import 'forgot_password.dart';
+import '../../services/version_check_service.dart';
 
 class EmailLogIn extends StatefulWidget {
   const EmailLogIn({super.key});
@@ -38,6 +41,10 @@ class _EmailLogInState extends State<EmailLogIn> {
   String password = '';
   GlobalKey<FormState> globalKey = GlobalKey<FormState>();
   String? user;
+
+  // Tenant/Sucursal actual
+  String _currentTenantCity = 'Cargando...';
+  String _currentTenantId = '';
 
   bool validateAndSave() {
     final form = globalKey.currentState;
@@ -61,6 +68,660 @@ class _EmailLogInState extends State<EmailLogIn> {
   void initState() {
     super.initState();
     _loadSavedCredentials();
+    _checkIfComingFromUpdate();
+    _loadCurrentTenant();
+  }
+
+  void _loadCurrentTenant() async {
+    final prefs = await SharedPreferences.getInstance();
+    final tenantId = prefs.getString('selected_tenant_id') ?? 'sde';
+    final tenant = TenantConfig.getTenantById(tenantId);
+    if (mounted && tenant != null) {
+      setState(() {
+        _currentTenantCity = tenant.city;
+        _currentTenantId = tenant.id;
+      });
+    }
+  }
+
+  void _showChangeBranchDialog(BuildContext context) {
+    final allTenants = TenantConfig.allTenants;
+    String? selectedId = _currentTenantId;
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar',
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width > 500 ? 450 : MediaQuery.of(context).size.width * 0.92,
+                  constraints: const BoxConstraints(maxHeight: 600),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 40,
+                        spreadRadius: 5,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header con gradiente
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFD59345),
+                              const Color(0xFFE8A85C),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(24),
+                            topRight: Radius.circular(24),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.business_rounded,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Seleccionar Sucursal',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Elige la ubicación donde deseas trabajar',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Lista de sucursales
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                          child: Column(
+                            children: allTenants.map((tenant) {
+                              final isSelected = tenant.id == selectedId;
+                              final isCurrent = tenant.id == _currentTenantId;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: InkWell(
+                                  onTap: () {
+                                    setDialogState(() {
+                                      selectedId = tenant.id;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      gradient: isSelected
+                                          ? LinearGradient(
+                                              colors: [
+                                                const Color(0xFFD59345).withValues(alpha: 0.15),
+                                                const Color(0xFFE8A85C).withValues(alpha: 0.08),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            )
+                                          : null,
+                                      color: isSelected ? null : Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? const Color(0xFFD59345)
+                                            : Colors.grey.shade200,
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: const Color(0xFFD59345).withValues(alpha: 0.2),
+                                                blurRadius: 12,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Avatar con icono de ubicación
+                                        Container(
+                                          width: 52,
+                                          height: 52,
+                                          decoration: BoxDecoration(
+                                            gradient: isSelected
+                                                ? const LinearGradient(
+                                                    colors: [Color(0xFFD59345), Color(0xFFE8A85C)],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  )
+                                                : null,
+                                            color: isSelected ? null : Colors.grey.shade200,
+                                            borderRadius: BorderRadius.circular(14),
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              Icons.location_city_rounded,
+                                              color: isSelected ? Colors.white : Colors.grey.shade500,
+                                              size: 26,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+
+                                        // Información
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      tenant.city,
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: isSelected
+                                                            ? const Color(0xFFD59345)
+                                                            : Colors.grey.shade800,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (isCurrent) ...[
+                                                    const SizedBox(width: 8),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 3,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green.shade100,
+                                                        borderRadius: BorderRadius.circular(20),
+                                                      ),
+                                                      child: Text(
+                                                        'Actual',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: Colors.green.shade700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                tenant.name,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+
+                                        // Radio button estilizado
+                                        AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          width: 26,
+                                          height: 26,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: isSelected
+                                                ? const LinearGradient(
+                                                    colors: [Color(0xFFD59345), Color(0xFFE8A85C)],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  )
+                                                : null,
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? const Color(0xFFD59345)
+                                                  : Colors.grey.shade300,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: isSelected
+                                              ? const Icon(
+                                                  Icons.check_rounded,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                )
+                                              : null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+
+                      // Footer con botones
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(24),
+                            bottomRight: Radius.circular(24),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  side: BorderSide(color: Colors.grey.shade300),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Cancelar',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton(
+                                onPressed: selectedId != _currentTenantId
+                                    ? () {
+                                        Navigator.of(context).pop();
+                                        final tenant = TenantConfig.getTenantById(selectedId!);
+                                        if (tenant != null) {
+                                          _switchToTenant(tenant);
+                                        }
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  backgroundColor: const Color(0xFFD59345),
+                                  disabledBackgroundColor: Colors.grey.shade300,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.swap_horiz_rounded,
+                                      color: selectedId != _currentTenantId
+                                          ? Colors.white
+                                          : Colors.grey.shade500,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Cambiar Sucursal',
+                                      style: TextStyle(
+                                        color: selectedId != _currentTenantId
+                                            ? Colors.white
+                                            : Colors.grey.shade500,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutBack,
+          ),
+          child: FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _switchToTenant(TenantModel tenant) async {
+    // Mostrar diálogo de confirmación profesional
+    if (!mounted) return;
+
+    final confirmed = await showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar',
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width > 450 ? 420 : MediaQuery.of(context).size.width * 0.9,
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Icono animado
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFD59345).withValues(alpha: 0.15),
+                          const Color(0xFFE8A85C).withValues(alpha: 0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.swap_horizontal_circle_rounded,
+                      size: 56,
+                      color: Color(0xFFD59345),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Título
+                  const Text(
+                    'Cambiar de Sucursal',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Información del cambio
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        // De
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Actual',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _currentTenantCity,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Flecha
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            color: const Color(0xFFD59345),
+                            size: 28,
+                          ),
+                        ),
+                        // A
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Nueva',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                tenant.city,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFD59345),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Advertencia
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded, color: Colors.amber.shade700, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Se limpiará la caché y la página se recargará automáticamente.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Botones
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: const Color(0xFFD59345),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_rounded, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Confirmar Cambio',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    // Mostrar loading mientras se limpia la caché
+    EasyLoading.show(status: 'Preparando cambio de sucursal...');
+
+    try {
+      // Usar el servicio de caché para limpiar y recargar
+      final cacheService = TenantCacheService();
+
+      // Limpiar caché (cierra sesión de Firebase, limpia SharedPreferences y localStorage)
+      await cacheService.clearCacheForTenantSwitch(tenant.id);
+
+      EasyLoading.showSuccess('Recargando aplicación...', duration: const Duration(seconds: 1));
+
+      // Esperar un momento para que el usuario vea el mensaje
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Recargar la página automáticamente
+      cacheService.reloadWebPage();
+
+    } catch (e) {
+      EasyLoading.dismiss();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cambiar de sucursal: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _checkIfComingFromUpdate() async {
+    final isFromUpdate = await VersionCheckService().isComingFromUpdate();
+    if (isFromUpdate && mounted) {
+      // Mostrar mensaje de éxito
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Actualización completada. Por favor, inicia sesión nuevamente.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      });
+    }
   }
 
   void _loadSavedCredentials() async {
@@ -254,13 +915,30 @@ class _EmailLogInState extends State<EmailLogIn> {
                                       mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        RichText(
-                                            text: TextSpan(text: 'Santo Domingo ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
-                                          TextSpan(
-                                            text: dynamicAppsName,
-                                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: const Color.fromRGBO(0, 167, 250, 1), fontWeight: FontWeight.bold),
-                                          )
-                                        ])),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: RichText(
+                                                  text: TextSpan(text: '${_currentTenantCity.toUpperCase()} ', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: kTitleColor, fontWeight: FontWeight.bold), children: [
+                                                TextSpan(
+                                                  text: dynamicAppsName,
+                                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18, color: const Color.fromRGBO(0, 167, 250, 1), fontWeight: FontWeight.bold),
+                                                )
+                                              ])),
+                                            ),
+                                            // Botón para cambiar sucursal
+                                            TextButton.icon(
+                                              onPressed: () => _showChangeBranchDialog(context),
+                                              icon: const Icon(Icons.store, size: 18, color: Color(0xFFD59345)),
+                                              label: const Text('Cambiar', style: TextStyle(color: Color(0xFFD59345), fontSize: 12)),
+                                              style: TextButton.styleFrom(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                minimumSize: Size.zero,
+                                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                         Text(
                                           'Bienvenido de nuevo, por favor inicia sesión en tu cuenta',
                                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: kRegularFontSize, color: kNeutral500),
@@ -450,6 +1128,48 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                   const Spacer(),
                                         
                                                 ],
+                                              ),
+                                              const SizedBox(height: 16),
+                                              // Badge de versión en pantalla de login
+                                              Center(
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        const Color(0xFF6366f1).withOpacity(0.1),
+                                                        const Color(0xFF8b5cf6).withOpacity(0.1),
+                                                      ],
+                                                    ),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(
+                                                      color: const Color(0xFF6366f1).withOpacity(0.3),
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Container(
+                                                        width: 8,
+                                                        height: 8,
+                                                        decoration: const BoxDecoration(
+                                                          color: Color(0xFF22c55e),
+                                                          shape: BoxShape.circle,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      const Text(
+                                                        'v2.1.74',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: Color(0xFF6366f1),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                           ),

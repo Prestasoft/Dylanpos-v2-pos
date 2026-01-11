@@ -1,6 +1,12 @@
 {
   "rules": {
-    ".read": true,
-    ".write": true
+    "Admin Panel": {
+      ".read": true,
+      ".write": false
+    },
+    "$userId": {
+      ".read": "auth != null && auth.uid == $userId",
+      ".write": "auth != null && auth.uid == $userId"
+    }
   }
 }

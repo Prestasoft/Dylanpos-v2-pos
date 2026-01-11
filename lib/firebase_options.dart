@@ -41,25 +41,15 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-      // SANTO DOMINGO BASE DE DATOS (ACTIVO)
-      apiKey: "AIzaSyCm5cqfIUlV3wll49QA36IRwUrbnww__lo",
-      authDomain: "dylanpos-victorfoto-stodgo.firebaseapp.com",
-      databaseURL: "https://dylanpos-victorfoto-stodgo-dev2.firebaseio.com/",
-      projectId: "dylanpos-victorfoto-stodgo",
-      storageBucket: "dylanpos-victorfoto-stodgo.firebasestorage.app",
-      messagingSenderId: "892139987413",
-      appId: "1:892139987413:web:e93a15d7a74313c78e1d5c",
-      measurementId: "G-B6GB7L2RCM"
-      // ========================================================================= //
-      // SANTIAGO BASE DE DATOS (INACTIVO)
-      // apiKey: "AIzaSyBP1pN3CBRNcUROMYinjTjKCzisLN7RjA0",
-      // authDomain: "dylanpos-v2.firebaseapp.com",
-      // databaseURL: "https://dylanpos-v2-default-rtdb.firebaseio.com",
-      // projectId: "dylanpos-v2",
-      // storageBucket: "dylanpos-v2.firebasestorage.app",
-      // messagingSenderId: "917502791038",
-      // appId: "1:917502791038:web:478334d1eb2748c1c6772f",
-      // measurementId: "G-XN9YDWN22N"
+      // SANTO DOMINGO ESTE BASE DE DATOS (ACTIVO)
+      apiKey: "AIzaSyDfcwhEq_JuUg23OonfQtYtDGzlXQEXI9c",
+      authDomain: "sistema-victor-sde.firebaseapp.com",
+      databaseURL: "https://sistema-victor-sde-default-rtdb.firebaseio.com",
+      projectId: "sistema-victor-sde",
+      storageBucket: "sistema-victor-sde.firebasestorage.app",
+      messagingSenderId: "180650620806",
+      appId: "1:180650620806:web:5daf2c0d43927db6a61e07",
+      measurementId: "G-231GYNFL54"
       );
 
   // SANTIAGO BASE DE DATOS
@@ -81,4 +71,14 @@ class DefaultFirebaseOptions {
   // messagingSenderId: "892139987413",
   // appId: "1:892139987413:web:e93a15d7a74313c78e1d5c",
   // measurementId: "G-B6GB7L2RCM"
+
+  // LA ROMANA BASE DE DATOS
+  // apiKey: "AIzaSyBkEcFoUDjFXH8IcH-oxlWHNZ_H15WfEE0",
+  // authDomain: "sistema-victor-romana.firebaseapp.com",
+  // databaseURL: "https://sistema-victor-romana-default-rtdb.firebaseio.com",
+  // projectId: "sistema-victor-romana",
+  // storageBucket: "sistema-victor-romana.firebasestorage.app",
+  // messagingSenderId: "609430938517",
+  // appId: "1:609430938517:web:fbc73dda27c7fee4974c9c",
+  // measurementId: "G-KHTR23Q0FM"
 }

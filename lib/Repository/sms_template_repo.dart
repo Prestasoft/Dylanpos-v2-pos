@@ -1,32 +1,57 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:salespro_admin/model/whatsapp_marketing_sms_template_model.dart';
 
-import '../const.dart';
+import '../services/api_service.dart';
 
+/// Repositorio de plantillas SMS/WhatsApp - Usa PostgreSQL API
 class SmsTemplateRepo {
-  DatabaseReference ref = FirebaseDatabase.instance.ref();
+  final ApiService _apiService = ApiService();
 
+  /// Obtener todas las plantillas desde PostgreSQL
   Future<WhatsappMarketingSmsTemplateModel> getAllTemplate() async {
-    final model = await ref.child('${await getUserID()}/Whatsapp Marketing Template').get();
-    var data = jsonDecode(jsonEncode(model.value));
-    if (data == null) {
-      return WhatsappMarketingSmsTemplateModel(
-        saleTemplate: 'Loading...',
-        purchaseTemplate: 'Loading...',
-        paymentTemplate: 'Loading...',
-        dueTemplate: 'Loading...',
-        saleReturnTemplate: 'Loading...',
-        purchaseReturnTemplate: 'Loading...',
-        quotationTemplate: 'Loading...',
-      );
-    } else {
-      return WhatsappMarketingSmsTemplateModel.fromJson(data);
+    WhatsappMarketingSmsTemplateModel defaultModel = WhatsappMarketingSmsTemplateModel(
+      saleTemplate: 'Loading...',
+      purchaseTemplate: 'Loading...',
+      paymentTemplate: 'Loading...',
+      dueTemplate: 'Loading...',
+      saleReturnTemplate: 'Loading...',
+      purchaseReturnTemplate: 'Loading...',
+      quotationTemplate: 'Loading...',
+    );
+
+    try {
+      final response = await _apiService.get('whatsapp-templates');
+
+      if (response.success && response.data != null) {
+        final templateData = response.data['whatsapp_template'] ?? response.data;
+        if (templateData != null) {
+          return WhatsappMarketingSmsTemplateModel.fromJson(templateData as Map<String, dynamic>);
+        }
+      }
+      return defaultModel;
+    } catch (e) {
+      return defaultModel;
     }
   }
 
-  Future<void> updateTemplate(WhatsappMarketingSmsTemplateModel model) async {
-    await ref.child('${await getUserID()}/Whatsapp Marketing Template').set(model.toJson());
+  /// Actualizar plantillas
+  Future<bool> updateTemplate(WhatsappMarketingSmsTemplateModel model) async {
+    try {
+      final templateData = Map<String, dynamic>.from(model.toJson());
+      final response = await _apiService.put('whatsapp-templates', templateData);
+      return response.success;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Crear plantillas iniciales
+  Future<bool> createTemplate(WhatsappMarketingSmsTemplateModel model) async {
+    try {
+      final templateData = Map<String, dynamic>.from(model.toJson());
+      final response = await _apiService.post('whatsapp-templates', templateData);
+      return response.success;
+    } catch (e) {
+      return false;
+    }
   }
 }

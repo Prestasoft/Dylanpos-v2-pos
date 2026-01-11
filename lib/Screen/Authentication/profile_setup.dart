@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -153,19 +152,22 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
   late String customerKey;
 
   void getCustomerKey(String phoneNumber) async {
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Customers')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'].toString() == phoneNumber) {
-          customerKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('customers', queryParams: {
+        'phone': phoneNumber,
+        'limit': '1',
+      });
+      if (response.success && response.data != null) {
+        final customers = response.data['customers'] as List<dynamic>? ?? [];
+        if (customers.isNotEmpty) {
+          final customerData = Map<String, dynamic>.from(customers.first);
+          customerKey = customerData['id']?.toString() ?? '';
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting customer key: $e');
+    }
   }
 
   @override
@@ -699,15 +701,7 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                                                                         'Loading...',
                                                                     dismissOnTap:
                                                                         false);
-                                                                final DatabaseReference
-                                                                    personalInformationRef =
-                                                                    FirebaseDatabase
-                                                                        .instance
-                                                                        .ref()
-                                                                        .child(
-                                                                            await getUserID())
-                                                                        .child(
-                                                                            'Personal Information');
+                                                                final apiService = ApiService();
                                                                 PersonalInformationModel
                                                                     personalInformation =
                                                                     PersonalInformationModel(
@@ -751,9 +745,11 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                                                                       gstController
                                                                           .text,
                                                                 );
-                                                                await personalInformationRef.set(
-                                                                    personalInformation
-                                                                        .toJson());
+                                                                await apiService.put(
+                                                                    'personal-information',
+                                                                    Map<String, dynamic>.from(
+                                                                        personalInformation
+                                                                            .toJson()));
 
                                                                 // EasyLoading.showSuccess('Added Successfully', duration: const Duration(milliseconds: 1000));
 
@@ -764,19 +760,9 @@ class _ProfileUpdateState extends State<ProfileUpdate> {
                                                                         id: await getUserID());
                                                                 if (sellerUserRef !=
                                                                     null) {
-                                                                  final DatabaseReference
-                                                                      superAdminSellerListRepo =
-                                                                      FirebaseDatabase
-                                                                          .instance
-                                                                          .ref()
-                                                                          .child(
-                                                                              'Admin Panel')
-                                                                          .child(
-                                                                              'Seller List')
-                                                                          .child(
-                                                                              sellerUserRef);
-                                                                  superAdminSellerListRepo
-                                                                      .update({
+                                                                  await apiService.put(
+                                                                      'seller-list/$sellerUserRef',
+                                                                      {
                                                                     'phoneNumber':
                                                                         phoneNumberController
                                                                             .text,

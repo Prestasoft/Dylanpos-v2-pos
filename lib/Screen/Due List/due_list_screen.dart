@@ -1,4 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -13,12 +12,50 @@ import 'package:salespro_admin/model/add_to_cart_model.dart'; // Importar modelo
 import 'package:intl/intl.dart'; // Añadir para manejo de fechas
 
 import '../../Provider/customer_provider.dart';
+import '../../Provider/transactions_provider.dart';
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../../subscription.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
 import '../currency/currency_provider.dart';
 import 'due_popUp.dart';
+
+/// Modelo para agrupar las deudas por cliente
+class CustomerDueInfo {
+  final String customerName;
+  final String customerPhone;
+  final String customerType;
+  final double totalDue;
+  final int invoiceCount;
+  final List<SaleTransactionModel> pendingSales;
+
+  CustomerDueInfo({
+    required this.customerName,
+    required this.customerPhone,
+    required this.customerType,
+    required this.totalDue,
+    required this.invoiceCount,
+    required this.pendingSales,
+  });
+
+  /// Convertir a CustomerModel para compatibilidad con el código existente
+  CustomerModel toCustomerModel() {
+    return CustomerModel(
+      id: customerPhone, // Usar teléfono como ID temporal
+      customerName: customerName,
+      phoneNumber: customerPhone,
+      type: customerType,
+      emailAddress: '',
+      customerAddress: '',
+      dueAmount: totalDue.toString(),
+      profilePicture: '',
+      openingBalance: '0',
+      remainedBalance: '0',
+      gst: '',
+    );
+  }
+}
 
 class DueList extends StatefulWidget {
   const DueList({Key? key}) : super(key: key);
@@ -198,32 +235,34 @@ class _DueListState extends State<DueList> {
   Future<List<SaleTransactionModel>> _obtenerFacturasPendientes(String clienteId) async {
     List<SaleTransactionModel> facturasPendientes = [];
     try {
-      final userId = await getUserID();
-      final ventasRef = FirebaseDatabase.instance.ref().child(userId).child('Sales Transition');
-      final snapshot = await ventasRef.get();
-      
-      if (snapshot.exists) {
-        Map<dynamic, dynamic> ventas = snapshot.value as Map<dynamic, dynamic>;
-        ventas.forEach((key, value) {
-          SaleTransactionModel factura = SaleTransactionModel.fromJson(value);
-          if (factura.customerPhone == clienteId && 
-              (factura.dueAmount != null && factura.dueAmount! > 0)) {
-            factura.key = key;
+      final apiService = ApiService();
+      final response = await apiService.get('sales', queryParams: {
+        'customerPhone': clienteId,
+        'hasDue': 'true',
+      });
+
+      if (response.success && response.data != null) {
+        final sales = response.data['sales'] as List<dynamic>? ?? [];
+        for (var saleData in sales) {
+          final saleMap = Map<String, dynamic>.from(saleData);
+          SaleTransactionModel factura = SaleTransactionModel.fromJson(saleMap);
+          if (factura.dueAmount != null && factura.dueAmount! > 0) {
+            factura.key = saleMap['id']?.toString() ?? '';
             facturasPendientes.add(factura);
           }
-        });
+        }
       }
     } catch (e) {
       print('Error al obtener facturas pendientes: $e');
     }
-    
+
     // Ordenar por fecha (más recientes primero)
     facturasPendientes.sort((a, b) {
       DateTime fechaA = DateTime.tryParse(a.purchaseDate) ?? DateTime(1900);
       DateTime fechaB = DateTime.tryParse(b.purchaseDate) ?? DateTime(1900);
       return fechaB.compareTo(fechaA);
     });
-    
+
     return facturasPendientes;
   }
 
@@ -658,23 +697,74 @@ class _DueListState extends State<DueList> {
       child: Scaffold(
           backgroundColor: kDarkWhite,
           body: Consumer(builder: (_, ref, watch) {
-            AsyncValue<List<CustomerModel>> customers =
-                ref.watch(allCustomerProvider);
-            return customers.when(data: (allCustomerList) {
-              List<CustomerModel> customerList = [];
-              List<CustomerModel> supplierList = [];
-              List<CustomerModel> showAbleCustomer = [];
-              List<CustomerModel> showAbleSupplier = [];
-              for (var value1 in allCustomerList) {
-                if (value1.type != 'Proveedores' &&
-                    value1.dueAmount.toDouble() > 0) {
-                  customerList.add(value1);
-                } else {
-                  value1.dueAmount.toDouble() > 0
-                      ? supplierList.add(value1)
-                      : null;
+            // Usamos transitionProvider para obtener todas las ventas
+            AsyncValue<List<SaleTransactionModel>> salesAsync =
+                ref.watch(transitionProvider);
+            return salesAsync.when(data: (allSales) {
+              // Agrupar ventas con dueAmount > 0 por cliente
+              Map<String, CustomerDueInfo> customerDuesMap = {};
+              Map<String, CustomerDueInfo> supplierDuesMap = {};
+
+              for (var sale in allSales) {
+                // Solo procesar ventas con deuda pendiente
+                if (sale.dueAmount != null && sale.dueAmount! > 0) {
+                  // Usar teléfono como key ya que es más consistente que el nombre
+                  final key = sale.customerPhone.isNotEmpty
+                      ? sale.customerPhone
+                      : sale.customerName;
+
+                  // Determinar si es cliente o proveedor
+                  final isSupplier = sale.customerType == 'Proveedores' ||
+                                    sale.customerType == 'Proveedor' ||
+                                    sale.customerType == 'Supplier';
+
+                  final targetMap = isSupplier ? supplierDuesMap : customerDuesMap;
+
+                  // Determinar el tipo correcto basado en si es proveedor o cliente
+                  // Esto corrige el problema de "Unknown" cuando customerType no está definido
+                  final correctCustomerType = isSupplier ? 'Proveedor' : 'Cliente';
+
+                  if (targetMap.containsKey(key)) {
+                    // Actualizar existente
+                    final existing = targetMap[key]!;
+                    targetMap[key] = CustomerDueInfo(
+                      customerName: existing.customerName,
+                      customerPhone: existing.customerPhone,
+                      customerType: existing.customerType,
+                      totalDue: existing.totalDue + (sale.dueAmount ?? 0),
+                      invoiceCount: existing.invoiceCount + 1,
+                      pendingSales: [...existing.pendingSales, sale],
+                    );
+                  } else {
+                    // Crear nuevo - usar correctCustomerType en vez de sale.customerType
+                    targetMap[key] = CustomerDueInfo(
+                      customerName: sale.customerName,
+                      customerPhone: sale.customerPhone,
+                      customerType: correctCustomerType,
+                      totalDue: sale.dueAmount ?? 0,
+                      invoiceCount: 1,
+                      pendingSales: [sale],
+                    );
+                  }
                 }
               }
+
+              // Convertir a listas de CustomerModel para compatibilidad
+              List<CustomerModel> customerList = customerDuesMap.values
+                  .map((info) => info.toCustomerModel())
+                  .toList();
+              List<CustomerModel> supplierList = supplierDuesMap.values
+                  .map((info) => info.toCustomerModel())
+                  .toList();
+
+              // Ordenar por deuda total (mayor a menor)
+              customerList.sort((a, b) =>
+                  double.parse(b.dueAmount).compareTo(double.parse(a.dueAmount)));
+              supplierList.sort((a, b) =>
+                  double.parse(b.dueAmount).compareTo(double.parse(a.dueAmount)));
+
+              List<CustomerModel> showAbleCustomer = [];
+              List<CustomerModel> showAbleSupplier = [];
 
               ///___________customer_filter______________________________________________________
               for (var element in customerList) {

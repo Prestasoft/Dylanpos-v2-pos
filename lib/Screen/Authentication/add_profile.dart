@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -180,10 +179,7 @@ class _ProfileAddState extends State<ProfileAdd> {
 
   ///_____post_General_category___________________________________________________________________
   Future<void> postGeneralCategory() async {
-    final DatabaseReference categoryInformationRef = FirebaseDatabase.instance
-        .ref()
-        .child(await getUserID())
-        .child('Categories');
+    final apiService = ApiService();
     CategoryModel categoryModel = CategoryModel(
         categoryName: 'General',
         size: false,
@@ -192,7 +188,10 @@ class _ProfileAddState extends State<ProfileAdd> {
         type: false,
         weight: false,
         warranty: false);
-    await categoryInformationRef.push().set(categoryModel.toJson());
+    await apiService.post(
+      'categories',
+      Map<String, dynamic>.from(categoryModel.toJson()),
+    );
   }
 
   List<String> language = [
@@ -242,19 +241,22 @@ class _ProfileAddState extends State<ProfileAdd> {
   late String customerKey;
 
   void getCustomerKey(String phoneNumber) async {
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Customers')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'].toString() == phoneNumber) {
-          customerKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('customers', queryParams: {
+        'phone': phoneNumber,
+        'limit': '1',
+      });
+      if (response.success && response.data != null) {
+        final customers = response.data['customers'] as List<dynamic>? ?? [];
+        if (customers.isNotEmpty) {
+          final customerData = Map<String, dynamic>.from(customers.first);
+          customerKey = customerData['id']?.toString() ?? '';
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting customer key: $e');
+    }
   }
 
   @override
@@ -633,14 +635,7 @@ class _ProfileAddState extends State<ProfileAdd> {
                                                 EasyLoading.show(
                                                     status: 'Loading...',
                                                     dismissOnTap: false);
-                                                final DatabaseReference
-                                                    personalInformationRef =
-                                                    FirebaseDatabase.instance
-                                                        .ref()
-                                                        .child(
-                                                            await getUserID())
-                                                        .child(
-                                                            'Personal Information');
+                                                final apiService = ApiService();
                                                 PersonalInformationModel
                                                     personalInformation =
                                                     PersonalInformationModel(
@@ -682,9 +677,10 @@ class _ProfileAddState extends State<ProfileAdd> {
                                                 );
 
                                                 ///________super_admin_data_post_________________________________________________________
-                                                await personalInformationRef
-                                                    .set(personalInformation
-                                                        .toJson());
+                                                await apiService.post(
+                                                    'personal-information',
+                                                    Map<String, dynamic>.from(personalInformation.toJson()),
+                                                );
                                                 SellerInfoModel
                                                     sellerInfoModel =
                                                     SellerInfoModel(
@@ -715,14 +711,6 @@ class _ProfileAddState extends State<ProfileAdd> {
                                                   gst: gstController.text,
                                                 );
                                                 //_______________warehouse_setup______________
-                                                final DatabaseReference
-                                                    productInformationRef =
-                                                    FirebaseDatabase.instance
-                                                        .ref()
-                                                        .child(
-                                                            await getUserID())
-                                                        .child(
-                                                            'Warehouse List');
                                                 WareHouseModel
                                                     warehouse = WareHouseModel(
                                                         warehouseName:
@@ -732,16 +720,14 @@ class _ProfileAddState extends State<ProfileAdd> {
                                                                 .text,
                                                         id: id.toString());
 
-                                                await productInformationRef
-                                                    .push()
-                                                    .set(warehouse.toJson());
-                                                await FirebaseDatabase.instance
-                                                    .ref()
-                                                    .child('Admin Panel')
-                                                    .child('Seller List')
-                                                    .push()
-                                                    .set(sellerInfoModel
-                                                        .toJson());
+                                                await apiService.post(
+                                                    'warehouses',
+                                                    Map<String, dynamic>.from(warehouse.toJson()),
+                                                );
+                                                await apiService.post(
+                                                    'seller-list',
+                                                    Map<String, dynamic>.from(sellerInfoModel.toJson()),
+                                                );
 
                                                 EasyLoading.showSuccess(
                                                     'Added Successfully',
@@ -752,19 +738,12 @@ class _ProfileAddState extends State<ProfileAdd> {
 
                                                 ///_________free_subscription_______________________________________
 
-                                                final DatabaseReference
-                                                    subscriptionRef =
-                                                    FirebaseDatabase.instance
-                                                        .ref()
-                                                        .child(FirebaseAuth
-                                                            .instance
-                                                            .currentUser!
-                                                            .uid)
-                                                        .child('Subscription');
-                                                await subscriptionRef.set(
-                                                    Subscription
+                                                await apiService.post(
+                                                    'subscriptions',
+                                                    Map<String, dynamic>.from(Subscription
                                                         .freeSubscriptionModel
-                                                        .toJson());
+                                                        .toJson()),
+                                                );
                                                 EasyLoading.showSuccess(
                                                     'Added Successfully!');
                                                 // ignore: unused_result
@@ -1133,12 +1112,7 @@ class _ProfileAddState extends State<ProfileAdd> {
                                         EasyLoading.show(
                                             status: 'Loading...',
                                             dismissOnTap: false);
-                                        final DatabaseReference
-                                            personalInformationRef =
-                                            FirebaseDatabase.instance
-                                                .ref()
-                                                .child(await getUserID())
-                                                .child('Personal Information');
+                                        final apiService = ApiService();
                                         PersonalInformationModel
                                             personalInformation =
                                             PersonalInformationModel(
@@ -1176,8 +1150,10 @@ class _ProfileAddState extends State<ProfileAdd> {
                                         );
 
                                         ///________super_admin_data_post_________________________________________________________
-                                        await personalInformationRef
-                                            .set(personalInformation.toJson());
+                                        await apiService.post(
+                                            'personal-information',
+                                            Map<String, dynamic>.from(
+                                                personalInformation.toJson()));
                                         SellerInfoModel sellerInfoModel =
                                             SellerInfoModel(
                                           businessCategory: selectedShopCategory
@@ -1202,27 +1178,20 @@ class _ProfileAddState extends State<ProfileAdd> {
                                           gst: gstController.text,
                                         );
                                         //_______________warehouse_setup______________
-                                        final DatabaseReference
-                                            productInformationRef =
-                                            FirebaseDatabase.instance
-                                                .ref()
-                                                .child(await getUserID())
-                                                .child('Warehouse List');
                                         WareHouseModel warehouse =
                                             WareHouseModel(
                                                 warehouseName: 'InHouse',
                                                 warehouseAddress:
                                                     companyNameController.text,
                                                 id: id.toString());
-                                        await productInformationRef
-                                            .push()
-                                            .set(warehouse.toJson());
-                                        await FirebaseDatabase.instance
-                                            .ref()
-                                            .child('Admin Panel')
-                                            .child('Seller List')
-                                            .push()
-                                            .set(sellerInfoModel.toJson());
+                                        await apiService.post(
+                                            'warehouses',
+                                            Map<String, dynamic>.from(
+                                                warehouse.toJson()));
+                                        await apiService.post(
+                                            'seller-list',
+                                            Map<String, dynamic>.from(
+                                                sellerInfoModel.toJson()));
 
                                         EasyLoading.showSuccess(
                                             'Added Successfully',
@@ -1233,16 +1202,11 @@ class _ProfileAddState extends State<ProfileAdd> {
 
                                         ///_________free_subscription_______________________________________
 
-                                        final DatabaseReference
-                                            subscriptionRef = FirebaseDatabase
-                                                .instance
-                                                .ref()
-                                                .child(FirebaseAuth
-                                                    .instance.currentUser!.uid)
-                                                .child('Subscription');
-                                        await subscriptionRef.set(Subscription
-                                            .freeSubscriptionModel
-                                            .toJson());
+                                        await apiService.post(
+                                            'subscriptions',
+                                            Map<String, dynamic>.from(Subscription
+                                                .freeSubscriptionModel
+                                                .toJson()));
                                         EasyLoading.showSuccess(
                                             'Added Successfully!');
                                         // ignore: unused_result

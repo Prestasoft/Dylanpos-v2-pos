@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -18,6 +15,7 @@ import 'package:uuid/uuid.dart';
 import '../../Provider/product_provider.dart';
 import '../../commas.dart';
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
 import 'edit_warehouse.dart';
@@ -64,28 +62,33 @@ class _WareHouseListState extends State<WareHouseList> {
       required WidgetRef updateRef,
       required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
-    String expenseKey = '';
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Warehouse List')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['warehouseName'].toString() == incomeCategoryName) {
-          expenseKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      // Buscar warehouse por nombre
+      final response = await apiService.get('warehouses?warehouseName=$incomeCategoryName');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> warehouses = [];
+        if (data is Map && data['warehouses'] != null) {
+          warehouses = data['warehouses'] as List<dynamic>;
+        } else if (data is List) {
+          warehouses = data;
+        }
+        if (warehouses.isNotEmpty) {
+          final warehouse = Map<String, dynamic>.from(warehouses.first);
+          final warehouseId = warehouse['id']?.toString() ?? warehouse['key']?.toString();
+          if (warehouseId != null) {
+            await apiService.delete('warehouses/$warehouseId');
+          }
         }
       }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance
-        .ref("${await getUserID()}/Warehouse List/$expenseKey");
-    await ref.remove();
-    final _ = await updateRef.refresh(warehouseProvider);
-    EasyLoading.showSuccess(lang.S.of(context).done).then(
-      (value) => GoRouter.of(context).pop(),
-    );
+      final _ = await updateRef.refresh(warehouseProvider);
+      EasyLoading.showSuccess(lang.S.of(context).done).then(
+        (value) => GoRouter.of(context).pop(),
+      );
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
+    }
   }
 
   num grandTotalStockValue = 0;
@@ -393,26 +396,21 @@ class _WareHouseListState extends State<WareHouseList> {
                                                                                 if (warehouseName != '' && !names.contains(warehouseName.toLowerCase().removeAllWhiteSpace())) {
                                                                                   try {
                                                                                     EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                                                    final DatabaseReference productInformationRef = FirebaseDatabase.instance
-                                                                                        .ref()
-                                                                                        .child(await getUserID())
-                                                                                        .child('Warehouse List');
-                                                                                    
-                                                                                    DatabaseReference newRef = productInformationRef.push();
-                                                                                    
-                                                                                    // Asegurar que el key no es nulo
-                                                                                    final String newId = newRef.key ?? const Uuid().v4(); // Usamos el key o generamos uno alternativo
-                                                                                    
+                                                                                    final apiService = ApiService();
+
+                                                                                    final String newId = const Uuid().v4();
+
                                                                                     WareHouseModel warehouse = WareHouseModel(
-                                                                                      warehouseName: warehouseName, 
-                                                                                      warehouseAddress: address, 
-                                                                                      id: newId // Usamos el ID asegurado
+                                                                                      warehouseName: warehouseName,
+                                                                                      warehouseAddress: address,
+                                                                                      id: newId
                                                                                     );
-                                                                                    
-                                                                                    await newRef.set(warehouse.toJson());
-                                                                                    
+
+                                                                                    await apiService.post('warehouses',
+                                                                                        Map<String, dynamic>.from(warehouse.toJson()));
+
                                                                                     EasyLoading.showSuccess(lang.S.of(context).addedSuccessfully, duration: const Duration(milliseconds: 500));
-                                                                                    
+
                                                                                     // Refresh provider
                                                                                     await ref.refresh(warehouseProvider);
 

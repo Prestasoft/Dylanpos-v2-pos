@@ -106,15 +106,25 @@ class UserRoleModel {
   bool canEdit(String type) => getPermission(type)?.edit ?? false;
   bool canDelete(String type) => getPermission(type)?.delete ?? false;
 
-  factory UserRoleModel.fromJson(Map<String, dynamic> json) => UserRoleModel(
-        email: json["email"] ?? '',
-        userTitle: json["userTitle"] ?? '',
-        databaseId: json["databaseId"] ?? '',
-        userRoleName: json["userRoleName"] ?? '',
-        permissions: json["permissions"] == null
-            ? []
-            : List<Permission>.from(
-                json["permissions"].map((x) => Permission.fromJson(x))),
+  factory UserRoleModel.fromJson(Map<String, dynamic> json) {
+    // Helper para convertir permisos de forma segura
+    List<Permission> parsePermissions(dynamic perms) {
+      if (perms == null) return [];
+      if (perms is! List) return [];
+      return perms.map((x) {
+        if (x is Map) {
+          return Permission.fromJson(Map<String, dynamic>.from(x));
+        }
+        return Permission(type: '');
+      }).where((p) => p.type.isNotEmpty).toList();
+    }
+
+    return UserRoleModel(
+        email: json["email"]?.toString() ?? '',
+        userTitle: json["userTitle"]?.toString() ?? '',
+        databaseId: json["databaseId"]?.toString() ?? '',
+        userRoleName: json["userRoleName"]?.toString() ?? '',
+        permissions: parsePermissions(json["permissions"]),
         saleView: json["saleView"] ?? false,
         saleEdit: json["saleEdit"] ?? false,
         saleDelete: json["saleDelete"] ?? false,
@@ -155,6 +165,7 @@ class UserRoleModel {
         hrmEdit: json["hrmEdit"] ?? false,
         hrmDelete: json["hrmDelete"] ?? false,
       );
+  }
 
   Map<String, dynamic> toJson() => {
         "email": email,
@@ -220,11 +231,11 @@ class Permission {
   });
 
   factory Permission.fromJson(Map<String, dynamic> json) => Permission(
-        type: json["type"],
-        title: json["title"],
-        view: json["view"],
-        edit: json["edit"],
-        delete: json["delete"],
+        type: json["type"]?.toString() ?? '',
+        title: json["title"]?.toString(),
+        view: json["view"] == true || json["view"] == 'true',
+        edit: json["edit"] == true || json["edit"] == 'true',
+        delete: json["delete"] == true || json["delete"] == 'true',
       );
 
   Map<String, dynamic> toJson() => {

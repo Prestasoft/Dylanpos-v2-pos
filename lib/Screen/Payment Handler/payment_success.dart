@@ -1,9 +1,9 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Repository/subscriptionPlanRepo.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:salespro_admin/services/api_service.dart';
 
 import '../../model/subscription_model.dart';
 import '../../model/subscription_plan_model.dart';
@@ -44,9 +44,8 @@ class PaymentSuccess extends StatefulWidget {
       }
     }
 
-    final DatabaseReference subscriptionRef = FirebaseDatabase.instance.ref().child(userId).child('Subscription');
-
-    await subscriptionRef.set(subscriptionModel.toJson());
+    final apiService = ApiService();
+    await apiService.post('subscriptions', Map<String, dynamic>.from(subscriptionModel.toJson()));
     EasyLoading.showSuccess('Added Successfully', duration: const Duration());
     // ignore: use_build_context_synchronously
     // Navigator.pushNamed(context, MtHomeScreen.route);

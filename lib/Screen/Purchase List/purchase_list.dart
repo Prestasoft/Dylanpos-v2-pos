@@ -1,4 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -23,6 +22,7 @@ import '../../delete_invoice_functions.dart';
 import '../../model/purchase_transation_model.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
+import '../../services/api_service.dart';
 
 class PurchaseList extends StatefulWidget {
   const PurchaseList({super.key});
@@ -581,9 +581,13 @@ class _PurchaseListState extends State<PurchaseList> {
                                                                                       isFromPurchase: true,
                                                                                     );
                                                                                     await delete.deleteDailyTransaction(invoice: paginatedTransactions[index].invoiceNumber, status: 'Purchase', field: 'purchaseTransactionModel');
-                                                                                    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Transition/${paginatedTransactions[index].key}");
 
-                                                                                    await ref.remove();
+                                                                                    // Delete purchase via API
+                                                                                    final apiService = ApiService();
+                                                                                    final purchaseKey = paginatedTransactions[index].key;
+                                                                                    if (purchaseKey != null && purchaseKey.isNotEmpty) {
+                                                                                      await apiService.delete('purchases/$purchaseKey');
+                                                                                    }
                                                                                     // ignore: unused_result
                                                                                     consuearRef.refresh(purchaseTransitionProvider);
                                                                                     // ignore: unused_result

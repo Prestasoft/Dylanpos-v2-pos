@@ -1,4 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -10,6 +9,7 @@ import 'package:salespro_admin/Provider/expense_category_proivder.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/income_catehory_model.dart';
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class AddIncomeCategory extends StatefulWidget {
@@ -160,14 +160,11 @@ class _AddIncomeCategoryState extends State<AddIncomeCategory> {
                                 EasyLoading.show(
                                     status: '${lang.S.of(context).loading}...',
                                     dismissOnTap: false);
-                                final DatabaseReference productInformationRef =
-                                    FirebaseDatabase.instance
-                                        .ref()
-                                        .child(await getUserID())
-                                        .child('Income Category');
-                                await productInformationRef
-                                    .push()
-                                    .set(expenseCategory.toJson());
+                                final apiService = ApiService();
+                                await apiService.post(
+                                  'categories/incomes',
+                                  Map<String, dynamic>.from(expenseCategory.toJson()),
+                                );
                                 EasyLoading.showSuccess(
                                     lang.S.of(context).addedSuccessfully,
                                     duration:

@@ -1,7 +1,5 @@
 // ignore_for_file: unused_result
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,9 +8,9 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../../Provider/user_role_provider.dart';
-import '../../Repository/get_user_role_repo.dart';
 import '../../const.dart';
 import '../../model/user_role_model.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class AddUserRole extends StatefulWidget {
@@ -364,15 +362,30 @@ class _AddUserRoleState extends State<AddUserRole> {
   // Método para enviar email de restablecimiento de contraseña
   Future<void> _sendPasswordResetEmail(String email) async {
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Se ha enviado un correo de restablecimiento de contraseña a $email'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      final apiService = ApiService();
+      final response = await apiService.post('auth/password-reset', {
+        'email': email,
+      });
+
+      if (response.success) {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Se ha enviado un correo de restablecimiento de contraseña a $email'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al enviar correo de restablecimiento: ${response.message}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } catch (e) {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1448,47 +1461,44 @@ class _AddUserRoleState extends State<AddUserRole> {
                       EasyLoading.show(
                           status: '${lang.S.of(context).loading}...',
                           dismissOnTap: false);
-                      UserRoleRepo repo = UserRoleRepo();
-                      String adminRoleKey = '';
-                      String userRoleKey = '';
-                      var adminRoleList = await repo.getAllUserRoleFromAdmin();
-                      var userRoleList = await repo.getAllUserRole();
-                      for (var element in adminRoleList) {
-                        if (element.email ==
-                            (widget.userRoleModel?.email ?? "")) {
-                          adminRoleKey = element.userKey ?? '';
-                          break;
+
+                      // Find user by email via API
+                      final apiService = ApiService();
+                      String? userId;
+
+                      // Find the user in PostgreSQL by email
+                      final userResponse = await apiService.get('users?email=${widget.userRoleModel?.email ?? ""}');
+                      if (userResponse.success && userResponse.data != null) {
+                        final data = userResponse.data;
+                        List<dynamic> users = [];
+                        if (data is Map && data['users'] != null) {
+                          users = data['users'] as List<dynamic>;
+                        } else if (data is List) {
+                          users = data;
                         }
-                      }
-                      for (var element in userRoleList) {
-                        if (element.email ==
-                            (widget.userRoleModel?.email ?? "")) {
-                          userRoleKey = element.userKey ?? '';
-                          break;
+                        if (users.isNotEmpty) {
+                          final userData = Map<String, dynamic>.from(users.first);
+                          userId = userData['id']?.toString();
                         }
                       }
 
-                      DatabaseReference dataRef = FirebaseDatabase.instance
-                          .ref("$constUserId/User Role/$userRoleKey");
-                      DatabaseReference adminDataRef = FirebaseDatabase.instance
-                          .ref("Admin Panel/User Role/$adminRoleKey");
                       userRolePermissionModel.email = emailController.text;
                       userRolePermissionModel.userTitle = titleController.text;
                       userRolePermissionModel.userRoleName = userRoleName.text;
-                      // userRolePermissionModel.databaseId =
-                      //     widget.userRoleModel!.databaseId;
                       userRolePermissionModel.databaseId = constUserId;
-                      await dataRef.update(userRolePermissionModel.toJson());
-                      await adminDataRef
-                          .update(userRolePermissionModel.toJson());
-                      
-                      // Si se cambió la contraseña, enviar email de restablecimiento
-                      if (passwordController.text.isNotEmpty && 
-                          confirmPasswordController.text.isNotEmpty &&
-                          passwordController.text == confirmPasswordController.text) {
-                        await _sendPasswordResetEmail(emailController.text);
+
+                      // Update user via API
+                      if (userId != null && userId.isNotEmpty) {
+                        final updateData = userRolePermissionModel.toJson();
+                        // Add password if changed
+                        if (passwordController.text.isNotEmpty &&
+                            confirmPasswordController.text.isNotEmpty &&
+                            passwordController.text == confirmPasswordController.text) {
+                          updateData['password'] = passwordController.text;
+                        }
+                        await apiService.put('users/$userId', updateData);
                       }
-                      
+
                       ref.refresh(userRoleProvider);
                       ref.refresh(allUserRoleProvider);
 
@@ -1508,8 +1518,7 @@ class _AddUserRoleState extends State<AddUserRole> {
                     if (!validateAndSave()) return;
                     userRolePermissionModel.email = emailController.text;
                     userRolePermissionModel.userTitle = titleController.text;
-                    userRolePermissionModel.databaseId =
-                        FirebaseAuth.instance.currentUser!.uid;
+                    userRolePermissionModel.databaseId = constUserId;
                     userRolePermissionModel.userRoleName = userRoleName.text;
                     signUp(
                       context: context,
@@ -1626,90 +1635,54 @@ class _AddUserRoleState extends State<AddUserRole> {
     required UserRoleModel userRoleModel}) async {
     EasyLoading.show(status: '${lang.S.of(context).registering}....');
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
+      final apiService = ApiService();
 
-      if (userCredential.additionalUserInfo!.isNewUser) {
-        await FirebaseDatabase.instance
-            .ref()
-            .child(userRoleModel.databaseId ?? "")
-            .child('User Role')
-            .push()
-            .set(userRoleModel.toJson());
-        await FirebaseDatabase.instance
-            .ref()
-            .child('Admin Panel')
-            .child('User Role')
-            .push()
-            .set(userRoleModel.toJson());
+      // Create user via API (register endpoint)
+      final userData = userRoleModel.toJson();
+      userData['email'] = email;
+      userData['password'] = password;
+      userData['name'] = userRoleModel.userTitle ?? email;
+      userData['role'] = userRoleModel.userRoleName ?? 'user';
 
-        await FirebaseAuth.instance.signOut();
-        await Future.delayed(const Duration(seconds: 1));
-        try {
-          await Future.delayed(const Duration(seconds: 1));
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-              email: mainLoginEmail, password: mainLoginPassword);
-          await Future.delayed(const Duration(seconds: 2));
-          ref.refresh(userRoleProvider);
+      final response = await apiService.post('auth/register', userData);
 
-          EasyLoading.showSuccess(lang.S.of(context).successfullyAdded);
-          // ignore: use_build_context_synchronously
-          // Navigator.of(context).pushNamed(MtHomeScreen.route);
-          context.go('/dashboard');
-        } on FirebaseAuthException catch (e) {
-          EasyLoading.showError(lang.S.of(context).error);
-          EasyLoading.showError(e.message.toString());
-          if (e.code == 'user-not-found') {
-            // ignore: use_build_context_synchronously
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('${lang.S.of(context).noUserFoundForThatEmail}.'),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          } else if (e.code == 'wrong-password') {
-            //EasyLoading.showError('wrong-password');
-            EasyLoading.showError(lang.S.of(context).wrongPassword);
-            // ignore: use_build_context_synchronously
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                //content: Text('Wrong password provided for that user.'),
-                content: Text(
-                    '${lang.S.of(context).wrongPasswordProvidedForThatUser}.'),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        } catch (e) {
-          EasyLoading.showError(e.toString());
+      if (response.success) {
+        ref.refresh(userRoleProvider);
+        ref.refresh(allUserRoleProvider);
+
+        EasyLoading.showSuccess(lang.S.of(context).successfullyAdded);
+        // ignore: use_build_context_synchronously
+        context.go('/dashboard');
+      } else {
+        // Handle specific error cases
+        final errorMessage = response.message ?? '';
+        if (errorMessage.contains('already exists') || errorMessage.contains('already in use')) {
           // ignore: use_build_context_synchronously
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.toString()),
+              content: Text(
+                  '${lang.S.of(context).theAccountAlreadyExistsForThatEmail}.'),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else if (errorMessage.contains('weak') || errorMessage.contains('password')) {
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${lang.S.of(context).thePasswordProvidedIsTooWeak}.'),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
               duration: const Duration(seconds: 3),
             ),
           );
         }
-      }
-    } on FirebaseAuthException catch (e) {
-      EasyLoading.showError(lang.S.of(context).failedWithError);
-      if (e.code == 'weak-password') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            // content: Text('The password provided is too weak.'),
-            content: Text('${lang.S.of(context).thePasswordProvidedIsTooWeak}.'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      } else if (e.code == 'email-already-in-use') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            //content: Text('The account already exists for that email.'),
-            content: Text(
-                '${lang.S.of(context).theAccountAlreadyExistsForThatEmail}.'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        EasyLoading.showError(lang.S.of(context).failedWithError);
       }
     } catch (e) {
       EasyLoading.showError(lang.S.of(context).failedWithError);

@@ -1,13 +1,15 @@
 import 'package:intl/intl.dart';
 
 class CustomerModel {
-  late String customerName, phoneNumber, type, profilePicture, emailAddress, 
+  String? id;  // ID del cliente en PostgreSQL (UUID)
+  late String customerName, phoneNumber, type, profilePicture, emailAddress,
               customerAddress, dueAmount, openingBalance, remainedBalance, gst;
   bool? receiveWhatsappUpdates;
-  String? createdAt;  // Nuevo campo
-  String? updatedAt;  // Nuevo campo
+  String? createdAt;
+  String? updatedAt;
 
   CustomerModel({
+    this.id,
     required this.customerName,
     required this.phoneNumber,
     required this.type,
@@ -42,33 +44,46 @@ class CustomerModel {
   }
 
   factory CustomerModel.fromJson(Map<dynamic, dynamic> json) {
+    // Helper para convertir fechas desde int (milliseconds), String, o null
+    String parseDateTime(dynamic value) {
+      if (value == null) {
+        return DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      }
+      if (value is int) {
+        return DateFormat('yyyy-MM-dd HH:mm:ss')
+            .format(DateTime.fromMillisecondsSinceEpoch(value));
+      }
+      return value.toString();
+    }
+
     return CustomerModel(
-      customerName: json['customerName'] as String,
-      phoneNumber: json['phoneNumber'] as String,
-      type: json['type'] as String,
-      profilePicture: json['profilePicture'] as String,
-      emailAddress: json['emailAddress'] as String,
-      customerAddress: json['customerAddress'] as String,
-      dueAmount: json['due']?.toString() ?? '0',  // Manejo de null
-      openingBalance: json['openingBalance']?.toString() ?? '0',
-      remainedBalance: json['remainedBalance']?.toString() ?? '0',
+      id: json['id']?.toString(),  // UUID del cliente en PostgreSQL
+      customerName: json['customerName']?.toString() ?? json['name']?.toString() ?? '',
+      phoneNumber: json['phoneNumber']?.toString() ?? json['phone']?.toString() ?? '',
+      type: json['type']?.toString() ?? json['customer_type']?.toString() ?? 'Customer',
+      profilePicture: json['profilePicture']?.toString() ?? json['profile_picture']?.toString() ?? '',
+      emailAddress: json['emailAddress']?.toString() ?? json['email']?.toString() ?? '',
+      customerAddress: json['customerAddress']?.toString() ?? json['address']?.toString() ?? '',
+      dueAmount: json['due']?.toString() ?? json['dueAmount']?.toString() ?? '0',
+      openingBalance: json['openingBalance']?.toString() ?? json['opening_balance']?.toString() ?? '0',
+      remainedBalance: json['remainedBalance']?.toString() ?? json['remained_balance']?.toString() ?? '0',
       gst: json['gst']?.toString() ?? '',
-      receiveWhatsappUpdates: json['receiveWhatsappUpdates'] ?? false,
-      createdAt: json['created_at']?.toString() ?? 
-                DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
-      updatedAt: json['updated_at']?.toString() ?? 
-                DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+      receiveWhatsappUpdates: json['receiveWhatsappUpdates'] ?? json['receive_whatsapp_updates'] ?? false,
+      createdAt: parseDateTime(json['created_at'] ?? json['createdAt']),
+      updatedAt: parseDateTime(json['updated_at'] ?? json['updatedAt']),
     );
   }
 
   Map<dynamic, dynamic> toJson() => <dynamic, dynamic>{
+    if (id != null) 'id': id,
     'customerName': customerName,
     'phoneNumber': phoneNumber,
     'type': type,
     'profilePicture': profilePicture,
     'emailAddress': emailAddress,
     'customerAddress': customerAddress,
-    'due': dueAmount,
+    'dueAmount': dueAmount,
+    'due': dueAmount, // Mantener ambos para compatibilidad
     'openingBalance': openingBalance,
     'remainedBalance': remainedBalance,
     'gst': gst,

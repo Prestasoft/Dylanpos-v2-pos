@@ -1,9 +1,7 @@
 // ignore_for_file: unused_result
 
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,8 +11,10 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/all_expanse_provider.dart';
 import 'package:salespro_admin/Provider/expense_category_proivder.dart';
+import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/expense_model.dart';
+import 'package:salespro_admin/model/customer_model.dart';
 
 import '../../Provider/daily_transaction_provider.dart';
 import '../../commas.dart';
@@ -22,6 +22,8 @@ import '../../const.dart';
 import '../../model/daily_transaction_model.dart';
 import '../../model/expense_category_model.dart';
 import '../Widgets/Constant Data/constant.dart';
+import '../../services/audit_service.dart';
+import '../../model/audit_model.dart';
 
 class NewExpense extends StatefulWidget {
   const NewExpense({super.key});
@@ -190,6 +192,14 @@ class _NewExpenseState extends State<NewExpense> {
 
   String? selectedCategories;
   late String selectedPaymentType = paymentMethods.first;
+  CustomerModel? selectedCustomer;
+  bool showCustomerSelector = false;
+  
+  // Variables para el buscador de clientes
+  TextEditingController customerSearchController = TextEditingController();
+  List<CustomerModel> filteredCustomers = [];
+  bool showCustomerDropdown = false;
+  FocusNode customerSearchFocus = FocusNode();
 
   DropdownButton<String> getCategories() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -209,6 +219,25 @@ class _NewExpenseState extends State<NewExpense> {
       onChanged: (value) {
         setState(() {
           selectedCategories = value!;
+          // Mostrar selector de cliente si la categoría es "Devolución Depósito"
+          bool wasShowingCustomerSelector = showCustomerSelector;
+          showCustomerSelector = selectedCategories?.toLowerCase().contains('devolución') == true || 
+                                selectedCategories?.toLowerCase().contains('devolucion') == true ||
+                                selectedCategories?.toLowerCase().contains('depósito') == true ||
+                                selectedCategories?.toLowerCase().contains('deposito') == true ||
+                                selectedCategories?.toLowerCase().contains('refund') == true ||
+                                selectedCategories?.toLowerCase().contains('deposit') == true;
+          
+          // Si cambió de mostrar a no mostrar el selector, limpiar los campos relacionados
+          if (wasShowingCustomerSelector && !showCustomerSelector) {
+            selectedCustomer = null;
+            customerSearchController.clear();
+            expanseForNameController.clear();
+            showCustomerDropdown = false;
+          } else if (!wasShowingCustomerSelector && showCustomerSelector) {
+            // Si ahora muestra el selector, limpiar el campo "Gasto para"
+            expanseForNameController.clear();
+          }
         });
       },
     );
@@ -234,19 +263,22 @@ class _NewExpenseState extends State<NewExpense> {
     );
   }
 
+  final ApiService _apiService = ApiService();
+
   Future<void> category() async {
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Expense Category')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = ExpenseCategoryModel.fromJson(
-            jsonDecode(jsonEncode(element.value)));
-        categories.add(data.categoryName);
+    try {
+      final response = await _apiService.get('categories/expenses');
+      if (response.success && response.data != null) {
+        final categoriesList = response.data['expense_categories'] as List<dynamic>? ??
+            response.data['categories'] as List<dynamic>? ?? [];
+        for (var element in categoriesList) {
+          var data = ExpenseCategoryModel.fromJson(Map<String, dynamic>.from(element));
+          categories.add(data.categoryName);
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('Error cargando categorías: $e');
+    }
     setState(() {});
   }
 
@@ -263,10 +295,42 @@ class _NewExpenseState extends State<NewExpense> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     checkCurrentUserAndRestartApp();
     category();
+    
+    // Listener para el campo de búsqueda de clientes
+    customerSearchFocus.addListener(() {
+      if (!customerSearchFocus.hasFocus && customerSearchController.text.isEmpty) {
+        setState(() {
+          showCustomerDropdown = false;
+        });
+      }
+    });
+  }
+  
+  @override
+  void dispose() {
+    customerSearchController.dispose();
+    customerSearchFocus.dispose();
+    super.dispose();
+  }
+  
+  // Método para filtrar clientes
+  void filterCustomers(String query, List<CustomerModel> allCustomers) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredCustomers = allCustomers;
+      } else {
+        filteredCustomers = allCustomers.where((customer) {
+          final nameLower = customer.customerName.toLowerCase();
+          final phoneLower = customer.phoneNumber.toLowerCase();
+          final queryLower = query.toLowerCase();
+          return nameLower.contains(queryLower) || phoneLower.contains(queryLower);
+        }).toList();
+      }
+      showCustomerDropdown = true;
+    });
   }
 
   String expenseAmount = '0';
@@ -395,6 +459,170 @@ class _NewExpenseState extends State<NewExpense> {
                           )),
                     ]),
 
+                    ///________Customer Selector (if Devolución Depósito)_______________________________
+                    if (showCustomerSelector)
+                      ResponsiveGridRow(children: [
+                        ResponsiveGridCol(
+                          xs: 12,
+                          md: 12,
+                          lg: 12,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Consumer(
+                              builder: (context, ref, child) {
+                                final customerList = ref.watch(allCustomerProvider);
+                                return customerList.when(
+                                  data: (customers) {
+                                    // Inicializar la lista filtrada si está vacía
+                                    if (filteredCustomers.isEmpty && customers.isNotEmpty) {
+                                      filteredCustomers = customers;
+                                    }
+                                    
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Campo de búsqueda
+                                        TextFormField(
+                                          controller: customerSearchController,
+                                          focusNode: customerSearchFocus,
+                                          decoration: InputDecoration(
+                                            labelText: 'Cliente para Devolución',
+                                            hintText: 'Buscar por nombre o teléfono...',
+                                            prefixIcon: const Icon(Icons.search),
+                                            suffixIcon: selectedCustomer != null
+                                                ? IconButton(
+                                                    icon: const Icon(Icons.clear),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        selectedCustomer = null;
+                                                        customerSearchController.clear();
+                                                        showCustomerDropdown = false;
+                                                        // Limpiar el campo "Gasto para" cuando se deselecciona el cliente
+                                                        if (showCustomerSelector) {
+                                                          expanseForNameController.clear();
+                                                        }
+                                                      });
+                                                    },
+                                                  )
+                                                : null,
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(8.0),
+                                            ),
+                                          ),
+                                          onChanged: (value) {
+                                            filterCustomers(value, customers);
+                                          },
+                                          onTap: () {
+                                            filterCustomers(customerSearchController.text, customers);
+                                          },
+                                        ),
+                                        
+                                        // Cliente seleccionado
+                                        if (selectedCustomer != null)
+                                          Container(
+                                            margin: const EdgeInsets.only(top: 8.0),
+                                            padding: const EdgeInsets.all(12.0),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[100],
+                                              borderRadius: BorderRadius.circular(8.0),
+                                              border: Border.all(color: Colors.grey[300]!),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.person, color: Colors.grey),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        selectedCustomer!.customerName,
+                                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                                      ),
+                                                      if (selectedCustomer!.phoneNumber.isNotEmpty)
+                                                        Text(
+                                                          selectedCustomer!.phoneNumber,
+                                                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        
+                                        // Lista de resultados
+                                        if (showCustomerDropdown && filteredCustomers.isNotEmpty)
+                                          Container(
+                                            margin: const EdgeInsets.only(top: 4.0),
+                                            constraints: const BoxConstraints(maxHeight: 200),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(8.0),
+                                              border: Border.all(color: Colors.grey[300]!),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.grey.withValues(alpha: 0.2),
+                                                  spreadRadius: 1,
+                                                  blurRadius: 5,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ListView.builder(
+                                              shrinkWrap: true,
+                                              itemCount: filteredCustomers.length,
+                                              itemBuilder: (context, index) {
+                                                final customer = filteredCustomers[index];
+                                                return ListTile(
+                                                  leading: const Icon(Icons.person_outline),
+                                                  title: Text(customer.customerName),
+                                                  subtitle: customer.phoneNumber.isNotEmpty 
+                                                      ? Text(customer.phoneNumber) 
+                                                      : null,
+                                                  onTap: () {
+                                                    setState(() {
+                                                      selectedCustomer = customer;
+                                                      customerSearchController.text = customer.customerName;
+                                                      showCustomerDropdown = false;
+                                                      // Auto-rellenar el campo "Gasto para" con el nombre del cliente
+                                                      if (showCustomerSelector) {
+                                                        expanseForNameController.text = 'Devolución depósito - ${customer.customerName}';
+                                                      }
+                                                    });
+                                                  },
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        
+                                        // Mensaje cuando no hay resultados
+                                        if (showCustomerDropdown && filteredCustomers.isEmpty && customerSearchController.text.isNotEmpty)
+                                          Container(
+                                            margin: const EdgeInsets.only(top: 4.0),
+                                            padding: const EdgeInsets.all(16.0),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[100],
+                                              borderRadius: BorderRadius.circular(8.0),
+                                              border: Border.all(color: Colors.grey[300]!),
+                                            ),
+                                            child: const Text(
+                                              'No se encontraron clientes con ese criterio',
+                                              style: TextStyle(color: Colors.grey),
+                                            ),
+                                          ),
+                                      ],
+                                    );
+                                  },
+                                  loading: () => const Center(child: CircularProgressIndicator()),
+                                  error: (error, stack) => Text('Error: $error'),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ]),
+
                     ///________payment Type_&_expanseFor_______________________________
                     ResponsiveGridRow(children: [
                       //-------------expense for----------------------
@@ -405,7 +633,8 @@ class _NewExpenseState extends State<NewExpense> {
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
                             child: TextFormField(
-                              showCursor: true,
+                              showCursor: !showCustomerSelector,
+                              readOnly: showCustomerSelector,
                               controller: expanseForNameController,
                               validator: (value) {
                                 if (value.isEmptyOrNull) {
@@ -418,9 +647,23 @@ class _NewExpenseState extends State<NewExpense> {
                                 expanseForNameController.text = value!;
                               },
                               cursorColor: kTitleColor,
+                              style: TextStyle(
+                                color: showCustomerSelector ? Colors.grey[700] : null,
+                              ),
                               decoration: InputDecoration(
                                 labelText: lang.S.of(context).expenseFor,
-                                hintText: lang.S.of(context).enterName,
+                                hintText: showCustomerSelector 
+                                    ? 'Se mostrará el nombre del cliente seleccionado' 
+                                    : lang.S.of(context).enterName,
+                                fillColor: showCustomerSelector ? Colors.grey[100] : null,
+                                filled: showCustomerSelector,
+                                suffixIcon: showCustomerSelector
+                                    ? Icon(
+                                        Icons.lock_outline,
+                                        color: Colors.grey[600],
+                                        size: 20,
+                                      )
+                                    : null,
                               ),
                             ),
                           )),
@@ -590,6 +833,10 @@ class _NewExpenseState extends State<NewExpense> {
                                     if (validateAndSave() &&
                                         selectedCategories != null &&
                                         selectedCategories!.isNotEmpty) {
+                                      final String currentUserId = await getUserID();
+                                      // Usar la misma lógica que en ventas para obtener el nombre del usuario
+                                      final String currentUserName = isSubUser ? constSubUserTitle : 'Admin';
+                                      
                                       ExpenseModel expense = ExpenseModel(
                                         expenseDate: selectedDate.toString(),
                                         category: selectedCategories.toString(),
@@ -600,6 +847,11 @@ class _NewExpenseState extends State<NewExpense> {
                                         paymentType: selectedPaymentType,
                                         referenceNo: expanseRefController.text,
                                         note: expanseNoteController.text,
+                                        userId: currentUserId,
+                                        userName: currentUserName,
+                                        customerId: showCustomerSelector ? selectedCustomer?.phoneNumber : null,
+                                        customerName: showCustomerSelector ? selectedCustomer?.customerName : null,
+                                        customerPhone: showCustomerSelector ? selectedCustomer?.phoneNumber : null,
                                       );
                                       try {
                                         setState(() {
@@ -609,22 +861,43 @@ class _NewExpenseState extends State<NewExpense> {
                                             status:
                                                 '${lang.S.of(context).loading}...',
                                             dismissOnTap: false);
-                                        final DatabaseReference
-                                            productInformationRef =
-                                            FirebaseDatabase.instance
-                                                .ref()
-                                                .child(await getUserID())
-                                                .child('Expense');
-                                        await productInformationRef
-                                            .push()
-                                            .set(expense.toJson())
-                                            .then((_) {
+
+                                        // Guardar gasto en PostgreSQL API
+                                        final response = await _apiService.post(
+                                          'expenses',
+                                          Map<String, dynamic>.from(expense.toJson()),
+                                        );
+
+                                        if (response.success) {
                                           EasyLoading.showSuccess(
                                               lang.S
                                                   .of(context)
                                                   .addedSuccessfully,
                                               duration: const Duration(
                                                   milliseconds: 500));
+
+                                          // Registrar en auditoría
+                                          await AuditService().logCreate(
+                                            module: AuditModule.expenses,
+                                            itemName: 'Gasto',
+                                            itemId: expense.expenseDate,
+                                            data: {
+                                              'expanseFor': expense.expanseFor,
+                                              'category': expense.category,
+                                              'amount': expense.amount,
+                                              'paymentType': expense.paymentType,
+                                              'note': expense.note,
+                                              'referenceNo': expense.referenceNo,
+                                              'userId': expense.userId,
+                                              'userName': expense.userName,
+                                              'customerId': expense.customerId,
+                                              'customerName': expense.customerName,
+                                              'customerPhone': expense.customerPhone,
+                                            },
+                                          );
+
+                                          // Generar ID único usando timestamp para evitar duplicados
+                                          final uniqueId = 'EXP-${DateTime.now().millisecondsSinceEpoch}';
 
                                           DailyTransactionModel
                                               dailyTransaction =
@@ -638,7 +911,9 @@ class _NewExpenseState extends State<NewExpense> {
                                                 expense.amount.toDouble(),
                                             remainingBalance:
                                                 expense.amount.toDouble(),
-                                            id: expense.expenseDate,
+                                            id: uniqueId,
+                                            paymentType: expense.paymentType,
+                                            sellerName: expense.userName ?? currentUserName,
                                             expenseModel: expense,
                                           );
                                           postDailyTransaction(
@@ -655,7 +930,7 @@ class _NewExpenseState extends State<NewExpense> {
                                               GoRouter.of(context).pop();
                                             }
                                           });
-                                        }).catchError((error) {
+                                        } else {
                                           setState(() {
                                             saleButtonClicked = false;
                                           });
@@ -663,8 +938,8 @@ class _NewExpenseState extends State<NewExpense> {
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(SnackBar(
                                                   content:
-                                                      Text(error.toString())));
-                                        });
+                                                      Text(response.message ?? 'Error al guardar gasto')));
+                                        }
                                       } catch (e) {
                                         setState(() {
                                           saleButtonClicked = false;

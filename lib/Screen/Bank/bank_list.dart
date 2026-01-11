@@ -204,6 +204,8 @@ class _BankListState extends ConsumerState<BankList> {
                                     await ref.read(bankNotifierProvider.notifier)
                                         .deleteBank(bank.bankId!);
                                     EasyLoading.showSuccess('Banco eliminado');
+                                    // Refrescar la lista automáticamente
+                                    refresh();
                                   } catch (e) {
                                     EasyLoading.showError('Error al eliminar');
                                   }

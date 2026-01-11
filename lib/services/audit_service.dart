@@ -1,16 +1,18 @@
+// audit_service.dart - Migrado a PostgreSQL API
 import 'dart:io';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../model/audit_model.dart';
+import 'api_service.dart';
+
+/// Servicio API compartido
+final ApiService _apiService = ApiService();
 
 class AuditService {
   static final AuditService _instance = AuditService._internal();
   factory AuditService() => _instance;
   AuditService._internal();
 
-  final DatabaseReference _auditRef = FirebaseDatabase.instance.ref('Audits');
-  
   // Cache del usuario actual para evitar llamadas repetitivas
   static String? _currentUserId;
   static String? _currentUserName;
@@ -34,7 +36,7 @@ class AuditService {
     _currentUserEmail = null;
   }
 
-  /// Registrar una acción en el sistema de auditoría
+  /// Registrar una acción en el sistema de auditoría - Usa PostgreSQL API
   Future<void> logAction({
     required AuditAction action,
     required AuditModule module,
@@ -68,8 +70,8 @@ class AuditService {
         createdAt: now,
       );
 
-      // Guardar en Firebase
-      await _auditRef.child(auditId).set(audit.toJson());
+      // Guardar en PostgreSQL API
+      await _apiService.post('audits', audit.toJson());
 
       // Log en consola para desarrollo
       if (kDebugMode) {
@@ -88,7 +90,7 @@ class AuditService {
   /// Método conveniente para login
   Future<void> logLogin(String userId, String userName, String userEmail) async {
     setCurrentUser(userId: userId, userName: userName, userEmail: userEmail);
-    
+
     await logAction(
       action: AuditAction.login,
       module: AuditModule.authentication,
@@ -103,7 +105,7 @@ class AuditService {
       module: AuditModule.authentication,
       description: 'Usuario cerró sesión',
     );
-    
+
     clearCurrentUser();
   }
 
@@ -188,7 +190,7 @@ class AuditService {
     );
   }
 
-  /// Obtener registros de auditoría con filtros
+  /// Obtener registros de auditoría con filtros - Usa PostgreSQL API
   Future<List<AuditModel>> getAuditLogs({
     String? userId,
     String? action,
@@ -198,57 +200,33 @@ class AuditService {
     int limit = 100,
   }) async {
     try {
-      // Usar orderByKey en lugar de orderByChild para evitar índice
-      Query query = _auditRef.orderByKey().limitToLast(limit);
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+      };
 
-      final snapshot = await query.get();
+      if (userId != null) queryParams['user_id'] = userId;
+      if (action != null) queryParams['action'] = action;
+      if (module != null) queryParams['module'] = module;
+      if (startDate != null) queryParams['start_date'] = startDate.toIso8601String();
+      if (endDate != null) queryParams['end_date'] = endDate.toIso8601String();
+
+      final response = await _apiService.get('audits', queryParams: queryParams);
+
+      if (!response.success || response.data == null) {
+        return [];
+      }
+
+      final auditsData = response.data['audits'] as List<dynamic>? ?? [];
       final List<AuditModel> audits = [];
 
-      if (snapshot.exists) {
-        final data = Map<String, dynamic>.from(snapshot.value as Map);
-        
-        for (final entry in data.entries) {
-          try {
-            final auditData = Map<String, dynamic>.from(entry.value as Map);
-            final audit = AuditModel.fromJson(auditData);
-
-            // Aplicar filtros adicionales
-            bool shouldInclude = true;
-
-            if (userId != null && audit.userId != userId) {
-              shouldInclude = false;
-            }
-
-            if (action != null && audit.action != action) {
-              shouldInclude = false;
-            }
-
-            if (module != null && audit.module != module) {
-              shouldInclude = false;
-            }
-
-            // Filtrar por fecha en el cliente
-            if (startDate != null || endDate != null) {
-              try {
-                final auditDate = DateTime.parse(audit.createdAt);
-                if (startDate != null && auditDate.isBefore(startDate)) {
-                  shouldInclude = false;
-                }
-                if (endDate != null && auditDate.isAfter(endDate.add(Duration(days: 1)))) {
-                  shouldInclude = false;
-                }
-              } catch (e) {
-                debugPrint('Error parsing audit date: $e');
-                shouldInclude = false;
-              }
-            }
-
-            if (shouldInclude) {
-              audits.add(audit);
-            }
-          } catch (e) {
-            debugPrint('Error procesando registro de auditoría: $e');
+      for (var item in auditsData) {
+        try {
+          if (item is Map) {
+            final auditData = Map<String, dynamic>.from(item);
+            audits.add(AuditModel.fromJson(auditData));
           }
+        } catch (e) {
+          debugPrint('Error procesando registro de auditoría: $e');
         }
       }
 
@@ -262,19 +240,25 @@ class AuditService {
     }
   }
 
-  /// Obtener estadísticas de auditoría
+  /// Obtener estadísticas de auditoría - Usa PostgreSQL API
   Future<Map<String, dynamic>> getAuditStats() async {
     try {
       final logs = await getAuditLogs(limit: 1000);
-      
+
       final Map<String, int> actionCounts = {};
       final Map<String, int> moduleCounts = {};
       final Map<String, int> userCounts = {};
+      final Map<String, String> userIdToName = {};
 
       for (final log in logs) {
         actionCounts[log.action] = (actionCounts[log.action] ?? 0) + 1;
         moduleCounts[log.module] = (moduleCounts[log.module] ?? 0) + 1;
         userCounts[log.userName] = (userCounts[log.userName] ?? 0) + 1;
+
+        // Guardar mapeo userId -> userName
+        if (log.userId.isNotEmpty && log.userName.isNotEmpty) {
+          userIdToName[log.userId] = log.userName;
+        }
       }
 
       return {
@@ -282,6 +266,7 @@ class AuditService {
         'actionCounts': actionCounts,
         'moduleCounts': moduleCounts,
         'userCounts': userCounts,
+        'userIdToName': userIdToName,
         'lastActivity': logs.isNotEmpty ? logs.first.createdAt : null,
       };
     } catch (e) {
@@ -296,7 +281,6 @@ class AuditService {
       if (kIsWeb) {
         return 'Web Client';
       } else {
-        // En móvil se podría implementar obtener IP real
         return 'Mobile Client';
       }
     } catch (e) {
@@ -319,5 +303,47 @@ class AuditService {
     } catch (e) {
       return 'Flutter App';
     }
+  }
+
+  /// Obtener todos los usuarios registrados del sistema - Usa PostgreSQL API
+  Future<Map<String, String>> getAllSystemUsers() async {
+    final Map<String, String> users = {};
+
+    try {
+      // Obtener usuarios desde PostgreSQL API
+      final response = await _apiService.get('users', queryParams: {'limit': '1000'});
+
+      if (response.success && response.data != null) {
+        final usersData = response.data['users'] as List<dynamic>? ?? [];
+
+        for (var item in usersData) {
+          try {
+            if (item is Map) {
+              final userData = Map<String, dynamic>.from(item);
+              final id = userData['id']?.toString() ?? '';
+              final name = userData['name']?.toString() ??
+                          userData['userTitle']?.toString() ??
+                          userData['email']?.toString() ?? 'Usuario';
+              final role = userData['role']?.toString() ?? '';
+
+              if (id.isNotEmpty) {
+                final displayName = role.toLowerCase() == 'admin'
+                    ? name
+                    : '$name${role.isNotEmpty ? " ($role)" : ""}';
+                users[id] = displayName;
+              }
+            }
+          } catch (e) {
+            debugPrint('Error procesando usuario: $e');
+          }
+        }
+      }
+
+      debugPrint('Total usuarios del sistema encontrados: ${users.length}');
+    } catch (e) {
+      debugPrint('Error obteniendo usuarios del sistema: $e');
+    }
+
+    return users;
   }
 }

@@ -1,6 +1,5 @@
-import 'dart:convert';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,29 +76,35 @@ class _ExpenseCategoryState extends State<ExpenseCategory> {
       required WidgetRef updateRef,
       required BuildContext context}) async {
     EasyLoading.show(status: 'Deleting..');
-    String expenseKey = '';
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Expense Category')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['categoryName'].toString() == expenseCategoryName) {
-          expenseKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      // Buscar categoría por nombre
+      final response = await apiService.get('categories/expenses', queryParams: {
+        'categoryName': expenseCategoryName,
+        'limit': '1',
+      });
+
+      if (response.success && response.data != null) {
+        final categories = response.data['expense_categories'] as List<dynamic>? ??
+            response.data['categories'] as List<dynamic>? ?? [];
+        if (categories.isNotEmpty) {
+          final categoryData = Map<String, dynamic>.from(categories.first);
+          final categoryId = categoryData['id']?.toString();
+          if (categoryId != null) {
+            await apiService.delete('categories/expenses/$categoryId');
+          }
         }
       }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance
-        .ref("${await getUserID()}/Expense Category/$expenseKey");
-    await ref.remove();
-    // ignore: unused_result
-    updateRef.refresh(expenseCategoryProvider);
-    // ignore: use_build_context_synchronously
-    GoRouter.of(context).pop();
 
-    EasyLoading.showSuccess('Done');
+      // ignore: unused_result
+      updateRef.refresh(expenseCategoryProvider);
+      // ignore: use_build_context_synchronously
+      GoRouter.of(context).pop();
+      EasyLoading.showSuccess('Done');
+    } catch (e) {
+      EasyLoading.showError('Error deleting category');
+      debugPrint('Error eliminando categoría: $e');
+    }
   }
 
   final _horizontalScroll = ScrollController();

@@ -1,8 +1,6 @@
-import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -148,19 +146,22 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
   late String customerKey;
 
   void getCustomerKey(String phoneNumber) async {
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Customers')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'].toString() == phoneNumber) {
-          customerKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('customers', queryParams: {
+        'phone': phoneNumber,
+        'limit': '1',
+      });
+      if (response.success && response.data != null) {
+        final customers = response.data['customers'] as List<dynamic>? ?? [];
+        if (customers.isNotEmpty) {
+          final customerData = Map<String, dynamic>.from(customers.first);
+          customerKey = customerData['id']?.toString() ?? '';
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting customer key: $e');
+    }
   }
 
   @override
@@ -478,9 +479,7 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                           status:
                                               '${lang.S.of(context).loading}...',
                                           dismissOnTap: false);
-                                      DatabaseReference reference =
-                                          FirebaseDatabase.instance.ref(
-                                              "${FirebaseAuth.instance.currentUser!.uid}/Customers/$customerKey");
+                                      final apiService = ApiService();
                                       PersonalInformationModel
                                           personalInformation =
                                           PersonalInformationModel(
@@ -499,8 +498,10 @@ class _TabletProfileSetUpState extends State<TabletProfileSetUp> {
                                         currentLocale: 'en',
                                         gst: '',
                                       );
-                                      await reference
-                                          .set(personalInformation.toJson());
+                                      await apiService.put(
+                                        'customers/$customerKey',
+                                        Map<String, dynamic>.from(personalInformation.toJson()),
+                                      );
                                       // EasyLoading.showSuccess('Added Successfully!');
                                       EasyLoading.showSuccess(
                                           '${lang.S.of(context).addedSuccessfully}!');

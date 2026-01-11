@@ -1,14 +1,12 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
-
-import '../const.dart';
 import '../currency.dart';
 import '../model/personal_information_model.dart';
+import '../services/api_service.dart';
 
+/// Repositorio de perfil/información personal - Usa PostgreSQL API
 class ProfileRepo {
-  DatabaseReference ref = FirebaseDatabase.instance.ref();
+  final ApiService _apiService = ApiService();
 
+  /// Obtener detalles del perfil desde PostgreSQL
   Future<PersonalInformationModel> getDetails() async {
     PersonalInformationModel personalInfo = PersonalInformationModel(
       companyName: 'Loading...',
@@ -26,23 +24,59 @@ class ProfileRepo {
       currentLocale: 'en',
       gst: '',
     );
-    final model = await ref.child('${await getUserID()}/Personal Information').get();
-    var data = jsonDecode(jsonEncode(model.value));
-    if (data == null) {
+
+    try {
+      final response = await _apiService.get('profile');
+
+      if (response.success && response.data != null) {
+        final data = response.data['profile'] ?? response.data;
+        if (data != null) {
+          return PersonalInformationModel.fromJson(data as Map<String, dynamic>);
+        }
+      }
+
       currency = personalInfo.currency;
       return personalInfo;
-    } else {
-      return PersonalInformationModel.fromJson(data);
+    } catch (e) {
+      currency = personalInfo.currency;
+      return personalInfo;
     }
   }
 
+  /// Verificar si el perfil está configurado
   Future<bool> isProfileSetupDone() async {
-    final model = await ref.child('${await getUserID()}/Personal Information').get();
-    var data = jsonDecode(jsonEncode(model.value));
-    if (data == null) {
+    try {
+      final response = await _apiService.get('profile');
+
+      if (response.success && response.data != null) {
+        final data = response.data['profile'] ?? response.data;
+        return data != null;
+      }
       return false;
-    } else {
-      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Actualizar perfil
+  Future<bool> updateProfile(PersonalInformationModel profile) async {
+    try {
+      final profileData = Map<String, dynamic>.from(profile.toJson());
+      final response = await _apiService.put('profile', profileData);
+      return response.success;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Crear perfil inicial
+  Future<bool> createProfile(PersonalInformationModel profile) async {
+    try {
+      final profileData = Map<String, dynamic>.from(profile.toJson());
+      final response = await _apiService.post('profile', profileData);
+      return response.success;
+    } catch (e) {
+      return false;
     }
   }
 }

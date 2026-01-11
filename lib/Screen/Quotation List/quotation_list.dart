@@ -1,8 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
-import 'dart:convert';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,35 +32,44 @@ class QuotationList extends StatefulWidget {
 
 class _QuotationListState extends State<QuotationList> {
   ScrollController mainScroll = ScrollController();
+  final ApiService _apiService = ApiService();
+
   void deleteQuotation(
       {required String date,
       required WidgetRef updateRef,
       required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
-    String key = '';
+    String quotationId = '';
     try {
-      // Fetch data from Firebase
-      final snapshot = await FirebaseDatabase.instance
-          .ref(await getUserID())
-          .child('Sales Quotation')
-          .orderByKey()
-          .get();
+      // Fetch quotation from API by purchaseDate
+      final response = await _apiService.get('quotations', queryParams: {
+        'purchaseDate': date,
+        'limit': '1',
+      });
 
-      // Find the key for the given date
-      for (var element in snapshot.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['purchaseDate'].toString() == date) {
-          key = element.key.toString();
-          break; // Exit loop once the key is found
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> quotations = [];
+        if (data is Map && data['quotations'] != null) {
+          quotations = data['quotations'] as List<dynamic>;
+        } else if (data is List) {
+          quotations = data;
+        }
+
+        if (quotations.isNotEmpty) {
+          final quotationData = Map<String, dynamic>.from(quotations.first);
+          quotationId = quotationData['id']?.toString() ?? '';
         }
       }
 
       // Delete the record
-      if (key.isNotEmpty) {
-        DatabaseReference ref = FirebaseDatabase.instance
-            .ref("${await getUserID()}/Sales Quotation/$key");
-        await ref.remove();
-        EasyLoading.showSuccess(lang.S.of(context).done);
+      if (quotationId.isNotEmpty) {
+        final deleteResponse = await _apiService.delete('quotations/$quotationId');
+        if (deleteResponse.success) {
+          EasyLoading.showSuccess(lang.S.of(context).done);
+        } else {
+          EasyLoading.showError('Failed to delete');
+        }
       } else {
         EasyLoading.showError('Record not found');
       }

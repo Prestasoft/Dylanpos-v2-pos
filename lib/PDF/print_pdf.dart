@@ -201,24 +201,47 @@ class GeneratePdfAndPrint {
     }
   }
 
-  EasyLoading.show(status: 'Generando PDF...', dismissOnTap: true);
+  EasyLoading.show(status: 'Generando PDF...', dismissOnTap: false);
+  
   Uint8List pdfData;
-  if (printType == 'thermal') {
-    pdfData = await generateThermalDocument(
-      personalInformation: personalInformationModel,
-      transactions: saleTransactionModel,
-      generalSetting: setting,
-      post: post,
-      context: context,
-    );
-  } else {
-    pdfData = await generateSaleDocument(
-      personalInformation: personalInformationModel,
-      transactions: saleTransactionModel,
-      generalSetting: setting,
-      post: post,
-      context: context,
-    );
+  try {
+    // Convertir a Future y agregar timeout para la generación del PDF
+    if (printType == 'thermal') {
+      pdfData = await Future.value(generateThermalDocument(
+        personalInformation: personalInformationModel,
+        transactions: saleTransactionModel,
+        generalSetting: setting,
+        post: post,
+        context: context,
+      )).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('La generación del PDF está tardando demasiado. Por favor intente nuevamente.');
+        },
+      );
+    } else {
+      pdfData = await Future.value(generateSaleDocument(
+        personalInformation: personalInformationModel,
+        transactions: saleTransactionModel,
+        generalSetting: setting,
+        post: post,
+        context: context,
+      )).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('La generación del PDF está tardando demasiado. Por favor intente nuevamente.');
+        },
+      );
+    }
+  } catch (e) {
+    EasyLoading.dismiss();
+    if (e is TimeoutException) {
+      EasyLoading.showError('Tiempo de espera agotado. Por favor intente nuevamente.');
+    } else {
+      EasyLoading.showError('Error al generar PDF: ${e.toString()}');
+    }
+    print('Error generando PDF: $e');
+    return null;
   }
 
   if (!returnPdfData) {

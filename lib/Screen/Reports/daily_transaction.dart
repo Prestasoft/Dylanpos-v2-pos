@@ -27,9 +27,13 @@ import '../Expenses/expense_details.dart';
 import '../Income/income_details.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
+import '../../services/deletion_password_service.dart';
 import './transfer_details_dialog.dart';
 import '../../delete_invoice_functions.dart';
+import '../../model/expense_model.dart';
+import '../../services/audit_service.dart';
+import '../../model/audit_model.dart';
 
 class DailyTransaction extends StatefulWidget {
   const DailyTransaction({super.key});
@@ -116,6 +120,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
     'Purchase Return': 'Devolución de Compra',
     'Due Payment': 'Pago de Adeudo',
     'Expense': 'Gastos',
+    'Devolución': 'Devoluciones',
     'Income': 'Ingresos',
   };
 
@@ -253,37 +258,74 @@ class _DailyTransactionState extends State<DailyTransaction> {
     }
   }
 
+  // Función para obtener el tipo traducido considerando categorías especiales
+  String getTranslatedType(DailyTransactionModel transaction) {
+    // Si es un gasto, verificar si es una devolución de depósito
+    if (transaction.type == 'Expense' && transaction.expenseModel != null) {
+      final category = transaction.expenseModel!.category.toLowerCase();
+      if (category.contains('devolución') || 
+          category.contains('devolucion') ||
+          category.contains('depósito') || 
+          category.contains('deposito') ||
+          category.contains('refund') ||
+          category.contains('deposit')) {
+        return 'Devolución';
+      }
+    }
+    
+    // Si no es un caso especial, usar la traducción normal
+    return translateType(transaction.type);
+  }
+
   // Función para obtener el tipo de pago de una transacción
   String _getPaymentType(DailyTransactionModel transaction) {
     String paymentType = 'N/A';
-    
-    if (transaction.saleTransactionModel != null) {
+
+    // ✅ PRIMERO: Intentar campo directo del modelo (viene directamente de la API)
+    if (transaction.paymentType != null && transaction.paymentType!.isNotEmpty) {
+      paymentType = transaction.paymentType!;
+    }
+    // SEGUNDO: Fallback a modelos anidados (compatibilidad con datos completos)
+    else if (transaction.saleTransactionModel != null) {
       paymentType = transaction.saleTransactionModel!.paymentType ?? 'N/A';
     } else if (transaction.dueTransactionModel != null) {
       paymentType = transaction.dueTransactionModel!.paymentType ?? 'N/A';
     } else if (transaction.purchaseTransactionModel != null) {
       paymentType = transaction.purchaseTransactionModel!.paymentType ?? 'N/A';
+    } else if (transaction.expenseModel != null) {
+      paymentType = transaction.expenseModel!.paymentType ?? 'N/A';
+    } else if (transaction.incomeModel != null) {
+      paymentType = transaction.incomeModel!.paymentType ?? 'N/A';
     }
-    
+
     // Traducir tipos de pago comunes al español
     switch (paymentType.toLowerCase()) {
       case 'cash':
+      case 'efectivo':
         return 'Efectivo';
       case 'card':
-        return 'Tarjeta';
-      case 'transfer':
-        return 'Transferencia';
-      case 'bank transfer':
-        return 'Transferencia';
+      case 'tarjeta':
       case 'credit card':
         return 'Tarjeta';
+      case 'transfer':
+      case 'bank transfer':
+      case 'transferencia':
+      case 'bank':
+        return 'Transferencia';
+      case 'mobile payment':
+        return 'Pago Móvil';
       default:
         return paymentType;
     }
   }
 
   String _getUserName(DailyTransactionModel transaction) {
-    // Extraer el nombre del usuario según el tipo de transacción
+    // ✅ PRIMERO: Intentar campo directo del modelo (viene directamente de la API)
+    if (transaction.sellerName != null && transaction.sellerName!.isNotEmpty) {
+      return transaction.sellerName!;
+    }
+
+    // SEGUNDO: Fallback a modelos anidados según el tipo de transacción
     switch (transaction.type) {
       case 'Sale':
       case 'Adicionales':
@@ -297,8 +339,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
       case 'Due Payment':
         return transaction.dueTransactionModel?.sellerName ?? 'N/A';
       case 'Expense':
-        // ExpenseModel - verificar si tiene campo de usuario
-        return 'N/A';
+        // ExpenseModel - ahora tiene campo userName
+        return transaction.expenseModel?.userName ?? 'N/A';
       case 'Income':
         // IncomeModel - verificar si tiene campo de usuario
         return 'N/A';
@@ -308,6 +350,22 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   double _getTotalPendiente(DailyTransactionModel transaction) {
+    // Para Due Collection/Payment: usar dueAmountAfterPay directo si está disponible
+    if (transaction.type == 'Due Collection' || transaction.type == 'Due Payment') {
+      // PRIMERO: Intentar campo directo dueAmountAfterPay (viene de la API)
+      if (transaction.dueAmountAfterPay != null && transaction.dueAmountAfterPay! > 0) {
+        return transaction.dueAmountAfterPay!;
+      }
+      // SEGUNDO: Fallback a modelo anidado
+      return transaction.dueTransactionModel?.dueAmountAfterPay ?? 0.0;
+    }
+
+    // Para otros tipos: usar dueAmount directo
+    if (transaction.dueAmount != null && transaction.dueAmount! > 0) {
+      return transaction.dueAmount!;
+    }
+
+    // TERCERO: Fallback a modelos anidados según el tipo de transacción
     switch (transaction.type) {
       case 'Sale':
       case 'Sale Return':
@@ -315,10 +373,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
       case 'Purchase':
       case 'Purchase Return':
         return transaction.remainingBalance;
-      case 'Due Collection':
-      case 'Due Payment':
-        // Para pagos de cuentas por cobrar, mostrar el saldo restante después del pago
-        return transaction.dueTransactionModel?.dueAmountAfterPay ?? 0.0;
       case 'Expense':
       case 'Income':
         return 0.0;
@@ -428,6 +482,9 @@ class _DailyTransactionState extends State<DailyTransaction> {
               });
 
               // Primero agregar todas las transacciones diarias existentes
+              // Usar Set para evitar duplicados basados en ID
+              Set<String> addedTransactionIds = {};
+
               for (var element in dailyReport.reversed.toList()) {
             if (element.date.isNotEmpty) {
               DateTime? parsedDate;
@@ -444,7 +501,29 @@ class _DailyTransactionState extends State<DailyTransaction> {
                   (selectedDate.end.isAfter(parsedDate) ||
                       parsedDate.isAtSameMomentAs(selectedDate.end))) {
                 // Aplicar filtro por tipo si no es "Todos"
-                if (selectedTypeFilter == 'Todos' || element.type == selectedTypeFilter) {
+                bool matchesTypeFilter = false;
+
+                if (selectedTypeFilter == 'Todos') {
+                  matchesTypeFilter = true;
+                } else if (selectedTypeFilter == 'Devolución') {
+                  // Caso especial para devoluciones: verificar si es un gasto de tipo devolución
+                  if (element.type == 'Expense' && element.expenseModel != null) {
+                    final category = element.expenseModel!.category.toLowerCase();
+                    matchesTypeFilter = category.contains('devolución') ||
+                                      category.contains('devolucion') ||
+                                      category.contains('depósito') ||
+                                      category.contains('deposito') ||
+                                      category.contains('refund') ||
+                                      category.contains('deposit');
+                  }
+                } else {
+                  // Para otros filtros, comparar el tipo directamente
+                  matchesTypeFilter = element.type == selectedTypeFilter;
+                }
+
+                // Evitar duplicados: solo agregar si el ID no está ya en la lista
+                if (matchesTypeFilter && !addedTransactionIds.contains(element.id)) {
+                  addedTransactionIds.add(element.id);
                   reTransaction.add(element);
                 }
               }
@@ -522,14 +601,51 @@ class _DailyTransactionState extends State<DailyTransaction> {
 
           debugPrint('📋 RESULTADO FINAL: ${reTransaction.length} transacciones mostradas');
           debugPrint('💰 Ventas finales: ${reTransaction.where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones').length}');
-          
+
           // Mostrar facturas específicas que se están buscando
           var salesInResult = reTransaction.where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones').map((t) => t.id).toList();
           debugPrint('🧾 Facturas mostradas: ${salesInResult.take(10).toList()}${salesInResult.length > 10 ? '... y ${salesInResult.length - 10} más' : ''}');
-          
+
           // Verificar específicamente la factura 516
           bool has516 = reTransaction.any((t) => t.id == '516');
           debugPrint('🎯 ¿Incluye factura 516?: $has516');
+
+          // Ordenar por fecha descendente (más recientes primero)
+          reTransaction.sort((a, b) {
+            try {
+              // Intentar parsear las fechas (formato: DD-MM-YYYY HH:MM:SS o YYYY-MM-DD HH:MM:SS)
+              DateTime dateA;
+              DateTime dateB;
+
+              if (a.date.contains('-') && a.date.split('-')[0].length == 4) {
+                // Formato ISO: YYYY-MM-DD
+                dateA = DateTime.tryParse(a.date) ?? DateTime(1900);
+              } else {
+                // Formato DD-MM-YYYY
+                final partsA = a.date.split(' ')[0].split('-');
+                if (partsA.length >= 3) {
+                  dateA = DateTime(int.tryParse(partsA[2]) ?? 1900, int.tryParse(partsA[1]) ?? 1, int.tryParse(partsA[0]) ?? 1);
+                } else {
+                  dateA = DateTime(1900);
+                }
+              }
+
+              if (b.date.contains('-') && b.date.split('-')[0].length == 4) {
+                dateB = DateTime.tryParse(b.date) ?? DateTime(1900);
+              } else {
+                final partsB = b.date.split(' ')[0].split('-');
+                if (partsB.length >= 3) {
+                  dateB = DateTime(int.tryParse(partsB[2]) ?? 1900, int.tryParse(partsB[1]) ?? 1, int.tryParse(partsB[0]) ?? 1);
+                } else {
+                  dateB = DateTime(1900);
+                }
+              }
+
+              return dateB.compareTo(dateA); // Descendente (más reciente primero)
+            } catch (e) {
+              return 0;
+            }
+          });
 
           final pages = _lossProfitPerPage == -1
               ? 1
@@ -911,33 +1027,42 @@ class _DailyTransactionState extends State<DailyTransaction> {
                             lg: 33,
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
-                              child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
-                                decoration: BoxDecoration(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    _showCashDetailsDialog(context, summary, reTransaction);
+                                  },
                                   borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                                  border: Border.all(color: const Color(0xFF4CAF50), width: 1),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.money, color: const Color(0xFF4CAF50), size: 24),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.pagoEfectivo)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFF4CAF50),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
+                                  child: Container(
+                                    padding: const EdgeInsets.only(
+                                        left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFF4CAF50), width: 1),
                                     ),
-                                    Text(
-                                      'Pago Efectivo',
-                                      style: theme.textTheme.bodyMedium,
-                                      textAlign: TextAlign.center,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.money, color: const Color(0xFF4CAF50), size: 24),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '$globalCurrency ${myFormat.format(summary.ingresoEfectivo - summary.gastoEfectivo)}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFF4CAF50),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
+                                        Text(
+                                          'Efectivo Neto',
+                                          style: theme.textTheme.bodyMedium,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -1123,6 +1248,20 @@ class _DailyTransactionState extends State<DailyTransaction> {
                         height: 1,
                       ),
                       const ExportButton().visible(false),
+                      
+                      // Botón temporal para buscar transacciones huérfanas
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () => _showOrphanTransactions(ref),
+                          icon: const Icon(Icons.search),
+                          label: const Text('Buscar Transacciones Huérfanas'),
+                        ),
+                      ),
 
                       ///___________search________________________________________________-
                       ResponsiveGridRow(rowSegments: 100, children: [
@@ -1370,7 +1509,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                             ),
                                                             DataCell(
                                                               Text(
-                                                                translateType(paginatedList[index].type),
+                                                                getTranslatedType(paginatedList[index]),
                                                               ),
                                                             ),
                                                             DataCell(
@@ -1855,33 +1994,25 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   Widget _buildInvoiceNumberCell(
-    DailyTransactionModel transaction, 
-    BuildContext context, 
-    AsyncValue<PersonalInformationModel> profile, 
+    DailyTransactionModel transaction,
+    BuildContext context,
+    AsyncValue<PersonalInformationModel> profile,
     AsyncValue<GeneralSettingModel> settingProvider
   ) {
     return Consumer(
       builder: (context, ref, child) {
-        // DEBUG: Analizar la estructura de transacciones Due Payment
-        if (transaction.type == 'Due Payment') {
-          debugPrint('🔍 ANÁLISIS Due Payment:');
-          debugPrint('   - ID: ${transaction.id}');
-          debugPrint('   - Name: ${transaction.name}');
-          debugPrint('   - Type: ${transaction.type}');
-          debugPrint('   - dueTransactionModel null?: ${transaction.dueTransactionModel == null}');
-          if (transaction.dueTransactionModel != null) {
-            debugPrint('   - Invoice Number: ${transaction.dueTransactionModel!.invoiceNumber}');
-          }
-        }
-        
+        // PRIMERO: Verificar si hay invoiceNumber directo del API (campo plano)
+        // Esto tiene prioridad porque es el campo enriquecido que viene del backend
+        final directInvoiceNumber = transaction.invoiceNumber ?? '';
+
         // PARA TRANSACCIONES DE DUE PAYMENT (Cuentas por Cobrar)
         if (transaction.type == 'Due Payment') {
-          String displayText = transaction.id.isNotEmpty ? transaction.id : 'Due Payment';
-          
-          // Si tiene dueTransactionModel, usar el invoice number
-          if (transaction.dueTransactionModel != null && transaction.dueTransactionModel!.invoiceNumber.isNotEmpty) {
-            displayText = transaction.dueTransactionModel!.invoiceNumber;
-          }
+          // Prioridad: 1) invoiceNumber directo del API, 2) dueTransactionModel, 3) ID
+          String displayText = directInvoiceNumber.isNotEmpty
+              ? directInvoiceNumber
+              : (transaction.dueTransactionModel?.invoiceNumber.isNotEmpty == true
+                  ? transaction.dueTransactionModel!.invoiceNumber
+                  : (transaction.id.isNotEmpty ? transaction.id : 'Due Payment'));
           
           return InkWell(
             onTap: () async {
@@ -1950,70 +2081,92 @@ class _DailyTransactionState extends State<DailyTransaction> {
         }
         
         // PARA TRANSACCIONES DE DUE COLLECTION (También pueden necesitar recibo)
-        if (transaction.type == 'Due Collection' && transaction.dueTransactionModel != null) {
-          final invoiceNumber = transaction.dueTransactionModel!.invoiceNumber;
-          return InkWell(
-            onTap: () async {
-              final setting = settingProvider.valueOrNull;
-              final profileInfo = profile.valueOrNull;
-              if (setting != null && profileInfo != null) {
-                debugPrint('🧾 Generando recibo de Due Collection - Factura: $invoiceNumber');
-                
-                try {
-                  EasyLoading.show(status: 'Generando recibo de cobro...');
-                  await GeneratePdfAndPrint().printDueInvoice(
-                    personalInformationModel: profileInfo,
-                    dueTransactionModel: transaction.dueTransactionModel!,
-                    setting: setting,
-                    context: context,
-                    fromSaleReports: true,
-                  );
-                  EasyLoading.dismiss();
-                  debugPrint('✅ Recibo de Due Collection generado exitosamente');
-                } catch (e) {
-                  EasyLoading.dismiss();
-                  debugPrint('❌ Error generando recibo de Due Collection: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error generando recibo: $e')),
-                  );
+        if (transaction.type == 'Due Collection') {
+          // Usar directInvoiceNumber primero, luego modelo si existe
+          final invoiceNumber = directInvoiceNumber.isNotEmpty
+              ? directInvoiceNumber
+              : (transaction.dueTransactionModel?.invoiceNumber ?? '');
+
+          // Mostrar aunque no haya modelo, usando el campo directo
+          if (invoiceNumber.isNotEmpty) {
+            return InkWell(
+              onTap: () async {
+                final setting = settingProvider.valueOrNull;
+                final profileInfo = profile.valueOrNull;
+                if (setting != null && profileInfo != null && transaction.dueTransactionModel != null) {
+                  debugPrint('🧾 Generando recibo de Due Collection - Factura: $invoiceNumber');
+
+                  try {
+                    EasyLoading.show(status: 'Generando recibo de cobro...');
+                    await GeneratePdfAndPrint().printDueInvoice(
+                      personalInformationModel: profileInfo,
+                      dueTransactionModel: transaction.dueTransactionModel!,
+                      setting: setting,
+                      context: context,
+                      fromSaleReports: true,
+                    );
+                    EasyLoading.dismiss();
+                    debugPrint('✅ Recibo de Due Collection generado exitosamente');
+                  } catch (e) {
+                    EasyLoading.dismiss();
+                    debugPrint('❌ Error generando recibo de Due Collection: $e');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error generando recibo: $e')),
+                    );
+                  }
+                } else {
+                  // Si no hay modelo, solo mostrar el número sin opción de PDF
+                  debugPrint('⚠️ Due Collection sin modelo - solo mostrando número: $invoiceNumber');
                 }
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(6.0),
-                border: Border.all(color: Colors.green.shade200, width: 1),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.receipt_long, size: 16.0, color: Colors.green.shade700),
-                  const SizedBox(width: 4.0),
-                  Text(
-                    invoiceNumber,
-                    style: TextStyle(
-                      color: Colors.green.shade700,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      decoration: TextDecoration.underline,
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(6.0),
+                  border: Border.all(color: Colors.green.shade200, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.receipt_long, size: 16.0, color: Colors.green.shade700),
+                    const SizedBox(width: 4.0),
+                    Text(
+                      invoiceNumber,
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
+            );
+          }
         }
         
-        // PARA TRANSACCIONES DE VENTA (SALE)
-        if (transaction.saleTransactionModel != null) {
-          final invoiceNumber = transaction.saleTransactionModel!.invoiceNumber;
+        // PARA TRANSACCIONES DE VENTA (SALE, Impresiones, Adicionales) - Usar directInvoiceNumber primero
+        // Nota: 'Impresiones' se muestra como 'Producto' en la UI, 'Adicionales' también son ventas
+        if (transaction.type == 'Sale' || transaction.type == 'Impresiones' || transaction.type == 'Adicionales') {
+          // Priorizar directInvoiceNumber (del API), luego modelo si existe
+          final invoiceNumber = directInvoiceNumber.isNotEmpty
+              ? directInvoiceNumber
+              : (transaction.saleTransactionModel?.invoiceNumber ?? '');
           return InkWell(
             onTap: () async {
               final setting = settingProvider.valueOrNull;
               final profileInfo = profile.valueOrNull;
               if (setting != null && profileInfo != null) {
+                // Verificar que el modelo de venta existe antes de procesar PDF
+                if (transaction.saleTransactionModel == null) {
+                  debugPrint('⚠️ saleTransactionModel es null - no se puede generar PDF');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('No se puede generar PDF para esta venta (Invoice: $invoiceNumber)')),
+                  );
+                  return;
+                }
                 // Verificar que tenga productos antes de procesar
                 final saleModel = transaction.saleTransactionModel!;
                 debugPrint('🔍 DEBUG PDF - Factura: ${saleModel.invoiceNumber}');
@@ -2385,6 +2538,344 @@ class _DailyTransactionState extends State<DailyTransaction> {
     );
   }
 
+  // Método para buscar y mostrar transacciones huérfanas
+  Future<void> _showOrphanTransactions(WidgetRef ref) async {
+    try {
+      EasyLoading.show(status: 'Buscando transacciones huérfanas...');
+
+      final apiService = ApiService();
+
+      // Obtener todas las transacciones diarias
+      final dailyResponse = await apiService.get('daily-transactions', queryParams: {
+        'limit': '5000',
+      });
+
+      // Obtener todos los gastos actuales
+      final expenseResponse = await apiService.get('expenses', queryParams: {
+        'limit': '5000',
+      });
+
+      List<Map<String, dynamic>> orphanTransactions = [];
+      Map<String, bool> existingExpenses = {};
+
+      // Crear un mapa de gastos existentes para búsqueda rápida
+      if (expenseResponse.success && expenseResponse.data != null) {
+        final expenses = expenseResponse.data['expenses'] as List<dynamic>? ?? [];
+        for (var element in expenses) {
+          final expense = Map<String, dynamic>.from(element);
+          final key = '${expense['expanseFor']}_${expense['amount']}_${expense['expenseDate']}';
+          existingExpenses[key] = true;
+        }
+      }
+
+      // Buscar transacciones de tipo Expense sin gasto correspondiente
+      if (dailyResponse.success && dailyResponse.data != null) {
+        final transactions = dailyResponse.data['daily_transactions'] as List<dynamic>? ??
+            dailyResponse.data['transactions'] as List<dynamic>? ?? [];
+
+        for (var element in transactions) {
+          final transactionData = Map<String, dynamic>.from(element);
+          final transactionId = transactionData['id']?.toString();
+          final transaction = DailyTransactionModel.fromJson(transactionData);
+
+          if (transaction.type == 'Expense' && transaction.expenseModel != null) {
+            final expense = transaction.expenseModel!;
+            final key = '${expense.expanseFor}_${expense.amount}_${expense.expenseDate}';
+
+            // Si no existe el gasto en la tabla de gastos, es huérfano
+            if (!existingExpenses.containsKey(key)) {
+              // Verificar si es la transacción de Victor Guzmán
+              if ((expense.customerName?.toLowerCase().contains('victor') ?? false) ||
+                  (expense.customerName?.toLowerCase().contains('guzman') ?? false) ||
+                  expense.amount == '5000' || expense.amount == '5000.00') {
+                orphanTransactions.add({
+                  'key': transactionId,
+                  'transaction': transaction,
+                  'expense': expense,
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      EasyLoading.dismiss();
+      
+      if (orphanTransactions.isEmpty) {
+        EasyLoading.showInfo('No se encontraron transacciones huérfanas de Victor Guzmán');
+        return;
+      }
+      
+      // Mostrar diálogo con las transacciones encontradas
+      if (!mounted) return;
+      
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            width: 600,
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Encabezado
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Transacciones Huérfanas Encontradas',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(dialogContext),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                
+                // Lista de transacciones
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: orphanTransactions.length,
+                    itemBuilder: (context, index) {
+                      final data = orphanTransactions[index];
+                      final expense = data['expense'] as ExpenseModel;
+                      final transaction = data['transaction'] as DailyTransactionModel;
+                      
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Transacción #${index + 1}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'HUÉRFANA',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text('Cliente: ${expense.customerName ?? "N/A"}'),
+                              Text('Concepto: ${expense.expanseFor}'),
+                              Text('Monto: \$${expense.amount}'),
+                              Text('Fecha: ${expense.expenseDate}'),
+                              Text('Categoría: ${expense.category}'),
+                              if (expense.customerPhone != null)
+                                Text('Teléfono: ${expense.customerPhone}'),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: () async {
+                                      // Pedir confirmación con contraseña
+                                      final confirmed = await _confirmDeleteOrphan(
+                                        context, 
+                                        expense,
+                                        data['key'] as String,
+                                      );
+                                      
+                                      if (confirmed) {
+                                        Navigator.pop(dialogContext);
+                                        await _deleteOrphanTransaction(
+                                          data['key'] as String,
+                                          transaction,
+                                          ref,
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.delete),
+                                    label: const Text('Eliminar del Informe'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                
+                // Botón cerrar
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Cerrar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
+    }
+  }
+  
+  // Confirmar eliminación con contraseña
+  Future<bool> _confirmDeleteOrphan(BuildContext context, ExpenseModel expense, String transactionKey) async {
+    final passwordController = TextEditingController();
+    bool confirmed = false;
+    
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Confirmar Eliminación'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('¿Está seguro de eliminar esta transacción del informe?'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Cliente: ${expense.customerName}'),
+                  Text('Monto: \$${expense.amount}'),
+                  Text('Fecha: ${expense.expenseDate}'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Contraseña de autorización',
+                hintText: 'Ingrese la contraseña',
+                prefixIcon: Icon(Icons.lock),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              // Validar contraseña con Firebase
+              final isValid = await DeletionPasswordService.validatePassword(
+                passwordController.text,
+              );
+
+              if (isValid) {
+                confirmed = true;
+                Navigator.pop(dialogContext);
+              } else {
+                EasyLoading.showError('Contraseña incorrecta');
+              }
+            },
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    
+    return confirmed;
+  }
+  
+  // Eliminar transacción huérfana
+  Future<void> _deleteOrphanTransaction(String transactionKey, DailyTransactionModel transaction, WidgetRef ref) async {
+    try {
+      EasyLoading.show(status: 'Eliminando transacción...');
+
+      final apiService = ApiService();
+
+      // Eliminar la transacción diaria
+      await apiService.delete('daily-transactions/$transactionKey');
+
+      // Actualizar el balance si es necesario
+      if (transaction.type == 'Expense' && transaction.paymentOut > 0) {
+        final personalInfoResponse = await apiService.get('personal-information');
+
+        if (personalInfoResponse.success && personalInfoResponse.data != null) {
+          final data = Map<String, dynamic>.from(personalInfoResponse.data);
+          double currentBalance = double.tryParse(data['remainingShopBalance']?.toString() ?? '0') ?? 0.0;
+          double newBalance = currentBalance + transaction.paymentOut;
+
+          await apiService.put('personal-information', {
+            'remainingShopBalance': newBalance,
+          });
+        }
+      }
+
+      // Registrar en auditoría
+      await AuditService().logAction(
+        action: AuditAction.delete,
+        module: AuditModule.expenses,
+        description: 'Eliminó transacción huérfana del informe: ${transaction.name} por \$${transaction.paymentOut}',
+        beforeData: {
+          'transactionKey': transactionKey,
+          'name': transaction.name,
+          'amount': transaction.paymentOut,
+          'date': transaction.date,
+          'type': transaction.type,
+        },
+      );
+
+      // Refrescar el provider
+      ref.invalidate(dailyTransactionProvider);
+
+      EasyLoading.showSuccess('Transacción eliminada del informe');
+    } catch (e) {
+      EasyLoading.showError('Error al eliminar: $e');
+    }
+  }
+
   // NUEVO: Método para corregir saldos negativos en clientes
   Future<void> _fixNegativeBalances() async {
     try {
@@ -2430,34 +2921,38 @@ class _DailyTransactionState extends State<DailyTransaction> {
   Future<void> _deleteProblematicInvoices() async {
     try {
       EasyLoading.show(status: 'Eliminando facturas problemáticas...');
-      
-      final userId = await getUserID();
-      final dailyTransactionRef = FirebaseDatabase.instance.ref('$userId/Daily Transaction');
-      
+
+      final apiService = ApiService();
+
       // Obtener todas las entradas de Daily Transaction
-      final snapshot = await dailyTransactionRef.get();
-      
-      if (snapshot.exists) {
-        final data = snapshot.value as Map<dynamic, dynamic>;
+      final response = await apiService.get('daily-transactions', queryParams: {
+        'limit': '5000',
+      });
+
+      if (response.success && response.data != null) {
+        final transactions = response.data['daily_transactions'] as List<dynamic>? ??
+            response.data['transactions'] as List<dynamic>? ?? [];
         int deletedCount = 0;
-        
-        for (var entry in data.entries) {
-          final key = entry.key;
-          final value = entry.value as Map<dynamic, dynamic>;
-          
+
+        for (var element in transactions) {
+          final value = Map<String, dynamic>.from(element);
+          final transactionId = value['id']?.toString();
+
           // Verificar si es una venta y tiene el invoiceNumber problemático
-          if ((value['type'] == 'Sale' || value['type'] == 'Adicionales' || value['type'] == 'Impresiones') && 
+          if ((value['type'] == 'Sale' || value['type'] == 'Adicionales' || value['type'] == 'Impresiones') &&
               value['saleTransactionModel'] != null &&
               _problematicInvoices.contains(value['saleTransactionModel']['invoiceNumber'])) {
-            
-            await dailyTransactionRef.child(key).remove();
-            deletedCount++;
-            debugPrint('🗑️ Eliminada factura problemática: ${value['saleTransactionModel']['invoiceNumber']}');
+
+            if (transactionId != null) {
+              await apiService.delete('daily-transactions/$transactionId');
+              deletedCount++;
+              debugPrint('🗑️ Eliminada factura problemática: ${value['saleTransactionModel']['invoiceNumber']}');
+            }
           }
         }
-        
+
         EasyLoading.dismiss();
-        
+
         // Mostrar resultado
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2465,24 +2960,362 @@ class _DailyTransactionState extends State<DailyTransaction> {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Limpiar la lista y refrescar
         _problematicInvoices.clear();
         setState(() {});
-        
+
       } else {
         EasyLoading.dismiss();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se encontraron datos en Daily Transaction')),
         );
       }
-      
+
     } catch (e) {
       EasyLoading.dismiss();
       debugPrint('❌ Error eliminando facturas problemáticas: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
+    }
+  }
+
+  void _showCashDetailsDialog(BuildContext context, DailySummaryModel summary, List<DailyTransactionModel> transactions) {
+    final currencyProvider = pro.Provider.of<CurrencyProvider>(context, listen: false);
+    final globalCurrency = currencyProvider.currency ?? '\$';
+    
+    // Filtrar transacciones en efectivo
+    List<DailyTransactionModel> cashInTransactions = [];
+    List<DailyTransactionModel> cashOutTransactions = [];
+    
+    for (var transaction in transactions) {
+      String? paymentType;
+
+      if (transaction.saleTransactionModel != null) {
+        paymentType = transaction.saleTransactionModel!.paymentType;
+      } else if (transaction.dueTransactionModel != null) {
+        paymentType = transaction.dueTransactionModel!.paymentType;
+      } else if (transaction.purchaseTransactionModel != null) {
+        paymentType = transaction.purchaseTransactionModel!.paymentType;
+      } else if (transaction.expenseModel != null) {
+        paymentType = transaction.expenseModel!.paymentType;
+      } else if (transaction.incomeModel != null) {
+        paymentType = transaction.incomeModel!.paymentType;
+      } else if (transaction.paySalary != null) {
+        paymentType = transaction.paySalary!.paymentType;
+      } else {
+        // Fallback: usar campo directo de la transacción
+        paymentType = transaction.paymentType;
+      }
+
+      if (paymentType != null) {
+        final paymentTypeLower = paymentType.toLowerCase().trim();
+        if (paymentTypeLower == "cash" || paymentTypeLower == "efectivo") {
+          if (transaction.paymentIn > 0) {
+            cashInTransactions.add(transaction);
+          } else if (transaction.paymentOut > 0) {
+            cashOutTransactions.add(transaction);
+          }
+        }
+      }
+    }
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          child: Container(
+            width: 600,
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20.0),
+                      topRight: Radius.circular(20.0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.account_balance_wallet, color: Colors.white, size: 28),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Detalle de Efectivo',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Balance Summary
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20.0),
+                  color: Colors.grey.shade50,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildSummaryItem(
+                            'Ingresos',
+                            '$globalCurrency ${myFormat.format(summary.ingresoEfectivo)}',
+                            Colors.green,
+                            Icons.arrow_downward,
+                          ),
+                          Container(
+                            height: 60,
+                            width: 1,
+                            color: Colors.grey.shade300,
+                          ),
+                          _buildSummaryItem(
+                            'Gastos/Devoluciones',
+                            '$globalCurrency ${myFormat.format(summary.gastoEfectivo)}',
+                            Colors.red,
+                            Icons.arrow_upward,
+                          ),
+                          Container(
+                            height: 60,
+                            width: 1,
+                            color: Colors.grey.shade300,
+                          ),
+                          _buildSummaryItem(
+                            'Balance',
+                            '$globalCurrency ${myFormat.format(summary.ingresoEfectivo - summary.gastoEfectivo)}',
+                            (summary.ingresoEfectivo - summary.gastoEfectivo) >= 0 ? Colors.blue : Colors.orange,
+                            Icons.account_balance,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Transactions List
+                Expanded(
+                  child: DefaultTabController(
+                    length: 2,
+                    child: Column(
+                      children: [
+                        TabBar(
+                          labelColor: const Color(0xFF4CAF50),
+                          unselectedLabelColor: Colors.grey,
+                          indicatorColor: const Color(0xFF4CAF50),
+                          tabs: [
+                            Tab(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.arrow_downward, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text('Ingresos (${cashInTransactions.length})'),
+                                ],
+                              ),
+                            ),
+                            Tab(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.arrow_upward, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text('Gastos/Devoluciones (${cashOutTransactions.length})'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              // Ingresos Tab
+                              _buildTransactionsList(cashInTransactions, globalCurrency, true),
+                              // Gastos Tab
+                              _buildTransactionsList(cashOutTransactions, globalCurrency, false),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Footer
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20.0),
+                      bottomRight: Radius.circular(20.0),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade200,
+                        offset: const Offset(0, -2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Cerrar',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildSummaryItem(String label, String value, Color color, IconData icon) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildTransactionsList(List<DailyTransactionModel> transactions, String currency, bool isIncome) {
+    if (transactions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isIncome ? Icons.inbox : Icons.money_off,
+              size: 64,
+              color: Colors.grey.shade300,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isIncome ? 'No hay ingresos en efectivo' : 'No hay gastos en efectivo',
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: transactions.length,
+      itemBuilder: (context, index) {
+        final transaction = transactions[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isIncome ? Colors.green.shade100 : Colors.red.shade100,
+              child: Icon(
+                _getTransactionIcon(transaction.type),
+                color: isIncome ? Colors.green : Colors.red,
+              ),
+            ),
+            title: Text(
+              transaction.name,
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(translateType(transaction.type)),
+                Text(
+                  transaction.date.substring(0, 10),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            trailing: Text(
+              '$currency ${myFormat.format(isIncome ? transaction.paymentIn : transaction.paymentOut)}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isIncome ? Colors.green : Colors.red,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+  
+  IconData _getTransactionIcon(String type) {
+    switch (type) {
+      case 'Sale':
+      case 'Adicionales':
+      case 'Impresiones':
+        return Icons.shopping_cart;
+      case 'Due Collection':
+        return Icons.account_balance_wallet;
+      case 'Income':
+        return Icons.attach_money;
+      case 'Expense':
+        return Icons.money_off;
+      case 'Purchase':
+        return Icons.shopping_bag;
+      default:
+        return Icons.receipt;
     }
   }
 }

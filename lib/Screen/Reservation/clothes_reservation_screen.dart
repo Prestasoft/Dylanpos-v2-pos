@@ -158,7 +158,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
     // Crear la reserva
     final success = await ref.read(crearReservaProvider({
       'serviceId': packageId,
-      'clientId': selectedCustomer?.phoneNumber ?? '',
+      'clientId': selectedCustomer?.id ?? selectedCustomer?.phoneNumber ?? '',
       'dressId': '',
       'branchId': '',
       'date': formattedDate,
@@ -182,16 +182,16 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
         ),
       );
 
-      // Navigate to the POS sales screen
+      // Navigate to the POS sales screen with reservationId
       if (mounted) {
         // Actualiza el estado del menú lateral
         ref.read(sidebarProvider.notifier)
           ..expandMenu('/sales') // Expande el menú de Ventas
           ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
 
-        // Navega a la pantalla
+        // Navega a la pantalla con el ID de la reservación
         Navigator.of(context).popUntil((route) => route.isFirst);
-        context.go('/sales/inventory-sales');
+        context.go('/sales/inventory-sales', extra: {'reservationId': success.reservationId});
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -732,7 +732,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
         dressName: '',
         branchId: '',
         dressReservations: dressReservations,
-        clientId: selectedCustomer?.phoneNumber ?? '',
+        clientId: selectedCustomer?.id ?? selectedCustomer?.phoneNumber ?? '',
         clientName: selectedCustomer?.customerName ?? '',
         reservationId: '',
         selectedDate: selectedDate,
@@ -812,7 +812,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
                   dressName: '',
                   branchId: '',
                   dressReservations: dressReservations,
-                  clientId: selectedCustomer?.phoneNumber ?? '',
+                  clientId: selectedCustomer?.id ?? selectedCustomer?.phoneNumber ?? '',
                   clientName: selectedCustomer?.customerName ?? '',
                   reservationId: '',
                   selectedDate: selectedDate,

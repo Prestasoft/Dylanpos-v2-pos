@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -11,6 +9,7 @@ import 'package:salespro_admin/generated/l10n.dart' as lang;
 import '../../Provider/expense_category_proivder.dart';
 import '../../const.dart';
 import '../../model/expense_category_model.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditCategory extends StatefulWidget {
@@ -33,23 +32,26 @@ class _EditCategoryState extends State<EditCategory> {
   String categoryDescription = '';
   String categoryName = '';
 
-  String expenseKey = '';
+  String? expenseCategoryId;
+  final ApiService _apiService = ApiService();
 
-  void getExpenseKey() async {
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Expense Category')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['categoryName'].toString() ==
-            widget.expenseCategoryModel.categoryName) {
-          expenseKey = element.key.toString();
+  void getExpenseCategoryId() async {
+    try {
+      final response = await _apiService.get('categories/expenses', queryParams: {
+        'categoryName': widget.expenseCategoryModel.categoryName,
+        'limit': '1',
+      });
+      if (response.success && response.data != null) {
+        final categories = response.data['expense_categories'] as List<dynamic>? ??
+            response.data['categories'] as List<dynamic>? ?? [];
+        if (categories.isNotEmpty) {
+          final categoryData = Map<String, dynamic>.from(categories.first);
+          expenseCategoryId = categoryData['id']?.toString();
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error obteniendo ID de categoría: $e');
+    }
   }
 
   @override
@@ -59,7 +61,7 @@ class _EditCategoryState extends State<EditCategory> {
     checkCurrentUserAndRestartApp();
     categoryDescription = widget.expenseCategoryModel.categoryDescription;
     categoryName = widget.expenseCategoryModel.categoryName;
-    getExpenseKey();
+    getExpenseCategoryId();
   }
 
   @override
@@ -197,15 +199,12 @@ class _EditCategoryState extends State<EditCategory> {
                                       status:
                                           '${lang.S.of(context).loading}...',
                                       dismissOnTap: false);
-                                  final DatabaseReference
-                                      productInformationRef = FirebaseDatabase
-                                          .instance
-                                          .ref()
-                                          .child(await getUserID())
-                                          .child('Expense Category')
-                                          .child(expenseKey);
-                                  await productInformationRef
-                                      .set(expenseCategory.toJson());
+                                  if (expenseCategoryId != null) {
+                                    await _apiService.put(
+                                      'categories/expenses/$expenseCategoryId',
+                                      Map<String, dynamic>.from(expenseCategory.toJson()),
+                                    );
+                                  }
                                   EasyLoading.showSuccess(
                                       lang.S.of(context).editSuccessfully,
                                       duration:

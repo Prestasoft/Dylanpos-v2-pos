@@ -1,9 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, unused_result
 
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:salespro_admin/services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -336,8 +334,7 @@ class _PurchaseShowPaymentPopUpState extends State<PurchaseShowPaymentPopUp> {
                                                   });
                                                   EasyLoading.show(status: 'Loading...', dismissOnTap: false);
 
-                                                  final userId = await getUserID();
-                                                  DatabaseReference ref = FirebaseDatabase.instance.ref("$userId/Purchase Transition");
+                                                  final apiService = ApiService();
 
                                                   dueAmountController.text.toDouble() <= 0 ? widget.transitionModel.isPaid = true : widget.transitionModel.isPaid = false;
                                                   dueAmountController.text.toDouble() <= 0 ? widget.transitionModel.dueAmount = 0 : widget.transitionModel.dueAmount = dueAmountController.text.toDouble();
@@ -345,26 +342,53 @@ class _PurchaseShowPaymentPopUpState extends State<PurchaseShowPaymentPopUp> {
                                                   widget.transitionModel.totalAmount = widget.transitionModel.totalAmount!.toDouble();
                                                   widget.transitionModel.paymentType = selectedPaymentOption;
 
-                                                  await ref.push().set(widget.transitionModel.toJson());
+                                                  // Guardar compra en PostgreSQL
+                                                  await apiService.post('purchases', Map<String, dynamic>.from(widget.transitionModel.toJson()));
 
                                                   ///__________StockMange_________________________________________________
-                                                  final stockRef = FirebaseDatabase.instance.ref('$userId/Products/');
                                                   for (var element in widget.transitionModel.productList!) {
-                                                    var data = await stockRef.orderByChild('productCode').equalTo(element.productCode).once();
-                                                    final data2 = jsonDecode(jsonEncode(data.snapshot.value));
-                                                    String productPath = data.snapshot.value.toString().substring(1, 21);
-
-                                                    var data1 = await stockRef.child('$productPath/productStock').get();
-                                                    int stock = int.parse(data1.value.toString());
-                                                    int remainStock = stock + element.productStock.toInt();
-
-                                                    stockRef.child(productPath).update({
-                                                      'productStock': '$remainStock',
-                                                      'productSalePrice': element.productSalePrice,
-                                                      'productPurchasePrice': element.productPurchasePrice,
-                                                      'productDealerPrice': element.productDealerPrice,
-                                                      'productWholeSalePrice': element.productWholeSalePrice,
+                                                    // Buscar producto por código
+                                                    final productResponse = await apiService.get('products', queryParams: {
+                                                      'productCode': element.productCode,
+                                                      'limit': '1',
                                                     });
+
+                                                    if (productResponse.success && productResponse.data != null) {
+                                                      final data = productResponse.data;
+                                                      List<dynamic> products = [];
+                                                      if (data is Map && data['products'] != null) {
+                                                        products = data['products'] as List<dynamic>;
+                                                      } else if (data is List) {
+                                                        products = data;
+                                                      }
+
+                                                      if (products.isNotEmpty) {
+                                                        final productData = Map<String, dynamic>.from(products.first);
+                                                        final String? productId = productData['id']?.toString();
+                                                        int currentStock = int.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+                                                        int remainStock = currentStock + element.productStock.toInt();
+
+                                                        // Actualizar stock y precios
+                                                        if (productId != null) {
+                                                          await apiService.put('products/$productId', {
+                                                            'productStock': '$remainStock',
+                                                            'productSalePrice': element.productSalePrice,
+                                                            'productPurchasePrice': element.productPurchasePrice,
+                                                            'productDealerPrice': element.productDealerPrice,
+                                                            'productWholeSalePrice': element.productWholeSalePrice,
+                                                          });
+
+                                                          // Actualizar números de serie si existen
+                                                          if (element.serialNumber.isNotEmpty) {
+                                                            List<dynamic> currentSerialList = productData['serialNumber'] ?? [];
+                                                            List<dynamic> newSerialList = currentSerialList + element.serialNumber;
+                                                            await apiService.put('products/$productId', {
+                                                              'serialNumber': newSerialList,
+                                                            });
+                                                          }
+                                                        }
+                                                      }
+                                                    }
 
                                                     ///________daily_transactionModel_________________________________________________________________________
 
@@ -380,17 +404,6 @@ class _PurchaseShowPaymentPopUpState extends State<PurchaseShowPaymentPopUp> {
                                                       purchaseTransactionModel: widget.transitionModel,
                                                     );
                                                     postDailyTransaction(dailyTransactionModel: dailyTransaction);
-
-                                                    ///________Update_Serial_Number____________________________________________________
-
-                                                    if (element.serialNumber.isNotEmpty) {
-                                                      var productOldSerialList = data2[productPath]['serialNumber'] ?? [];
-
-                                                      List<dynamic> result = productOldSerialList + element.serialNumber;
-                                                      stockRef.child(productPath).update({
-                                                        'serialNumber': result.map((e) => e).toList(),
-                                                      });
-                                                    }
                                                   }
 
                                                   ///_________Invoice Increase______________________________________________________
@@ -401,22 +414,34 @@ class _PurchaseShowPaymentPopUpState extends State<PurchaseShowPaymentPopUp> {
 
                                                   ///_________DueUpdate___________________________________________________________________________________
                                                   if (widget.transitionModel.customerName != 'Guest') {
-                                                    final dueUpdateRef = FirebaseDatabase.instance.ref('$userId/Customers/');
-                                                    String? key;
+                                                    // Buscar cliente por teléfono
+                                                    final customerResponse = await apiService.get('customers', queryParams: {
+                                                      'phoneNumber': widget.transitionModel.customerPhone ?? '',
+                                                      'limit': '1',
+                                                    });
 
-                                                    await FirebaseDatabase.instance.ref(userId).child('Customers').orderByKey().get().then((value) {
-                                                      for (var element in value.children) {
-                                                        var data = jsonDecode(jsonEncode(element.value));
-                                                        if (data['phoneNumber'] == widget.transitionModel.customerPhone) {
-                                                          key = element.key;
+                                                    if (customerResponse.success && customerResponse.data != null) {
+                                                      final data = customerResponse.data;
+                                                      List<dynamic> customers = [];
+                                                      if (data is Map && data['customers'] != null) {
+                                                        customers = data['customers'] as List<dynamic>;
+                                                      } else if (data is List) {
+                                                        customers = data;
+                                                      }
+
+                                                      if (customers.isNotEmpty) {
+                                                        final customerData = Map<String, dynamic>.from(customers.first);
+                                                        final String? customerId = customerData['id']?.toString();
+                                                        int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+                                                        int totalDue = previousDue + widget.transitionModel.dueAmount!.toInt();
+
+                                                        if (customerId != null) {
+                                                          await apiService.put('customers/$customerId', {
+                                                            'due': '$totalDue',
+                                                          });
                                                         }
                                                       }
-                                                    });
-                                                    var data1 = await dueUpdateRef.child('$key/due').get();
-                                                    int previousDue = data1.value.toString().toInt();
-
-                                                    int totalDue = previousDue + widget.transitionModel.dueAmount!.toInt();
-                                                    dueUpdateRef.child(key!).update({'due': '$totalDue'});
+                                                    }
                                                   }
 
                                                   ///________update_all_provider___________________________________________________
@@ -742,35 +767,68 @@ class _PurchaseShowPaymentPopUpState extends State<PurchaseShowPaymentPopUp> {
   }
 
   void getSpecificCustomers({required String phoneNumber, required int due}) async {
-    final userId = await getUserID();
-    final ref = FirebaseDatabase.instance.ref('$userId/Customers/');
-    String? key;
+    final apiService = ApiService();
 
-    await FirebaseDatabase.instance.ref(userId).child('Customers').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'] == phoneNumber) {
-          key = element.key;
+    // Buscar cliente por teléfono
+    final response = await apiService.get('customers', queryParams: {
+      'phoneNumber': phoneNumber,
+      'limit': '1',
+    });
+
+    if (response.success && response.data != null) {
+      final data = response.data;
+      List<dynamic> customers = [];
+      if (data is Map && data['customers'] != null) {
+        customers = data['customers'] as List<dynamic>;
+      } else if (data is List) {
+        customers = data;
+      }
+
+      if (customers.isNotEmpty) {
+        final customerData = Map<String, dynamic>.from(customers.first);
+        final String? customerId = customerData['id']?.toString();
+        int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+        int totalDue = previousDue + due;
+
+        if (customerId != null) {
+          await apiService.put('customers/$customerId', {
+            'due': '$totalDue',
+          });
         }
       }
-    });
-    var data1 = await ref.child('$key/due').get();
-    int previousDue = data1.value.toString().toInt();
-
-    int totalDue = previousDue + due;
-    ref.child(key!).update({'due': '$totalDue'});
+    }
   }
 
   void decreaseStock(String productCode, int quantity) async {
-    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+    final apiService = ApiService();
 
-    var data = await ref.orderByChild('productCode').equalTo(productCode).once();
-    String productPath = data.snapshot.value.toString().substring(1, 21);
+    // Buscar producto por código
+    final response = await apiService.get('products', queryParams: {
+      'productCode': productCode,
+      'limit': '1',
+    });
 
-    var data1 = await ref.child('$productPath/productStock').get();
-    int stock = int.parse(data1.value.toString());
-    int remainStock = stock - quantity;
+    if (response.success && response.data != null) {
+      final data = response.data;
+      List<dynamic> products = [];
+      if (data is Map && data['products'] != null) {
+        products = data['products'] as List<dynamic>;
+      } else if (data is List) {
+        products = data;
+      }
 
-    ref.child(productPath).update({'productStock': '$remainStock'});
+      if (products.isNotEmpty) {
+        final productData = Map<String, dynamic>.from(products.first);
+        final String? productId = productData['id']?.toString();
+        int stock = int.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+        int remainStock = stock - quantity;
+
+        if (productId != null) {
+          await apiService.put('products/$productId', {
+            'productStock': '$remainStock',
+          });
+        }
+      }
+    }
   }
 }

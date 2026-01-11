@@ -9,11 +9,13 @@ import 'package:salespro_admin/commas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
+import 'package:salespro_admin/Provider/branch_settings_provider.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
 import '../const.dart';
 import '../model/general_setting_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
+import '../model/branch_settings_model.dart';
 
 ///___________Sales_PDF_Formats____________________________________________________________________________________________________________________________
 FutureOr<Uint8List> generateSaleDocument({
@@ -30,26 +32,71 @@ FutureOr<Uint8List> generateSaleDocument({
   final pw.Document doc = pw.Document();
   final ref = ProviderScope.containerOf(context);
   final List<String> idReservaciones = post?.reservationIds ?? [];
-  //actualizar los prodcutos
-  await ref.read(ActualizarEstadoReservaProvider({
-    'id': idReservaciones,
-    'estado': 'confirmado',
-    'estado_factura': true,
-  }));
+
+  // Obtener configuración de sucursal para el encabezado
+  BranchSettingsModel? branchSettings;
+  try {
+    branchSettings = await ref.read(branchSettingsProvider.future).timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => BranchSettingsModel.defaultSettings(''),
+    );
+  } catch (e) {
+    branchSettings = BranchSettingsModel.defaultSettings('');
+  }
+  
+  // Actualizar los productos de forma asíncrona sin bloquear
+  if (idReservaciones.isNotEmpty) {
+    // Ejecutar la actualización sin esperar el resultado
+    Future(() async {
+      try {
+        await ref.read(ActualizarEstadoReservaProvider({
+          'id': idReservaciones,
+          'estado': 'confirmado',
+          'estado_factura': true,
+        }).future);
+      } catch (error) {
+        print('Error actualizando estado de reserva: $error');
+      }
+    });
+  }
 
   // Primero, obtener el primer ID de reservación (si existe)
   final firstReservationId = idReservaciones.isNotEmpty ? idReservaciones.first : null;
 
-  // Obtener la reservación completa usando el primer ID
-  final fullReservation = firstReservationId != null 
-      ? await ref.read(fullReservationByIdProviderVQ(firstReservationId).future)
-      : null;
+  // Obtener la reservación completa usando el primer ID con timeout
+  FullReservation? fullReservation;
+  try {
+    fullReservation = firstReservationId != null 
+        ? await ref.read(fullReservationByIdProviderVQ(firstReservationId).future).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => null,
+          )
+        : null;
+  } catch (e) {
+    print('Error obteniendo reservación: $e');
+    fullReservation = null;
+  }
 
 // Extraer el nombre del vendedor de la reservación
 final reservationSellerName = fullReservation?.reservation['seller_name']?.toString() ?? 'No especificado';
   // Obtener la lista de IDs de reservaciones
-  // Obtener todas las reservaciones primero
-  final List<FullReservation?> reservaciones = await Future.wait(idReservaciones.map((id) => ref.read(fullReservationByIdProviderVQ(id).future)));
+  // Obtener todas las reservaciones con timeout
+  List<FullReservation?> reservaciones = [];
+  try {
+    reservaciones = await Future.wait(
+      idReservaciones.map((id) => 
+        ref.read(fullReservationByIdProviderVQ(id).future)
+          .timeout(const Duration(seconds: 3), onTimeout: () => null)
+          .catchError((_) => null)
+      )
+    ).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => <FullReservation?>[],
+    );
+  } catch (e) {
+    print('Error obteniendo reservaciones: $e');
+    reservaciones = [];
+  }
   
   // Separar reservaciones por tipo
   FullReservation? preQuinceFiestaReservation;
@@ -109,7 +156,11 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
     } 
     // Para reservas normales, usar la descripción del servicio
     else {
-      final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+      // Intentar obtener la reservación de las ya cargadas
+      final fullReservation = reservaciones.firstWhere(
+        (r) => r?.reservation['id'] == item.productId,
+        orElse: () => null,
+      );
       final serviceDescription = fullReservation?.service?['description'] ?? item.descricpion ?? '';
       
       rows.add(<String>[
@@ -129,511 +180,449 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
       margin: pw.EdgeInsets.zero,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       header: (pw.Context context) {
-        return pw.Padding(
-          padding: const pw.EdgeInsets.only(left: 20.0, right: 20, bottom: 20, top: 5),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
+        return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Row(
-                children: [
-                  pw.Container(
-                    width: 150,
-                    padding: const pw.EdgeInsets.all(10.0),
-                    child: pw.Center(
+              // ═══════════════════════════════════════════════════════════════════════
+              // ENCABEZADO CON BANDA DE COLOR (Estilo Gubernamental/DGII)
+              // ═══════════════════════════════════════════════════════════════════════
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.white, // Fondo blanco para ahorrar tinta
+                  border: pw.Border.all(color: PdfColors.black, width: 1.5),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    // ─── Lado Izquierdo: Logo + Info Empresa ───
+                    pw.Row(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Container(
+                          width: 60,
+                          height: 60,
+                          child: pw.Image(image),
+                        ),
+                        pw.SizedBox(width: 12),
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(
+                              branchSettings?.companyName.isNotEmpty == true
+                                  ? branchSettings!.companyName.toUpperCase()
+                                  : personalInformation.companyName.toUpperCase(),
+                              style: pw.TextStyle(
+                                color: PdfColors.black,
+                                fontSize: 14.0,
+                                fontWeight: pw.FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            pw.SizedBox(height: 2),
+                            pw.Container(width: 150, height: 1, color: PdfColors.black),
+                            pw.SizedBox(height: 3),
+                            if (branchSettings?.rnc.isNotEmpty == true || personalInformation.gst.trim().isNotEmpty)
+                              pw.Text(
+                                'RNC: ${branchSettings?.rnc.isNotEmpty == true ? branchSettings!.rnc : personalInformation.gst}',
+                                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // ─── Lado Derecho: Número de Factura ───
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'FACTURA',
+                          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.black, letterSpacing: 2),
+                        ),
+                        pw.Container(width: 70, height: 1, color: PdfColors.black),
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                          'No. ${transactions.invoiceNumber}',
+                          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                        ),
+                        pw.Text(
+                          DateFormat('dd/MM/yyyy').format(DateTime.parse(transactions.purchaseDate)),
+                          style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // ─── Línea secundaria con datos de contacto ───
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.grey200, // Fondo gris claro para ahorrar tinta
+                  border: pw.Border(
+                    left: pw.BorderSide(color: PdfColors.black, width: 1.5),
+                    right: pw.BorderSide(color: PdfColors.black, width: 1.5),
+                    bottom: pw.BorderSide(color: PdfColors.black, width: 1.5),
+                  ),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  children: [
+                    if (branchSettings?.address.isNotEmpty == true) ...[
+                      pw.Text(branchSettings!.address, style: pw.TextStyle(fontSize: 8, color: PdfColors.black)),
+                      pw.Text('  |  ', style: pw.TextStyle(fontSize: 8, color: PdfColors.black)),
+                    ],
+                    pw.Text(
+                      'Tel: ${branchSettings?.phone.isNotEmpty == true ? branchSettings!.phone : personalInformation.phoneNumber}',
+                      style: pw.TextStyle(fontSize: 8, color: PdfColors.black),
+                    ),
+                    if (branchSettings?.city.isNotEmpty == true) ...[
+                      pw.Text('  |  ', style: pw.TextStyle(fontSize: 8, color: PdfColors.black)),
+                      pw.Text(branchSettings!.city, style: pw.TextStyle(fontSize: 8, color: PdfColors.black)),
+                    ],
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+              pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 20),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+
+              // ═══════════════════════════════════════════════════════════════════════
+              // SECCIÓN COMPROBANTE FISCAL (Estilo DGII Prominente)
+              // ═══════════════════════════════════════════════════════════════════════
+              pw.Container(
+                width: double.infinity,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(
+                    color: _hasValidNcf(transactions.ncfType)
+                        ? PdfColors.black
+                        : PdfColors.grey400,
+                    width: _hasValidNcf(transactions.ncfType) ? 2 : 1,
+                  ),
+                ),
+                child: pw.Column(
+                  children: [
+                    // Encabezado con fondo de color
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 15),
+                      decoration: pw.BoxDecoration(
+                        color: _hasValidNcf(transactions.ncfType)
+                            ? PdfColors.grey200
+                            : PdfColors.grey200,
+                      ),
+                      child: pw.Text(
+                        _hasValidNcf(transactions.ncfType) ? 'COMPROBANTE FISCAL' : 'DOCUMENTO INTERNO',
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                          letterSpacing: 2,
+                          color: PdfColors.black,
+                        ),
+                      ),
+                    ),
+                    // Contenido principal
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(12),
                       child: pw.Column(
                         children: [
-                          pw.Image(
-                            image,
+                          // Tipo de comprobante
+                          pw.Row(
+                            children: [
+                              pw.Text('Tipo:', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                              pw.SizedBox(width: 10),
+                              pw.Expanded(
+                                child: pw.Text(
+                                  _getInvoiceTitle(transactions.ncfType),
+                                  style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_hasValidNcf(transactions.ncfType)) ...[
+                            pw.SizedBox(height: 8),
+                            // NCF en recuadro destacado
+                            pw.Row(
+                              children: [
+                                pw.Text('NCF:', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                                pw.SizedBox(width: 10),
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  decoration: pw.BoxDecoration(
+                                    border: pw.Border.all(color: PdfColors.black, width: 1),
+                                    color: PdfColors.white,
+                                  ),
+                                  child: pw.Text(
+                                    transactions.ncfNumber ?? '${transactions.ncfType}-Pendiente',
+                                    style: pw.TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: pw.FontWeight.bold,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (transactions.ncfExpirationDate != null) ...[
+                              pw.SizedBox(height: 6),
+                              pw.Row(
+                                children: [
+                                  pw.Text('Válido hasta:', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                                  pw.SizedBox(width: 10),
+                                  pw.Text(
+                                    _formatExpirationDate(transactions.ncfExpirationDate!),
+                                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 12),
+
+              // ═══════════════════════════════════════════════════════════════════════
+              // SECCIÓN: FACTURADO A (Cliente) - Estilo Formulario Oficial
+              // ═══════════════════════════════════════════════════════════════════════
+              pw.Container(
+                width: double.infinity,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey400, width: 1),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Encabezado
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey200,
+                        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1)),
+                      ),
+                      child: pw.Text(
+                        'FACTURADO A:',
+                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                      ),
+                    ),
+                    // Contenido del cliente
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(10),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          _buildFormRow('Nombre/Razón Social ', transactions.customerName),
+                          if (transactions.customerRnc != null && transactions.customerRnc!.isNotEmpty)
+                            _buildFormRow('RNC/Cédula ', transactions.customerRnc!)
+                          else if (transactions.customerGst.trim().isNotEmpty)
+                            _buildFormRow('RNC/Cédula ', transactions.customerGst),
+                          if (transactions.customerAddress.isNotEmpty)
+                            _buildFormRow('Dirección ', transactions.customerAddress),
+                          if (transactions.customerPhone.isNotEmpty)
+                            _buildFormRow('Teléfono ', transactions.customerPhone),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 10),
+
+              // ═══════════════════════════════════════════════════════════════════════
+              // SECCIÓN: CONDICIONES + RESPONSABLES
+              // ═══════════════════════════════════════════════════════════════════════
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // ─── Condiciones ───
+                  pw.Expanded(
+                    child: pw.Container(
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey400, width: 1),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.grey200,
+                              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1)),
+                            ),
+                            child: pw.Text('CONDICIONES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Column(
+                              children: [
+                                _buildInfoRow('Condición', transactions.isPaid! ? 'PAGADO' : 'PENDIENTE'),
+                                _buildInfoRow('Método', transactions.paymentType ?? 'N/A'),
+                                if (place != null && place != '-')
+                                  _buildInfoRow('Lugar', place),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        personalInformation.companyName,
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 20.0, fontWeight: pw.FontWeight.bold),
+                  pw.SizedBox(width: 8),
+                  // ─── Responsables ───
+                  pw.Expanded(
+                    child: pw.Container(
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey400, width: 1),
                       ),
-
-                      ///______Phone________________________________________________________________
-                      pw.Container(
-                        padding: const pw.EdgeInsets.all(1.0),
-                        child: pw.Center(
-                          child: pw.Text(
-                            'Teléfono: ${personalInformation.phoneNumber}',
-                            style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 14.0),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.grey200,
+                              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1)),
+                            ),
+                            child: pw.Text('RESPONSABLES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                           ),
-                        ),
-                      ),
-
-                      pw.Container(
-                        width: 300,
-                        child: pw.Text(
-                          "Lugar: ${place ?? 'Sin lugar'}",
-                          style: pw.TextStyle(
-                            color: PdfColors.black,
-                            fontSize: 11,
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Column(
+                              children: [
+                                _buildInfoRow('Vendedor', transactions.sellerName ?? 'Admin'),
+                                _buildInfoRow('Reservó', reservationSellerName),
+                                _buildInfoRow('Hora', DateFormat('HH:mm').format(DateTime.parse(transactions.purchaseDate))),
+                                // Fechas de reservación
+                                ...() {
+                                  List<pw.Widget> dateWidgets = [];
+                                  final mainReservation = preQuinceFiestaReservation ?? normalReservation ??
+                                      (reservaciones.where((r) => r != null).isNotEmpty ? reservaciones.where((r) => r != null).first : null);
+                                  if (mainReservation != null) {
+                                    if (preQuinceFiestaReservation != null) {
+                                      dateWidgets.add(_buildInfoRow('Pre-Quince', _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time'])));
+                                      final fiestaDate = mainReservation.reservation['fiesta_date']?.toString();
+                                      final fiestaTime = mainReservation.reservation['fiesta_time']?.toString();
+                                      if (fiestaDate != null && fiestaDate.isNotEmpty && fiestaTime != null && fiestaTime.isNotEmpty) {
+                                        dateWidgets.add(_buildInfoRow('Fiesta', _formatearFechaYHora(fiestaDate, fiestaTime), bold: true));
+                                      }
+                                    } else {
+                                      dateWidgets.add(_buildInfoRow('Reservación', _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time'])));
+                                    }
+                                  }
+                                  return dateWidgets;
+                                }(),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      pw.SizedBox(height: 10.0),
-
-                      ///______Shop_GST________________________________________________________________
-                      personalInformation.gst.trim().isNotEmpty
-                          ? pw.Container(
-                              padding: const pw.EdgeInsets.all(1.0),
-                              child: pw.Center(
-                                child: pw.Text(
-                                  'RNC: ${personalInformation.gst}',
-                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 14.0),
-                                ),
-                              ),
-                            )
-                          : pw.Container(),
-                    ],
-                  )
+                    ),
+                  ),
                 ],
               ),
 
-              ///________Bill/Invoice_________________________________________________________
+              pw.SizedBox(height: 10),
+
+              // ─── Línea divisoria antes de productos ───
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.all(10.0),
-                child: pw.Center(
-                  child: pw.Container(
-                    decoration: pw.BoxDecoration(
-                      border: pw.Border.all(color: PdfColors.black, width: 0.5),
-                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
-                    ),
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.only(top: 2.0, bottom: 2, left: 5, right: 5),
-                      child: pw.Text(
-                        'Factura de Reservacion',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontSize: 16.0, fontWeight: pw.FontWeight.bold),
-                      ),
-                    ),
-                  ),
+                height: 2,
+                color: PdfColors.grey800,
+              ),
+                  ],
                 ),
               ),
-
-              ///___________price_section_____________________________________________________
-              pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                ///_________Left_Side__________________________________________________________
-                pw.Column(children: [
-                  ///_____Name_______________________________________
-                  pw.Row(children: [
-                    pw.SizedBox(
-                      width: 75.0,
-                      child: pw.Text(
-                        'Cliente',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 10.0,
-                      child: pw.Text(
-                        ':',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 140.0,
-                      child: pw.Text(
-                        transactions.customerName,
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                  ]),
-
-                  ///_____Phone_______________________________________
-                  pw.SizedBox(height: 2),
-                  pw.Row(children: [
-                    pw.SizedBox(
-                      width: 75.0,
-                      child: pw.Text(
-                        'Teléfono',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 10.0,
-                      child: pw.Text(
-                        ':',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 140.0,
-                      child: pw.Text(
-                        transactions.customerPhone,
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                  ]),
-
-                  ///_____Address_______________________________________
-                  pw.SizedBox(height: 2),
-                  pw.Row(
-                    children: [
-                      pw.SizedBox(
-                        width: 75.0,
-                        child: pw.Text(
-                          'Lugar',
-                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                        ),
-                      ),
-                      pw.SizedBox(
-                        width: 10.0,
-                        child: pw.Text(
-                          ':',
-                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                        ),
-                      ),
-                      pw.SizedBox(
-                        width: 140.0,
-                        child: pw.Text(
-                          place ?? '-',
-                          style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.SizedBox(height: 2),
-
-                  ///_____Reservation Date_______________________________________
-                  // Construir widgets de fecha dinámicamente
-                  ...() {
-                    List<pw.Widget> dateWidgets = [];
-                    
-                    // Mostrar fecha principal (pre-quince-fiesta si existe, sino normal)
-                    final mainReservation = preQuinceFiestaReservation ?? normalReservation ?? 
-                        (reservaciones.where((r) => r != null).isNotEmpty ? reservaciones.where((r) => r != null).first : null);
-                    
-                    if (mainReservation != null) {
-                      // Si es PRE-QUINCE FIESTA, mostrar ambas fechas
-                      if (preQuinceFiestaReservation != null) {
-                        // Fecha Pre-Quince (fecha principal)
-                        dateWidgets.add(
-                          pw.Row(
-                            children: [
-                              pw.SizedBox(
-                                width: 75.0,
-                                child: pw.Text(
-                                  'Fecha Pre-Quince',
-                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                              pw.SizedBox(
-                                width: 10.0,
-                                child: pw.Text(
-                                  ':',
-                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                              pw.SizedBox(
-                                width: 140.0,
-                                child: pw.Text(
-                                  _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time']),
-                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        // Fecha Fiesta (si existe)
-                        final fiestaDate = mainReservation.reservation['fiesta_date']?.toString();
-                        final fiestaTime = mainReservation.reservation['fiesta_time']?.toString();
-                        
-                        if (fiestaDate != null && fiestaDate.isNotEmpty && fiestaTime != null && fiestaTime.isNotEmpty) {
-                          dateWidgets.add(pw.SizedBox(height: 2));
-                          dateWidgets.add(
-                            pw.Row(
-                              children: [
-                                pw.SizedBox(
-                                  width: 75.0,
-                                  child: pw.Text(
-                                    'Fecha Fiesta',
-                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontWeight: pw.FontWeight.bold),
-                                  ),
-                                ),
-                                pw.SizedBox(
-                                  width: 10.0,
-                                  child: pw.Text(
-                                    ':',
-                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                                  ),
-                                ),
-                                pw.SizedBox(
-                                  width: 140.0,
-                                  child: pw.Text(
-                                    _formatearFechaYHora(fiestaDate, fiestaTime),
-                                    style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontWeight: pw.FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                      } else {
-                        // Reserva normal
-                        dateWidgets.add(
-                          pw.Row(
-                            children: [
-                              pw.SizedBox(
-                                width: 75.0,
-                                child: pw.Text(
-                                  'Fecha de reservación',
-                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                              pw.SizedBox(
-                                width: 10.0,
-                                child: pw.Text(
-                                  ':',
-                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                              pw.SizedBox(
-                                width: 140.0,
-                                child: pw.Text(
-                                  _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time']),
-                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    }
-                    
-                    return dateWidgets;
-                  }(),
-
-                  pw.SizedBox(height: 2),
-
-                  ///_____Party GST_______________________________________
-                  pw.SizedBox(height: transactions.customerGst.trim().isNotEmpty ? 2 : 0),
-                  transactions.customerGst.trim().isNotEmpty
-                      ? pw.Row(children: [
-                          pw.SizedBox(
-                            width: 75.0,
-                            child: pw.Text(
-                              'RNC',
-                              style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                            ),
-                          ),
-                          pw.SizedBox(
-                            width: 10.0,
-                            child: pw.Text(
-                              ':',
-                              style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                            ),
-                          ),
-                          pw.SizedBox(
-                            width: 140.0,
-                            child: pw.Text(
-                              transactions.customerGst,
-                              style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                            ),
-                          ),
-                        ])
-                      : pw.Container(),
-                ]),
-
-                ///_________Right_Side___________________________________________________________
-                pw.Column(children: [
-                  ///______invoice_number_____________________________________________
-                  pw.Row(children: [
-                    pw.SizedBox(
-                      width: 50.0,
-                      child: pw.Text(
-                        'Factura',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 10.0,
-                      child: pw.Text(
-                        ':',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 125.0,
-                      child: pw.Text(
-                        '#${transactions.invoiceNumber}',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                  ]),
-                  pw.SizedBox(height: 2),
-
-                  ///_________Sells By________________________________________________
-                  pw.Row(children: [
-                    pw.SizedBox(
-                      width: 50.0,
-                      child: pw.Text(
-                        'Vendido por',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 10.0,
-                      child: pw.Text(
-                        ':',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 125.0,
-                      child: pw.Text(
-                        transactions.sellerName ?? "Admin",
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                  ]),
-                  pw.SizedBox(height: 2),
-
-                  ///_________Reserved By________________________________________________
-                  pw.Row(children: [
-                    pw.SizedBox(
-                      width: 50.0,
-                      child: pw.Text(
-                        'Reservado por',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 10.0,
-                      child: pw.Text(
-                        ':',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 125.0,
-                      child: pw.Text(
-                        reservationSellerName,
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                  ]),
-                  pw.SizedBox(height: 2),
-
-                  ///______Date__________________________________________________________
-                  pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                    pw.SizedBox(
-                      width: 50.0,
-                      child: pw.Text(
-                        'Fecha',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 10.0,
-                      child: pw.Text(
-                        ':',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.Container(
-                      width: 125.0,
-                      child: pw.Text(
-                        '${DateFormat.yMd().format(DateTime.parse(transactions.purchaseDate))}, ${DateFormat.jm().format(DateTime.parse(transactions.purchaseDate))}',
-                        // DateTimeFormat.format(DateTime.parse(transactions.purchaseDate), format: AmericanDateTimeFormats.),
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                  ]),
-                  pw.SizedBox(height: 2),
-
-                  ///______Status____________________________________________
-                  pw.Row(children: [
-                    pw.SizedBox(
-                      width: 50.0,
-                      child: pw.Text(
-                        'Estado',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 10.0,
-                      child: pw.Text(
-                        ':',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                      ),
-                    ),
-                    pw.SizedBox(
-                      width: 125.0,
-                      child: pw.Text(
-                        transactions.isPaid! ? 'Pagado' : 'Pendiente',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black, fontWeight: pw.FontWeight.bold),
-                      ),
-                    ),
-                  ]),
-                ]),
-              ]),
             ],
-          ),
         );
       },
       footer: (pw.Context context) {
         return pw.Column(
           children: [
+            // Sección de firmas
             pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 10.0),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 20.0),
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Container(
-                    alignment: pw.Alignment.centerRight,
-                    margin: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
-                    padding: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
-                    child: pw.Column(children: [
+                  // Firma del Cliente
+                  pw.Column(
+                    children: [
+                      pw.SizedBox(height: 25),
                       pw.Container(
-                        width: 120.0,
-                        height: 1.0,
-                        color: PdfColors.black,
+                        width: 150.0,
+                        decoration: const pw.BoxDecoration(
+                          border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 1)),
+                        ),
                       ),
                       pw.SizedBox(height: 4.0),
                       pw.Text(
                         'Firma del Cliente',
-                        style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                              color: PdfColors.black,
-                              fontSize: 11,
-                            ),
-                      )
-                    ]),
+                        style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                      ),
+                    ],
                   ),
-                  pw.Container(
-                    alignment: pw.Alignment.centerRight,
-                    margin: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
-                    padding: const pw.EdgeInsets.only(bottom: 3.0 * PdfPageFormat.mm),
-                    child: pw.Column(
-                      children: [
-                        pw.Container(
-                          width: 120.0,
-                          height: 1.0,
-                          color: PdfColors.black,
+                  // Firma Autorizada
+                  pw.Column(
+                    children: [
+                      pw.SizedBox(height: 25),
+                      pw.Container(
+                        width: 150.0,
+                        decoration: const pw.BoxDecoration(
+                          border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 1)),
                         ),
-                        pw.SizedBox(height: 4.0),
-                        pw.Text(
-                          'Firma Autorizada',
-                          style: pw.Theme.of(context).defaultTextStyle.copyWith(
-                                color: PdfColors.black,
-                                fontSize: 11,
-                              ),
-                        )
-                      ],
-                    ),
+                      ),
+                      pw.SizedBox(height: 4.0),
+                      pw.Text(
+                        'Firma Autorizada',
+                        style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            pw.Text('Powered By ${generalSetting.companyName.isNotEmpty == true ? generalSetting.companyName : pdfFooter}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.black)),
+            pw.SizedBox(height: 15),
+            // Línea separadora elegante
+            pw.Container(
+              margin: const pw.EdgeInsets.symmetric(horizontal: 20),
+              width: double.infinity,
+              height: 1,
+              decoration: const pw.BoxDecoration(
+                color: PdfColors.black,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+            // Pie de página con información
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 20),
+              child: pw.Column(
+                children: [
+                  pw.Text(
+                    '"Capturando momentos que duran para siempre"',
+                    style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    'Documento generado electrónicamente - ${generalSetting.companyName.isNotEmpty == true ? generalSetting.companyName : pdfFooter}',
+                    style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+                  ),
+                ],
+              ),
+            ),
             pw.SizedBox(height: 5),
           ],
         );
@@ -643,30 +632,21 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
           padding: const pw.EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0),
           child: pw.Column(
             children: [
-              ///___________Table__________________________________________________________
+              ///___________Table (Estilo Profesional)__________________________________________________________
               pw.Table.fromTextArray(
                 context: context,
                 border: const pw.TableBorder(
-                  left: pw.BorderSide(
-                    color: PdfColors.grey600,
-                  ),
-                  right: pw.BorderSide(
-                    color: PdfColors.grey600,
-                  ),
-                  bottom: pw.BorderSide(
-                    color: PdfColors.grey600,
-                  ),
-                  top: pw.BorderSide(
-                    color: PdfColors.grey600,
-                  ),
-                  verticalInside: pw.BorderSide(
-                    color: PdfColors.grey600,
-                  ),
-                  horizontalInside: pw.BorderSide(
-                    color: PdfColors.grey600,
-                  ),
+                  left: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                  right: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                  bottom: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                  top: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                  verticalInside: pw.BorderSide(color: PdfColors.grey400, width: 0.3),
+                  horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.3),
                 ),
-                // headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#D5D8DC')),
+                // Encabezado con fondo gris claro para ahorrar tinta
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                ),
                 columnWidths: <int, pw.TableColumnWidth>{
                   0: const pw.FlexColumnWidth(1),
                   1: const pw.FlexColumnWidth(6),
@@ -675,9 +655,11 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                   4: const pw.FlexColumnWidth(1.5),
                   5: const pw.FlexColumnWidth(1.5),
                 },
-                headerStyle: pw.TextStyle(color: PdfColors.black, fontSize: 11, fontWeight: pw.FontWeight.bold),
+                // Texto negro en encabezado
+                headerStyle: pw.TextStyle(color: PdfColors.black, fontSize: 10, fontWeight: pw.FontWeight.bold),
                 rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
-                // oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                // Filas alternas para mejor legibilidad
+                oddRowDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFf5f5f5)),
                 headerAlignments: <int, pw.Alignment>{
                   0: pw.Alignment.center,
                   1: pw.Alignment.centerLeft,
@@ -879,6 +861,34 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                             ),
                           ]),
                           pw.SizedBox(height: 2),
+
+                          ///________ITBIS (18%)_______________________________________________
+                          if (transactions.itbisAmount != null && transactions.itbisAmount! > 0)
+                            pw.Row(children: [
+                              pw.SizedBox(
+                                width: 100.0,
+                                child: pw.Text(
+                                  'ITBIS (18%)',
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(
+                                        color: PdfColors.black,
+                                        fontSize: 11,
+                                      ),
+                                ),
+                              ),
+                              pw.Container(
+                                alignment: pw.Alignment.centerRight,
+                                width: 150.0,
+                                child: pw.Text(
+                                  myFormat.format(transactions.itbisAmount!),
+                                  style: pw.Theme.of(context).defaultTextStyle.copyWith(
+                                        color: PdfColors.black,
+                                        fontSize: 11,
+                                      ),
+                                ),
+                              ),
+                            ]),
+                          if (transactions.itbisAmount != null && transactions.itbisAmount! > 0)
+                            pw.SizedBox(height: 2),
 
                           ///_________divider__________________________________________
                           pw.Divider(thickness: .5, height: 0.5, color: PdfColors.black),
@@ -1160,14 +1170,39 @@ Future<Uint8List> generateThermalDocument({
             ),
             pw.Divider(thickness: 0.5),
 
-            // Tipo de documento
+            // Tipo de documento según NCF
             pw.Center(
-              child: pw.Text(
-                'FACTURA DE RESERVACIÓN',
-                style: pw.TextStyle(
-                  fontSize: 9,
-                  fontWeight: pw.FontWeight.bold,
-                ),
+              child: pw.Column(
+                children: [
+                  pw.Text(
+                    _getInvoiceTitle(transactions.ncfType),
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  // Mostrar NCF si existe
+                  if (_hasValidNcf(transactions.ncfType)) ...[
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      'NCF: ${transactions.ncfNumber ?? "${transactions.ncfType}-Pendiente"}',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    if (transactions.ncfExpirationDate != null) ...[
+                      pw.SizedBox(height: 1),
+                      pw.Text(
+                        'Válido hasta: ${_formatExpirationDate(transactions.ncfExpirationDate!)}',
+                        style: pw.TextStyle(
+                          fontSize: 7,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
               ),
             ),
             pw.SizedBox(height: 5),
@@ -1253,7 +1288,11 @@ Future<Uint8List> generateThermalDocument({
             pw.Divider(thickness: 0.2),
 
             ...transactions.productList!.map((item) {
-              final fullReservation = ref.read(fullReservationByIdProviderVQ(item.productId)).value;
+              // Intentar obtener la reservación de las ya cargadas
+              final fullReservation = reservaciones.firstWhere(
+                (r) => r?.reservation['id'] == item.productId,
+                orElse: () => null,
+              );
               final serviceDescription = fullReservation?.service?['description'] ?? '';
 
               return pw.Padding(
@@ -1390,6 +1429,10 @@ Future<Uint8List> generateThermalDocument({
             pw.Divider(thickness: 0.5),
             pw.SizedBox(height: 5),
 
+
+            pw.Divider(thickness: 0.5),
+            pw.SizedBox(height: 5),
+
             // Mensaje de agradecimiento
             pw.Center(
               child: pw.Text(
@@ -1426,8 +1469,10 @@ Future<Uint8List> generateThermalDocument({
 pw.Widget _buildReservationSection(FullReservation reservacion) {
   String nombresVestidos = "";
 
-  if (reservacion.reservation['multiple_dress'] != null) {
-    final multipleDress = reservacion.reservation['multiple_dress'] as List;
+  // Firebase usa 'multiple_dress', PostgreSQL usa 'dress_ids'
+  final dressData = reservacion.reservation['multiple_dress'] ?? reservacion.reservation['dress_ids'];
+  if (dressData != null && dressData is List) {
+    final multipleDress = dressData;
     // Filtrar los nombres de los vestidos
     if (multipleDress.isNotEmpty) {
       nombresVestidos = multipleDress.map((e) => e['dress_name'] ?? '').where((name) => name.isNotEmpty).join('\n');
@@ -1452,7 +1497,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           ),
         ],
       ),
-      if (reservacion.reservation['multiple_dress'] != null) ...[
+      if (dressData != null && dressData is List) ...[
         pw.SizedBox(height: 2),
         pw.Column(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -1630,4 +1675,102 @@ String _formatearFechaYHora(String? fecha, String? hora) {
   } catch (e) {
     return '-';
   }
+}
+
+/// Obtiene el título de la factura según el tipo de NCF (DGII)
+String _getInvoiceTitle(String? ncfType) {
+  if (ncfType == null || ncfType.isEmpty || ncfType == 'SIN') {
+    return 'RECIBO / FACTURA INTERNA';
+  }
+
+  switch (ncfType) {
+    case 'B01':
+      return 'FACTURA DE CRÉDITO FISCAL';
+    case 'B02':
+      return 'FACTURA DE CONSUMO';
+    case 'B14':
+      return 'FACTURA GUBERNAMENTAL';
+    case 'B15':
+      return 'FACTURA DE RÉGIMEN ESPECIAL';
+    case 'B16':
+      return 'FACTURA DE EXPORTACIÓN';
+    default:
+      return 'FACTURA CON COMPROBANTE FISCAL';
+  }
+}
+
+/// Verifica si la factura tiene NCF válido
+bool _hasValidNcf(String? ncfType) {
+  return ncfType != null && ncfType.isNotEmpty && ncfType != 'SIN';
+}
+
+/// Formatea la fecha de vencimiento del NCF (YYYY-MM-DD a DD/MM/YYYY)
+String _formatExpirationDate(String dateStr) {
+  try {
+    final parts = dateStr.split('-');
+    if (parts.length == 3) {
+      return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return dateStr;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+/// Widget auxiliar para construir filas de información en formato etiqueta: valor
+pw.Widget _buildInfoRow(String label, String value, {bool bold = false}) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.only(bottom: 3),
+    child: pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.SizedBox(
+          width: 70,
+          child: pw.Text(
+            '$label:',
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: PdfColors.grey700,
+            ),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Widget auxiliar para construir filas con líneas punteadas (estilo formulario oficial)
+pw.Widget _buildFormRow(String label, String value) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.only(bottom: 4),
+    child: pw.Row(
+      children: [
+        pw.Text(
+          label,
+          style: pw.TextStyle(fontSize: 9, color: PdfColors.grey800),
+        ),
+        pw.Expanded(
+          child: pw.Container(
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5)),
+            ),
+            padding: const pw.EdgeInsets.only(left: 5, bottom: 2),
+            child: pw.Text(
+              value,
+              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

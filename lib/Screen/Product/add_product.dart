@@ -1,8 +1,8 @@
 // ignore_for_file: unused_result, use_build_context_synchronously
 
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -375,11 +375,7 @@ class _AddProductState extends State<AddProduct> {
                             if (categoryValidateAndSave()) {
                               EasyLoading.show(status: 'Adding Category');
                               try {
-                                final DatabaseReference categoryInformationRef =
-                                    FirebaseDatabase.instance
-                                        .ref()
-                                        .child(await getUserID())
-                                        .child('Categories');
+                                final apiService = ApiService();
                                 CategoryModel categoryModel = CategoryModel(
                                   categoryName: itemCategoryController.text,
                                   size: isSize,
@@ -390,9 +386,10 @@ class _AddProductState extends State<AddProduct> {
                                   warranty: isWarranty,
                                 );
 
-                                await categoryInformationRef
-                                    .push()
-                                    .set(categoryModel.toJson());
+                                await apiService.post(
+                                  'categories',
+                                  Map<String, dynamic>.from(categoryModel.toJson()),
+                                );
                                 ref.refresh(categoryProvider);
 
                                 setState1(() {
@@ -578,16 +575,13 @@ class _AddProductState extends State<AddProduct> {
                             if (brandValidateAndSave()) {
                               try {
                                 EasyLoading.show(status: 'Adding Brand');
-                                final DatabaseReference categoryInformationRef =
-                                    FirebaseDatabase.instance
-                                        .ref()
-                                        .child(await getUserID())
-                                        .child('Brands');
+                                final apiService = ApiService();
                                 BrandsModel brandModel = BrandsModel(
                                     brandName: brandNameController.text);
-                                await categoryInformationRef
-                                    .push()
-                                    .set(brandModel.toJson());
+                                await apiService.post(
+                                  'brands',
+                                  Map<String, dynamic>.from(brandModel.toJson()),
+                                );
                                 ref.refresh(brandProvider);
                                 setState(() {
                                   // selectedBrand = brandModel.brandName;
@@ -755,16 +749,13 @@ class _AddProductState extends State<AddProduct> {
                           if (unitValidateAndSave()) {
                             try {
                               EasyLoading.show(status: 'Adding Units');
-                              final DatabaseReference categoryInformationRef =
-                                  FirebaseDatabase.instance
-                                      .ref()
-                                      .child(await getUserID())
-                                      .child('Units');
+                              final apiService = ApiService();
                               UnitModel unitModel =
                                   UnitModel(unitNameController.text);
-                              await categoryInformationRef
-                                  .push()
-                                  .set(unitModel.toJson());
+                              await apiService.post(
+                                'units',
+                                Map<String, dynamic>.from(unitModel.toJson()),
+                              );
                               ref.refresh(unitProvider);
                               setState(() {
                                 unitTime = 0;
@@ -3035,15 +3026,7 @@ class _AddProductState extends State<AddProduct> {
                                                                   'Loading...',
                                                               dismissOnTap:
                                                                   false);
-                                                          final DatabaseReference
-                                                              productInformationRef =
-                                                              FirebaseDatabase
-                                                                  .instance
-                                                                  .ref()
-                                                                  .child(
-                                                                      await getUserID())
-                                                                  .child(
-                                                                      'Products');
+                                                          final apiService = ApiService();
                                                           ProductModel
                                                               productModel =
                                                               ProductModel(
@@ -3115,10 +3098,10 @@ class _AddProductState extends State<AddProduct> {
                                                                         ?.subTaxes ??
                                                                     [],
                                                           );
-                                                          await productInformationRef
-                                                              .push()
-                                                              .set(productModel
-                                                                  .toJson());
+                                                          await apiService.post(
+                                                            'products',
+                                                            Map<String, dynamic>.from(productModel.toJson()),
+                                                          );
 
                                                           Subscription
                                                               .decreaseSubscriptionLimits(

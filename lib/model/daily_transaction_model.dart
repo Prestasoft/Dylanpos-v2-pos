@@ -9,6 +9,15 @@ import 'income_modle.dart';
 class DailyTransactionModel {
   late String name, date, type, id;
   late double total, paymentIn, paymentOut, remainingBalance;
+
+  // Campos directos para mostrar en la UI (extraídos del JSON)
+  String? paymentType;      // Tipo de pago (Efectivo, Tarjeta, etc.)
+  String? sellerName;       // Usuario/Vendedor que realizó la transacción
+  String? invoiceNumber;    // Número de factura
+  double? dueAmount;        // Monto pendiente total
+  double? dueAmountAfterPay; // Monto pendiente después del pago (para Due Collection)
+
+  // Modelos anidados opcionales (para compatibilidad con datos completos)
   SaleTransactionModel? saleTransactionModel;
   PurchaseTransactionModel? purchaseTransactionModel;
   DueTransactionModel? dueTransactionModel;
@@ -25,6 +34,11 @@ class DailyTransactionModel {
     required this.paymentOut,
     required this.remainingBalance,
     required this.id,
+    this.paymentType,
+    this.sellerName,
+    this.invoiceNumber,
+    this.dueAmount,
+    this.dueAmountAfterPay,
     this.saleTransactionModel,
     this.purchaseTransactionModel,
     this.dueTransactionModel,
@@ -34,31 +48,47 @@ class DailyTransactionModel {
   });
 
   DailyTransactionModel.fromJson(Map<String, dynamic> json) {
-    name = json['name'].toString();
-    date = json['date'].toString();
-    type = json['type'].toString();
-    total = double.parse(json['total'].toString());
-    paymentIn = double.parse(json['paymentIn'].toString());
-    paymentOut = double.parse(json['paymentOut'].toString());
-    remainingBalance = double.parse(json['remainingBalance'].toString());
-    id = json['id'].toString();
-    if (json['saleTransactionModel'] != null) {
-      saleTransactionModel = SaleTransactionModel.fromJson(json['saleTransactionModel']);
+    // Campos básicos
+    name = json['name']?.toString() ?? '';
+    date = json['date']?.toString() ?? '';
+    type = json['type']?.toString() ?? '';
+    total = double.tryParse(json['total']?.toString() ?? '0') ?? 0.0;
+    paymentIn = double.tryParse(json['paymentIn']?.toString() ?? json['payment_in']?.toString() ?? '0') ?? 0.0;
+    paymentOut = double.tryParse(json['paymentOut']?.toString() ?? json['payment_out']?.toString() ?? '0') ?? 0.0;
+    remainingBalance = double.tryParse(json['remainingBalance']?.toString() ?? json['remaining_balance']?.toString() ?? '0') ?? 0.0;
+    id = json['id']?.toString() ?? '';
+
+    // Campos directos para la UI (soporte camelCase y snake_case)
+    paymentType = json['paymentType']?.toString() ?? json['payment_type']?.toString();
+    sellerName = json['sellerName']?.toString() ?? json['seller_name']?.toString() ?? json['userName']?.toString() ?? json['user_name']?.toString();
+    invoiceNumber = json['invoiceNumber']?.toString() ?? json['invoice_number']?.toString();
+    dueAmount = double.tryParse(json['dueAmount']?.toString() ?? json['due_amount']?.toString() ?? '0');
+    dueAmountAfterPay = double.tryParse(json['dueAmountAfterPay']?.toString() ?? json['due_amount_after_pay']?.toString() ?? '0');
+
+    // Modelos anidados (para compatibilidad con datos completos - soporta camelCase y snake_case)
+    final saleData = json['saleTransactionModel'] ?? json['sale_transaction_model'];
+    if (saleData != null) {
+      saleTransactionModel = SaleTransactionModel.fromJson(Map<String, dynamic>.from(saleData));
     }
-    if (json['purchaseTransactionModel'] != null) {
-      purchaseTransactionModel = PurchaseTransactionModel.fromJson(json['purchaseTransactionModel']);
+    final purchaseData = json['purchaseTransactionModel'] ?? json['purchase_transaction_model'];
+    if (purchaseData != null) {
+      purchaseTransactionModel = PurchaseTransactionModel.fromJson(Map<String, dynamic>.from(purchaseData));
     }
-    if (json['dueTransactionModel'] != null) {
-      dueTransactionModel = DueTransactionModel.fromJson(json['dueTransactionModel']);
+    final dueData = json['dueTransactionModel'] ?? json['due_transaction_model'];
+    if (dueData != null) {
+      dueTransactionModel = DueTransactionModel.fromJson(Map<String, dynamic>.from(dueData));
     }
-    if (json['incomeModel'] != null) {
-      incomeModel = IncomeModel.fromJson(json['incomeModel']);
+    final incomeData = json['incomeModel'] ?? json['income_model'];
+    if (incomeData != null) {
+      incomeModel = IncomeModel.fromJson(Map<String, dynamic>.from(incomeData));
     }
-    if (json['expenseModel'] != null) {
-      expenseModel = ExpenseModel.fromJson(json['expenseModel']);
+    final expenseData = json['expenseModel'] ?? json['expense_model'];
+    if (expenseData != null) {
+      expenseModel = ExpenseModel.fromJson(Map<String, dynamic>.from(expenseData));
     }
-    if (json['paySalaryModel'] != null) {
-      paySalary = PaySalaryModel.fromJson(json['paySalaryModel']);
+    final salaryData = json['paySalaryModel'] ?? json['pay_salary_model'];
+    if (salaryData != null) {
+      paySalary = PaySalaryModel.fromJson(Map<String, dynamic>.from(salaryData));
     }
   }
 
@@ -71,6 +101,13 @@ class DailyTransactionModel {
         'paymentOut': paymentOut,
         'remainingBalance': remainingBalance,
         'id': id,
+        // Campos directos para la UI
+        'paymentType': paymentType,
+        'sellerName': sellerName,
+        'invoiceNumber': invoiceNumber,
+        'dueAmount': dueAmount,
+        'dueAmountAfterPay': dueAmountAfterPay,
+        // Modelos anidados
         'saleTransactionModel': saleTransactionModel?.toJson(),
         'purchaseTransactionModel': purchaseTransactionModel?.toJson(),
         'dueTransactionModel': dueTransactionModel?.toJson(),

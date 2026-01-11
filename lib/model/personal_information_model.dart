@@ -17,20 +17,37 @@ class PersonalInformationModel {
   });
 
   PersonalInformationModel.fromJson(dynamic json) {
-    phoneNumber = json['phoneNumber'];
-    companyName = json['companyName'];
-    pictureUrl = json['pictureUrl'];
-    businessCategory = json['businessCategory'];
-    language = json['language'];
-    countryName = json['countryName'];
-    saleInvoiceCounter = json['saleInvoiceCounter'];
-    purchaseInvoiceCounter = json['purchaseInvoiceCounter'];
-    dueInvoiceCounter = json['dueInvoiceCounter'];
-    shopOpeningBalance = json['shopOpeningBalance'] ?? 0;
-    remainingShopBalance = json['remainingShopBalance'] ?? 0;
-    currency = json['currency'] ?? '\$';
-    currentLocale = json['currentLocale'] ?? 'en';
-    gst = json['gst'] ?? '';
+    // Helper para convertir a int de forma segura
+    int parseInt(dynamic value, [int defaultValue = 0]) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? defaultValue;
+      return defaultValue;
+    }
+
+    // Helper para convertir a num de forma segura
+    num parseNum(dynamic value, [num defaultValue = 0]) {
+      if (value == null) return defaultValue;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value) ?? defaultValue;
+      return defaultValue;
+    }
+
+    phoneNumber = json['phoneNumber']?.toString() ?? '';
+    companyName = json['companyName']?.toString() ?? '';
+    pictureUrl = json['pictureUrl']?.toString() ?? '';
+    businessCategory = json['businessCategory']?.toString() ?? '';
+    language = json['language']?.toString() ?? 'en';
+    countryName = json['countryName']?.toString() ?? '';
+    saleInvoiceCounter = parseInt(json['saleInvoiceCounter'], 1);
+    purchaseInvoiceCounter = parseInt(json['purchaseInvoiceCounter'], 1);
+    dueInvoiceCounter = parseInt(json['dueInvoiceCounter'], 1);
+    shopOpeningBalance = parseNum(json['shopOpeningBalance'], 0);
+    remainingShopBalance = parseNum(json['remainingShopBalance'], 0);
+    currency = json['currency']?.toString() ?? '\$';
+    currentLocale = json['currentLocale']?.toString() ?? 'en';
+    gst = json['gst']?.toString() ?? '';
   }
 
   late dynamic phoneNumber;

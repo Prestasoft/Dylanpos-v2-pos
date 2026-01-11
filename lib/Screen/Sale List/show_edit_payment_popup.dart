@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -477,32 +477,30 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
                                                           .newTransitionModel);
 
                                               ///__________updateInvoice_______________________________________
-                                              String? key;
-                                              await FirebaseDatabase.instance
-                                                  .ref(userId)
-                                                  .child('Sales Transition')
-                                                  .orderByKey()
-                                                  .get()
-                                                  .then((value) {
-                                                for (var element
-                                                    in value.children) {
-                                                  final t = SaleTransactionModel
-                                                      .fromJson(jsonDecode(
-                                                          jsonEncode(
-                                                              element.value)));
-                                                  if (myTransitionModel
-                                                          .invoiceNumber ==
-                                                      t.invoiceNumber) {
-                                                    key = element.key;
+                                              // Buscar y actualizar venta via API
+                                              final apiServiceSale = ApiService();
+                                              String? saleId;
+                                              try {
+                                                final salesResponse = await apiServiceSale.get('sales?invoiceNumber=${myTransitionModel.invoiceNumber}');
+                                                if (salesResponse.success && salesResponse.data != null) {
+                                                  final salesData = salesResponse.data;
+                                                  List<dynamic> sales = [];
+                                                  if (salesData is Map && salesData['sales'] != null) {
+                                                    sales = salesData['sales'] as List<dynamic>;
+                                                  } else if (salesData is List) {
+                                                    sales = salesData;
+                                                  }
+                                                  if (sales.isNotEmpty) {
+                                                    final sale = Map<String, dynamic>.from(sales.first);
+                                                    saleId = sale['id']?.toString() ?? sale['key']?.toString();
                                                   }
                                                 }
-                                              });
-                                              await FirebaseDatabase.instance
-                                                  .ref(userId)
-                                                  .child('Sales Transition')
-                                                  .child(key!)
-                                                  .update(myTransitionModel
-                                                      .toJson());
+                                                if (saleId != null) {
+                                                  await apiServiceSale.put('sales/$saleId', Map<String, dynamic>.from(myTransitionModel.toJson()));
+                                                }
+                                              } catch (e) {
+                                                debugPrint('Error actualizando venta: $e');
+                                              }
 
                                               ///__________StockMange________________________________________________
                                               List<AddToCartModel>
@@ -709,193 +707,108 @@ class _ShowEditPaymentPopUpState extends State<ShowEditPaymentPopUp> {
                                                   }
                                                 }
                                               }
-                                              for (var element
-                                                  in widget.decreaseStockList) {
-                                                final ref = FirebaseDatabase
-                                                    .instance
-                                                    .ref(
-                                                        '${await getUserID()}/Products/');
-
-                                                var data = await ref
-                                                    .orderByChild('productCode')
-                                                    .equalTo(element.productId)
-                                                    .once();
-                                                String productPath = data
-                                                    .snapshot.value
-                                                    .toString()
-                                                    .substring(1, 21);
-
-                                                var data1 = await ref
-                                                    .child(
-                                                        '$productPath/productStock')
-                                                    .get();
-                                                int stock = int.parse(
-                                                    data1.value.toString());
-                                                int remainStock = stock -
-                                                    int.parse(element.quantity
-                                                        .toString());
-
-                                                ref.child(productPath).update({
-                                                  'productStock': '$remainStock'
-                                                });
+                                              // Decrementar stock via API
+                                              for (var element in widget.decreaseStockList) {
+                                                try {
+                                                  final apiServiceProduct = ApiService();
+                                                  final productResponse = await apiServiceProduct.get('products?productCode=${element.productId}');
+                                                  if (productResponse.success && productResponse.data != null) {
+                                                    final productsData = productResponse.data;
+                                                    List<dynamic> products = [];
+                                                    if (productsData is Map && productsData['products'] != null) {
+                                                      products = productsData['products'] as List<dynamic>;
+                                                    } else if (productsData is List) {
+                                                      products = productsData;
+                                                    }
+                                                    if (products.isNotEmpty) {
+                                                      final product = Map<String, dynamic>.from(products.first);
+                                                      final productId = product['id'] ?? product['key'];
+                                                      int stock = int.tryParse(product['productStock']?.toString() ?? '0') ?? 0;
+                                                      int remainStock = stock - int.parse(element.quantity.toString());
+                                                      await apiServiceProduct.put('products/$productId', {'productStock': '$remainStock'});
+                                                    }
+                                                  }
+                                                } catch (e) {
+                                                  debugPrint('Error decrementando stock: $e');
+                                                }
                                               }
 
                                               ///____________deleted_products_______________________________________________
+                                              // Incrementar stock via API
+                                              for (var element in increaseStockList) {
+                                                try {
+                                                  final apiServiceProduct = ApiService();
+                                                  final productResponse = await apiServiceProduct.get('products?productCode=${element.productId}');
+                                                  if (productResponse.success && productResponse.data != null) {
+                                                    final productsData = productResponse.data;
+                                                    List<dynamic> products = [];
+                                                    if (productsData is Map && productsData['products'] != null) {
+                                                      products = productsData['products'] as List<dynamic>;
+                                                    } else if (productsData is List) {
+                                                      products = productsData;
+                                                    }
+                                                    if (products.isNotEmpty) {
+                                                      final product = Map<String, dynamic>.from(products.first);
+                                                      final productId = product['id'] ?? product['key'];
+                                                      int stock = int.tryParse(product['productStock']?.toString() ?? '0') ?? 0;
+                                                      int remainStock = stock + int.parse(element.quantity.toString());
 
-                                              for (var element
-                                                  in increaseStockList) {
-                                                final ref = FirebaseDatabase
-                                                    .instance
-                                                    .ref(
-                                                        '${await getUserID()}/Products/');
+                                                      // Actualizar stock y serial numbers
+                                                      Map<String, dynamic> updateData = {'productStock': '$remainStock'};
 
-                                                var data = await ref
-                                                    .orderByChild('productCode')
-                                                    .equalTo(element.productId)
-                                                    .once();
-                                                String productPath = data
-                                                    .snapshot.value
-                                                    .toString()
-                                                    .substring(1, 21);
+                                                      // Agregar serial numbers
+                                                      if (element.serialNumber != null && element.serialNumber!.isNotEmpty) {
+                                                        List<dynamic> existingSerials = product['serialNumber'] ?? [];
+                                                        for (var serial in element.serialNumber!) {
+                                                          existingSerials.add(serial);
+                                                        }
+                                                        updateData['serialNumber'] = existingSerials;
+                                                      }
 
-                                                var data1 = await ref
-                                                    .child(
-                                                        '$productPath/productStock')
-                                                    .get();
-
-                                                int stock = int.parse(
-                                                    data1.value.toString());
-
-                                                ///______update_stock____________________________________________________
-                                                int remainStock = stock +
-                                                    int.parse(element.quantity
-                                                        .toString());
-
-                                                ref.child(productPath).update({
-                                                  'productStock': '$remainStock'
-                                                });
-
-                                                ///_____serial_add________________________________
-                                                ProductModel? productData;
-
-                                                final serialRef =
-                                                    FirebaseDatabase.instance.ref(
-                                                        '$userId/Products/$productPath');
-                                                await serialRef
-                                                    .orderByKey()
-                                                    .get()
-                                                    .then((value) {
-                                                  productData =
-                                                      ProductModel.fromJson(
-                                                          jsonDecode(jsonEncode(
-                                                              value.value)));
-                                                });
-
-                                                for (var element
-                                                    in element.serialNumber!) {
-                                                  productData!.serialNumber
-                                                      .add(element);
+                                                      await apiServiceProduct.put('products/$productId', updateData);
+                                                    }
+                                                  }
+                                                } catch (e) {
+                                                  debugPrint('Error incrementando stock: $e');
                                                 }
-                                                serialRef
-                                                    .child('serialNumber')
-                                                    .set(productData!
-                                                        .serialNumber
-                                                        .map((e) => e)
-                                                        .toList());
                                               }
 
                                               ///_________DueUpdate______________________________________________________OK
-                                              if (pastDue <
-                                                  widget.newTransitionModel
-                                                      .dueAmount!) {
-                                                double due = pastDue -
-                                                    widget.newTransitionModel
-                                                        .dueAmount!;
-                                                // getSpecificCustomersDueUpdate(
-                                                //     phoneNumber: widget.newTransitionModel.customerPhone, isDuePaid: false, due: due.toInt());
+                                              // Actualizar due del cliente via API
+                                              try {
+                                                final apiServiceCustomer = ApiService();
+                                                final customerResponse = await apiServiceCustomer.get('customers?phoneNumber=${widget.newTransitionModel.customerPhone}');
 
-                                                final ref = FirebaseDatabase
-                                                    .instance
-                                                    .ref(
-                                                        '${await getUserID()}/Customers/');
-                                                String? key;
-
-                                                await FirebaseDatabase.instance
-                                                    .ref(await getUserID())
-                                                    .child('Customers')
-                                                    .orderByKey()
-                                                    .get()
-                                                    .then((value) {
-                                                  for (var element
-                                                      in value.children) {
-                                                    var data = jsonDecode(
-                                                        jsonEncode(
-                                                            element.value));
-                                                    if (data['phoneNumber'] ==
-                                                        widget
-                                                            .newTransitionModel
-                                                            .customerPhone) {
-                                                      key = element.key;
-                                                    }
+                                                if (customerResponse.success && customerResponse.data != null) {
+                                                  final customersData = customerResponse.data;
+                                                  List<dynamic> customers = [];
+                                                  if (customersData is Map && customersData['customers'] != null) {
+                                                    customers = customersData['customers'] as List<dynamic>;
+                                                  } else if (customersData is List) {
+                                                    customers = customersData;
                                                   }
-                                                });
-                                                var data1 = await ref
-                                                    .child('$key/due')
-                                                    .get();
-                                                int previousDue = data1.value
-                                                    .toString()
-                                                    .toInt();
 
-                                                int totalDue;
+                                                  if (customers.isNotEmpty) {
+                                                    final customer = Map<String, dynamic>.from(customers.first);
+                                                    final customerId = customer['id'] ?? customer['key'];
+                                                    int previousDue = int.tryParse(customer['due']?.toString() ?? '0') ?? 0;
 
-                                                totalDue =
-                                                    previousDue - due.toInt();
-                                                ref.child(key!).update(
-                                                    {'due': '$totalDue'});
-                                              } else if (pastDue >
-                                                  widget.newTransitionModel
-                                                      .dueAmount!) {
-                                                double due = widget
-                                                        .newTransitionModel
-                                                        .dueAmount! -
-                                                    pastDue;
-                                                final ref = FirebaseDatabase
-                                                    .instance
-                                                    .ref('$userId/Customers/');
-                                                String? key;
-
-                                                await FirebaseDatabase.instance
-                                                    .ref(userId)
-                                                    .child('Customers')
-                                                    .orderByKey()
-                                                    .get()
-                                                    .then((value) {
-                                                  for (var element
-                                                      in value.children) {
-                                                    var data = jsonDecode(
-                                                        jsonEncode(
-                                                            element.value));
-                                                    if (data['phoneNumber'] ==
-                                                        widget
-                                                            .newTransitionModel
-                                                            .customerPhone) {
-                                                      key = element.key;
+                                                    int totalDue;
+                                                    if (pastDue < widget.newTransitionModel.dueAmount!) {
+                                                      double due = pastDue - widget.newTransitionModel.dueAmount!;
+                                                      totalDue = previousDue - due.toInt();
+                                                    } else if (pastDue > widget.newTransitionModel.dueAmount!) {
+                                                      double due = widget.newTransitionModel.dueAmount! - pastDue;
+                                                      totalDue = previousDue + due.toInt();
+                                                    } else {
+                                                      totalDue = previousDue;
                                                     }
+
+                                                    await apiServiceCustomer.put('customers/$customerId', {'due': '$totalDue'});
                                                   }
-                                                });
-                                                var data1 = await ref
-                                                    .child('$key/due')
-                                                    .get();
-                                                int previousDue = data1.value
-                                                    .toString()
-                                                    .toInt();
-
-                                                int totalDue;
-
-                                                totalDue =
-                                                    previousDue + due.toInt();
-                                                ref.child(key!).update(
-                                                    {'due': '$totalDue'});
+                                                }
+                                              } catch (e) {
+                                                debugPrint('Error actualizando due del cliente: $e');
                                               }
 
                                               await GeneratePdfAndPrint()

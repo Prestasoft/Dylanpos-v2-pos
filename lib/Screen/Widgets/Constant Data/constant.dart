@@ -1,11 +1,9 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
 
 import '../../../const.dart';
+import '../../../services/api_service.dart';
 
 String paypalClientId = '';
 String paypalClientSecret = '';
@@ -167,44 +165,74 @@ List<String> saleStats = [
 void updateInvoice(
     {required String typeOfInvoice, required int invoice}) async {
   ///_______invoice_Update_____________________________________________
-  final DatabaseReference personalInformationRef = FirebaseDatabase.instance
-      .ref()
-      .child(await getUserID())
-      .child('Personal Information');
-
-  await personalInformationRef.update({typeOfInvoice: invoice});
+  try {
+    final apiService = ApiService();
+    await apiService.put('personal-information', {typeOfInvoice: invoice});
+  } catch (e) {
+    debugPrint('Error actualizando factura: $e');
+  }
 }
 
 Future<void> postDailyTransaction(
     {required DailyTransactionModel dailyTransactionModel}) async {
-  final DatabaseReference personalInformationRef = FirebaseDatabase.instance
-      .ref()
-      .child(await getUserID())
-      .child('Personal Information');
-  double remainingBalance = 0;
+  try {
+    final apiService = ApiService();
+    double remainingBalance = 0;
 
-  await personalInformationRef.orderByKey().get().then((value) {
-    var data = jsonDecode(jsonEncode(value.value));
-    remainingBalance = data['remainingShopBalance'];
-  });
+    // Obtener información personal para el balance
+    final responsePersonal = await apiService.get('personal-information');
+    if (responsePersonal.success && responsePersonal.data != null) {
+      final data = Map<String, dynamic>.from(responsePersonal.data);
+      remainingBalance = (data['remainingShopBalance'] ?? 0).toDouble();
+    }
 
-  if (dailyTransactionModel.type == 'Sale' ||
-      dailyTransactionModel.type == 'Due Collection' ||
-      dailyTransactionModel.type == 'Income' ||
-      dailyTransactionModel.type == 'Purchase Return') {
-    remainingBalance += dailyTransactionModel.paymentIn;
-  } else {
-    remainingBalance -= dailyTransactionModel.paymentOut;
+    if (dailyTransactionModel.type == 'Sale' ||
+        dailyTransactionModel.type == 'Due Collection' ||
+        dailyTransactionModel.type == 'Income' ||
+        dailyTransactionModel.type == 'Purchase Return') {
+      remainingBalance += dailyTransactionModel.paymentIn;
+    } else {
+      remainingBalance -= dailyTransactionModel.paymentOut;
+    }
+
+    dailyTransactionModel.remainingBalance = remainingBalance;
+
+    ///________post_remaining Balance_on_personal_information___________________________________________________
+    await apiService.put('personal-information', {'remainingShopBalance': remainingBalance});
+
+    ///_________dailyTransaction_Posting________________________________________________________________________
+    // Crear objeto con los campos principales y empaquetar los extras en 'data'
+    final modelJson = Map<String, dynamic>.from(dailyTransactionModel.toJson());
+
+    // Extraer campos extra para el objeto 'data'
+    final dataPayload = <String, dynamic>{
+      'paymentType': modelJson['paymentType'],
+      'sellerName': modelJson['sellerName'],
+      'invoiceNumber': modelJson['invoiceNumber'],
+      'dueAmount': modelJson['dueAmount'],
+      'saleTransactionModel': modelJson['saleTransactionModel'],
+      'purchaseTransactionModel': modelJson['purchaseTransactionModel'],
+      'dueTransactionModel': modelJson['dueTransactionModel'],
+      'incomeModel': modelJson['incomeModel'],
+      'expenseModel': modelJson['expenseModel'],
+      'paySalaryModel': modelJson['paySalaryModel'],
+    };
+
+    // Crear el payload final con 'data' como campo separado
+    final requestBody = <String, dynamic>{
+      'name': modelJson['name'],
+      'date': modelJson['date'],
+      'type': modelJson['type'],
+      'total': modelJson['total'],
+      'paymentIn': modelJson['paymentIn'],
+      'paymentOut': modelJson['paymentOut'],
+      'remainingBalance': modelJson['remainingBalance'],
+      'firebase_id': modelJson['id'],
+      'data': dataPayload,
+    };
+
+    await apiService.post('daily-transactions', requestBody);
+  } catch (e) {
+    debugPrint('Error en postDailyTransaction: $e');
   }
-
-  dailyTransactionModel.remainingBalance = remainingBalance;
-
-  ///________post_remaining Balance_on_personal_information___________________________________________________
-  await personalInformationRef
-      .update({'remainingShopBalance': remainingBalance});
-
-  ///_________dailyTransaction_Posting________________________________________________________________________
-  DatabaseReference dailyTransactionRef =
-      FirebaseDatabase.instance.ref("${await getUserID()}/Daily Transaction");
-  await dailyTransactionRef.push().set(dailyTransactionModel.toJson());
 }

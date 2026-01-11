@@ -35,14 +35,40 @@ class DressModel {
       subcategory: map['subcategory'] ?? '',
       branchId: map['branch_id'] ?? '',
       available: map['available'] ?? false,
-      createdAt: map['created_at']?.toDate() ?? DateTime.now(),
-      updatedAt: map['updated_at']?.toDate() ?? DateTime.now(),
+      createdAt: _parseDateTime(map['created_at']),
+      updatedAt: _parseDateTime(map['updated_at']),
       state: map['state'] ?? "Sin Estado",
       images: map['images'] != null && map['images'] is List
           ? List<String>.from(map['images'].map((x) => x.toString()))
           : [],
       price: map['price']?.toDouble() ?? 0.0,
     );
+  }
+
+  /// Helper method to parse DateTime from various formats (Firebase Timestamp, int milliseconds, or String)
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+
+    // Si es un int (milisegundos desde epoch - formato de la API PostgreSQL)
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+
+    // Si es un String (ISO 8601 o similar)
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+
+    // Si tiene método toDate() (Firebase Timestamp)
+    if (value != null) {
+      try {
+        return value.toDate();
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+
+    return DateTime.now();
   }
 
   factory DressModel.fromRealtimeDB(Map<dynamic, dynamic> map, dynamic documentId) {

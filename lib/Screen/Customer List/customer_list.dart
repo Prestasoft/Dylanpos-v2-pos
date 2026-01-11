@@ -1,6 +1,8 @@
-import 'dart:convert';
-import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,36 +38,72 @@ class _CustomerListState extends State<CustomerList> {
       required WidgetRef updateRef,
       required BuildContext context}) async {
     EasyLoading.show(status: 'Eliminando..');
-    String customerKey = '';
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Customers')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'].toString() == phoneNumber) {
-          customerKey = element.key.toString();
+
+    try {
+      // Buscar cliente por teléfono usando PostgreSQL API
+      final apiService = ApiService();
+      final searchResponse = await apiService.get('customers', queryParams: {
+        'phoneNumber': phoneNumber,
+        'limit': '1',
+      });
+
+      if (searchResponse.success && searchResponse.data != null) {
+        final customers = searchResponse.data['customers'] as List<dynamic>? ?? [];
+        if (customers.isNotEmpty) {
+          final customerData = Map<String, dynamic>.from(customers.first);
+          final customerId = customerData['id']?.toString();
+
+          if (customerId != null) {
+            await apiService.delete('customers/$customerId');
+          }
         }
       }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance
-        .ref("${await getUserID()}/Customers/$customerKey");
-    await ref.remove();
-    // ignore: unused_result
-    updateRef.refresh(allCustomerProvider);
-    // context.pop();
-    EasyLoading.showSuccess('Realizado');
+
+      // ignore: unused_result
+      updateRef.refresh(allCustomerProvider);
+      EasyLoading.showSuccess('Realizado');
+    } catch (e) {
+      EasyLoading.showError('Error al eliminar');
+    }
   }
 
   ScrollController mainScroll = ScrollController();
-  String searchItem = '';
+
+  // ✅ SOLUCIÓN DEFINITIVA: Usar TextEditingController + debounce apropiado
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = ''; // Este es el valor que se usa para la búsqueda (se actualiza después del debounce)
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
     checkCurrentUserAndRestartApp();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _searchController.dispose();
+    mainScroll.dispose();
+    _horizontalScroll.dispose();
+    super.dispose();
+  }
+
+  /// ✅ Método para manejar el debounce de búsqueda
+  void _onSearchChanged(String value) {
+    // Cancelar el timer anterior si existe
+    _debounceTimer?.cancel();
+
+    // Crear nuevo timer que espera 600ms después de que el usuario deje de escribir
+    _debounceTimer = Timer(const Duration(milliseconds: 600), () {
+      // Solo actualizar si el valor realmente cambió
+      if (_searchQuery != value) {
+        setState(() {
+          _searchQuery = value;
+          _currentPage = 1;
+        });
+      }
+    });
   }
 
   final _horizontalScroll = ScrollController();
@@ -79,34 +117,27 @@ class _CustomerListState extends State<CustomerList> {
     return Scaffold(
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
+          // ✅ IMPORTANTE: Usar búsqueda por API en lugar de filtrado local
+          // _searchQuery se actualiza SOLO después del debounce (600ms)
           AsyncValue<List<CustomerModel>> customers =
-              ref.watch(allCustomerProvider);
+              ref.watch(searchCustomerProvider(_searchQuery));
           final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
           final globalCurrency = currencyProvider.currency ?? '\$';
           return customers.when(data: (list) {
-            List<CustomerModel> allCustomerList = list.reversed.toList();
+            // Ya no se necesita .reversed porque el repo ordena por createdAt DESC
+            List<CustomerModel> allCustomerList = list;
             List<String> listOfPhoneNumber = [];
-            List<CustomerModel> customerLists = [];
             List<CustomerModel> showAbleCustomer = [];
+            // Construir lista de teléfonos y filtrar solo clientes (no suppliers)
             for (var value1 in allCustomerList) {
               listOfPhoneNumber.add(value1.phoneNumber
                   .replaceAll(RegExp(r'\s+'), '')
                   .toLowerCase());
               if (value1.type != 'Supplier') {
-                customerLists.add(value1);
+                showAbleCustomer.add(value1);
               }
             }
-            for (var element in customerLists) {
-              if (element.customerName
-                      .replaceAll(RegExp(r'\s+'), '')
-                      .toLowerCase()
-                      .contains(searchItem.toLowerCase()) ||
-                  element.phoneNumber.contains(searchItem)) {
-                showAbleCustomer.add(element);
-              } else if (searchItem == '') {
-                showAbleCustomer.add(element);
-              }
-            }
+            // ✅ Ya NO se hace filtrado local - la búsqueda se hace en la API
             final totalPages =
                 (showAbleCustomer.length / _customerPerPage).ceil();
 
@@ -254,13 +285,12 @@ class _CustomerListState extends State<CustomerList> {
                           child: Padding(
                             padding: const EdgeInsets.all(10),
                             child: TextFormField(
+                              // ✅ SOLUCIÓN: Usar controller para mantener el texto
+                              controller: _searchController,
                               showCursor: true,
                               cursorColor: kTitleColor,
-                              onChanged: (value) {
-                                setState(() {
-                                  searchItem = value;
-                                });
-                              },
+                              // ✅ Debounce de 600ms - NO llama setState inmediatamente
+                              onChanged: _onSearchChanged,
                               keyboardType: TextInputType.name,
                               decoration: kInputDecoration.copyWith(
                                 contentPadding: const EdgeInsets.all(10.0),

@@ -1,5 +1,5 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -546,56 +546,50 @@ class _CategoryListState extends State<CategoryList> {
                                                                         .S
                                                                         .of(context)
                                                                         .addingCategory);
-                                                                final DatabaseReference
-                                                                    categoryInformationRef =
-                                                                    FirebaseDatabase
-                                                                        .instance
-                                                                        .ref()
-                                                                        .child(
-                                                                            await getUserID())
-                                                                        .child(
-                                                                            'Categories');
-                                                                CategoryModel
-                                                                    categoryModel =
-                                                                    CategoryModel(
-                                                                  categoryName:
-                                                                      itemCategoryController
-                                                                          .text,
-                                                                  size: isSize,
-                                                                  color:
-                                                                      isColor,
-                                                                  capacity:
-                                                                      isCapacity,
-                                                                  type: isType,
-                                                                  weight:
-                                                                      isWeight,
-                                                                  warranty:
-                                                                      isWarranty,
-                                                                );
-                                                                await categoryInformationRef
-                                                                    .push()
-                                                                    .set(categoryModel
-                                                                        .toJson());
-                                                                // ignore: unused_result
-                                                                ref.refresh(
-                                                                    categoryProvider);
-                                                                itemCategoryController
-                                                                    .clear();
-                                                                isSize = false;
-                                                                isColor = false;
-                                                                isWeight =
-                                                                    false;
-                                                                isCapacity =
-                                                                    false;
-                                                                isType = false;
-                                                                isWarranty =
-                                                                    false;
-                                                                //EasyLoading.showSuccess("Successfully Added");
-                                                                EasyLoading.showSuccess(lang
-                                                                    .S
-                                                                    .of(context)
-                                                                    .successfullyAdded);
-                                                                finish(context);
+                                                                try {
+                                                                  CategoryModel
+                                                                      categoryModel =
+                                                                      CategoryModel(
+                                                                    categoryName:
+                                                                        itemCategoryController
+                                                                            .text,
+                                                                    size: isSize,
+                                                                    color:
+                                                                        isColor,
+                                                                    capacity:
+                                                                        isCapacity,
+                                                                    type: isType,
+                                                                    weight:
+                                                                        isWeight,
+                                                                    warranty:
+                                                                        isWarranty,
+                                                                  );
+                                                                  // Guardar categoría usando PostgreSQL API
+                                                                  final apiService = ApiService();
+                                                                  await apiService.post('categories', Map<String, dynamic>.from(categoryModel.toJson()));
+                                                                  // ignore: unused_result
+                                                                  ref.refresh(
+                                                                      categoryProvider);
+                                                                  itemCategoryController
+                                                                      .clear();
+                                                                  isSize = false;
+                                                                  isColor = false;
+                                                                  isWeight =
+                                                                      false;
+                                                                  isCapacity =
+                                                                      false;
+                                                                  isType = false;
+                                                                  isWarranty =
+                                                                      false;
+                                                                  //EasyLoading.showSuccess("Successfully Added");
+                                                                  EasyLoading.showSuccess(lang
+                                                                      .S
+                                                                      .of(context)
+                                                                      .successfullyAdded);
+                                                                  finish(context);
+                                                                } catch (e) {
+                                                                  EasyLoading.showError('Error: $e');
+                                                                }
                                                               }
                                                             },
                                                             child: Text(
@@ -1223,23 +1217,30 @@ class _CategoryListState extends State<CategoryList> {
                                                                                                   if (categoryValidateAndSave()) {
                                                                                                     EasyLoading.show(status: lang.S.of(context).addingCategory);
                                                                                                     try {
-                                                                                                      await FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories').orderByChild('categoryName').once().then((DatabaseEvent event) async {
-                                                                                                        if (event.snapshot.value != null) {
-                                                                                                          Map<dynamic, dynamic> values = event.snapshot.value as Map<dynamic, dynamic>;
-                                                                                                          for (var entry in values.entries) {
-                                                                                                            if (entry.value['categoryName'] == showAbleCategories[index].categoryName) {
-                                                                                                              await FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories').child(entry.key).update({
-                                                                                                                'categoryName': itemCategoryController.text,
-                                                                                                                'variationSize': isSize,
-                                                                                                                'variationColor': isColor,
-                                                                                                                'variationWeight': isWeight,
-                                                                                                                'variationCapacity': isCapacity,
-                                                                                                                'variationType': isType,
-                                                                                                              });
-                                                                                                            }
+                                                                                                      // Buscar categoría por nombre usando PostgreSQL API
+                                                                                                      final apiService = ApiService();
+                                                                                                      final searchResponse = await apiService.get('categories', queryParams: {
+                                                                                                        'categoryName': showAbleCategories[index].categoryName,
+                                                                                                        'limit': '1',
+                                                                                                      });
+
+                                                                                                      if (searchResponse.success && searchResponse.data != null) {
+                                                                                                        final categories = searchResponse.data['categories'] as List<dynamic>? ?? [];
+                                                                                                        if (categories.isNotEmpty) {
+                                                                                                          final categoryData = Map<String, dynamic>.from(categories.first);
+                                                                                                          final categoryId = categoryData['id']?.toString();
+                                                                                                          if (categoryId != null) {
+                                                                                                            await apiService.put('categories/$categoryId', {
+                                                                                                              'categoryName': itemCategoryController.text,
+                                                                                                              'variationSize': isSize,
+                                                                                                              'variationColor': isColor,
+                                                                                                              'variationWeight': isWeight,
+                                                                                                              'variationCapacity': isCapacity,
+                                                                                                              'variationType': isType,
+                                                                                                            });
                                                                                                           }
                                                                                                         }
-                                                                                                      });
+                                                                                                      }
 
                                                                                                       // ignore: unused_result
                                                                                                       ref.refresh(categoryProvider);
@@ -1396,31 +1397,37 @@ class _CategoryListState extends State<CategoryList> {
                                                                                         ElevatedButton(
                                                                                           onPressed: () async {
                                                                                             if (!isDemo) {
-                                                                                              // Fetch the categories from Firebase
-                                                                                              DatabaseEvent event = await FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories').orderByChild('categoryName').once();
+                                                                                              try {
+                                                                                                // Buscar categoría por nombre usando PostgreSQL API
+                                                                                                final apiService = ApiService();
+                                                                                                final searchResponse = await apiService.get('categories', queryParams: {
+                                                                                                  'categoryName': showAbleCategories[index].categoryName,
+                                                                                                  'limit': '1',
+                                                                                                });
 
-                                                                                              if (event.snapshot.value != null) {
-                                                                                                Map<dynamic, dynamic> values = event.snapshot.value as Map<dynamic, dynamic>;
+                                                                                                if (searchResponse.success && searchResponse.data != null) {
+                                                                                                  final categories = searchResponse.data['categories'] as List<dynamic>? ?? [];
+                                                                                                  if (categories.isNotEmpty) {
+                                                                                                    final categoryData = Map<String, dynamic>.from(categories.first);
+                                                                                                    final categoryId = categoryData['id']?.toString();
+                                                                                                    if (categoryId != null) {
+                                                                                                      // Eliminar categoría usando PostgreSQL API
+                                                                                                      await apiService.delete('categories/$categoryId');
 
-                                                                                                for (var key in values.keys) {
-                                                                                                  if (values[key]['categoryName'] == showAbleCategories[index].categoryName) {
-                                                                                                    // Delete the category from Firebase
-                                                                                                    await FirebaseDatabase.instance.ref().child(await getUserID()).child('Categories').child(key).remove();
+                                                                                                      // ignore: unused_result
+                                                                                                      ref.refresh(categoryProvider);
 
-                                                                                                    // ignore: unused_result
-                                                                                                    ref.refresh(categoryProvider);
+                                                                                                      // Show success message
+                                                                                                      EasyLoading.showSuccess('Deleted Successfully');
 
-                                                                                                    // Show success message
-                                                                                                    EasyLoading.showSuccess('Deleted Successfully');
-
-                                                                                                    // Navigate back and then to the category list
-                                                                                                    GoRouter.of(context).pop();
-                                                                                                    context.go(CategoryList.route);
-
-                                                                                                    // Exit the loop once the category is found and deleted
-                                                                                                    break;
+                                                                                                      // Navigate back and then to the category list
+                                                                                                      GoRouter.of(context).pop();
+                                                                                                      context.go(CategoryList.route);
+                                                                                                    }
                                                                                                   }
                                                                                                 }
+                                                                                              } catch (e) {
+                                                                                                EasyLoading.showError('Error: $e');
                                                                                               }
                                                                                             } else {
                                                                                               EasyLoading.showInfo(demoText);

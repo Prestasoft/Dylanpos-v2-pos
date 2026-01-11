@@ -12,6 +12,9 @@ import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
 import 'add_user_role_screen.dart';
+import 'change_deletion_password_dialog.dart';
+import 'whatsapp_templates_dialog.dart';
+import 'whatsapp_credentials_dialog.dart';
 
 class UserRoleScreen extends StatefulWidget {
   const UserRoleScreen({super.key});
@@ -98,37 +101,97 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                         ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ),
-                                ElevatedButton(
-                                  onPressed: (() {
-                                    showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return StatefulBuilder(
-                                            builder: (context, setState1) {
-                                          return Dialog(
-                                              insetPadding:
-                                                  const EdgeInsets.all(8),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10.0),
-                                              ),
-                                              surfaceTintColor: kWhite,
-                                              child: SizedBox(
-                                                width: 700,
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                      15.0),
-                                                  child: AddUserRole(),
-                                                ),
-                                              ));
-                                        });
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Botón para configurar credenciales WhatsApp
+                                    OutlinedButton.icon(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return const WhatsAppCredentialsDialog();
+                                          },
+                                        );
                                       },
-                                    );
-                                  }),
-                                  child: Text(
-                                    lang.S.of(context).addNewUser,
-                                  ),
+                                      icon: const Icon(Icons.api, size: 18),
+                                      label: const Text('Config. WhatsApp'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.blue[700],
+                                        side: BorderSide(color: Colors.blue[700]!),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Botón para plantillas WhatsApp
+                                    OutlinedButton.icon(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return const WhatsAppTemplatesDialog();
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(Icons.message, size: 18),
+                                      label: const Text('Plantillas WhatsApp'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.green[700],
+                                        side: BorderSide(color: Colors.green[700]!),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Botón para cambiar clave de eliminación
+                                    OutlinedButton.icon(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return const ChangeDeletionPasswordDialog();
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(Icons.lock_reset, size: 18),
+                                      label: const Text('Cambiar Clave'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.orange[700],
+                                        side: BorderSide(color: Colors.orange[700]!),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Botón agregar usuario
+                                    ElevatedButton(
+                                      onPressed: (() {
+                                        showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return StatefulBuilder(
+                                                builder: (context, setState1) {
+                                              return Dialog(
+                                                  insetPadding:
+                                                      const EdgeInsets.all(8),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(10.0),
+                                                  ),
+                                                  surfaceTintColor: kWhite,
+                                                  child: SizedBox(
+                                                    width: 700,
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.all(
+                                                          15.0),
+                                                      child: AddUserRole(),
+                                                    ),
+                                                  ));
+                                            });
+                                          },
+                                        );
+                                      }),
+                                      child: Text(
+                                        lang.S.of(context).addNewUser,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -780,29 +843,25 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
         return;
       }
 
-      // Buscar las claves del usuario en ambas bases de datos
-      String userKey = '';
-      String adminKey = '';
-      
-      final userRoleList = await repo.getAllUserRole();
-      final adminRoleList = await repo.getAllUserRoleFromAdmin();
-      
-      for (var element in userRoleList) {
-        if (element.email == user.email) {
-          userKey = element.userKey ?? '';
-          break;
-        }
-      }
-      
-      for (var element in adminRoleList) {
-        if (element.email == user.email) {
-          adminKey = element.userKey ?? '';
-          break;
-        }
+      // Usar directamente el userKey del objeto usuario
+      String userKey = user.userKey ?? user.databaseId ?? '';
+
+      if (userKey.isEmpty) {
+        debugPrint('Error: userKey está vacío para el usuario ${user.email}');
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: No se puede identificar el usuario'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
       }
 
+      debugPrint('Eliminando usuario con ID: $userKey, email: ${user.email}');
+
       // Eliminar el usuario
-      bool success = await repo.deleteUserRole(userKey, adminKey, user.email ?? '');
+      bool success = await repo.deleteUserRole(userKey, '', user.email ?? '');
       
       if (success) {
         // Refrescar la lista

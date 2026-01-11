@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:intl/intl.dart';
 
 import 'package:salespro_admin/commas.dart';
@@ -18,6 +18,8 @@ import '../../model/sale_confirmation_model.dart';
 import '../../model/reservation_model.dart';
 
 import '../Widgets/Constant Data/constant.dart';
+import '../../services/whatsapp_template_service.dart';
+import '../../services/whatsapp_credentials_service.dart';
 
 
 class SaleConfirmationsScreen extends ConsumerStatefulWidget {
@@ -78,16 +80,25 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
     }
 
     try {
-      final snapshot = await FirebaseDatabase.instance
-          .ref('Admin Panel/reservations')
-          .child(reservationId)
-          .get();
+      final apiService = ApiService();
+      final response = await apiService.get('reservations/$reservationId');
 
-      if (snapshot.exists) {
-        final reservation = ReservationModel.fromMap(
-          Map<String, dynamic>.from(snapshot.value as Map), 
-          reservationId
-        );
+      if (response.success && response.data != null) {
+        final reservationData = response.data;
+        Map<String, dynamic> resData;
+
+        // Manejar si viene como objeto directo o dentro de 'reservation'
+        if (reservationData is Map) {
+          if (reservationData.containsKey('reservation')) {
+            resData = Map<String, dynamic>.from(reservationData['reservation']);
+          } else {
+            resData = Map<String, dynamic>.from(reservationData);
+          }
+        } else {
+          return 'No encontrada';
+        }
+
+        final reservation = ReservationModel.fromMap(resData, reservationId);
         final date = reservation.reservationDate;
         _reservationDates[reservationId] = date;
         return date;
@@ -646,30 +657,23 @@ class _SaleConfirmationsScreenState extends ConsumerState<SaleConfirmationsScree
     try {
       EasyLoading.show(status: 'Enviando confirmación...');
 
-      final message = '''
-Hola $customerName 👋🏼
+      // Crear mensaje usando plantilla de WhatsApp
+      final template = await WhatsAppTemplateService.getTemplate('confirmation_link');
+      final message = WhatsAppTemplateService.replaceVariables(template, {
+        'nombre': customerName,
+        'link': confirmationLink,
+      });
 
-Tu reserva está pendiente de confirmación.
-
-Haz clic en el siguiente enlace para confirmar tu reserva: 👇🏼
-$confirmationLink
-
-Este enlace expira en 24 horas. ¡Gracias por tu preferencia!
-
-Con aprecio,
-Equipo Víctor Guzmán Fotografía
-Para llamadas: 8098982876 ☎️
-''';
+      // Obtener credenciales dinámicas de WhatsApp
+      final credentials = await WhatsAppCredentialsService.getCredentials();
 
       final body = {
-        'token': '5i36w829nb1ljkj7', //token santo domingo
-        //'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': credentials.token,
         'to': phoneNumber,
         'body': message,
       };
 
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat'); //instancia santo domingo
-      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/chat'); //instancia santiago
+      final url = Uri.parse(credentials.getApiUrl('messages/chat'));
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
       final response = await http.post(

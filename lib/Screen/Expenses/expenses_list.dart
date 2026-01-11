@@ -9,6 +9,8 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/all_expanse_provider.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import '../../services/api_service.dart';
 
 import '../../const.dart';
 import '../../model/expense_model.dart';
@@ -16,6 +18,11 @@ import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
 import '../currency/currency_provider.dart';
 import 'expense_details.dart';
+import '../../services/deletion_password_service.dart';
+import '../../services/audit_service.dart';
+import '../../model/audit_model.dart';
+import '../../Provider/daily_transaction_provider.dart';
+import '../../model/daily_transaction_model.dart';
 
 class ExpensesList extends StatefulWidget {
   const ExpensesList({Key? key}) : super(key: key);
@@ -28,7 +35,8 @@ class ExpensesList extends StatefulWidget {
 
 class _ExpensesListState extends State<ExpensesList> {
   String searchItem = '';
-  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime selectedDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  final ApiService _apiService = ApiService();
 
   List<String> get month => [
         'Hoy',
@@ -108,7 +116,7 @@ class _ExpensesListState extends State<ExpensesList> {
     }
   }
 
-  DateTime selected2ndDate = DateTime.now();
+  DateTime selected2ndDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
   Future<void> _selectedDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(context: context, initialDate: selected2ndDate, firstDate: DateTime(2015, 8), lastDate: DateTime(2101));
@@ -122,7 +130,7 @@ class _ExpensesListState extends State<ExpensesList> {
   double calculateAllExpense({required List<ExpenseModel> allExpense}) {
     double totalExpense = 0;
     for (var element in allExpense) {
-      totalExpense += element.amount.toDouble();
+      totalExpense += double.tryParse(element.amount) ?? 0.0;
     }
 
     return totalExpense;
@@ -132,9 +140,338 @@ class _ExpensesListState extends State<ExpensesList> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     checkCurrentUserAndRestartApp();
+  }
+  
+  Future<void> _showDeleteConfirmation({
+    required BuildContext context,
+    required ExpenseModel expense,
+    required WidgetRef ref,
+  }) async {
+    final passwordController = TextEditingController();
+    bool isPasswordVisible = false;
+    
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icono de advertencia
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.red,
+                    size: 35,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Título
+                Text(
+                  'Eliminar Gasto/Devolución',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: kTitleColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                
+                // Información del gasto
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Concepto:'),
+                          Flexible(
+                            child: Text(
+                              expense.expanseFor,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Monto:'),
+                          Text(
+                            '\$${expense.amount}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Fecha:'),
+                          Text(
+                            expense.expenseDate,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      if (expense.customerName != null && expense.customerName!.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Cliente:'),
+                            Flexible(
+                              child: Text(
+                                expense.customerName!,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Campo de contraseña
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: !isPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña de autorización',
+                    hintText: 'Ingrese la contraseña para eliminar',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isPasswordVisible = !isPasswordVisible;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                
+                // Mensaje de advertencia
+                const Text(
+                  'Esta acción no se puede deshacer',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Botones
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: Text(
+                          lang.S.of(context).cancel,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          // Verificar contraseña con Firebase
+                          final isValid = await DeletionPasswordService.validatePassword(
+                            passwordController.text,
+                          );
+
+                          if (isValid) {
+                            Navigator.pop(dialogContext);
+                            await _deleteExpense(expense, ref);
+                          } else {
+                            EasyLoading.showError('Contraseña incorrecta');
+                          }
+                        },
+                        child: const Text('Eliminar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _deleteDailyTransaction(ExpenseModel expense) async {
+    try {
+      // Buscar y eliminar la transacción diaria correspondiente usando API
+      final response = await _apiService.get('daily-transactions', queryParams: {
+        'type': 'Expense',
+      });
+
+      if (response.success && response.data != null) {
+        final transactions = response.data['daily_transactions'] as List<dynamic>? ??
+            response.data['transactions'] as List<dynamic>? ?? [];
+
+        for (var element in transactions) {
+          final transactionData = Map<String, dynamic>.from(element);
+          final transaction = DailyTransactionModel.fromJson(transactionData);
+
+          // Comparar por tipo, fecha y modelo de gasto
+          if (transaction.type == 'Expense' &&
+              transaction.expenseModel != null &&
+              transaction.expenseModel!.expanseFor == expense.expanseFor &&
+              transaction.expenseModel!.amount == expense.amount &&
+              transaction.expenseModel!.expenseDate == expense.expenseDate) {
+
+            // Eliminar la transacción diaria usando API
+            final transactionId = transactionData['id']?.toString();
+            if (transactionId != null) {
+              await _apiService.delete('daily-transactions/$transactionId');
+            }
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error eliminando transacción diaria: $e');
+    }
+  }
+  
+  Future<void> _updateShopBalance(ExpenseModel expense) async {
+    try {
+      // Obtener el balance actual usando API
+      final response = await _apiService.get('business-settings');
+
+      if (response.success && response.data != null) {
+        final settings = response.data['settings'] ?? response.data;
+        double currentBalance = double.tryParse(settings['remainingShopBalance']?.toString() ?? '0') ?? 0.0;
+
+        // Al eliminar un gasto, sumar el monto de vuelta al balance
+        double newBalance = currentBalance + double.parse(expense.amount);
+
+        // Actualizar el balance usando API
+        await _apiService.put('business-settings', {
+          'remainingShopBalance': newBalance,
+        });
+      }
+    } catch (e) {
+      debugPrint('Error actualizando balance de la tienda: $e');
+    }
+  }
+  
+  Future<void> _deleteExpense(ExpenseModel expense, WidgetRef ref) async {
+    try {
+      EasyLoading.show(status: 'Eliminando...');
+
+      // Buscar la key del gasto usando API
+      String? expenseKey;
+      final response = await _apiService.get('expenses', queryParams: {
+        'expanseFor': expense.expanseFor,
+        'amount': expense.amount,
+        'expenseDate': expense.expenseDate,
+        'category': expense.category,
+      });
+
+      if (response.success && response.data != null) {
+        final expenses = response.data['expenses'] as List<dynamic>? ?? [];
+        for (var element in expenses) {
+          final expenseData = Map<String, dynamic>.from(element);
+          // Comparar por múltiples campos para asegurar que es el gasto correcto
+          if (expenseData['expanseFor'] == expense.expanseFor &&
+              expenseData['amount']?.toString() == expense.amount &&
+              expenseData['expenseDate'] == expense.expenseDate &&
+              expenseData['category'] == expense.category) {
+            expenseKey = expenseData['id']?.toString();
+            break;
+          }
+        }
+      }
+
+      if (expenseKey != null) {
+        // Preparar datos para auditoría
+        final beforeData = {
+          'expenseKey': expenseKey,
+          'expanseFor': expense.expanseFor,
+          'amount': expense.amount,
+          'category': expense.category,
+          'expenseDate': expense.expenseDate,
+          'paymentType': expense.paymentType,
+          'referenceNo': expense.referenceNo,
+          'note': expense.note,
+          if (expense.customerName != null) 'customerName': expense.customerName,
+          if (expense.customerPhone != null) 'customerPhone': expense.customerPhone,
+          if (expense.customerId != null) 'customerId': expense.customerId,
+        };
+
+        // Eliminar el gasto usando API
+        await _apiService.delete('expenses/$expenseKey');
+
+        // Eliminar también de Daily Transaction
+        await _deleteDailyTransaction(expense);
+
+        // Actualizar el balance de la tienda
+        await _updateShopBalance(expense);
+
+        // Registrar en auditoría
+        await AuditService().logAction(
+          action: AuditAction.delete,
+          module: AuditModule.expenses,
+          description: 'Eliminó el gasto "${expense.expanseFor}" por \$${expense.amount}${expense.customerName != null ? " (Cliente: ${expense.customerName})" : ""}',
+          beforeData: beforeData,
+          afterData: null,
+        );
+
+        // Refrescar la lista
+        ref.invalidate(expenseProvider);
+        ref.invalidate(dailyTransactionProvider);
+
+        EasyLoading.showSuccess('Gasto eliminado correctamente');
+      } else {
+        EasyLoading.showError('No se pudo encontrar el gasto');
+      }
+    } catch (e) {
+      EasyLoading.showError('Error al eliminar: $e');
+    }
   }
 
   final _horizontalScroll = ScrollController();
@@ -155,8 +492,20 @@ class _ExpensesListState extends State<ExpensesList> {
             List<ExpenseModel> reverseAllExpense = allExpenses.reversed.toList();
             List<ExpenseModel> showExpense = [];
             for (var element in reverseAllExpense) {
-              if (element.expanseFor.toLowerCase().contains(searchItem.toLowerCase()) && (selectedDate.isBefore(DateTime.parse(element.expenseDate)) || DateTime.parse(element.expenseDate).isAtSameMomentAs(selectedDate)) && (selected2ndDate.isAfter(DateTime.parse(element.expenseDate)) || DateTime.parse(element.expenseDate).isAtSameMomentAs(selected2ndDate))) {
-                showExpense.add(element);
+              try {
+                DateTime expenseDate = DateTime.parse(element.expenseDate);
+                // Normalizar la fecha del gasto a solo fecha (sin hora)
+                DateTime expenseDateOnly = DateTime(expenseDate.year, expenseDate.month, expenseDate.day);
+                
+                bool matchesSearch = searchItem.isEmpty || element.expanseFor.toLowerCase().contains(searchItem.toLowerCase());
+                bool matchesDateStart = selectedDate.isBefore(expenseDateOnly) || selectedDate.isAtSameMomentAs(expenseDateOnly);
+                bool matchesDateEnd = selected2ndDate.isAfter(expenseDateOnly) || selected2ndDate.isAtSameMomentAs(expenseDateOnly);
+                
+                if (matchesSearch && matchesDateStart && matchesDateEnd) {
+                  showExpense.add(element);
+                }
+              } catch (e) {
+                // Error parseando fecha
               }
             }
 
@@ -259,7 +608,7 @@ class _ExpensesListState extends State<ExpensesList> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      '$globalCurrency ${myFormat.format(double.tryParse(calculateAllExpense(allExpense: expenses.value ?? []).toString()) ?? 0)}',
+                                      '$globalCurrency ${myFormat.format(calculateAllExpense(allExpense: showExpense))}',
                                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
                                     ),
                                     Text(
@@ -475,7 +824,9 @@ class _ExpensesListState extends State<ExpensesList> {
                                                         DataColumn(label: Text(lang.S.of(context).SL)),
                                                         DataColumn(label: Text(lang.S.of(context).date)),
                                                         DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).createdBy)),
+                                                        DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).expenseFor)),
                                                         DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).category)),
+                                                        DataColumn(headingRowAlignment: MainAxisAlignment.center, label: const Text('Cliente')),
                                                         DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).note)),
                                                         DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).paymentType)),
                                                         DataColumn(headingRowAlignment: MainAxisAlignment.center, label: Text(lang.S.of(context).amount)),
@@ -499,6 +850,15 @@ class _ExpensesListState extends State<ExpensesList> {
                                                           DataCell(
                                                             Center(
                                                               child: Text(
+                                                                paginatedList[index].userName ?? 'Unknown',
+                                                              ),
+                                                            ),
+                                                          ),
+
+                                                          ///____________Expense For_________________________________________________
+                                                          DataCell(
+                                                            Center(
+                                                              child: Text(
                                                                 paginatedList[index].expanseFor,
                                                               ),
                                                             ),
@@ -510,6 +870,29 @@ class _ExpensesListState extends State<ExpensesList> {
                                                               child: Text(
                                                                 paginatedList[index].category,
                                                               ),
+                                                            ),
+                                                          ),
+
+                                                          ///______Cliente (para devoluciones)___________________________________________________________
+                                                          DataCell(
+                                                            Center(
+                                                              child: paginatedList[index].customerName != null && paginatedList[index].customerName!.isNotEmpty
+                                                                  ? Column(
+                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                                                      children: [
+                                                                        Text(
+                                                                          paginatedList[index].customerName!,
+                                                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                                                        ),
+                                                                        if (paginatedList[index].customerPhone != null && paginatedList[index].customerPhone!.isNotEmpty)
+                                                                          Text(
+                                                                            paginatedList[index].customerPhone!,
+                                                                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                                                          ),
+                                                                      ],
+                                                                    )
+                                                                  : const Text('-'),
                                                             ),
                                                           ),
 
@@ -601,6 +984,29 @@ class _ExpensesListState extends State<ExpensesList> {
                                                                               lang.S.of(context).edit,
                                                                               style: theme.textTheme.bodyLarge?.copyWith(
                                                                                 color: kGreyTextColor,
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                      
+                                                                      ///____________delete___________________________________________
+                                                                      PopupMenuItem(
+                                                                        onTap: () {
+                                                                          _showDeleteConfirmation(
+                                                                            context: context,
+                                                                            expense: showExpense[index],
+                                                                            ref: ref,
+                                                                          );
+                                                                        },
+                                                                        child: Row(
+                                                                          children: [
+                                                                            const Icon(IconlyLight.delete, size: 22.0, color: Colors.red),
+                                                                            const SizedBox(width: 4.0),
+                                                                            Text(
+                                                                              lang.S.of(context).delete,
+                                                                              style: theme.textTheme.bodyLarge?.copyWith(
+                                                                                color: Colors.red,
                                                                               ),
                                                                             ),
                                                                           ],

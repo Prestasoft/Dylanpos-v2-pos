@@ -1,81 +1,94 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
-import '../../../../const.dart';
+import '../../../../services/api_service.dart';
 import '../model/designation_model.dart';
 
+/// Repositorio de designaciones/cargos - Usa PostgreSQL API
 class DesignationRepository {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
+  final ApiService _apiService = ApiService();
 
+  /// Obtener todas las designaciones desde PostgreSQL
   Future<List<DesignationModel>> getAllDesignation() async {
     List<DesignationModel> designations = [];
 
     try {
-      final userID = await getUserID();
-      final snapshot = await FirebaseDatabase.instance.ref(userID).child('Designation').orderByKey().get();
+      final response = await _apiService.get('hrm/designations', queryParams: {'limit': '1000'});
 
-      for (var element in snapshot.children) {
-        var data = DesignationModel.fromJson(jsonDecode(jsonEncode(element.value)));
-        designations.add(data);
+      if (response.success && response.data != null) {
+        final designationsData = response.data['designations'] as List<dynamic>? ?? [];
+
+        for (var element in designationsData) {
+          final data = Map<String, dynamic>.from(element as Map);
+          designations.add(DesignationModel.fromJson(data));
+        }
       }
     } catch (e) {
+      // Error silencioso para mantener compatibilidad
     }
-
 
     return designations;
   }
 
-  // Method to save designation
+  /// Agregar nueva designación
   Future<bool> addDesignation({required DesignationModel designation}) async {
     try {
       EasyLoading.show(status: 'Loading...', dismissOnTap: false);
 
-      final userID = await getUserID();
-      final DatabaseReference productInformationRef = _dbRef.child(userID).child('Designation').child(designation.id.toString());
+      final designationData = Map<String, dynamic>.from(designation.toJson());
+      final response = await _apiService.post('hrm/designations', designationData);
 
-      await productInformationRef.set(designation.toJson());
+      if (response.success) {
+        EasyLoading.showSuccess('Added Successfully', duration: const Duration(milliseconds: 500));
+        return true;
+      }
 
-      EasyLoading.showSuccess('Added Successfully', duration: const Duration(milliseconds: 500));
-      return true;
+      EasyLoading.showError(response.message ?? 'Error al agregar designación');
+      return false;
     } catch (e) {
       EasyLoading.dismiss();
       throw Exception('Failed to add designation: ${e.toString()}');
     }
   }
 
+  /// Actualizar designación existente
   Future<bool> updateDesignation({required DesignationModel designation}) async {
     try {
       EasyLoading.show(status: 'Loading...', dismissOnTap: false);
 
-      final userID = await getUserID();
-      final DatabaseReference productInformationRef = _dbRef.child(userID).child('Designation').child(designation.id.toString());
-
-      await productInformationRef.update({
+      final updateData = {
         'designation': designation.designation,
         'designationDescription': designation.designationDescription,
-      });
+      };
 
-      EasyLoading.showSuccess('Updated Successfully', duration: const Duration(milliseconds: 500));
-      return true;
+      final response = await _apiService.put('hrm/designations/${designation.id}', updateData);
+
+      if (response.success) {
+        EasyLoading.showSuccess('Updated Successfully', duration: const Duration(milliseconds: 500));
+        return true;
+      }
+
+      EasyLoading.showError(response.message ?? 'Error al actualizar designación');
+      return false;
     } catch (e) {
       EasyLoading.dismiss();
       throw Exception('Failed to Updated designation: ${e.toString()}');
     }
   }
 
+  /// Eliminar designación
   Future<bool> deleteDesignation({required num id}) async {
     try {
       EasyLoading.show(status: 'Deleting...');
 
-      final String userId = await getUserID();
-      final DatabaseReference productInformationRef = _dbRef.child(userId).child('Designation').child(id.toString());
+      final response = await _apiService.delete('hrm/designations/$id');
 
-      await productInformationRef.remove();
+      if (response.success) {
+        EasyLoading.showSuccess('Deleted Successfully');
+        return true;
+      }
 
-      EasyLoading.showSuccess('Deleted Successfully');
-      return true;
+      EasyLoading.showError(response.message ?? 'Error al eliminar designación');
+      return false;
     } catch (e) {
       EasyLoading.showError('Error: ${e.toString()}');
       return false;

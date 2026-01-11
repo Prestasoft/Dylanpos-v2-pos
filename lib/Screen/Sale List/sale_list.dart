@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -28,6 +28,9 @@ import '../../PDF/print_pdf.dart';
 import '../../Provider/product_provider.dart';
 import '../../Provider/profile_provider.dart';
 import '../../Provider/transactions_provider.dart';
+import '../../services/deletion_password_service.dart';
+import '../../services/whatsapp_template_service.dart';
+import '../../services/whatsapp_credentials_service.dart';
 import '../../commas.dart';
 import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
@@ -72,10 +75,10 @@ class _SaleListState extends State<SaleList> {
             
             return transactionReport.when(
               data: (mainTransaction) {
-                final reMainTransaction = mainTransaction.reversed.toList();
+                // Las ventas ya vienen ordenadas del repositorio (más reciente primero)
                 List<SaleTransactionModel> showAbleSaleTransactions = [];
 
-                for (var element in reMainTransaction) {
+                for (var element in mainTransaction) {
                   if (searchItem != '' &&
                       (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) ||
                       element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()))) {
@@ -728,24 +731,28 @@ class _SaleListState extends State<SaleList> {
       }
 
       EasyLoading.show(status: 'Preparando envío...');
-      
+
       final pdfBase64 = base64Encode(pdfData);
-      
-      final safeMessage = '''
-        Hola ${customerName},
-        Adjunto su comprobante #${invoiceNumber}.
-        Gracias por su preferencia!
-        ''';
+
+      // Crear mensaje usando plantilla de WhatsApp
+      final template = await WhatsAppTemplateService.getTemplate('invoice_caption');
+      final safeMessage = WhatsAppTemplateService.replaceVariables(template, {
+        'nombre': customerName,
+        'factura': invoiceNumber,
+      });
+
+      // Obtener credenciales dinámicas de WhatsApp
+      final credentials = await WhatsAppCredentialsService.getCredentials();
 
       final body = {
-        'token': '5i36w829nb1ljkj7',
+        'token': credentials.token,
         'to': cleanedPhone,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
         'caption': safeMessage,
       };
 
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document');
+      final url = Uri.parse(credentials.getApiUrl('messages/document'));
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -975,7 +982,6 @@ class _SaleListState extends State<SaleList> {
 
   Future<void> _showDeleteAuthDialog(SaleTransactionModel transaction, WidgetRef ref) async {
     TextEditingController passwordController = TextEditingController();
-    const String correctPassword = "22400600452"; // Misma clave que descuentos
     
     return showDialog<void>(
       context: context,
@@ -1049,13 +1055,14 @@ class _SaleListState extends State<SaleList> {
     );
   }
 
-  void _validateDeletePassword(BuildContext dialogContext, String password, SaleTransactionModel transaction, WidgetRef ref) {
-    const String correctPassword = "22400600452"; // Misma clave que descuentos
-    
-    if (password == correctPassword) {
+  void _validateDeletePassword(BuildContext dialogContext, String password, SaleTransactionModel transaction, WidgetRef ref) async {
+    // Validar contraseña con Firebase
+    final isValid = await DeletionPasswordService.validatePassword(password);
+
+    if (isValid) {
       // Cerrar el diálogo de autenticación
       Navigator.of(dialogContext).pop();
-      
+
       // Ejecutar la eliminación después de un pequeño delay
       Future.delayed(Duration(milliseconds: 100), () {
         _performDeleteSale(transaction, ref);
@@ -1155,10 +1162,11 @@ class _SaleListState extends State<SaleList> {
         await consuearRef.read(cancelReservationProvider(reservationId).future);
       }
 
-      // Paso 6: Eliminar de Firebase Database
+      // Paso 6: Eliminar de PostgreSQL via API
       debugPrint('🗑️ Paso 6: Eliminando de Sales Transition...');
-      DatabaseReference dbRef = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/${transaction.key}");
-      await dbRef.remove();
+      final apiService = ApiService();
+      final saleId = transaction.key ?? transaction.invoiceNumber;
+      await apiService.delete('sales/$saleId');
 
       // Paso 7: Refrescar providers
       debugPrint('🗑️ Paso 7: Refrescando providers...');

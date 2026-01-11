@@ -8,6 +8,7 @@ import 'package:iconly/iconly.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/product_provider.dart';
+import 'package:salespro_admin/Provider/dress_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/export_button.dart';
@@ -842,16 +843,9 @@ class _ServicePackageListState extends State<ServicePackageList> {
       _selectedComponents = List<String?>.from(package.components);
     }
 
-    // Validar componentes existentes contra las categorías actuales
-    final categories = ref.read(categoryProvider).maybeWhen(
-      data: (cats) => cats.map((c) => c.categoryName).toSet(),
-      orElse: () => <String>{},
-    );
-    for (int i = 0; i < _selectedComponents.length; i++) {
-      if (_selectedComponents[i] != null && !categories.contains(_selectedComponents[i])) {
-        _selectedComponents[i] = null;
-      }
-    }
+    // NO validar componentes al abrir el modal - los valores existentes del paquete
+    // siempre deben mostrarse. La validación se hará en el Consumer cuando
+    // las categorías estén cargadas.
 
     // Asegura que siempre haya al menos un dropdown visible
     void ensureAtLeastOneDropdown() {
@@ -1064,14 +1058,27 @@ class _ServicePackageListState extends State<ServicePackageList> {
 
                             Consumer(
                               builder: (context, ref, child) {
-                                final categoriesAsync = ref.watch(categoryProvider);
+                                // Usar categorías de VESTIDOS para los componentes del paquete
+                                // Los componentes son categorías de vestidos como "Sin Vestimenta", "Vestido de Madre", etc.
+                                final categoriesAsync = ref.watch(dressCategoriesProvider);
 
                                 return categoriesAsync.when(
                                   data: (categories) {
-                                    final dropdownItems = categories
+                                    // Combinar categorías de la API con valores existentes del paquete
+                                    // Esto asegura que los valores actuales siempre estén en el dropdown
+                                    final existingValues = _selectedComponents
+                                        .where((v) => v != null && v.isNotEmpty)
+                                        .cast<String>()
+                                        .toSet();
+
+                                    // Crear set combinado: categorías de API + valores existentes
+                                    final allCategories = <String>{...categories, ...existingValues};
+                                    final sortedCategories = allCategories.toList()..sort();
+
+                                    final dropdownItems = sortedCategories
                                         .map((c) => DropdownMenuItem<String>(
-                                              value: c.categoryName,
-                                              child: Text(c.categoryName),
+                                              value: c,
+                                              child: Text(c),
                                             ))
                                         .toList();
 

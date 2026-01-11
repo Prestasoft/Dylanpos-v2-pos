@@ -1,12 +1,16 @@
-// Provider mejorado
+// Provider mejorado - Migrado a PostgreSQL API
 import 'dart:async';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nb_utils/nb_utils.dart';
 
 import '../model/dress_model.dart';
+import '../services/api_service.dart';
 
+/// Servicio API compartido
+final ApiService _apiService = ApiService();
+
+/// Provider de vestidos por estado - Usa PostgreSQL API
 final dressesByStatusProvider = FutureProvider.family<List<DressModel>, String>(
   (ref, params) async {
     try {
@@ -28,30 +32,29 @@ final dressesByStatusProvider = FutureProvider.family<List<DressModel>, String>(
   },
 );
 
+/// Obtener todos los vestidos desde PostgreSQL
 Future<List<DressModel>> _fetchDresses() async {
   try {
-    final snapshot = await FirebaseDatabase.instance
-        .ref('Admin Panel/dresses')
-        .get()
-        .timeout(const Duration(seconds: 10));
+    final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
 
-    final value = snapshot.value;
-    if (value == null) return [];
-
-    if (value is! Map) {
+    if (!response.success || response.data == null) {
       return [];
     }
 
+    final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
     final List<DressModel> dresses = [];
 
-    value.forEach((key, data) {
+    for (var item in dressesData) {
       try {
-        if (data is Map && data.containsKey('name')) {
-          dresses.add(DressModel.fromRealtimeDB(data, key));
+        if (item is Map && item.containsKey('name')) {
+          final data = Map<String, dynamic>.from(item);
+          final id = data['id']?.toString() ?? '';
+          dresses.add(DressModel.fromMap(data, id));
         }
       } catch (e) {
+        // Error silencioso
       }
-    });
+    }
 
     return dresses;
   } on TimeoutException {
@@ -61,6 +64,7 @@ Future<List<DressModel>> _fetchDresses() async {
   }
 }
 
+/// Filtrar vestidos por nombre
 List<DressModel> _filterByName(List<DressModel> dresses, String search) {
   if (search.isEmpty) return dresses;
 
@@ -69,31 +73,31 @@ List<DressModel> _filterByName(List<DressModel> dresses, String search) {
   }).toList();
 }
 
+/// Obtener IDs de vestidos reservados desde PostgreSQL
 Future<Set<String>> _getReservedDressIds() async {
   try {
     final now = DateTime.now();
     final endOfYear = DateTime(now.year, 12, 31, 23, 59, 59);
 
-    final reservationsSnapshot = await FirebaseDatabase.instance
-        .ref('Admin Panel/reservations')
-        .get()
-        .timeout(const Duration(seconds: 10));
+    final response = await _apiService.get('reservations', queryParams: {'limit': '5000'});
 
-    final reservationsData = reservationsSnapshot.value;
+    if (!response.success || response.data == null) {
+      return <String>{};
+    }
+
+    final reservationsData = response.data['reservations'] as List<dynamic>? ?? [];
     final reservedDressIds = <String>{};
 
-    if (reservationsData is! Map) return reservedDressIds;
-
-    reservationsData.forEach((resId, resData) {
+    for (var resData in reservationsData) {
       try {
-        if (resData is! Map) return;
+        if (resData is! Map) continue;
 
-        _processSimpleReservation(resData, now, endOfYear, reservedDressIds);
-
-        _processMultipleReservations(resData, now, endOfYear, reservedDressIds);
+        _processSimpleReservation(Map<String, dynamic>.from(resData), now, endOfYear, reservedDressIds);
+        _processMultipleReservations(Map<String, dynamic>.from(resData), now, endOfYear, reservedDressIds);
       } catch (e) {
+        // Error silencioso
       }
-    });
+    }
 
     return reservedDressIds;
   } catch (e) {
@@ -101,6 +105,7 @@ Future<Set<String>> _getReservedDressIds() async {
   }
 }
 
+/// Procesar reservación simple
 void _processSimpleReservation(
     Map resData, DateTime now, DateTime endOfYear, Set<String> reservedIds) {
   final String? dressId = resData['dress_id']?.toString();
@@ -114,9 +119,11 @@ void _processSimpleReservation(
   }
 }
 
+/// Procesar reservaciones múltiples
 void _processMultipleReservations(
     Map resData, DateTime now, DateTime endOfYear, Set<String> reservedIds) {
-  final multiple = resData['multiple_dress'];
+  // Firebase usa 'multiple_dress', PostgreSQL usa 'dress_ids'
+  final multiple = resData['multiple_dress'] ?? resData['dress_ids'];
   final String? resDateStr = resData['reservation_date']?.toString();
 
   if (multiple is! List || resDateStr == null) return;
@@ -131,6 +138,7 @@ void _processMultipleReservations(
   }
 }
 
+/// Filtrar vestidos por estado
 List<DressModel> _filterByStatus(
     List<DressModel> dresses, String status, Set<String> reservedIds) {
   switch (status) {

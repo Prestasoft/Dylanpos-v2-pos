@@ -1,0 +1,11 @@
+{
+  "version": "2.1.74",
+  "build": "20260111-0005",
+  "releaseDate": "2026-01-11",
+  "environment": "production",
+  "description": "Actualización a versión 2.1.74",
+  "changelog": [
+    "Actualización a versión 2.1.74"
+  ],
+  "forceUpdate": true
+}

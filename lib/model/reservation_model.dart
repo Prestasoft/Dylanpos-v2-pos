@@ -19,6 +19,12 @@ class ReservationModel {
   final String? fiestaDate;
   final String? fiestaTime;
   final bool isFiestaDate;
+  // Campos adicionales para mostrar nombres
+  final String? customerName;
+  final String? customerPhone;
+  final String? serviceName;
+  final String? vestido;
+  final List<Map<String, dynamic>> dressesData;
 
   ReservationModel({
     String? id,
@@ -41,36 +47,73 @@ class ReservationModel {
     this.fiestaDate,
     this.fiestaTime,
     this.isFiestaDate = false,
+    this.customerName,
+    this.customerPhone,
+    this.serviceName,
+    this.vestido,
+    List<Map<String, dynamic>>? dressesData,
   })  : id = id ?? '',
         createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+        updatedAt = updatedAt ?? DateTime.now(),
+        dressesData = dressesData ?? [];
 
   factory ReservationModel.fromMap(Map<String, dynamic> map, String id) {
+    // Procesar dress_ids de forma segura
+    List<Map<String, String>> parsedDressIds = [];
+    final dressIdsRaw = map['dress_ids'];
+    if (dressIdsRaw != null && dressIdsRaw is List) {
+      for (final item in dressIdsRaw) {
+        if (item is Map) {
+          parsedDressIds.add({
+            'dress_id': item['dress_id']?.toString() ?? '',
+            'branch_id': item['branch_id']?.toString() ?? '',
+          });
+        } else if (item is String) {
+          // Si es solo un string (dress_id), usarlo directamente
+          parsedDressIds.add({
+            'dress_id': item,
+            'branch_id': '',
+          });
+        }
+      }
+    }
+
+    // Parsear dresses_data si existe
+    List<Map<String, dynamic>> parsedDressesData = [];
+    final dressesDataRaw = map['dresses_data'];
+    if (dressesDataRaw != null && dressesDataRaw is List) {
+      for (final item in dressesDataRaw) {
+        if (item is Map) {
+          parsedDressesData.add(Map<String, dynamic>.from(item));
+        }
+      }
+    }
+
     return ReservationModel(
       id: id,
-      serviceId: map['service_id'] ?? '',
-      clientId: map['client_id'] ?? '',
-      dressId: map['dress_id'] ?? '',
-      branchId: map['branch_id'] ?? '',
-      reservationDate: map['reservation_date'] ?? '',
-      reservationTime: map['reservation_time'] ?? '',
+      serviceId: map['service_id']?.toString() ?? '',
+      clientId: map['client_id']?.toString() ?? '',
+      dressId: map['dress_id']?.toString() ?? '',
+      branchId: map['branch_id']?.toString() ?? '',
+      reservationDate: map['reservation_date']?.toString() ?? '',
+      reservationTime: map['reservation_time']?.toString() ?? '',
       createdAt: _parseTimestamp(map['created_at']),
       updatedAt: _parseTimestamp(map['updated_at']),
-      estadoFactura: map['estado_factura'] ?? false,
-      estado: map['estado'],
-      nota: map['nota'] ?? '',
-      place: map['place'] ?? '',
-      multipleDress: List<Map<String, String>>.from(
-        (map['dress_ids'] ?? []).map((x) => {
-              'dress_id': x['dress_id'] ?? '',
-              'branch_id': x['branch_id'] ?? '',
-            }),
-      ),
-      reservation_associated: map['reservation_associated'] ?? '',
-      package_price: map['package_price'] ?? '',
-      sellerName: map['seller_name'] ?? '',
-      fiestaDate: map['fiesta_date'] ?? '',
-      fiestaTime: map['fiesta_time'] ?? '',
+      estadoFactura: map['estado_factura'] == true || map['estado_factura'] == 'true',
+      estado: map['estado']?.toString(),
+      nota: map['nota']?.toString() ?? '',
+      place: map['place']?.toString() ?? '',
+      multipleDress: parsedDressIds,
+      reservation_associated: map['reservation_associated']?.toString() ?? '',
+      package_price: map['package_price']?.toString() ?? '',
+      sellerName: map['seller_name']?.toString() ?? '',
+      fiestaDate: map['fiesta_date']?.toString() ?? '',
+      fiestaTime: map['fiesta_time']?.toString() ?? '',
+      customerName: map['customer_name']?.toString(),
+      customerPhone: map['customer_phone']?.toString(),
+      serviceName: map['service_name']?.toString(),
+      vestido: map['vestido']?.toString(),
+      dressesData: parsedDressesData,
     );
   }
 

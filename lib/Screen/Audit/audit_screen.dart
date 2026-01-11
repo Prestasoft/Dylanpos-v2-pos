@@ -28,6 +28,7 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
   List<AuditModel> audits = [];
   Map<String, dynamic> stats = {};
   bool isLoading = true;
+  Map<String, String> uniqueUsers = {}; // userId -> userName
   
   // Controladores de UI
   final ScrollController _horizontalScrollController = ScrollController();
@@ -37,6 +38,7 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
   @override
   void initState() {
     super.initState();
+    _loadAllSystemUsers();
     _loadAuditData();
     _loadStats();
   }
@@ -45,6 +47,17 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
   void dispose() {
     _horizontalScrollController.dispose();
     super.dispose();
+  }
+  
+  Future<void> _loadAllSystemUsers() async {
+    try {
+      final systemUsers = await _auditService.getAllSystemUsers();
+      setState(() {
+        uniqueUsers = systemUsers;
+      });
+    } catch (e) {
+      debugPrint('Error cargando usuarios del sistema: $e');
+    }
   }
 
   Future<void> _loadAuditData() async {
@@ -77,7 +90,11 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
   Future<void> _loadStats() async {
     try {
       final result = await _auditService.getAuditStats();
-      setState(() => stats = result);
+      setState(() {
+        stats = result;
+        // Ya no extraemos usuarios de las estadísticas, 
+        // porque ahora los obtenemos directamente del sistema
+      });
     } catch (e) {
       debugPrint('Error cargando estadísticas: $e');
     }
@@ -318,8 +335,45 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
           ),
           const SizedBox(height: 16),
           
+          // Primera fila de filtros
           Row(
             children: [
+              // Filtro por Usuario
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Usuario', style: TextStyle(fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String?>(
+                      value: selectedUserId,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      hint: const Text('Todos los usuarios'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Todos los usuarios'),
+                        ),
+                        ...uniqueUsers.entries.map((entry) {
+                          return DropdownMenuItem<String?>(
+                            value: entry.key,
+                            child: Text(entry.value),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        setState(() => selectedUserId = value);
+                        _loadAuditData();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              
               // Filtro por Acción
               Expanded(
                 child: Column(
@@ -378,7 +432,14 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Segunda fila de filtros
+          Row(
+            children: [
               
               // Filtro por Fecha Inicio
               Expanded(

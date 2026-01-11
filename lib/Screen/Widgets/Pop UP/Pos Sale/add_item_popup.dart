@@ -1,5 +1,4 @@
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +17,7 @@ import '../../../../model/brands_model.dart';
 import '../../../../model/category_model.dart';
 import '../../../../model/product_model.dart';
 import '../../../../model/unit_model.dart';
+import '../../../../services/api_service.dart';
 import '../../../WareHouse/warehouse_model.dart';
 import '../../Constant Data/button_global.dart';
 import '../../Constant Data/constant.dart';
@@ -295,30 +295,29 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           ).onTap(() async {
                             EasyLoading.show(
                                 status: lang.S.of(context).addingCategory);
-                            final DatabaseReference categoryInformationRef =
-                                FirebaseDatabase.instance
-                                    .ref()
-                                    .child(await getUserID())
-                                    .child('Categories');
-                            CategoryModel categoryModel = CategoryModel(
-                                categoryName: itemCategoryController.text,
-                                size: isSize,
-                                color: isColor,
-                                capacity: isCapacity,
-                                type: isType,
-                                weight: isWeight,
-                                warranty: isWarranty);
-                            await categoryInformationRef
-                                .push()
-                                .set(categoryModel.toJson());
-                            final _ = ref.refresh(categoryProvider);
-                            setState(() {
-                              categoryType = 0;
-                              categoryName.clear();
-                            });
-                            EasyLoading.showSuccess(
-                                lang.S.of(context).successfull);
-                            finish(context);
+                            try {
+                              final apiService = ApiService();
+                              CategoryModel categoryModel = CategoryModel(
+                                  categoryName: itemCategoryController.text,
+                                  size: isSize,
+                                  color: isColor,
+                                  capacity: isCapacity,
+                                  type: isType,
+                                  weight: isWeight,
+                                  warranty: isWarranty);
+                              await apiService.post('categories',
+                                  Map<String, dynamic>.from(categoryModel.toJson()));
+                              final _ = ref.refresh(categoryProvider);
+                              setState(() {
+                                categoryType = 0;
+                                categoryName.clear();
+                              });
+                              EasyLoading.showSuccess(
+                                  lang.S.of(context).successfull);
+                              finish(context);
+                            } catch (e) {
+                              EasyLoading.showError('Error: $e');
+                            }
                           })
                         ],
                       )
@@ -446,24 +445,23 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                           ).onTap(() async {
                             EasyLoading.show(
                                 status: lang.S.of(context).addingBrand);
-                            final DatabaseReference _categoryInformationRef =
-                                FirebaseDatabase.instance
-                                    .ref()
-                                    .child(await getUserID())
-                                    .child('Brands');
-                            BrandsModel brandModel = BrandsModel(
-                                brandName: brandNameController.text);
-                            await _categoryInformationRef
-                                .push()
-                                .set(brandModel.toJson());
-                            final _ = ref.refresh(brandProvider);
-                            setState(() {
-                              brandTime = 0;
-                              brandName.clear();
-                            });
-                            EasyLoading.showSuccess(
-                                lang.S.of(context).successfull);
-                            finish(context);
+                            try {
+                              final apiService = ApiService();
+                              BrandsModel brandModel = BrandsModel(
+                                  brandName: brandNameController.text);
+                              await apiService.post('brands',
+                                  Map<String, dynamic>.from(brandModel.toJson()));
+                              final _ = ref.refresh(brandProvider);
+                              setState(() {
+                                brandTime = 0;
+                                brandName.clear();
+                              });
+                              EasyLoading.showSuccess(
+                                  lang.S.of(context).successfull);
+                              finish(context);
+                            } catch (e) {
+                              EasyLoading.showError('Error: $e');
+                            }
                           })
                         ],
                       )
@@ -616,25 +614,23 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                         ).onTap(() async {
                           EasyLoading.show(
                               status: lang.S.of(context).addingUnits);
-                          final DatabaseReference _categoryInformationRef =
-                              FirebaseDatabase.instance
-                                  // ignore: deprecated_member_use
-                                  .ref()
-                                  .child(await getUserID())
-                                  .child('Units');
-                          UnitModel unitModel =
-                              UnitModel(unitNameController.text);
-                          await _categoryInformationRef
-                              .push()
-                              .set(unitModel.toJson());
-                          final _ = ref.refresh(unitProvider);
-                          setState(() {
-                            unitTime = 0;
-                            unitType.clear();
-                          });
-                          EasyLoading.showSuccess(
-                              "${lang.S.of(context).successfull}");
-                          finish(context);
+                          try {
+                            final apiService = ApiService();
+                            UnitModel unitModel =
+                                UnitModel(unitNameController.text);
+                            await apiService.post('units',
+                                Map<String, dynamic>.from(unitModel.toJson()));
+                            final _ = ref.refresh(unitProvider);
+                            setState(() {
+                              unitTime = 0;
+                              unitType.clear();
+                            });
+                            EasyLoading.showSuccess(
+                                "${lang.S.of(context).successfull}");
+                            finish(context);
+                          } catch (e) {
+                            EasyLoading.showError('Error: $e');
+                          }
                         })
                       ],
                     )
@@ -1434,13 +1430,7 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                         status:
                                             '${lang.S.of(context).loading}...',
                                         dismissOnTap: false);
-                                    // ignore: no_leading_underscores_for_local_identifiers
-                                    final DatabaseReference
-                                        _productInformationRef =
-                                        FirebaseDatabase.instance
-                                            .ref()
-                                            .child(await getUserID())
-                                            .child('Products');
+                                    final apiService = ApiService();
                                     ProductModel productModel = ProductModel(
                                       productNameController.text,
                                       selectedCategories!,
@@ -1475,9 +1465,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                       groupTaxRate: 0,
                                       subTaxes: [],
                                     );
-                                    await _productInformationRef
-                                        .push()
-                                        .set(productModel.toJson());
+                                    await apiService.post('products',
+                                        Map<String, dynamic>.from(productModel.toJson()));
                                     EasyLoading.showSuccess(
                                         lang.S.of(context).addedSuccessfully,
                                         duration:

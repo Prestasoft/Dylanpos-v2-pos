@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+
+import '../../services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -431,11 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   kButtonDecoration.copyWith(
                                                       color: kMainColor),
                                               onPressed: () async {
-                                                final dbRef = FirebaseDatabase
-                                                    .instance
-                                                    .ref()
-                                                    .child(await getUserID())
-                                                    .child('Invoice Settings');
+                                                final apiService = ApiService();
                                                 InvoiceModel inv = InvoiceModel(
                                                     phoneNumber:
                                                         data.phoneNumber,
@@ -456,7 +453,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                             .text,
                                                     isRight: isRight,
                                                     showInvoice: showLogo);
-                                                await dbRef.set(inv.toJson());
+                                                try {
+                                                  await apiService.put('settings/invoice-settings', inv.toJson());
+                                                  EasyLoading.showSuccess('${lang.S.of(context).saveChanges}!');
+                                                } catch (e) {
+                                                  EasyLoading.showError('Error al guardar');
+                                                }
                                               },
                                               buttonTextColor: Colors.white,
                                             ),

@@ -30,20 +30,28 @@ class DueTransactionModel {
   });
 
   DueTransactionModel.fromJson(Map<dynamic, dynamic> json) {
-    customerName = json['customerName'] as String;
-    customerPhone = json['customerPhone'].toString();
-    invoiceNumber = json['invoiceNumber'].toString();
-    customerAddress = json['customerAddress'] ?? '';
-    customerGst = json['customerGst'] ?? '';
-    customerType = json['customerType'].toString();
-    sellerName = json['sellerName'].toString();
-    purchaseDate = json['purchaseDate'].toString();
-    totalDue = double.parse(json['totalDue'].toString());
-    dueAmountAfterPay = double.parse(json['dueAmountAfterPay'].toString());
-    payDueAmount = double.parse(json['payDueAmount'].toString());
-    isPaid = json['isPaid'];
-    paymentType = json['paymentType'].toString();
-    sendWhatsappMessage = json['sendWhatsappMessage'] ?? false;
+    // Helper para convertir a double de forma segura
+    double parseDouble(dynamic value, [double defaultValue = 0.0]) {
+      if (value == null) return defaultValue;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? defaultValue;
+      return defaultValue;
+    }
+
+    customerName = json['customerName']?.toString() ?? '';
+    customerPhone = json['customerPhone']?.toString() ?? '';
+    invoiceNumber = json['invoiceNumber']?.toString() ?? '';
+    customerAddress = json['customerAddress']?.toString() ?? '';
+    customerGst = json['customerGst']?.toString() ?? '';
+    customerType = json['customerType']?.toString() ?? '';
+    sellerName = json['sellerName']?.toString() ?? '';
+    purchaseDate = json['purchaseDate']?.toString() ?? '';
+    totalDue = parseDouble(json['totalDue']);
+    dueAmountAfterPay = parseDouble(json['dueAmountAfterPay']);
+    payDueAmount = parseDouble(json['payDueAmount']);
+    isPaid = json['isPaid'] == true;
+    paymentType = json['paymentType']?.toString() ?? '';
+    sendWhatsappMessage = json['sendWhatsappMessage'] == true;
     bankId = json['bankId']?.toString();
     bankName = json['bankName']?.toString();
   }

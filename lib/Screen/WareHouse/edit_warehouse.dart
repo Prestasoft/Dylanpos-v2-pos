@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -12,6 +9,7 @@ import 'package:salespro_admin/Screen/WareHouse/warehouse_model.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditWarehouse extends StatefulWidget {
@@ -37,21 +35,25 @@ class _EditWarehouseState extends State<EditWarehouse> {
   String expenseKey = '';
 
   void getExpenseKey() async {
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Warehouse List')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['warehouseName'].toString() ==
-            widget.warehouseModel.warehouseName) {
-          expenseKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('warehouses?warehouseName=${widget.warehouseModel.warehouseName}');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> warehouses = [];
+        if (data is Map && data['warehouses'] != null) {
+          warehouses = data['warehouses'] as List<dynamic>;
+        } else if (data is List) {
+          warehouses = data;
+        }
+        if (warehouses.isNotEmpty) {
+          final warehouse = Map<String, dynamic>.from(warehouses.first);
+          expenseKey = warehouse['id']?.toString() ?? warehouse['key']?.toString() ?? '';
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error obteniendo warehouse key: $e');
+    }
   }
 
   @override
@@ -211,15 +213,9 @@ class _EditWarehouseState extends State<EditWarehouse> {
                                       status:
                                           '${lang.S.of(context).loading}...',
                                       dismissOnTap: false);
-                                  final DatabaseReference
-                                      productInformationRef = FirebaseDatabase
-                                          .instance
-                                          .ref()
-                                          .child(await getUserID())
-                                          .child('Warehouse List')
-                                          .child(expenseKey);
-                                  await productInformationRef
-                                      .set(warehouse.toJson());
+                                  final apiService = ApiService();
+                                  await apiService.put('warehouses/$expenseKey',
+                                      Map<String, dynamic>.from(warehouse.toJson()));
                                   EasyLoading.showSuccess(
                                       lang.S.of(context).editSuccessfully,
                                       duration:

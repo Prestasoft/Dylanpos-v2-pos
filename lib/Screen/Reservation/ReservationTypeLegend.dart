@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ReservationTypeLegend extends StatelessWidget {
-  const ReservationTypeLegend({Key? key}) : super(key: key);
+  const ReservationTypeLegend({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class ReservationTypeLegend extends StatelessWidget {
         SizedBox(width: 16),
         _LegendDot(color: Colors.purple, label: 'Exterior'),
         SizedBox(width: 16),
-        _LegendDot(color: Colors.green, label: 'Renta'),
+        _LegendDot(color: Color(0xFF4CAF50), label: 'Renta'), // Verde elegante
         SizedBox(width: 16),
         _LegendDot(color: Colors.grey, label: 'Otro'),
       ],
@@ -26,7 +26,7 @@ class _LegendDot extends StatelessWidget {
   final Color color;
   final String label;
 
-  const _LegendDot({required this.color, required this.label, Key? key}) : super(key: key);
+  const _LegendDot({required this.color, required this.label, super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,146 +1,180 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:salespro_admin/Screen/WareHouse/warehouse_model.dart';
 import 'package:salespro_admin/model/category_model.dart';
 
-import '../const.dart';
 import '../model/brands_model.dart';
 import '../model/product_model.dart';
 import '../model/unit_model.dart';
+import '../services/api_service.dart';
 
+/// Repositorio de productos - Usa PostgreSQL API
 class ProductRepo {
+  final ApiService _apiService = ApiService();
+
+  /// Obtener todos los productos desde PostgreSQL
   Future<List<ProductModel>> getAllProduct() async {
-    List<ProductModel> productList = [];
-    final result = await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get();
-    for (var element in result.children) {
-      productList.add(ProductModel.fromJson(jsonDecode(jsonEncode(element.value))));
-    }
-    return productList;
-  }
+    try {
+      final response = await _apiService.getProducts(limit: 1000);
 
-  Future<List<dynamic>> getAllProductByJson({required String searchData}) async {
-    List<dynamic> productList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Products').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        if (jsonDecode(jsonEncode(element.value))['productName'].toString().toLowerCase().contains(searchData.toLowerCase())) {
-          productList.add(element.value);
-        }
+      if (response.success && response.data != null) {
+        final productsData = response.data['products'] as List<dynamic>? ?? [];
+
+        return productsData.map((data) {
+          return ProductModel.fromJson(data as Map<String, dynamic>);
+        }).toList();
       }
-    });
-    return productList;
+      return [];
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  // Future<List<dynamic>> getAllProductByJsonWarehouse(
-  //     {required String searchData, required WareHouseModel warehouseId}) async {
-  //   List<dynamic> productList = [];
-  //   await FirebaseDatabase.instance
-  //       .ref(await getUserID())
-  //       .child('Products')
-  //       .orderByKey()
-  //       .get()
-  //       .then((value) {
-  //     for (var element in value.children) {
-  //       if (jsonDecode(jsonEncode(element.value))['productName']
-  //               .toString()
-  //               .toLowerCase()
-  //               .contains(searchData.toLowerCase()) &&
-  //           ((jsonDecode(jsonEncode(element.value))['warehouseId'] == '' &&
-  //                   warehouseId.warehouseName == 'InHouse')
-  //               ? true
-  //               : jsonDecode(jsonEncode(element.value))['warehouseId']
-  //                       .toString() ==
-  //                   warehouseId.id)) {
-  //         productList.add(element.value);
-  //       }
-  //     }
-  //   });
-  //   return productList;
-  // }
+  /// Obtener productos por nombre (búsqueda) - retorna JSON dinámico
+  Future<List<dynamic>> getAllProductByJson({required String searchData}) async {
+    try {
+      final response = await _apiService.getProducts(limit: 1000, search: searchData);
 
+      if (response.success && response.data != null) {
+        final productsData = response.data['products'] as List<dynamic>? ?? [];
+
+        // Filtrar por nombre si hay datos de búsqueda
+        if (searchData.isEmpty) {
+          return productsData;
+        }
+
+        return productsData.where((product) {
+          final name = product['productName']?.toString().toLowerCase() ?? '';
+          return name.contains(searchData.toLowerCase());
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Obtener productos filtrados por almacén (warehouse)
   Future<List<dynamic>> getAllProductByJsonWarehouse({
     required String searchData,
     required WareHouseModel warehouseId,
   }) async {
-    List<dynamic> productList = [];
-    final snapshot = await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Products')
-        .orderByKey()
-        .get();
-
-    for (var element in snapshot.children) {
-      final product = jsonDecode(jsonEncode(element.value));
-      // Agregar el ID del documento (key) al objeto producto
-      product['firebaseId'] = element.key; // <- Esta es la línea clave
-      
-      final name = product['productName'].toString().toLowerCase();
-      final matchesName = searchData.isEmpty || name.contains(searchData.toLowerCase());
-
-      if (matchesName) {
-        productList.add(product);
-      }
-    }
-
-    return productList;
-  }
-
-  Future<List<CategoryModel>> getAllCategory() async {
-    List<CategoryModel> categoryList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Categories').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        categoryList.add(CategoryModel.fromJson(jsonDecode(jsonEncode(element.value))));
-      }
-    });
-    return categoryList;
-  }
-
-  Future<List<BrandsModel>> getAllBrands() async {
-    List<BrandsModel> brandList = [];
-
     try {
-      final snapshot = await FirebaseDatabase.instance.ref('Admin Panel/Bank Info').orderByKey().get();
+      final response = await _apiService.getProducts(limit: 1000, search: searchData);
 
-      if (snapshot.exists) {
+      if (response.success && response.data != null) {
+        final productsData = response.data['products'] as List<dynamic>? ?? [];
 
-        for (var element in snapshot.children) {
+        return productsData.where((product) {
+          final name = product['productName']?.toString().toLowerCase() ?? '';
+          final matchesName = searchData.isEmpty || name.contains(searchData.toLowerCase());
 
-          if (element.value is Map<dynamic, dynamic>) {
-            final mapValue = element.value as Map<dynamic, dynamic>;
-
-            if (mapValue.containsKey('accountName') && mapValue.containsKey('bankName')) {
-              brandList.add(BrandsModel.fromJson(mapValue));
-            } else {
-            }
-          } else if (element.value == null || (element.value is Map && (element.value as Map).isEmpty) || (element.value is String && (element.value as String).isEmpty) || (element.value is List && (element.value as List).isEmpty)) {
-          } else {
-          }
-        }
-      } else {
+          // Por ahora retornamos todos los productos ya que el filtro de warehouse
+          // se puede implementar después en el servidor
+          return matchesName;
+        }).toList();
       }
+      return [];
     } catch (e) {
+      rethrow;
     }
-
-    return brandList;
   }
 
-  // Future<List<BrandsModel>> getAllBrandss(s) async {
-  //   List<BrandsModel> brandList = [];
-  //   await FirebaseDatabase.instance.ref('Admin Panel').child('Bank Info').orderByKey().get().then((value) {
-  //     for (var element in value.children) {
-  //       brandList.add(BrandsModel.fromJson(jsonDecode(jsonEncode(element.value))));
-  //     }
-  //   });
-  //   return brandList;
-  // }
+  /// Obtener todas las categorías de servicios/paquetes desde PostgreSQL
+  /// Usa el endpoint /api/categories/services que consulta la tabla 'categories'
+  Future<List<CategoryModel>> getAllCategory() async {
+    try {
+      final response = await _apiService.get('categories/services', queryParams: {'limit': '1000'});
 
-  Future<List<UnitModel>> getAllUnits() async {
-    List<UnitModel> unitList = [];
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Units').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        unitList.add(UnitModel.fromJson(jsonDecode(jsonEncode(element.value))));
+      if (response.success && response.data != null) {
+        final categoriesData = response.data['categories'] as List<dynamic>? ?? [];
+
+        return categoriesData.map((data) {
+          return CategoryModel.fromJson(data as Map<String, dynamic>);
+        }).toList();
       }
-    });
-    return unitList;
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Obtener todas las marcas/bancos desde PostgreSQL
+  Future<List<BrandsModel>> getAllBrands() async {
+    try {
+      final response = await _apiService.get('banks', queryParams: {'limit': '100'});
+
+      if (response.success && response.data != null) {
+        final banksData = response.data['banks'] as List<dynamic>? ?? [];
+
+        return banksData.map((data) {
+          final mapData = data as Map<String, dynamic>;
+          // Verificar que tenga los campos necesarios
+          if (mapData.containsKey('accountName') && mapData.containsKey('bankName')) {
+            return BrandsModel.fromJson(mapData);
+          }
+          return null;
+        }).whereType<BrandsModel>().toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Obtener todas las unidades desde PostgreSQL
+  Future<List<UnitModel>> getAllUnits() async {
+    try {
+      final response = await _apiService.get('units', queryParams: {'limit': '100'});
+
+      if (response.success && response.data != null) {
+        final unitsData = response.data['units'] as List<dynamic>? ?? [];
+
+        return unitsData.map((data) {
+          return UnitModel.fromJson(data as Map<String, dynamic>);
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Crear un nuevo producto
+  Future<ProductModel?> createProduct(ProductModel product) async {
+    try {
+      final productData = Map<String, dynamic>.from(product.toJson());
+      final response = await _apiService.post('products', productData);
+
+      if (response.success && response.data != null) {
+        return ProductModel.fromJson(response.data['product']);
+      }
+      return null;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Actualizar un producto existente
+  Future<ProductModel?> updateProduct(String id, ProductModel product) async {
+    try {
+      final productData = Map<String, dynamic>.from(product.toJson());
+      final response = await _apiService.put('products/$id', productData);
+
+      if (response.success && response.data != null) {
+        return ProductModel.fromJson(response.data['product']);
+      }
+      return null;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Eliminar un producto
+  Future<bool> deleteProduct(String id) async {
+    try {
+      final response = await _apiService.delete('products/$id');
+      return response.success;
+    } catch (e) {
+      rethrow;
+    }
   }
 }

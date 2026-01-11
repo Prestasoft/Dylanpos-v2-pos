@@ -1,96 +1,174 @@
+// areas_equipments_provider.dart - Migrado a PostgreSQL API
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_database/firebase_database.dart';
 import '../../model/admin_panel_models.dart';
+import '../services/api_service.dart';
 
+/// Servicio API compartido
+final ApiService _apiService = ApiService();
+
+/// Provider de áreas - Usa PostgreSQL API
 final areasProvider = AsyncNotifierProvider<AreasNotifier, List<Area>>(
   AreasNotifier.new,
 );
 
+/// Provider de equipos - Usa PostgreSQL API
 final equipmentsProvider = AsyncNotifierProvider<EquipmentsNotifier, List<Equipment>>(
   EquipmentsNotifier.new,
 );
 
+/// Notifier de Áreas - Migrado a PostgreSQL API
 class AreasNotifier extends AsyncNotifier<List<Area>> {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
 
   @override
   Future<List<Area>> build() async {
     return _fetchAreas();
   }
 
+  /// Obtener todas las áreas desde PostgreSQL
   Future<List<Area>> _fetchAreas() async {
-    final snapshot = await _dbRef.child('Admin Panel/areas').get();
-    if (snapshot.exists) {
-      final Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
-      return values.entries.map((entry) {
-        return Area.fromMap({
-          ...entry.value as Map<dynamic, dynamic>,
-          'id': entry.key,
-        });
-      }).toList();
+    try {
+      final response = await _apiService.get('areas', queryParams: {'limit': '1000'});
+
+      if (response.success && response.data != null) {
+        final areasData = response.data['areas'] as List<dynamic>? ?? [];
+        return areasData.map((item) {
+          final data = Map<String, dynamic>.from(item as Map);
+          data['id'] = data['id']?.toString() ?? '';
+          return Area.fromMap(data);
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
-    return [];
   }
 
-  // ✅ Agregado este método
+  /// Obtener áreas (método público)
   Future<List<Area>> getAreas() async {
     return await _fetchAreas();
   }
 
+  /// Agregar área - Usa PostgreSQL API
   Future<String> addArea(Area area) async {
-    final newAreaRef = _dbRef.child('Admin Panel/areas').push();
-    await newAreaRef.set(area.toMap());
-    ref.invalidateSelf(); // Refrescar la lista
-    return newAreaRef.key!;
+    try {
+      final response = await _apiService.post('areas', area.toMap());
+
+      if (response.success) {
+        ref.invalidateSelf(); // Refrescar la lista
+        final newId = response.data?['area']?['id']?.toString() ??
+                      response.data?['id']?.toString() ??
+                      DateTime.now().millisecondsSinceEpoch.toString();
+        return newId;
+      }
+      throw Exception(response.message ?? 'Error al agregar área');
+    } catch (e) {
+      rethrow;
+    }
   }
 
+  /// Actualizar área - Usa PostgreSQL API
   Future<void> updateArea(Area area) async {
-    await _dbRef.child('Admin Panel/areas/${area.id}').update(area.toMap());
-    ref.invalidateSelf();
+    try {
+      final response = await _apiService.put('areas/${area.id}', area.toMap());
+
+      if (response.success) {
+        ref.invalidateSelf();
+      } else {
+        throw Exception(response.message ?? 'Error al actualizar área');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
+  /// Eliminar área - Usa PostgreSQL API
   Future<void> deleteArea(String id) async {
-    await _dbRef.child('Admin Panel/areas/$id').remove();
-    ref.invalidateSelf();
+    try {
+      final response = await _apiService.delete('areas/$id');
+
+      if (response.success) {
+        ref.invalidateSelf();
+      } else {
+        throw Exception(response.message ?? 'Error al eliminar área');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 }
 
+/// Notifier de Equipos - Migrado a PostgreSQL API
 class EquipmentsNotifier extends AsyncNotifier<List<Equipment>> {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
 
   @override
   Future<List<Equipment>> build() async {
     return _fetchEquipments();
   }
 
+  /// Obtener todos los equipos desde PostgreSQL
   Future<List<Equipment>> _fetchEquipments() async {
-    final snapshot = await _dbRef.child('Admin Panel/equipments').get();
-    if (snapshot.exists) {
-      final Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
-      return values.entries.map((entry) {
-        return Equipment.fromMap({
-          ...entry.value as Map<dynamic, dynamic>,
-          'id': entry.key,
-        });
-      }).toList();
+    try {
+      final response = await _apiService.get('equipments', queryParams: {'limit': '1000'});
+
+      if (response.success && response.data != null) {
+        final equipmentsData = response.data['equipments'] as List<dynamic>? ?? [];
+        return equipmentsData.map((item) {
+          final data = Map<String, dynamic>.from(item as Map);
+          data['id'] = data['id']?.toString() ?? '';
+          return Equipment.fromMap(data);
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
-    return [];
   }
 
+  /// Agregar equipo - Usa PostgreSQL API
   Future<String> addEquipment(Equipment equipment) async {
-    final newEquipmentRef = _dbRef.child('Admin Panel/equipments').push();
-    await newEquipmentRef.set(equipment.toMap());
-    ref.invalidateSelf();
-    return newEquipmentRef.key!;
+    try {
+      final response = await _apiService.post('equipments', equipment.toMap());
+
+      if (response.success) {
+        ref.invalidateSelf();
+        final newId = response.data?['equipment']?['id']?.toString() ??
+                      response.data?['id']?.toString() ??
+                      DateTime.now().millisecondsSinceEpoch.toString();
+        return newId;
+      }
+      throw Exception(response.message ?? 'Error al agregar equipo');
+    } catch (e) {
+      rethrow;
+    }
   }
 
+  /// Actualizar equipo - Usa PostgreSQL API
   Future<void> updateEquipment(Equipment equipment) async {
-    await _dbRef.child('Admin Panel/equipments/${equipment.id}').update(equipment.toMap());
-    ref.invalidateSelf();
+    try {
+      final response = await _apiService.put('equipments/${equipment.id}', equipment.toMap());
+
+      if (response.success) {
+        ref.invalidateSelf();
+      } else {
+        throw Exception(response.message ?? 'Error al actualizar equipo');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
+  /// Eliminar equipo - Usa PostgreSQL API
   Future<void> deleteEquipment(String id) async {
-    await _dbRef.child('Admin Panel/equipments/$id').remove();
-    ref.invalidateSelf();
+    try {
+      final response = await _apiService.delete('equipments/$id');
+
+      if (response.success) {
+        ref.invalidateSelf();
+      } else {
+        throw Exception(response.message ?? 'Error al eliminar equipo');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 }

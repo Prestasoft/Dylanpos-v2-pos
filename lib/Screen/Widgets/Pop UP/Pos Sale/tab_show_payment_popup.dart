@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 
-import 'package:firebase_database/firebase_database.dart';
+import '../../../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -384,8 +384,7 @@ class _TabShowPaymentPopUpState extends State<TabShowPaymentPopUp> {
                                 try {
                                   EasyLoading.show(status: 'Loading...', dismissOnTap: false);
 
-                                  final userId = await getUserID();
-                                  DatabaseReference ref = FirebaseDatabase.instance.ref("$userId/Sales Transition");
+                                  final apiService = ApiService();
 
                                   dueAmountController.text.toDouble() <= 0 ? widget.transitionModel.isPaid = true : widget.transitionModel.isPaid = false;
                                   dueAmountController.text.toDouble() <= 0 ? widget.transitionModel.dueAmount = 0 : widget.transitionModel.dueAmount = dueAmountController.text.toDouble();
@@ -394,7 +393,7 @@ class _TabShowPaymentPopUpState extends State<TabShowPaymentPopUp> {
                                   widget.transitionModel.totalAmount = getTotalAmount().toDouble();
                                   widget.transitionModel.paymentType = selectedPaymentOption;
 
-                                  await ref.push().set(widget.transitionModel.toJson());
+                                  await apiService.post('sales', Map<String, dynamic>.from(widget.transitionModel.toJson()));
 
                                   ///__________StockMange_________________________________________________-
 
@@ -447,35 +446,66 @@ class _TabShowPaymentPopUpState extends State<TabShowPaymentPopUp> {
   }
 
   void getSpecificCustomers({required String phoneNumber, required int due}) async {
-    final userId = await getUserID();
-    final ref = FirebaseDatabase.instance.ref('$userId/Customers/');
-    String? key;
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('customers?phoneNumber=$phoneNumber');
 
-    await FirebaseDatabase.instance.ref(userId).child('Customers').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'] == phoneNumber) {
-          key = element.key;
+      if (response.success && response.data != null) {
+        final customersData = response.data;
+        List<dynamic> customers = [];
+
+        if (customersData is Map && customersData['customers'] != null) {
+          customers = customersData['customers'] as List<dynamic>;
+        } else if (customersData is List) {
+          customers = customersData;
+        }
+
+        if (customers.isNotEmpty) {
+          final customer = Map<String, dynamic>.from(customers.first);
+          final customerId = customer['id']?.toString() ?? customer['key']?.toString();
+          int previousDue = int.tryParse(customer['due']?.toString() ?? '0') ?? 0;
+          int totalDue = previousDue + due;
+
+          if (customerId != null) {
+            await apiService.put('customers/$customerId', {'due': '$totalDue'});
+          }
         }
       }
-    });
-    var data1 = await ref.child('$key/due').get();
-    int previousDue = data1.value.toString().toInt();
-
-    int totalDue = previousDue + due;
-    ref.child(key!).update({'due': '$totalDue'});
+    } catch (e) {
+      debugPrint('Error actualizando due del cliente: $e');
+    }
   }
 
   void decreaseStock(String productCode, num quantity) async {
-    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
+    try {
+      final apiService = ApiService();
 
-    var data = await ref.orderByChild('productCode').equalTo(productCode).once();
-    String productPath = data.snapshot.value.toString().substring(1, 21);
+      // Buscar el producto por código
+      final response = await apiService.get('products?productCode=$productCode');
 
-    var data1 = await ref.child('$productPath/productStock').get();
-    num stock = int.parse(data1.value.toString());
-    num remainStock = stock - quantity;
+      if (response.success && response.data != null) {
+        final productsData = response.data;
+        List<dynamic> products = [];
 
-    ref.child(productPath).update({'productStock': '$remainStock'});
+        if (productsData is Map && productsData['products'] != null) {
+          products = productsData['products'] as List<dynamic>;
+        } else if (productsData is List) {
+          products = productsData;
+        }
+
+        if (products.isNotEmpty) {
+          final product = Map<String, dynamic>.from(products.first);
+          final productId = product['id']?.toString() ?? product['key']?.toString();
+          num stock = num.tryParse(product['productStock']?.toString() ?? '0') ?? 0;
+          num remainStock = stock - quantity;
+
+          if (productId != null) {
+            await apiService.put('products/$productId', {'productStock': '$remainStock'});
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al disminuir stock: $e');
+    }
   }
 }

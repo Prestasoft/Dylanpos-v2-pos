@@ -49,47 +49,59 @@ class ProductModel {
   });
 
   ProductModel.fromJson(Map<dynamic, dynamic> json) {
-    productName = json['productName'] as String;
-    productCategory = json['productCategory'].toString();
-    size = json['size'].toString();
-    color = json['color'].toString();
-    weight = json['weight'].toString();
-    capacity = json['capacity'].toString();
-    type = json['type'].toString();
-    warranty = json['warranty'].toString();
-    brandName = json['brandName'].toString();
-    productCode = json['productCode'].toString();
-    productStock = json['productStock'].toString();
-    productUnit = json['productUnit'].toString();
-    productSalePrice = json['productSalePrice'].toString();
-    productPurchasePrice = json['productPurchasePrice'].toString();
-    productDiscount = json['productDiscount'].toString();
-    productWholeSalePrice = json['productWholeSalePrice'].toString();
-    productDealerPrice = json['productDealerPrice'].toString();
-    productManufacturer = json['productManufacturer'].toString();
-    warehouseName = json['warehouseName'].toString();
-    warehouseId = json['warehouseId'].toString();
-    productPicture = json['productPicture'].toString();
-    if (json['serialNumber'] != null) {
-      serialNumber = <String>[];
-      json['serialNumber'].forEach((v) {
-        serialNumber.add(v);
-      });
+    // Helper para convertir a num de forma segura
+    num parseNum(dynamic value, [num defaultValue = 0]) {
+      if (value == null) return defaultValue;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value) ?? defaultValue;
+      return defaultValue;
     }
-    expiringDate = json['expiringDate'];
-    manufacturingDate = json['manufacturingDate'];
-    lowerStockAlert = json['lowerStockAlert'] ?? 5;
-    taxType = json['taxType'] ?? '';
-    margin = json['margin'] ?? '';
-    excTax = json['excTax'] ?? '';
-    incTax = json['incTax'] ?? '';
-    groupTaxName = json['groupTaxName'] ?? '';
-    groupTaxRate = json['groupTaxRate'] ?? '';
-    if (json['subTax'] != null) {
+
+    productName = json['productName']?.toString() ?? '';
+    productCategory = json['productCategory']?.toString() ?? '';
+    size = json['size']?.toString() ?? '';
+    color = json['color']?.toString() ?? '';
+    weight = json['weight']?.toString() ?? '';
+    capacity = json['capacity']?.toString() ?? '';
+    type = json['type']?.toString() ?? '';
+    warranty = json['warranty']?.toString() ?? '';
+    brandName = json['brandName']?.toString() ?? '';
+    productCode = json['productCode']?.toString() ?? '';
+    productStock = json['productStock']?.toString() ?? '0';
+    productUnit = json['productUnit']?.toString() ?? '';
+    productSalePrice = json['productSalePrice']?.toString() ?? '0';
+    productPurchasePrice = json['productPurchasePrice']?.toString() ?? '0';
+    productDiscount = json['productDiscount']?.toString() ?? '0';
+    productWholeSalePrice = json['productWholeSalePrice']?.toString() ?? '0';
+    productDealerPrice = json['productDealerPrice']?.toString() ?? '0';
+    productManufacturer = json['productManufacturer']?.toString() ?? '';
+    warehouseName = json['warehouseName']?.toString() ?? '';
+    warehouseId = json['warehouseId']?.toString() ?? '';
+    productPicture = json['productPicture']?.toString() ?? '';
+    if (json['serialNumber'] != null && json['serialNumber'] is List) {
+      serialNumber = <String>[];
+      for (var v in json['serialNumber']) {
+        serialNumber.add(v?.toString() ?? '');
+      }
+    } else {
+      serialNumber = [];
+    }
+    expiringDate = json['expiringDate']?.toString();
+    manufacturingDate = json['manufacturingDate']?.toString();
+    lowerStockAlert = parseNum(json['lowerStockAlert'], 5);
+    taxType = json['taxType']?.toString() ?? '';
+    margin = parseNum(json['margin'], 0);
+    excTax = parseNum(json['excTax'], 0);
+    incTax = parseNum(json['incTax'], 0);
+    groupTaxName = json['groupTaxName']?.toString() ?? '';
+    groupTaxRate = parseNum(json['groupTaxRate'], 0);
+    if (json['subTax'] != null && json['subTax'] is List) {
       subTaxes = <TaxModel>[];
-      json['subTax'].forEach((v) {
-        subTaxes.add(TaxModel.fromJson(v));
-      });
+      for (var v in json['subTax']) {
+        if (v is Map) {
+          subTaxes.add(TaxModel.fromJson(Map<String, dynamic>.from(v)));
+        }
+      }
     } else {
       subTaxes = [];
     }

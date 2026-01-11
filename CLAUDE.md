@@ -104,7 +104,7 @@ Multi-service Firebase setup:
 - **Messaging**: Push notifications with web push support
 - **App Check**: Security for production environment
 
-**Configuration**: Web-only deployment with separate environments (Santo Domingo/Santiago)
+**Configuration**: Web-only deployment with separate environments (Santiago/Santo Domingo)
 
 ### State Management Pattern
 
@@ -154,7 +154,7 @@ The codebase includes comprehensive validation scripts (primarily in `lib/Screen
 - **Documentation**: Extensive markdown documentation files for complex features
 
 ### Firebase Environment Configuration
-- **Multi-environment setup**: Santo Domingo (active) and Santiago configurations
+- **Multi-environment setup**: Santiago (active) and Santo Domingo configurations
 - **Security**: Firebase App Check implemented for production
 - **Realtime Database**: Used for FCM tokens and real-time synchronization
 - **Database Rules**: Security rules defined in `database.rules.json`
@@ -196,6 +196,50 @@ The codebase includes comprehensive validation scripts (primarily in `lib/Screen
 - **PayPal**: Use established PayPal integration patterns
 - **Validation**: Implement thorough validation following patterns in `lib/Screen/Inventory Sales/`
 - **Security**: Never log or expose payment credentials
+
+## ⚠️ DESPLIEGUE A PRODUCCIÓN - OBLIGATORIO USAR deploy.sh
+
+**CRÍTICO**: Para desplegar a producción, SIEMPRE usar el script `deploy.sh`. NUNCA hacer deployment manual con `flutter build web` + `scp/rsync`.
+
+### Comando de despliegue:
+```bash
+# SIEMPRE usar este comando para desplegar:
+./deploy.sh
+
+# O con input automático (para Claude):
+echo -e "s\nDescripción del cambio" | ./deploy.sh
+```
+
+### ¿Por qué usar deploy.sh?
+El script `deploy.sh` hace automáticamente:
+1. **Auto-incrementa la versión** (ej: 2.1.7 → 2.1.8)
+2. **Actualiza la versión en todos los archivos**:
+   - `pubspec.yaml`
+   - `web/index.html` (REQUIRED_VERSION, título, version-text)
+   - `lib/top_bar/top_bar.dart` (badge de versión)
+   - `lib/Screen/Authentication/log_in.dart` (badge de versión)
+   - `web/app-version.json` (archivo de versión para actualización automática)
+3. **Compila** `flutter build web --release`
+4. **Sube archivos** via rsync al servidor
+5. **Verifica** la versión en el servidor
+
+### ⛔ NO HACER NUNCA:
+```bash
+# ❌ INCORRECTO - No actualiza versión:
+flutter build web --release
+scp -r build/web/* root@servidor:/var/www/victorpos-app/
+
+# ❌ INCORRECTO - No actualiza versión:
+rsync -avz build/web/ root@servidor:/var/www/victorpos-app/
+```
+
+### Configuración del servidor:
+- **IP**: 72.62.163.74
+- **Usuario**: root
+- **Ruta**: /var/www/victorpos-app
+- **URL**: https://sistema.victorguzmanfotografia.com
+
+---
 
 ## Security Considerations
 

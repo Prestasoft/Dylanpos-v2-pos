@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -116,25 +116,40 @@ class _QuotationScreenState extends State<QuotationScreen> {
         ),
       );
 
+  final ApiService _apiService = ApiService();
+
   void deleteQuotation(
       {required String date, required WidgetRef updateRef}) async {
-    String key = '';
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Sales Quotation')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['invoiceNumber'].toString() == date) {
-          key = element.key.toString();
+    String quotationId = '';
+    try {
+      // Find quotation by invoice number via API
+      final response = await _apiService.get('quotations', queryParams: {
+        'invoiceNumber': date,
+        'limit': '1',
+      });
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> quotations = [];
+        if (data is Map && data['quotations'] != null) {
+          quotations = data['quotations'] as List<dynamic>;
+        } else if (data is List) {
+          quotations = data;
+        }
+
+        if (quotations.isNotEmpty) {
+          final quotationData = Map<String, dynamic>.from(quotations.first);
+          quotationId = quotationData['id']?.toString() ?? '';
         }
       }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance
-        .ref("${await getUserID()}/Sales Quotation/$key");
-    await ref.remove();
+
+      // Delete the quotation
+      if (quotationId.isNotEmpty) {
+        await _apiService.delete('quotations/$quotationId');
+      }
+    } catch (e) {
+      debugPrint('Error deleting quotation: $e');
+    }
     final _ = updateRef.refresh(quotationProvider);
   }
 
@@ -2142,10 +2157,6 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                                                 '${lang.S.of(context).loading}...',
                                                                             dismissOnTap:
                                                                                 false);
-                                                                        DatabaseReference
-                                                                            ref =
-                                                                            FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation");
-
                                                                         transitionModel.isPaid =
                                                                             false;
                                                                         transitionModel
@@ -2161,9 +2172,9 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                                             : 'Admin';
 
                                                                         ///_________Push_on_dataBase____________________________________________________________________________
-                                                                        await ref
-                                                                            .push()
-                                                                            .set(transitionModel.toJson());
+                                                                        await _apiService.post(
+                                                                            'quotations',
+                                                                            Map<String, dynamic>.from(transitionModel.toJson()));
                                                                         //await GeneratePdfAndPrint().printQuotationInvoice(personalInformationModel: data, saleTransactionModel: transitionModel, context: context);
 
                                                                         ///_________Invoice Increase____________________________________________________________________________

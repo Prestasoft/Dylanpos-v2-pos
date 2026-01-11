@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,7 @@ import 'package:salespro_admin/Screen/tax%20rates/tax_model.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class AddTaxGroupPopUP extends StatefulWidget {
@@ -281,14 +281,8 @@ class _AddTaxGroupPopUPState extends State<AddTaxGroupPopUP> {
                               EasyLoading.show(
                                   status: '${lang.S.of(context).loading}...',
                                   dismissOnTap: false);
-                              final DatabaseReference productInformationRef =
-                                  FirebaseDatabase.instance
-                                      .ref()
-                                      .child(await getUserID())
-                                      .child('Group Tax List')
-                                      .child(groupTax.id.toString());
-                              await productInformationRef
-                                  .set(groupTax.toJson());
+                              final apiService = ApiService();
+                              await apiService.post('group-taxes', Map<String, dynamic>.from(groupTax.toJson()));
                               EasyLoading.showSuccess(
                                   '${lang.S.of(context).addedSuccessfully}',
                                   duration: const Duration(milliseconds: 500));

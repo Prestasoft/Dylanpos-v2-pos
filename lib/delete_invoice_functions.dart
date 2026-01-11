@@ -1,298 +1,337 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
+// delete_invoice_functions.dart - Migrado a PostgreSQL API
 import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/model/purchase_transation_model.dart';
 
-import 'const.dart';
-import 'model/product_model.dart';
 import 'model/sale_transaction_model.dart';
+import 'services/api_service.dart';
+
+/// Servicio API compartido
+final ApiService _apiService = ApiService();
 
 class DeleteInvoice {
+  /// Editar stock y serial para ventas - Usa PostgreSQL API
   Future<void> editStockAndSerial({
     required SaleTransactionModel saleTransactionModel,
   }) async {
     for (var product in saleTransactionModel.productList!) {
-      final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
-      String? productPath;
-
-      // Intentar acceso directo primero (más eficiente)
       try {
-        final directData = await ref.child(product.productId).get();
-        if (directData.exists) {
-          productPath = product.productId;
-        }
-      } catch (e) {
-        // Si falla, usar consulta por productCode
-        final data = await ref.orderByChild('productCode').equalTo(product.productId).once();
-        if (data.snapshot.value != null) {
-          final dataMap = Map.from(data.snapshot.value as Map);
-          productPath = dataMap.keys.first;
-        }
-      }
+        // Obtener producto actual
+        final response = await _apiService.get('products/${product.productId}');
 
-      if (productPath == null) {
-        continue; // No se encontró el producto
-      }
+        if (!response.success || response.data == null) {
+          // Buscar por código de producto
+          final searchResponse = await _apiService.get('products', queryParams: {
+            'productCode': product.productId,
+            'limit': '1',
+          });
 
-      // Obtener el stock actual
-      var stockSnap = await ref.child('$productPath/productStock').get();
-      int currentStock = int.tryParse(stockSnap.value.toString()) ?? 0;
-      int updatedStock = currentStock + int.tryParse(product.quantity.toString())!;
-
-      // Actualizar el stock
-      await ref.child(productPath).update({'productStock': '$updatedStock'});
-
-      /// Agregar los números de serie nuevamente
-      ProductModel? productData;
-      final serialRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/$productPath');
-
-      await serialRef.orderByKey().get().then((value) {
-        productData = ProductModel.fromJson(jsonDecode(jsonEncode(value.value)));
-      });
-
-      for (var serial in product.serialNumber ?? []) {
-        if (!productData!.serialNumber.contains(serial)) {
-          productData!.serialNumber.add(serial);
-        }
-      }
-
-      await serialRef.child('serialNumber').set(productData!.serialNumber);
-    }
-  }
-
-  Future<void> editStockAndSerialForPurchase({required PurchaseTransactionModel saleTransactionModel}) async {
-    for (var element in saleTransactionModel.productList!) {
-      final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
-      String? productPath;
-
-      // Intentar acceso directo primero (más eficiente)
-      try {
-        final directData = await ref.child(element.productCode).get();
-        if (directData.exists) {
-          productPath = element.productCode;
-        }
-      } catch (e) {
-        // Si falla, usar consulta por productCode
-        final data = await ref.orderByChild('productCode').equalTo(element.productCode).once();
-        if (data.snapshot.value != null) {
-          final dataMap = Map.from(data.snapshot.value as Map);
-          productPath = dataMap.keys.first;
-        }
-      }
-
-      if (productPath == null) {
-        continue; // No se encontró el producto
-      }
-
-      var data1 = await ref.child('$productPath/productStock').get();
-      int stock = int.parse(data1.value.toString());
-      int remainStock = stock - int.parse(element.productStock.toString());
-
-      await ref.child(productPath).update({'productStock': '$remainStock'});
-
-      ///_____serial_remove________________________________
-      ProductModel? productData;
-
-      final serialRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products/$productPath');
-      await serialRef.orderByKey().get().then((value) {
-        productData = ProductModel.fromJson(jsonDecode(jsonEncode(value.value)));
-      });
-
-      for (var serial in element.serialNumber) {
-        productData!.serialNumber.remove(serial);
-      }
-
-      await serialRef.child('serialNumber').set(productData!.serialNumber.map((e) => e).toList());
-    }
-  }
-
-  Future<void> customerDueUpdate({required String phone, required num due}) async {
-    if (due > 0) {
-      final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-      String? key;
-
-      await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
-        for (var element in value.children) {
-          try {
-            var data = jsonDecode(jsonEncode(element.value));
-            
-            // Validación null-safe
-            if (data == null) continue;
-            if (data['phoneNumber'] == null) continue;
-            
-            if (data['phoneNumber'] == phone) {
-              key = element.key;
-              break; // Salir del loop una vez encontrado
-            }
-          } catch (e) {
-            // Si hay error al procesar este elemento, continuar con el siguiente
-            print('Error processing customer element: $e');
+          if (!searchResponse.success || searchResponse.data == null) {
             continue;
           }
-        }
-      });
-      
-      if (key == null) {
-        print('Customer not found with phone: $phone');
-        return; // Salir si no se encuentra el cliente
-      }
-      
-      var data1 = await ref.child('$key/due').get();
-      int previousDue = int.tryParse(data1.value?.toString() ?? '0') ?? 0;
 
-      int totalDue = previousDue - due.toInt();
-      await ref.child(key!).update({'due': '$totalDue'});
+          final products = searchResponse.data['products'] as List<dynamic>? ?? [];
+          if (products.isEmpty) continue;
+
+          final productData = Map<String, dynamic>.from(products.first);
+          final productId = productData['id']?.toString();
+          if (productId == null) continue;
+
+          // Actualizar stock
+          int currentStock = int.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+          int updatedStock = currentStock + int.tryParse(product.quantity.toString())!;
+
+          // Actualizar serial numbers
+          List<dynamic> serialNumbers = productData['serialNumber'] as List<dynamic>? ?? [];
+          for (var serial in product.serialNumber ?? []) {
+            if (!serialNumbers.contains(serial)) {
+              serialNumbers.add(serial);
+            }
+          }
+
+          await _apiService.put('products/$productId', {
+            'productStock': updatedStock.toString(),
+            'serialNumber': serialNumbers,
+          });
+        } else {
+          final productData = response.data['product'] ?? response.data;
+          final productId = productData['id']?.toString() ?? product.productId;
+
+          int currentStock = int.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+          int updatedStock = currentStock + int.tryParse(product.quantity.toString())!;
+
+          List<dynamic> serialNumbers = productData['serialNumber'] as List<dynamic>? ?? [];
+          for (var serial in product.serialNumber ?? []) {
+            if (!serialNumbers.contains(serial)) {
+              serialNumbers.add(serial);
+            }
+          }
+
+          await _apiService.put('products/$productId', {
+            'productStock': updatedStock.toString(),
+            'serialNumber': serialNumbers,
+          });
+        }
+      } catch (e) {
+        print('Error actualizando stock para producto ${product.productId}: $e');
+        continue;
+      }
     }
   }
 
+  /// Editar stock y serial para compras - Usa PostgreSQL API
+  Future<void> editStockAndSerialForPurchase({required PurchaseTransactionModel saleTransactionModel}) async {
+    for (var element in saleTransactionModel.productList!) {
+      try {
+        // Buscar producto por código
+        final searchResponse = await _apiService.get('products', queryParams: {
+          'productCode': element.productCode,
+          'limit': '1',
+        });
+
+        if (!searchResponse.success || searchResponse.data == null) {
+          continue;
+        }
+
+        final products = searchResponse.data['products'] as List<dynamic>? ?? [];
+        if (products.isEmpty) continue;
+
+        final productData = Map<String, dynamic>.from(products.first);
+        final productId = productData['id']?.toString();
+        if (productId == null) continue;
+
+        int currentStock = int.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+        int remainStock = currentStock - int.parse(element.productStock.toString());
+
+        // Remover serial numbers
+        List<dynamic> serialNumbers = List.from(productData['serialNumber'] as List<dynamic>? ?? []);
+        for (var serial in element.serialNumber) {
+          serialNumbers.remove(serial);
+        }
+
+        await _apiService.put('products/$productId', {
+          'productStock': remainStock.toString(),
+          'serialNumber': serialNumbers,
+        });
+      } catch (e) {
+        print('Error actualizando stock para producto ${element.productCode}: $e');
+        continue;
+      }
+    }
+  }
+
+  /// Actualizar deuda del cliente - Usa PostgreSQL API
+  Future<void> customerDueUpdate({required String phone, required num due}) async {
+    if (due > 0) {
+      try {
+        // Buscar cliente por teléfono
+        final searchResponse = await _apiService.get('customers', queryParams: {
+          'phoneNumber': phone,
+          'limit': '1',
+        });
+
+        if (!searchResponse.success || searchResponse.data == null) {
+          print('Customer not found with phone: $phone');
+          return;
+        }
+
+        final customers = searchResponse.data['customers'] as List<dynamic>? ?? [];
+        if (customers.isEmpty) {
+          print('Customer not found with phone: $phone');
+          return;
+        }
+
+        final customerData = Map<String, dynamic>.from(customers.first);
+        final customerId = customerData['id']?.toString();
+        if (customerId == null) return;
+
+        int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+        int totalDue = previousDue - due.toInt();
+
+        await _apiService.put('customers/$customerId', {
+          'due': totalDue.toString(),
+        });
+      } catch (e) {
+        print('Error actualizando deuda del cliente: $e');
+      }
+    }
+  }
+
+  /// Actualizar balance de la tienda - Usa PostgreSQL API
   Future<void> updateFromShopRemainBalance({required num paidAmount, required bool isFromPurchase}) async {
     if (paidAmount > 0) {
-      final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Personal Information');
-      var data1 = await ref.child("remainingShopBalance").get();
-      num previousBalance = data1.value.toString().toInt();
-      await ref.update({'remainingShopBalance': isFromPurchase ? previousBalance + paidAmount : previousBalance - paidAmount});
+      try {
+        final response = await _apiService.get('settings/personal-information');
+
+        if (response.success && response.data != null) {
+          final data = response.data['personalInformation'] ?? response.data;
+          num previousBalance = num.tryParse(data['remainingShopBalance']?.toString() ?? '0') ?? 0;
+          num newBalance = isFromPurchase ? previousBalance + paidAmount : previousBalance - paidAmount;
+
+          await _apiService.put('settings/personal-information', {
+            'remainingShopBalance': newBalance,
+          });
+        }
+      } catch (e) {
+        print('Error actualizando balance de tienda: $e');
+      }
     }
   }
 
+  /// Eliminar transacción diaria - Usa PostgreSQL API
   Future<void> deleteDailyTransaction({required String invoice, required String status, required String field}) async {
-    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Daily Transaction');
-    String? key;
+    try {
+      // Buscar transacción por invoice y tipo
+      final response = await _apiService.get('daily-transactions', queryParams: {
+        'type': status,
+        'invoiceNumber': invoice,
+        'limit': '100',
+      });
 
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Daily Transaction').orderByKey().get().then((value) {
-      for (var element in value.children) {
+      if (!response.success || response.data == null) {
+        log('No transaction found for invoice: $invoice with status: $status');
+        return;
+      }
+
+      final transactions = response.data['daily_transactions'] as List<dynamic>? ??
+                          response.data['transactions'] as List<dynamic>? ?? [];
+
+      for (var transaction in transactions) {
         try {
-          var data = jsonDecode(jsonEncode(element.value));
-          
-          // Validaciones null-safe
-          if (data == null) continue;
-          if (data['type'] != status) continue;
-          
-          // Verificar que el campo existe y no es null
-          if (data[field] == null) continue;
-          
-          // Verificar que invoiceNumber existe en el subcampo
-          var fieldData = data[field];
-          if (fieldData is Map && fieldData['invoiceNumber'] == invoice) {
-            key = element.key;
-            break; // Salir del loop una vez encontrado
+          final transactionData = Map<String, dynamic>.from(transaction);
+          final transactionId = transactionData['id']?.toString();
+
+          if (transactionId != null) {
+            // Verificar que el campo coincide
+            final fieldData = transactionData[field];
+            if (fieldData is Map && fieldData['invoiceNumber'] == invoice) {
+              await _apiService.delete('daily-transactions/$transactionId');
+            }
           }
         } catch (e) {
-          // Si hay error al procesar este elemento, continuar con el siguiente
-          print('Error processing transaction element: $e');
+          print('Error procesando transacción: $e');
           continue;
         }
       }
-    });
-    if (key == null) {
-      log('No transaction found for invoice: $invoice with status: $status');
-      return;
+    } catch (e) {
+      print('Error eliminando transacción diaria: $e');
     }
-    await ref.child(key!).remove();
   }
 
-  // NUEVO: Función para eliminar TODAS las transacciones Due Collection de una factura
+  /// Eliminar todas las Due Collections de una factura - Usa PostgreSQL API
   Future<void> deleteAllDueCollections({required String invoice}) async {
-    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Daily Transaction');
-    List<String> keysToDelete = [];
+    try {
+      final response = await _apiService.get('daily-transactions', queryParams: {
+        'type': 'Due Collection',
+        'invoiceNumber': invoice,
+        'limit': '1000',
+      });
 
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Daily Transaction').orderByKey().get().then((value) {
-      for (var element in value.children) {
+      if (!response.success || response.data == null) {
+        return;
+      }
+
+      final transactions = response.data['daily_transactions'] as List<dynamic>? ??
+                          response.data['transactions'] as List<dynamic>? ?? [];
+
+      int deletedCount = 0;
+      for (var transaction in transactions) {
         try {
-          var data = jsonDecode(jsonEncode(element.value));
-          
-          // Validaciones null-safe
-          if (data == null) continue;
-          if (data['type'] != 'Due Collection') continue;
-          if (data['dueTransactionModel'] == null) continue;
-          
-          // Verificar que invoiceNumber coincide
-          var fieldData = data['dueTransactionModel'];
-          if (fieldData is Map && fieldData['invoiceNumber'] == invoice) {
-            keysToDelete.add(element.key!);
+          final transactionData = Map<String, dynamic>.from(transaction);
+          final transactionId = transactionData['id']?.toString();
+
+          if (transactionId != null) {
+            await _apiService.delete('daily-transactions/$transactionId');
+            print('🗑️ Eliminada Due Collection para factura $invoice, id: $transactionId');
+            deletedCount++;
           }
         } catch (e) {
-          print('Error processing Due Collection element: $e');
+          print('Error eliminando Due Collection: $e');
           continue;
         }
       }
-    });
 
-    // Eliminar todas las transacciones encontradas
-    for (String key in keysToDelete) {
-      await ref.child(key).remove();
-      print('🗑️ Eliminada Due Collection para factura $invoice, key: $key');
+      print('🗑️ Total Due Collections eliminadas para factura $invoice: $deletedCount');
+    } catch (e) {
+      print('Error en deleteAllDueCollections: $e');
     }
-    
-    print('🗑️ Total Due Collections eliminadas para factura $invoice: ${keysToDelete.length}');
   }
 
-  // NUEVO: Función para eliminar TODOS los registros Due Transaction de una factura
+  /// Eliminar todos los Due Transactions de una factura - Usa PostgreSQL API
   Future<void> deleteAllDueTransactions({required String invoice}) async {
-    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Due Transaction');
-    List<String> keysToDelete = [];
+    try {
+      final response = await _apiService.get('due-transactions', queryParams: {
+        'invoiceNumber': invoice,
+        'limit': '1000',
+      });
 
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Due Transaction').orderByKey().get().then((value) {
-      for (var element in value.children) {
+      if (!response.success || response.data == null) {
+        return;
+      }
+
+      final transactions = response.data['due_transactions'] as List<dynamic>? ??
+                          response.data['transactions'] as List<dynamic>? ?? [];
+
+      int deletedCount = 0;
+      for (var transaction in transactions) {
         try {
-          var data = jsonDecode(jsonEncode(element.value));
-          
-          // Validaciones null-safe
-          if (data == null) continue;
-          if (data['invoiceNumber'] != invoice) continue;
-          
-          keysToDelete.add(element.key!);
+          final transactionData = Map<String, dynamic>.from(transaction);
+          final transactionId = transactionData['id']?.toString();
+
+          if (transactionId != null) {
+            await _apiService.delete('due-transactions/$transactionId');
+            print('🗑️ Eliminado Due Transaction para factura $invoice, id: $transactionId');
+            deletedCount++;
+          }
         } catch (e) {
-          print('Error processing Due Transaction element: $e');
+          print('Error eliminando Due Transaction: $e');
           continue;
         }
       }
-    });
 
-    // Eliminar todos los registros encontrados
-    for (String key in keysToDelete) {
-      await ref.child(key).remove();
-      print('🗑️ Eliminado Due Transaction para factura $invoice, key: $key');
+      print('🗑️ Total Due Transactions eliminados para factura $invoice: $deletedCount');
+    } catch (e) {
+      print('Error en deleteAllDueTransactions: $e');
     }
-    
-    print('🗑️ Total Due Transactions eliminados para factura $invoice: ${keysToDelete.length}');
   }
 
-  // NUEVO: Función para limpiar facturas huérfanas (que ya no existen en Sales pero siguen en Daily)
+  /// Limpiar facturas huérfanas - Usa PostgreSQL API
   Future<void> cleanOrphanInvoicePayments({required String invoice}) async {
     print('🧹 === LIMPIEZA DE FACTURA HUÉRFANA $invoice ===');
-    
+
     // Eliminar Due Collections
     await deleteAllDueCollections(invoice: invoice);
-    
-    // Eliminar Due Transactions  
+
+    // Eliminar Due Transactions
     await deleteAllDueTransactions(invoice: invoice);
-    
+
     print('🧹 === LIMPIEZA COMPLETA DE FACTURA $invoice ===');
   }
 
-  // NUEVO: Función para corregir saldos negativos en clientes
+  /// Corregir saldos negativos en clientes - Usa PostgreSQL API
   Future<void> fixNegativeCustomerBalances() async {
     print('🔧 === INICIANDO CORRECCIÓN DE SALDOS NEGATIVOS ===');
-    
-    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-    List<Map<String, dynamic>> customersToFix = [];
-    
-    // Buscar clientes con saldos negativos
-    await ref.orderByKey().get().then((value) {
-      for (var element in value.children) {
+
+    try {
+      final response = await _apiService.get('customers', queryParams: {'limit': '5000'});
+
+      if (!response.success || response.data == null) {
+        print('❌ Error obteniendo clientes');
+        return;
+      }
+
+      final customers = response.data['customers'] as List<dynamic>? ?? [];
+      List<Map<String, dynamic>> customersToFix = [];
+
+      for (var customer in customers) {
         try {
-          var data = jsonDecode(jsonEncode(element.value));
-          
-          if (data == null) continue;
-          
-          int dueAmount = int.tryParse(data['due']?.toString() ?? '0') ?? 0;
-          
+          final customerData = Map<String, dynamic>.from(customer);
+          int dueAmount = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+
           if (dueAmount < 0) {
             customersToFix.add({
-              'key': element.key,
-              'name': data['customerName'] ?? 'Sin nombre',
-              'phone': data['phoneNumber'] ?? 'Sin teléfono',
+              'id': customerData['id']?.toString(),
+              'name': customerData['customerName'] ?? 'Sin nombre',
+              'phone': customerData['phoneNumber'] ?? 'Sin teléfono',
               'negativeDue': dueAmount,
             });
           }
@@ -301,58 +340,62 @@ class DeleteInvoice {
           continue;
         }
       }
-    });
-    
-    print('📊 Clientes con saldos negativos encontrados: ${customersToFix.length}');
-    
-    // Corregir cada cliente
-    int correctedCount = 0;
-    for (var customer in customersToFix) {
-      try {
-        await ref.child(customer['key']).update({'due': '0'});
-        print('✅ Corregido: ${customer['name']} (${customer['phone']}) - Era: ${customer['negativeDue']} → Ahora: 0');
-        correctedCount++;
-      } catch (e) {
-        print('❌ Error corrigiendo ${customer['name']}: $e');
-      }
-    }
-    
-    print('🎉 === CORRECCIÓN COMPLETA: $correctedCount clientes corregidos ===');
-  }
 
-  // NUEVO: Función para corregir un cliente específico por teléfono
-  Future<void> fixSpecificCustomer({required String phone, required int correctAmount}) async {
-    print('🔧 Corrigiendo cliente específico: $phone');
-    
-    final ref = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-    String? key;
+      print('📊 Clientes con saldos negativos encontrados: ${customersToFix.length}');
 
-    await ref.orderByKey().get().then((value) {
-      for (var element in value.children) {
+      int correctedCount = 0;
+      for (var customer in customersToFix) {
         try {
-          var data = jsonDecode(jsonEncode(element.value));
-          
-          if (data == null) continue;
-          if (data['phoneNumber'] == phone) {
-            key = element.key;
-            break;
+          if (customer['id'] != null) {
+            await _apiService.put('customers/${customer['id']}', {'due': '0'});
+            print('✅ Corregido: ${customer['name']} (${customer['phone']}) - Era: ${customer['negativeDue']} → Ahora: 0');
+            correctedCount++;
           }
         } catch (e) {
-          print('Error processing customer element: $e');
-          continue;
+          print('❌ Error corrigiendo ${customer['name']}: $e');
         }
       }
-    });
-    
-    if (key == null) {
-      print('❌ Cliente no encontrado con teléfono: $phone');
-      return;
+
+      print('🎉 === CORRECCIÓN COMPLETA: $correctedCount clientes corregidos ===');
+    } catch (e) {
+      print('Error en fixNegativeCustomerBalances: $e');
     }
-    
-    var data1 = await ref.child('$key/due').get();
-    int previousDue = int.tryParse(data1.value?.toString() ?? '0') ?? 0;
-    
-    await ref.child(key!).update({'due': '$correctAmount'});
-    print('✅ Cliente $phone corregido: $previousDue → $correctAmount');
+  }
+
+  /// Corregir un cliente específico por teléfono - Usa PostgreSQL API
+  Future<void> fixSpecificCustomer({required String phone, required int correctAmount}) async {
+    print('🔧 Corrigiendo cliente específico: $phone');
+
+    try {
+      final searchResponse = await _apiService.get('customers', queryParams: {
+        'phoneNumber': phone,
+        'limit': '1',
+      });
+
+      if (!searchResponse.success || searchResponse.data == null) {
+        print('❌ Cliente no encontrado con teléfono: $phone');
+        return;
+      }
+
+      final customers = searchResponse.data['customers'] as List<dynamic>? ?? [];
+      if (customers.isEmpty) {
+        print('❌ Cliente no encontrado con teléfono: $phone');
+        return;
+      }
+
+      final customerData = Map<String, dynamic>.from(customers.first);
+      final customerId = customerData['id']?.toString();
+      if (customerId == null) {
+        print('❌ ID de cliente no encontrado');
+        return;
+      }
+
+      int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+
+      await _apiService.put('customers/$customerId', {'due': correctAmount.toString()});
+      print('✅ Cliente $phone corregido: $previousDue → $correctAmount');
+    } catch (e) {
+      print('Error en fixSpecificCustomer: $e');
+    }
   }
 }

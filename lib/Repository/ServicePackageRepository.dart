@@ -1,71 +1,86 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 
-class ServicePackageRepository {
-  final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
+import '../services/api_service.dart';
 
-  // Obtener todos los paquetes de servicio
+/// Repositorio de paquetes de servicio - Usa PostgreSQL API
+class ServicePackageRepository {
+  final ApiService _apiService = ApiService();
+
+  /// Obtener todos los paquetes de servicio desde PostgreSQL
   Future<List<ServicePackageModel>> getAllPackages() async {
     try {
-      final querySnapshot =
-          await _firebaseFirestore.collection('services').get();
+      debugPrint('📦 ServicePackageRepository: Cargando paquetes desde PostgreSQL API...');
 
-      return querySnapshot.docs
-          .map((doc) => ServicePackageModel.fromMap(doc.data(), doc.id))
-          .toList();
-    } catch (e) {
+      final response = await _apiService.getServices(limit: 1000);
+
+      if (response.success && response.data != null) {
+        final packagesData = response.data['services'] as List<dynamic>? ?? [];
+
+        debugPrint('📦 Paquetes encontrados: ${packagesData.length}');
+
+        final packages = packagesData.map((data) {
+          return ServicePackageModel.fromMap(data as Map<String, dynamic>, data['id']?.toString() ?? '');
+        }).toList();
+
+        debugPrint('📦 Paquetes parseados exitosamente: ${packages.length}');
+        return packages;
+      }
+      return [];
+    } catch (e, stackTrace) {
+      debugPrint('❌ ServicePackageRepository Error: $e');
+      debugPrint('❌ StackTrace: $stackTrace');
       return [];
     }
   }
 
-  // Agregar un paquete de servicio
+  /// Agregar un paquete de servicio
   Future<bool> addPackage(ServicePackageModel newPackage) async {
     try {
-      await _firebaseFirestore.collection('services').add({
+      final packageData = {
         'name': newPackage.name,
         'category': newPackage.category,
         'subcategory': newPackage.subcategory,
         'price': newPackage.price,
         'duration': newPackage.duration,
         'components': newPackage.components,
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-      });
+      };
 
-      return true;
+      final response = await _apiService.createService(packageData);
+      return response.success;
     } catch (e) {
+      debugPrint('❌ Error al agregar paquete: $e');
       return false;
     }
   }
 
-  // Actualizar un paquete de servicio
+  /// Actualizar un paquete de servicio
   Future<bool> updatePackage(ServicePackageModel updatedPackage) async {
     try {
-      await _firebaseFirestore
-          .collection('services')
-          .doc(updatedPackage.id)
-          .update({
+      final packageData = {
         'name': updatedPackage.name,
         'category': updatedPackage.category,
         'subcategory': updatedPackage.subcategory,
         'price': updatedPackage.price,
         'duration': updatedPackage.duration,
         'components': updatedPackage.components,
-        'updated_at': FieldValue.serverTimestamp(),
-      });
+      };
 
-      return true;
+      final response = await _apiService.put('services/${updatedPackage.id}', packageData);
+      return response.success;
     } catch (e) {
+      debugPrint('❌ Error al actualizar paquete: $e');
       return false;
     }
   }
 
-  // Eliminar un paquete de servicio
+  /// Eliminar un paquete de servicio
   Future<bool> deletePackage(String packageId) async {
     try {
-      await _firebaseFirestore.collection('services').doc(packageId).delete();
-      return true;
+      final response = await _apiService.delete('services/$packageId');
+      return response.success;
     } catch (e) {
+      debugPrint('❌ Error al eliminar paquete: $e');
       return false;
     }
   }

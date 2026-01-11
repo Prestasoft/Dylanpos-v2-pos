@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +31,7 @@ import '../../Provider/product_provider.dart';
 import '../../Provider/profile_provider.dart';
 import '../../Provider/transactions_provider.dart';
 import '../../Repository/product_repo.dart';
+import '../../services/whatsapp_credentials_service.dart';
 import '../../commas.dart';
 import '../../const.dart';
 import '../../currency.dart';
@@ -136,9 +137,12 @@ class _InventorySalesState extends State<InventorySales> {
         Gracias por su preferencia!
         ''';
       
+      // Obtener credenciales dinámicas de WhatsApp
+      final credentials = await WhatsAppCredentialsService.getCredentials();
+
       // Crear cuerpo de la petición
       final body = {
-        'token': '5i36w829nb1ljkj7',
+        'token': credentials.token,
         'to': phoneNumber,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
@@ -146,7 +150,7 @@ class _InventorySalesState extends State<InventorySales> {
       };
 
       // Configurar la petición HTTP
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document');
+      final url = Uri.parse(credentials.getApiUrl('messages/document'));
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -540,15 +544,19 @@ class _InventorySalesState extends State<InventorySales> {
 
     String typeOfInvoice = 'saleInvoiceCounter';
 
-    final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('personal-information');
 
-    // Ver el Nro de Ultima Factura
-    final snapshot = await personalInformationRef.child(typeOfInvoice).get();
-
-    lastInvoiceNumber = (snapshot.value != null ? int.tryParse(snapshot.value.toString()) ?? 0 : 0);
-    lastInvoiceNumber += 1;
-
-    return lastInvoiceNumber;
+      if (response.success && response.data != null) {
+        final personalInfo = Map<String, dynamic>.from(response.data);
+        lastInvoiceNumber = int.tryParse(personalInfo[typeOfInvoice]?.toString() ?? '0') ?? 0;
+      }
+      lastInvoiceNumber += 1;
+      return lastInvoiceNumber;
+    } catch (e) {
+      return lastInvoiceNumber > 0 ? lastInvoiceNumber : DateTime.now().millisecondsSinceEpoch % 100000;
+    }
   }
 
   bool isAlertSet = false;
@@ -694,7 +702,7 @@ class _InventorySalesState extends State<InventorySales> {
               final matchesSearch = searchController.text.isEmpty || customer.customerName.toLowerCase().contains(searchController.text.toLowerCase()) || customer.phoneNumber.toLowerCase().contains(searchController.text.toLowerCase());
 
               final hasReservation = reservations.any(
-                (res) => res.clientId == customer.phoneNumber,
+                (res) => res.clientId == customer.id || res.clientId == customer.phoneNumber,
               );
 
               return matchesSearch && (!switchValue || hasReservation); // si el switch está activo, filtra
@@ -967,7 +975,7 @@ class _InventorySalesState extends State<InventorySales> {
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (element.warehouseName == 'SANTIAGO') {
+      if (element.warehouseName == 'LA ROMANA') {
         selectedWareHouse = element;
       }
       i++;
@@ -2090,7 +2098,7 @@ class _InventorySalesState extends State<InventorySales> {
 
                                                                   try {
                                                                     EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                                    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation");
+                                                                    final apiServiceQuotation = ApiService();
 
                                                                     transitionModel.isPaid = false;
                                                                     transitionModel.dueAmount = 0;
@@ -2101,7 +2109,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                                     final currentUser = FirebaseAuth.instance.currentUser;
                                                                     transitionModel.sellerName = currentUser?.displayName ?? currentUser?.email ?? (isSubUser ? constSubUserTitle : 'Admin');
 
-                                                                    await ref.push().set(transitionModel.toJson());
+                                                                    await apiServiceQuotation.post('quotations', Map<String, dynamic>.from(transitionModel.toJson()));
                                                                     updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
                                                                     // ignore: unused_result
                                                                     consumerRef.refresh(profileDetailsProvider);
@@ -2308,7 +2316,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                 EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
 
                                                 EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
+                                                final apiServiceSale = ApiService();
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
                                                 (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
@@ -2317,7 +2325,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                 final currentUser = FirebaseAuth.instance.currentUser;
                                                 transitionModel.sellerName = currentUser?.displayName ?? currentUser?.email ?? (isSubUser ? constSubUserTitle : 'Admin');
                                                 SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
-                                                await ref.push().set(post.toJson());
+                                                await apiServiceSale.post('sales', Map<String, dynamic>.from(post.toJson()));
 
                                                 //imprimir factura
                                                 if (sendWhatsApp) {
@@ -2374,25 +2382,41 @@ class _InventorySalesState extends State<InventorySales> {
 
                                                 limpiarCarro();
 
-                                                final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
+                                                // Actualizar stock de productos via API
+                                                final stockApiService = ApiService();
                                                 for (var element in transitionModel.productList!) {
-                                                  var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
-                                                  final data2 = jsonDecode(jsonEncode(data.snapshot.value));
-                                                  String productPath = data.snapshot.value.toString().substring(1, 21);
+                                                  try {
+                                                    // Buscar producto por código
+                                                    final productResponse = await stockApiService.get('products?productCode=${element.productId}');
+                                                    if (productResponse.success && productResponse.data != null) {
+                                                      final productsData = productResponse.data;
+                                                      List<dynamic> products = [];
+                                                      if (productsData is Map && productsData['products'] != null) {
+                                                        products = productsData['products'] as List<dynamic>;
+                                                      } else if (productsData is List) {
+                                                        products = productsData;
+                                                      }
 
-                                                  var data1 = await stockRef.child('$productPath/productStock').get();
-                                                  num stock = num.parse(data1.value.toString());
-                                                  num remainStock = stock - element.quantity;
+                                                      if (products.isNotEmpty) {
+                                                        final product = Map<String, dynamic>.from(products.first);
+                                                        final productId = product['id'] ?? product['key'];
+                                                        num stock = num.tryParse(product['productStock']?.toString() ?? '0') ?? 0;
+                                                        num remainStock = stock - element.quantity;
 
-                                                  stockRef.child(productPath).update({'productStock': '$remainStock'});
+                                                        Map<String, dynamic> updateData = {'productStock': '$remainStock'};
 
-                                                  if (element.serialNumber?.isNotEmpty ?? false) {
-                                                    var productOldSerialList = data2[productPath]['serialNumber'];
+                                                        // Actualizar serial numbers si aplica
+                                                        if (element.serialNumber?.isNotEmpty ?? false) {
+                                                          List<dynamic> productOldSerialList = product['serialNumber'] ?? [];
+                                                          List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
+                                                          updateData['serialNumber'] = result;
+                                                        }
 
-                                                    List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
-                                                    stockRef.child(productPath).update({
-                                                      'serialNumber': result.map((e) => e).toList(),
-                                                    });
+                                                        await stockApiService.put('products/$productId', updateData);
+                                                      }
+                                                    }
+                                                  } catch (e) {
+                                                    print('Error actualizando stock de producto ${element.productId}: $e');
                                                   }
                                                 }
 
@@ -2414,27 +2438,36 @@ class _InventorySalesState extends State<InventorySales> {
                                                 postDailyTransaction(dailyTransactionModel: dailyTransaction);
 
                                                 if (transitionModel.customerName != 'Guest') {
-                                                  final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-                                                  String? key;
+                                                  // Actualizar due del cliente via API
+                                                  try {
+                                                    final customerApiService = ApiService();
+                                                    final customerResponse = await customerApiService.get('customers?phoneNumber=${transitionModel.customerPhone}');
 
-                                                  await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
-                                                    for (var element in value.children) {
-                                                      var data = jsonDecode(jsonEncode(element.value));
-                                                      if (data['phoneNumber'] == transitionModel.customerPhone) {
-                                                        key = element.key;
+                                                    if (customerResponse.success && customerResponse.data != null) {
+                                                      final customersData = customerResponse.data;
+                                                      List<dynamic> customers = [];
+                                                      if (customersData is Map && customersData['customers'] != null) {
+                                                        customers = customersData['customers'] as List<dynamic>;
+                                                      } else if (customersData is List) {
+                                                        customers = customersData;
+                                                      }
+
+                                                      if (customers.isNotEmpty) {
+                                                        final customer = Map<String, dynamic>.from(customers.first);
+                                                        final customerId = customer['id'] ?? customer['key'];
+                                                        int previousDue = int.tryParse(customer['due']?.toString() ?? '0') ?? 0;
+                                                        int totalDue = previousDue + transitionModel.dueAmount!.toInt();
+
+                                                        // Actualizar due y updated_at
+                                                        await customerApiService.put('customers/$customerId', {
+                                                          'due': '$totalDue',
+                                                          'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+                                                        });
                                                       }
                                                     }
-                                                  });
-                                                  
-                                                  var data1 = await dueUpdateRef.child('$key/due').get();
-                                                  int previousDue = data1.value.toString().toInt();
-                                                  int totalDue = previousDue + transitionModel.dueAmount!.toInt();
-                                                  
-                                                  // Actualizar due y updated_at
-                                                  await dueUpdateRef.child(key!).update({
-                                                    'due': '$totalDue',
-                                                    'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()), // Formato legible
-                                                  });
+                                                  } catch (e) {
+                                                    debugPrint('Error actualizando due del cliente: $e');
+                                                  }
                                                 }
 
                                                 // ignore: unused_result

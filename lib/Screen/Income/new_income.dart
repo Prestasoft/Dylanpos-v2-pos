@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -17,7 +14,7 @@ import '../../Provider/income_provider.dart';
 import '../../commas.dart';
 import '../../const.dart';
 import '../../model/daily_transaction_model.dart';
-import '../../model/expense_category_model.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 import 'income_list.dart';
 
@@ -32,6 +29,7 @@ class NewIncome extends StatefulWidget {
 
 class _NewIncomeState extends State<NewIncome> {
   bool saveButtonClicked = false;
+  final ApiService _apiService = ApiService();
 
   void showCategoryPopUp() {
     showDialog(
@@ -237,20 +235,22 @@ class _NewIncomeState extends State<NewIncome> {
   }
 
   Future<void> category() async {
-    final userId = await getUserID();
-
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Income Category')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = ExpenseCategoryModel.fromJson(
-            jsonDecode(jsonEncode(element.value)));
-        categories.add(data.categoryName);
+    try {
+      final response = await _apiService.get('categories/incomes');
+      if (response.success && response.data != null) {
+        final categoriesList = response.data['income_categories'] as List<dynamic>? ??
+            response.data['categories'] as List<dynamic>? ?? [];
+        for (var element in categoriesList) {
+          final categoryData = Map<String, dynamic>.from(element);
+          final categoryName = categoryData['categoryName']?.toString() ?? '';
+          if (categoryName.isNotEmpty) {
+            categories.add(categoryName);
+          }
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('Error loading income categories: $e');
+    }
     setState(() {});
   }
 
@@ -615,15 +615,10 @@ class _NewIncomeState extends State<NewIncome> {
                                               status:
                                                   '${lang.S.of(context).loading}...',
                                               dismissOnTap: false);
-                                          final DatabaseReference
-                                              productInformationRef =
-                                              FirebaseDatabase.instance
-                                                  .ref()
-                                                  .child(await getUserID())
-                                                  .child('Income');
-                                          await productInformationRef
-                                              .push()
-                                              .set(income.toJson());
+                                          await _apiService.post(
+                                            'incomes',
+                                            Map<String, dynamic>.from(income.toJson()),
+                                          );
 
                                           ///________daily_transactionModel_________________________________________________________________________
 

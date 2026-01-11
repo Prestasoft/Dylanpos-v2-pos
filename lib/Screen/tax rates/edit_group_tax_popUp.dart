@@ -1,6 +1,4 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +6,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/Screen/tax%20rates/tax_model.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
-import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class EditGroupTaxPopUP extends StatefulWidget {
@@ -40,20 +38,25 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
   String taxKey = '';
 
   void getTaxKey() async {
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Group Tax List')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['name'].toString() == widget.groupTaxModel.name) {
-          taxKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('group-taxes?name=${widget.groupTaxModel.name}');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> groupTaxes = [];
+        if (data is Map && data['groupTaxes'] != null) {
+          groupTaxes = data['groupTaxes'] as List<dynamic>;
+        } else if (data is List) {
+          groupTaxes = data;
+        }
+        if (groupTaxes.isNotEmpty) {
+          final tax = Map<String, dynamic>.from(groupTaxes.first);
+          taxKey = tax['id']?.toString() ?? tax['key']?.toString() ?? '';
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting group tax key: $e');
+    }
   }
 
   late GroupTaxModel newGroupTaxModel;
@@ -328,16 +331,11 @@ class _EditGroupTaxPopUPState extends State<EditGroupTaxPopUP> {
                               EasyLoading.show(
                                   status: '${lang.S.of(context).loading}...',
                                   dismissOnTap: false);
-                              final DatabaseReference productInformationRef =
-                                  FirebaseDatabase.instance
-                                      .ref()
-                                      .child(await getUserID())
-                                      .child('Group Tax List')
-                                      .child(taxKey);
-                              await productInformationRef
-                                  .set(groupTax.toJson());
+                              final apiService = ApiService();
+                              String idToUse = taxKey.isNotEmpty ? taxKey : widget.groupTaxModel.id;
+                              await apiService.put('group-taxes/$idToUse', Map<String, dynamic>.from(groupTax.toJson()));
                               EasyLoading.showSuccess(
-                                  '${lang.S.of(context).addedSuccessfully}',
+                                  lang.S.of(context).addedSuccessfully,
                                   duration: const Duration(milliseconds: 500));
                               // ignore: unused_result
                               ref.refresh(groupTaxProvider);

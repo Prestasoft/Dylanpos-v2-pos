@@ -1,9 +1,5 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../const.dart';
+import 'package:salespro_admin/services/api_service.dart';
 
 //_____________________________________________warehouse_model_____________________
 
@@ -19,9 +15,10 @@ class WareHouseModel {
   });
 
   WareHouseModel.fromJson(Map<String, dynamic> json) {
-    warehouseName = json['warehouseName'];
-    warehouseAddress = json['address'];
-    id = json['id'];
+    // Soportar tanto formato Firebase (warehouseName) como PostgreSQL (name)
+    warehouseName = json['warehouseName']?.toString() ?? json['name']?.toString() ?? '';
+    warehouseAddress = json['address']?.toString() ?? json['city']?.toString() ?? '';
+    id = json['id']?.toString() ?? '';
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -42,12 +39,35 @@ class WareHouseRepo {
   Future<List<WareHouseModel>> getAllWarehouse() async {
     List<WareHouseModel> allWarehouseList = [];
 
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Warehouse List').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        var data = WareHouseModel.fromJson(jsonDecode(jsonEncode(element.value)));
-        allWarehouseList.add(data);
+    final apiService = ApiService();
+
+    // Intentar primero con /warehouses, si falla usar /auth/branches
+    var response = await apiService.get('warehouses');
+
+    if (!response.success || response.data == null) {
+      // Fallback a branches (PostgreSQL)
+      response = await apiService.get('auth/branches');
+    }
+
+    if (response.success && response.data != null) {
+      final data = response.data;
+      List<dynamic> warehouses = [];
+
+      if (data is Map && data['warehouses'] != null) {
+        warehouses = data['warehouses'] as List<dynamic>;
+      } else if (data is Map && data['branches'] != null) {
+        // Formato PostgreSQL: branches
+        warehouses = data['branches'] as List<dynamic>;
+      } else if (data is List) {
+        warehouses = data;
       }
-    });
+
+      for (var element in warehouses) {
+        var warehouseData = Map<String, dynamic>.from(element);
+        allWarehouseList.add(WareHouseModel.fromJson(warehouseData));
+      }
+    }
+
     return allWarehouseList;
   }
 }

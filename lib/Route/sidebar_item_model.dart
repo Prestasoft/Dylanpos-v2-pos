@@ -414,10 +414,50 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/sale-confirmations',
     ),
     SidebarItemModel(
+      name: 'Módulo Impresión',
+      iconPath: 'images/dashboard_icon/product.svg',
+      sidebarItemType: SidebarItemType.submenu,
+      type: "inventory_sales",  // Usa el mismo permiso que ventas de inventario
+      submenus: [
+        SidebarSubmenuModel(
+          name: 'Facturar Impresión',
+          type: "inventory_sales",
+          navigationPath: '/photo-invoice',
+        ),
+        SidebarSubmenuModel(
+          name: 'Lista de Ventas',
+          type: "inventory_sales",
+          navigationPath: '/sales/photo-sales-list',
+        ),
+        SidebarSubmenuModel(
+          name: 'Tipos de Productos/Servicios',
+          type: "inventory_sales",
+          navigationPath: '/sales/photo-product-service-types',
+        ),
+        SidebarSubmenuModel(
+          name: 'Gestión de Productos',
+          type: "inventory_sales",
+          navigationPath: '/sales/photo-products-services',
+        ),
+      ],
+    ),
+    SidebarItemModel(
       name: lang.S.current.dueList,
       iconPath: 'images/dashboard_icon/due_list.svg',
       type: "dues",
       navigationPath: '/due-list',
+    ),
+    SidebarItemModel(
+      name: 'Transferencias',
+      iconPath: 'images/dashboard_icon/income.svg',
+      type: "dues",  // Mismo permiso que cuentas por cobrar
+      navigationPath: '/transfer-verifications',
+    ),
+    SidebarItemModel(
+      name: 'DGII',
+      iconPath: 'images/dashboard_icon/reports.svg',
+      type: "reports",  // Permiso de reportes
+      navigationPath: '/dgii',
     ),
     SidebarItemModel(
       name: lang.S.current.reports,
@@ -534,32 +574,63 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/user-role',
     ),
     SidebarItemModel(
+      name: 'Configuración Sucursal',
+      iconPath: 'images/dashboard_icon/warehouse.svg',
+      type: "user_roles",  // Solo admin puede ver esto
+      navigationPath: '/branch-settings',
+    ),
+    SidebarItemModel(
       name: lang.S.current.taxRate,
       iconPath: 'images/dashboard_icon/tax_rate.svg',
       type: "tax_rates",
       navigationPath: '/tax-rates',
     ),
     SidebarItemModel(
-      name: 'Gestion de Nomina',
+      name: 'Recursos Humanos',
       iconPath: 'images/dashboard_icon/hrm.svg',
       sidebarItemType: SidebarItemType.submenu,
       type: "hrm",
       navigationPath: '/hrm',
       submenus: [
         SidebarSubmenuModel(
-          name: lang.S.current.designationList,
-          type: "designations",
-          navigationPath: '/hrm/designation-list',
-        ),
-        SidebarSubmenuModel(
           name: 'Empleados',
           type: "employees",
           navigationPath: '/hrm/employee',
         ),
         SidebarSubmenuModel(
-          name: 'Lista de Salarios',
+          name: lang.S.current.designationList,
+          type: "designations",
+          navigationPath: '/hrm/designation-list',
+        ),
+        SidebarSubmenuModel(
+          name: 'Nómina',
           type: "salary_list",
           navigationPath: '/hrm/salaries-list',
+        ),
+        SidebarSubmenuModel(
+          name: 'Asistencia',
+          type: "attendance",
+          navigationPath: '/hrm/attendance',
+        ),
+        SidebarSubmenuModel(
+          name: 'Vacaciones',
+          type: "vacations",
+          navigationPath: '/hrm/vacations',
+        ),
+        SidebarSubmenuModel(
+          name: 'Préstamos',
+          type: "loans",
+          navigationPath: '/hrm/loans',
+        ),
+        SidebarSubmenuModel(
+          name: 'Prestaciones',
+          type: "prestaciones",
+          navigationPath: '/hrm/prestaciones',
+        ),
+        SidebarSubmenuModel(
+          name: 'Reportes TSS',
+          type: "tss_reports",
+          navigationPath: '/hrm/tss-reports',
         ),
       ],
     ),
@@ -568,6 +639,12 @@ List<SidebarItemModel> get topMenus {
       iconPath: 'images/dashboard_icon/user_role.svg',
       type: "audit",
       navigationPath: '/audit',
+    ),
+    SidebarItemModel(
+      name: 'Migrar Base de Datos',
+      iconPath: 'images/dashboard_icon/transaction.svg',
+      type: "user_roles",  // Solo admin puede ver esto
+      navigationPath: '/database-migration',
     ),
   ];
 }

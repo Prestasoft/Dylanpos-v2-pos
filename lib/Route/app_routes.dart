@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Route/shell_route_warpper.dart';
+import 'package:salespro_admin/services/api_service.dart';
 import 'package:salespro_admin/Screen/Authentication/add_profile.dart';
 import 'package:salespro_admin/Screen/Authentication/forgot_password.dart';
 import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
+import 'package:salespro_admin/Screen/Tenant/tenant_selector_screen.dart';
 import 'package:salespro_admin/Screen/Calendar/CalendarDressScreen.dart';
 import 'package:salespro_admin/Screen/Category%20List/category_list.dart';
 import 'package:salespro_admin/Screen/Customer%20List/add_customer.dart';
@@ -44,6 +46,11 @@ import '../Screen/Authentication/profile_setup.dart';
 import '../Screen/Expenses/expense_edit.dart';
 import '../Screen/Expenses/expenses_list.dart';
 import '../Screen/HRM/employees/employee_list.dart';
+import '../Screen/HRM/attendance/attendance_screen.dart';
+import '../Screen/HRM/vacations/vacations_screen.dart';
+import '../Screen/HRM/loans/loans_screen.dart';
+import '../Screen/HRM/prestaciones/prestaciones_screen.dart';
+import '../Screen/HRM/tss_reports/tss_reports_screen.dart';
 import '../Screen/Home/home_screen.dart';
 import '../Screen/Income/income_Edit.dart';
 import '../Screen/Income/income_list.dart';
@@ -72,16 +79,55 @@ import '../Screen/Widgets/Pop UP/Purchase/purchase_payment_popup.dart';
 import '../Screen/tax rates/tax_model.dart';
 import '../Screen/tax rates/tax_rate_screen.dart';
 import '../Screen/Equipments/areas_equipments_screen.dart';
+import '../Screen/Branch Settings/branch_settings_screen.dart';
 import '../model/customer_model.dart';
 import '../model/expense_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
 import 'not_found.dart';
 import 'package:salespro_admin/Screen/blank_home.dart';
-
+import 'package:salespro_admin/Screen/Photo%20Invoice/photo_invoice_screen_v2.dart';
+import 'package:salespro_admin/Screen/Photo%20Invoice/photo_sales_list_screen.dart';
+import 'package:salespro_admin/Screen/Photo%20Invoice/photo_products_services_screen.dart';
+import 'package:salespro_admin/Screen/Photo%20Invoice/photo_product_service_types_screen.dart';
+import 'package:salespro_admin/test_invoice_generation.dart';
+import 'package:salespro_admin/Screen/Admin/database_cleanup_screen.dart';
+import 'package:salespro_admin/Screen/Admin/database_migration_screen.dart';
+import 'package:salespro_admin/Screen/test_supabase_login.dart';
+import 'package:salespro_admin/Screen/Transfer%20Verifications/transfer_verifications_screen.dart';
+import 'package:salespro_admin/Screen/DGII/dgii_screen.dart';
 abstract class AcnooAppRoutes {
+  // Instancia global de ApiService para verificar autenticación
+  static final ApiService _apiService = ApiService();
+
   static final routerConfig = GoRouter(
     initialLocation: '/',
+    redirect: (BuildContext context, GoRouterState state) {
+      // Verificar autenticación del usuario usando ApiService (PostgreSQL)
+      final isAuthenticated = _apiService.isAuthenticated;
+      final isLoggingIn = state.matchedLocation == '/' ||
+                         state.matchedLocation == '/log-in' ||
+                         state.matchedLocation == '/sign-up' ||
+                         state.matchedLocation == '/forgot-password' ||
+                         state.matchedLocation == '/profile-setup' ||
+                         state.matchedLocation == '/subscription' ||
+                         state.matchedLocation == '/select-branch' ||
+                         state.matchedLocation == '/test-supabase' ||
+                         state.matchedLocation == '/blank-home';
+
+      // Si NO está autenticado y NO está en una página de login, redirigir a login
+      if (!isAuthenticated && !isLoggingIn) {
+        return '/';
+      }
+
+      // Si está autenticado y está en la página de login, redirigir a dashboard
+      if (isAuthenticated && state.matchedLocation == '/') {
+        return '/dashboard';
+      }
+
+      // Permitir navegación normal
+      return null;
+    },
     routes: [
       // Ruta para BlankHome (ahora dentro del ShellRoute para mostrar menú y barra)
       ShellRoute(
@@ -97,7 +143,21 @@ abstract class AcnooAppRoutes {
               child: BlankHome(),
             ),
           ),
-          // ...existing code...
+          // Limpieza de base de datos (TEMPORAL)
+          GoRoute(
+            path: '/database-cleanup',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: DatabaseCleanupScreen(),
+            ),
+          ),
+          // Migración de base de datos a API propia
+          GoRoute(
+            path: '/database-migration',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: DatabaseMigrationScreen(),
+            ),
+          ),
+                    // ...existing code...
           ///-----------------------DashBoard Route---------------------------
           GoRoute(
             path: '/dashboard',
@@ -213,9 +273,15 @@ abstract class AcnooAppRoutes {
               ///-----------------Inventory Sales Route---------------------
               GoRoute(
                 path: 'inventory-sales',
-                pageBuilder: (context, state) => const NoTransitionPage<void>(
-                  child: InventorySales(),
-                ),
+                pageBuilder: (context, state) {
+                  // Extraer el reservationId si viene como parámetro extra
+                  final extra = state.extra as Map<String, dynamic>?;
+                  final reservationId = extra?['reservationId'] as String?;
+
+                  return NoTransitionPage<void>(
+                    child: InventorySales(reservationId: reservationId),
+                  );
+                },
               ),
 
               ///---------------------Sales List Route------------------
@@ -226,6 +292,46 @@ abstract class AcnooAppRoutes {
                 ),
               ),
 
+              ///---------------------Photo Invoice Route--------------------------
+              GoRoute(
+                path: 'photo-invoice',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: PhotoInvoiceScreenV2(),
+                ),
+              ),
+              
+              ///---------------------Photo Sales List Route--------------------------
+              GoRoute(
+                path: 'photo-sales-list',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: PhotoSalesListScreen(),
+                ),
+              ),
+              
+              ///---------------------Photo Products Services Route--------------------------
+              GoRoute(
+                path: 'photo-products-services',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: PhotoProductsServicesScreen(),
+                ),
+              ),
+              
+              ///---------------------Photo Product Service Types Route--------------------------
+              GoRoute(
+                path: 'photo-product-service-types',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: PhotoProductServiceTypesScreen(),
+                ),
+              ),
+              
+              ///---------------------Test Invoice Route--------------------------
+              GoRoute(
+                path: 'test-invoice',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: TestInvoiceGeneration(),
+                ),
+              ),
+              
               ///---------------------Sales Return Route--------------------------
               GoRoute(
                 path: 'sales-return-list',
@@ -474,6 +580,22 @@ abstract class AcnooAppRoutes {
             ),
           ),
 
+          ///-----------------------Transfer Verifications Route--------------------------
+          GoRoute(
+            path: '/transfer-verifications',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: TransferVerificationsScreen(),
+            ),
+          ),
+
+          ///-----------------------DGII - Comprobantes Fiscales Route--------------------------
+          GoRoute(
+            path: '/dgii',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: DgiiScreen(),
+            ),
+          ),
+
           ///------------------Ledger----------------------------------------
           GoRoute(
             path: '/ledger',
@@ -616,6 +738,14 @@ abstract class AcnooAppRoutes {
               child: SaleConfirmationsScreen(),
             ),
           ),
+          
+          //---------------------Photo Invoice Route------------------------------------
+          GoRoute(
+            path: '/photo-invoice',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: PhotoInvoiceScreenV2(),
+            ),
+          ),
 
           ///---------------------Audit Route------------------------------------
           GoRoute(
@@ -661,6 +791,14 @@ abstract class AcnooAppRoutes {
             path: '/user-role',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: UserRoleScreen(),
+            ),
+          ),
+
+          ///-----------------Branch Settings Screen----------------------------------
+          GoRoute(
+            path: '/branch-settings',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: BranchSettingsScreen(),
             ),
           ),
 
@@ -711,9 +849,63 @@ abstract class AcnooAppRoutes {
                   child: SalariesListScreen(),
                 ),
               ),
+
+              ///---------------------Attendance Route------------------
+              GoRoute(
+                path: 'attendance',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: AttendanceScreen(),
+                ),
+              ),
+
+              ///---------------------Vacations Route------------------
+              GoRoute(
+                path: 'vacations',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: VacationsScreen(),
+                ),
+              ),
+
+              ///---------------------Loans Route------------------
+              GoRoute(
+                path: 'loans',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: LoansScreen(),
+                ),
+              ),
+
+              ///---------------------Prestaciones Route------------------
+              GoRoute(
+                path: 'prestaciones',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: PrestacionesScreen(),
+                ),
+              ),
+
+              ///---------------------TSS Reports Route------------------
+              GoRoute(
+                path: 'tss-reports',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: TSSReportsScreen(),
+                ),
+              ),
             ],
           ),
         ],
+      ),
+      /// Ruta para selector de sucursal (multi-tenant)
+      GoRoute(
+        path: TenantSelectorScreen.route,
+        pageBuilder: (context, state) => const NoTransitionPage<void>(
+          child: TenantSelectorScreen(),
+        ),
+      ),
+      // Test Supabase (TEMPORAL - para probar conexión)
+      GoRoute(
+        path: '/test-supabase',
+        pageBuilder: (context, state) => const NoTransitionPage<void>(
+          child: TestSupabaseLogin(),
+        ),
       ),
       GoRoute(
         path: EmailLogIn.route,

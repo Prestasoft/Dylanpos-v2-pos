@@ -90,47 +90,66 @@ class AddToCartModel {
 
   String toJson() => json.encode(toMap());
 
-  factory AddToCartModel.fromMap(Map<String, dynamic> json) => AddToCartModel(
-        uuid: json["uuid"],
-        productId: json["product_id"],
-        productName: json["product_name"],
-        warehouseName: json["warehouseName"],
-        warehouseId: json["warehouseId"],
-        productBrandName: json["product_brand_name"],
-        unitPrice: json["unit_price"],
-        subTotal: json["sub_total"],
-        uniqueCheck: json["unique_check"],
-        quantity: json["quantity"],
-        productDetails: json["product_details"],
-        itemCartIndex: json["item_cart_index"],
-        stock: json["stock"],
-        productImage: json["productImage"] ??
-            'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
-        productPurchasePrice: json["productPurchasePrice"],
-        serialNumber: json["serialNumber"],
-        productWarranty: json['productWarranty'],
-        taxType: json['taxType'] ?? '',
-        margin: json['margin'] ?? 0,
-        excTax: json['excTax'] ?? 0,
-        incTax: json['incTax'] ?? 0,
-        groupTaxName: json['groupTaxName'] ?? '',
-        groupTaxRate: json['groupTaxRate'] ?? 0,
-        subTaxes: json['subTax'] != null
-            ? List<TaxModel>.from(
-                json['subTax'].map((x) => TaxModel.fromJson(x)))
-            : [],
-        isReservation: json["isReservation"] ?? false,
-        reservationId: json['reservationId'],
-        dressId: json["dressId"],
-        serviceId: json["serviceId"],
-        descricpion: json['descricpion'],
-        isAdditional: json['isAdditional'] ?? false,
-        mainReservationId: json['mainReservationId'],
-        isDress: json['isDress'] ?? false,
-        dressState: json['dressState'],
-        dressAvailable: json['dressAvailable'],
-        dressCategory: json['dressCategory'],
-      );
+  factory AddToCartModel.fromMap(Map<String, dynamic> json) {
+    // Helper para convertir a num de forma segura
+    num parseNum(dynamic value, [num defaultValue = 0]) {
+      if (value == null) return defaultValue;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value) ?? defaultValue;
+      return defaultValue;
+    }
+
+    // Helper para convertir a int de forma segura
+    int parseInt(dynamic value, [int defaultValue = 0]) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? defaultValue;
+      return defaultValue;
+    }
+
+    return AddToCartModel(
+      uuid: json["uuid"]?.toString(),
+      productId: json["product_id"]?.toString(),
+      productName: json["product_name"]?.toString(),
+      warehouseName: json["warehouseName"]?.toString() ?? '',
+      warehouseId: json["warehouseId"]?.toString() ?? '',
+      productBrandName: json["product_brand_name"]?.toString(),
+      unitPrice: json["unit_price"],
+      subTotal: json["sub_total"]?.toString(),
+      uniqueCheck: json["unique_check"]?.toString(),
+      quantity: parseNum(json["quantity"], 1),
+      productDetails: json["product_details"],
+      itemCartIndex: parseInt(json["item_cart_index"], -1),
+      stock: parseNum(json["stock"]),
+      productImage: json["productImage"]?.toString() ??
+          'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
+      productPurchasePrice: parseNum(json["productPurchasePrice"]),
+      serialNumber: json["serialNumber"],
+      productWarranty: json['productWarranty']?.toString(),
+      taxType: json['taxType']?.toString() ?? '',
+      margin: parseNum(json['margin']),
+      excTax: parseNum(json['excTax']),
+      incTax: parseNum(json['incTax']),
+      groupTaxName: json['groupTaxName']?.toString() ?? '',
+      groupTaxRate: parseNum(json['groupTaxRate']),
+      subTaxes: json['subTax'] != null && json['subTax'] is List
+          ? List<TaxModel>.from(
+              (json['subTax'] as List).map((x) => TaxModel.fromJson(x)))
+          : [],
+      isReservation: json["isReservation"] == true || json["isReservation"] == 'true',
+      reservationId: json['reservationId']?.toString(),
+      dressId: json["dressId"]?.toString(),
+      serviceId: json["serviceId"]?.toString(),
+      descricpion: json['descricpion']?.toString(),
+      isAdditional: json['isAdditional'] == true || json['isAdditional'] == 'true',
+      mainReservationId: json['mainReservationId']?.toString(),
+      isDress: json['isDress'] == true || json['isDress'] == 'true',
+      dressState: json['dressState']?.toString(),
+      dressAvailable: json['dressAvailable'] == true || json['dressAvailable'] == 'true',
+      dressCategory: json['dressCategory']?.toString(),
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         "uuid": uuid,

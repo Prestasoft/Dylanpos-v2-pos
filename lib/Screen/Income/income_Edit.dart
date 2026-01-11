@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -14,7 +11,7 @@ import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/income_modle.dart';
 
 import '../../const.dart';
-import '../../model/expense_category_model.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 class IncomeEdit extends StatefulWidget {
@@ -27,6 +24,9 @@ class IncomeEdit extends StatefulWidget {
 }
 
 class _IncomeEditState extends State<IncomeEdit> {
+  final ApiService _apiService = ApiService();
+  String? incomeId;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -38,7 +38,7 @@ class _IncomeEditState extends State<IncomeEdit> {
     incomeRefController.text = widget.incomeModel.referenceNo;
     selectedDate = DateTime.parse(widget.incomeModel.incomeDate);
     selectedPaymentType = widget.incomeModel.paymentType;
-    getExpenseKey();
+    getIncomeId();
     category();
   }
 
@@ -206,26 +206,29 @@ class _IncomeEditState extends State<IncomeEdit> {
   String? selectedCategories;
   late String selectedPaymentType = paymentMethods.first;
 
-  String expenseKey = '';
-
-  void getExpenseKey() async {
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Income')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['incomeFor'].toString() == widget.incomeModel.incomeFor &&
-            data['amount'].toString() == widget.incomeModel.amount &&
-            data['incomeDate'].toString() == widget.incomeModel.incomeDate &&
-            data['paymentType'].toString() == widget.incomeModel.paymentType) {
-          expenseKey = element.key.toString();
+  void getIncomeId() async {
+    try {
+      final response = await _apiService.get('incomes', queryParams: {
+        'incomeFor': widget.incomeModel.incomeFor,
+        'amount': widget.incomeModel.amount,
+        'limit': '10',
+      });
+      if (response.success && response.data != null) {
+        final incomes = response.data['incomes'] as List<dynamic>? ?? [];
+        for (var element in incomes) {
+          final incomeData = Map<String, dynamic>.from(element);
+          if (incomeData['incomeFor']?.toString() == widget.incomeModel.incomeFor &&
+              incomeData['amount']?.toString() == widget.incomeModel.amount &&
+              incomeData['incomeDate']?.toString() == widget.incomeModel.incomeDate &&
+              incomeData['paymentType']?.toString() == widget.incomeModel.paymentType) {
+            incomeId = incomeData['id']?.toString();
+            break;
+          }
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error obteniendo ID de ingreso: $e');
+    }
   }
 
   DropdownButton<String> getCategories() {
@@ -274,20 +277,22 @@ class _IncomeEditState extends State<IncomeEdit> {
   }
 
   Future<void> category() async {
-    final userId = await getUserID();
-
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Income Category')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = ExpenseCategoryModel.fromJson(
-            jsonDecode(jsonEncode(element.value)));
-        categories.add(data.categoryName);
+    try {
+      final response = await _apiService.get('categories/incomes');
+      if (response.success && response.data != null) {
+        final categoriesList = response.data['income_categories'] as List<dynamic>? ??
+            response.data['categories'] as List<dynamic>? ?? [];
+        for (var element in categoriesList) {
+          final categoryData = Map<String, dynamic>.from(element);
+          final categoryName = categoryData['categoryName']?.toString() ?? '';
+          if (categoryName.isNotEmpty) {
+            categories.add(categoryName);
+          }
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('Error loading income categories: $e');
+    }
     setState(() {
       selectedCategories = widget.incomeModel.category;
     });
@@ -693,15 +698,12 @@ class _IncomeEditState extends State<IncomeEdit> {
                                           status:
                                               '${lang.S.of(context).loading}...',
                                           dismissOnTap: false);
-                                      final DatabaseReference
-                                          productInformationRef =
-                                          FirebaseDatabase.instance
-                                              .ref()
-                                              .child(await getUserID())
-                                              .child('Income')
-                                              .child(expenseKey);
-                                      await productInformationRef
-                                          .set(income.toJson());
+                                      if (incomeId != null) {
+                                        await _apiService.put(
+                                          'incomes/$incomeId',
+                                          Map<String, dynamic>.from(income.toJson()),
+                                        );
+                                      }
                                       EasyLoading.showSuccess(
                                           lang.S.of(context).addedSuccessfully,
                                           duration: const Duration(

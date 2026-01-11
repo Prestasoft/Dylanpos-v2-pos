@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'dart:typed_data';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -29,6 +29,12 @@ import '../../subscription.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
 import '../../Provider/bank_provider.dart';
+import '../../services/whatsapp_template_service.dart';
+import '../../services/whatsapp_credentials_service.dart';
+import '../../model/transfer_verification_model.dart';
+import '../../Provider/transfer_verification_provider.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 class ShowDuePaymentPopUp extends StatefulWidget {
   const ShowDuePaymentPopUp({super.key, required this.customerModel});
@@ -64,6 +70,83 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
   String selectedPaymentOption = 'Efectivo';
   String? selectedBankId;
   String? selectedBankName;
+
+  // Campos para verificación de transferencia
+  final TextEditingController transferHolderNameController = TextEditingController();
+  final TextEditingController transferReferenceController = TextEditingController();
+  String? transferReceiptUrl;
+  bool isUploadingReceipt = false;
+
+  /// Método para seleccionar y subir comprobante de transferencia
+  void _pickTransferReceipt() {
+    try {
+      final html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+      uploadInput.accept = 'image/*';
+      uploadInput.click();
+
+      uploadInput.onChange.listen((event) async {
+        final files = uploadInput.files;
+        if (files != null && files.isNotEmpty) {
+          final file = files[0];
+
+          // Verificar formato (solo formatos web compatibles)
+          final fileName = file.name.toLowerCase();
+          final allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          final isValidFormat = allowedExtensions.any((ext) => fileName.endsWith(ext));
+
+          if (!isValidFormat) {
+            EasyLoading.showError('Formato no soportado. Use JPG, PNG, GIF o WebP.');
+            return;
+          }
+
+          // Verificar tamaño (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            EasyLoading.showError('La imagen no debe superar 5MB');
+            return;
+          }
+
+          setState(() => isUploadingReceipt = true);
+          EasyLoading.show(status: 'Subiendo comprobante...');
+
+          try {
+            final reader = html.FileReader();
+            reader.readAsDataUrl(file);
+
+            await reader.onLoad.first;
+            final base64Data = reader.result as String;
+
+            // Subir al servidor API
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final safeFileName = file.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+            final filename = 'receipt_${timestamp}_$safeFileName';
+
+            final apiService = ApiService();
+            final response = await apiService.post('uploads/transfer-receipt', {
+              'base64Data': base64Data.split(',').last,
+              'filename': filename,
+              'contentType': file.type,
+            });
+
+            if (response.success && response.data != null) {
+              final downloadUrl = response.data['url'] as String;
+              setState(() {
+                transferReceiptUrl = downloadUrl;
+                isUploadingReceipt = false;
+              });
+              EasyLoading.showSuccess('Comprobante cargado');
+            } else {
+              throw Exception(response.message ?? 'Error al subir imagen');
+            }
+          } catch (e) {
+            setState(() => isUploadingReceipt = false);
+            EasyLoading.showError('Error al subir imagen: $e');
+          }
+        }
+      });
+    } catch (e) {
+      EasyLoading.showError('Error al seleccionar imagen');
+    }
+  }
 
   DropdownButton<String> getOption() {
     List<DropdownMenuItem<String>> dropDownItems = [];
@@ -119,21 +202,23 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
       // }
 
       EasyLoading.show(status: 'Preparando envío...');
-      
+
       // Codificar PDF en Base64
       final pdfBase64 = base64Encode(pdfData);
-      
-      // Crear mensaje
-      final safeMessage = '''
-        Hola ${customerName},
-        Adjunto su comprobante #${invoiceNumber}.
-        Gracias por su preferencia!
-        ''';
-      
+
+      // Crear mensaje usando plantilla de WhatsApp
+      final template = await WhatsAppTemplateService.getTemplate('payment_receipt');
+      final safeMessage = WhatsAppTemplateService.replaceVariables(template, {
+        'nombre': customerName,
+        'factura': invoiceNumber,
+      });
+
+      // Obtener credenciales dinámicas de WhatsApp
+      final credentials = await WhatsAppCredentialsService.getCredentials();
+
      // Crear cuerpo de la petición
       final body = {
-        'token': '5i36w829nb1ljkj7', //token santo domingo
-        //'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': credentials.token,
         'to': phoneNumber,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
@@ -141,8 +226,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
       };
 
       // Configurar la petición HTTP
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
+      final url = Uri.parse(credentials.getApiUrl('messages/document'));
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -594,6 +678,108 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                               ),
                             ))
                       ]),
+                    // Campos adicionales para transferencia
+                    if (selectedPaymentOption == 'Transferencia')
+                      ResponsiveGridRow(children: [
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Text(
+                                'Nombre del Titular *',
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            )),
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: TextFormField(
+                                controller: transferHolderNameController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Nombre de quien transfiere',
+                                ),
+                              ),
+                            ))
+                      ]),
+                    if (selectedPaymentOption == 'Transferencia')
+                      ResponsiveGridRow(children: [
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Text(
+                                'No. Referencia',
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            )),
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: TextFormField(
+                                controller: transferReferenceController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Número de referencia (opcional)',
+                                ),
+                              ),
+                            ))
+                      ]),
+                    if (selectedPaymentOption == 'Transferencia')
+                      ResponsiveGridRow(children: [
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Text(
+                                'Comprobante *',
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            )),
+                        ResponsiveGridCol(
+                            xs: 12,
+                            md: 6,
+                            lg: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (transferReceiptUrl != null)
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                        const SizedBox(width: 8),
+                                        const Text('Comprobante cargado'),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          icon: const Icon(Icons.close, size: 18),
+                                          onPressed: () => setState(() => transferReceiptUrl = null),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    ElevatedButton.icon(
+                                      onPressed: () {
+                                        _pickTransferReceipt();
+                                      },
+                                      icon: const Icon(Icons.upload_file),
+                                      label: const Text('Subir Comprobante'),
+                                    ),
+                                ],
+                              ),
+                            ))
+                      ]),
                     const SizedBox(height: 20.0),
                     ResponsiveGridRow(children: [
                       ResponsiveGridCol(
@@ -622,32 +808,77 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                 onPressed: saleButtonClicked
                                     ? () {}
                                     : () async {
+                                        // Validaciones para transferencia
+                                        if (selectedPaymentOption == 'Transferencia') {
+                                          if (selectedBankId == null) {
+                                            EasyLoading.showError('Seleccione un banco para la transferencia');
+                                            return;
+                                          }
+                                          if (transferHolderNameController.text.trim().isEmpty) {
+                                            EasyLoading.showError('Ingrese el nombre del titular');
+                                            return;
+                                          }
+                                          if (transferReceiptUrl == null) {
+                                            EasyLoading.showError('Suba el comprobante de la transferencia');
+                                            return;
+                                          }
+                                        }
+
                                         if (dueAmount > 0 && !payingAmountController.text.isEmptyOrNull && payingAmountController.text.toInt() > 0) {
                                           try {
                                             setState(() => saleButtonClicked = true);
                                             // EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                            
-                                            // 1. Guardar la transacción en Firebase
-                                            DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Due Transaction");
-                                            
+
+                                            // 1. Guardar la transacción en PostgreSQL
+                                            final apiService = ApiService();
+
                                             dueTransactionModel.invoiceNumber = selectedInvoice;
                                             dueTransactionModel.totalDue = dueAmount;
                                             dueTransactionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
                                             dueAmountController.text.toDouble() <= 0 ? dueTransactionModel.isPaid = true : dueTransactionModel.isPaid = false;
-                                            dueAmountController.text.toDouble() <= 0 
-                                                ? {dueTransactionModel.dueAmountAfterPay = 0, dueTransactionModel.payDueAmount = dueAmount} 
+                                            dueAmountController.text.toDouble() <= 0
+                                                ? {dueTransactionModel.dueAmountAfterPay = 0, dueTransactionModel.payDueAmount = dueAmount}
                                                 : {dueTransactionModel.dueAmountAfterPay = dueAmountController.text.toDouble(), dueTransactionModel.payDueAmount = dueAmount - dueAmountController.text.toDouble()};
-                                            
+
                                             dueTransactionModel.paymentType = selectedPaymentOption;
                                             dueTransactionModel.sendWhatsappMessage = widget.customerModel.receiveWhatsappUpdates;
-                                            
+
                                             // Agregar información del banco si es transferencia
                                             if (selectedPaymentOption == 'Transferencia' && selectedBankId != null) {
                                               dueTransactionModel.bankId = selectedBankId;
                                               dueTransactionModel.bankName = selectedBankName;
                                             }
-                                            
-                                            await ref.push().set(dueTransactionModel.toJson());
+
+                                            await apiService.post('due-transactions', Map<String, dynamic>.from(dueTransactionModel.toJson()));
+
+                                            // Crear registro de verificación de transferencia si aplica
+                                            if (selectedPaymentOption == 'Transferencia' && transferReceiptUrl != null) {
+                                              try {
+                                                final transferVerification = TransferVerificationModel(
+                                                  branchId: apiService.branchId ?? 'sdo',
+                                                  invoiceNumber: selectedInvoice,
+                                                  customerName: dueTransactionModel.customerName ?? '',
+                                                  customerPhone: dueTransactionModel.customerPhone ?? '',
+                                                  bankName: selectedBankName ?? '',
+                                                  holderName: transferHolderNameController.text.trim(),
+                                                  referenceNumber: transferReferenceController.text.trim().isNotEmpty
+                                                      ? transferReferenceController.text.trim()
+                                                      : null,
+                                                  transferDate: DateTime.now().toIso8601String(),
+                                                  amount: dueTransactionModel.payDueAmount ?? 0.0,
+                                                  receiptUrl: transferReceiptUrl!,
+                                                  status: 'pending',
+                                                  sellerName: isSubUser ? constSubUserTitle : 'Admin',
+                                                  createdAt: DateTime.now().toIso8601String(),
+                                                );
+
+                                                await transferVerificationRepository.createTransfer(transferVerification);
+                                                print('DEBUG: Registro de verificación de transferencia creado (DuePopup)');
+                                              } catch (e) {
+                                                print('ERROR al crear verificación de transferencia: $e');
+                                                // No bloquear el pago si falla la creación del registro
+                                              }
+                                            }
 
                                             // 2. Preguntar si desea enviar por WhatsApp
                                             final sendWhatsApp = await showDialog<bool>(
@@ -725,6 +956,10 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 paymentOut: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 id: selectedInvoice,
+                                                // Campos directos para mostrar en el reporte
+                                                paymentType: dueTransactionModel.paymentType,
+                                                sellerName: dueTransactionModel.sellerName,
+                                                invoiceNumber: selectedInvoice,
                                                 dueTransactionModel: dueTransactionModel,
                                               );
                                               postDailyTransaction(dailyTransactionModel: dailyTransaction);
@@ -738,32 +973,45 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 paymentOut: 0,
                                                 remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 id: selectedInvoice,
+                                                // Campos directos para mostrar en el reporte
+                                                paymentType: dueTransactionModel.paymentType,
+                                                sellerName: dueTransactionModel.sellerName,
+                                                invoiceNumber: selectedInvoice,
                                                 dueTransactionModel: dueTransactionModel,
                                               );
                                               postDailyTransaction(dailyTransactionModel: dailyTransaction);
                                             }
 
-                                            // Actualizar saldo del cliente
-                                            final cRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-                                            String? key;
+                                            // Actualizar saldo del cliente via API
+                                            String? customerId;
+                                            int previousDue = 0;
+                                            int remainedBalance = 0;
 
-                                            await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
-                                              for (var element in value.children) {
-                                                var data = jsonDecode(jsonEncode(element.value));
-                                                if (data['phoneNumber'] == widget.customerModel.phoneNumber) {
-                                                  key = element.key;
-                                                }
-                                              }
+                                            // Buscar cliente por teléfono
+                                            final customerResponse = await apiService.get('customers', queryParams: {
+                                              'phoneNumber': widget.customerModel.phoneNumber,
+                                              'limit': '1',
                                             });
-                                            var data1 = await cRef.child('$key/due').get();
-                                            var data2 = await cRef.child('$key/remainedBalance').get();
-                                            int previousDue = data1.value.toString().toInt();
-                                            int remainedBalance = data2.value.toString().toInt();
+
+                                            if (customerResponse.success && customerResponse.data != null) {
+                                              final customers = customerResponse.data['customers'] as List<dynamic>? ?? [];
+                                              if (customers.isNotEmpty) {
+                                                final customerData = Map<String, dynamic>.from(customers.first);
+                                                customerId = customerData['id']?.toString();
+                                                previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+                                                remainedBalance = int.tryParse(customerData['remainedBalance']?.toString() ?? '0') ?? 0;
+                                              }
+                                            }
 
                                             int totalDue = previousDue - dueTransactionModel.payDueAmount!.toInt();
                                             int remainedDue = remainedBalance - dueTransactionModel.payDueAmount!.toInt();
-                                            cRef.child(key!).update({'due': '$totalDue'});
-                                            selectedInvoice == 'Select Invoice' ? cRef.child(key!).update({'remainedBalance': '$remainedDue'}) : null;
+
+                                            if (customerId != null) {
+                                              await apiService.put('customers/$customerId', {'due': '$totalDue'});
+                                              if (selectedInvoice == 'Select Invoice') {
+                                                await apiService.put('customers/$customerId', {'remainedBalance': '$remainedDue'});
+                                              }
+                                            }
 
                                             // Actualizar contadores y providers
                                             updateInvoice(typeOfInvoice: 'dueInvoiceCounter', invoice: data.dueInvoiceCounter.toInt());
@@ -973,28 +1221,28 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
   }
 
   void updateDueInvoice({required String type, required String invoice, required int remainDueAmount}) async {
-    final ref = type == 'Supplier' ? FirebaseDatabase.instance.ref('${await getUserID()}/Purchase Transition/') : FirebaseDatabase.instance.ref('${await getUserID()}/Sales Transition/');
-    String? key;
+    final apiService = ApiService();
+    final endpoint = type == 'Supplier' ? 'purchases' : 'sales';
+    String? transactionId;
 
-    type == 'Supplier'
-        ? await FirebaseDatabase.instance.ref(await getUserID()).child('Purchase Transition/').orderByKey().get().then((value) {
-            for (var element in value.children) {
-              var data = jsonDecode(jsonEncode(element.value));
-              if (data['invoiceNumber'] == invoice) {
-                key = element.key;
-              }
-            }
-          })
-        : await FirebaseDatabase.instance.ref(await getUserID()).child('Sales Transition').orderByKey().get().then((value) {
-            for (var element in value.children) {
-              var data = jsonDecode(jsonEncode(element.value));
-              if (data['invoiceNumber'] == invoice) {
-                key = element.key;
-              }
-            }
-          });
-    ref.child(key!).update({
-      'dueAmount': '$remainDueAmount',
+    // Buscar la transacción por número de factura
+    final response = await apiService.get(endpoint, queryParams: {
+      'invoiceNumber': invoice,
+      'limit': '1',
     });
+
+    if (response.success && response.data != null) {
+      final transactions = response.data[endpoint] as List<dynamic>? ?? [];
+      if (transactions.isNotEmpty) {
+        final transactionData = Map<String, dynamic>.from(transactions.first);
+        transactionId = transactionData['id']?.toString();
+      }
+    }
+
+    if (transactionId != null) {
+      await apiService.put('$endpoint/$transactionId', {
+        'dueAmount': '$remainDueAmount',
+      });
+    }
   }
 }

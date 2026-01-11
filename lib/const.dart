@@ -1,8 +1,5 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:restart_app/restart_app.dart';
@@ -11,6 +8,7 @@ import 'Screen/tax rates/tax_model.dart';
 import 'model/add_to_cart_model.dart';
 import 'model/sale_transaction_model.dart';
 import 'model/user_role_model.dart';
+import 'services/api_service.dart';
 
 ///______________DATA____________
 String appsName = 'VICTOR GUZMAN FOTOGRAFIA';
@@ -115,23 +113,13 @@ List<TaxModel> getAllTaxFromCartList({required List<AddToCartModel> cart}) {
 
 List<String> selectedNumbers = [];
 
+/// Obtiene el ID de venta desde el API PostgreSQL
+/// Esta función ahora usa el ApiService en lugar de Firebase
 Future<String?> getSaleID({required String id}) async {
-  String? key;
-  await FirebaseDatabase.instance
-      .ref()
-      .child('Admin Panel')
-      .child('Seller List')
-      .orderByKey()
-      .get()
-      .then((value) async {
-    for (var element in value.children) {
-      var data = jsonDecode(jsonEncode(element.value));
-      if (data['userId'].toString() == id) {
-        key = element.key.toString();
-      }
-    }
-  });
-  return key;
+  // La función ya no es necesaria con PostgreSQL
+  // El servidor maneja los IDs internamente
+  // Retornamos el mismo ID ya que PostgreSQL usa UUIDs directamente
+  return id;
 }
 
 String constUserId = '';
@@ -392,9 +380,11 @@ double safeParseDouble(String? value) {
   return double.tryParse(value ?? '0') ?? 0;
 }
 
+/// Verifica si el usuario actual está autenticado
+/// Ahora usa ApiService en lugar de FirebaseAuth
 void checkCurrentUserAndRestartApp() {
-  final User? user = FirebaseAuth.instance.currentUser;
-  if (user?.uid == null) {
+  final apiService = ApiService();
+  if (!apiService.isAuthenticated) {
     Restart.restartApp();
   }
 }

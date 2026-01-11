@@ -1,7 +1,6 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -649,43 +648,41 @@ class _ProductState extends State<Product> {
                                     return;
                                   }
                                   if (validateAndSave()) {
-                                    final userID = await getUserID();
-                                    final ref = FirebaseDatabase.instance
-                                        .ref(userID)
-                                        .child('Products');
-                                    String productKey = '';
+                                    try {
+                                      final apiService = ApiService();
+                                      // Find product by productCode
+                                      final response = await apiService.get('products', queryParams: {
+                                        'productCode': product.productCode,
+                                        'limit': '1',
+                                      });
 
-                                    await ref.orderByKey().get().then((value) {
-                                      for (var element in value.children) {
-                                        var data = jsonDecode(
-                                            jsonEncode(element.value));
-                                        if (data['productCode'].toString() ==
-                                            product.productCode) {
-                                          productKey = element.key.toString();
+                                      if (response.success && response.data != null) {
+                                        final products = response.data['products'] as List<dynamic>? ?? [];
+                                        if (products.isNotEmpty) {
+                                          final productData = Map<String, dynamic>.from(products.first);
+                                          final productId = productData['id']?.toString();
+
+                                          if (productId != null) {
+                                            // Update product
+                                            await apiService.put('products/$productId', {
+                                              'productStock': ((num.tryParse(stock) ?? 0) +
+                                                      (num.tryParse(product.productStock) ?? 0))
+                                                  .toString(),
+                                              'productSalePrice': productSalePrice,
+                                              'productPurchasePrice': productPurchasePrice,
+                                              'productWholeSalePrice': productWholePrice,
+                                              'productDealerPrice': productDealerPrice,
+                                            });
+                                            EasyLoading.showSuccess('Done');
+                                            // ignore: unused_result
+                                            pref.refresh(productProvider);
+                                            GoRouter.of(context).pop();
+                                          }
                                         }
                                       }
-                                    });
-
-                                    await ref.child(productKey).update({
-                                      'productStock': ((num.tryParse(stock) ??
-                                                  0) +
-                                              (num.tryParse(
-                                                      product.productStock) ??
-                                                  0))
-                                          .toString(),
-                                      // 'productStock': stockController.text,
-                                      'productSalePrice': productSalePrice,
-                                      'productPurchasePrice':
-                                          productPurchasePrice,
-                                      'productWholeSalePrice':
-                                          productWholePrice,
-                                      'productDealerPrice': productDealerPrice,
-                                    });
-                                    EasyLoading.showSuccess('Done');
-                                    // ignore: unused_result
-                                    pref.refresh(productProvider);
-                                    GoRouter.of(context).pop();
-                                    // Navigator.pop(popUp);
+                                    } catch (e) {
+                                      EasyLoading.showError('Error: $e');
+                                    }
                                   }
                                 },
                                 child: Text(
@@ -714,29 +711,32 @@ class _ProductState extends State<Product> {
     EasyLoading.show(status: 'Deleting..');
 
     try {
-      String userId = await getUserID(); // Get User ID first
-      DatabaseReference productRef =
-          FirebaseDatabase.instance.ref('$userId/Products');
+      final apiService = ApiService();
 
-      DataSnapshot snapshot = await productRef.orderByKey().get();
+      // Find product by productCode
+      final response = await apiService.get('products', queryParams: {
+        'productCode': productCode,
+        'limit': '1',
+      });
 
-      String customerKey = '';
+      if (response.success && response.data != null) {
+        final products = response.data['products'] as List<dynamic>? ?? [];
 
-      for (var element in snapshot.children) {
-        var data = jsonDecode(jsonEncode(element.value));
+        if (products.isNotEmpty) {
+          final productData = Map<String, dynamic>.from(products.first);
+          final productId = productData['id']?.toString();
 
-        if (data['productCode'].toString() == productCode) {
-          customerKey = element.key.toString();
-          break; // Exit loop as soon as the key is found
+          if (productId != null) {
+            // Delete product
+            await apiService.delete('products/$productId');
+            final _ = updateProduct.refresh(productProvider); // Refresh UI
+            EasyLoading.showSuccess('Product Deleted');
+          } else {
+            EasyLoading.showError('Product Not Found');
+          }
+        } else {
+          EasyLoading.showError('Product Not Found');
         }
-      }
-
-      if (customerKey.isNotEmpty) {
-        await FirebaseDatabase.instance
-            .ref('$userId/Products/$customerKey')
-            .remove();
-        final _ = updateProduct.refresh(productProvider); // Refresh UI
-        EasyLoading.showSuccess('Product Deleted');
       } else {
         EasyLoading.showError('Product Not Found');
       }

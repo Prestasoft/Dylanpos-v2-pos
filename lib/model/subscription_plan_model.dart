@@ -18,16 +18,24 @@ class SubscriptionPlanModel {
   int subscriptionPrice, offerPrice;
 
   SubscriptionPlanModel.fromJson(Map<dynamic, dynamic> json)
-      : subscriptionName = json['subscriptionName'] as String,
-        saleNumber = json['saleNumber'],
-        purchaseNumber = json['purchaseNumber'],
-        partiesNumber = json['partiesNumber'],
-        subscriptionPrice = json['subscriptionPrice'],
-        dueNumber = json['dueNumber'],
-        duration = json['duration'],
-        products = json['products'],
-        whatsappMarketingEnabled = json['whatsappMarketingEnabled'] ?? false,
-        offerPrice = json['offerPrice'];
+      : subscriptionName = json['subscriptionName']?.toString() ?? '',
+        saleNumber = _parseInt(json['saleNumber']),
+        purchaseNumber = _parseInt(json['purchaseNumber']),
+        partiesNumber = _parseInt(json['partiesNumber']),
+        subscriptionPrice = _parseInt(json['subscriptionPrice']),
+        dueNumber = _parseInt(json['dueNumber']),
+        duration = _parseInt(json['duration']),
+        products = _parseInt(json['products']),
+        whatsappMarketingEnabled = json['whatsappMarketingEnabled'] == true,
+        offerPrice = _parseInt(json['offerPrice']);
+
+  static int _parseInt(dynamic value, [int defaultValue = 0]) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? defaultValue;
+    return defaultValue;
+  }
 
   Map<dynamic, dynamic> toJson() => <dynamic, dynamic>{
         'subscriptionName': subscriptionName,

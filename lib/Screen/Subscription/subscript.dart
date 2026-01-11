@@ -1,6 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:salespro_admin/services/api_service.dart';
 
 import '../../model/subscription_model.dart';
 import '../../model/subscription_plan_model.dart';
@@ -30,16 +29,29 @@ class Subscript {
     subscriptionName: 'Free',
   );
 
-  static void decreaseSubscriptionLimits({required String itemType, required BuildContext context}) {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    final ref = FirebaseDatabase.instance.ref(userId).child('Subscription');
-    ref.keepSynced(true);
-    ref.child(itemType).get().then((value) {
-      int beforeAction = int.parse(value.value.toString());
-      if (beforeAction != -202) {
-        int afterAction = beforeAction - 1;
-        ref.update({itemType: afterAction});
+  static void decreaseSubscriptionLimits({required String itemType, required BuildContext context}) async {
+    final apiService = ApiService();
+
+    // Obtener la suscripción actual
+    final response = await apiService.get('subscriptions/current');
+
+    if (response.success && response.data != null) {
+      final data = response.data;
+      Map<String, dynamic>? subscriptionData;
+
+      if (data is Map && data['subscription'] != null) {
+        subscriptionData = Map<String, dynamic>.from(data['subscription']);
+      } else if (data is Map) {
+        subscriptionData = Map<String, dynamic>.from(data);
       }
-    });
+
+      if (subscriptionData != null) {
+        int beforeAction = int.tryParse(subscriptionData[itemType]?.toString() ?? '0') ?? 0;
+        if (beforeAction != -202) {
+          int afterAction = beforeAction - 1;
+          await apiService.put('subscriptions/current', {itemType: afterAction});
+        }
+      }
+    }
   }
 }

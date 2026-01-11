@@ -1,3 +1,4 @@
+// top_bar_fixed.dart - Migrado a PostgreSQL API
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -21,9 +22,10 @@ import '../Screen/currency/global_currency.dart';
 import '../const.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_confirmation_model.dart';
-import 'package:firebase_database/firebase_database.dart';
 import '../Screen/Reports/cuadre_modal.dart';
 import '../model/sale_transaction_model.dart';
+import '../services/api_service.dart';
+import '../services/audit_service.dart';
 
 class TopBarWidget extends ConsumerStatefulWidget {
   const TopBarWidget({super.key, this.onMenuTap});
@@ -35,6 +37,8 @@ class TopBarWidget extends ConsumerStatefulWidget {
 }
 
 class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
+  final ApiService _apiService = ApiService();
+
   // Funciones de verificación de permisos para cada botón del header
   bool _canAccessRentClothing() {
     if (!isSubUser) return true;
@@ -165,55 +169,21 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
       //   }
       // }
     } catch (e) {}
-    // Obtener gastos del día
+    // Obtener gastos del día - Usa PostgreSQL API
     try {
-      final expensesRef = FirebaseDatabase.instance.ref("$userId/Expense");
-      final expensesSnapshot = await expensesRef.get();
-      if (expensesSnapshot.exists) {
-        final expensesData = expensesSnapshot.value as Map<dynamic, dynamic>;
-        for (var expenseEntry in expensesData.entries) {
-          final expenseData = expenseEntry.value as Map<dynamic, dynamic>;
-          String? dateField = expenseData['expenseDate']?.toString();
-          if (dateField != null) {
-            try {
-              DateTime expenseDate;
-              if (dateField.contains('/')) {
-                final parts = dateField.split('/');
-                if (parts.length >= 3) {
-                  expenseDate = DateTime(
-                    int.parse(parts[2]),
-                    int.parse(parts[1]),
-                    int.parse(parts[0]),
-                  );
-                } else {
-                  continue;
-                }
-              } else if (dateField.contains('-')) {
-                String datePart = dateField.split(' ')[0];
-                if (datePart.split('-').length >= 3) {
-                  final parts = datePart.split('-');
-                  expenseDate = DateTime(
-                    int.parse(parts[0]),
-                    int.parse(parts[1]),
-                    int.parse(parts[2]),
-                  );
-                } else {
-                  expenseDate = DateTime.parse(dateField);
-                }
-              } else {
-                expenseDate = DateTime.parse(dateField);
-              }
-              final isToday = expenseDate
-                      .isAfter(todayStart.subtract(Duration(seconds: 1))) &&
-                  expenseDate.isBefore(todayEnd);
-              if (isToday) {
-                final amount =
-                    double.tryParse(expenseData['amount']?.toString() ?? '0') ??
-                        0.0;
-                gastos += amount;
-              }
-            } catch (e) {}
-          }
+      final todayStr = DateFormat('yyyy-MM-dd').format(today);
+      final response = await _apiService.get('expenses', queryParams: {
+        'startDate': todayStr,
+        'endDate': todayStr,
+        'limit': '1000',
+      });
+
+      if (response.success && response.data != null) {
+        final expenses = response.data['expenses'] as List<dynamic>? ?? [];
+        for (var expense in expenses) {
+          final expenseData = Map<String, dynamic>.from(expense);
+          final amount = double.tryParse(expenseData['amount']?.toString() ?? '0') ?? 0.0;
+          gastos += amount;
         }
       }
     } catch (e) {}
@@ -253,37 +223,40 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
     super.initState();
   }
 
+  /// Marcar notificaciones como leídas - Usa PostgreSQL API
   Future<void> _markAllAsRead(BuildContext context,
       List<SaleConfirmationModel> notifications, WidgetRef ref) async {
-    final userId = await getUserID();
-    final databaseRef =
-        FirebaseDatabase.instance.ref("$userId/SaleConfirmations");
-
     try {
-      // Primero obtenemos todos los registros para encontrar los que coinciden
-      final snapshot = await databaseRef.get();
-      final Map<dynamic, dynamic> allRecords =
-          snapshot.value as Map<dynamic, dynamic>? ?? {};
-
-      final updates = <String, dynamic>{};
+      int markedCount = 0;
 
       for (final notification in notifications) {
-        // Buscamos el registro que coincida con el token
-        final recordEntry = allRecords.entries.firstWhere(
-          (entry) => entry.value['token'] == notification.token,
-          orElse: () => const MapEntry(null, null),
-        );
+        // Buscar confirmación por token en PostgreSQL API
+        final searchResponse = await _apiService.get('sale-confirmations', queryParams: {
+          'token': notification.token,
+          'limit': '1',
+        });
 
-        if (recordEntry.key != null) {
-          updates['${recordEntry.key}/notified'] = true;
+        if (searchResponse.success && searchResponse.data != null) {
+          final confirmations = searchResponse.data['sale_confirmations'] as List<dynamic>? ??
+                               searchResponse.data['confirmations'] as List<dynamic>? ?? [];
+
+          if (confirmations.isNotEmpty) {
+            final confirmationData = Map<String, dynamic>.from(confirmations.first);
+            final confirmationId = confirmationData['id']?.toString();
+
+            if (confirmationId != null) {
+              // Actualizar la confirmación como notificada
+              await _apiService.put('sale-confirmations/$confirmationId', {
+                'notified': true,
+              });
+              markedCount++;
+            }
+          }
         }
       }
 
-      if (updates.isNotEmpty) {
-        await databaseRef.update(updates);
-        if (mounted) {
-          EasyLoading.showSuccess('Notificaciones marcadas como leídas');
-        }
+      if (markedCount > 0 && mounted) {
+        EasyLoading.showSuccess('Notificaciones marcadas como leídas');
       }
     } catch (e) {
       debugPrint('Error al marcar como leídas: $e');
@@ -1141,10 +1114,18 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                   ),
                   PopupMenuItem(
                     onTap: () async {
+                      // Registrar logout en auditoría antes de cerrar sesión
+                      await AuditService().logLogout();
+
+                      // Limpiar token del API (PostgreSQL)
+                      await _apiService.logout();
+
+                      // Cerrar sesión de Firebase
                       await FirebaseAuth.instance.signOut();
-                      EasyLoading.showSuccess('Successfully Logged Out');
+
+                      EasyLoading.showSuccess('Sesión cerrada correctamente');
                       if (context.mounted) {
-                        context.go('/', extra: {'replace': true});
+                        context.go('/');
                       }
                     },
                     child: Row(

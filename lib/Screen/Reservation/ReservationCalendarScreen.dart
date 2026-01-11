@@ -3,18 +3,45 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
+import 'package:salespro_admin/Provider/transactions_provider.dart';
+import 'package:salespro_admin/Provider/profile_provider.dart';
+import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
+import 'package:salespro_admin/model/sale_transaction_model.dart';
 import 'package:salespro_admin/Provider/dress_with_reservations.dart';
+import 'package:salespro_admin/PDF/print_pdf.dart';
+import 'package:salespro_admin/commas.dart';
+import 'package:salespro_admin/model/customer_model.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:salespro_admin/services/deletion_password_service.dart';
 
 //------------------- ENUM Y CARD -------------------
 enum ReservationStatus {
   past,
   upcoming,
   aboutToExpire,
+}
+
+/// Helper estático para formatear fechas de reservación
+/// Convierte formato ISO 8601 (PostgreSQL: 2026-01-06T00:00:00.000Z) a formato legible (2026-01-06)
+String formatReservationDate(String date) {
+  if (date.isEmpty) return date;
+  try {
+    // Si contiene 'T' (formato ISO), parsear y reformatear
+    if (date.contains('T')) {
+      final parsedDate = DateTime.parse(date);
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    }
+    // Si ya está en formato simple, devolverlo tal cual
+    return date;
+  } catch (e) {
+    // Si falla el parsing, devolver la fecha original
+    return date;
+  }
 }
 
 class ReservationCard extends ConsumerWidget {
@@ -24,7 +51,30 @@ class ReservationCard extends ConsumerWidget {
 
   Widget _buildDressName(String dressName, dynamic dressComposite) {
     if (dressComposite is List && dressComposite.isNotEmpty) {
-      return Text('Múltiples vestidos', style: const TextStyle(fontSize: 14));
+      // Extraer los nombres de los vestidos del array
+      final dressNames = dressComposite.map((d) {
+        if (d is Map) {
+          return d['dress_name']?.toString() ?? d['name']?.toString() ?? '';
+        }
+        return '';
+      }).where((name) => name.isNotEmpty).toList();
+
+      if (dressNames.isEmpty) {
+        return Text('Vestido: $dressName', style: const TextStyle(fontSize: 14));
+      } else if (dressNames.length == 1) {
+        return Text('Vestido: ${dressNames.first}', style: const TextStyle(fontSize: 14));
+      } else {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Vestidos (${dressNames.length}):', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            ...dressNames.map((name) => Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text('• $name', style: const TextStyle(fontSize: 13)),
+            )),
+          ],
+        );
+      }
     } else {
       return Text('Vestido: $dressName', style: const TextStyle(fontSize: 14));
     }
@@ -58,6 +108,7 @@ class ReservationCard extends ConsumerWidget {
     final isFiesta = lowerName.contains('fiesta');
     final isEstudio = lowerName.contains('estudio');
     final isExterior = lowerName.contains('exterior');
+    final isRenta = lowerName.contains('renta') || lowerName.contains('vestimenta') || lowerName.contains('vestido');
 
     switch (status) {
       case ReservationStatus.past:
@@ -76,6 +127,12 @@ class ReservationCard extends ConsumerWidget {
           statusIcon = Icons.landscape;
           statusText = 'Exterior pasado';
           cardBgColor = Colors.purple.withValues(alpha: 0.10);
+        } else if (isRenta) {
+          // Renta de vestimenta pasada
+          statusColor = const Color(0xFF4CAF50).withValues(alpha: 0.7); // Verde elegante más opaco para pasadas
+          statusIcon = Icons.checkroom;
+          statusText = 'Renta pasada';
+          cardBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.05); // Muy suave para pasadas
         } else {
           statusColor = Colors.grey;
           statusIcon = Icons.history;
@@ -99,6 +156,12 @@ class ReservationCard extends ConsumerWidget {
           statusIcon = Icons.landscape;
           statusText = 'Exterior por vencer';
           cardBgColor = Colors.purple.withValues(alpha: 0.10);
+        } else if (isRenta) {
+          // Renta de vestimenta por vencer
+          statusColor = const Color(0xFF4CAF50); // Verde elegante
+          statusIcon = Icons.checkroom;
+          statusText = 'Renta por vencer';
+          cardBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.15); // Un poco más intenso por ser próxima
         } else {
           statusColor = Colors.orange;
           statusIcon = Icons.warning_amber_rounded;
@@ -122,6 +185,11 @@ class ReservationCard extends ConsumerWidget {
           statusIcon = Icons.landscape;
           statusText = 'Exterior próximo';
           cardBgColor = Colors.purple.withValues(alpha: 0.10);
+        } else if (isRenta) {
+          statusColor = const Color(0xFF4CAF50); // Verde elegante y suave
+          statusIcon = Icons.checkroom; // Icono de percha para renta de ropa
+          statusText = 'Renta próxima';
+          cardBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.12); // Verde elegante suave
         } else {
           statusColor = Colors.green;
           statusIcon = Icons.event_available;
@@ -146,13 +214,38 @@ class ReservationCard extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Text('Error al cargar datos: $error', style: TextStyle(color: Colors.red)),
             data: (fullReservation) {
-              final clientName = fullReservation?.client?.customerName ?? 'Cliente desconocido';
+              // Usar customer_name de PostgreSQL primero, luego lookup, luego client_id
+              final clientId = fullReservation?.reservation['client_id']?.toString();
+              final customerNameFromDb = fullReservation?.reservation['customer_name']?.toString();
+              final clientName = customerNameFromDb ??
+                  fullReservation?.client?.customerName ??
+                  (clientId != null && clientId.isNotEmpty ? clientId : 'Cliente desconocido');
               String dressName = '';
-              final dressComposite = fullReservation?.reservation['multiple_dress'] ?? [];
-              if (dressComposite.isEmpty) {
-                dressName = fullReservation?.dress?['name'] ?? 'Vestido no especificado';
+              // Buscar vestidos en multiple_dress (Firebase), dresses_data (PostgreSQL con nombres), o dress_ids (PostgreSQL solo IDs)
+              var dressComposite = fullReservation?.reservation['multiple_dress'] ?? [];
+              if (dressComposite is! List || dressComposite.isEmpty) {
+                dressComposite = fullReservation?.reservation['dresses_data'] ?? [];
               }
-              final serviceName = fullReservation?.service?['name'] ?? 'Servicio no especificado';
+              // Si dresses_data está vacío, intentar dress_ids
+              bool usedDressIds = false;
+              if (dressComposite is! List || dressComposite.isEmpty) {
+                dressComposite = fullReservation?.reservation['dress_ids'] ?? [];
+                usedDressIds = true;
+              }
+              // Si usamos dress_ids (solo UUIDs sin nombres), o si todo está vacío, obtener nombre del dress asociado
+              if (dressComposite is! List || dressComposite.isEmpty || usedDressIds) {
+                // Intentar vestido de PostgreSQL primero, luego lookup del dress
+                final vestidoFromDb = fullReservation?.reservation['vestido']?.toString();
+                dressName = vestidoFromDb ?? fullReservation?.dress?['name'] ?? 'Vestido no especificado';
+                // Si usamos dress_ids pero no hay dress asociado, limpiar dressComposite para que use dressName
+                if (usedDressIds && dressName != 'Vestido no especificado') {
+                  dressComposite = []; // Forzar uso del dressName del dress asociado
+                }
+              }
+              // Usar service_name de PostgreSQL primero, luego lookup del servicio
+              final serviceNameFromDb = fullReservation?.reservation['service_name']?.toString();
+              final serviceName = serviceNameFromDb ??
+                  fullReservation?.service?['name'] ?? 'Servicio no especificado';
               final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
               final place = fullReservation?.reservation['place'] ?? 'Sin lugar';
               final hasAditionals = (fullReservation?.reservation['aditionals'] != null && 
@@ -179,7 +272,7 @@ class ReservationCard extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${reservation.reservationDate} - ${reservation.reservationTime}',
+                                    '${formatReservationDate(reservation.reservationDate)} - ${reservation.reservationTime}',
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                   ),
                                   if (reservation.isFiestaDate)
@@ -202,6 +295,136 @@ class ReservationCard extends ConsumerWidget {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+                                  // Mostrar número de factura si existe
+                                  Consumer(
+                                    builder: (context, ref, child) {
+                                      final invoiceNumberAsync = ref.watch(invoiceNumberByReservationProvider(reservation.id));
+                                      final settingProvider = ref.watch(generalSettingProvider);
+                                      final profile = ref.watch(profileDetailsProvider);
+                                      final salesTransactionsAsync = ref.watch(transitionProvider);
+                                      
+                                      return invoiceNumberAsync.when(
+                                        data: (invoiceNumber) {
+                                          if (invoiceNumber != null && invoiceNumber.isNotEmpty) {
+                                            // Buscar la transacción actual
+                                            SaleTransactionModel? currentTransaction;
+                                            if (salesTransactionsAsync.hasValue) {
+                                              for (final t in salesTransactionsAsync.value!) {
+                                                if (t.reservationIds.contains(reservation.id)) {
+                                                  currentTransaction = t;
+                                                  break;
+                                                }
+                                              }
+                                            }
+                                            
+                                            final hasDueAmount = currentTransaction != null && 
+                                                double.parse(currentTransaction.dueAmount.toString()) > 0;
+                                            
+                                            return InkWell(
+                                              onTap: () async {
+                                                try {
+                                                  final setting = settingProvider.value;
+                                                  final profileInfo = profile.value;
+                                                  
+                                                  if (setting != null && profileInfo != null && currentTransaction != null && context.mounted) {
+                                                    EasyLoading.show(status: 'Preparando vista previa...');
+                                                    // Generar y mostrar el PDF
+                                                    await GeneratePdfAndPrint().printSaleInvoice(
+                                                      setting: setting,
+                                                      personalInformationModel: profileInfo,
+                                                      saleTransactionModel: currentTransaction,
+                                                      context: context,
+                                                      printType: 'normal',
+                                                      fromSaleReports: true,
+                                                      post: currentTransaction,
+                                                    );
+                                                    EasyLoading.dismiss();
+                                                  } else if (setting == null || profileInfo == null) {
+                                                    EasyLoading.showError('No se pudo cargar la configuración o el perfil');
+                                                  }
+                                                } catch (error) {
+                                                  EasyLoading.dismiss();
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(content: Text('Error: $error')),
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: hasDueAmount
+                                                        ? [
+                                                            const Color(0xFFE57373), // Rojo suave
+                                                            const Color(0xFFEF5350), // Rojo suave más oscuro
+                                                          ]
+                                                        : [
+                                                            const Color(0xFF66BB6A), // Verde suave
+                                                            const Color(0xFF4CAF50), // Verde más oscuro
+                                                          ],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  ),
+                                                  borderRadius: BorderRadius.circular(20),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: (hasDueAmount
+                                                          ? const Color(0xFFE57373)
+                                                          : const Color(0xFF66BB6A)).withValues(alpha: 0.4),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(0, 3),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      hasDueAmount
+                                                          ? Icons.payment
+                                                          : Icons.check_circle,
+                                                      size: 14,
+                                                      color: Colors.white,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Column(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          'Factura: $invoiceNumber',
+                                                          style: const TextStyle(
+                                                            fontSize: 11,
+                                                            color: Colors.white,
+                                                            fontWeight: FontWeight.w700,
+                                                            letterSpacing: 0.3,
+                                                          ),
+                                                        ),
+                                                        if (hasDueAmount && currentTransaction != null)
+                                                          Text(
+                                                            'Saldo: \$${myFormat.format(double.parse(currentTransaction.dueAmount.toString()))}',
+                                                            style: const TextStyle(
+                                                              fontSize: 9,
+                                                              color: Colors.white70,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
+                                        loading: () => const SizedBox.shrink(),
+                                        error: (_, __) => const SizedBox.shrink(),
+                                      );
+                                    },
+                                  ),
                                 ],
                               ),
                             ),
@@ -393,6 +616,9 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
     
     return reservationsValue.when(
       data: (allReservations) {
+        // Cargar datos de clientes si no están en caché
+        _loadClientsData(allReservations);
+        
         // Filtrar las reservaciones según la búsqueda
         final reservations = _filterReservations(allReservations);
         
@@ -465,7 +691,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem(Colors.green, 'Renta'),
+                _buildLegendItem(const Color(0xFF4CAF50), 'Renta'),
                 const SizedBox(width: 16),
                 _buildLegendItem(Colors.amber, 'Fiesta'),
                 const SizedBox(width: 16),
@@ -600,7 +826,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                         }
                         // Si es renta, verde
                         if (event.serviceId == packageRentaId) {
-                          dotColor = Colors.green;
+                          dotColor = const Color(0xFF4CAF50); // Verde elegante para renta
                         } else if (serviceName != null) {
                           final lowerName = serviceName.toLowerCase();
                           if (lowerName.contains('fiesta')) {
@@ -756,7 +982,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar en notas, lugar o vendedor...',
+                hintText: 'Buscar por cliente, notas, lugar o vendedor...',
                 hintStyle: TextStyle(color: Colors.grey.shade600),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
@@ -783,6 +1009,42 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
     );
   }
 
+  // Estado para almacenar la información de clientes
+  final Map<String, CustomerModel?> _clientsCache = {};
+  
+  // Cargar los datos de clientes cuando se cargan las reservaciones
+  Future<void> _loadClientsData(List<ReservationModel> reservations) async {
+    // Solo cargar clientes que no están en caché
+    final reservationsToLoad = reservations
+        .where((r) => !_clientsCache.containsKey(r.id))
+        .toList();
+    
+    if (reservationsToLoad.isEmpty) return;
+    
+    // Cargar clientes en lotes para mejorar el rendimiento
+    const batchSize = 10;
+    for (int i = 0; i < reservationsToLoad.length; i += batchSize) {
+      final batch = reservationsToLoad.skip(i).take(batchSize);
+      final futures = batch.map((reservation) async {
+        try {
+          final fullReservation = await ref.read(
+            fullReservationByIdProviderVQ(reservation.id).future
+          );
+          _clientsCache[reservation.id] = fullReservation?.client;
+        } catch (e) {
+          _clientsCache[reservation.id] = null;
+        }
+      });
+      
+      await Future.wait(futures);
+      
+      // Actualizar la UI después de cada lote
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+  
   // Función para filtrar reservaciones según la búsqueda
   List<ReservationModel> _filterReservations(List<ReservationModel> reservations) {
     if (_searchQuery.isEmpty) {
@@ -804,7 +1066,16 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
       // Buscar en el nombre del vendedor
       final sellerMatch = reservation.sellerName.toLowerCase().contains(query);
       
-      return idMatch || notesMatch || placeMatch || sellerMatch;
+      // Buscar en el nombre del cliente (usando el cache)
+      bool clientMatch = false;
+      final client = _clientsCache[reservation.id];
+      if (client != null) {
+        final clientName = client.customerName.toLowerCase();
+        final clientPhone = client.phoneNumber.toLowerCase();
+        clientMatch = clientName.contains(query) || clientPhone.contains(query);
+      }
+      
+      return idMatch || notesMatch || placeMatch || sellerMatch || clientMatch;
     }).toList();
   }
   
@@ -817,19 +1088,14 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
         
     return OutlinedButton(
       onPressed: () {
-        // Debug para producción
-        print('DEBUG: Botón presionado - view: $view, mounted: $mounted');
-        
         // Asegurar que siempre podemos cambiar de vista
         if (!mounted) {
-          print('DEBUG: Widget no está montado, no se puede cambiar vista');
           return;
         }
         
         try {
           setState(() {
             _calendarView = view;
-            print('DEBUG: Vista cambiada a: $_calendarView');
           });
           
           // Si cambiamos a la vista "Día", cerramos el Drawer si está abierto
@@ -845,7 +1111,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             });
           }
         } catch (e) {
-          print('ERROR en _buildCustomViewButton: $e');
+          // Error manejado silenciosamente
         }
       },
       style: OutlinedButton.styleFrom(
@@ -996,9 +1262,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   void _showPasswordDialog(BuildContext context, ReservationModel reservation) {
     final passwordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    // Contraseña estática para cancelar reservaciones
-    const String staticPassword = "22400600452";
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1016,9 +1280,6 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
               if (value == null || value.isEmpty) {
                 return 'Por favor ingrese la contraseña';
               }
-              if (value != staticPassword) {
-                return 'Contraseña incorrecta';
-              }
               return null;
             },
           ),
@@ -1031,11 +1292,25 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           TextButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
+                // Validar contraseña con Firebase
+                final isValid = await DeletionPasswordService.validatePassword(
+                  passwordController.text,
+                );
+
+                if (!isValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Contraseña incorrecta'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 Navigator.of(context).pop(); // Cierra el diálogo de contraseña
-                
+
                 // Procede a cancelar la reservación
                 await ref.read(cancelReservationProvider(reservation.id).future);
-                // No necesitamos otro pop() aquí porque ya no hay más diálogos
               }
             },
             child: const Text('Confirmar'),
@@ -1047,10 +1322,21 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   }
 
   DateTime? _parseDate(String date) {
+    if (date.isEmpty) return null;
     try {
+      // Primero intentar formato ISO 8601 completo (PostgreSQL: 2026-01-03T00:00:00.000Z)
+      if (date.contains('T')) {
+        return DateTime.parse(date);
+      }
+      // Luego intentar formato simple (Firebase: yyyy-MM-dd)
       return DateFormat('yyyy-MM-dd').parse(date);
     } catch (e) {
-      return null;
+      // Si falla, intentar DateTime.parse como fallback
+      try {
+        return DateTime.parse(date);
+      } catch (_) {
+        return null;
+      }
     }
   }
 
@@ -1212,8 +1498,18 @@ class ReservationDetailView extends ConsumerWidget {
                     final dress = fullReservation.dress;
                     final service = fullReservation.service;
                     final client = fullReservation.client;
-                    final dressComposite =
-                        reservationData['multiple_dress'] ?? [];
+                    // Buscar vestidos en multiple_dress (Firebase), dresses_data o dress_ids (PostgreSQL)
+                    var dressComposite = reservationData['multiple_dress'] ?? [];
+                    if (dressComposite is! List || dressComposite.isEmpty) {
+                      dressComposite = reservationData['dresses_data'] ?? [];
+                    }
+                    if (dressComposite is! List || dressComposite.isEmpty) {
+                      dressComposite = reservationData['dress_ids'] ?? [];
+                    }
+
+                    // Obtener service_name desde PostgreSQL o Firebase
+                    final serviceName = reservationData['service_name'] ??
+                                        (service != null ? (service['name'] ?? service['serviceName'] ?? '') : '');
 
                     String formattedDate;
                     try {
@@ -1304,6 +1600,7 @@ class ReservationDetailView extends ConsumerWidget {
                                   ],
                                 ),
 
+                                // Información del Cliente - usar datos de PostgreSQL o lookup
                                 if (client != null)
                                   _buildSection(
                                     context,
@@ -1321,7 +1618,19 @@ class ReservationDetailView extends ConsumerWidget {
                                             'Dirección',
                                             client.customerAddress),
                                     ],
+                                  )
+                                else if (reservationData['customer_name'] != null)
+                                  _buildSection(
+                                    context,
+                                    title: 'Información del Cliente',
+                                    children: [
+                                      _buildDetailItem(Icons.person, 'Nombre',
+                                          reservationData['customer_name']?.toString() ?? ''),
+                                      _buildDetailItem(Icons.phone, 'Teléfono',
+                                          reservationData['customer_phone']?.toString() ?? reservationData['client_id']?.toString() ?? ''),
+                                    ],
                                   ),
+                                // Información del Vestido - usar datos de PostgreSQL o lookup
                                 if (dress != null)
                                   _buildSection(
                                     context,
@@ -1338,14 +1647,27 @@ class ReservationDetailView extends ConsumerWidget {
                                         _buildDetailItem(Icons.straighten,
                                             'Talla', dress['size']),
                                     ],
-                                  ),
-                                if (reservationData['multiple_dress'] != null)
+                                  )
+                                else if (reservationData['vestido'] != null && reservationData['vestido'].toString().isNotEmpty)
                                   _buildSection(
                                     context,
-                                    title: 'Información de Vestimenta',
+                                    title: 'Información del Vestido',
                                     children: [
-                                      _buildDetailItemComposite(context, Icons.checkroom,
-                                          'Vestido', dressComposite),
+                                      _buildDetailItem(Icons.checkroom,
+                                          'Vestido', reservationData['vestido']?.toString() ?? ''),
+                                    ],
+                                  ),
+                                // Mostrar sección de vestimenta si hay vestidos o servicio
+                              if ((dressComposite is List && dressComposite.isNotEmpty) || serviceName.isNotEmpty)
+                                  _buildSection(
+                                    context,
+                                    title: 'Información de Vestimenta y Paquete',
+                                    children: [
+                                      if (dressComposite is List && dressComposite.isNotEmpty)
+                                        _buildDetailItemComposite(context, Icons.checkroom,
+                                            'Vestido', dressComposite),
+                                      if (serviceName.isNotEmpty)
+                                        _buildDetailItem(Icons.photo_camera, 'Paquete/Servicio', serviceName),
                                       _buildDetailItem(
                                           Icons.category,
                                           'Categoría',
@@ -1365,7 +1687,15 @@ class ReservationDetailView extends ConsumerWidget {
                                           final packagePrice = aditional['package_price']?.toString() ?? '0';
                                           final reservationDate = aditional['reservation_date']?.toString() ?? '';
                                           final reservationTime = aditional['reservation_time']?.toString() ?? '';
-                                          final dressComposite = aditional['multiple_dress'] as List<dynamic>? ?? [];
+                                          // Vestidos: Firebase usa multiple_dress, PostgreSQL usa dresses_data o dress_ids
+                                          var dressCompositeAditional = aditional['multiple_dress'] as List<dynamic>? ?? [];
+                                          if (dressCompositeAditional.isEmpty) {
+                                            dressCompositeAditional = aditional['dresses_data'] as List<dynamic>? ?? [];
+                                          }
+                                          if (dressCompositeAditional.isEmpty) {
+                                            dressCompositeAditional = aditional['dress_ids'] as List<dynamic>? ?? [];
+                                          }
+                                          final dressCompositeAdit = dressCompositeAditional; // Used below for additionals display
 
                                           return Padding(
                                             padding: const EdgeInsets.only(bottom: 12),
@@ -1416,7 +1746,7 @@ class ReservationDetailView extends ConsumerWidget {
                                                     ),
                                                   ),
 
-                                                if (dressComposite.isNotEmpty)
+                                                if (dressCompositeAdit.isNotEmpty)
                                                   Padding(
                                                     padding: const EdgeInsets.only(top: 8, left: 34),
                                                     child: Column(
@@ -1429,7 +1759,7 @@ class ReservationDetailView extends ConsumerWidget {
                                                             fontWeight: FontWeight.w500,
                                                           ),
                                                         ),
-                                                        ...dressComposite.map((dress) {
+                                                        ...dressCompositeAdit.map((dress) {
                                                           final dressName = dress['dress_name']?.toString() ?? 'Sin nombre';
                                                           final branchId = dress['branch_id']?.toString() ?? 'Sin sucursal';
                                                           

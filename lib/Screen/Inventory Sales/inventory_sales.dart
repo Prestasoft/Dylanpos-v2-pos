@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'dart:typed_data';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,10 +26,13 @@ import 'package:salespro_admin/utils/ReservationUtils.dart';
 import 'package:intl/intl.dart';
 import '../../PDF/print_pdf.dart';
 import '../../Provider/customer_provider.dart';
+import '../../Repository/customer_repo.dart';
 import '../../Provider/daily_transaction_provider.dart';
 import '../../Provider/due_transaction_provider.dart';
 import '../../Provider/product_provider.dart';
 import '../../Provider/profile_provider.dart';
+import '../../services/whatsapp_template_service.dart';
+import '../../services/whatsapp_credentials_service.dart';
 import '../../Provider/transactions_provider.dart';
 import '../../Repository/product_repo.dart';
 import '../../commas.dart';
@@ -52,11 +56,17 @@ import '../../services/audit_service.dart';
 import '../../model/audit_model.dart';
 import '../../Provider/bank_provider.dart';
 import '../../model/bank_model.dart';
+import '../../services/deletion_password_service.dart';
+import '../../model/transfer_verification_model.dart';
+import '../../Provider/transfer_verification_provider.dart';
+import '../../model/ncf_model.dart';
+import '../../Repository/dgii_repo.dart';
 
 class InventorySales extends StatefulWidget {
-  const InventorySales({super.key, this.quotation});
+  const InventorySales({super.key, this.quotation, this.reservationId});
 
   final SaleTransactionModel? quotation;
+  final String? reservationId;  // ID de la reservación para cargar automáticamente
 
   @override
   State<InventorySales> createState() => _InventorySalesState();
@@ -106,6 +116,18 @@ class _InventorySalesState extends State<InventorySales> {
   String? selectedBankId;
   String? selectedBankName;
 
+  // Campos para verificación de transferencia
+  final TextEditingController transferHolderNameController = TextEditingController();
+  final TextEditingController transferReferenceController = TextEditingController();
+  String? transferReceiptUrl;
+  bool isUploadingReceipt = false;
+
+  // Campos para NCF (Comprobante Fiscal DGII)
+  String selectedNcfType = 'SIN';
+  final TextEditingController customerRncController = TextEditingController();
+  List<NcfTypeModel> ncfTypes = [];
+  bool isLoadingNcfTypes = false;
+
   WareHouseModel? selectedWareHouse;
   int i = 0;
 
@@ -132,31 +154,200 @@ class _InventorySalesState extends State<InventorySales> {
       selectedUserName?.phoneNumber = widget.quotation!.customerPhone;
       selectedUserName?.type = widget.quotation!.customerType;
     }
+
+    // Si viene un reservationId, cargar la reservación automáticamente
+    if (widget.reservationId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadReservationById(widget.reservationId!);
+      });
+    }
+
+    // Cargar tipos de NCF
+    _loadNcfTypes();
+  }
+
+  /// Carga los tipos de NCF desde la API
+  Future<void> _loadNcfTypes() async {
+    setState(() => isLoadingNcfTypes = true);
+    try {
+      final dgiiRepo = DgiiRepository();
+      final types = await dgiiRepo.getNcfTypes();
+      setState(() {
+        ncfTypes = types;
+        isLoadingNcfTypes = false;
+      });
+    } catch (e) {
+      debugPrint('Error cargando tipos NCF: $e');
+      // Usar tipos por defecto si falla la carga
+      setState(() {
+        ncfTypes = [
+          NcfTypeModel(code: 'SIN', name: 'Sin Comprobante', requiresRnc: false, appliesItbis: false),
+          NcfTypeModel(code: 'B01', name: 'Crédito Fiscal', requiresRnc: true, appliesItbis: true),
+          NcfTypeModel(code: 'B02', name: 'Consumidor Final', requiresRnc: false, appliesItbis: true),
+          NcfTypeModel(code: 'B14', name: 'Regímenes Especiales', requiresRnc: true, appliesItbis: true),
+          NcfTypeModel(code: 'B15', name: 'Gubernamental', requiresRnc: true, appliesItbis: true),
+        ];
+        isLoadingNcfTypes = false;
+      });
+    }
+  }
+
+  /// Verifica si el tipo de NCF seleccionado requiere RNC
+  bool get ncfRequiresRnc {
+    final type = ncfTypes.firstWhere(
+      (t) => t.code == selectedNcfType,
+      orElse: () => NcfTypeModel(code: 'SIN', name: 'Sin Comprobante'),
+    );
+    return type.requiresRnc;
+  }
+
+  /// Obtiene la tasa de ITBIS del tipo de NCF seleccionado
+  double get ncfItbisRate {
+    final type = ncfTypes.firstWhere(
+      (t) => t.code == selectedNcfType,
+      orElse: () => NcfTypeModel(code: 'SIN', name: 'Sin Comprobante'),
+    );
+    return type.appliesItbis ? type.itbisRate : 0.0;
+  }
+
+  /// Carga una reservación por ID desde la API y la agrega al carrito
+  Future<void> _loadReservationById(String reservationId) async {
+    try {
+      EasyLoading.show(status: 'Cargando reservación...');
+
+      final apiService = ApiService();
+      final response = await apiService.get('reservations/$reservationId');
+
+      if (!response.success || response.data == null) {
+        EasyLoading.showError('No se pudo cargar la reservación');
+        return;
+      }
+
+      final data = Map<String, dynamic>.from(response.data);
+      final reservation = data;
+      final service = data['service'] as Map<String, dynamic>?;
+      final dresses = data['dresses_data'] as List<dynamic>? ?? data['multiple_dress'] as List<dynamic>? ?? [];
+      final aditionals = data['aditionals'] as List<dynamic>? ?? [];
+
+      // Crear el modelo de reservación para el carrito
+      // Si hay múltiples vestidos, usar el formato compuesto
+      if (dresses.length > 1) {
+        // Múltiples vestidos - usar ReservationProductCompositeModel
+        final multipleDress = dresses.map((d) {
+          if (d is Map) {
+            return {
+              'dress_id': d['dress_id'] ?? d['id'],
+              'dress_name': d['dress_name'] ?? d['name'],
+              'dress_price': d['dress_price'] ?? d['price'] ?? d['rental_price'],
+            };
+          }
+          return d;
+        }).toList();
+
+        final compositeModel = ReservationProductCompositeModel.fromMap({
+          'id': reservationId,
+          'service_id': service?['id'] ?? reservation['service_id'] ?? '',
+          'service_name': service?['name'] ?? reservation['package_name'] ?? 'Servicio',
+          'client_id': reservation['client_id'] ?? reservation['customer_id'] ?? '',
+          'multiple_dress': multipleDress,
+          'branch_id': reservation['branch_id'] ?? '',
+          'reservation_date': reservation['reservation_date'] ?? '',
+          'reservation_time': reservation['reservation_time'] ?? '',
+          'price': service != null && service['price'] != null
+              ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0)
+              : (reservation['package_price'] is num ? (reservation['package_price'] as num).toDouble() : 0.0),
+          'created_at': reservation['created_at'],
+          'updated_at': reservation['updated_at'],
+          'duration': service?['duration'] ?? {},
+          'package_price': double.tryParse(reservation['package_price']?.toString() ?? '0.0'),
+          'descricpion': service?['description'] ?? reservation['notes'] ?? '',
+        });
+
+        _addReservationCompositeToCart(compositeModel);
+      } else {
+        // Un solo vestido o ninguno - usar ReservationProductModel
+        final firstDress = dresses.isNotEmpty ? dresses.first : null;
+
+        final reservationModel = ReservationProductModel.fromMap({
+          'id': reservationId,
+          'service_id': service?['id'] ?? reservation['service_id'] ?? '',
+          'service_name': service?['name'] ?? reservation['package_name'] ?? 'Servicio',
+          'client_id': reservation['client_id'] ?? reservation['customer_id'] ?? '',
+          'dress_id': firstDress?['dress_id'] ?? firstDress?['id'] ?? reservation['dress_id'] ?? '',
+          'dress_name': firstDress?['dress_name'] ?? firstDress?['name'] ?? reservation['dress_name'] ?? 'Vestido',
+          'branch_id': reservation['branch_id'] ?? '',
+          'reservation_date': reservation['reservation_date'] ?? '',
+          'reservation_time': reservation['reservation_time'] ?? '',
+          'price': service != null && service['price'] != null
+              ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0)
+              : (reservation['package_price'] is num ? (reservation['package_price'] as num).toDouble() : 0.0),
+          'created_at': reservation['created_at'],
+          'updated_at': reservation['updated_at'],
+          'duration': service?['duration'] ?? {},
+          'package_price': double.tryParse(reservation['package_price']?.toString() ?? '0.0'),
+          'descricpion': service?['description'] ?? reservation['notes'] ?? '',
+        });
+
+        _addReservationToCart(reservationModel);
+      }
+
+      // Cargar adicionales si los hay
+      if (aditionals.isNotEmpty) {
+        await _addReservationAdditionalsToCart(reservationId);
+      }
+
+      // Cargar información del cliente si está disponible
+      final customerId = reservation['customer_id'] ?? reservation['client_id'];
+      if (customerId != null) {
+        try {
+          final customerResponse = await apiService.get('customers/$customerId');
+          if (customerResponse.success && customerResponse.data != null) {
+            final customerData = Map<String, dynamic>.from(customerResponse.data['customer'] ?? customerResponse.data);
+            setState(() {
+              selectedUserId = customerId;
+              selectedUserName = CustomerModel.fromJson(customerData);
+              clientename = selectedUserName?.customerName;
+            });
+          }
+        } catch (e) {
+          print('Error al cargar cliente: $e');
+        }
+      }
+
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('Reservación cargada');
+
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Error al cargar reservación: ${e.toString()}');
+      print('Error en _loadReservationById: $e');
+    }
   }
 
   Future<List<DressModel>> _fetchDresses() async {
     try {
-      final snapshot = await FirebaseDatabase.instance
-          .ref('Admin Panel/dresses')
-          .get()
-          .timeout(const Duration(seconds: 10));
+      final apiService = ApiService();
+      final response = await apiService.get('dresses', queryParams: {
+        'limit': '1000',
+      });
 
-      if (!snapshot.exists || snapshot.value == null) {
+      if (!response.success || response.data == null) {
         return [];
       }
 
-      final value = snapshot.value as Map<dynamic, dynamic>;
+      final dressesList = response.data['dresses'] as List<dynamic>? ?? [];
       final List<DressModel> dresses = [];
 
-      value.forEach((key, data) {
+      for (var data in dressesList) {
         try {
-          if (data is Map && data.containsKey('name')) {
-            dresses.add(DressModel.fromRealtimeDB(data, key));
+          final dressData = Map<String, dynamic>.from(data);
+          if (dressData.containsKey('name')) {
+            dresses.add(DressModel.fromRealtimeDB(dressData, dressData['id']?.toString() ?? ''));
           }
         } catch (e) {
-          print('Error al parsear vestido $key: $e');
+          print('Error al parsear vestido: $e');
         }
-      });
+      }
 
       return dresses;
     } on TimeoutException {
@@ -487,28 +678,29 @@ class _InventorySalesState extends State<InventorySales> {
       // }
 
       EasyLoading.show(status: 'Preparando envío...');
-      
+
       // Codificar PDF en Base64
       final pdfBase64 = base64Encode(pdfData);
-      
-      // Crear mensaje
-      final safeMessage = '''
-        Hola ${customerName},
-        Adjunto su comprobante #${invoiceNumber}.
-        Gracias por su preferencia!
-        ''';
-      
+
+      // Crear mensaje usando plantilla de WhatsApp
+      final template = await WhatsAppTemplateService.getTemplate('invoice_caption');
+      final safeMessage = WhatsAppTemplateService.replaceVariables(template, {
+        'nombre': customerName,
+        'factura': invoiceNumber,
+      });
+
+      // Obtener credenciales dinámicas de WhatsApp
+      final credentials = await WhatsAppCredentialsService.getCredentials();
+
       final body = {
-        'token': '5i36w829nb1ljkj7', //token santo domingo
-        //'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': credentials.token,
         'to': phoneNumber,
         'filename': 'Comprobante_${invoiceNumber}.pdf',
         'document': pdfBase64,
         'caption': safeMessage,
       };
 
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/document'); //instancia santo domingo
-      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/document'); //instancia santiago
+      final url = Uri.parse(credentials.getApiUrl('messages/document'));
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
       
       EasyLoading.show(status: 'Enviando...');
@@ -540,52 +732,23 @@ class _InventorySalesState extends State<InventorySales> {
     try {
       EasyLoading.show(status: 'Enviando confirmación...');
 
-      final message = '''
-  Hola $customerName 👋🏼
+      // Crear mensaje usando plantilla de WhatsApp
+      final template = await WhatsAppTemplateService.getTemplate('confirmation_link');
+      final message = WhatsAppTemplateService.replaceVariables(template, {
+        'nombre': customerName,
+        'link': confirmationLink,
+      });
 
-Tu reserva está pendiente de confirmación.
-
-Haz clic en el siguiente enlace para confirmar tu reserva: 👇🏼
-$confirmationLink
-
-Este enlace expira en 24 horas. ¡Gracias por tu preferencia!
-
-DE SUMA IMPORTANCIA:
-
-Nota 1: Para posponer fecha, tratar de hacerlo con tiempo, y esto independientemente tiene un costo de 2500 pesos.
-
-Nota 2: Las fotos adicionales tienen un costo de 500 pesos cada una.
-
-Nota 3: Llegar puntual el día del evento, 30 minutos de tardanza se le cobrará 1,500 pesos, y pasada la hora, la sesión de fotos se cancela y obligatoriamente hay que posponer nueva fecha. ¡Recuerda que posiblemente tenemos más eventos antes o después de ti! Por tanto, la PUNTUALIDAD es de suma importancia para nosotros. Cuando un cliente nos llega 20 o 30 minutos tarde, se nos complica todo el día, ayúdanos a quedar bien, con todos nuestros clientes.
-
-Nota 4: Un día después de la sesión se le enviarán las fotos para su selección, esta a través de un enlace, donde el cliente debe solo de dar like o corazones a las fotos que quiere le trabajemos. La primera vez le pedirá que ingrese su correo electrónico y después de, puede dar like libremente.
-
-Nota 5: Después de que el cliente selecciona las fotos en digitales se le estarán enviando al cliente editadas y retocadas a nivel profesional en un periodo de 10 a 20 días laborables. Los enmarcados en un máximo de 15 días, después de la selección del cliente, y el video o álbum 2 a 3 meses después de la selección del cliente.
-
-Nota 6: El cliente es el responsable de su transportación y del lugar seleccionado para la sesión fotográfica.
-
-Nota 7: El cliente debe de regresar el vestido en un periodo máximo de 1 hora después de su sesión fotográfica.
-
-Nota 8: El cliente se compromete a cuidar nuestros vestuarios como si fuesen suyo.
-
-Nota 9: Recordar el dinero no es reembolsable.
-
-Todas estas restricciones nos ayudan a poder brindar un servicio de calidad, solo le pedimos a todos nuestros clientes educación, respeto y valoración de nuestro trabajo. Es su responsabilidad ayudarnos a quedar bien con todos los demás clientes. Agradecemos en gran manera su comprensión, en todos estos puntos. Nos vemos el día de su sesión fotográfica!
-
-Con aprecio,
-Equipo Víctor Guzmán Fotografía
-Para llamadas: 8098982876 ☎️
-''';
+      // Obtener credenciales dinámicas de WhatsApp
+      final credentials = await WhatsAppCredentialsService.getCredentials();
 
       final body = {
-        'token': '5i36w829nb1ljkj7', //token santo domingo
-        //'token': '5gs146cmkgu6y5vw', //token santiago
+        'token': credentials.token,
         'to': phoneNumber,
         'body': message,
       };
 
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat'); //instancia santo domingo
-      //final url = Uri.parse('https://api.ultramsg.com/instance129929/messages/chat'); //instancia santiago
+      final url = Uri.parse(credentials.getApiUrl('messages/chat'));
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
       final response = await http.post(
@@ -1037,11 +1200,11 @@ void _addReservationCompositeToCart(ReservationProductCompositeModel reservation
 
 Future<void> _addReservationAdditionalsToCart(String reservationId) async {
   try {
-    final dbRef = FirebaseDatabase.instance.ref('Admin Panel/reservations/$reservationId');
-    final snapshot = await dbRef.get();
+    final apiService = ApiService();
+    final response = await apiService.get('reservations/$reservationId');
 
-    if (snapshot.exists && snapshot.value is Map) {
-      final reservationData = snapshot.value as Map<dynamic, dynamic>;
+    if (response.success && response.data != null) {
+      final reservationData = Map<String, dynamic>.from(response.data);
       final aditionals = reservationData['aditionals'] as List<dynamic>?;
 
       if (aditionals != null && aditionals.isNotEmpty) {
@@ -1067,9 +1230,11 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
   // Obtener información del vestido
   String dressName = 'Vestido adicional';
   String dressId = '';
-  
-  if (additionalData['multiple_dress'] is List && (additionalData['multiple_dress'] as List).isNotEmpty) {
-    final firstDress = (additionalData['multiple_dress'] as List).first;
+
+  // Firebase usa 'multiple_dress', PostgreSQL usa 'dress_ids'
+  final dressData = additionalData['multiple_dress'] ?? additionalData['dress_ids'];
+  if (dressData is List && dressData.isNotEmpty) {
+    final firstDress = dressData.first;
     dressName = firstDress['dress_name'] ?? dressName;
     dressId = firstDress['dress_id'] ?? dressId;
   } else if (additionalData['dress_id'] != null) {
@@ -1112,27 +1277,84 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
     }
   }
 
-  Future<int> getLastInvoiceNumber() async {
-    int lastInvoiceNumber = invoiceNumber == null ? 0 : int.tryParse(invoiceNumber!) ?? 0;
-
-    String typeOfInvoice = 'saleInvoiceCounter';
-
+  /// Método para seleccionar y subir comprobante de transferencia
+  Future<void> _pickTransferReceipt() async {
     try {
-      final DatabaseReference personalInformationRef = FirebaseDatabase.instance.ref().child(await getUserID()).child('Personal Information');
+      final html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+      uploadInput.accept = 'image/*';
+      uploadInput.click();
 
-      // Ver el Nro de Ultima Factura
-      final snapshot = await personalInformationRef.child(typeOfInvoice).get();
+      uploadInput.onChange.listen((event) async {
+        final files = uploadInput.files;
+        if (files != null && files.isNotEmpty) {
+          final file = files[0];
 
-      lastInvoiceNumber = (snapshot.value != null ? int.tryParse(snapshot.value.toString()) ?? 0 : 0);
-      lastInvoiceNumber += 1;
-      
-      print('DEBUG: Número de factura obtenido: $lastInvoiceNumber');
-      return lastInvoiceNumber;
+          // Verificar formato (solo formatos web compatibles)
+          final fileName = file.name.toLowerCase();
+          final allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          final isValidFormat = allowedExtensions.any((ext) => fileName.endsWith(ext));
+
+          if (!isValidFormat) {
+            EasyLoading.showError('Formato no soportado. Use JPG, PNG, GIF o WebP.\nArchivos HEIC de iPhone no son compatibles.');
+            return;
+          }
+
+          // Verificar tamaño (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            EasyLoading.showError('La imagen no debe superar 5MB');
+            return;
+          }
+
+          setState(() => isUploadingReceipt = true);
+
+          try {
+            final reader = html.FileReader();
+            reader.readAsDataUrl(file);
+
+            await reader.onLoad.first;
+            final base64Data = reader.result as String;
+
+            // Subir al servidor API (en lugar de Firebase Storage)
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final safeFileName = file.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+            final filename = 'receipt_${timestamp}_$safeFileName';
+
+            final apiService = ApiService();
+            final response = await apiService.post('uploads/transfer-receipt', {
+              'base64Data': base64Data.split(',').last,
+              'filename': filename,
+              'contentType': file.type,
+            });
+
+            if (response.success && response.data != null) {
+              final downloadUrl = response.data['url'] as String;
+              setState(() {
+                transferReceiptUrl = downloadUrl;
+                isUploadingReceipt = false;
+              });
+              EasyLoading.showSuccess('Comprobante cargado');
+            } else {
+              throw Exception(response.message ?? 'Error al subir imagen');
+            }
+          } catch (e) {
+            setState(() => isUploadingReceipt = false);
+            EasyLoading.showError('Error al subir imagen: $e');
+          }
+        }
+      });
     } catch (e) {
-      print('ERROR al obtener número de factura: $e');
-      // Si falla, asegurarnos de que tengamos al menos un número
-      return lastInvoiceNumber > 0 ? lastInvoiceNumber : DateTime.now().millisecondsSinceEpoch % 100000;
+      EasyLoading.showError('Error al seleccionar imagen');
     }
+  }
+
+  /// NOTA: Esta función ahora devuelve un placeholder temporal.
+  /// El número de factura REAL se genera atómicamente en el servidor PostgreSQL
+  /// para evitar duplicados cuando múltiples usuarios facturan simultáneamente.
+  /// El número real se obtiene de la respuesta del API POST /sales
+  Future<int> getLastInvoiceNumber() async {
+    // Devuelve un placeholder - el servidor genera el número real atómicamente
+    print('DEBUG: Generando placeholder para invoiceNumber (el servidor generará el real)');
+    return 0; // El servidor asignará el número real
   }
 
   bool isAlertSet = false;
@@ -1248,10 +1470,13 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
       onChanged: (value) {
         setState(() {
           selectedPaymentOption = value!;
-          // Reset bank selection when payment method changes
+          // Reset bank selection and transfer fields when payment method changes
           if (value != 'Transferencia') {
             selectedBankId = null;
             selectedBankName = null;
+            transferHolderNameController.clear();
+            transferReferenceController.clear();
+            transferReceiptUrl = null;
           }
         });
       },
@@ -1262,14 +1487,18 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
   // searchable_dropdown: ^1.1.3
 
   // Implementation of the search dialog with a modern look
+  // AHORA USA BÚSQUEDA API EN LUGAR DE FILTRADO LOCAL
   Future<CustomerModel?> _showCustomerSearchDialog(
     BuildContext context,
-    List<CustomerModel> customers,
+    List<CustomerModel> initialCustomers,
     List<ReservationModel> reservations,
   ) async {
     TextEditingController searchController = TextEditingController();
-    List<CustomerModel> filteredCustomers = List.from(customers);
+    List<CustomerModel> displayedCustomers = List.from(initialCustomers);
     bool switchValue = false;
+    bool isLoading = false;
+    Timer? debounceTimer;
+    final CustomerRepo customerRepo = CustomerRepo();
 
     return showDialog<CustomerModel>(
       context: context,
@@ -1278,16 +1507,39 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
         final screenSize = MediaQuery.of(context).size;
         return StatefulBuilder(
           builder: (context, setState) {
-            // Lógica de filtrado dinámica dentro del builder
-            filteredCustomers = customers.where((customer) {
-              final matchesSearch = searchController.text.isEmpty || customer.customerName.toLowerCase().contains(searchController.text.toLowerCase()) || customer.phoneNumber.toLowerCase().contains(searchController.text.toLowerCase());
+            // Función para filtrar por reservas pendientes
+            List<CustomerModel> filterByReservations(List<CustomerModel> customers) {
+              if (!switchValue) return customers;
+              return customers.where((customer) {
+                return reservations.any(
+                  (res) => res.clientId == customer.id || res.clientId == customer.phoneNumber,
+                );
+              }).toList();
+            }
 
-              final hasReservation = reservations.any(
-                (res) => res.clientId == customer.phoneNumber,
-              );
+            // Función para buscar clientes via API
+            Future<void> searchCustomers(String query) async {
+              setState(() => isLoading = true);
 
-              return matchesSearch && (!switchValue || hasReservation); // si el switch está activo, filtra
-            }).toList();
+              try {
+                List<CustomerModel> results;
+                if (query.isEmpty) {
+                  // Si no hay búsqueda, cargar todos los clientes
+                  results = await customerRepo.getAllCustomer();
+                } else {
+                  // Búsqueda via API
+                  results = await customerRepo.searchCustomers(query);
+                }
+
+                setState(() {
+                  displayedCustomers = filterByReservations(results);
+                  isLoading = false;
+                });
+              } catch (e) {
+                debugPrint('❌ Error buscando clientes: $e');
+                setState(() => isLoading = false);
+              }
+            }
 
             return Dialog(
               // Limitamos el ancho del diálogo
@@ -1335,7 +1587,10 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                         ),
                         IconButton(
                           icon: const Icon(Icons.close, size: 20),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            debounceTimer?.cancel();
+                            Navigator.pop(context);
+                          },
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
@@ -1345,8 +1600,27 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                     TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        hintText: 'Buscar cliente...',
+                        hintText: 'Buscar por nombre, teléfono, RNC o cédula...',
                         prefixIcon: const Icon(Icons.search, size: 18),
+                        suffixIcon: isLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () {
+                                  searchController.clear();
+                                  debounceTimer?.cancel();
+                                  searchCustomers('');
+                                },
+                              )
+                            : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
@@ -1357,7 +1631,12 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                         isDense: true,
                       ),
                       onChanged: (value) {
-                        setState(() {});
+                        // Debounce de 500ms para evitar muchas llamadas API
+                        debounceTimer?.cancel();
+                        debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                          searchCustomers(value);
+                        });
+                        setState(() {}); // Actualizar UI inmediatamente para mostrar loading
                       },
                     ),
                     const SizedBox(height: 8),
@@ -1370,6 +1649,8 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                       onChanged: (value) {
                         setState(() {
                           switchValue = value;
+                          // Re-aplicar filtro de reservas
+                          searchCustomers(searchController.text);
                         });
                       },
                       activeColor: kMainColor,
@@ -1381,90 +1662,100 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.35,
                       ),
-                      child: filteredCustomers.isEmpty
-                          ? Center(
+                      child: isLoading
+                          ? const Center(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.search_off,
-                                      size: 36,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'No se encontraron clientes',
-                                      style: TextStyle(color: Colors.grey.shade600),
-                                    ),
-                                  ],
-                                ),
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: CircularProgressIndicator(),
                               ),
                             )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: filteredCustomers.length,
-                              itemBuilder: (context, index) {
-                                final customer = filteredCustomers[index];
-                                return InkWell(
-                                  onTap: () => Navigator.pop(context, customer),
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                      horizontal: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: Colors.grey.shade200,
-                                          width: 1,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
+                          : displayedCustomers.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 20),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        CircleAvatar(
-                                          radius: 16,
-                                          backgroundColor: Colors.blue.shade50,
-                                          child: Text(
-                                            customer.customerName.isNotEmpty ? customer.customerName[0].toUpperCase() : '?',
-                                            style: TextStyle(
-                                              color: Colors.blue.shade700,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
-                                          ),
+                                        Icon(
+                                          Icons.search_off,
+                                          size: 36,
+                                          color: Colors.grey.shade400,
                                         ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                customer.customerName,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w500,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              Text(
-                                                customer.phoneNumber,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey.shade600,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'No se encontraron clientes',
+                                          style: TextStyle(color: Colors.grey.shade600),
                                         ),
                                       ],
                                     ),
                                   ),
-                                );
-                              },
-                            ),
+                                )
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: displayedCustomers.length,
+                                  itemBuilder: (context, index) {
+                                    final customer = displayedCustomers[index];
+                                    return InkWell(
+                                      onTap: () {
+                                        debounceTimer?.cancel();
+                                        Navigator.pop(context, customer);
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 10,
+                                          horizontal: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: Colors.grey.shade200,
+                                              width: 1,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 16,
+                                              backgroundColor: Colors.blue.shade50,
+                                              child: Text(
+                                                customer.customerName.isNotEmpty ? customer.customerName[0].toUpperCase() : '?',
+                                                style: TextStyle(
+                                                  color: Colors.blue.shade700,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    customer.customerName,
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.w500,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    customer.phoneNumber,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                     ),
                   ],
                 ),
@@ -1556,10 +1847,15 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (element.warehouseName == 'SANTO DOMINGO') {
+      // Buscar warehouse que contenga 'SANTO DOMINGO' o 'SDE' (para Santo Domingo Este)
+      if (selectedWareHouse == null && (element.warehouseName.toUpperCase().contains('SANTO DOMINGO') || element.warehouseName.toUpperCase().contains('SDE'))) {
         selectedWareHouse = element;
       }
       i++;
+    }
+    // Si no se encontró ninguno, seleccionar el primer warehouse disponible
+    if (selectedWareHouse == null && list.isNotEmpty) {
+      selectedWareHouse = list.first;
     }
     return DropdownButton(
       icon: const Icon(Icons.keyboard_arrow_down, color: kNeutral700),
@@ -1693,7 +1989,9 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                         return GestureDetector(
                                           onTap: () async {
                                             ref.invalidate(reservationsFutureProvider);
+                                            ref.invalidate(allCustomerProvider); // Forzar recarga de clientes para mostrar los recién agregados
                                             final reservations = await ref.read(reservationsFutureProvider.future);
+                                            final customerList = await ref.read(allCustomerProvider.future);
                                             CustomerModel? selectedCustomer = await _showCustomerSearchDialog(
                                               context,
                                               customerList,
@@ -1718,7 +2016,10 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
 
                                                 invoiceNumber = '';
 
-                                                invoiceNumber = '';
+                                                // Auto-completar RNC/Cédula si el cliente ya tiene uno registrado
+                                                if (selectedCustomer.gst.isNotEmpty) {
+                                                  customerRncController.text = selectedCustomer.gst;
+                                                }
                                               });
                                             }
                                           },
@@ -1876,6 +2177,10 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                   suggestionsCallback: (pattern) {
                                     // No mostrar sugerencias si el patrón está vacío o es muy corto
                                     if (pattern.isEmpty || pattern.length < 2) {
+                                      return Future.value([]);
+                                    }
+                                    // Verificar que hay un warehouse seleccionado
+                                    if (selectedWareHouse == null) {
                                       return Future.value([]);
                                     }
                                     ProductRepo pr = ProductRepo();
@@ -2338,6 +2643,74 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                       ),
                                     ),
                                   )),
+                              // NCF Type selector (Comprobante Fiscal)
+                              ResponsiveGridCol(
+                                  xs: 12,
+                                  md: 6,
+                                  lg: 6,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: SizedBox(
+                                      height: 48,
+                                      child: FormField(
+                                        builder: (FormFieldState<dynamic> field) {
+                                          return InputDecorator(
+                                            decoration: const InputDecoration(
+                                              labelText: 'Tipo Comprobante (NCF)',
+                                              hintText: 'Seleccione tipo',
+                                            ),
+                                            child: Theme(
+                                              data: ThemeData(highlightColor: dropdownItemColor, focusColor: dropdownItemColor, hoverColor: dropdownItemColor),
+                                              child: DropdownButtonHideUnderline(
+                                                child: isLoadingNcfTypes
+                                                    ? const SizedBox(
+                                                        height: 20,
+                                                        width: 20,
+                                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                                      )
+                                                    : DropdownButton<String>(
+                                                        isExpanded: true,
+                                                        value: selectedNcfType,
+                                                        items: ncfTypes.map((type) {
+                                                          return DropdownMenuItem<String>(
+                                                            value: type.code,
+                                                            child: Text('${type.code} - ${type.name}'),
+                                                          );
+                                                        }).toList(),
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            selectedNcfType = value ?? 'SIN';
+                                                            // Limpiar RNC si el nuevo tipo no lo requiere
+                                                            if (!ncfRequiresRnc) {
+                                                              customerRncController.clear();
+                                                            }
+                                                          });
+                                                        },
+                                                      ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  )),
+                              // Campo RNC/Cédula - solo mostrar cuando el NCF lo requiere
+                              if (ncfRequiresRnc)
+                                ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 6,
+                                    lg: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: TextField(
+                                        controller: customerRncController,
+                                        decoration: const InputDecoration(
+                                          labelText: 'RNC / Cédula *',
+                                          hintText: 'Ingrese RNC o Cédula del cliente',
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                      ),
+                                    )),
                               // Bank selection dropdown - only show when Transferencia is selected
                               if (selectedPaymentOption == 'Transferencia')
                                 ResponsiveGridCol(
@@ -2397,6 +2770,154 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                             ),
                                           );
                                         },
+                                      ),
+                                    )),
+                              // Campo: Nombre del titular (obligatorio)
+                              if (selectedPaymentOption == 'Transferencia')
+                                ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 6,
+                                    lg: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: TextField(
+                                        controller: transferHolderNameController,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Nombre del titular *',
+                                          hintText: 'Nombre como aparece en el comprobante',
+                                        ),
+                                      ),
+                                    )),
+                              // Campo: Número de referencia (opcional)
+                              if (selectedPaymentOption == 'Transferencia')
+                                ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 6,
+                                    lg: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: TextField(
+                                        controller: transferReferenceController,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Número de referencia',
+                                          hintText: 'Opcional',
+                                        ),
+                                      ),
+                                    )),
+                              // Campo: Comprobante de transferencia (obligatorio)
+                              if (selectedPaymentOption == 'Transferencia')
+                                ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 12,
+                                    lg: 12,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey.shade300),
+                                          borderRadius: BorderRadius.circular(8),
+                                          color: Colors.grey.shade50,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Row(
+                                              children: [
+                                                Icon(Icons.camera_alt, color: Colors.blue),
+                                                SizedBox(width: 8),
+                                                Text('Comprobante de Transferencia *', style: TextStyle(fontWeight: FontWeight.bold)),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            if (transferReceiptUrl != null) ...[
+                                              Stack(
+                                                children: [
+                                                  ClipRRect(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    child: Image.network(
+                                                      transferReceiptUrl!,
+                                                      height: 150,
+                                                      fit: BoxFit.contain,
+                                                      errorBuilder: (context, error, stackTrace) {
+                                                        return Container(
+                                                          height: 100,
+                                                          color: Colors.grey.shade200,
+                                                          child: const Center(child: Icon(Icons.broken_image)),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                  Positioned(
+                                                    top: 4,
+                                                    right: 4,
+                                                    child: IconButton(
+                                                      icon: const Icon(Icons.close, color: Colors.red),
+                                                      onPressed: () => setState(() => transferReceiptUrl = null),
+                                                      style: IconButton.styleFrom(backgroundColor: Colors.white),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                              const Text('✓ Comprobante cargado', style: TextStyle(color: Colors.green)),
+                                            ] else ...[
+                                              if (isUploadingReceipt)
+                                                const Center(child: CircularProgressIndicator())
+                                              else
+                                                InkWell(
+                                                  onTap: _pickTransferReceipt,
+                                                  child: Container(
+                                                    height: 100,
+                                                    decoration: BoxDecoration(
+                                                      border: Border.all(color: Colors.blue, style: BorderStyle.solid),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: const Center(
+                                                      child: Column(
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Icon(Icons.upload_file, size: 40, color: Colors.blue),
+                                                          SizedBox(height: 8),
+                                                          Text('Subir comprobante', style: TextStyle(color: Colors.blue)),
+                                                          Text('Formatos: JPG, PNG (Max 5MB)', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    )),
+                              // Aviso sobre verificación
+                              if (selectedPaymentOption == 'Transferencia')
+                                ResponsiveGridCol(
+                                    xs: 12,
+                                    md: 12,
+                                    lg: 12,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.orange),
+                                        ),
+                                        child: const Row(
+                                          children: [
+                                            Icon(Icons.info_outline, color: Colors.orange),
+                                            SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Este pago quedará PENDIENTE hasta que un operador verifique el comprobante.',
+                                                style: TextStyle(color: Colors.orange, fontSize: 12),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ))
                             ]),
@@ -2817,7 +3338,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
 
                                                                   try {
                                                                     EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                                    DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation");
+                                                                    final apiServiceQuotation = ApiService();
 
                                                                     transitionModel.isPaid = false;
                                                                     transitionModel.dueAmount = 0;
@@ -2827,7 +3348,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                                     // Obtener el nombre real del usuario actual
                                                                     transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
 
-                                                                    await ref.push().set(transitionModel.toJson());
+                                                                    await apiServiceQuotation.post('quotations', Map<String, dynamic>.from(transitionModel.toJson()));
                                                                     
                                                                     // Registrar auditoría de la cotización
                                                                     await AuditService().logCreate(
@@ -2984,6 +3505,15 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                           } else if (selectedPaymentOption == 'Transferencia' && selectedBankId == null) {
                                             print('DEBUG: Error - No se seleccionó banco para transferencia');
                                             EasyLoading.showError('Por favor seleccione un banco para la transferencia');
+                                          } else if (selectedPaymentOption == 'Transferencia' && transferHolderNameController.text.trim().isEmpty) {
+                                            print('DEBUG: Error - No se ingresó nombre del titular');
+                                            EasyLoading.showError('Por favor ingrese el nombre del titular de la transferencia');
+                                          } else if (selectedPaymentOption == 'Transferencia' && transferReceiptUrl == null) {
+                                            print('DEBUG: Error - No se subió comprobante de transferencia');
+                                            EasyLoading.showError('Por favor suba el comprobante de la transferencia');
+                                          } else if (ncfRequiresRnc && customerRncController.text.trim().isEmpty) {
+                                            print('DEBUG: Error - NCF requiere RNC pero no se ingresó');
+                                            EasyLoading.showError('El tipo de comprobante $selectedNcfType requiere RNC o Cédula');
                                           } else {
                                             print('DEBUG: Intentando obtener número de factura');
                                             var invoice_number_variable = await getLastInvoiceNumber();
@@ -2994,6 +3524,32 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                               print('DEBUG: Error - Monto pagado inválido');
                                               EasyLoading.showError('Por favor ingrese un monto pagado válido');
                                               return;
+                                            }
+
+                                            // Calcular subtotal e ITBIS si aplica
+                                            final subtotalBeforeTax = getTotalAmount().toDouble() + serviceCharge - discountAmount;
+                                            final itbisRate = ncfItbisRate;
+                                            final itbisAmount = selectedNcfType != 'SIN' && itbisRate > 0
+                                                ? subtotalBeforeTax * (itbisRate / 100)
+                                                : 0.0;
+                                            final totalWithItbis = subtotalBeforeTax + itbisAmount + vatGst;
+
+                                            // Generar NCF si es necesario
+                                            String? generatedNcfNumber;
+                                            String? ncfExpirationDate;
+                                            if (selectedNcfType != 'SIN') {
+                                              print('DEBUG: Generando NCF para tipo: $selectedNcfType');
+                                              final ncfResult = await dgiiRepository.generateNcfWithExpiration(selectedNcfType);
+                                              if (ncfResult != null) {
+                                                generatedNcfNumber = ncfResult['ncfNumber'];
+                                                ncfExpirationDate = ncfResult['expirationDate'];
+                                              }
+                                              print('DEBUG: NCF generado: $generatedNcfNumber, Vence: $ncfExpirationDate');
+                                              if (generatedNcfNumber == null) {
+                                                EasyLoading.showError('Error generando comprobante fiscal. Verifique la configuración de secuencias NCF.');
+                                                setState(() => saleButtonClicked = false);
+                                                return;
+                                              }
                                             }
 
                                             SaleTransactionModel transitionModel = SaleTransactionModel(
@@ -3012,12 +3568,19 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                               sendWhatsappMessage: selectedUserName?.receiveWhatsappUpdates ?? false,
                                               purchaseDate: DateTime.now().toString(),
                                               productList: cartList,
-                                              totalAmount: double.parse((getTotalAmount().toDouble() + serviceCharge - discountAmount + vatGst).toStringAsFixed(1)),
+                                              totalAmount: double.parse(totalWithItbis.toStringAsFixed(2)),
                                               discountAmount: discountAmount,
                                               serviceCharge: serviceCharge,
                                               vat: vatGst,
                                               reservationIds: cartList.where((item) => item.reservationId != null).map((item) => item.reservationId!).toList(),
                                               saleType: _getSaleType(), // NUEVO: tipo de venta
+                                              // Campos NCF / DGII
+                                              ncfType: selectedNcfType,
+                                              ncfNumber: generatedNcfNumber,
+                                              ncfExpirationDate: ncfExpirationDate,
+                                              customerRnc: customerRncController.text.trim().isNotEmpty ? customerRncController.text.trim() : null,
+                                              itbisAmount: itbisAmount,
+                                              subtotalBeforeTax: subtotalBeforeTax,
                                             );
 
                                             if (transitionModel.customerType == "Guest" && dueAmountController.text.toDouble() > 0) {
@@ -3089,14 +3652,14 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                 EasyLoading.show(status: 'Procesando...', dismissOnTap: false);
 
                                                 EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
-                                                print('DEBUG: Guardando transacción en Firebase');
-                                                
+                                                print('DEBUG: Guardando transacción en PostgreSQL');
+
                                                 // Declarar las variables fuera del bloque try para que estén disponibles en todo el ámbito
-                                                DatabaseReference ref;
+                                                final apiServiceSale = ApiService();
                                                 SaleTransactionModel post;
-                                                
+                                                String? saleId;
+
                                                 try {
-                                                  ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition");
                                                   (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.isPaid = true : transitionModel.isPaid = false;
                                                   (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
                                                   (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
@@ -3109,7 +3672,23 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   // Obtener el nombre real del usuario actual
                                                   transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
                                                   post = checkLossProfit(transitionModel: transitionModel);
-                                                  await ref.push().set(post.toJson());
+                                                  final saleResponse = await apiServiceSale.post('sales', Map<String, dynamic>.from(post.toJson()));
+                                                  saleId = saleResponse.data?['id']?.toString() ?? saleResponse.data?['sale']?['id']?.toString();
+
+                                                  // IMPORTANTE: Extraer número de factura atómico generado por el servidor
+                                                  String? serverInvoiceNum;
+                                                  final saleData = saleResponse.data;
+                                                  if (saleData != null) {
+                                                    serverInvoiceNum = saleData['invoice_number']?.toString() ??
+                                                                       (saleData['sale'] as Map<String, dynamic>?)?['invoice_number']?.toString() ??
+                                                                       saleData['invoiceNumber']?.toString() ??
+                                                                       (saleData['sale'] as Map<String, dynamic>?)?['invoiceNumber']?.toString();
+                                                  }
+                                                  if (serverInvoiceNum != null && serverInvoiceNum.isNotEmpty && serverInvoiceNum != 'null') {
+                                                    post.invoiceNumber = serverInvoiceNum;
+                                                    transitionModel.invoiceNumber = serverInvoiceNum;
+                                                    invoiceNumber = serverInvoiceNum;
+                                                  }
                                                   print('DEBUG: Transacción guardada exitosamente');
                                                   
                                                   // Registrar auditoría de la venta
@@ -3126,6 +3705,60 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                       'isReservation': item.isReservation ?? false,
                                                     }).toList(),
                                                   );
+
+                                                  // DEBUG: Verificar valores ANTES de la condición
+                                                  print('═══════════════════════════════════════════════════════════════');
+                                                  print('DEBUG TRANSFER VERIFICATION - ANTES DE CONDICIÓN');
+                                                  print('  selectedPaymentOption: "$selectedPaymentOption"');
+                                                  print('  transferReceiptUrl: ${transferReceiptUrl ?? "NULL"}');
+                                                  print('  Condición evaluada: ${selectedPaymentOption == 'Transferencia' && transferReceiptUrl != null}');
+                                                  print('═══════════════════════════════════════════════════════════════');
+
+                                                  // Crear registro de verificación de transferencia si aplica
+                                                  if (selectedPaymentOption == 'Transferencia' && transferReceiptUrl != null) {
+                                                    try {
+                                                      print('DEBUG: Creando registro de verificación de transferencia...');
+                                                      print('DEBUG: branchId: ${ApiService().branchId}');
+                                                      print('DEBUG: invoiceNumber: ${post.invoiceNumber}');
+                                                      print('DEBUG: customerName: ${post.customerName}');
+                                                      print('DEBUG: bankName: $selectedBankName');
+                                                      print('DEBUG: holderName: ${transferHolderNameController.text.trim()}');
+                                                      print('DEBUG: amount: ${payingAmountController.text}');
+                                                      print('DEBUG: receiptUrl: $transferReceiptUrl');
+
+                                                      final transferVerification = TransferVerificationModel(
+                                                        branchId: ApiService().branchId ?? 'sdo',
+                                                        saleId: saleId,
+                                                        invoiceNumber: post.invoiceNumber,
+                                                        customerName: post.customerName,
+                                                        customerPhone: post.customerPhone,
+                                                        customerEmail: selectedUserName?.emailAddress,
+                                                        bankName: selectedBankName ?? '',
+                                                        holderName: transferHolderNameController.text.trim(),
+                                                        referenceNumber: transferReferenceController.text.trim().isNotEmpty
+                                                            ? transferReferenceController.text.trim()
+                                                            : null,
+                                                        transferDate: DateTime.now().toIso8601String(),
+                                                        amount: double.tryParse(payingAmountController.text) ?? 0.0,
+                                                        receiptUrl: transferReceiptUrl!,
+                                                        status: 'pending',
+                                                        sellerName: isSubUser ? constSubUserTitle : 'Admin',
+                                                        createdAt: DateTime.now().toIso8601String(),
+                                                      );
+
+                                                      final result = await transferVerificationRepository.createTransfer(transferVerification);
+                                                      if (result != null) {
+                                                        print('DEBUG: Registro de verificación de transferencia creado exitosamente - ID: ${result.id}');
+                                                        EasyLoading.showInfo('Transferencia registrada para verificación');
+                                                      } else {
+                                                        print('ERROR: createTransfer retornó null');
+                                                      }
+                                                    } catch (e, stackTrace) {
+                                                      print('ERROR al crear verificación de transferencia: $e');
+                                                      print('Stack trace: $stackTrace');
+                                                      // No bloquear la venta si falla la creación del registro
+                                                    }
+                                                  }
                                                 } catch (e) {
                                                   print('ERROR al guardar transacción: $e');
                                                   EasyLoading.showError('Error al guardar la venta: ${e.toString()}');
@@ -3186,7 +3819,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
 
                                                 final confirmation = SaleConfirmationModel(
                                                   token: token,
-                                                  saleId: ref.push().key ?? '',
+                                                  saleId: saleId ?? post.invoiceNumber,
                                                   userId: userId,
                                                   confirmed: false,
                                                   createdAt: DateTime.now().toIso8601String(),
@@ -3194,8 +3827,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   saleData: post,
                                                 );
 
-                                                final confirmRef = FirebaseDatabase.instance.ref('$userId/SaleConfirmations');
-                                                await confirmRef.push().set(confirmation.toJson());
+                                                await apiServiceSale.post('sale-confirmations', Map<String, dynamic>.from(confirmation.toJson()));
 
                                                 final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santo domingo
                                                 //final link = 'https://stg.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santiago
@@ -3206,38 +3838,61 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   confirmationLink: link,
                                                 );
 
-                                                // if (printType == 'thermal' || printType == 'both') {
-                                                //   await GeneratePdfAndPrint().printSaleInvoice(
-                                                //     personalInformationModel: data,
-                                                //     saleTransactionModel: transitionModel,
-                                                //     context: context,
-                                                //     fromInventorySale: true,
-                                                //     setting: setting,
-                                                //     printType: 'thermal',
-                                                //     post: post,
-                                                //   );
+                                                if (printType == 'thermal' || printType == 'both') {
+                                                  await GeneratePdfAndPrint().printSaleInvoice(
+                                                    personalInformationModel: data,
+                                                    saleTransactionModel: transitionModel,
+                                                    context: context,
+                                                    fromInventorySale: true,
+                                                    setting: setting,
+                                                    printType: 'thermal',
+                                                    post: post,
+                                                  );
+
+                                                  // Registrar auditoría de impresión térmica
+                                                  await AuditService().logPrint(
+                                                    module: AuditModule.sales,
+                                                    documentType: 'Factura Térmica',
+                                                    documentId: post.invoiceNumber,
+                                                  );
+                                                }
 
                                                 limpiarCarro();
 
-                                                final stockRef = FirebaseDatabase.instance.ref('${await getUserID()}/Products');
+                                                // Actualizar stock de productos via API
                                                 for (var element in transitionModel.productList!) {
-                                                  var data = await stockRef.orderByChild('productCode').equalTo(element.productId).once();
-                                                  final data2 = jsonDecode(jsonEncode(data.snapshot.value));
-                                                  String productPath = data.snapshot.value.toString().substring(1, 21);
-
-                                                  var data1 = await stockRef.child('$productPath/productStock').get();
-                                                  num stock = num.parse(data1.value.toString());
-                                                  num remainStock = stock - element.quantity;
-
-                                                  stockRef.child(productPath).update({'productStock': '$remainStock'});
-
-                                                  if (element.serialNumber?.isNotEmpty ?? false) {
-                                                    var productOldSerialList = data2[productPath]['serialNumber'];
-
-                                                    List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
-                                                    stockRef.child(productPath).update({
-                                                      'serialNumber': result.map((e) => e).toList(),
+                                                  try {
+                                                    // Buscar el producto por código
+                                                    final productResponse = await apiServiceSale.get('products', queryParams: {
+                                                      'productCode': element.productId,
+                                                      'limit': '1',
                                                     });
+
+                                                    if (productResponse.success && productResponse.data != null) {
+                                                      final productsList = productResponse.data['products'] as List<dynamic>? ?? [];
+                                                      if (productsList.isNotEmpty) {
+                                                        final productData = Map<String, dynamic>.from(productsList.first);
+                                                        final productId = productData['id']?.toString();
+                                                        final currentStock = num.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+                                                        final remainStock = currentStock - element.quantity;
+
+                                                        if (productId != null) {
+                                                          // Actualizar el stock
+                                                          Map<String, dynamic> updateData = {'productStock': '$remainStock'};
+
+                                                          // Actualizar serial numbers si es necesario
+                                                          if (element.serialNumber?.isNotEmpty ?? false) {
+                                                            final oldSerialList = productData['serialNumber'] as List<dynamic>? ?? [];
+                                                            final result = oldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
+                                                            updateData['serialNumber'] = result;
+                                                          }
+
+                                                          await apiServiceSale.put('products/$productId', updateData);
+                                                        }
+                                                      }
+                                                    }
+                                                  } catch (e) {
+                                                    print('Error al actualizar stock del producto ${element.productId}: $e');
                                                   }
                                                 }
 
@@ -3260,26 +3915,32 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                 postDailyTransaction(dailyTransactionModel: dailyTransaction);
 
                                                 if (transitionModel.customerName != 'Guest') {
-                                                  final dueUpdateRef = FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-                                                  String? key;
+                                                  try {
+                                                    // Buscar cliente por teléfono
+                                                    final customerResponse = await apiServiceSale.get('customers', queryParams: {
+                                                      'phoneNumber': transitionModel.customerPhone,
+                                                      'limit': '1',
+                                                    });
 
-                                                  await FirebaseDatabase.instance.ref(await getUserID()).child('Customers').orderByKey().get().then((value) {
-                                                    for (var element in value.children) {
-                                                      var data = jsonDecode(jsonEncode(element.value));
-                                                      if (data['phoneNumber'] == transitionModel.customerPhone) {
-                                                        key = element.key;
+                                                    if (customerResponse.success && customerResponse.data != null) {
+                                                      final customersList = customerResponse.data['customers'] as List<dynamic>? ?? [];
+                                                      if (customersList.isNotEmpty) {
+                                                        final customerData = Map<String, dynamic>.from(customersList.first);
+                                                        final customerId = customerData['id']?.toString();
+                                                        int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+                                                        int totalDue = previousDue + transitionModel.dueAmount!.toInt();
+
+                                                        if (customerId != null) {
+                                                          await apiServiceSale.put('customers/$customerId', {
+                                                            'due': '$totalDue',
+                                                            'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+                                                          });
+                                                        }
                                                       }
                                                     }
-                                                  });
-                                                  
-                                                  var data1 = await dueUpdateRef.child('$key/due').get();
-                                                  int previousDue = data1.value.toString().toInt();
-                                                  int totalDue = previousDue + transitionModel.dueAmount!.toInt();
-                                                  
-                                                  await dueUpdateRef.child(key!).update({
-                                                    'due': '$totalDue',
-                                                    'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
-                                                  });
+                                                  } catch (e) {
+                                                    print('Error al actualizar due del cliente: $e');
+                                                  }
                                                 }
 
                                                 // ignore: unused_result
@@ -3361,13 +4022,16 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
       discountAmount = 0; // Resetea el monto de descuento
       vatGst = 0; // Resetea los impuestos
       discountFieldsEnabled = false; // Resetea la protección de descuentos
+      // Resetea campos de transferencia
+      transferHolderNameController.clear();
+      transferReferenceController.clear();
+      transferReceiptUrl = null;
     });
   }
 
   Future<void> _showDiscountAuthDialog() async {
     TextEditingController passwordController = TextEditingController();
-    const String correctPassword = "22400600452"; // Cambiar por la clave deseada
-    
+
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -3434,13 +4098,14 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
     );
   }
 
-  void _validatePasswordSafe(BuildContext dialogContext, String password) {
-    const String correctPassword = "22400600452"; // Cambiar por la clave deseada
-    
-    if (password == correctPassword) {
+  void _validatePasswordSafe(BuildContext dialogContext, String password) async {
+    // Validar contraseña con Firebase
+    final isValid = await DeletionPasswordService.validatePassword(password);
+
+    if (isValid) {
       // Cerrar el diálogo
       Navigator.of(dialogContext).pop();
-      
+
       // Actualizar el estado después de un pequeño delay
       Future.delayed(Duration(milliseconds: 100), () {
         if (mounted) {

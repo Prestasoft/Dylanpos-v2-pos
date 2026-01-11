@@ -185,14 +185,27 @@ class _CustomerSelectorState extends ConsumerState<CustomerSelector> {
               ),
             ),
             GestureDetector(
-              onTap: () {
-                context.push(
+              onTap: () async {
+                // Navegar a crear cliente y esperar el resultado
+                final result = await context.push<CustomerModel>(
                   '/add-customer',
                   extra: {
                     'typeOfCustomerAdd': 'Buyer',
                     'listOfPhoneNumber': listOfPhoneNumber,
                   },
                 );
+
+                // Si se creó un cliente, seleccionarlo automáticamente
+                if (result != null) {
+                  setState(() {
+                    selectedUserId = result.phoneNumber;
+                    selectedUserName = result;
+                  });
+                  widget.onCustomerSelected(result);
+
+                  // Refrescar la lista de clientes
+                  ref.invalidate(allCustomerProvider);
+                }
               },
               child: Container(
                 height: 40,

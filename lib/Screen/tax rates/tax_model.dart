@@ -1,9 +1,7 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../const.dart';
+import '../../services/api_service.dart';
 
 //_______________________________Single_Tax_Model_________________
 class TaxModel {
@@ -80,12 +78,25 @@ class TaxRepo {
   Future<List<TaxModel>> getAllSingleTaxList() async {
     List<TaxModel> allWarehouseList = [];
 
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Tax List').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        var data = TaxModel.fromJson(jsonDecode(jsonEncode(element.value)));
-        allWarehouseList.add(data);
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('taxes');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> taxes = [];
+        if (data is Map && data['taxes'] != null) {
+          taxes = data['taxes'] as List<dynamic>;
+        } else if (data is List) {
+          taxes = data;
+        }
+        for (var element in taxes) {
+          var taxData = Map<String, dynamic>.from(element);
+          allWarehouseList.add(TaxModel.fromJson(taxData));
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting taxes: $e');
+    }
     return allWarehouseList;
   }
 
@@ -93,12 +104,25 @@ class TaxRepo {
   Future<List<GroupTaxModel>> getAllGroupTaxList() async {
     List<GroupTaxModel> groupTaxList = [];
 
-    await FirebaseDatabase.instance.ref(await getUserID()).child('Group Tax List').orderByKey().get().then((value) {
-      for (var element in value.children) {
-        var data = GroupTaxModel.fromJson(jsonDecode(jsonEncode(element.value)));
-        groupTaxList.add(data);
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('group-taxes');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> groupTaxes = [];
+        if (data is Map && data['groupTaxes'] != null) {
+          groupTaxes = data['groupTaxes'] as List<dynamic>;
+        } else if (data is List) {
+          groupTaxes = data;
+        }
+        for (var element in groupTaxes) {
+          var taxData = Map<String, dynamic>.from(element);
+          groupTaxList.add(GroupTaxModel.fromJson(taxData));
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting group taxes: $e');
+    }
     return groupTaxList;
   }
 }

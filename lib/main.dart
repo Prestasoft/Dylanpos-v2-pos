@@ -1,16 +1,21 @@
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'services/api_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nb_utils/nb_utils.dart' hide S;
 import 'package:provider/provider.dart' as pro;
 import 'package:responsive_framework/responsive_framework.dart' as rf;
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Language/language_provider.dart';
 import 'package:salespro_admin/Route/app_routes.dart';
+import 'package:salespro_admin/services/tenant/tenant_model.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 import 'package:salespro_admin/const.dart';
 import 'package:url_strategy/url_strategy.dart';
@@ -22,12 +27,18 @@ import 'Screen/currency/currency_provider.dart';
 import 'firebase_options.dart';
 import 'generated/l10n.dart';
 import 'model/paypal_info_model.dart';
+import 'services/version_check_service.dart';
+import 'widgets/update_dialog.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar SharedPreferences para nb_utils
+  await initialize();
+
   ResponsiveGridBreakpoints.value = ResponsiveGridBreakpoints(
     sm: 576,
     md: 1240,
@@ -35,11 +46,45 @@ Future<void> main() async {
   );
   setPathUrlStrategy();
 
+  // Inicializar Firebase con el tenant guardado o el default
+  // IMPORTANTE: Leer directamente de localStorage porque nb_utils puede tener caché vieja
+  String savedTenantId = '';
+  if (kIsWeb) {
+    savedTenantId = html.window.localStorage['selected_tenant_id'] ?? '';
+    debugPrint('🌐 localStorage - selected_tenant_id: $savedTenantId');
+  }
+  // Fallback a nb_utils si localStorage está vacío
+  if (savedTenantId.isEmpty) {
+    savedTenantId = getStringAsync('selected_tenant_id');
+    debugPrint('📦 nb_utils - selected_tenant_id: $savedTenantId');
+  }
+
+  TenantModel targetTenant;
+  if (savedTenantId.isNotEmpty) {
+    targetTenant = TenantConfig.getTenantById(savedTenantId) ?? TenantConfig.defaultTenant;
+  } else {
+    targetTenant = TenantConfig.defaultTenant;
+  }
+
+  debugPrint('🏢 Tenant seleccionado: ${targetTenant.city} (${targetTenant.id})');
+
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+    options: targetTenant.firebaseOptions,
   );
 
+  // Guardar el tenant actual en ambos: SharedPreferences y localStorage
+  await setValue('selected_tenant_id', targetTenant.id);
+  if (kIsWeb) {
+    html.window.localStorage['selected_tenant_id'] = targetTenant.id;
+    debugPrint('💾 localStorage actualizado con tenant: ${targetTenant.id}');
+  }
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // IMPORTANTE: Inicializar ApiService ANTES de runApp para cargar token de sesión
+  // Esto permite que el router verifique autenticación correctamente al recargar página
+  await ApiService().init();
+  debugPrint('🔐 ApiService inicializado - isAuthenticated: ${ApiService().isAuthenticated}');
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -52,10 +97,19 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final VersionCheckService _versionCheckService = VersionCheckService();
+  
   @override
   void initState() {
     super.initState();
     _initFirebaseMessaging();
+    _initVersionCheck();
+  }
+  
+  @override
+  void dispose() {
+    _versionCheckService.stopVersionCheck();
+    super.dispose();
   }
 
   Future<void> _initFirebaseMessaging() async {
@@ -66,18 +120,16 @@ class _MyAppState extends State<MyApp> {
 
     // Obtiene el token FCM
     String? token = await messaging.getToken(
-      vapidKey: 'BE356sfDxE_ue2ju2QB8ZpoWMSlmnPAExkdyoxdy34xwaw3QluB51SU9W2Rz5T8kpQYDlyxR53Xm9-q2EnO259w' //key santo domingo
-       //vapidKey: 'BGNqh0uT5XjU36uZosNSQbAJ-J0_V6kyPcMwQ_PE6WpoqKn4kkKpES-mc7caR6V8XEYZjQ3Dbz4AFZhpS-dMUcQ' //key santiago
+      vapidKey: 'BHihs1laCgF-by2riBdLNshy3Zivz9LITx4Ut_Xv34KIwZGEof8X8u-lTRQG7Iwi1K2WBDXUkRNbYi0Z_7ov7fo' // Santiago VAPID key
     );
 
     if (token != null) {
-
-      // Guarda el token directamente en Firebase Realtime Database
+      // Guarda el token FCM en PostgreSQL API
       try {
-        final userId = await getUserID();
-        final databaseRef = FirebaseDatabase.instance.ref('$userId/fcmToken');
-        await databaseRef.set(token);
+        final apiService = ApiService();
+        await apiService.put('settings/fcm-token', {'fcmToken': token});
       } catch (e) {
+        // Error silencioso
       }
     }
 
@@ -85,6 +137,33 @@ class _MyAppState extends State<MyApp> {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       // Aquí puedes disparar un modal, alerta, badge, etc.
     });
+  }
+  
+  void _initVersionCheck() {
+    // Configurar callback para cuando se detecte una actualización
+    _versionCheckService.onUpdateAvailable = (versionInfo) {
+      // Mostrar diálogo de actualización si el contexto está disponible
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          // Usar try-catch para evitar errores si el Navigator no está disponible
+          try {
+            final navigatorState = Navigator.maybeOf(context);
+            if (navigatorState != null) {
+              showUpdateDialog(context, versionInfo);
+            } else {
+              debugPrint('⚠️ Navigator no disponible para mostrar diálogo de actualización');
+            }
+          } catch (e) {
+            debugPrint('⚠️ Error al mostrar diálogo de actualización: $e');
+          }
+        }
+      });
+    };
+
+    // Iniciar verificación periódica (cada 5 minutos)
+    _versionCheckService.startVersionCheck(
+      interval: const Duration(minutes: 5),
+    );
   }
 
   @override
@@ -128,13 +207,23 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  /// Obtener información de PayPal - Usa PostgreSQL API
   Future<void> getPaypalInfo() async {
-    DatabaseReference paypalRef = FirebaseDatabase.instance.ref('Admin Panel/Paypal Info');
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('settings/paypal-info');
 
-    final paypalData = await paypalRef.get();
-    PaypalInfoModel paypalInfoModel = PaypalInfoModel.fromJson(jsonDecode(jsonEncode(paypalData.value)));
+      if (response.success && response.data != null) {
+        final paypalData = response.data['paypalInfo'] ?? response.data;
+        PaypalInfoModel paypalInfoModel = PaypalInfoModel.fromJson(
+          Map<String, dynamic>.from(paypalData)
+        );
 
-    paypalClientId = paypalInfoModel.paypalClientId;
-    paypalClientSecret = paypalInfoModel.paypalClientSecret;
+        paypalClientId = paypalInfoModel.paypalClientId;
+        paypalClientSecret = paypalInfoModel.paypalClientSecret;
+      }
+    } catch (e) {
+      // Error silencioso - configuración de PayPal no disponible
+    }
   }
 }

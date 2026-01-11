@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:salespro_admin/services/api_service.dart';
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import '../../Provider/reservation_provider.dart';
 import '../../model/customer_model.dart';
@@ -56,15 +56,34 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
     });
 
     try {
-      final packageSnapshot = await FirebaseDatabase.instance.ref('Admin Panel/services/${widget.packageId}').get();
+      final apiService = ApiService();
+      final response = await apiService.get('services/${widget.packageId}');
 
-      if (packageSnapshot.exists && packageSnapshot.value is Map) {
-        final Map<dynamic, dynamic> packageData = packageSnapshot.value as Map<dynamic, dynamic>;
+      if (response.success && response.data != null) {
+        final data = response.data;
+        Map<String, dynamic>? packageData;
 
-        setState(() {
-          packageDuration = (packageData['duration'] is Map) ? Map<String, dynamic>.from(packageData['duration']) : {'value': 1, 'unit': 'days'};
-          isLoadingPackage = false;
-        });
+        if (data is Map) {
+          if (data['service'] != null) {
+            packageData = Map<String, dynamic>.from(data['service']);
+          } else {
+            packageData = Map<String, dynamic>.from(data);
+          }
+        }
+
+        if (packageData != null) {
+          setState(() {
+            packageDuration = (packageData!['duration'] is Map)
+                ? Map<String, dynamic>.from(packageData['duration'])
+                : {'value': 1, 'unit': 'days'};
+            isLoadingPackage = false;
+          });
+        } else {
+          setState(() {
+            packageDuration = {'value': 1, 'unit': 'days'};
+            isLoadingPackage = false;
+          });
+        }
       } else {
         setState(() {
           packageDuration = {'value': 1, 'unit': 'days'};
@@ -331,8 +350,10 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
         padding: const EdgeInsets.all(12),
         child: CustomerSelector(
             initialCustomer: selectedCustomer,
-            onCustomerSelected: (CustomerModel) {
-              selectedCustomer = CustomerModel;
+            onCustomerSelected: (customer) {
+              setState(() {
+                selectedCustomer = customer;
+              });
             })),
     if (isPreQuinceFiesta) ...[
       SizedBox(height: 16),

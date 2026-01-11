@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -35,23 +34,27 @@ class EditCategories extends StatefulWidget {
 
 class _EditCategoriesState extends State<EditCategories> {
   GlobalKey<FormState> addCustomer = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
 
-  late String customerKey;
+  String? customerId;
 
-  void getCustomerKey(String phoneNumber) async {
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Customers')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'].toString() == phoneNumber) {
-          customerKey = element.key.toString();
+  void getCustomerId(String phoneNumber) async {
+    try {
+      final response = await _apiService.get('customers', queryParams: {
+        'phoneNumber': phoneNumber,
+        'limit': '1',
+      });
+
+      if (response.success && response.data != null) {
+        final customers = response.data['customers'] as List<dynamic>? ?? [];
+        if (customers.isNotEmpty) {
+          final customerData = Map<String, dynamic>.from(customers.first);
+          customerId = customerData['id']?.toString();
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error obteniendo ID del cliente: $e');
+    }
   }
 
   String profilePicture = '';
@@ -146,7 +149,7 @@ class _EditCategoriesState extends State<EditCategories> {
     customerAddressController.text = widget.customerModel.customerAddress;
     gstController.text = widget.customerModel.gst;
     setWhatsapp();
-    getCustomerKey(widget.customerModel.phoneNumber);
+    getCustomerId(widget.customerModel.phoneNumber);
     super.initState();
   }
 
@@ -650,12 +653,6 @@ class _EditCategoriesState extends State<EditCategories> {
                                                                           '${lang.S.of(context).loading}...',
                                                                       dismissOnTap:
                                                                           false);
-                                                                  DatabaseReference
-                                                                      reference =
-                                                                      FirebaseDatabase
-                                                                          .instance
-                                                                          .ref(
-                                                                              "${await getUserID()}/Customers/$customerKey");
 
                                                                   CustomerModel
                                                                       customerModel =
@@ -692,63 +689,56 @@ class _EditCategoriesState extends State<EditCategories> {
                                                                   );
 
                                                                   ///___________update_customer_________________________________________________________
-                                                                  await reference.set(
-                                                                      customerModel
-                                                                          .toJson());
+                                                                  if (customerId != null) {
+                                                                    await _apiService.put(
+                                                                      'customers/$customerId',
+                                                                      Map<String, dynamic>.from(customerModel.toJson()),
+                                                                    );
+                                                                  }
 
                                                                   ///_________chanePhone in All invoice_________________________________________________
-                                                                  String key =
-                                                                      '';
-                                                                  widget.customerModel.phoneNumber !=
-                                                                              customerModel
-                                                                                  .phoneNumber ||
-                                                                          widget.customerModel.customerName !=
-                                                                              customerModel
-                                                                                  .customerName
-                                                                      ? widget.customerModel.type !=
-                                                                              'Supplier'
-                                                                          ? await FirebaseDatabase
-                                                                              .instance
-                                                                              .ref(
-                                                                                  await getUserID())
-                                                                              .child(
-                                                                                  'Sales Transition')
-                                                                              .orderByKey()
-                                                                              .get()
-                                                                              .then(
-                                                                                  (value) async {
-                                                                              for (var element in value.children) {
-                                                                                var data = jsonDecode(jsonEncode(element.value));
-                                                                                if (data['customerPhone'].toString() == widget.customerModel.phoneNumber) {
-                                                                                  key = element.key.toString();
-                                                                                  DatabaseReference reference = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Transition/$key");
-                                                                                  await reference.update({
-                                                                                    'customerName': customerModel.customerName,
-                                                                                    'customerPhone': customerModel.phoneNumber
-                                                                                  });
-                                                                                }
-                                                                              }
-                                                                            })
-                                                                          : await FirebaseDatabase
-                                                                              .instance
-                                                                              .ref(await getUserID())
-                                                                              .child('Purchase Transition')
-                                                                              .orderByKey()
-                                                                              .get()
-                                                                              .then((value) async {
-                                                                              for (var element in value.children) {
-                                                                                var data = jsonDecode(jsonEncode(element.value));
-                                                                                if (data['customerPhone'].toString() == widget.customerModel.phoneNumber) {
-                                                                                  key = element.key.toString();
-                                                                                  DatabaseReference reference = FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Transition/$key");
-                                                                                  await reference.update({
-                                                                                    'customerName': customerModel.customerName,
-                                                                                    'customerPhone': customerModel.phoneNumber
-                                                                                  });
-                                                                                }
-                                                                              }
-                                                                            })
-                                                                      : null;
+                                                                  if (widget.customerModel.phoneNumber != customerModel.phoneNumber ||
+                                                                      widget.customerModel.customerName != customerModel.customerName) {
+                                                                    if (widget.customerModel.type != 'Supplier') {
+                                                                      // Actualizar Sales Transition
+                                                                      final salesResponse = await _apiService.get('sales', queryParams: {
+                                                                        'customerPhone': widget.customerModel.phoneNumber,
+                                                                        'limit': '1000',
+                                                                      });
+                                                                      if (salesResponse.success && salesResponse.data != null) {
+                                                                        final sales = salesResponse.data['sales'] as List<dynamic>? ?? [];
+                                                                        for (var sale in sales) {
+                                                                          final saleData = Map<String, dynamic>.from(sale);
+                                                                          final saleId = saleData['id']?.toString();
+                                                                          if (saleId != null) {
+                                                                            await _apiService.put('sales/$saleId', {
+                                                                              'customerName': customerModel.customerName,
+                                                                              'customerPhone': customerModel.phoneNumber,
+                                                                            });
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    } else {
+                                                                      // Actualizar Purchase Transition
+                                                                      final purchaseResponse = await _apiService.get('purchases', queryParams: {
+                                                                        'customerPhone': widget.customerModel.phoneNumber,
+                                                                        'limit': '1000',
+                                                                      });
+                                                                      if (purchaseResponse.success && purchaseResponse.data != null) {
+                                                                        final purchases = purchaseResponse.data['purchases'] as List<dynamic>? ?? [];
+                                                                        for (var purchase in purchases) {
+                                                                          final purchaseData = Map<String, dynamic>.from(purchase);
+                                                                          final purchaseId = purchaseData['id']?.toString();
+                                                                          if (purchaseId != null) {
+                                                                            await _apiService.put('purchases/$purchaseId', {
+                                                                              'customerName': customerModel.customerName,
+                                                                              'customerPhone': customerModel.phoneNumber,
+                                                                            });
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
 
                                                                   //EasyLoading.showSuccess('Added Successfully!');
                                                                   EasyLoading

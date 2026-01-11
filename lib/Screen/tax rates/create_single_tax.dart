@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:math';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +8,7 @@ import 'package:salespro_admin/Screen/tax%20rates/tax_model.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 
 //____________________________________________________AddSingleTax_______________________
@@ -128,12 +127,8 @@ class _CreateSingleTaxPopUpState extends State<CreateSingleTaxPopUp> {
                       EasyLoading.show(
                           status: '${lang.S.of(context).loading}...',
                           dismissOnTap: false);
-                      final DatabaseReference productInformationRef =
-                          FirebaseDatabase.instance
-                              .ref()
-                              .child(await getUserID())
-                              .child('Tax List');
-                      await productInformationRef.push().set(tax.toJson());
+                      final apiService = ApiService();
+                      await apiService.post('taxes', Map<String, dynamic>.from(tax.toJson()));
                       EasyLoading.showSuccess(
                           lang.S.of(context).addedSuccessfully,
                           duration: const Duration(milliseconds: 500));
@@ -197,20 +192,25 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
   String taxKey = '';
 
   void getTaxKey() async {
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Tax List')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['name'].toString() == widget.taxModel.name) {
-          taxKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('taxes?name=${widget.taxModel.name}');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> taxes = [];
+        if (data is Map && data['taxes'] != null) {
+          taxes = data['taxes'] as List<dynamic>;
+        } else if (data is List) {
+          taxes = data;
+        }
+        if (taxes.isNotEmpty) {
+          final tax = Map<String, dynamic>.from(taxes.first);
+          taxKey = tax['id']?.toString() ?? tax['key']?.toString() ?? '';
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting tax key: $e');
+    }
   }
 
   @override
@@ -314,42 +314,36 @@ class _EditSingleTaxTaxState extends State<EditSingleTaxPopUp> {
               child: ElevatedButton(
                 style:
                     ElevatedButton.styleFrom(minimumSize: const Size(450, 48)),
-                onPressed: () {
+                onPressed: () async {
                   TaxModel tax = TaxModel(
                       taxRate: rate, id: widget.taxModel.id, name: name);
                   if (name != '' && name == widget.taxModel.name
                       ? true
                       : !names
                           .contains(name.toLowerCase().removeAllWhiteSpace())) {
-                    setState(() async {
-                      try {
-                        EasyLoading.show(
-                            status: '${lang.S.of(context).loading}...',
-                            dismissOnTap: false);
-                        final DatabaseReference taxInfoRef = FirebaseDatabase
-                            .instance
-                            .ref()
-                            .child(await getUserID())
-                            .child('Tax List')
-                            .child(taxKey);
-                        await taxInfoRef.set(tax.toJson());
-                        EasyLoading.showSuccess(
-                            lang.S.of(context).editSuccessfully,
-                            duration: const Duration(milliseconds: 500));
+                    try {
+                      EasyLoading.show(
+                          status: '${lang.S.of(context).loading}...',
+                          dismissOnTap: false);
+                      final apiService = ApiService();
+                      String idToUse = taxKey.isNotEmpty ? taxKey : widget.taxModel.id;
+                      await apiService.put('taxes/$idToUse', Map<String, dynamic>.from(tax.toJson()));
+                      EasyLoading.showSuccess(
+                          lang.S.of(context).editSuccessfully,
+                          duration: const Duration(milliseconds: 500));
 
-                        ///____provider_refresh____________________________________________
-                        // ignore: unused_result
-                        ref.refresh(taxProvider);
-                        // ignore: unused_result
-                        ref.refresh(groupTaxProvider);
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          context.pop();
-                        });
-                      } catch (e) {
-                        EasyLoading.dismiss();
-                        //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                      }
-                    });
+                      ///____provider_refresh____________________________________________
+                      // ignore: unused_result
+                      ref.refresh(taxProvider);
+                      // ignore: unused_result
+                      ref.refresh(groupTaxProvider);
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        context.pop();
+                      });
+                    } catch (e) {
+                      EasyLoading.dismiss();
+                      //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                    }
                   } else if (names
                       .contains(name.toLowerCase().removeAllWhiteSpace())) {
                     EasyLoading.showError(lang.S.of(context).nameAlreadyExists);

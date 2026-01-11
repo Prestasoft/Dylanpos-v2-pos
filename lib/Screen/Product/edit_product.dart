@@ -1,7 +1,5 @@
-import 'dart:convert';
-
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -122,21 +120,22 @@ class _AddProductState extends State<EditProduct> {
   late String productKey;
 
   void getProductKey(String code) async {
-    // ignore: unused_local_variable
-    List<ProductModel> productList = [];
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Products')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['productCode'].toString() == code) {
-          productKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('products', queryParams: {
+        'productCode': code,
+        'limit': '1',
+      });
+      if (response.success && response.data != null) {
+        final products = response.data['products'] as List<dynamic>? ?? [];
+        if (products.isNotEmpty) {
+          final productData = Map<String, dynamic>.from(products.first);
+          productKey = productData['id']?.toString() ?? '';
         }
       }
-    });
+    } catch (e) {
+      debugPrint('Error getting product key: $e');
+    }
   }
 
   late ProductModel productModel;
@@ -2450,12 +2449,7 @@ class _AddProductState extends State<EditProduct> {
                                                     EasyLoading.show(
                                                         status: 'Loading...',
                                                         dismissOnTap: false);
-                                                    final DatabaseReference
-                                                        productInformationRef =
-                                                        FirebaseDatabase
-                                                            .instance
-                                                            .ref(
-                                                                "${await getUserID()}/Products/$productKey");
+                                                    final apiService = ApiService();
                                                     productModel.productName =
                                                         productNameController
                                                             .text;
@@ -2539,9 +2533,10 @@ class _AddProductState extends State<EditProduct> {
                                                         selectedGroupTaxModel
                                                                 ?.subTaxes ??
                                                             [];
-                                                    await productInformationRef
-                                                        .set(productModel
-                                                            .toJson());
+                                                    await apiService.put(
+                                                        'products/$productKey',
+                                                        Map<String, dynamic>.from(productModel.toJson()),
+                                                    );
                                                     EasyLoading.showSuccess(
                                                         'Added Successfully',
                                                         duration:

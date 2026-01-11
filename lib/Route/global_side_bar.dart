@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:expansion_widget/expansion_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
@@ -11,6 +12,8 @@ import 'package:restart_app/restart_app.dart';
 import 'package:salespro_admin/Route/sidebar_item_model.dart';
 import 'package:salespro_admin/Route/static_string.dart';
 import 'package:salespro_admin/const.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 import '../Provider/general_setting_provider.dart';
 import '../Provider/subacription_plan_provider.dart';
@@ -19,6 +22,8 @@ import '../Screen/currency/global_currency.dart';
 import '../model/subscription_model.dart';
 import '../services/audit_service.dart';
 import '../Repository/profile_details_repo.dart';
+import '../services/tenant/tenant_model.dart';
+import 'package:nb_utils/nb_utils.dart';
 
 class GlobalSideBar extends StatefulWidget {
   const GlobalSideBar({
@@ -554,11 +559,16 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
       builder: (_, ref, watch) {
         final settingProvider = ref.watch(generalSettingProvider);
         return settingProvider.when(data: (setting) {
-          // Obtener el nombre de la sucursal desde la configuración general
-          final branchName = 'Santo Domingo';
-          
+          // Obtener el nombre de la sucursal desde el tenant actual
+          final tenantId = getStringAsync('selected_tenant_id');
+          final tenant = TenantConfig.getTenantById(tenantId) ?? TenantConfig.defaultTenant;
+          final branchName = tenant.city.toUpperCase();
+
+          // Verificar si el usuario es admin (no es subUser)
+          final isAdmin = !isSubUser;
+
           return Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             height: ResponsiveValue<double?>(
               context,
               conditionalValues: [
@@ -582,20 +592,24 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                   iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 if (iconOnly)
-                  // Mostrar solo las iniciales en modo icono
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: kMainColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Text(
-                        branchName.split(' ').map((word) => word.isNotEmpty ? word[0] : '').take(2).join('').toUpperCase(),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                  // Mostrar solo las iniciales en modo icono con opción de cambiar
+                  InkWell(
+                    onTap: isAdmin ? () => _showBranchSelectorDialog(context, tenant) : null,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: kMainColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Center(
+                        child: Text(
+                          branchName.split(' ').map((word) => word.isNotEmpty ? word[0] : '').take(2).join('').toUpperCase(),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -603,16 +617,47 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                 if (!iconOnly)
                   // Mostrar el nombre completo en modo expandido
                   Expanded(
-                    child: Text(
-                      branchName,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            branchName,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // Botón Cambiar solo para admin
+                        if (isAdmin) ...[
+                          const SizedBox(width: 6),
+                          InkWell(
+                            onTap: () => _showBranchSelectorDialog(context, tenant),
+                            borderRadius: BorderRadius.circular(4),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: kMainColor.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: kMainColor, width: 1),
+                              ),
+                              child: Text(
+                                'Cambiar',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: kMainColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
               ],
@@ -627,6 +672,136 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
         });
       },
     );
+  }
+
+  /// Muestra el diálogo para seleccionar sucursal
+  void _showBranchSelectorDialog(BuildContext context, TenantModel currentTenant) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.store, color: kMainColor),
+            const SizedBox(width: 10),
+            const Text('Cambiar Sucursal'),
+          ],
+        ),
+        content: SizedBox(
+          width: 350,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Sucursal actual: ${currentTenant.city}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              ...TenantConfig.allTenants.map((tenant) {
+                final isSelected = tenant.id == currentTenant.id;
+                return ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isSelected ? kMainColor : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        tenant.initials,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    tenant.city,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? kMainColor : null,
+                    ),
+                  ),
+                  subtitle: Text(tenant.shortName),
+                  trailing: isSelected
+                      ? const Icon(Icons.check_circle, color: kMainColor)
+                      : const Icon(Icons.chevron_right),
+                  selected: isSelected,
+                  selectedTileColor: kMainColor.withValues(alpha: 0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  onTap: isSelected
+                      ? null
+                      : () => _changeBranch(dialogContext, tenant),
+                );
+              }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Cambia a otra sucursal
+  void _changeBranch(BuildContext context, TenantModel newTenant) async {
+    // Mostrar confirmación
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar cambio'),
+        content: Text(
+          '¿Desea cambiar a la sucursal ${newTenant.city}?\n\nLa aplicación se reiniciará para aplicar los cambios.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: kMainColor),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Cambiar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      // IMPORTANTE: Guardar en localStorage directamente para web
+      // El main.dart lee primero de localStorage
+      if (kIsWeb) {
+        html.window.localStorage['selected_tenant_id'] = newTenant.id;
+        debugPrint('💾 localStorage actualizado con tenant: ${newTenant.id}');
+      }
+
+      // También guardar en SharedPreferences como backup
+      await setValue('selected_tenant_id', newTenant.id);
+
+      // Cerrar el diálogo de selección
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Recargar la página completamente para reinicializar Firebase con el nuevo tenant
+      if (kIsWeb) {
+        html.window.location.reload();
+      } else {
+        Restart.restartApp();
+      }
+    }
   }
 
   _SelectionInfo _isSelected(BuildContext context, SidebarItemModel menu) {

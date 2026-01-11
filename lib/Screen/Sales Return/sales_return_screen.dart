@@ -1,9 +1,8 @@
 // ignore_for_file: unused_result
 
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -73,11 +72,10 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
       if (!mounted) return; // Check if the widget is still mounted
 
       EasyLoading.show(status: 'Loading...', dismissOnTap: false);
+      final apiService = ApiService();
 
-      // Push sales return data to Firebase
-      final DatabaseReference ref =
-          FirebaseDatabase.instance.ref("${await getUserID()}/Sales Return");
-      await ref.push().set(salesModel.toJson());
+      // Push sales return data to PostgreSQL
+      await apiService.post('sales-returns', Map<String, dynamic>.from(salesModel.toJson()));
 
       // Print the invoice
       try {
@@ -92,29 +90,33 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
       }
 
       // Update stock
-      final stockRef =
-          FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
       for (var element in salesModel.productList!) {
-        var data = await stockRef
-            .orderByChild('productCode')
-            .equalTo(element.productId)
-            .once();
-        final data2 = jsonDecode(jsonEncode(data.snapshot.value));
+        // Get product by productCode
+        final productResponse = await apiService.get('products?productCode=${element.productId}');
+        if (productResponse.success && productResponse.data != null) {
+          final prodData = productResponse.data;
+          List<dynamic> products = [];
+          if (prodData is Map && prodData['products'] != null) {
+            products = prodData['products'] as List<dynamic>;
+          } else if (prodData is List) {
+            products = prodData;
+          }
+          if (products.isNotEmpty) {
+            final productData = Map<String, dynamic>.from(products.first);
+            final productId = productData['id']?.toString() ?? '';
+            num stock = num.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+            num remainStock = stock + element.quantity;
 
-        String productPath = data.snapshot.value.toString().substring(1, 21);
+            Map<String, dynamic> updateData = {'productStock': '$remainStock'};
 
-        var data1 = await stockRef.child('$productPath/productStock').get();
-        num stock = num.parse(data1.value.toString());
-        num remainStock = stock + element.quantity;
+            if (element.serialNumber != null && element.serialNumber!.isNotEmpty) {
+              List<dynamic> oldSerials = productData['serialNumber'] ?? [];
+              List<dynamic> newSerials = [...oldSerials, ...element.serialNumber!];
+              updateData['serialNumber'] = newSerials;
+            }
 
-        stockRef.child(productPath).update({'productStock': '$remainStock'});
-
-        if (element.serialNumber != null && element.serialNumber!.isNotEmpty) {
-          var productOldSerialList =
-              data2[productPath]['serialNumber'] + element.serialNumber;
-          stockRef.child(productPath).update({
-            'serialNumber': productOldSerialList.map((e) => e).toList(),
-          });
+            await apiService.put('products/$productId', updateData);
+          }
         }
       }
 
@@ -142,32 +144,28 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
 
       // Update due amount
       if (salesModel.customerName != 'Guest' && (original.dueAmount ?? 0) > 0) {
-        final dueUpdateRef =
-            FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-        String? key;
-
-        await FirebaseDatabase.instance
-            .ref(await getUserID())
-            .child('Customers')
-            .orderByKey()
-            .get()
-            .then((value) {
-          for (var element in value.children) {
-            var data = jsonDecode(jsonEncode(element.value));
-            if (data['phoneNumber'] == salesModel.customerPhone) {
-              key = element.key;
-            }
+        // Find customer by phone
+        final customerResponse = await apiService.get('customers?phoneNumber=${salesModel.customerPhone}');
+        if (customerResponse.success && customerResponse.data != null) {
+          final custData = customerResponse.data;
+          List<dynamic> customers = [];
+          if (custData is Map && custData['customers'] != null) {
+            customers = custData['customers'] as List<dynamic>;
+          } else if (custData is List) {
+            customers = custData;
           }
-        });
+          if (customers.isNotEmpty) {
+            final customerData = Map<String, dynamic>.from(customers.first);
+            final customerId = customerData['id']?.toString() ?? '';
+            int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
 
-        var data1 = await dueUpdateRef.child('$key/due').get();
-        int previousDue = data1.value.toString().toInt();
-
-        num dueNow = (original.dueAmount ?? 0) - (salesModel.totalAmount ?? 0);
-        int totalDue = dueNow.isNegative
-            ? 0
-            : previousDue - salesModel.totalAmount!.toInt();
-        dueUpdateRef.child(key!).update({'due': '$totalDue'});
+            num dueNow = (original.dueAmount ?? 0) - (salesModel.totalAmount ?? 0);
+            int totalDue = dueNow.isNegative
+                ? 0
+                : previousDue - salesModel.totalAmount!.toInt();
+            await apiService.put('customers/$customerId', {'due': '$totalDue'});
+          }
+        }
       }
 
       // Refresh providers
@@ -1153,33 +1151,29 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
                                           // myTransitionModel.totalAmount = widget.newTransitionModel.totalAmount!.toDouble();
                                           ///________________updateInvoice___________________________________________________________OK
                                           String? key;
-                                          final userId = await getUserID();
-                                          await FirebaseDatabase.instance
-                                              .ref(userId)
-                                              .child('Sales Transition')
-                                              .orderByKey()
-                                              .get()
-                                              .then((value) {
-                                            for (var element
-                                                in value.children) {
-                                              final t =
-                                                  SaleTransactionModel.fromJson(
-                                                      jsonDecode(jsonEncode(
-                                                          element.value)));
-                                              if (editedTransitionModel
-                                                      .invoiceNumber ==
-                                                  t.invoiceNumber) {
-                                                key = element.key;
-                                              }
+                                          final apiService = ApiService();
+
+                                          // Find sale by invoice number via API
+                                          final saleResponse = await apiService.get('sales?invoiceNumber=${editedTransitionModel.invoiceNumber}');
+                                          if (saleResponse.success && saleResponse.data != null) {
+                                            final data = saleResponse.data;
+                                            List<dynamic> sales = [];
+                                            if (data is Map && data['sales'] != null) {
+                                              sales = data['sales'] as List<dynamic>;
+                                            } else if (data is List) {
+                                              sales = data;
                                             }
-                                          });
+                                            if (sales.isNotEmpty) {
+                                              final saleData = Map<String, dynamic>.from(sales.first);
+                                              key = saleData['id']?.toString() ?? '';
+                                            }
+                                          }
 
                                           if (newProductList.isEmpty) {
-                                            await FirebaseDatabase.instance
-                                                .ref(userId)
-                                                .child('Sales Transition')
-                                                .child(key!)
-                                                .remove();
+                                            // Delete sale via API
+                                            if (key != null && key!.isNotEmpty) {
+                                              await apiService.delete('sales/$key');
+                                            }
                                           } else {
                                             num totalQuantity = 0;
                                             double lossProfit = 0;
@@ -1235,12 +1229,10 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
 
                                             ///__________total LossProfit & quantity________________________________________________________________
                                             // final postEditedTransitionModel = ShowEditPaymentPopUp.checkLossProfit(transitionModel: editedTransitionModel);
-                                            await FirebaseDatabase.instance
-                                                .ref(userId)
-                                                .child('Sales Transition')
-                                                .child(key!)
-                                                .update(editedTransitionModel
-                                                    .toJson());
+                                            // Update sale via API
+                                            if (key != null && key!.isNotEmpty) {
+                                              await apiService.put('sales/$key', editedTransitionModel.toJson());
+                                            }
                                           }
                                           SaleTransactionModel invoice =
                                               SaleTransactionModel(

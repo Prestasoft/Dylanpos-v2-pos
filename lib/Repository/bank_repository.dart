@@ -1,72 +1,64 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 import '../model/bank_model.dart';
-import '../const.dart';
+import '../services/api_service.dart';
 
+/// Repositorio de bancos - Usa PostgreSQL API
 class BankRepository {
-  final DatabaseReference ref = FirebaseDatabase.instance.ref();
+  final ApiService _apiService = ApiService();
 
+  /// Obtener todos los bancos activos desde PostgreSQL
   Future<List<BankModel>> getAllBanks() async {
     try {
-      final userId = await getUserID();
-      final snapshot = await ref.child(userId).child('Banks').get();
-      
-      if (snapshot.value == null) {
-        return [];
-      }
+      final response = await _apiService.get('banks', queryParams: {'limit': '100'});
 
-      final banksMap = snapshot.value as Map<dynamic, dynamic>;
-      final banks = <BankModel>[];
-      
-      banksMap.forEach((key, value) {
-        if (value is Map && (value['isActive'] ?? true)) {
-          final bank = BankModel.fromJson(Map<String, dynamic>.from(value));
-          bank.bankId = key;
-          banks.add(bank);
+      if (response.success && response.data != null) {
+        final banksData = response.data['banks'] as List<dynamic>? ?? [];
+        final banks = <BankModel>[];
+
+        for (var data in banksData) {
+          if (data is Map<String, dynamic>) {
+            final isActive = data['isActive'] ?? true;
+            if (isActive) {
+              final bank = BankModel.fromJson(data);
+              bank.bankId = data['id']?.toString();
+              banks.add(bank);
+            }
+          }
         }
-      });
 
-      // Ordenar por nombre
-      banks.sort((a, b) => (a.bankName ?? '').compareTo(b.bankName ?? ''));
-      return banks;
+        // Ordenar por nombre
+        banks.sort((a, b) => (a.bankName ?? '').compareTo(b.bankName ?? ''));
+        return banks;
+      }
+      return [];
     } catch (e) {
       print('Error getting banks: $e');
       return [];
     }
   }
 
+  /// Stream de bancos (simulado para compatibilidad)
   Stream<List<BankModel>> getBanksStream() {
-    return Stream.fromFuture(getUserID()).asyncExpand((userId) {
-      return ref.child(userId).child('Banks').onValue.map((event) {
-        if (event.snapshot.value == null) {
-          return <BankModel>[];
-        }
+    // Crear un StreamController para emitir actualizaciones
+    final controller = StreamController<List<BankModel>>();
 
-        final banksMap = event.snapshot.value as Map<dynamic, dynamic>;
-        final banks = <BankModel>[];
-        
-        banksMap.forEach((key, value) {
-          if (value is Map && (value['isActive'] ?? true)) {
-            final bank = BankModel.fromJson(Map<String, dynamic>.from(value));
-            bank.bankId = key;
-            banks.add(bank);
-          }
-        });
-
-        // Ordenar por nombre
-        banks.sort((a, b) => (a.bankName ?? '').compareTo(b.bankName ?? ''));
-        return banks;
-      });
+    // Obtener datos iniciales
+    getAllBanks().then((banks) {
+      controller.add(banks);
+    }).catchError((e) {
+      controller.addError(e);
     });
+
+    return controller.stream;
   }
 
+  /// Obtener un banco por ID
   Future<BankModel?> getBankById(String bankId) async {
     try {
-      final userId = await getUserID();
-      final snapshot = await ref.child(userId).child('Banks').child(bankId).get();
-      
-      if (snapshot.value != null) {
-        final bank = BankModel.fromJson(Map<String, dynamic>.from(snapshot.value as Map));
+      final response = await _apiService.get('banks/$bankId');
+
+      if (response.success && response.data != null) {
+        final bank = BankModel.fromJson(response.data['bank']);
         bank.bankId = bankId;
         return bank;
       }
@@ -77,52 +69,53 @@ class BankRepository {
     }
   }
 
+  /// Agregar un nuevo banco
   Future<String> addBank(BankModel bank) async {
     try {
-      final userId = await getUserID();
-      final newBankRef = ref.child(userId).child('Banks').push();
-      bank.bankId = newBankRef.key;
       bank.createdAt = DateTime.now();
       bank.updatedAt = DateTime.now();
-      
-      await newBankRef.set(bank.toJson());
-      return newBankRef.key!;
+
+      final bankData = Map<String, dynamic>.from(bank.toJson());
+      final response = await _apiService.post('banks', bankData);
+
+      if (response.success && response.data != null) {
+        return response.data['bank']['id']?.toString() ?? '';
+      }
+      throw Exception('Error creating bank');
     } catch (e) {
       print('Error adding bank: $e');
       rethrow;
     }
   }
 
+  /// Actualizar un banco existente
   Future<void> updateBank(BankModel bank) async {
     try {
-      final userId = await getUserID();
       bank.updatedAt = DateTime.now();
-      await ref.child(userId).child('Banks').child(bank.bankId!).update(bank.toJson());
+      final bankData = Map<String, dynamic>.from(bank.toJson());
+      await _apiService.put('banks/${bank.bankId}', bankData);
     } catch (e) {
       print('Error updating bank: $e');
       rethrow;
     }
   }
 
+  /// Eliminar un banco (hard delete)
   Future<void> deleteBank(String bankId) async {
     try {
-      final userId = await getUserID();
-      // Soft delete - just mark as inactive
-      await ref.child(userId).child('Banks').child(bankId).update({
-        'isActive': false,
-        'updatedAt': DateTime.now().toIso8601String(),
-      });
+      await _apiService.delete('banks/$bankId');
     } catch (e) {
       print('Error deleting bank: $e');
       rethrow;
     }
   }
 
+  /// Verificar si existe un banco con el mismo nombre
   Future<bool> isBankNameExists(String bankName, {String? excludeBankId}) async {
     try {
       final banks = await getAllBanks();
-      return banks.any((bank) => 
-        bank.bankName?.toLowerCase() == bankName.toLowerCase() && 
+      return banks.any((bank) =>
+        bank.bankName?.toLowerCase() == bankName.toLowerCase() &&
         bank.bankId != excludeBankId
       );
     } catch (e) {

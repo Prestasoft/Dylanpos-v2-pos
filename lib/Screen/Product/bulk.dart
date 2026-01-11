@@ -2,8 +2,9 @@ import 'dart:html' as html;
 
 import 'package:excel/excel.dart' as e;
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+
+import '../../services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -243,11 +244,7 @@ class _BulkProductUploadPopupState extends State<BulkProductUploadPopup> {
   }
 
   Future<void> addCategory({required String categoryName}) async {
-    final DatabaseReference categoryInformationRef = FirebaseDatabase.instance
-        .ref()
-        .child(await getUserID())
-        .child('Categories');
-
+    final apiService = ApiService();
     CategoryModel categoryModel = CategoryModel(
       categoryName: categoryName,
       size: false,
@@ -257,7 +254,10 @@ class _BulkProductUploadPopupState extends State<BulkProductUploadPopup> {
       weight: false,
       warranty: false,
     );
-    await categoryInformationRef.push().set(categoryModel.toJson());
+    await apiService.post(
+      'categories',
+      Map<String, dynamic>.from(categoryModel.toJson()),
+    );
   }
 
   String printSerialNumber(List<String> numberList) {
@@ -279,16 +279,15 @@ class _BulkProductUploadPopupState extends State<BulkProductUploadPopup> {
     var sheet = excel.sheets.keys.first;
     var table = excel.tables[sheet]!;
 
+    final apiService = ApiService();
     for (var row in table.rows) {
       ProductModel? data =
           await createProductModelFromExcelData(row: row, ref: ref);
       if (data != null) {
-        final DatabaseReference productInformationRef = FirebaseDatabase
-            .instance
-            .ref()
-            .child(await getUserID())
-            .child('Products');
-        await productInformationRef.push().set(data.toJson());
+        await apiService.post(
+          'products',
+          Map<String, dynamic>.from(data.toJson()),
+        );
         Subscription.decreaseSubscriptionLimits(
             itemType: 'products', context: context);
       }

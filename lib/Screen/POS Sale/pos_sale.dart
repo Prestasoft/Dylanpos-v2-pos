@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -2680,7 +2680,7 @@ class _PosSaleState extends State<PosSale> {
 
                                                                                       try {
                                                                                         EasyLoading.show(status: 'Loading...', dismissOnTap: false);
-                                                                                        DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Sales Quotation");
+                                                                                        final apiService = ApiService();
 
                                                                                         transitionModel.isPaid = false;
                                                                                         transitionModel.dueAmount = 0;
@@ -2690,7 +2690,7 @@ class _PosSaleState extends State<PosSale> {
                                                                                         transitionModel.sellerName = isSubUser ? constSubUserTitle : 'Admin';
 
                                                                                         ///_________Push_on_dataBase____________________________________________________________________________
-                                                                                        await ref.push().set(transitionModel.toJson());
+                                                                                        await apiService.post('sales-quotations', Map<String, dynamic>.from(transitionModel.toJson()));
 
                                                                                         ///_________Invoice Increase____________________________________________________________________________
                                                                                         updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());

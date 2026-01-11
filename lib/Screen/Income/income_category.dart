@@ -1,8 +1,5 @@
 // ignore_for_file: unused_result, use_build_context_synchronously
 
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -20,6 +17,7 @@ import 'package:salespro_admin/model/income_catehory_model.dart';
 import 'package:salespro_admin/model/income_modle.dart';
 
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
 
@@ -125,6 +123,8 @@ class _IncomeCategoryState extends State<IncomeCategory> {
   //   EasyLoading.showSuccess(lang.S.of(context).done);
   // }
 
+  final ApiService _apiService = ApiService();
+
   Future<void> deleteExpenseCategory({
     required String incomeCategoryName,
     required WidgetRef updateRef,
@@ -133,32 +133,37 @@ class _IncomeCategoryState extends State<IncomeCategory> {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
 
     try {
-      String expenseKey = '';
-      final userId = await getUserID();
+      String? incomeCategoryId;
 
-      // Fetch the expense category key
-      final snapshot = await FirebaseDatabase.instance.ref(userId).child('Income Category').orderByKey().get();
+      // Buscar el ID de la categoría por nombre
+      final response = await _apiService.get('categories/incomes', queryParams: {
+        'categoryName': incomeCategoryName,
+        'limit': '1',
+      });
 
-      for (var element in snapshot.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['categoryName'].toString() == incomeCategoryName) {
-          expenseKey = element.key.toString();
-          break; // Exit loop once the key is found
+      if (response.success && response.data != null) {
+        final categories = response.data['income_categories'] as List<dynamic>? ??
+            response.data['categories'] as List<dynamic>? ?? [];
+        for (var element in categories) {
+          final categoryData = Map<String, dynamic>.from(element);
+          if (categoryData['categoryName']?.toString() == incomeCategoryName) {
+            incomeCategoryId = categoryData['id']?.toString();
+            break;
+          }
         }
       }
 
-      if (expenseKey.isNotEmpty) {
-        // Delete the expense category
-        DatabaseReference ref = FirebaseDatabase.instance.ref("${await getUserID()}/Income Category/$expenseKey");
-        await ref.remove();
+      if (incomeCategoryId != null) {
+        // Eliminar la categoría de ingreso
+        await _apiService.delete('categories/incomes/$incomeCategoryId');
 
-        // Refresh the provider
-        updateRef.refresh(expenseCategoryProvider);
+        // Refrescar el provider
+        updateRef.refresh(incomeCategoryProvider);
 
-        // Show success message
+        // Mostrar mensaje de éxito
         EasyLoading.showSuccess(lang.S.of(context).done);
 
-        // Navigate back after successful deletion
+        // Navegar hacia atrás
         GoRouter.of(context).pop();
       } else {
         EasyLoading.showError('Category not found');

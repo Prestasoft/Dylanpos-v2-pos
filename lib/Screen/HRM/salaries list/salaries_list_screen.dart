@@ -8,7 +8,7 @@ import 'package:iconly/iconly.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Screen/HRM/employees/provider/designation_provider.dart';
 import 'package:salespro_admin/Screen/HRM/salaries%20list/model/pay_salary_model.dart';
-import 'package:salespro_admin/Screen/HRM/salaries%20list/pay_salary_screen.dart';
+import 'package:salespro_admin/Screen/HRM/salaries%20list/nomina_completa_screen.dart';
 import 'package:salespro_admin/Screen/HRM/salaries%20list/provider/salary_provider.dart';
 import 'package:salespro_admin/Screen/HRM/salaries%20list/repo/salary_repo.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
@@ -34,14 +34,49 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     checkCurrentUserAndRestartApp();
   }
 
   final _horizontalScroll = ScrollController();
-  int _salaryPerPage = 10; // Default number of items to display
+  int _salaryPerPage = 10;
   int _currentPage = 1;
+
+  Widget _buildQuickAccessButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,76 +136,115 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(10.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Flexible(
-                                    child: Text(
-                                      'Salaries List',
-                                      style:
-                                          theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          'Gestión de Nómina',
+                                          style:
+                                              theme.textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  employee.when(
-                                    data: (employees) {
-                                      return ElevatedButton.icon(
-                                        onPressed: () {
-                                          if (!checkUserRoleEditPermissionV2(type: 'hrm')) {
-                                            EasyLoading.showError(
-                                                userPermissionErrorText);
-                                            return;
-                                          }
-                                          showDialog(
-                                            barrierDismissible: false,
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return StatefulBuilder(
-                                                builder: (context, setStates) {
-                                                  return Dialog(
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20.0),
-                                                    ),
-                                                    child: PaySalaryScreen(
-                                                      listOfEmployees:
-                                                          employees,
-                                                      ref: ref,
-                                                    ),
+                                      employee.when(
+                                        data: (employees) {
+                                          return ElevatedButton.icon(
+                                            onPressed: () {
+                                              if (!checkUserRoleEditPermissionV2(type: 'hrm')) {
+                                                EasyLoading.showError(
+                                                    userPermissionErrorText);
+                                                return;
+                                              }
+                                              showDialog(
+                                                barrierDismissible: false,
+                                                context: context,
+                                                builder: (BuildContext context) {
+                                                  return NominaCompletaScreen(
+                                                    ref: ref,
                                                   );
                                                 },
                                               );
                                             },
+                                            icon: const Icon(FeatherIcons.plus,
+                                                color: kWhite, size: 20.0),
+                                            label: Text(
+                                              'Pagar Nómina',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                            ),
                                           );
                                         },
-                                        icon: const Icon(FeatherIcons.plus,
-                                            color: kWhite, size: 20.0),
-                                        label: Text(
-                                          'Pay Salary',
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
+                                        error: (error, stackTrace) {
+                                          return const Center(
+                                            child: Text('An Error accused'),
+                                          );
+                                        },
+                                        loading: () {
+                                          return const Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Botones de acceso rápido
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      children: [
+                                        _buildQuickAccessButton(
+                                          context: context,
+                                          icon: Icons.beach_access,
+                                          label: 'Vacaciones y Licencias',
+                                          color: Colors.blue,
+                                          onTap: () => GoRouter.of(context).push('/hrm/vacations'),
                                         ),
-                                      );
-                                    },
-                                    error: (error, stackTrace) {
-                                      return const Center(
-                                        child: Text('An Error accused'),
-                                      );
-                                    },
-                                    loading: () {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    },
+                                        const SizedBox(width: 12),
+                                        _buildQuickAccessButton(
+                                          context: context,
+                                          icon: Icons.gavel,
+                                          label: 'Calcular Prestaciones',
+                                          color: Colors.orange,
+                                          onTap: () => GoRouter.of(context).push('/hrm/prestaciones'),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        _buildQuickAccessButton(
+                                          context: context,
+                                          icon: Icons.account_balance_wallet,
+                                          label: 'Préstamos',
+                                          color: Colors.purple,
+                                          onTap: () => GoRouter.of(context).push('/hrm/loans'),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        _buildQuickAccessButton(
+                                          context: context,
+                                          icon: Icons.fingerprint,
+                                          label: 'Asistencia',
+                                          color: Colors.teal,
+                                          onTap: () => GoRouter.of(context).push('/hrm/attendance'),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        _buildQuickAccessButton(
+                                          context: context,
+                                          icon: Icons.assessment,
+                                          label: 'Reportes TSS',
+                                          color: Colors.indigo,
+                                          onTap: () => GoRouter.of(context).push('/hrm/tss-reports'),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -334,73 +408,103 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
                                                         .textTheme.titleMedium,
                                                     columns: [
                                                       const DataColumn(
-                                                        label: Text(
-                                                          'S.L',
-                                                        ),
+                                                        label: Text('#'),
                                                       ),
                                                       const DataColumn(
-                                                        label: Text(
-                                                          'Nombre',
-                                                        ),
+                                                        label: Text('Empleado'),
                                                       ),
                                                       const DataColumn(
-                                                        label: Text(
-                                                          'Teléfono',
-                                                        ),
+                                                        label: Text('Período'),
                                                       ),
                                                       const DataColumn(
-                                                        label: Text(
-                                                          'Designación',
-                                                        ),
+                                                        label: Text('Salario Bruto'),
                                                       ),
                                                       const DataColumn(
-                                                        label: Text(
-                                                          'Salario',
-                                                        ),
+                                                        label: Text('Deducciones'),
+                                                      ),
+                                                      const DataColumn(
+                                                        label: Text('Salario Neto'),
+                                                      ),
+                                                      const DataColumn(
+                                                        label: Text('Estado'),
                                                       ),
                                                       DataColumn(
                                                         label: Text(
-                                                          lang.S
-                                                              .of(context)
-                                                              .action,
+                                                          lang.S.of(context).action,
                                                         ),
                                                       ),
                                                     ],
                                                     rows: List.generate(
                                                       paginatedList.length,
-                                                      (index) => DataRow(
+                                                      (index) {
+                                                        final salary = paginatedList[index];
+                                                        final monthNames = {
+                                                          '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr',
+                                                          '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Ago',
+                                                          '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
+                                                          'Enero': 'Ene', 'Febrero': 'Feb', 'Marzo': 'Mar', 'Abril': 'Abr',
+                                                          'Mayo': 'May', 'Junio': 'Jun', 'Julio': 'Jul', 'Agosto': 'Ago',
+                                                          'Septiembre': 'Sep', 'Octubre': 'Oct', 'Noviembre': 'Nov', 'Diciembre': 'Dic',
+                                                        };
+                                                        final monthDisplay = monthNames[salary.month] ?? salary.month;
+                                                        final fortnightText = salary.fortnight != null ? ' Q${salary.fortnight}' : '';
+                                                        return DataRow(
                                                           cells: [
                                                             DataCell(
-                                                              Text(
-                                                                  "${startIndex + index + 1}"),
+                                                              Text("${startIndex + index + 1}"),
+                                                            ),
+                                                            DataCell(
+                                                              Column(
+                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: [
+                                                                  Text(
+                                                                    salary.employeeName,
+                                                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                                                  ),
+                                                                  Text(
+                                                                    salary.designation,
+                                                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            DataCell(
+                                                              Text('$monthDisplay ${salary.year}$fortnightText'),
                                                             ),
                                                             DataCell(
                                                               Text(
-                                                                paginatedList[
-                                                                        index]
-                                                                    .employeeName,
+                                                                'RD\$ ${salary.grossSalary.toStringAsFixed(2)}',
+                                                                style: const TextStyle(color: Colors.green),
                                                               ),
                                                             ),
                                                             DataCell(
                                                               Text(
-                                                                paginatedList[
-                                                                        index]
-                                                                    .paySalary
-                                                                    .toString(),
+                                                                'RD\$ ${salary.totalDeductions.toStringAsFixed(2)}',
+                                                                style: const TextStyle(color: Colors.red),
                                                               ),
                                                             ),
                                                             DataCell(
                                                               Text(
-                                                                paginatedList[
-                                                                        index]
-                                                                    .designation,
+                                                                'RD\$ ${salary.netSalary.toStringAsFixed(2)}',
+                                                                style: const TextStyle(fontWeight: FontWeight.bold, color: kMainColor),
                                                               ),
                                                             ),
                                                             DataCell(
-                                                              Text(
-                                                                paginatedList[
-                                                                        index]
-                                                                    .month,
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                                decoration: BoxDecoration(
+                                                                  color: salary.status == 'Pagado' ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                                                                  borderRadius: BorderRadius.circular(4),
+                                                                ),
+                                                                child: Text(
+                                                                  salary.status,
+                                                                  style: TextStyle(
+                                                                    color: salary.status == 'Pagado' ? Colors.green : Colors.orange,
+                                                                    fontSize: 12,
+                                                                    fontWeight: FontWeight.w500,
+                                                                  ),
+                                                                ),
                                                               ),
                                                             ),
 
@@ -441,31 +545,15 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
                                                                           return;
                                                                         }
                                                                         await showDialog(
-                                                                          barrierDismissible:
-                                                                              false,
-                                                                          context:
-                                                                              context,
-                                                                          builder:
-                                                                              (BuildContext context) {
-                                                                            return StatefulBuilder(
-                                                                              builder: (context, setStates) {
-                                                                                return Dialog(
-                                                                                  shape: RoundedRectangleBorder(
-                                                                                    borderRadius: BorderRadius.circular(20.0),
-                                                                                  ),
-                                                                                  child: PaySalaryScreen(
-                                                                                    listOfEmployees: employee.value ?? [],
-                                                                                    payedSalary: paginatedList[index],
-                                                                                    ref: ref,
-                                                                                  ),
-                                                                                );
-                                                                              },
+                                                                          barrierDismissible: false,
+                                                                          context: context,
+                                                                          builder: (BuildContext context) {
+                                                                            return NominaCompletaScreen(
+                                                                              payedSalary: salary,
+                                                                              ref: ref,
                                                                             );
                                                                           },
                                                                         );
-
-                                                                        GoRouter.of(context)
-                                                                            .pop();
                                                                       },
                                                                       child:
                                                                           Row(
@@ -532,7 +620,9 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
                                                                 ),
                                                               ),
                                                             ),
-                                                          ]),
+                                                          ],
+                                                        );
+                                                      },
                                                     ),
                                                   ),
                                                 ),

@@ -7,6 +7,12 @@ class DailySummaryModel {
   final double pagoEfectivo;
   final double pagoTransferencia;
   final double pagoTarjetas;
+  final double ingresoEfectivo;
+  final double gastoEfectivo;
+  final double ingresoTransferencia;
+  final double gastoTransferencia;
+  final double ingresoTarjeta;
+  final double gastoTarjeta;
 
   DailySummaryModel({
     this.totalFacturado = 0.0,
@@ -15,6 +21,12 @@ class DailySummaryModel {
     this.pagoEfectivo = 0.0,
     this.pagoTransferencia = 0.0,
     this.pagoTarjetas = 0.0,
+    this.ingresoEfectivo = 0.0,
+    this.gastoEfectivo = 0.0,
+    this.ingresoTransferencia = 0.0,
+    this.gastoTransferencia = 0.0,
+    this.ingresoTarjeta = 0.0,
+    this.gastoTarjeta = 0.0,
   });
 
   factory DailySummaryModel.fromDailyTransactions(List<DailyTransactionModel> transactions) {
@@ -24,6 +36,12 @@ class DailySummaryModel {
     double pagoEfectivo = 0.0;
     double pagoTransferencia = 0.0;
     double pagoTarjetas = 0.0;
+    double ingresoEfectivo = 0.0;
+    double gastoEfectivo = 0.0;
+    double ingresoTransferencia = 0.0;
+    double gastoTransferencia = 0.0;
+    double ingresoTarjeta = 0.0;
+    double gastoTarjeta = 0.0;
 
     for (final transaction in transactions) {
       // Total Facturado - para todas las ventas (Sale, Adicionales, Producto)
@@ -35,7 +53,7 @@ class DailySummaryModel {
       // Obtener el tipo de pago y monto según el tipo de transacción
       String? paymentType;
       double paymentAmount = 0.0;
-      
+
       if (transaction.saleTransactionModel != null) {
         paymentType = transaction.saleTransactionModel!.paymentType;
         paymentAmount = transaction.paymentIn;
@@ -60,23 +78,55 @@ class DailySummaryModel {
         paymentType = transaction.paySalary!.paymentType;
         paymentAmount = transaction.paymentOut;
         totalPagado += transaction.paymentOut; // Sumar al total pagado
+      } else {
+        // Fallback: usar campos directos de la transacción cuando los modelos anidados no están disponibles
+        paymentType = transaction.paymentType;
+        if (transaction.type == "Expense" || transaction.type == "Purchase" ||
+            transaction.type == "Purchase Return" || transaction.type == "Salary Payment") {
+          paymentAmount = transaction.paymentOut;
+          totalPagado += transaction.paymentOut;
+        } else {
+          paymentAmount = transaction.paymentIn;
+          totalPagado += transaction.paymentIn;
+        }
       }
 
       // Categorizar por método de pago (considerando español e inglés)
       if (paymentType != null && paymentAmount > 0) {
         final paymentTypeLower = paymentType.toLowerCase().trim();
+        
+        // Determinar si es ingreso o gasto
+        bool isExpense = transaction.type == "Expense" || transaction.type == "Purchase" || 
+                        transaction.type == "Purchase Return" || transaction.type == "Salary Payment";
+        
         switch (paymentTypeLower) {
           case "cash":
           case "efectivo":
             pagoEfectivo += paymentAmount;
+            if (isExpense) {
+              gastoEfectivo += paymentAmount;
+            } else {
+              ingresoEfectivo += paymentAmount;
+            }
             break;
           case "bank":
+          case "banco":
           case "transferencia":
             pagoTransferencia += paymentAmount;
+            if (isExpense) {
+              gastoTransferencia += paymentAmount;
+            } else {
+              ingresoTransferencia += paymentAmount;
+            }
             break;
           case "card":
           case "tarjeta":
             pagoTarjetas += paymentAmount;
+            if (isExpense) {
+              gastoTarjeta += paymentAmount;
+            } else {
+              ingresoTarjeta += paymentAmount;
+            }
             break;
         }
       }
@@ -89,6 +139,12 @@ class DailySummaryModel {
       pagoEfectivo: pagoEfectivo,
       pagoTransferencia: pagoTransferencia,
       pagoTarjetas: pagoTarjetas,
+      ingresoEfectivo: ingresoEfectivo,
+      gastoEfectivo: gastoEfectivo,
+      ingresoTransferencia: ingresoTransferencia,
+      gastoTransferencia: gastoTransferencia,
+      ingresoTarjeta: ingresoTarjeta,
+      gastoTarjeta: gastoTarjeta,
     );
   }
 

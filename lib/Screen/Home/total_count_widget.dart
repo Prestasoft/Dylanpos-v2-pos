@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +11,7 @@ import 'package:salespro_admin/generated/l10n.dart' as lang;
 import '../../Provider/product_provider.dart';
 import '../../const.dart';
 import '../../model/product_model.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../currency/currency_provider.dart';
 
@@ -794,27 +792,31 @@ class _StatisticsDataState extends State<StatisticsData> {
     }
   }
 
+  /// Obtener totales de productos - Usa PostgreSQL API
   void getAllTotal() async {
-    // ignore: unused_local_variable
-    List<ProductModel> productList = [];
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Products')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        totalStock = totalStock + int.parse(data['productStock']);
-        totalSalePrice = totalSalePrice +
-            (int.tryParse(data['productSalePrice']) ??
-                0 * (int.tryParse(data['productStock']) ?? 0));
-        totalParPrice = totalParPrice +
-            (int.parse(data['productPurchasePrice']) *
-                int.parse(data['productStock']));
-        // productList.add(ProductModel.fromJson(jsonDecode(jsonEncode(element.value))));
+    final apiService = ApiService();
+    try {
+      final response = await apiService.get('products', queryParams: {
+        'limit': '10000',
+      });
+
+      if (response.success && response.data != null) {
+        final products = response.data['products'] as List<dynamic>? ?? [];
+
+        for (var element in products) {
+          final data = Map<String, dynamic>.from(element);
+          totalStock = totalStock + (int.tryParse(data['productStock']?.toString() ?? '0') ?? 0);
+          totalSalePrice = totalSalePrice +
+              (num.tryParse(data['productSalePrice']?.toString() ?? '0') ?? 0) *
+                  (num.tryParse(data['productStock']?.toString() ?? '0') ?? 0);
+          totalParPrice = totalParPrice +
+              (num.tryParse(data['productPurchasePrice']?.toString() ?? '0') ?? 0) *
+                  (num.tryParse(data['productStock']?.toString() ?? '0') ?? 0);
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('Error obteniendo totales de productos: $e');
+    }
     setState(() {});
   }
 }

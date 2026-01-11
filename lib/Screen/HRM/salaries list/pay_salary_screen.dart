@@ -62,13 +62,13 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
     checkCurrentUserAndRestartApp();
 
     if (widget.payedSalary != null) {
-      paySalaryController.text = widget.payedSalary?.paySalary.toString() ?? '';
+      paySalaryController.text = widget.payedSalary?.grossSalary.toString() ?? '';
       notesController.text = widget.payedSalary?.note ?? '';
       selectedMonth = widget.payedSalary?.month;
       selectedYear = widget.payedSalary?.year;
       selectedPaymentOption = widget.payedSalary?.paymentType;
       for (var element in widget.listOfEmployees) {
-        if (element.id == widget.payedSalary?.employmentId) {
+        if (element.id == widget.payedSalary?.employeeId) {
           setState(() {
             selectedEmployee = element;
           });
@@ -491,28 +491,43 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                                   ? () async {
                                       if (formKey.currentState?.validate() ??
                                           false) {
+                                        final grossSalary = double.tryParse(paySalaryController.text) ?? 0;
+                                        final deductions = PayrollCalculatorRD.calculateDeductions(
+                                          grossSalary: grossSalary,
+                                          overtime: 0,
+                                          bonuses: 0,
+                                          commissions: 0,
+                                          otherIncome: 0,
+                                        );
+                                        final now = DateTime.now();
                                         final data = PaySalaryModel(
                                           id: widget.payedSalary!.id,
-                                          designation:
-                                              selectedEmployee?.designation ??
-                                                  '',
-                                          designationId:
-                                              selectedEmployee?.designationId ??
-                                                  0,
-                                          employeeName:
-                                              selectedEmployee?.name ?? '',
-                                          employmentId:
-                                              selectedEmployee?.id ?? 0,
+                                          employeeName: selectedEmployee?.name ?? '',
+                                          employeeCedula: selectedEmployee?.cedula ?? '',
+                                          employeeId: selectedEmployee?.id ?? 0,
+                                          designationId: selectedEmployee?.designationId ?? 0,
+                                          designation: selectedEmployee?.designation ?? '',
+                                          department: selectedEmployee?.department ?? 'General',
+                                          year: selectedYear ?? now.year.toString(),
                                           month: selectedMonth ?? '',
-                                          year: selectedYear ?? '',
-                                          netSalary:
-                                              selectedEmployee?.salary ?? 0,
-                                          paySalary: num.tryParse(
-                                                  paySalaryController.text) ??
-                                              0,
-                                          payingDate: DateTime.now(),
-                                          paymentType:
-                                              selectedPaymentOption ?? '',
+                                          payingDate: now,
+                                          periodStart: DateTime(now.year, now.month, 1),
+                                          periodEnd: DateTime(now.year, now.month + 1, 0),
+                                          grossSalary: grossSalary,
+                                          totalIncome: deductions.totalIncome,
+                                          afpEmployee: deductions.afpEmployee,
+                                          sfsEmployee: deductions.sfsEmployee,
+                                          totalTSS: deductions.totalTSS,
+                                          afpEmployer: deductions.afpEmployer,
+                                          sfsEmployer: deductions.sfsEmployer,
+                                          srlEmployer: deductions.srlEmployer,
+                                          infotep: deductions.infotep,
+                                          taxableIncome: deductions.taxableIncome,
+                                          isrWithholding: deductions.isrWithholding,
+                                          totalDeductions: deductions.totalDeductions,
+                                          netSalary: deductions.netSalary,
+                                          paymentType: selectedPaymentOption ?? 'Efectivo',
+                                          status: 'Pagado',
                                           note: notesController.text,
                                         );
 
@@ -532,31 +547,46 @@ class _PaySalaryScreenState extends State<PaySalaryScreen> {
                                           false) {
                                         num id = DateTime.now()
                                             .millisecondsSinceEpoch;
+                                        final grossSalary = double.tryParse(paySalaryController.text) ?? 0;
+                                        final deductions = PayrollCalculatorRD.calculateDeductions(
+                                          grossSalary: grossSalary,
+                                          overtime: 0,
+                                          bonuses: 0,
+                                          commissions: 0,
+                                          otherIncome: 0,
+                                        );
+                                        final now = DateTime.now();
 
                                         bool result =
                                             await SalaryRepository().paySalary(
                                           salary: PaySalaryModel(
                                             id: id,
-                                            designation:
-                                                selectedEmployee?.designation ??
-                                                    '',
-                                            designationId: selectedEmployee
-                                                    ?.designationId ??
-                                                0,
-                                            employeeName:
-                                                selectedEmployee?.name ?? '',
-                                            employmentId:
-                                                selectedEmployee?.id ?? 0,
+                                            employeeName: selectedEmployee?.name ?? '',
+                                            employeeCedula: selectedEmployee?.cedula ?? '',
+                                            employeeId: selectedEmployee?.id ?? 0,
+                                            designationId: selectedEmployee?.designationId ?? 0,
+                                            designation: selectedEmployee?.designation ?? '',
+                                            department: selectedEmployee?.department ?? 'General',
+                                            year: selectedYear ?? now.year.toString(),
                                             month: selectedMonth ?? '',
-                                            year: selectedYear ?? '',
-                                            netSalary:
-                                                selectedEmployee?.salary ?? 0,
-                                            paySalary: num.tryParse(
-                                                    paySalaryController.text) ??
-                                                0,
-                                            payingDate: DateTime.now(),
-                                            paymentType:
-                                                selectedPaymentOption ?? '',
+                                            payingDate: now,
+                                            periodStart: DateTime(now.year, now.month, 1),
+                                            periodEnd: DateTime(now.year, now.month + 1, 0),
+                                            grossSalary: grossSalary,
+                                            totalIncome: deductions.totalIncome,
+                                            afpEmployee: deductions.afpEmployee,
+                                            sfsEmployee: deductions.sfsEmployee,
+                                            totalTSS: deductions.totalTSS,
+                                            afpEmployer: deductions.afpEmployer,
+                                            sfsEmployer: deductions.sfsEmployer,
+                                            srlEmployer: deductions.srlEmployer,
+                                            infotep: deductions.infotep,
+                                            taxableIncome: deductions.taxableIncome,
+                                            isrWithholding: deductions.isrWithholding,
+                                            totalDeductions: deductions.totalDeductions,
+                                            netSalary: deductions.netSalary,
+                                            paymentType: selectedPaymentOption ?? 'Efectivo',
+                                            status: 'Pagado',
                                             note: notesController.text,
                                           ),
                                         );

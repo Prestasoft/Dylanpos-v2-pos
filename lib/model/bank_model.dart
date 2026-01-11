@@ -20,18 +20,19 @@ class BankModel {
   });
 
   BankModel.fromJson(Map<String, dynamic> json) {
-    bankId = json['bankId'];
-    bankName = json['bankName'];
-    accountNumber = json['accountNumber'];
-    accountHolder = json['accountHolder'];
-    branch = json['branch'];
-    isActive = json['isActive'] ?? true;
-    createdAt = json['createdAt'] != null
-        ? DateTime.parse(json['createdAt'])
-        : null;
-    updatedAt = json['updatedAt'] != null
-        ? DateTime.parse(json['updatedAt'])
-        : null;
+    // Soporta tanto snake_case (API) como camelCase (Firebase legacy)
+    bankId = json['id']?.toString() ?? json['bankId'];
+    bankName = json['bank_name'] ?? json['bankName'];
+    accountNumber = json['account_number'] ?? json['accountNumber'];
+    accountHolder = json['account_name'] ?? json['accountHolder'] ?? json['holderName'];
+    branch = json['branch_id'] ?? json['branch'];
+    isActive = json['is_active'] ?? json['isActive'] ?? true;
+    createdAt = json['created_at'] != null
+        ? DateTime.parse(json['created_at'])
+        : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null);
+    updatedAt = json['updated_at'] != null
+        ? DateTime.parse(json['updated_at'])
+        : (json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null);
   }
 
   Map<String, dynamic> toJson() {

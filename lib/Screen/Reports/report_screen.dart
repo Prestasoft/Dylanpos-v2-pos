@@ -1,7 +1,7 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:convert';
 import 'dart:html';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -209,26 +209,38 @@ class _SaleReportsState extends State<SaleReports> {
   }
 
   Future<Map<String, dynamic>> getDailyTransactions(List<SaleTransactionModel> transactions) async {
-    final userID = await getUserID();
-    final ref = FirebaseDatabase.instance.ref(userID).child('Daily Transaction');
-    final snapshot = await ref.get();
-    
-    if (snapshot.exists) {
-      Map<String, dynamic> allDailyTransactions = Map<String, dynamic>.from(snapshot.value as Map);
-      
+    final apiService = ApiService();
+
+    final response = await apiService.get('daily-transactions', queryParams: {
+      'limit': '5000',
+    });
+
+    if (response.success && response.data != null) {
+      final dailyTransactions = response.data['daily_transactions'] as List<dynamic>? ??
+          response.data['transactions'] as List<dynamic>? ?? [];
+
+      Map<String, dynamic> allDailyTransactions = {};
+      for (var element in dailyTransactions) {
+        final data = Map<String, dynamic>.from(element);
+        final id = data['id']?.toString() ?? '';
+        if (id.isNotEmpty) {
+          allDailyTransactions[id] = data;
+        }
+      }
+
       // Filtrar solo las transacciones que coincidan con nuestros invoiceNumbers
       Map<String, dynamic> filteredTransactions = {};
-      
+
       for (var transaction in transactions) {
         final matchingEntries = allDailyTransactions.entries.where(
           (entry) => entry.value['id'] == transaction.invoiceNumber
         );
-        
+
         for (var entry in matchingEntries) {
           filteredTransactions[entry.key] = entry.value;
         }
       }
-      
+
       return filteredTransactions;
     }
     return {};

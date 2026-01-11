@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -13,6 +10,7 @@ import 'package:salespro_admin/Screen/tax%20rates/tax_model.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../Widgets/Constant Data/constant.dart';
 import 'create_single_tax.dart';
 import 'edit_group_tax_popUp.dart';
@@ -31,29 +29,30 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
       required WidgetRef updateRef,
       required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
-    String expenseKey = '';
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Tax List')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['name'].toString() == name) {
-          expenseKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('taxes?name=$name');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> taxes = [];
+        if (data is Map && data['taxes'] != null) {
+          taxes = data['taxes'] as List<dynamic>;
+        } else if (data is List) {
+          taxes = data;
+        }
+        if (taxes.isNotEmpty) {
+          final tax = Map<String, dynamic>.from(taxes.first);
+          final taxId = tax['id']?.toString() ?? tax['key']?.toString();
+          if (taxId != null) {
+            await apiService.delete('taxes/$taxId');
+            // ignore: unused_result
+            updateRef.refresh(taxProvider);
+            EasyLoading.showSuccess(lang.S.of(context).done);
+          }
         }
       }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance
-        .ref("${await getUserID()}/Tax List/$expenseKey");
-    if (expenseKey != '') {
-      await ref.remove();
-      // ignore: unused_result
-      updateRef.refresh(taxProvider);
-      EasyLoading.showSuccess(lang.S.of(context).done);
-      // Navigator.pop(context),
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
     }
   }
 
@@ -62,28 +61,30 @@ class _TaxRatesWidgetState extends State<TaxRatesWidget> {
       required WidgetRef updateRef,
       required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
-    String expenseKey = '';
-    final userId = await getUserID();
-    await FirebaseDatabase.instance
-        .ref(userId)
-        .child('Group Tax List')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['name'].toString() == name) {
-          expenseKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('group-taxes?name=$name');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> groupTaxes = [];
+        if (data is Map && data['groupTaxes'] != null) {
+          groupTaxes = data['groupTaxes'] as List<dynamic>;
+        } else if (data is List) {
+          groupTaxes = data;
+        }
+        if (groupTaxes.isNotEmpty) {
+          final groupTax = Map<String, dynamic>.from(groupTaxes.first);
+          final groupTaxId = groupTax['id']?.toString() ?? groupTax['key']?.toString();
+          if (groupTaxId != null) {
+            await apiService.delete('group-taxes/$groupTaxId');
+            // ignore: unused_result
+            updateRef.refresh(groupTaxProvider);
+            EasyLoading.showSuccess(lang.S.of(context).done);
+          }
         }
       }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance
-        .ref("${await getUserID()}/Group Tax List/$expenseKey");
-    if (expenseKey != '') {
-      await ref.remove();
-      // ignore: unused_result
-      updateRef.refresh(groupTaxProvider);
-      EasyLoading.showSuccess(lang.S.of(context).done);
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
     }
   }
 

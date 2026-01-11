@@ -1,8 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -11,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:salespro_admin/services/api_service.dart';
 
 import '../../Provider/bank_info_provider.dart';
 import '../../Provider/profile_provider.dart';
@@ -53,11 +53,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<String> uploadFile() async {
     try {
-      var snapshot = await FirebaseStorage.instance.ref('Subscription Attachment/${DateTime.now().millisecondsSinceEpoch}').putData(bytesFromPicker!);
-      var url = await snapshot.ref.getDownloadURL();
+      final apiService = ApiService();
 
-      EasyLoading.showSuccess('Upload Successful!');
-      return url;
+      // Convertir bytes a base64 para enviar al API
+      String base64Data = base64Encode(bytesFromPicker!);
+      String fileName = 'subscription_${DateTime.now().millisecondsSinceEpoch}';
+
+      final response = await apiService.post('uploads/subscription-attachment', {
+        'file': base64Data,
+        'fileName': fileName,
+      });
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        String url = '';
+        if (data is Map) {
+          url = data['url']?.toString() ?? data['fileUrl']?.toString() ?? '';
+        }
+        EasyLoading.showSuccess('Upload Successful!');
+        return url;
+      } else {
+        EasyLoading.showError('Upload failed');
+        return '';
+      }
     } catch (e) {
       EasyLoading.dismiss();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -470,25 +488,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               data.userId = await getUserID();
                               EasyLoading.show(status: 'Loading...');
                               data.attachment = await uploadFile();
-                              final DatabaseReference ref = FirebaseDatabase.instance.ref().child('Admin Panel').child('Subscription Update Request');
 
-                              await ref.push().set(data.toJson());
+                              final apiService = ApiService();
+                              await apiService.post('subscription-requests', Map<String, dynamic>.from(data.toJson()));
+
                               EasyLoading.showSuccess('Request has been send');
                               context.pop();
-                              // context.pop();
                             } else {
                               EasyLoading.showError('You Are Not A Valid User');
                             }
-
-                            ///_______________________________
-                            // EasyLoading.show(status: 'Loading...');
-                            // data.attachment = await uploadFile();
-                            // final DatabaseReference ref = FirebaseDatabase.instance.ref().child('Admin Panel').child('Subscription Update Request');
-                            //
-                            // ref.push().set(data.toJson());
-                            // EasyLoading.showSuccess('Request has been send');
-                            // context.pop();
-                            // context.pop();
                           }
                         },
                         child: Text(

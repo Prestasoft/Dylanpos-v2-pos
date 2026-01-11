@@ -12,7 +12,7 @@ import '../../Provider/general_setting_provider.dart';
 import '../../Provider/transactions_provider.dart';
 import '../../model/sale_transaction_model.dart';
 import '../../model/due_transaction_model.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../../services/api_service.dart';
 import '../../const.dart';
 
 class TransferDetailsDialog extends ConsumerWidget {
@@ -456,53 +456,58 @@ class TransferDetailsDialog extends ConsumerWidget {
             data: (setting) async {
               try {
                 print('DEBUG _showInvoiceDetails: Providers cargados correctamente');
-                
-                // Determinar la referencia de la base de datos
-                DatabaseReference dbRef;
-                
+
+                final apiService = ApiService();
+                String endpoint;
+
                 if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones') {
-                  dbRef = FirebaseDatabase.instance.ref('$userId/Sales Transition');
-                  print('DEBUG _showInvoiceDetails: Buscando en Sales Transition');
+                  endpoint = 'sales';
+                  print('DEBUG _showInvoiceDetails: Buscando en Sales');
                 } else if (type == 'Due Collection' || type == 'Due Payment') {
-                  dbRef = FirebaseDatabase.instance.ref('$userId/Due Transaction');
-                  print('DEBUG _showInvoiceDetails: Buscando en Due Transaction');
+                  endpoint = 'due-transactions';
+                  print('DEBUG _showInvoiceDetails: Buscando en Due Transactions');
                 } else {
                   print('DEBUG _showInvoiceDetails: Tipo no soportado: $type');
                   EasyLoading.showError('Tipo de transacción no soportado');
                   return;
                 }
-                
-                // Buscar la transacción
-                print('DEBUG _showInvoiceDetails: Obteniendo todas las transacciones');
-                final snapshot = await dbRef.get();
-                
-                if (!snapshot.exists) {
+
+                // Buscar la transacción por invoiceNumber
+                print('DEBUG _showInvoiceDetails: Obteniendo transacciones');
+                final response = await apiService.get(endpoint, queryParams: {
+                  'invoiceNumber': invoiceNumber,
+                  'limit': '1',
+                });
+
+                if (!response.success || response.data == null) {
                   print('DEBUG _showInvoiceDetails: No hay transacciones en la base de datos');
                   EasyLoading.showError('No se encontraron transacciones');
                   return;
                 }
-                
+
                 // Buscar la factura específica
-                final allData = snapshot.value as Map<dynamic, dynamic>;
-                Map<dynamic, dynamic>? transactionData;
-                
-                allData.forEach((key, value) {
-                  if (value is Map && value['invoiceNumber'] == invoiceNumber) {
-                    print('DEBUG _showInvoiceDetails: Factura encontrada con key: $key');
-                    transactionData = value;
+                final dataList = response.data[endpoint == 'sales' ? 'sales' : 'due_transactions'] as List<dynamic>? ?? [];
+                Map<String, dynamic>? transactionData;
+
+                for (var element in dataList) {
+                  final data = Map<String, dynamic>.from(element);
+                  if (data['invoiceNumber'] == invoiceNumber) {
+                    print('DEBUG _showInvoiceDetails: Factura encontrada');
+                    transactionData = data;
+                    break;
                   }
-                });
-                
+                }
+
                 if (transactionData == null) {
                   print('DEBUG _showInvoiceDetails: Factura $invoiceNumber no encontrada');
                   EasyLoading.showError('Factura no encontrada');
                   return;
                 }
-                
+
                 // Generar el PDF según el tipo
                 if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones') {
-                  final saleTransaction = SaleTransactionModel.fromJson(transactionData!);
-                  
+                  final saleTransaction = SaleTransactionModel.fromJson(transactionData);
+
                   await GeneratePdfAndPrint().printSaleInvoice(
                     personalInformationModel: profileInfo,
                     saleTransactionModel: saleTransaction,
@@ -512,8 +517,8 @@ class TransferDetailsDialog extends ConsumerWidget {
                     fromSaleReports: true,
                   );
                 } else if (type == 'Due Collection' || type == 'Due Payment') {
-                  final dueTransaction = DueTransactionModel.fromJson(transactionData!);
-                  
+                  final dueTransaction = DueTransactionModel.fromJson(transactionData);
+
                   await GeneratePdfAndPrint().printDueInvoice(
                     personalInformationModel: profileInfo,
                     dueTransactionModel: dueTransaction,

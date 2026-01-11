@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -16,6 +13,7 @@ import 'package:salespro_admin/model/customer_model.dart';
 
 import '../../Provider/customer_provider.dart';
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../../subscription.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
@@ -67,29 +65,33 @@ class _SupplierListState extends State<SupplierList> {
       required WidgetRef updateRef,
       required BuildContext context}) async {
     EasyLoading.show(status: '${lang.S.of(context).deleting}..');
-    String customerKey = '';
-    await FirebaseDatabase.instance
-        .ref(await getUserID())
-        .child('Customers')
-        .orderByKey()
-        .get()
-        .then((value) {
-      for (var element in value.children) {
-        var data = jsonDecode(jsonEncode(element.value));
-        if (data['phoneNumber'].toString() == phoneNumber) {
-          customerKey = element.key.toString();
+    try {
+      final apiService = ApiService();
+      // Buscar customer por teléfono
+      final response = await apiService.get('customers?phoneNumber=$phoneNumber');
+      if (response.success && response.data != null) {
+        final data = response.data;
+        List<dynamic> customers = [];
+        if (data is Map && data['customers'] != null) {
+          customers = data['customers'] as List<dynamic>;
+        } else if (data is List) {
+          customers = data;
+        }
+        if (customers.isNotEmpty) {
+          final customer = Map<String, dynamic>.from(customers.first);
+          final customerId = customer['id']?.toString() ?? customer['key']?.toString();
+          if (customerId != null) {
+            await apiService.delete('customers/$customerId');
+          }
         }
       }
-    });
-    DatabaseReference ref = FirebaseDatabase.instance
-        .ref("${await getUserID()}/Customers/$customerKey");
-    await ref.remove();
-    final refreshedCustomers = updateRef.refresh(allCustomerProvider);
-    // ignore: use_build_context_synchronously
-    // Navigator.pop(context);
-    GoRouter.of(context).pop();
-
-    EasyLoading.showSuccess(lang.S.of(context).done);
+      final refreshedCustomers = updateRef.refresh(allCustomerProvider);
+      // ignore: use_build_context_synchronously
+      GoRouter.of(context).pop();
+      EasyLoading.showSuccess(lang.S.of(context).done);
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
+    }
   }
 
   ScrollController mainScroll = ScrollController();

@@ -1,9 +1,8 @@
 // ignore_for_file: unused_result
 
-import 'dart:convert';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+
+import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,69 +46,59 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
     try {
       EasyLoading.show(
           status: '${lang.S.of(context).loading}...', dismissOnTap: false);
+      final apiService = ApiService();
 
       ///_________Push_on_Sale_return_dataBase____________________________________________________________________________
-      DatabaseReference ref =
-          FirebaseDatabase.instance.ref("${await getUserID()}/Purchase Return");
-      await ref.push().set(purchase.toJson());
+      await apiService.post('purchase-returns', Map<String, dynamic>.from(purchase.toJson()));
 
       ///________________delete_From_Sale_transaction______________________________________________________________________
-      String? key;
-      await FirebaseDatabase.instance
-          .ref(await getUserID())
-          .child('Purchase Transition')
-          .orderByKey()
-          .get()
-          .then((value) {
-        for (var element in value.children) {
-          final t = PurchaseTransactionModel.fromJson(
-              jsonDecode(jsonEncode(element.value)));
-          if (purchase.invoiceNumber == t.invoiceNumber) {
-            key = element.key;
+      // Find purchase by invoice number and delete
+      final purchaseResponse = await apiService.get('purchases?invoiceNumber=${purchase.invoiceNumber}');
+      if (purchaseResponse.success && purchaseResponse.data != null) {
+        final data = purchaseResponse.data;
+        List<dynamic> purchases = [];
+        if (data is Map && data['purchases'] != null) {
+          purchases = data['purchases'] as List<dynamic>;
+        } else if (data is List) {
+          purchases = data;
+        }
+        if (purchases.isNotEmpty) {
+          final purchaseData = Map<String, dynamic>.from(purchases.first);
+          final purchaseId = purchaseData['id']?.toString() ?? '';
+          if (purchaseId.isNotEmpty) {
+            await apiService.delete('purchases/$purchaseId');
           }
         }
-      });
-      await FirebaseDatabase.instance
-          .ref(await getUserID())
-          .child('Purchase Transition')
-          .child(key!)
-          .remove();
+      }
 
       ///__________StockMange_________________________________________________________________________________
-      final stockRef =
-          FirebaseDatabase.instance.ref('${await getUserID()}/Products/');
-
       for (var element in purchase.productList!) {
-        var data = await stockRef
-            .orderByChild('productCode')
-            .equalTo(element.productCode)
-            .once();
-        final data2 =
-            jsonDecode(jsonEncode(data.snapshot.children.first.value));
+        final productResponse = await apiService.get('products?productCode=${element.productCode}');
+        if (productResponse.success && productResponse.data != null) {
+          final prodData = productResponse.data;
+          List<dynamic> products = [];
+          if (prodData is Map && prodData['products'] != null) {
+            products = prodData['products'] as List<dynamic>;
+          } else if (prodData is List) {
+            products = prodData;
+          }
+          if (products.isNotEmpty) {
+            final productData = Map<String, dynamic>.from(products.first);
+            final productId = productData['id']?.toString() ?? '';
+            int stock = int.tryParse(productData['productStock']?.toString() ?? '0') ?? 0;
+            int remainStock = stock - (int.tryParse(element.productStock) ?? 0);
 
-        var data1 = await stockRef
-            .child('${data.snapshot.children.first.key}/productStock')
-            .get();
-        int stock = int.parse(data1.value.toString());
-        int remainStock = stock - (int.tryParse(element.productStock) ?? 0);
+            Map<String, dynamic> updateData = {'productStock': '$remainStock'};
 
-        stockRef
-            .child(data.snapshot.children.first.key!)
-            .update({'productStock': '$remainStock'});
+            // Update Serial Number
+            if (element.serialNumber.isNotEmpty) {
+              List<dynamic> oldSerials = productData['serialNumber'] ?? [];
+              final newList = oldSerials.where((item) => !element.serialNumber.contains(item)).toList();
+              updateData['serialNumber'] = newList;
+            }
 
-        ///________Update_Serial_Number____________________________________________________
-
-        if (element.serialNumber.isNotEmpty) {
-          ProductModel p = ProductModel.fromJson(data2);
-          final newList = p.serialNumber
-              .where((item) => !element.serialNumber.contains(item))
-              .toList();
-
-          // List<dynamic> result = productOldSerialList.where((item) => !element.serialNumber!.contains(item)).toList();
-          stockRef.child(data.snapshot.children.first.key!).update({
-            'serialNumber': newList.map((e) => e).toList(),
-            // 'serialNumber': p.serialNumber.where((item) => !element.serialNumber.contains(item)).toList(),
-          });
+            await apiService.put('products/$productId', updateData);
+          }
         }
       }
 
@@ -131,23 +120,23 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
 
       ///_________DueUpdate___________________________________________________________________________________
       if (purchase.customerName != 'Guest') {
-        final dueUpdateRef =
-            FirebaseDatabase.instance.ref('${await getUserID()}/Customers/');
-        // String? key;
-        final customerQuery = dueUpdateRef
-            .orderByChild('phoneNumber')
-            .equalTo(purchase.customerPhone);
-        final customerSnapshot = await customerQuery.once();
-
-        var data1 = await dueUpdateRef
-            .child('${customerSnapshot.snapshot.children.first.key}/due')
-            .get();
-        int previousDue = data1.value.toString().toInt();
-
-        int totalDue = previousDue - purchase.dueAmount!.toInt();
-        dueUpdateRef
-            .child(customerSnapshot.snapshot.children.first.key!)
-            .update({'due': '$totalDue'});
+        final customerResponse = await apiService.get('customers?phoneNumber=${purchase.customerPhone}');
+        if (customerResponse.success && customerResponse.data != null) {
+          final custData = customerResponse.data;
+          List<dynamic> customers = [];
+          if (custData is Map && custData['customers'] != null) {
+            customers = custData['customers'] as List<dynamic>;
+          } else if (custData is List) {
+            customers = custData;
+          }
+          if (customers.isNotEmpty) {
+            final customerData = Map<String, dynamic>.from(customers.first);
+            final customerId = customerData['id']?.toString() ?? '';
+            int previousDue = int.tryParse(customerData['due']?.toString() ?? '0') ?? 0;
+            int totalDue = previousDue - purchase.dueAmount!.toInt();
+            await apiService.put('customers/$customerId', {'due': '$totalDue'});
+          }
+        }
       }
 
       consumerRef.refresh(allCustomerProvider);

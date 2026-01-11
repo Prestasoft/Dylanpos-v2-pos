@@ -1,11 +1,13 @@
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import '../../commas.dart';
 import '../../const.dart';
+import '../../services/api_service.dart';
 import '../../model/sale_transaction_model.dart';
+import '../../services/whatsapp_template_service.dart';
+import '../../services/whatsapp_credentials_service.dart';
 
 class CuadreModal extends StatefulWidget {
   final List<SaleTransactionModel> ventasDelDia;
@@ -97,27 +99,32 @@ class _CuadreModalState extends State<CuadreModal> with SingleTickerProviderStat
   Future<void> _cargarDailyTransactions() async {
     setState(() => _loading = true);
     try {
-      final ref = FirebaseDatabase.instance
-          .ref(await getUserID())
-          .child('Daily Transaction');
-      
-      final snapshot = await ref.get();
+      final apiService = ApiService();
 
-      if (snapshot.exists) {
-        Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
+      // Formatear fechas para la consulta
+      final startDate = _inicioDia.toIso8601String();
+      final endDate = _finDia.toIso8601String();
+
+      final response = await apiService.get('daily-transactions', queryParams: {
+        'startDate': startDate,
+        'endDate': endDate,
+        'limit': '1000',
+      });
+
+      if (response.success && response.data != null) {
+        final transactions = response.data['daily_transactions'] as List<dynamic>? ??
+            response.data['transactions'] as List<dynamic>? ?? [];
+
         _dailyTransactions = [];
-        
-        values.forEach((key, value) {
-          Map<String, dynamic> transaction = {
-            'key': key,
-            ...Map<String, dynamic>.from(value)
-          };
-          
+
+        for (var value in transactions) {
+          Map<String, dynamic> transaction = Map<String, dynamic>.from(value);
+
           if (transaction['date'] != null) {
             try {
               final dateStr = transaction['date'] as String;
               final date = DateTime.parse(dateStr);
-              
+
               if (date.isAfter(_inicioDia) && date.isBefore(_finDia)) {
                 _dailyTransactions.add(transaction);
               }
@@ -125,10 +132,10 @@ class _CuadreModalState extends State<CuadreModal> with SingleTickerProviderStat
               debugPrint('Error al parsear fecha: ${transaction['date']}');
             }
           }
-        });
+        }
 
         debugPrint('Transacciones del día encontradas: ${_dailyTransactions.length}');
-        
+
         _clasificarTransacciones();
         _calcularTotales();
       } else {
@@ -276,53 +283,48 @@ class _CuadreModalState extends State<CuadreModal> with SingleTickerProviderStat
     return '${days[weekday]}, ${date.day} ${months[month]} ${date.year}';
   }
 
-  String _generateReportText() {
+  Future<String> _generateReportText() async {
     final now = DateTime.now();
     final formattedDate = '${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}';
     final bool cuadreOk = totalContado == efectivoNeto;
     final diferencia = (totalContado - efectivoNeto).abs();
-    
-    return '''🏪 CUADRE DE CAJA
-📅 ${_getFormattedDate(now)}
 
-📊 RESUMEN DEL DÍA
-💰 Total Ventas: \$${formatCurrency(_totalVentasDia)} RD\$
-💵 Cobros del día: \$${formatCurrency(_totalCobrosDia)} RD\$
-⏰ Pendiente: \$${formatCurrency(_totalPendiente)} RD\$
-💵 Efectivo Neto: \$${formatCurrency(efectivoNeto)} RD\$
-🛒 Total Gastos: \$${formatCurrency(widget.totalGastos)} RD\$
-
-💳 MÉTODOS DE PAGO
-💵 Efectivo: \$${formatCurrency(_totalEfectivoVentas + _totalEfectivoCobros)} RD\$
-💳 Tarjeta: \$${formatCurrency(_totalTarjetaVentas + _totalTarjetaCobros)} RD\$
-🔄 Transferencia: \$${formatCurrency(_totalTransferenciaVentas + _totalTransferenciaCobros)} RD\$
-
-💰 EFECTIVO FÍSICO
-📦 Total Contado: \$${formatCurrency(totalContado)} RD\$
-${cuadreOk ? '✅ Cuadre Perfecto' : '⚠️ Diferencia: \$${formatCurrency(diferencia)} RD\$'}
-
-📈 BALANCE FINAL
-💰 Balance Neto: \$${formatCurrency(totalNetoPorDia)} RD\$
-
----
-Generado: $formattedDate
-Sistema: VICTOR GUZMAN FOTOGRAFIA''';
+    // Usar plantilla de WhatsApp
+    final template = await WhatsAppTemplateService.getTemplate('daily_report');
+    return WhatsAppTemplateService.replaceVariables(template, {
+      'fecha': _getFormattedDate(now),
+      'totalVentas': '\$${formatCurrency(_totalVentasDia)}',
+      'totalCobros': '\$${formatCurrency(_totalCobrosDia)}',
+      'totalPendiente': '\$${formatCurrency(_totalPendiente)}',
+      'efectivoNeto': '\$${formatCurrency(efectivoNeto)}',
+      'totalGastos': '\$${formatCurrency(widget.totalGastos)}',
+      'totalEfectivo': '\$${formatCurrency(_totalEfectivoVentas + _totalEfectivoCobros)}',
+      'totalTarjeta': '\$${formatCurrency(_totalTarjetaVentas + _totalTarjetaCobros)}',
+      'totalTransferencia': '\$${formatCurrency(_totalTransferenciaVentas + _totalTransferenciaCobros)}',
+      'totalContado': '\$${formatCurrency(totalContado)}',
+      'cuadreStatus': cuadreOk ? '✅ Cuadre Perfecto' : '⚠️ Diferencia: \$${formatCurrency(diferencia)}',
+      'balanceNeto': '\$${formatCurrency(totalNetoPorDia)}',
+      'horaGeneracion': formattedDate,
+    });
   }
 
   Future<void> _sendReportViaWhatsApp(BuildContext context) async {
     try {
       EasyLoading.show(status: 'Enviando reporte de cuadre...');
 
-      final message = _generateReportText();
+      final message = await _generateReportText();
       const phoneNumber = '+59168774551';
 
+      // Obtener credenciales dinámicas de WhatsApp
+      final credentials = await WhatsAppCredentialsService.getCredentials();
+
       final body = {
-        'token': '5i36w829nb1ljkj7',
+        'token': credentials.token,
         'to': phoneNumber,
         'body': message,
       };
 
-      final url = Uri.parse('https://api.ultramsg.com/instance127004/messages/chat');
+      final url = Uri.parse(credentials.getApiUrl('messages/chat'));
       final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
 
       final response = await http.post(
@@ -932,7 +934,7 @@ Sistema: VICTOR GUZMAN FOTOGRAFIA''';
           ),
           const SizedBox(height: 8),
           _buildBalanceRow(
-            'Gastos',
+            'Gastos/Devoluciones',
             widget.totalGastos,
             Icons.shopping_cart,
             Colors.red,

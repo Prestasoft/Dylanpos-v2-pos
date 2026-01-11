@@ -1,7 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:salespro_admin/model/FullReservation.dart';
 
 class ReservationUtils {
+  /// Formatea una fecha ISO 8601 a formato legible (yyyy-MM-dd)
+  static String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '-';
+    try {
+      if (dateStr.contains('T')) {
+        final parsedDate = DateTime.parse(dateStr);
+        return DateFormat('yyyy-MM-dd').format(parsedDate);
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
   /// Retorna una descripción legible de la reserva completa
   static String formatFullReservation(FullReservation full) {
     final reservation = full.reservation;
@@ -11,7 +26,7 @@ class ReservationUtils {
     final buffer = StringBuffer();
 
     buffer.writeln(
-        '📅 Fecha: ${reservation['reservation_date']} a las ${reservation['reservation_time']}');
+        '📅 Fecha: ${_formatDate(reservation['reservation_date']?.toString())} a las ${reservation['reservation_time']}');
     buffer.writeln('🏬 Sucursal: ${reservation['branch_id']}');
     buffer.writeln('👗 Vestido: ${dress?['name'] ?? '-'}');
     buffer.writeln('🔖 Categoría: ${dress?['category'] ?? '-'}');

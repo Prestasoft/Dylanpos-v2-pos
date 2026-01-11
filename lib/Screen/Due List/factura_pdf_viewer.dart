@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,27 +13,28 @@ import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:cross_file/cross_file.dart';
 
-import '../../const.dart';
+import '../../services/api_service.dart';
 
 // Función para ver el PDF de la factura
 Future<void> verPdfFactura(BuildContext context, SaleTransactionModel factura) async {
   EasyLoading.show(status: 'Generando visualización de PDF...');
-  
+
   try {
+    final apiService = ApiService();
+
     // Obtener información personal de la empresa
-    final refPersonal = FirebaseDatabase.instance.ref('${await getUserID()}/Personal Information');
-    final snapshotPersonal = await refPersonal.get();
-    
+    final responsePersonal = await apiService.get('personal-information');
+
     // Obtener configuración general
-    final refGeneral = FirebaseDatabase.instance.ref('${await getUserID()}/General Setting');
-    final snapshotGeneral = await refGeneral.get();
-    
-    if (snapshotPersonal.exists && snapshotGeneral.exists) {
+    final responseGeneral = await apiService.get('general-settings');
+
+    if (responsePersonal.success && responseGeneral.success &&
+        responsePersonal.data != null && responseGeneral.data != null) {
       final personalInfo = PersonalInformationModel.fromJson(
-          jsonDecode(jsonEncode(snapshotPersonal.value)));
-          
+          Map<String, dynamic>.from(responsePersonal.data));
+
       final generalSetting = GeneralSettingModel.fromJson(
-          jsonDecode(jsonEncode(snapshotGeneral.value)));
+          Map<String, dynamic>.from(responseGeneral.data));
       
       try {
         final pdfGenerator = GeneratePdfAndPrint();

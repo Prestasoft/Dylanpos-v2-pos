@@ -1,11 +1,29 @@
-import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../model/dress_model.dart';
+import '../services/api_service.dart';
+import 'branch_provider.dart';
 
+/// ============================================================================
+/// DRESS PROVIDER - VERSIÓN REACTIVA CON BRANCH PROVIDER
+/// ============================================================================
+///
+/// Este provider ahora depende de branchIdProvider, lo que significa que:
+/// - Cuando el usuario cambia de sucursal, branchIdProvider.state cambia
+/// - Riverpod detecta el cambio y INVALIDA automáticamente este provider
+/// - Los datos se recargan con la nueva sucursal
+///
+/// ESTO GARANTIZA que el cambio de sucursal siempre funcione.
+/// ============================================================================
+
+/// Servicio API compartido
+final ApiService _apiService = ApiService();
+
+/// Subir imagen a Firebase Storage (se mantiene para almacenamiento de imágenes)
 Future<String> uploadImageToFirebase(dynamic imageFile) async {
   try {
     String fileName = DateTime.now().millisecondsSinceEpoch.toString();
@@ -51,7 +69,7 @@ Future<String> uploadImageToFirebase(dynamic imageFile) async {
   }
 }
 
-// Upload multiple images and return URLs
+/// Subir múltiples imágenes y retornar URLs
 Future<List<String>> uploadMultipleImages(List<dynamic> imageFiles) async {
   List<String> imageUrls = [];
 
@@ -65,7 +83,7 @@ Future<List<String>> uploadMultipleImages(List<dynamic> imageFiles) async {
   return imageUrls;
 }
 
-// Add a new dress with image URLs
+/// Agregar un nuevo vestido con URLs de imágenes - Usa PostgreSQL API
 final addDressProvider =
     FutureProvider.family<bool, Map<String, dynamic>>((ref, data) async {
   try {
@@ -85,37 +103,33 @@ final addDressProvider =
       imageFiles = webImages;
     }
 
-    // Upload new images if any
+    // Upload new images if any (still uses Firebase Storage)
     List<String> newImageUrls = await uploadMultipleImages(imageFiles);
 
     // Combine with existing image URLs if editing
     List<String> allImageUrls = [...dress.images, ...newImageUrls];
 
-    // Generate a new key if id is empty
-    String dressId = dress.id.isEmpty
-        ? FirebaseDatabase.instance.ref('Admin Panel/dresses').push().key ?? ''
-        : dress.id;
-
-    // Save dress to Realtime Database with image URLs
-    await FirebaseDatabase.instance.ref('Admin Panel/dresses/$dressId').set({
+    // Preparar datos para la API
+    final dressData = {
       'name': dress.name,
       'category': dress.category,
       'subcategory': dress.subcategory,
       'branch_id': dress.branchId,
       'available': dress.available,
-      'created_at': dress.createdAt.millisecondsSinceEpoch,
-      'updated_at': DateTime.now().millisecondsSinceEpoch,
       'images': allImageUrls,
-      'price': dress.price, // Save price if available
-    });
+      'price': dress.price,
+    };
 
-    return true;
+    // Guardar vestido en PostgreSQL
+    final response = await _apiService.post('dresses', dressData);
+
+    return response.success;
   } catch (e) {
     return false;
   }
 });
 
-// Update an existing dress
+/// Actualizar un vestido existente - Usa PostgreSQL API
 final updateDressProvider =
     FutureProvider.family<bool, Map<String, dynamic>>((ref, data) async {
   try {
@@ -135,7 +149,7 @@ final updateDressProvider =
       newImageFiles = webImages;
     }
 
-    // Upload new images if any
+    // Upload new images if any (still uses Firebase Storage)
     List<String> newImageUrls = [];
     if (newImageFiles.isNotEmpty) {
       newImageUrls = await uploadMultipleImages(newImageFiles);
@@ -144,72 +158,55 @@ final updateDressProvider =
     // Combine all images
     List<String> allImageUrls = [...dress.images, ...newImageUrls];
 
-    // Update the dress in Realtime Database
-    await FirebaseDatabase.instance
-        .ref('Admin Panel/dresses/${dress.id}')
-        .update({
+    // Preparar datos para actualizar
+    final updateData = {
       'name': dress.name,
       'category': dress.category,
       'subcategory': dress.subcategory,
       'branch_id': dress.branchId,
       'available': dress.available,
-      'updated_at': DateTime.now().millisecondsSinceEpoch,
       'images': allImageUrls,
-      'price': dress.price, // Update price if available
-    });
+      'price': dress.price,
+    };
 
-    return true;
+    // Actualizar en PostgreSQL
+    final response = await _apiService.put('dresses/${dress.id}', updateData);
+
+    return response.success;
   } catch (e) {
     return false;
   }
 });
-// Delete a dress
+
+/// Eliminar un vestido - Usa PostgreSQL API
 final deleteDressProvider =
     FutureProvider.family<bool, String>((ref, dressId) async {
   try {
-    // Get the dress first to potentially handle images
-    final dataSnapshot = await FirebaseDatabase.instance
-        .ref('Admin Panel/dresses/$dressId')
-        .get();
-
-    if (dataSnapshot.exists) {
-      Map<dynamic, dynamic>? data =
-          dataSnapshot.value as Map<dynamic, dynamic>?;
-      if (data != null) {
-        // Convert to our model
-
-        // Delete the node from Realtime Database
-        await FirebaseDatabase.instance
-            .ref('Admin Panel/dresses/$dressId')
-            .remove();
-
-        return true;
-      }
-    }
-    return false;
+    final response = await _apiService.delete('dresses/$dressId');
+    return response.success;
   } catch (e) {
     return false;
   }
 });
 
-// Toggle dress availability
+/// Cambiar disponibilidad del vestido - Usa PostgreSQL API
 final toggleDressAvailabilityProvider =
     FutureProvider.family<bool, Map<String, dynamic>>((ref, data) async {
   try {
     String dressId = data['dressId'] as String;
     bool newAvailability = data['available'] as bool;
 
-    await FirebaseDatabase.instance.ref('Admin Panel/dresses/$dressId').update({
+    final response = await _apiService.put('dresses/$dressId', {
       'available': newAvailability,
-      'updated_at': DateTime.now().millisecondsSinceEpoch,
     });
 
-    return true;
+    return response.success;
   } catch (e) {
     return false;
   }
 });
 
+/// Cambiar estado del vestido - Usa PostgreSQL API
 final changeStateProvider =
     FutureProvider.family<bool, Map<String, dynamic>>((ref, data) async {
   try {
@@ -217,189 +214,395 @@ final changeStateProvider =
     bool newAvailability = data['available'] as bool;
     String state = data['state'] as String;
 
-    await FirebaseDatabase.instance.ref('Admin Panel/dresses/$dressId').update({
+    final response = await _apiService.put('dresses/$dressId', {
       'available': newAvailability,
       'state': state,
-      'updated_at': DateTime.now().millisecondsSinceEpoch,
     });
 
-    return true;
+    return response.success;
   } catch (e) {
     return false;
   }
 });
 
-// Get all dresses
+/// ============================================================================
+/// PROVIDER PRINCIPAL DE VESTIDOS - AHORA REACTIVO AL BRANCH
+/// ============================================================================
+///
+/// Este provider:
+/// 1. Observa branchIdProvider con ref.watch()
+/// 2. Cuando branchId cambia, Riverpod INVALIDA este provider automáticamente
+/// 3. Se ejecuta fetchDresses() con el nuevo branch
+/// 4. Los datos se actualizan en la UI
+/// ============================================================================
 final dressesProvider = StreamProvider<List<DressModel>>((ref) {
-  return FirebaseDatabase.instance
-      .ref('Admin Panel/dresses')
-      .onValue
-      .map((event) {
-    final snapshot = event.snapshot;
-    if (snapshot.value == null) return [];
+  // ⚠️ CLAVE: Observamos el branchId - esto crea la dependencia reactiva
+  final branchId = ref.watch(branchIdProvider);
 
-    // Aquí imprimes el JSON completo
+  final controller = StreamController<List<DressModel>>();
 
-    Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
-    List<DressModel> dresses = [];
-
-    data.forEach((key, value) {
-      if (value is Map &&
-          value.containsKey('name') &&
-          value.containsKey('category')) {
-        // Solo agregar si tiene campos mínimos de un vestido
-        dresses.add(DressModel.fromRealtimeDB(value, key));
-      }
-    });
-
-    return dresses;
-  });
-});
-
-// 1. Proveedor con timeout y manejo de errores
-final availableDressesByComponentsProvider =
-    StreamProvider.family<List<DressModel>, String>((ref, String category) {
-  // Crear un completer para gestionar el timeout
-  final future = FirebaseDatabase.instance
-      .ref('Admin Panel/dresses')
-      // 2. Optimizar consulta: limitamos el tamaño de descarga
-      .limitToFirst(100) // Ajusta este número según tus necesidades
-      .onValue
-      .timeout(
-    Duration(seconds: 15), // Timeout de 15 segundos
-    onTimeout: (sink) {
-      sink.addError(
-          'Tiempo de espera agotado. Verifica tu conexión a internet.');
-      sink.close();
-    },
-  ).map((event) {
-    final snapshot = event.snapshot;
-
-    // 3. Manejo adecuado de valores nulos
-    if (snapshot.value == null) {
-      return <DressModel>[];
-    }
-
+  Future<void> fetchDresses() async {
     try {
-      // 4. Manejo seguro de tipos
-      final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
-      List<DressModel> dresses = [];
+      debugPrint('🔄 [dressesProvider] Cargando vestidos para branch: $branchId');
 
-      // 5. Validación de cada elemento antes de procesarlo
-      data.forEach((key, value) {
-        if (value is Map<dynamic, dynamic>) {
-          try {
-            // Solo filtramos por categoría si existe
-            final dressCategory = value['category'];
-            if (dressCategory != null && dressCategory == category) {
-              dresses.add(DressModel.fromRealtimeDB(value, key));
+      final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
+
+      if (response.success && response.data != null) {
+        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        List<DressModel> dresses = [];
+
+        for (var item in dressesData) {
+          if (item is Map) {
+            final data = Map<String, dynamic>.from(item);
+            // Verificar campos mínimos
+            if (data.containsKey('name') && data.containsKey('category')) {
+              final id = data['id']?.toString() ?? '';
+              dresses.add(DressModel.fromMap(data, id));
             }
-          } catch (e) {
-            // Continuamos con el siguiente vestido en caso de error
           }
         }
-      });
 
-      // 6. Ordenamiento más eficiente
-      dresses.sort(
-          (a, b) => a.available == b.available ? 0 : (a.available ? -1 : 1));
-
-      return dresses;
+        debugPrint('✅ [dressesProvider] Cargados ${dresses.length} vestidos para branch: $branchId');
+        controller.add(dresses);
+      } else {
+        controller.add([]);
+      }
     } catch (e) {
-      throw 'Error al procesar los datos de vestidos. Intenta de nuevo.';
+      debugPrint('❌ [dressesProvider] Error: $e');
+      controller.add([]);
     }
+  }
+
+  // Fetch inicial
+  fetchDresses();
+
+  // Refresh periódico cada 30 segundos
+  final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetchDresses());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
   });
 
-  return future;
+  return controller.stream;
 });
 
-// 7. Proveedor alternativo con método de una sola vez (sin listener permanente)
+/// Proveedor de vestidos disponibles por componente/categoría - Usa PostgreSQL API
+/// AHORA REACTIVO AL BRANCH
+final availableDressesByComponentsProvider =
+    StreamProvider.family<List<DressModel>, String>((ref, String category) {
+  // ⚠️ CLAVE: Observamos el branchId
+  final branchId = ref.watch(branchIdProvider);
+
+  final controller = StreamController<List<DressModel>>();
+
+  Future<void> fetchDresses() async {
+    try {
+      debugPrint('🔄 [availableDressesByComponentsProvider] branch: $branchId, category: $category');
+
+      final response = await _apiService.get('dresses', queryParams: {
+        'category': category,
+        'limit': '100',
+      });
+
+      if (response.success && response.data != null) {
+        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        List<DressModel> dresses = [];
+
+        for (var item in dressesData) {
+          if (item is Map) {
+            final data = Map<String, dynamic>.from(item);
+            final dressCategory = data['category'];
+            if (dressCategory != null && dressCategory == category) {
+              final id = data['id']?.toString() ?? '';
+              dresses.add(DressModel.fromMap(data, id));
+            }
+          }
+        }
+
+        // Ordenar disponibles primero
+        dresses.sort(
+            (a, b) => a.available == b.available ? 0 : (a.available ? -1 : 1));
+
+        controller.add(dresses);
+      } else {
+        controller.add([]);
+      }
+    } catch (e) {
+      controller.addError('Error al procesar los datos de vestidos. Intenta de nuevo.');
+    }
+  }
+
+  // Fetch inicial
+  fetchDresses();
+
+  // Refresh periódico
+  final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetchDresses());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
+});
+
+/// Proveedor de vestidos (una sola vez) por categoría - Usa PostgreSQL API
+/// AHORA REACTIVO AL BRANCH
 final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>(
     (ref, String category) async {
+  // ⚠️ CLAVE: Observamos el branchId
+  final branchId = ref.watch(branchIdProvider);
+
   try {
-    final snapshot = await FirebaseDatabase.instance
-        .ref('Admin Panel/dresses')
-        .get(); // Usa get() en lugar de onValue para una sola consulta
+    debugPrint('🔄 [dressesOnceProvider] branch: $branchId, category: $category');
 
-    if (snapshot.value == null) return [];
-
-    final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
-    List<DressModel> dresses = [];
-
-    data.forEach((key, value) {
-      if (value is Map<dynamic, dynamic> && value['category'] == category) {
-        dresses.add(DressModel.fromRealtimeDB(value, key));
-      }
+    final response = await _apiService.get('dresses', queryParams: {
+      'limit': '5000',
     });
 
+    if (!response.success || response.data == null) return [];
+
+    final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+    List<DressModel> dresses = [];
+
+    for (var item in dressesData) {
+      if (item is Map) {
+        final data = Map<String, dynamic>.from(item);
+        final id = data['id']?.toString() ?? '';
+
+        // Si no hay categoría especificada, incluir todos
+        if (category.isEmpty) {
+          dresses.add(DressModel.fromMap(data, id));
+        } else {
+          // Filtro flexible: coincidencia exacta o si la categoría del vestido contiene el término
+          final dressCategory = (data['category'] ?? '').toString().toLowerCase();
+          final searchCategory = category.toLowerCase();
+
+          // Incluir si: coincide exactamente, contiene el término, o términos relacionados
+          if (dressCategory == searchCategory ||
+              dressCategory.contains(searchCategory) ||
+              searchCategory.contains(dressCategory) ||
+              // Mapeo de categorías de productos a categorías de vestidos
+              _categoryMatches(searchCategory, dressCategory)) {
+            dresses.add(DressModel.fromMap(data, id));
+          }
+        }
+      }
+    }
+
+    // Si no hay vestidos con filtro, retornar todos para evitar pantalla vacía
+    if (dresses.isEmpty && category.isNotEmpty) {
+      for (var item in dressesData) {
+        if (item is Map) {
+          final data = Map<String, dynamic>.from(item);
+          final id = data['id']?.toString() ?? '';
+          dresses.add(DressModel.fromMap(data, id));
+        }
+      }
+    }
+
+    // Ordenar disponibles primero
     dresses.sort(
         (a, b) => a.available == b.available ? 0 : (a.available ? -1 : 1));
 
+    debugPrint('✅ [dressesOnceProvider] Cargados ${dresses.length} vestidos');
     return dresses;
   } catch (e) {
+    debugPrint('❌ [dressesOnceProvider] Error: $e');
     throw 'Error al cargar los vestidos. Por favor, intenta de nuevo.';
   }
 });
 
-// Get a single dress
+/// Función auxiliar para mapear categorías de productos a categorías de vestidos
+bool _categoryMatches(String productCategory, String dressCategory) {
+  // Mapeos de categorías de productos a categorías de vestidos
+  final Map<String, List<String>> categoryMappings = {
+    'dama': ['vestidos', 'vestido de madre', 'vestidos colección cristal', 'vestidos cortos'],
+    'niña': ['vestidos de niñas', 'niñas'],
+    'caballero': ['trajes'],
+    'niño': ['trajes'],
+    'accesorios': ['corona', 'ramos'],
+  };
+
+  // Buscar coincidencias en el mapeo
+  for (var entry in categoryMappings.entries) {
+    if (productCategory.contains(entry.key)) {
+      for (var dressMatch in entry.value) {
+        if (dressCategory.contains(dressMatch)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/// Obtener un solo vestido - Usa PostgreSQL API
 final singleDressProvider =
     FutureProvider.family<DressModel?, String>((ref, dressId) async {
-  final snapshot =
-      await FirebaseDatabase.instance.ref('Admin Panel/dresses/$dressId').get();
+  try {
+    final response = await _apiService.get('dresses/$dressId');
 
-  if (snapshot.exists) {
-    Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
-    return DressModel.fromRealtimeDB(data, dressId);
+    if (response.success && response.data != null) {
+      final data = response.data['dress'] as Map<String, dynamic>? ?? response.data;
+      if (data.isNotEmpty) {
+        final id = data['id']?.toString() ?? dressId;
+        return DressModel.fromMap(Map<String, dynamic>.from(data), id);
+      }
+    }
+    return null;
+  } catch (e) {
+    return null;
   }
-  return null;
 });
 
-// Get dresses by category
+/// Obtener vestidos por categoría - Usa PostgreSQL API con StreamController
+/// AHORA REACTIVO AL BRANCH
 final dressesByCategoryProvider =
     StreamProvider.family<List<DressModel>, String>((ref, category) {
-  return FirebaseDatabase.instance
-      .ref('Admin Panel/dresses')
-      .orderByChild('category')
-      .equalTo(category)
-      .onValue
-      .map((event) {
-    final snapshot = event.snapshot;
-    if (snapshot.value == null) return [];
+  // ⚠️ CLAVE: Observamos el branchId
+  final branchId = ref.watch(branchIdProvider);
 
-    Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
-    List<DressModel> dresses = [];
+  final controller = StreamController<List<DressModel>>();
 
-    data.forEach((key, value) {
-      if (value is Map<dynamic, dynamic>) {
-        dresses.add(DressModel.fromRealtimeDB(value, key));
+  Future<void> fetchDresses() async {
+    try {
+      debugPrint('🔄 [dressesByCategoryProvider] branch: $branchId, category: $category');
+
+      final response = await _apiService.get('dresses', queryParams: {
+        'category': category,
+        'limit': '1000',
+      });
+
+      if (response.success && response.data != null) {
+        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        List<DressModel> dresses = [];
+
+        for (var item in dressesData) {
+          if (item is Map) {
+            final data = Map<String, dynamic>.from(item);
+            final id = data['id']?.toString() ?? '';
+            dresses.add(DressModel.fromMap(data, id));
+          }
+        }
+
+        controller.add(dresses);
+      } else {
+        controller.add([]);
       }
-    });
+    } catch (e) {
+      controller.add([]);
+    }
+  }
 
-    return dresses;
+  // Fetch inicial
+  fetchDresses();
+
+  // Refresh periódico
+  final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetchDresses());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
   });
+
+  return controller.stream;
 });
 
-// Get dresses by branch
+/// ============================================================================
+/// PROVIDER DE CATEGORÍAS DE VESTIDOS
+/// ============================================================================
+/// Este provider extrae las categorías únicas de los vestidos.
+/// Se usa en RegisterPackageScreen para los dropdowns de "Componentes"
+/// (que son categorías de vestidos, NO categorías de servicios).
+/// ============================================================================
+final dressCategoriesProvider = FutureProvider<List<String>>((ref) async {
+  // Observar el branchId para reaccionar a cambios de sucursal
+  final branchId = ref.watch(branchIdProvider);
+
+  try {
+    debugPrint('🔄 [dressCategoriesProvider] Cargando categorías de vestidos para branch: $branchId');
+
+    final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
+
+    if (response.success && response.data != null) {
+      final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+
+      // Extraer categorías únicas
+      final Set<String> categoriesSet = {};
+      for (var item in dressesData) {
+        if (item is Map) {
+          final category = item['category']?.toString();
+          if (category != null && category.isNotEmpty) {
+            categoriesSet.add(category);
+          }
+        }
+      }
+
+      // Convertir a lista y ordenar
+      final categories = categoriesSet.toList()..sort();
+
+      debugPrint('✅ [dressCategoriesProvider] Encontradas ${categories.length} categorías: $categories');
+      return categories;
+    }
+
+    return [];
+  } catch (e) {
+    debugPrint('❌ [dressCategoriesProvider] Error: $e');
+    return [];
+  }
+});
+
+/// Obtener vestidos por sucursal - Usa PostgreSQL API con StreamController
+/// AHORA REACTIVO AL BRANCH
 final dressesByBranchProvider =
     StreamProvider.family<List<DressModel>, String>((ref, branchId) {
-  return FirebaseDatabase.instance
-      .ref('Admin Panel/dresses')
-      .orderByChild('branch_id')
-      .equalTo(branchId)
-      .onValue
-      .map((event) {
-    final snapshot = event.snapshot;
-    if (snapshot.value == null) return [];
+  // Nota: Este provider usa el branchId del parámetro, no del provider
+  // Pero aún observamos el branchIdProvider para invalidar cuando cambie globalmente
+  ref.watch(branchIdProvider);
 
-    Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
-    List<DressModel> dresses = [];
+  final controller = StreamController<List<DressModel>>();
 
-    data.forEach((key, value) {
-      if (value is Map<dynamic, dynamic>) {
-        dresses.add(DressModel.fromRealtimeDB(value, key));
+  Future<void> fetchDresses() async {
+    try {
+      final response = await _apiService.get('dresses', queryParams: {
+        'branch_id': branchId,
+        'limit': '1000',
+      });
+
+      if (response.success && response.data != null) {
+        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        List<DressModel> dresses = [];
+
+        for (var item in dressesData) {
+          if (item is Map) {
+            final data = Map<String, dynamic>.from(item);
+            final id = data['id']?.toString() ?? '';
+            dresses.add(DressModel.fromMap(data, id));
+          }
+        }
+
+        controller.add(dresses);
+      } else {
+        controller.add([]);
       }
-    });
+    } catch (e) {
+      controller.add([]);
+    }
+  }
 
-    return dresses;
+  // Fetch inicial
+  fetchDresses();
+
+  // Refresh periódico
+  final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetchDresses());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
   });
+
+  return controller.stream;
 });
