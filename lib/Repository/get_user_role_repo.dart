@@ -121,17 +121,22 @@ class UserRoleRepo {
   /// Crear un nuevo usuario
   Future<UserRoleModel?> createUserRole(UserRoleModel userRole, String password) async {
     try {
+      // Transform permissions array to object format for backend
+      final permissionsObject = <String, dynamic>{};
+      for (var p in userRole.permissions) {
+        permissionsObject[p.type] = {
+          'view': p.view,
+          'edit': p.edit,
+          'delete': p.delete,
+        };
+      }
+
       final userData = {
         'email': userRole.email,
         'password': password,
         'name': userRole.userTitle,
         'role': userRole.userRoleName,
-        'permissions': userRole.permissions.map((p) => {
-          'type': p.type,
-          'view': p.view,
-          'edit': p.edit,
-          'delete': p.delete,
-        }).toList(),
+        'permissions': permissionsObject,
       };
 
       final response = await _apiService.createUser(userData);
@@ -156,15 +161,20 @@ class UserRoleRepo {
   /// Actualizar un usuario existente
   Future<bool> updateUserRole(String userId, UserRoleModel userRole) async {
     try {
-      final userData = {
-        'name': userRole.userTitle,
-        'role': userRole.userRoleName,
-        'permissions': userRole.permissions.map((p) => {
-          'type': p.type,
+      // Transform permissions array to object format for backend
+      final permissionsObject = <String, dynamic>{};
+      for (var p in userRole.permissions) {
+        permissionsObject[p.type] = {
           'view': p.view,
           'edit': p.edit,
           'delete': p.delete,
-        }).toList(),
+        };
+      }
+
+      final userData = {
+        'name': userRole.userTitle,
+        'role': userRole.userRoleName,
+        'permissions': permissionsObject,
       };
 
       final response = await _apiService.updateUser(userId, userData);

@@ -13,6 +13,7 @@ import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
 import 'add_user_role_screen.dart';
 import 'change_deletion_password_dialog.dart';
+import 'change_user_password_dialog.dart';
 import 'whatsapp_templates_dialog.dart';
 import 'whatsapp_credentials_dialog.dart';
 
@@ -459,8 +460,8 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                       IconButton(
                                                                         onPressed: () async {
                                                                           await _showDeleteConfirmation(
-                                                                            context, 
-                                                                            paginatedList[index], 
+                                                                            context,
+                                                                            paginatedList[index],
                                                                             ref
                                                                           );
                                                                         },
@@ -470,6 +471,29 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                           size: 18,
                                                                         ),
                                                                         tooltip: 'Eliminar usuario',
+                                                                      ),
+                                                                      const SizedBox(width: 4),
+                                                                      // Botón de cambiar contraseña
+                                                                      IconButton(
+                                                                        onPressed: () {
+                                                                          final user = paginatedList[index];
+                                                                          showDialog(
+                                                                            context: context,
+                                                                            builder: (BuildContext context) {
+                                                                              return ChangeUserPasswordDialog(
+                                                                                userId: user.databaseId ?? '',
+                                                                                userName: user.userTitle ?? 'Usuario',
+                                                                                userEmail: user.email ?? '',
+                                                                              );
+                                                                            },
+                                                                          );
+                                                                        },
+                                                                        icon: Icon(
+                                                                          Icons.key,
+                                                                          color: Colors.orange[700],
+                                                                          size: 18,
+                                                                        ),
+                                                                        tooltip: 'Cambiar contraseña',
                                                                       ),
                                                                     ],
                                                                   ),

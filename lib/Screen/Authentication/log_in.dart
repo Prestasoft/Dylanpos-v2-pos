@@ -952,12 +952,10 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                 showCursor: true,
                                                 cursorColor: kTitleColor,
                                                 textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
-                                                textFieldType: TextFieldType.EMAIL,
+                                                textFieldType: TextFieldType.NAME,
                                                 validator: (value) {
                                                   if (value == null || value.isEmpty) {
-                                                    return 'Email can\'n be empty';
-                                                  } else if (!value.contains('@')) {
-                                                    return 'Please enter a valid email';
+                                                    return 'Usuario o email requerido';
                                                   }
                                                   return null;
                                                 },
@@ -977,15 +975,15 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                         // color: Color(0xff98A2B3),
                                                       ),
                                                       child:  HugeIcon(
-                                                        icon: HugeIcons.strokeRoundedMail01,
+                                                        icon: HugeIcons.strokeRoundedUser,
                                                         color: kNeutral600,
                                                         size: 24.0,
                                                       ),
                                                     ),
                                                   ),
-                                                  labelText: lang.S.of(context).email,
+                                                  labelText: 'Usuario o Email',
                                                   labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintText: lang.S.of(context).enterYourEmailAddress,
+                                                  hintText: 'Ingrese su usuario o email',
                                                   hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
                                                 ),
                                               ),
@@ -1160,7 +1158,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                                                       ),
                                                       const SizedBox(width: 8),
                                                       const Text(
-                                                        'v2.1.74',
+                                                        'v2.1.76',
                                                         style: TextStyle(
                                                           fontSize: 12,
                                                           fontWeight: FontWeight.w600,

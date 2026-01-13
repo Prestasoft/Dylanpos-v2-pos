@@ -1490,6 +1490,25 @@ class _AddUserRoleState extends State<AddUserRole> {
                       // Update user via API
                       if (userId != null && userId.isNotEmpty) {
                         final updateData = userRolePermissionModel.toJson();
+
+                        // Transform permissions from array to object for backend
+                        if (updateData['permissions'] is List) {
+                          final permissionsList = updateData['permissions'] as List;
+                          final permissionsObject = <String, dynamic>{};
+
+                          for (var perm in permissionsList) {
+                            if (perm is Map && perm['type'] != null) {
+                              permissionsObject[perm['type'].toString()] = {
+                                'view': perm['view'] ?? false,
+                                'edit': perm['edit'] ?? false,
+                                'delete': perm['delete'] ?? false,
+                              };
+                            }
+                          }
+
+                          updateData['permissions'] = permissionsObject;
+                        }
+
                         // Add password if changed
                         if (passwordController.text.isNotEmpty &&
                             confirmPasswordController.text.isNotEmpty &&
@@ -1643,6 +1662,24 @@ class _AddUserRoleState extends State<AddUserRole> {
       userData['password'] = password;
       userData['name'] = userRoleModel.userTitle ?? email;
       userData['role'] = userRoleModel.userRoleName ?? 'user';
+
+      // Transform permissions from array to object for backend
+      if (userData['permissions'] is List) {
+        final permissionsList = userData['permissions'] as List;
+        final permissionsObject = <String, dynamic>{};
+
+        for (var perm in permissionsList) {
+          if (perm is Map && perm['type'] != null) {
+            permissionsObject[perm['type'].toString()] = {
+              'view': perm['view'] ?? false,
+              'edit': perm['edit'] ?? false,
+              'delete': perm['delete'] ?? false,
+            };
+          }
+        }
+
+        userData['permissions'] = permissionsObject;
+      }
 
       final response = await apiService.post('auth/register', userData);
 
