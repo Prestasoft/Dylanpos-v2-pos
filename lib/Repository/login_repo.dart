@@ -8,6 +8,7 @@ import 'package:nb_utils/nb_utils.dart';
 
 import '../services/api_service.dart';
 import '../services/audit_service.dart';
+import '../services/tenant/tenant_model.dart';
 import '../const.dart';
 import '../model/user_role_model.dart';
 
@@ -50,13 +51,40 @@ class LogInRepo extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('userPermission', json.encode(finalUserRoleModel.toJson()));
 
-        // IMPORTANTE: Sincronizar branch_id con el tenant seleccionado en la UI
-        // Esto asegura que después del login, la API use el tenant correcto
-        final selectedTenantId = prefs.getString('selected_tenant_id');
-        if (selectedTenantId != null && selectedTenantId.isNotEmpty) {
-          // Forzar que la API use el tenant seleccionado
-          await _apiService.setBranchId(selectedTenantId);
-          print('[LogInRepo.signIn] Branch sincronizado con selected_tenant_id: $selectedTenantId');
+        // LÓGICA INTELIGENTE DE SELECCIÓN DE SUCURSALES
+        // Obtener allowed_branches del usuario
+        final allowedBranches = user['allowed_branches'] as List<dynamic>?;
+        List<String>? branches = allowedBranches?.map((e) => e.toString()).toList();
+
+        // Filtrar sucursales según permisos del usuario
+        List<TenantModel> availableTenants;
+
+        if (isAdmin || branches == null || branches.isEmpty) {
+          // Administrador o sin restricciones: todas las sucursales
+          availableTenants = TenantConfig.allTenants;
+        } else {
+          // Usuario con restricciones: solo sus sucursales asignadas
+          availableTenants = TenantConfig.allTenants
+              .where((tenant) => branches.contains(tenant.id))
+              .toList();
+        }
+
+        // Decidir flujo según cantidad de sucursales disponibles
+        if (availableTenants.isEmpty) {
+          // Sin sucursales asignadas (error de configuración)
+          EasyLoading.showError('No tienes sucursales asignadas. Contacta al administrador.');
+          return;
+        } else if (availableTenants.length == 1) {
+          // Una sola sucursal: login automático
+          final tenant = availableTenants.first;
+          await _apiService.setBranchId(tenant.id);
+          await prefs.setString('selected_tenant_id', tenant.id);
+          print('[LogInRepo.signIn] Login automático a única sucursal: ${tenant.displayName}');
+        } else {
+          // Múltiples sucursales: mostrar modal de selección
+          await _showBranchSelectorModal(context, availableTenants);
+          // El modal configurará la sucursal seleccionada
+          return; // No continuar aquí, el modal manejará la navegación
         }
 
         await setUserDataOnLocalData(
@@ -95,6 +123,266 @@ class LogInRepo extends ChangeNotifier {
         ),
       );
     }
+  }
+
+  /// Mostrar modal para seleccionar sucursal (post-login)
+  Future<void> _showBranchSelectorModal(BuildContext context, List<TenantModel> tenants) async {
+    String selectedId = tenants.first.id;
+
+    await showGeneralDialog(
+      context: context,
+      barrierDismissible: false, // No permitir cerrar sin seleccionar
+      barrierLabel: 'Seleccionar Sucursal',
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return PopScope(
+              canPop: false, // Prevenir cierre con botón back
+              child: Center(
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: MediaQuery.of(context).size.width > 500 ? 450 : MediaQuery.of(context).size.width * 0.92,
+                    constraints: const BoxConstraints(maxHeight: 600),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 40,
+                          spreadRadius: 5,
+                          offset: const Offset(0, 20),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFFD59345),
+                                const Color(0xFFE8A85C),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(24),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.business_rounded,
+                                  color: Colors.white,
+                                  size: 36,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Seleccionar Sucursal',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Elige la ubicación donde deseas trabajar',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Lista de sucursales
+                        Flexible(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                            child: Column(
+                              children: tenants.map((tenant) {
+                                final isSelected = tenant.id == selectedId;
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: InkWell(
+                                    onTap: () {
+                                      setDialogState(() {
+                                        selectedId = tenant.id;
+                                      });
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        gradient: isSelected
+                                            ? LinearGradient(
+                                                colors: [
+                                                  const Color(0xFFD59345).withValues(alpha: 0.15),
+                                                  const Color(0xFFE8A85C).withValues(alpha: 0.08),
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              )
+                                            : null,
+                                        color: isSelected ? null : Colors.grey.shade50,
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? const Color(0xFFD59345)
+                                              : Colors.grey.shade200,
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: const Color(0xFFD59345).withValues(alpha: 0.2),
+                                                  blurRadius: 12,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 52,
+                                            height: 52,
+                                            decoration: BoxDecoration(
+                                              gradient: isSelected
+                                                  ? const LinearGradient(
+                                                      colors: [Color(0xFFD59345), Color(0xFFE8A85C)],
+                                                      begin: Alignment.topLeft,
+                                                      end: Alignment.bottomRight,
+                                                    )
+                                                  : LinearGradient(
+                                                      colors: [Colors.grey.shade300, Colors.grey.shade200],
+                                                    ),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              Icons.location_city_rounded,
+                                              color: isSelected ? Colors.white : Colors.grey.shade600,
+                                              size: 28,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  tenant.city,
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: isSelected ? const Color(0xFFD59345) : Colors.black87,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  tenant.name,
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (isSelected)
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFD59345),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+
+                        // Botones de acción
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    // Configurar sucursal seleccionada
+                                    await _apiService.setBranchId(selectedId);
+                                    final prefs = await SharedPreferences.getInstance();
+                                    await prefs.setString('selected_tenant_id', selectedId);
+
+                                    // Cerrar modal y navegar
+                                    if (context.mounted) {
+                                      Navigator.of(context).pop();
+                                      context.go('/blank-home');
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFD59345),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Continuar',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   /// Cerrar sesión

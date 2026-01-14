@@ -124,6 +124,8 @@ class _AddUserRoleState extends State<AddUserRole> {
     emailController.text = widget.userRoleModel?.email ?? '';
     titleController.text = widget.userRoleModel?.userTitle ?? '';
     userRoleName.text = widget.userRoleModel?.userRoleName ?? '';
+    selectedBranchId = widget.userRoleModel?.branchId ?? 'stg';
+    selectedAllowedBranches = widget.userRoleModel?.allowedBranches ?? [];
     if (widget.userRoleModel == null) return;
     if (widget.userRoleModel!.permissions.isNotEmpty) {
       // Migrar permisos faltantes antes de asignar
@@ -133,6 +135,8 @@ class _AddUserRoleState extends State<AddUserRole> {
 
   bool hidePassword = true;
   bool confirmHidePassword = true;
+  String selectedBranchId = 'stg'; // Sucursal seleccionada por defecto
+  List<String> selectedAllowedBranches = []; // Sucursales permitidas para cambiar
 
   // Métodos para roles predefinidos
   Widget _buildRoleButton(String title, VoidCallback onPressed, Color color, IconData icon) {
@@ -214,11 +218,19 @@ class _AddUserRoleState extends State<AddUserRole> {
     );
   }
 
+  void _clearAllPermissionsInternal() {
+    for (var permission in defaultPermissions) {
+      permission.view = false;
+      permission.edit = false;
+      permission.delete = false;
+    }
+  }
+
   void _setBasicSalesRole() {
     setState(() {
       // Limpiar todos los permisos primero
-      _clearAllPermissions();
-      
+      _clearAllPermissionsInternal();
+
       // Dar permisos básicos
       _setPermission('dashboard', view: true);
       _setPermission('inicio', view: true);
@@ -233,7 +245,7 @@ class _AddUserRoleState extends State<AddUserRole> {
   void _setRestrictedRole() {
     setState(() {
       // Limpiar todos los permisos primero
-      _clearAllPermissions();
+      _clearAllPermissionsInternal();
       
       // Dar permisos limitados (SIN rentar, facturar, disponibilidad)
       _setPermission('dashboard', view: true);
@@ -255,7 +267,7 @@ class _AddUserRoleState extends State<AddUserRole> {
   void _setNoHeaderActionsRole() {
     setState(() {
       // Limpiar todos los permisos primero
-      _clearAllPermissions();
+      _clearAllPermissionsInternal();
       
       // Dar permisos básicos SIN acceso a botones principales del header
       _setPermission('dashboard', view: true);
@@ -278,7 +290,7 @@ class _AddUserRoleState extends State<AddUserRole> {
   void _setOnlyConsultationRole() {
     setState(() {
       // Limpiar todos los permisos primero
-      _clearAllPermissions();
+      _clearAllPermissionsInternal();
       
       // Permisos específicos para Recursos Humanos
       _setPermission('dashboard', view: true, edit: true);
@@ -342,11 +354,19 @@ class _AddUserRoleState extends State<AddUserRole> {
   }
 
   void _clearAllPermissions() {
-    for (var permission in defaultPermissions) {
-      permission.view = false;
-      permission.edit = false;
-      permission.delete = false;
-    }
+    setState(() {
+      _clearAllPermissionsInternal();
+    });
+  }
+
+  void _selectAllPermissions() {
+    setState(() {
+      for (var permission in defaultPermissions) {
+        permission.view = true;
+        permission.edit = true;
+        permission.delete = true;
+      }
+    });
   }
 
   void _setPermission(String type, {bool view = false, bool edit = false, bool delete = false}) {
@@ -1228,6 +1248,15 @@ class _AddUserRoleState extends State<AddUserRole> {
                         ),
                       ),
                       Tooltip(
+                        message: 'Marca todos los permisos (Ver, Editar, Eliminar)',
+                        child: _buildRoleButton(
+                          'Seleccionar Todos',
+                          () => _selectAllPermissions(),
+                          Colors.purple,
+                          Icons.done_all_rounded,
+                        ),
+                      ),
+                      Tooltip(
                         message: 'Quita todos los permisos para empezar de cero',
                         child: _buildRoleButton(
                           'Limpiar Todo',
@@ -1406,6 +1435,146 @@ class _AddUserRoleState extends State<AddUserRole> {
                   ),
                   const SizedBox(height: 20.0),
 
+                  // Selector de Sucursal
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: selectedBranchId,
+                        hint: const Text('Seleccionar Sucursal'),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'stg',
+                            child: Text('Santiago'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'sde',
+                            child: Text('Santo Domingo Este'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'sdo',
+                            child: Text('Santo Domingo Oeste'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'rom',
+                            child: Text('La Romana'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedBranchId = newValue ?? 'stg';
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+
+                  // Sucursales permitidas para cambiar
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.blue.shade50,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.swap_horiz, color: Colors.blue.shade700, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Sucursales Permitidas para Cambiar',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.blue.shade900,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Selecciona las sucursales a las que este usuario puede cambiar/acceder',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                        ),
+                        const SizedBox(height: 12),
+                        CheckboxListTile(
+                          dense: true,
+                          title: const Text('Santiago', style: TextStyle(fontSize: 13)),
+                          value: selectedAllowedBranches.contains('stg'),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                if (!selectedAllowedBranches.contains('stg')) {
+                                  selectedAllowedBranches.add('stg');
+                                }
+                              } else {
+                                selectedAllowedBranches.remove('stg');
+                              }
+                            });
+                          },
+                        ),
+                        CheckboxListTile(
+                          dense: true,
+                          title: const Text('Santo Domingo Este', style: TextStyle(fontSize: 13)),
+                          value: selectedAllowedBranches.contains('sde'),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                if (!selectedAllowedBranches.contains('sde')) {
+                                  selectedAllowedBranches.add('sde');
+                                }
+                              } else {
+                                selectedAllowedBranches.remove('sde');
+                              }
+                            });
+                          },
+                        ),
+                        CheckboxListTile(
+                          dense: true,
+                          title: const Text('Santo Domingo Oeste', style: TextStyle(fontSize: 13)),
+                          value: selectedAllowedBranches.contains('sdo'),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                if (!selectedAllowedBranches.contains('sdo')) {
+                                  selectedAllowedBranches.add('sdo');
+                                }
+                              } else {
+                                selectedAllowedBranches.remove('sdo');
+                              }
+                            });
+                          },
+                        ),
+                        CheckboxListTile(
+                          dense: true,
+                          title: const Text('La Romana', style: TextStyle(fontSize: 13)),
+                          value: selectedAllowedBranches.contains('rom'),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                if (!selectedAllowedBranches.contains('rom')) {
+                                  selectedAllowedBranches.add('rom');
+                                }
+                              } else {
+                                selectedAllowedBranches.remove('rom');
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+
                   // Mensaje informativo para cambio de contraseña en edición
                   if (widget.userRoleModel != null) ...[
                     Container(
@@ -1485,6 +1654,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                       userRolePermissionModel.email = emailController.text;
                       userRolePermissionModel.userTitle = titleController.text;
                       userRolePermissionModel.userRoleName = userRoleName.text;
+                      userRolePermissionModel.branchId = selectedBranchId;
+                      userRolePermissionModel.allowedBranches = selectedAllowedBranches.isNotEmpty ? selectedAllowedBranches : null;
                       userRolePermissionModel.databaseId = constUserId;
 
                       // Update user via API
@@ -1509,13 +1680,34 @@ class _AddUserRoleState extends State<AddUserRole> {
                           updateData['permissions'] = permissionsObject;
                         }
 
+                        // Map frontend field names to backend field names
+                        final backendData = <String, dynamic>{
+                          'name': updateData['userTitle'],
+                          'role': updateData['userRoleName'],
+                          'branch_id': updateData['branchId'],
+                          'allowed_branches': updateData['allowedBranches'],
+                          'permissions': updateData['permissions'],
+                        };
+
                         // Add password if changed
                         if (passwordController.text.isNotEmpty &&
                             confirmPasswordController.text.isNotEmpty &&
                             passwordController.text == confirmPasswordController.text) {
-                          updateData['password'] = passwordController.text;
+                          backendData['password'] = passwordController.text;
                         }
-                        await apiService.put('users/$userId', updateData);
+
+                        // DEBUG: Log data being sent
+                        print('🔍 [UPDATE USER] userId: $userId');
+                        print('🔍 [UPDATE USER] selectedAllowedBranches: $selectedAllowedBranches');
+                        print('🔍 [UPDATE USER] backendData[allowed_branches]: ${backendData['allowed_branches']}');
+                        print('🔍 [UPDATE USER] Número de permisos: ${(backendData['permissions'] as Map).length}');
+                        print('🔍 [UPDATE USER] backendData completo: $backendData');
+
+                        final response = await apiService.put('users/$userId', backendData);
+
+                        print('🔍 [UPDATE USER RESPONSE] success: ${response.success}');
+                        print('🔍 [UPDATE USER RESPONSE] message: ${response.message}');
+                        print('🔍 [UPDATE USER RESPONSE] data: ${response.data}');
                       }
 
                       ref.refresh(userRoleProvider);
@@ -1539,6 +1731,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                     userRolePermissionModel.userTitle = titleController.text;
                     userRolePermissionModel.databaseId = constUserId;
                     userRolePermissionModel.userRoleName = userRoleName.text;
+                    userRolePermissionModel.branchId = selectedBranchId;
+                    userRolePermissionModel.allowedBranches = selectedAllowedBranches.isNotEmpty ? selectedAllowedBranches : null;
                     signUp(
                       context: context,
                       email: emailController.text,
@@ -1658,10 +1852,6 @@ class _AddUserRoleState extends State<AddUserRole> {
 
       // Create user via API (register endpoint)
       final userData = userRoleModel.toJson();
-      userData['email'] = email;
-      userData['password'] = password;
-      userData['name'] = userRoleModel.userTitle ?? email;
-      userData['role'] = userRoleModel.userRoleName ?? 'user';
 
       // Transform permissions from array to object for backend
       if (userData['permissions'] is List) {
@@ -1677,11 +1867,21 @@ class _AddUserRoleState extends State<AddUserRole> {
             };
           }
         }
-
         userData['permissions'] = permissionsObject;
       }
 
-      final response = await apiService.post('auth/register', userData);
+      // Map frontend field names to backend field names
+      final backendData = <String, dynamic>{
+        'email': email,
+        'password': password,
+        'name': userRoleModel.userTitle ?? email,
+        'role': userRoleModel.userRoleName ?? 'user',
+        'branch_id': userRoleModel.branchId ?? 'stg',
+        'allowed_branches': userRoleModel.allowedBranches,
+        'permissions': userData['permissions'],
+      };
+
+      final response = await apiService.post('auth/register', backendData);
 
       if (response.success) {
         ref.refresh(userRoleProvider);

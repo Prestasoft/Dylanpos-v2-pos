@@ -21,6 +21,7 @@ import '../Screen/Widgets/Constant Data/constant.dart';
 import '../Screen/currency/global_currency.dart';
 import '../model/subscription_model.dart';
 import '../services/audit_service.dart';
+import '../services/api_service.dart';
 import '../Repository/profile_details_repo.dart';
 import '../services/tenant/tenant_model.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -564,8 +565,13 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
           final tenant = TenantConfig.getTenantById(tenantId) ?? TenantConfig.defaultTenant;
           final branchName = tenant.city.toUpperCase();
 
-          // Verificar si el usuario es admin (no es subUser)
+          // Verificar si el usuario es admin (no es subUser) o tiene sucursales permitidas
           final isAdmin = !isSubUser;
+
+          // Verificar si el usuario tiene permiso de cambio de sucursal
+          final apiService = ApiService();
+          final currentUserModel = apiService.toUserRoleModel();
+          final canChangeBranch = isAdmin || (currentUserModel.allowedBranches != null && currentUserModel.allowedBranches!.isNotEmpty);
 
           return Container(
             padding: const EdgeInsets.all(12),
@@ -594,7 +600,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                 if (iconOnly)
                   // Mostrar solo las iniciales en modo icono con opción de cambiar
                   InkWell(
-                    onTap: isAdmin ? () => _showBranchSelectorDialog(context, tenant) : null,
+                    onTap: canChangeBranch ? () => _showBranchSelectorDialog(context, tenant) : null,
                     borderRadius: BorderRadius.circular(6),
                     child: Container(
                       width: 38,
@@ -633,8 +639,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // Botón Cambiar solo para admin
-                        if (isAdmin) ...[
+                        // Botón Cambiar solo para usuarios con permiso
+                        if (canChangeBranch) ...[
                           const SizedBox(width: 6),
                           InkWell(
                             onTap: () => _showBranchSelectorDialog(context, tenant),
@@ -676,6 +682,20 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
 
   /// Muestra el diálogo para seleccionar sucursal
   void _showBranchSelectorDialog(BuildContext context, TenantModel currentTenant) {
+    // Obtener las sucursales permitidas del usuario
+    final apiService = ApiService();
+    final currentUserModel = apiService.toUserRoleModel();
+    final allowedBranches = currentUserModel.allowedBranches;
+
+    // Filtrar sucursales según permisos
+    // PRIORIDAD: Si tiene allowedBranches definidas, filtrar por esas (sin importar si es admin)
+    // Solo mostrar todas si allowedBranches es null o vacío
+    final availableTenants = (allowedBranches != null && allowedBranches.isNotEmpty)
+        ? TenantConfig.allTenants.where((tenant) =>
+            allowedBranches.contains(tenant.id)
+          ).toList()
+        : TenantConfig.allTenants;
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -701,7 +721,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 8),
-              ...TenantConfig.allTenants.map((tenant) {
+              ...availableTenants.map((tenant) {
                 final isSelected = tenant.id == currentTenant.id;
                 return ListTile(
                   leading: Container(

@@ -41,6 +41,7 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
   int _lossProfitPerPage = 10; // Default number of items to display
   int _currentPage = 1;
   String searchItem = '';
+  String selectedBranch = 'all'; // Filtro de sucursal
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +56,14 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
               List<UserRoleModel> customerList = allCustomerList;
               final pages = (customerList.length / _lossProfitPerPage).ceil();
 
-              // Filter the list based on searchItem
+              // Filter the list based on searchItem and selectedBranch
               if (searchItem.isNotEmpty) {
                 customerList = customerList.where((user) {
                   return user.userTitle
+                              ?.toLowerCase()
+                              .contains(searchItem.toLowerCase()) ==
+                          true ||
+                      user.username
                               ?.toLowerCase()
                               .contains(searchItem.toLowerCase()) ==
                           true ||
@@ -66,6 +71,13 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                               ?.toLowerCase()
                               .contains(searchItem.toLowerCase()) ==
                           true;
+                }).toList();
+              }
+
+              // Filter by branch
+              if (selectedBranch != 'all') {
+                customerList = customerList.where((user) {
+                  return user.branchId == selectedBranch;
                 }).toList();
               }
 
@@ -282,8 +294,8 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                             ),
                             ResponsiveGridCol(
                               xs: 100,
-                              md: 60,
-                              lg: 35,
+                              md: 40,
+                              lg: 25,
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: TextFormField(
@@ -303,6 +315,56 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                       FeatherIcons.search,
                                       color: kTitleColor,
                                     ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            ResponsiveGridCol(
+                              xs: 100,
+                              md: 20,
+                              lg: 20,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Container(
+                                  height: 48,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    border: Border.all(color: kNeutral300),
+                                  ),
+                                  child: DropdownButton<String>(
+                                    isExpanded: true,
+                                    underline: const SizedBox(),
+                                    value: selectedBranch,
+                                    hint: const Text('Sucursal'),
+                                    items: [
+                                      DropdownMenuItem(
+                                        value: 'all',
+                                        child: Text('Todas las sucursales', style: theme.textTheme.bodyMedium),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'stg',
+                                        child: Text('Santiago', style: theme.textTheme.bodyMedium),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'sde',
+                                        child: Text('Santo Domingo Este', style: theme.textTheme.bodyMedium),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'sdo',
+                                        child: Text('Santo Domingo Oeste', style: theme.textTheme.bodyMedium),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'rom',
+                                        child: Text('La Romana', style: theme.textTheme.bodyMedium),
+                                      ),
+                                    ],
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        selectedBranch = newValue ?? 'all';
+                                        _currentPage = 1;
+                                      });
+                                    },
                                   ),
                                 ),
                               ),
@@ -377,6 +439,8 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                               label: Text(lang.S
                                                                   .of(context)
                                                                   .email)),
+                                                          const DataColumn(
+                                                              label: Text('Sucursal')),
                                                           DataColumn(
                                                               label: Text(lang.S
                                                                   .of(context)
@@ -392,11 +456,11 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                 DataCell(Text(
                                                                     "${startIndex + index + 1}")),
 
-                                                                ///______________Date__________________________________________________
+                                                                ///______________Username__________________________________________________
                                                                 DataCell(
                                                                   Text(
                                                                     paginatedList[index]
-                                                                            .userTitle ??
+                                                                            .username ??
                                                                         '',
                                                                   ),
                                                                 ),
@@ -409,11 +473,20 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                   ),
                                                                 ),
 
-                                                                ///____________Invoice_________________________________________________
+                                                                ///____________Email_________________________________________________
                                                                 DataCell(
                                                                   Text(
                                                                     paginatedList[index]
                                                                             .email ??
+                                                                        '',
+                                                                  ),
+                                                                ),
+
+                                                                ///____________Sucursal_________________________________________________
+                                                                DataCell(
+                                                                  Text(
+                                                                    paginatedList[index]
+                                                                            .branchName ??
                                                                         '',
                                                                   ),
                                                                 ),
@@ -482,7 +555,7 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                             builder: (BuildContext context) {
                                                                               return ChangeUserPasswordDialog(
                                                                                 userId: user.databaseId ?? '',
-                                                                                userName: user.userTitle ?? 'Usuario',
+                                                                                userName: user.username ?? user.userTitle ?? 'Usuario',
                                                                                 userEmail: user.email ?? '',
                                                                               );
                                                                             },

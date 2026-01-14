@@ -38,6 +38,7 @@ import 'package:salespro_admin/Screen/Whatsapp%20Marketing/whatsapp_marketing_sc
 import 'package:salespro_admin/Screen/quatation_screen/quatation_screen.dart';
 import 'package:salespro_admin/Screen/Confirmation/sale_confirmations_list.dart';
 import 'package:salespro_admin/Screen/Audit/audit_screen.dart';
+import 'package:salespro_admin/Screen/Deleted%20Items/deleted_items_screen.dart';
 import 'package:salespro_admin/model/income_modle.dart';
 import 'package:salespro_admin/Screen/Bank/bank_list.dart';
 
@@ -752,6 +753,14 @@ abstract class AcnooAppRoutes {
             path: '/audit',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: AuditScreen(),
+            ),
+          ),
+
+          ///---------------------Deleted Items Route------------------------------------
+          GoRoute(
+            path: '/deleted-items',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: DeletedItemsScreen(),
             ),
           ),
 

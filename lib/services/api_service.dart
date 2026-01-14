@@ -293,8 +293,14 @@ class ApiService {
     return UserRoleModel(
       email: _currentUser?['email'] ?? '',
       userTitle: _currentUser?['name'] ?? '',
+      username: _currentUser?['username'] ?? '',
       databaseId: _currentUser?['id'] ?? '',
       userRoleName: _currentUser?['role'] ?? '',
+      branchId: _currentUser?['branch_id'] ?? '',
+      branchName: _currentUser?['branch_name'] ?? '',
+      allowedBranches: _currentUser?['allowed_branches'] is List
+          ? List<String>.from(_currentUser!['allowed_branches'])
+          : null,
       permissions: permissionsList,
     );
   }

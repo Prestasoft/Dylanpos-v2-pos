@@ -641,6 +641,12 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/audit',
     ),
     SidebarItemModel(
+      name: 'Elementos Eliminados',
+      iconPath: 'images/dashboard_icon/due_list.svg',
+      type: "audit",  // Usa el mismo permiso que auditoría
+      navigationPath: '/deleted-items',
+    ),
+    SidebarItemModel(
       name: 'Migrar Base de Datos',
       iconPath: 'images/dashboard_icon/transaction.svg',
       type: "user_roles",  // Solo admin puede ver esto

@@ -1,8 +1,12 @@
 class UserRoleModel {
   String? email;
   String? userTitle;
+  String? username;
   String? databaseId;
   String? userRoleName;
+  String? branchId;
+  String? branchName;
+  List<String>? allowedBranches; // Sucursales a las que el usuario puede cambiar
   List<Permission> permissions;
   bool? saleView;
   bool? saleEdit;
@@ -49,8 +53,12 @@ class UserRoleModel {
   UserRoleModel(
       {this.email,
       this.userTitle,
+      this.username,
       this.databaseId,
       this.userRoleName,
+      this.branchId,
+      this.branchName,
+      this.allowedBranches,
       required this.permissions,
       this.saleView,
       this.saleEdit,
@@ -122,8 +130,14 @@ class UserRoleModel {
     return UserRoleModel(
         email: json["email"]?.toString() ?? '',
         userTitle: json["userTitle"]?.toString() ?? '',
+        username: json["username"]?.toString() ?? '',
         databaseId: json["databaseId"]?.toString() ?? '',
         userRoleName: json["userRoleName"]?.toString() ?? '',
+        branchId: json["branchId"]?.toString() ?? '',
+        branchName: json["branchName"]?.toString() ?? '',
+        allowedBranches: json["allowedBranches"] is List
+            ? List<String>.from(json["allowedBranches"].map((x) => x.toString()))
+            : null,
         permissions: parsePermissions(json["permissions"]),
         saleView: json["saleView"] ?? false,
         saleEdit: json["saleEdit"] ?? false,
@@ -170,8 +184,12 @@ class UserRoleModel {
   Map<String, dynamic> toJson() => {
         "email": email,
         "userTitle": userTitle,
+        "username": username,
         "databaseId": databaseId,
         "userRoleName": userRoleName,
+        "branchId": branchId,
+        "branchName": branchName,
+        "allowedBranches": allowedBranches != null ? List<dynamic>.from(allowedBranches!.map((x) => x)) : null,
         "permissions": List<dynamic>.from(permissions.map((x) => x.toJson())),
         "saleView": saleView,
         "saleEdit": saleEdit,

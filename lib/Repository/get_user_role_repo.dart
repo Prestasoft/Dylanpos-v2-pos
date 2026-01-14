@@ -23,8 +23,14 @@ class UserRoleRepo {
               final userRole = UserRoleModel(
                 email: data['email'] ?? '',
                 userTitle: data['name'] ?? '',
+                username: data['username'] ?? '',
                 databaseId: data['id']?.toString() ?? '',
                 userRoleName: data['role'] ?? 'user',
+                branchId: data['branch_id'] ?? '',
+                branchName: data['branch_name'] ?? '',
+                allowedBranches: data['allowed_branches'] is List
+                    ? List<String>.from(data['allowed_branches'])
+                    : null,
                 permissions: _parsePermissions(data['permissions']),
               );
               userRole.userKey = data['id']?.toString();
@@ -136,6 +142,8 @@ class UserRoleRepo {
         'password': password,
         'name': userRole.userTitle,
         'role': userRole.userRoleName,
+        'branch_id': userRole.branchId ?? 'stg',
+        'allowed_branches': userRole.allowedBranches,
         'permissions': permissionsObject,
       };
 
@@ -146,8 +154,14 @@ class UserRoleRepo {
         return UserRoleModel(
           email: data['email'] ?? '',
           userTitle: data['name'] ?? '',
+          username: data['username'] ?? '',
           databaseId: data['id']?.toString() ?? '',
           userRoleName: data['role'] ?? 'user',
+          branchId: data['branch_id'] ?? '',
+          branchName: data['branch_name'] ?? '',
+          allowedBranches: data['allowed_branches'] is List
+              ? List<String>.from(data['allowed_branches'])
+              : null,
           permissions: _parsePermissions(data['permissions']),
         );
       }
@@ -174,6 +188,8 @@ class UserRoleRepo {
       final userData = {
         'name': userRole.userTitle,
         'role': userRole.userRoleName,
+        'branch_id': userRole.branchId ?? 'stg',
+        'allowed_branches': userRole.allowedBranches,
         'permissions': permissionsObject,
       };
 
