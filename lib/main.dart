@@ -1,6 +1,7 @@
-import 'dart:convert';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'dart:convert'; // No usado actualmente
+// Firebase deshabilitado - No se está usando
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/api_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -19,19 +20,21 @@ import 'dart:html' as html;
 
 import 'package:salespro_admin/const.dart';
 import 'package:url_strategy/url_strategy.dart';
-import 'package:http/http.dart' as http;
+// import 'package:http/http.dart' as http; // No usado actualmente
 import 'Route/static_string.dart';
 import 'Screen/Widgets/Constant Data/constant.dart';
 import 'Screen/Widgets/Constant Data/theme.dart';
 import 'Screen/currency/currency_provider.dart';
-import 'firebase_options.dart';
+// Firebase deshabilitado
+// import 'firebase_options.dart';
 import 'generated/l10n.dart';
 import 'model/paypal_info_model.dart';
 import 'services/version_check_service.dart';
 import 'widgets/update_dialog.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-}
+// Firebase Messaging deshabilitado - No se está usando
+// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+// }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,9 +71,10 @@ Future<void> main() async {
 
   debugPrint('🏢 Tenant seleccionado: ${targetTenant.city} (${targetTenant.id})');
 
-  await Firebase.initializeApp(
-    options: targetTenant.firebaseOptions,
-  );
+  // Firebase deshabilitado - No se está usando
+  // await Firebase.initializeApp(
+  //   options: targetTenant.firebaseOptions,
+  // );
 
   // Guardar el tenant actual en ambos: SharedPreferences y localStorage
   await setValue('selected_tenant_id', targetTenant.id);
@@ -79,7 +83,8 @@ Future<void> main() async {
     debugPrint('💾 localStorage actualizado con tenant: ${targetTenant.id}');
   }
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // Firebase Messaging deshabilitado
+  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // IMPORTANTE: Inicializar ApiService ANTES de runApp para cargar token de sesión
   // Esto permite que el router verifique autenticación correctamente al recargar página
@@ -102,7 +107,8 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _initFirebaseMessaging();
+    // Firebase Messaging deshabilitado
+    // _initFirebaseMessaging();
     _initVersionCheck();
   }
   
@@ -112,32 +118,33 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  Future<void> _initFirebaseMessaging() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-    // Solicita permiso para notificaciones
-    await messaging.requestPermission();
-
-    // Obtiene el token FCM
-    String? token = await messaging.getToken(
-      vapidKey: 'BHihs1laCgF-by2riBdLNshy3Zivz9LITx4Ut_Xv34KIwZGEof8X8u-lTRQG7Iwi1K2WBDXUkRNbYi0Z_7ov7fo' // Santiago VAPID key
-    );
-
-    if (token != null) {
-      // Guarda el token FCM en PostgreSQL API
-      try {
-        final apiService = ApiService();
-        await apiService.put('settings/fcm-token', {'fcmToken': token});
-      } catch (e) {
-        // Error silencioso
-      }
-    }
-
-    // Escucha notificaciones mientras la app está activa (foreground)
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      // Aquí puedes disparar un modal, alerta, badge, etc.
-    });
-  }
+  // Firebase Messaging deshabilitado - No se está usando
+  // Future<void> _initFirebaseMessaging() async {
+  //   FirebaseMessaging messaging = FirebaseMessaging.instance;
+  //
+  //   // Solicita permiso para notificaciones
+  //   await messaging.requestPermission();
+  //
+  //   // Obtiene el token FCM
+  //   String? token = await messaging.getToken(
+  //     vapidKey: 'BHihs1laCgF-by2riBdLNshy3Zivz9LITx4Ut_Xv34KIwZGEof8X8u-lTRQG7Iwi1K2WBDXUkRNbYi0Z_7ov7fo' // Santiago VAPID key
+  //   );
+  //
+  //   if (token != null) {
+  //     // Guarda el token FCM en PostgreSQL API
+  //     try {
+  //       final apiService = ApiService();
+  //       await apiService.put('settings/fcm-token', {'fcmToken': token});
+  //     } catch (e) {
+  //       // Error silencioso
+  //     }
+  //   }
+  //
+  //   // Escucha notificaciones mientras la app está activa (foreground)
+  //   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  //     // Aquí puedes disparar un modal, alerta, badge, etc.
+  //   });
+  // }
   
   void _initVersionCheck() {
     // Configurar callback para cuando se detecte una actualización
