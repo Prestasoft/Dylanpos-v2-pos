@@ -49,6 +49,24 @@ const kNeutral700 = Color(0xff404040);
 const kNeutral800 = Color(0xff262626);
 const kNeutral500 = Color(0xff667085);
 const kNeutral900 = Color(0xff171717);
+
+// ============================================================================
+// TEMA DORADO/NEGRO - Colores del sistema
+// ============================================================================
+const Color kAppGoldPrimary = Color(0xFFD4A84B);   // Dorado principal - botones, acentos
+const Color kAppGoldLight = Color(0xFFE8C778);     // Dorado claro - hover, highlights
+const Color kAppGoldDark = Color(0xFFB8923C);      // Dorado oscuro - bordes, sombras
+const Color kAppDarkBg = Color(0xFF1A1A1A);        // Fondo oscuro principal
+const Color kAppCardBg = Color(0xFF2A2A2A);        // Fondo de cards/contenedores
+const Color kAppSurfaceBg = Color(0xFF121212);     // Fondo del área de contenido
+
+// Gradiente dorado para botones principales
+const List<Color> kAppGoldGradient = [
+  Color(0xFFB8923C),  // kAppGoldDark
+  Color(0xFFD4A84B),  // kAppGoldPrimary
+  Color(0xFFE8C778),  // kAppGoldLight
+];
+
 final kTextStyle = GoogleFonts.manrope(
   color: Colors.white,
 );

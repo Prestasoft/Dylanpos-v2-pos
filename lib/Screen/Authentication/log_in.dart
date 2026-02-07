@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,14 +9,12 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/Repository/login_repo.dart';
 import 'package:salespro_admin/Route/static_string.dart';
-//import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
 import 'package:salespro_admin/const.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
@@ -34,18 +33,15 @@ class EmailLogIn extends StatefulWidget {
 }
 
 class _EmailLogInState extends State<EmailLogIn> {
-  // Inicializar como strings vacíos para evitar null
   String email = '';
   String password = '';
   GlobalKey<FormState> globalKey = GlobalKey<FormState>();
   String? user;
 
-
   bool validateAndSave() {
     final form = globalKey.currentState;
     if (form!.validate()) {
       form.save();
-      // Asegurar que email y password estén limpios
       email = email.trim();
       password = password.trim();
       if (email.isEmpty || password.isEmpty) {
@@ -67,15 +63,11 @@ class _EmailLogInState extends State<EmailLogIn> {
     _loadCurrentTenant();
   }
 
-  void _loadCurrentTenant() async {
-    // Ya no necesitamos cargar el tenant en el login
-    // La selección de sucursal se hace POST-login
-  }
+  void _loadCurrentTenant() async {}
 
   void _checkIfComingFromUpdate() async {
     final isFromUpdate = await VersionCheckService().isComingFromUpdate();
     if (isFromUpdate && mounted) {
-      // Mostrar mensaje de éxito
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -124,7 +116,6 @@ class _EmailLogInState extends State<EmailLogIn> {
           actions: [
             TextButton(
               onPressed: () {
-                // Exit app
                 if (Platform.isAndroid) {
                   SystemNavigator.pop();
                 } else {
@@ -212,18 +203,19 @@ class _EmailLogInState extends State<EmailLogIn> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     final tabAndMobileScreen = isMobileAndTab(screenWidth);
-    final kLargeFontSize = responsiveValue<double>(context, xs: 24, md: 24, lg: 40);
-    final kRegularFontSize = responsiveValue<double>(context, xs: 14, md: 14, lg: 20);
-    final kSmallFontSize = responsiveValue<double>(context, xs: 14, md: 14, lg: 18);
+    final kRegularFontSize = responsiveValue<double>(context, xs: 14, md: 14, lg: 16);
+    final kSmallFontSize = responsiveValue<double>(context, xs: 14, md: 14, lg: 16);
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Cambiado a transparente para mostrar la imagen de fondo
+      backgroundColor: kAppDarkBg,
       body: Container(
-        height: MediaQuery.of(context).size.height, // Asegurar que ocupe toda la altura
+        height: screenHeight,
+        width: screenWidth,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('images/fondo2.webp'), // Cambia la ruta si deseas otra imagen
+            image: AssetImage('images/fondo_login.webp'),
             fit: BoxFit.cover,
           ),
         ),
@@ -233,324 +225,476 @@ class _EmailLogInState extends State<EmailLogIn> {
             final settingProvider = ref.watch(generalSettingProvider);
             return settingProvider.when(
               data: (setting) {
-                final dynamicNameLogo = setting.commonHeaderLogo.isNotEmpty ? setting.commonHeaderLogo : null;
                 final dynamicAppsName = setting.commonHeaderLogo.isNotEmpty ? setting.title : appsName;
-                return Padding(
-                  padding: screenWidth < 400 ? const EdgeInsets.all(8) : const EdgeInsets.all(20.0),
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height - 40, // Restar el padding
-                    child: SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: MediaQuery.of(context).size.height - 40,
-                        ),
-                        child: IntrinsicHeight(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                        // Logo comentado - dynamicNameLogo != null ? Image.network(dynamicNameLogo, height: 50) : SvgPicture.asset(nameLogo, height: 50),
-                        Center(
-                          child: ResponsiveGridRow(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                            ResponsiveGridCol(
-                                lg: 6,
-                                md: screenWidth < 650 ? 12 : 6,
-                                xs: 12,
-                                child: Center(
-                                  child: Container(
-                                    height: tabAndMobileScreen ? MediaQuery.of(context).size.width / 1.1 : MediaQuery.of(context).size.height / 1.2,
-                                    decoration: BoxDecoration(image: DecorationImage(image: AssetImage(tabAndMobileScreen ? 'images/loginLogo2.png' : 'images/loginLogo2.png'))),
-                                  ),
-                            )),
-                            ResponsiveGridCol(
-                              md: screenWidth < 650 ? 12 : 6,
-                              sm: 12,
-                              lg: 6,
-                              xs: 12,
-                              child: Padding(
-                                padding: screenWidth < 380 ? EdgeInsets.zero : const EdgeInsets.only(left: 20, right: 25),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(20.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(tabAndMobileScreen ? 20 : 40),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            // Solo mostrar el nombre del negocio, sin la sucursal
-                                            Text(
-                                              dynamicAppsName,
-                                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                                fontSize: 18,
-                                                color: const Color.fromRGBO(0, 167, 250, 1),
-                                                fontWeight: FontWeight.bold
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          'Bienvenido de nuevo, por favor inicia sesión en tu cuenta',
-                                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: kRegularFontSize, color: kNeutral500),
-                                        ),
-                                        SizedBox(height: tabAndMobileScreen ? 20 : 40.0),
-                                        Form(
-                                          key: globalKey,
-                                          child: Column(
-                                            children: [
-                                              AppTextField(
-                                                showCursor: true,
-                                                cursorColor: kTitleColor,
-                                                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
-                                                textFieldType: TextFieldType.NAME,
-                                                validator: (value) {
-                                                  if (value == null || value.isEmpty) {
-                                                    return 'Usuario o email requerido';
-                                                  }
-                                                  return null;
-                                                },
-                                                initialValue: email,
-                                                onChanged: (value) {
-                                                  loginProvider.email = value.trim();
-                                                  email = value.trim();
-                                                },
-                                                decoration: kInputDecoration.copyWith(
-                                                  prefixIcon: Padding(
-                                                    padding: const EdgeInsets.only(right: 8),
-                                                    child: Container(
-                                                      alignment: Alignment.center,
-                                                      width: 48,
-                                                      decoration: const BoxDecoration(
-                                                        border: Border(right: BorderSide(color: kBorderColor)),
-                                                        // color: Color(0xff98A2B3),
-                                                      ),
-                                                      child:  HugeIcon(
-                                                        icon: HugeIcons.strokeRoundedUser,
-                                                        color: kNeutral600,
-                                                        size: 24.0,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  labelText: 'Usuario o Email',
-                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintText: 'Ingrese su usuario o email',
-                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 20.0),
-                                              TextFormField(
-                                                showCursor: true,
-                                                cursorColor: kTitleColor,
-                                                keyboardType: TextInputType.visiblePassword,
-                                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kTitleColor),
-                                                validator: (value) {
-                                                  if (value == null || value.trim().isEmpty) {
-                                                    return 'Password can\'t be empty';
-                                                  } else if (value.trim().length < 4) {
-                                                    return 'Please enter a bigger password';
-                                                  }
-                                                  return null;
-                                                },
-                                                initialValue: password,
-                                                onChanged: (value) {
-                                                  loginProvider.password = value.trim();
-                                                  password = value.trim();
-                                                },
-                                                onEditingComplete: () async {
-                                                  password = password.trim();
-                                                  if (validateAndSave()) {
-                                                    bool isActive = await checkUser(context: context);
-                                                    if (isActive) {
-                                                      password = password.trim();
-                                                      _saveCredentials();
-                                                      loginProvider.email = email.trim();
-                                                      loginProvider.password = password;
-                                                      loginProvider.signIn(context);
-                                                    } else {
-                                                      EasyLoading.showInfo(lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp);
-                                                    }
-                                                  }
-                                                },
-                                                obscureText: hidePassword,
-                                                decoration: kInputDecoration.copyWith(
-                                                  prefixIcon: Padding(
-                                                    padding: const EdgeInsets.only(right: 8),
-                                                    child: Container(
-                                                      alignment: Alignment.center,
-                                                      width: 48,
-                                                      decoration: const BoxDecoration(
-                                                        border: Border(right: BorderSide(color: kBorderColor)),
-                                                        // color: Color(0xff98A2B3),
-                                                      ),
-                                                      child:  HugeIcon(
-                                                        icon: HugeIcons.strokeRoundedSquareLock02,
-                                                        color: kNeutral600,
-                                                        size: 24.0,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  suffixIcon: IconButton(
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        hidePassword = !hidePassword;
-                                                      });
-                                                    },
-                                                    icon: Icon(
-                                                      hidePassword ? FeatherIcons.eyeOff : FeatherIcons.eye,
-                                                      color: kGreyTextColor,
-                                                    ),
-                                                  ),
-                                                  labelText: lang.S.of(context).password,
-                                                  labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                                                  hintText: lang.S.of(context).enterYourPassword,
-                                                  hintStyle: kTextStyle.copyWith(color: kGreyTextColor),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 10.0),
-                                              Row(
-                                                children: [
-                                                  Checkbox(
-                                                    value: rememberMe,
-                                                    onChanged: (value) {
-                                                      setState(() {
-                                                        rememberMe = value ?? false;
-                                                      });
-                                                    },
-                                                  ),
-                                                  Text('Recordar credenciales', style: Theme.of(context).textTheme.bodyMedium),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 20.0),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  minimumSize: Size(screenWidth, 48),
-                                                  backgroundColor: const Color(0xFFD59345), // Cambiado a color #d59345
-                                                ),
-                                                onPressed: () async {
-                                                  password = password.trim();
-                                                  if (validateAndSave()) {
-                                                    bool isActive = await checkUser(context: context);
-                                                    if (isActive) {
-                                                      password = password.trim();
-                                                      _saveCredentials();
-                                                      loginProvider.email = email.trim();
-                                                      loginProvider.password = password;
-                                                      loginProvider.signIn(context);
-                                                    } else {
-                                                      EasyLoading.showInfo(lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp);
-                                                    }
-                                                  }
-                                                },
-                                                child: Text(lang.S.of(context).login),
-                                              ),
-                                              const SizedBox(height: 20.0),
-                                              
-                                              Row(
-                                                spacing: 2,
-                                                mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  IconButton(
-                                                      padding: EdgeInsets.zero,
-                                                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                                                      onPressed: () {
-                                                        context.go(ForgotPassword.route);
-                                                      },
-                                                      icon: Row(
-                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                        mainAxisAlignment: MainAxisAlignment.center,
-                                                        children: [
-                                                          Icon(
-                                                            MdiIcons.lockAlertOutline,
-                                                            color: kTitleColor,
-                                                            size: kSmallFontSize,
-                                                          ),
-                                                          const SizedBox(width: 5.0),
-                                                          Text(
-                                                            lang.S.of(context).forgotPassword,
-                                                            textAlign: TextAlign.center,
-                                                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: kNeutral600, fontSize: kSmallFontSize),
-                                                          )
-                                                        ],
-                                                      )),
-                                                  const Spacer(),
-                                        
-                                                ],
-                                              ),
-                                              const SizedBox(height: 16),
-                                              // Badge de versión en pantalla de login
-                                              Center(
-                                                child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      colors: [
-                                                        const Color(0xFF6366f1).withOpacity(0.1),
-                                                        const Color(0xFF8b5cf6).withOpacity(0.1),
-                                                      ],
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(20),
-                                                    border: Border.all(
-                                                      color: const Color(0xFF6366f1).withOpacity(0.3),
-                                                      width: 1,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      Container(
-                                                        width: 8,
-                                                        height: 8,
-                                                        decoration: const BoxDecoration(
-                                                          color: Color(0xFF22c55e),
-                                                          shape: BoxShape.circle,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      const Text(
-                                                        'v2.1.90',
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.w600,
-                                                          color: Color(0xFF6366f1),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+
+                // Layout para pantallas grandes (>= 1100px): imagen izquierda + formulario derecha
+                if (screenWidth >= 1100) {
+                  return Row(
+                    children: [
+                      // Columna izquierda: Imagen promocional de Victor Guzmán
+                      Expanded(
+                        flex: 6,
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          alignment: Alignment.center,
+                          child: Container(
+                            constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: kAppGoldPrimary.withValues(alpha: 0.3),
+                                  blurRadius: 50,
+                                  spreadRadius: 10,
                                 ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 15),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Image.asset(
+                                'images/portada_victor.png',
+                                fit: BoxFit.contain,
+                                width: double.infinity,
                               ),
-                            )
-                          ]),
+                            ),
+                          ),
                         ),
-                      ],
+                      ),
+                      // Columna derecha: Formulario de login
+                      Expanded(
+                        flex: 4,
+                        child: Center(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(20),
+                            child: _buildLoginFormContent(
+                              loginProvider: loginProvider,
+                              dynamicAppsName: dynamicAppsName,
+                              kRegularFontSize: kRegularFontSize,
+                              kSmallFontSize: kSmallFontSize,
+                              maxWidth: 420,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                // Layout móvil/tablet: formulario centrado
+                return Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: _buildLoginFormContent(
+                      loginProvider: loginProvider,
+                      dynamicAppsName: dynamicAppsName,
+                      kRegularFontSize: kRegularFontSize,
+                      kSmallFontSize: kSmallFontSize,
+                      maxWidth: tabAndMobileScreen ? screenWidth * 0.9 : 450,
                     ),
                   ),
-                ),
-              ),
-            ),
-          );
-        },
+                );
+              },
               error: (e, stack) {
-                return Text(e.toString());
+                return Center(
+                  child: Text(
+                    e.toString(),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
               },
               loading: () {
-                return Center(
-                  child: CircularProgressIndicator(),
+                return const Center(
+                  child: CircularProgressIndicator(color: kAppGoldPrimary),
                 );
               },
             );
           },
+        ),
+      ),
+    );
+  }
+
+  /// Widget del formulario de login con estilo glassmorphism dorado/negro
+  Widget _buildLoginFormContent({
+    required LogInRepo loginProvider,
+    required String dynamicAppsName,
+    required double kRegularFontSize,
+    required double kSmallFontSize,
+    required double maxWidth,
+  }) {
+    return Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: kAppDarkBg.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: kAppGoldPrimary.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Logo / Título con gradiente dorado
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: kAppGoldGradient,
+                  ).createShader(bounds),
+                  child: Text(
+                    dynamicAppsName,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontSize: 28,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Bienvenido de nuevo',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontSize: kRegularFontSize,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Formulario
+                Form(
+                  key: globalKey,
+                  child: Column(
+                    children: [
+                      // Campo Email/Usuario
+                      TextFormField(
+                        showCursor: true,
+                        cursorColor: kAppGoldPrimary,
+                        style: const TextStyle(color: Colors.white),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Usuario o email requerido';
+                          }
+                          return null;
+                        },
+                        initialValue: email,
+                        onChanged: (value) {
+                          loginProvider.email = value.trim();
+                          email = value.trim();
+                        },
+                        decoration: InputDecoration(
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: const BoxDecoration(
+                              border: Border(right: BorderSide(color: kAppGoldPrimary, width: 0.5)),
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              child: Icon(Icons.person_outline, color: kAppGoldPrimary, size: 22),
+                            ),
+                          ),
+                          labelText: 'Usuario o Email',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          hintText: 'Ingrese su usuario o email',
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                          filled: true,
+                          fillColor: kAppCardBg,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: kAppGoldPrimary, width: 2),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Campo Password
+                      TextFormField(
+                        showCursor: true,
+                        cursorColor: kAppGoldPrimary,
+                        keyboardType: TextInputType.visiblePassword,
+                        style: const TextStyle(color: Colors.white),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Password can\'t be empty';
+                          } else if (value.trim().length < 4) {
+                            return 'Please enter a bigger password';
+                          }
+                          return null;
+                        },
+                        initialValue: password,
+                        onChanged: (value) {
+                          loginProvider.password = value.trim();
+                          password = value.trim();
+                        },
+                        onEditingComplete: () async {
+                          password = password.trim();
+                          if (validateAndSave()) {
+                            bool isActive = await checkUser(context: context);
+                            if (isActive) {
+                              password = password.trim();
+                              _saveCredentials();
+                              loginProvider.email = email.trim();
+                              loginProvider.password = password;
+                              loginProvider.signIn(context);
+                            } else {
+                              EasyLoading.showInfo(lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp);
+                            }
+                          }
+                        },
+                        obscureText: hidePassword,
+                        decoration: InputDecoration(
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: const BoxDecoration(
+                              border: Border(right: BorderSide(color: kAppGoldPrimary, width: 0.5)),
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              child: Icon(Icons.lock_outline, color: kAppGoldPrimary, size: 22),
+                            ),
+                          ),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                hidePassword = !hidePassword;
+                              });
+                            },
+                            icon: Icon(
+                              hidePassword ? FeatherIcons.eyeOff : FeatherIcons.eye,
+                              color: Colors.white54,
+                              size: 20,
+                            ),
+                          ),
+                          labelText: lang.S.of(context).password,
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          hintText: lang.S.of(context).enterYourPassword,
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                          filled: true,
+                          fillColor: kAppCardBg,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: kAppGoldPrimary, width: 2),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Recordar credenciales
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: rememberMe,
+                              onChanged: (value) {
+                                setState(() {
+                                  rememberMe = value ?? false;
+                                });
+                              },
+                              activeColor: kAppGoldPrimary,
+                              checkColor: kAppDarkBg,
+                              side: const BorderSide(color: Colors.white38),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Recordar credenciales',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Botón de Login con gradiente dorado
+                      Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: kAppGoldGradient,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kAppGoldPrimary.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () async {
+                            password = password.trim();
+                            if (validateAndSave()) {
+                              bool isActive = await checkUser(context: context);
+                              if (isActive) {
+                                password = password.trim();
+                                _saveCredentials();
+                                loginProvider.email = email.trim();
+                                loginProvider.password = password;
+                                loginProvider.signIn(context);
+                              } else {
+                                EasyLoading.showInfo(lang.S.of(context).pleaseUseTheValidPurchaseCodeToUseTheApp);
+                              }
+                            }
+                          },
+                          child: Text(
+                            lang.S.of(context).login,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: kAppDarkBg,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Forgot Password
+                      TextButton(
+                        onPressed: () {
+                          context.go(ForgotPassword.route);
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              MdiIcons.lockAlertOutline,
+                              color: Colors.white54,
+                              size: kSmallFontSize,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              lang.S.of(context).forgotPassword,
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: kSmallFontSize,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Badge de versión con estilo dorado
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: kAppCardBg,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: kAppGoldPrimary.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Líneas decorativas doradas
+                            Container(
+                              width: 20,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    kAppGoldPrimary.withValues(alpha: 0.5),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF22c55e),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'v2.1.98',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: kAppGoldPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 20,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    kAppGoldPrimary.withValues(alpha: 0.5),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

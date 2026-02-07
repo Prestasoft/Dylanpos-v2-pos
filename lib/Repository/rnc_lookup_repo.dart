@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
 
 /// Modelo para datos de RNC de la DGII
@@ -38,10 +40,10 @@ class RncData {
 
 /// Repositorio para búsqueda de RNC en el padrón de la DGII
 class RncLookupRepository {
-  final ApiService _apiService = ApiService();
 
   /// Buscar RNC exacto
   /// Retorna los datos del contribuyente si existe
+  /// Usa http directo para evitar problemas de autenticación
   Future<RncData?> lookupRnc(String rnc) async {
     try {
       // Limpiar RNC
@@ -51,10 +53,21 @@ class RncLookupRepository {
         return null;
       }
 
-      final response = await _apiService.get('rnc/lookup/$cleanRnc');
+      // Usar http directo para el endpoint RNC (no requiere auth)
+      final uri = Uri.parse('${ApiService.baseUrl}/rnc/lookup/$cleanRnc');
+      print('[RncLookupRepository] Consultando RNC: $uri');
 
-      if (response.success && response.data != null && response.data['data'] != null) {
-        return RncData.fromJson(response.data['data'] as Map<String, dynamic>);
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      }).timeout(const Duration(seconds: 15));
+
+      print('[RncLookupRepository] Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return RncData.fromJson(data['data'] as Map<String, dynamic>);
+        }
       }
 
       return null;
@@ -71,14 +84,21 @@ class RncLookupRepository {
         return [];
       }
 
-      final response = await _apiService.get('rnc/search', queryParams: {
-        'q': query,
-        'limit': limit.toString(),
-      });
+      // Usar http directo para el endpoint RNC (no requiere auth)
+      final uri = Uri.parse('${ApiService.baseUrl}/rnc/search').replace(
+        queryParameters: {'q': query, 'limit': limit.toString()},
+      );
 
-      if (response.success && response.data != null) {
-        final results = response.data['results'] as List<dynamic>? ?? [];
-        return results.map((r) => RncData.fromJson(r as Map<String, dynamic>)).toList();
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      }).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['results'] != null) {
+          final results = data['results'] as List<dynamic>;
+          return results.map((r) => RncData.fromJson(r as Map<String, dynamic>)).toList();
+        }
       }
 
       return [];
@@ -91,11 +111,17 @@ class RncLookupRepository {
   /// Obtener estadísticas del padrón
   Future<Map<String, int>> getStats() async {
     try {
-      final response = await _apiService.get('rnc/stats');
+      // Usar http directo para el endpoint RNC (no requiere auth)
+      final uri = Uri.parse('${ApiService.baseUrl}/rnc/stats');
 
-      if (response.success && response.data != null) {
-        final stats = response.data['stats'] as Map<String, dynamic>?;
-        if (stats != null) {
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      }).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['stats'] != null) {
+          final stats = data['stats'] as Map<String, dynamic>;
           return {
             'total': int.tryParse(stats['total']?.toString() ?? '0') ?? 0,
             'activos': int.tryParse(stats['activos']?.toString() ?? '0') ?? 0,

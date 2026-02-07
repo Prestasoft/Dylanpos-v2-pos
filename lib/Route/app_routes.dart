@@ -52,6 +52,9 @@ import '../Screen/HRM/vacations/vacations_screen.dart';
 import '../Screen/HRM/loans/loans_screen.dart';
 import '../Screen/HRM/prestaciones/prestaciones_screen.dart';
 import '../Screen/HRM/tss_reports/tss_reports_screen.dart';
+import '../Screen/HRM/birthdays/employee_birthdays_screen.dart';
+import '../Screen/HRM/Rentability/rentability_dashboard.dart';
+import '../Screen/HRM/hrm_dashboard.dart';
 import '../Screen/Home/home_screen.dart';
 import '../Screen/Income/income_Edit.dart';
 import '../Screen/Income/income_list.dart';
@@ -896,6 +899,30 @@ abstract class AcnooAppRoutes {
                 path: 'tss-reports',
                 pageBuilder: (context, state) => const NoTransitionPage<void>(
                   child: TSSReportsScreen(),
+                ),
+              ),
+
+              ///---------------------Birthdays Route------------------
+              GoRoute(
+                path: 'birthdays',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: EmployeeBirthdaysScreen(),
+                ),
+              ),
+
+              ///---------------------Rentability Route------------------
+              GoRoute(
+                path: 'rentability',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: RentabilityDashboardScreen(),
+                ),
+              ),
+
+              ///---------------------HRM Dashboard Route------------------
+              GoRoute(
+                path: 'dashboard',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: HRMDashboardScreen(),
                 ),
               ),
             ],

@@ -1,23 +1,41 @@
 import 'package:flutter/material.dart';
+import 'Widgets/Constant Data/constant.dart';
 
 class BlankHome extends StatelessWidget {
   const BlankHome({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Fondo con imagen y logo centrado
+    // Fondo oscuro con partículas doradas y la imagen promocional de Victor Guzmán
     return Container(
       decoration: const BoxDecoration(
+        color: kAppDarkBg,
         image: DecorationImage(
-          image: AssetImage('images/fondo2.webp'),
+          image: AssetImage('images/fondo_login.webp'),
           fit: BoxFit.cover,
         ),
       ),
       child: Center(
-        child: Image.asset(
-          'images/loginLogo2.png',
-          width: 400,
-          fit: BoxFit.contain,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 900, maxHeight: 600),
+          margin: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: kAppGoldPrimary.withValues(alpha: 0.3),
+                blurRadius: 40,
+                spreadRadius: 10,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              'images/portada_victor.png',
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
       ),
     );

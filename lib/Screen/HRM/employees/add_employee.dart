@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:iconly/iconly.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Screen/HRM/employees/provider/designation_provider.dart';
@@ -10,6 +12,7 @@ import 'package:salespro_admin/Screen/HRM/employees/repo/employee_repo.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/add_designation.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/repo/designation_repo.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:salespro_admin/services/api_service.dart';
 
 import '../../../const.dart';
 import '../../Widgets/Constant Data/constant.dart';
@@ -107,6 +110,10 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen>
 
   // Lista mutable de designaciones para poder actualizarla cuando se agregue una nueva
   List<DesignationModel> _designations = [];
+
+  // Estado para búsqueda de cédula en Padrón Electoral
+  bool _isSearchingCedula = false;
+  Uint8List? _photoFromPadron;
 
   @override
   void initState() {
@@ -220,6 +227,177 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen>
       if (element.id == employee.designationId) {
         selectedDesignation = element;
         break;
+      }
+    }
+  }
+
+  /// Busca datos del ciudadano en el Padrón Electoral por cédula
+  Future<void> _searchByCedula() async {
+    String cedula = cedulaController.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (cedula.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingrese una cédula para buscar')),
+      );
+      return;
+    }
+
+    if (cedula.length != 11) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La cédula debe tener 11 dígitos')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSearchingCedula = true;
+    });
+
+    try {
+      final uri = Uri.parse('${ApiService.baseUrl}/padron-electoral/$cedula');
+      debugPrint('[AddEmployee] Consultando cédula: $uri');
+
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      }).timeout(const Duration(seconds: 25));
+
+      debugPrint('[AddEmployee] Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['success'] == true && data['data'] != null) {
+          final padronData = data['data'];
+
+          // Actualizar campos del formulario
+          setState(() {
+            // Nombre y apellidos
+            if (padronData['nombres'] != null) {
+              nameController.text = padronData['nombres'];
+            }
+
+            String apellidos = '';
+            if (padronData['apellido1'] != null) {
+              apellidos = padronData['apellido1'];
+            }
+            if (padronData['apellido2'] != null && padronData['apellido2'].toString().isNotEmpty) {
+              apellidos += ' ${padronData['apellido2']}';
+            }
+            if (apellidos.isNotEmpty) {
+              lastNameController.text = apellidos.trim();
+            }
+
+            // Fecha de nacimiento
+            if (padronData['fechaNacimiento'] != null) {
+              try {
+                birthDate = DateTime.parse(padronData['fechaNacimiento']);
+              } catch (e) {
+                debugPrint('Error parseando fecha: $e');
+              }
+            }
+
+            // Género
+            if (padronData['sexo'] != null) {
+              final sexo = padronData['sexo'].toString().toUpperCase();
+              if (sexo == 'M' || sexo == 'MASCULINO') {
+                selectedGender = 'Masculino';
+              } else if (sexo == 'F' || sexo == 'FEMENINO') {
+                selectedGender = 'Femenino';
+              }
+            }
+
+            // Estado civil
+            if (padronData['estadoCivil'] != null) {
+              final ec = padronData['estadoCivil'].toString().toUpperCase();
+              if (ec == 'S' || ec == 'SOLTERO' || ec == 'SOLTERO/A') {
+                selectedMaritalStatus = 'Soltero/a';
+              } else if (ec == 'C' || ec == 'CASADO' || ec == 'CASADO/A') {
+                selectedMaritalStatus = 'Casado/a';
+              } else if (ec == 'D' || ec == 'DIVORCIADO' || ec == 'DIVORCIADO/A') {
+                selectedMaritalStatus = 'Divorciado/a';
+              } else if (ec == 'V' || ec == 'VIUDO' || ec == 'VIUDO/A') {
+                selectedMaritalStatus = 'Viudo/a';
+              } else if (ec == 'U' || ec == 'UNION LIBRE' || ec == 'UNIÓN LIBRE') {
+                selectedMaritalStatus = 'Unión Libre';
+              }
+            }
+
+            // Provincia
+            if (padronData['provincia'] != null) {
+              selectedProvince = padronData['provincia'];
+            }
+
+            // Ciudad/Municipio
+            if (padronData['municipio'] != null) {
+              cityController.text = padronData['municipio'];
+            }
+
+            // Dirección (usa colegio como referencia del sector)
+            if (padronData['direccion'] != null && padronData['direccion'].toString().isNotEmpty) {
+              addressController.text = 'Cerca de ${padronData['direccion']}';
+            }
+
+            // Foto
+            if (padronData['foto'] != null && padronData['foto'].toString().isNotEmpty) {
+              try {
+                String base64Image = padronData['foto'];
+                if (base64Image.contains(',')) {
+                  base64Image = base64Image.split(',').last;
+                }
+                _photoFromPadron = base64.decode(base64Image);
+              } catch (e) {
+                debugPrint('Error decodificando foto: $e');
+              }
+            }
+          });
+
+          // Formatear cédula con guiones
+          cedulaController.text = EmployeeModel.formatCedula(cedula);
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Datos encontrados: ${nameController.text} ${lastNameController.text}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'] ?? 'Cédula no encontrada'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else if (response.statusCode == 404) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cédula no encontrada en el Padrón Electoral'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error consultando cédula: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al consultar: ${e.toString().contains('TimeoutException') ? 'Tiempo de espera agotado' : e}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearchingCedula = false;
+        });
       }
     }
   }
@@ -422,33 +600,64 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen>
               xs: 12,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  controller: cedulaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Cédula',
-                    hintText: '000-0000000-0',
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
-                    LengthLimitingTextInputFormatter(13),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: cedulaController,
+                        decoration: const InputDecoration(
+                          labelText: 'Cédula',
+                          hintText: '000-0000000-0',
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
+                          LengthLimitingTextInputFormatter(13),
+                        ],
+                        validator: (value) {
+                          // Cédula opcional, pero si se ingresa debe ser válida
+                          if (value != null && value.trim().isNotEmpty) {
+                            if (!EmployeeModel.isValidCedula(value)) {
+                              return 'Cédula inválida';
+                            }
+                          }
+                          return null;
+                        },
+                        onChanged: (value) {
+                          if (value.length == 11 && !value.contains('-')) {
+                            cedulaController.text = EmployeeModel.formatCedula(value);
+                            cedulaController.selection = TextSelection.fromPosition(
+                              TextPosition(offset: cedulaController.text.length),
+                            );
+                          }
+                        },
+                        onFieldSubmitted: (_) => _searchByCedula(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: ElevatedButton.icon(
+                        onPressed: _isSearchingCedula ? null : _searchByCedula,
+                        icon: _isSearchingCedula
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.search, size: 18),
+                        label: Text(_isSearchingCedula ? 'Buscando...' : 'Buscar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kMainColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        ),
+                      ),
+                    ),
                   ],
-                  validator: (value) {
-                    // Cédula opcional, pero si se ingresa debe ser válida
-                    if (value != null && value.trim().isNotEmpty) {
-                      if (!EmployeeModel.isValidCedula(value)) {
-                        return 'Cédula inválida';
-                      }
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    if (value.length == 11 && !value.contains('-')) {
-                      cedulaController.text = EmployeeModel.formatCedula(value);
-                      cedulaController.selection = TextSelection.fromPosition(
-                        TextPosition(offset: cedulaController.text.length),
-                      );
-                    }
-                  },
                 ),
               ),
             ),

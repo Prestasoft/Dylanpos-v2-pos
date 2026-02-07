@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:salespro_admin/Screen/HRM/employees/model/employee_model.dart';
 
@@ -161,6 +162,20 @@ class EmployeeRepository {
     } catch (e) {
       EasyLoading.dismiss();
       throw Exception('Error al actualizar estado: ${e.toString()}');
+    }
+  }
+
+  /// Actualizar campos parciales del empleado (para actualización desde Padrón Electoral)
+  Future<bool> updateEmployeePartial({
+    required dynamic id,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final response = await _apiService.put('hrm/employees/$id', data);
+      return response.success;
+    } catch (e) {
+      debugPrint('Error al actualizar empleado parcialmente: $e');
+      return false;
     }
   }
 

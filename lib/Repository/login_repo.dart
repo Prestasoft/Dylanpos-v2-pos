@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -11,6 +12,7 @@ import '../services/audit_service.dart';
 import '../services/tenant/tenant_model.dart';
 import '../const.dart';
 import '../model/user_role_model.dart';
+import '../Screen/Widgets/Constant Data/constant.dart';
 
 final logInProvider = ChangeNotifierProvider((ref) => LogInRepo());
 
@@ -125,255 +127,318 @@ class LogInRepo extends ChangeNotifier {
     }
   }
 
-  /// Mostrar modal para seleccionar sucursal (post-login)
+  /// Mostrar modal para seleccionar sucursal (post-login) - Tema Oscuro/Dorado
   Future<void> _showBranchSelectorModal(BuildContext context, List<TenantModel> tenants) async {
     String selectedId = tenants.first.id;
 
     await showGeneralDialog(
       context: context,
-      barrierDismissible: false, // No permitir cerrar sin seleccionar
+      barrierDismissible: false,
       barrierLabel: 'Seleccionar Sucursal',
-      barrierColor: Colors.black.withValues(alpha: 0.7),
+      barrierColor: Colors.black.withValues(alpha: 0.85),
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return PopScope(
-              canPop: false, // Prevenir cierre con botón back
+              canPop: false,
               child: Center(
                 child: Material(
                   color: Colors.transparent,
-                  child: Container(
-                    width: MediaQuery.of(context).size.width > 500 ? 450 : MediaQuery.of(context).size.width * 0.92,
-                    constraints: const BoxConstraints(maxHeight: 600),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 40,
-                          spreadRadius: 5,
-                          offset: const Offset(0, 20),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Header
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFFD59345),
-                                const Color(0xFFE8A85C),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(24),
-                              topRight: Radius.circular(24),
-                            ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        width: MediaQuery.of(context).size.width > 500 ? 450 : MediaQuery.of(context).size.width * 0.92,
+                        constraints: const BoxConstraints(maxHeight: 600),
+                        decoration: BoxDecoration(
+                          color: kAppDarkBg.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: kAppGoldPrimary.withValues(alpha: 0.3),
+                            width: 1.5,
                           ),
-                          child: Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.business_rounded,
-                                  color: Colors.white,
-                                  size: 36,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Seleccionar Sucursal',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Elige la ubicación donde deseas trabajar',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                              ),
-                            ],
-                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kAppGoldPrimary.withValues(alpha: 0.15),
+                              blurRadius: 40,
+                              spreadRadius: 5,
+                              offset: const Offset(0, 20),
+                            ),
+                          ],
                         ),
-
-                        // Lista de sucursales
-                        Flexible(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                            child: Column(
-                              children: tenants.map((tenant) {
-                                final isSelected = tenant.id == selectedId;
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: InkWell(
-                                    onTap: () {
-                                      setDialogState(() {
-                                        selectedId = tenant.id;
-                                      });
-                                    },
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        gradient: isSelected
-                                            ? LinearGradient(
-                                                colors: [
-                                                  const Color(0xFFD59345).withValues(alpha: 0.15),
-                                                  const Color(0xFFE8A85C).withValues(alpha: 0.08),
-                                                ],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                              )
-                                            : null,
-                                        color: isSelected ? null : Colors.grey.shade50,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? const Color(0xFFD59345)
-                                              : Colors.grey.shade200,
-                                          width: isSelected ? 2 : 1,
-                                        ),
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: const Color(0xFFD59345).withValues(alpha: 0.2),
-                                                  blurRadius: 12,
-                                                  offset: const Offset(0, 4),
-                                                ),
-                                              ]
-                                            : null,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Header con gradiente dorado
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    kAppGoldDark.withValues(alpha: 0.3),
+                                    kAppGoldPrimary.withValues(alpha: 0.15),
+                                    Colors.transparent,
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: kAppGoldPrimary.withValues(alpha: 0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  // Icono con borde dorado
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: kAppGoldPrimary.withValues(alpha: 0.5),
+                                        width: 2,
                                       ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 52,
-                                            height: 52,
-                                            decoration: BoxDecoration(
-                                              gradient: isSelected
-                                                  ? const LinearGradient(
-                                                      colors: [Color(0xFFD59345), Color(0xFFE8A85C)],
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          kAppGoldDark.withValues(alpha: 0.3),
+                                          kAppGoldPrimary.withValues(alpha: 0.1),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: ShaderMask(
+                                      shaderCallback: (bounds) => const LinearGradient(
+                                        colors: [kAppGoldLight, kAppGoldPrimary],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ).createShader(bounds),
+                                      child: const Icon(
+                                        Icons.business_rounded,
+                                        color: Colors.white,
+                                        size: 36,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // Título con gradiente dorado
+                                  ShaderMask(
+                                    shaderCallback: (bounds) => const LinearGradient(
+                                      colors: [kAppGoldLight, kAppGoldPrimary, kAppGoldLight],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    ).createShader(bounds),
+                                    child: const Text(
+                                      'Seleccionar Sucursal',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Elige la ubicación donde deseas trabajar',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white.withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Lista de sucursales
+                            Flexible(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                                child: Column(
+                                  children: tenants.map((tenant) {
+                                    final isSelected = tenant.id == selectedId;
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: InkWell(
+                                        onTap: () {
+                                          setDialogState(() {
+                                            selectedId = tenant.id;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? kAppGoldPrimary.withValues(alpha: 0.15)
+                                                : kAppCardBg,
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? kAppGoldPrimary
+                                                  : Colors.white.withValues(alpha: 0.1),
+                                              width: isSelected ? 2 : 1,
+                                            ),
+                                            boxShadow: isSelected
+                                                ? [
+                                                    BoxShadow(
+                                                      color: kAppGoldPrimary.withValues(alpha: 0.25),
+                                                      blurRadius: 12,
+                                                      offset: const Offset(0, 4),
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              // Icono de ubicación
+                                              Container(
+                                                width: 52,
+                                                height: 52,
+                                                decoration: BoxDecoration(
+                                                  gradient: isSelected
+                                                      ? const LinearGradient(
+                                                          colors: [kAppGoldDark, kAppGoldPrimary],
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                        )
+                                                      : null,
+                                                  color: isSelected ? null : kAppDarkBg,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: isSelected ? null : Border.all(
+                                                    color: Colors.white.withValues(alpha: 0.1),
+                                                  ),
+                                                ),
+                                                child: Icon(
+                                                  Icons.location_city_rounded,
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : kAppGoldPrimary.withValues(alpha: 0.7),
+                                                  size: 28,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              // Texto de sucursal
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      tenant.city,
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: isSelected
+                                                            ? kAppGoldLight
+                                                            : Colors.white,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      tenant.name,
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        color: Colors.white.withValues(alpha: 0.5),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              // Check de selección
+                                              if (isSelected)
+                                                Container(
+                                                  padding: const EdgeInsets.all(6),
+                                                  decoration: const BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [kAppGoldDark, kAppGoldPrimary],
                                                       begin: Alignment.topLeft,
                                                       end: Alignment.bottomRight,
-                                                    )
-                                                  : LinearGradient(
-                                                      colors: [Colors.grey.shade300, Colors.grey.shade200],
                                                     ),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Icon(
-                                              Icons.location_city_rounded,
-                                              color: isSelected ? Colors.white : Colors.grey.shade600,
-                                              size: 28,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  tenant.city,
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: isSelected ? const Color(0xFFD59345) : Colors.black87,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.check,
+                                                    color: Colors.white,
+                                                    size: 20,
                                                   ),
                                                 ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  tenant.name,
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                            ],
                                           ),
-                                          if (isSelected)
-                                            Container(
-                                              padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFD59345),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.check,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                            ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+
+                            // Botón Continuar con gradiente dorado
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [kAppGoldDark, kAppGoldPrimary, kAppGoldLight],
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: kAppGoldPrimary.withValues(alpha: 0.4),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
                                         ],
+                                      ),
+                                      child: ElevatedButton(
+                                        onPressed: () async {
+                                          // Configurar sucursal seleccionada
+                                          await _apiService.setBranchId(selectedId);
+                                          final prefs = await SharedPreferences.getInstance();
+                                          await prefs.setString('selected_tenant_id', selectedId);
+
+                                          // Cerrar modal y navegar
+                                          if (context.mounted) {
+                                            Navigator.of(context).pop();
+                                            context.go('/blank-home');
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.transparent,
+                                          shadowColor: Colors.transparent,
+                                          foregroundColor: kAppDarkBg,
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Continuar',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-
-                        // Botones de acción
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    // Configurar sucursal seleccionada
-                                    await _apiService.setBranchId(selectedId);
-                                    final prefs = await SharedPreferences.getInstance();
-                                    await prefs.setString('selected_tenant_id', selectedId);
-
-                                    // Cerrar modal y navegar
-                                    if (context.mounted) {
-                                      Navigator.of(context).pop();
-                                      context.go('/blank-home');
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFD59345),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Continuar',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),

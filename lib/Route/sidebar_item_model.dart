@@ -632,6 +632,16 @@ List<SidebarItemModel> get topMenus {
           type: "tss_reports",
           navigationPath: '/hrm/tss-reports',
         ),
+        SidebarSubmenuModel(
+          name: 'Cumpleaños',
+          type: "birthdays",
+          navigationPath: '/hrm/birthdays',
+        ),
+        SidebarSubmenuModel(
+          name: 'Rentabilidad',
+          type: "rentability",
+          navigationPath: '/hrm/rentability',
+        ),
       ],
     ),
     SidebarItemModel(

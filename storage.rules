@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules para Victor Guzman POS
+// Permite lectura/escritura a usuarios autenticados
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Permitir lectura pública para todas las imágenes
+    // (necesario para mostrar imágenes en el frontend sin autenticación)
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+
+    // Admin Panel - Solo usuarios autenticados pueden escribir
+    match /Admin Panel/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+
+    // Dress images - Solo usuarios autenticados pueden escribir
+    match /Admin Panel/dress_images/{imageId} {
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Product images - Solo usuarios autenticados pueden escribir
+    match /Admin Panel/product_images/{imageId} {
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Package images - Solo usuarios autenticados pueden escribir
+    match /Admin Panel/package_images/{imageId} {
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Invoices/PDFs - Solo usuarios autenticados pueden escribir
+    match /invoices/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+  }
+}

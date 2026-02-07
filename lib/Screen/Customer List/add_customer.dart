@@ -137,47 +137,93 @@ class _AddCustomerState extends State<AddCustomer> {
   RncData? foundRncData;
 
   Future<void> searchByCedula() async {
-    String cedula = searchCedulaController.text.trim();
+    String cedula = searchCedulaController.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
     if (cedula.isEmpty) return;
+
+    // Validar longitud de cédula (11 dígitos)
+    if (cedula.length != 11) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cédula debe tener 11 dígitos')),
+      );
+      return;
+    }
 
     setState(() {
       isSearching = true;
     });
 
     try {
-      final response = await http.get(Uri.parse('https://pres.soft-nh.com/api/consulta_data/$cedula'));
+      // Usar el proxy del backend para evitar problemas de CORS
+      final uri = Uri.parse('${ApiService.baseUrl}/padron-electoral/$cedula');
+      print('[AddCustomer] Consultando cédula: $uri');
+
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      }).timeout(const Duration(seconds: 25));
+
+      print('[AddCustomer] Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Actualizar nombre del cliente
-        if (data["padron"] != null) {
-          String fullName = "${data["padron"]["nombres"]} ${data["padron"]["apellido1"]} ${data["padron"]["apellido2"]}";
-          customerNameController.text = fullName;
-        }
+        // El backend retorna success: true si encontró datos
+        if (data["success"] == true && data["data"] != null) {
+          final padronData = data["data"];
 
-        // Actualizar imagen del perfil
-        if (data["foto"] != null && data["foto"]["Imagen"] != null) {
-          String base64Image = data["foto"]["Imagen"];
-          // Limpiar el formato de la imagen (remover encabezado si existe)
-          if (base64Image.contains(',')) {
-            base64Image = base64Image.split(',').last;
+          // Actualizar nombre del cliente
+          String fullName = "${padronData["nombres"] ?? ''} ${padronData["apellido1"] ?? ''} ${padronData["apellido2"] ?? ''}".trim();
+          if (fullName.isNotEmpty) {
+            customerNameController.text = fullName;
           }
 
-          try {
-            Uint8List decodedImage = base64.decode(base64Image);
-            setState(() {
-              image = decodedImage;
-              // No necesitamos profilePicture aquí ya que no la estamos subiendo a Firebase todavía
-              // El usuario puede decidir guardarla o no
-            });
-          } catch (e) {
+          // Actualizar imagen del perfil si existe
+          if (padronData["foto"] != null && padronData["foto"].isNotEmpty) {
+            try {
+              String base64Image = padronData["foto"];
+              // Limpiar el formato de la imagen (remover encabezado si existe)
+              if (base64Image.contains(',')) {
+                base64Image = base64Image.split(',').last;
+              }
+              Uint8List decodedImage = base64.decode(base64Image);
+              setState(() {
+                image = decodedImage;
+              });
+            } catch (e) {
+              print('Error decodificando imagen: $e');
+            }
           }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cédula encontrada: $fullName'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data["message"] ?? 'Cédula no encontrada'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         }
+      } else if (response.statusCode == 404) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cédula no encontrada en el Padrón Electoral'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${response.statusCode}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${response.statusCode}')),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al consultar la cédula: $e')));
+      print('Error consultando cédula: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al consultar la cédula: $e')),
+      );
     } finally {
       setState(() {
         isSearching = false;
