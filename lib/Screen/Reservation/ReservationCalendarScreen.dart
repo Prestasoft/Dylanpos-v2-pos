@@ -44,6 +44,37 @@ String formatReservationDate(String date) {
   }
 }
 
+/// Helper estático para formatear hora de reservación a formato 12h AM/PM
+/// Convierte formato 24h (09:00, 14:30) a formato 12h (9:00 AM, 2:30 PM)
+String formatReservationTime(String time) {
+  if (time.isEmpty) return time;
+  try {
+    // Parsear la hora en formato HH:mm
+    final parts = time.split(':');
+    if (parts.length >= 2) {
+      int hour = int.parse(parts[0]);
+      final minute = parts[1].padLeft(2, '0');
+
+      // Determinar AM/PM
+      final period = hour >= 12 ? 'PM' : 'AM';
+
+      // Convertir a formato 12h
+      if (hour == 0) {
+        hour = 12;  // 00:00 -> 12:00 AM
+      } else if (hour > 12) {
+        hour = hour - 12;  // 13:00 -> 1:00 PM
+      }
+      // Si hour == 12, se queda como 12 PM
+
+      return '$hour:$minute $period';
+    }
+    return time;
+  } catch (e) {
+    // Si falla el parsing, devolver la hora original
+    return time;
+  }
+}
+
 class ReservationCard extends ConsumerWidget {
   final ReservationModel reservation;
   final ReservationStatus status;
@@ -272,7 +303,7 @@ class ReservationCard extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${formatReservationDate(reservation.reservationDate)} - ${reservation.reservationTime}',
+                                    '${formatReservationDate(reservation.reservationDate)} - ${formatReservationTime(reservation.reservationTime)}',
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                   ),
                                   if (reservation.isFiestaDate)
@@ -1584,8 +1615,7 @@ class ReservationDetailView extends ConsumerWidget {
                                     _buildDetailItem(
                                         Icons.access_time,
                                         'Hora',
-                                        reservationData['reservation_time'] ??
-                                            ''),
+                                        formatReservationTime(reservationData['reservation_time'] ?? '')),
                                     _buildDetailItem(Icons.business, 'Sucursal',
                                         reservationData['branch_id'] ?? ''),
                                     _buildDetailItem(
@@ -1721,7 +1751,7 @@ class ReservationDetailView extends ConsumerWidget {
                                                           const SizedBox(height: 4),
                                                           if (reservationDate.isNotEmpty && reservationTime.isNotEmpty)
                                                             Text(
-                                                              'Fecha: $reservationDate - $reservationTime',
+                                                              'Fecha: $reservationDate - ${formatReservationTime(reservationTime)}',
                                                               style: TextStyle(
                                                                 fontSize: 14,
                                                                 color: Colors.grey[600],
