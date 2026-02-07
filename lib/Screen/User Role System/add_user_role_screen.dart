@@ -104,7 +104,18 @@ class _AddUserRoleState extends State<AddUserRole> {
     Permission(type: 'employees'),
     Permission(type: 'designations'),
     Permission(type: 'salary_list'),
-    
+    Permission(type: 'attendance'),
+    Permission(type: 'vacations'),
+    Permission(type: 'loans'),
+    Permission(type: 'prestaciones'),
+    Permission(type: 'tss_reports'),
+    Permission(type: 'birthdays'),
+    Permission(type: 'rentability'),
+
+    // ===== TRANSFERENCIAS Y BANCOS =====
+    Permission(type: 'transfers'),
+    Permission(type: 'banks'),
+
     // ===== CONFIGURACIÓN =====
     Permission(type: 'user_roles'),
     Permission(type: 'tax_rates'),
@@ -472,7 +483,18 @@ class _AddUserRoleState extends State<AddUserRole> {
       case 'employees':
       case 'designations':
       case 'salary_list':
+      case 'attendance':
+      case 'vacations':
+      case 'loans':
+      case 'prestaciones':
+      case 'tss_reports':
+      case 'birthdays':
+      case 'rentability':
         return 'RECURSOS HUMANOS';
+      case 'transfers':
+        return 'TRANSFERENCIAS';
+      case 'banks':
+        return 'BANCOS';
       case 'user_roles':
       case 'tax_rates':
         return 'CONFIGURACIÓN';
@@ -510,6 +532,10 @@ class _AddUserRoleState extends State<AddUserRole> {
         return Colors.pink;
       case 'CONFIGURACIÓN':
         return Colors.grey;
+      case 'TRANSFERENCIAS':
+        return Colors.cyan;
+      case 'BANCOS':
+        return Colors.blueGrey;
       default:
         return Colors.grey;
     }
@@ -554,6 +580,10 @@ class _AddUserRoleState extends State<AddUserRole> {
         return Icons.people_alt_rounded;
       case 'CONFIGURACIÓN':
         return Icons.settings_rounded;
+      case 'TRANSFERENCIAS':
+        return Icons.swap_horiz_rounded;
+      case 'BANCOS':
+        return Icons.account_balance_wallet_rounded;
       default:
         return Icons.folder_rounded;
     }
@@ -1831,6 +1861,24 @@ class _AddUserRoleState extends State<AddUserRole> {
         return 'Empleados';
       case 'salary_list':
         return 'Lista de Salarios';
+      case 'attendance':
+        return 'Asistencia';
+      case 'vacations':
+        return 'Vacaciones';
+      case 'loans':
+        return 'Préstamos';
+      case 'prestaciones':
+        return 'Prestaciones';
+      case 'tss_reports':
+        return 'Reportes TSS';
+      case 'birthdays':
+        return 'Cumpleaños';
+      case 'rentability':
+        return 'Rentabilidad';
+      case 'transfers':
+        return 'Transferencias';
+      case 'banks':
+        return 'Bancos';
       case 'audit':
         return 'Auditoría';
       default:
@@ -1948,6 +1996,8 @@ class _AddUserRoleState extends State<AddUserRole> {
       'reports',
       'audit',
       'hrm', 'employees', 'designations', 'salary_list',
+      'attendance', 'vacations', 'loans', 'prestaciones', 'tss_reports', 'birthdays', 'rentability',
+      'transfers', 'banks',
       'user_roles', 'tax_rates',
     ];
     

@@ -410,7 +410,7 @@ List<SidebarItemModel> get topMenus {
     SidebarItemModel(
       name: "Confirmaciones",
       iconPath: 'images/dashboard_icon/reports.svg',
-      type: "sales_return",
+      type: "confirmations",
       navigationPath: '/sale-confirmations',
     ),
     SidebarItemModel(
@@ -450,7 +450,7 @@ List<SidebarItemModel> get topMenus {
     SidebarItemModel(
       name: 'Transferencias',
       iconPath: 'images/dashboard_icon/income.svg',
-      type: "dues",  // Mismo permiso que cuentas por cobrar
+      type: "transfers",
       navigationPath: '/transfer-verifications',
     ),
     SidebarItemModel(
@@ -546,7 +546,7 @@ List<SidebarItemModel> get topMenus {
     SidebarItemModel(
       name: 'Bancos',
       iconPath: 'images/dashboard_icon/income.svg',
-      type: "income",  // Cambiado temporalmente para que aparezca
+      type: "banks",
       navigationPath: '/bank/bank-list',
     ),
     SidebarItemModel(

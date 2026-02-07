@@ -1118,7 +1118,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'v2.1.115',
+                  'v2.1.117',
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
