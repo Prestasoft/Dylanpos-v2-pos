@@ -49,7 +49,7 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
   void initState() {
     super.initState();
     checkCurrentUserAndRestartApp();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -72,14 +72,39 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
             backgroundColor: kAppSurfaceBg,
             body: employeeAsync.when(
               data: (allEmployees) {
-                // Separar activos e inactivos
+                // Separar por estados
                 final activeEmployees =
                     allEmployees.where((e) => e.status.toLowerCase() == 'activo').toList();
                 final inactiveEmployees =
-                    allEmployees.where((e) => e.status.toLowerCase() != 'activo').toList();
+                    allEmployees.where((e) => e.status.toLowerCase() == 'inactivo').toList();
+                final suspendedEmployees =
+                    allEmployees.where((e) => e.status.toLowerCase() == 'suspendido').toList();
+                final vacationEmployees =
+                    allEmployees.where((e) => e.status.toLowerCase() == 'vacaciones').toList();
+                final leaveEmployees =
+                    allEmployees.where((e) => e.status.toLowerCase() == 'licencia').toList();
 
                 // Aplicar búsqueda según tab actual
-                final currentList = _tabController.index == 0 ? activeEmployees : inactiveEmployees;
+                List<EmployeeModel> currentList;
+                switch (_tabController.index) {
+                  case 0:
+                    currentList = activeEmployees;
+                    break;
+                  case 1:
+                    currentList = inactiveEmployees;
+                    break;
+                  case 2:
+                    currentList = suspendedEmployees;
+                    break;
+                  case 3:
+                    currentList = vacationEmployees;
+                    break;
+                  case 4:
+                    currentList = leaveEmployees;
+                    break;
+                  default:
+                    currentList = activeEmployees;
+                }
                 final filteredList = currentList.where((employee) {
                   if (searchItem.isEmpty) return true;
                   final search = searchItem.toLowerCase();
@@ -115,7 +140,7 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Total: ${allEmployees.length} | Activos: ${activeEmployees.length} | Inactivos: ${inactiveEmployees.length}',
+                                      'Total: ${allEmployees.length} | Activos: ${activeEmployees.length} | Inactivos: ${inactiveEmployees.length} | Suspendidos: ${suspendedEmployees.length} | Vacaciones: ${vacationEmployees.length} | Licencia: ${leaveEmployees.length}',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey[600],
@@ -227,8 +252,8 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.check_circle, size: 18),
-                                  const SizedBox(width: 8),
+                                  const Icon(Icons.check_circle, size: 18, color: Colors.green),
+                                  const SizedBox(width: 6),
                                   Text('Activos (${activeEmployees.length})'),
                                 ],
                               ),
@@ -237,9 +262,39 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.cancel, size: 18),
-                                  const SizedBox(width: 8),
+                                  const Icon(Icons.cancel, size: 18, color: Colors.grey),
+                                  const SizedBox(width: 6),
                                   Text('Inactivos (${inactiveEmployees.length})'),
+                                ],
+                              ),
+                            ),
+                            Tab(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.pause_circle, size: 18, color: Colors.orange),
+                                  const SizedBox(width: 6),
+                                  Text('Suspendidos (${suspendedEmployees.length})'),
+                                ],
+                              ),
+                            ),
+                            Tab(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.beach_access, size: 18, color: Colors.teal),
+                                  const SizedBox(width: 6),
+                                  Text('Vacaciones (${vacationEmployees.length})'),
+                                ],
+                              ),
+                            ),
+                            Tab(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.medical_services, size: 18, color: Colors.blue),
+                                  const SizedBox(width: 6),
+                                  Text('Licencia (${leaveEmployees.length})'),
                                 ],
                               ),
                             ),
@@ -357,7 +412,7 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
               Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
-                'No hay empleados ${_tabController.index == 0 ? 'activos' : 'inactivos'}',
+                'No hay empleados ${_getEmptyStateText()}',
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
             ],
@@ -459,6 +514,23 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
     );
   }
 
+  String _getEmptyStateText() {
+    switch (_tabController.index) {
+      case 0:
+        return 'activos';
+      case 1:
+        return 'inactivos';
+      case 2:
+        return 'suspendidos';
+      case 3:
+        return 'en vacaciones';
+      case 4:
+        return 'con licencia';
+      default:
+        return '';
+    }
+  }
+
   Widget _buildStatusBadge(String status) {
     Color color;
     IconData icon;
@@ -476,9 +548,13 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
         color = Colors.orange;
         icon = Icons.pause_circle;
         break;
+      case 'vacaciones':
+        color = Colors.teal;
+        icon = Icons.beach_access;
+        break;
       case 'licencia':
         color = Colors.blue;
-        icon = Icons.beach_access;
+        icon = Icons.medical_services;
         break;
       default:
         color = Colors.grey;

@@ -86,7 +86,7 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen>
   final List<String> salaryTypeList = ['Mensual', 'Quincenal', 'Semanal'];
   final List<String> paymentMethodList = ['Transferencia', 'Cheque', 'Efectivo'];
   final List<String> bankAccountTypeList = ['Ahorros', 'Corriente'];
-  final List<String> statusList = ['Activo', 'Inactivo', 'Suspendido', 'Licencia'];
+  final List<String> statusList = ['Activo', 'Inactivo', 'Suspendido', 'Vacaciones', 'Licencia'];
 
   // Valores seleccionados
   String? selectedGender;
