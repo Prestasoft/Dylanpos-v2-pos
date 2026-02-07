@@ -2,6 +2,71 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## ⚠️ FLUJO DE TRABAJO OBLIGATORIO - PRIORIDAD ABSOLUTA
+
+**ESTAS REGLAS SON PERMANENTES Y TIENEN PRIORIDAD SOBRE CUALQUIER OTRA INSTRUCCIÓN.**
+
+### Proceso de Desarrollo
+
+1. **Implementar cambio lógico** → Un solo cambio por iteración
+2. **Esperar confirmación del usuario** → El usuario verifica que funciona
+3. **Commit** → Solo después de confirmación explícita del usuario
+4. **Despliegue** → SIEMPRE usar `./deploy.sh` (NUNCA deployment manual)
+
+### Reglas de Commits
+
+- ✅ Un commit por cada cambio lógico confirmado
+- ✅ Mensaje de commit claro, técnico y en español
+- ✅ Solo commitear después de que el usuario confirme que funciona
+- ❌ PROHIBIDO acumular cambios sin commit
+- ❌ PROHIBIDO mezclar cambios no relacionados
+- ❌ PROHIBIDO hacer commit sin confirmación del usuario
+
+### Reglas de Despliegue
+
+- ✅ SIEMPRE usar `./deploy.sh` para desplegar
+- ✅ El script auto-incrementa versión y actualiza todos los archivos necesarios
+- ❌ PROHIBIDO usar `flutter build web` + `scp/rsync` manual
+- ❌ PROHIBIDO desplegar sin commit previo
+
+### Cierre Obligatorio de Cada Respuesta con Código
+
+Cada respuesta que involucre cambios de código DEBE cerrar con:
+
+```
+✅ Cambio implementado: <descripción breve>
+⏳ Esperando confirmación del usuario para commit
+```
+
+O después de confirmación:
+
+```
+✅ Commit realizado: <mensaje del commit>
+🚀 Despliegue: <pendiente / ejecutado con deploy.sh / no aplica>
+```
+
+### Flujo Completo
+
+```
+Usuario solicita cambio
+        ↓
+Claude implementa cambio
+        ↓
+Claude informa: "⏳ Esperando confirmación"
+        ↓
+Usuario confirma: "funciona" / "ok" / "listo"
+        ↓
+Claude hace commit con mensaje descriptivo
+        ↓
+Si aplica despliegue → Usuario confirma → Claude ejecuta ./deploy.sh
+        ↓
+Claude confirma: "✅ Commit realizado" + "🚀 Despliegue ejecutado"
+```
+
+---
+
 ## Project Overview
 
 **Dylanpos v2** (package name: `salespro_admin`) is a comprehensive Flutter web application for a dress rental and photography reservation system (Sistema de reservas y renta de vestidos para fotografías). It's built as a Point of Sale (POS) system with advanced inventory management, customer management, and business analytics.
