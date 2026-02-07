@@ -46,7 +46,7 @@ import '../Screen/Authentication/log_in.dart';
 import '../Screen/Authentication/profile_setup.dart';
 import '../Screen/Expenses/expense_edit.dart';
 import '../Screen/Expenses/expenses_list.dart';
-import '../Screen/HRM/employees/employee_list.dart';
+import '../Screen/HRM/employees/employee_list_v2.dart';
 import '../Screen/HRM/attendance/attendance_screen.dart';
 import '../Screen/HRM/vacations/vacations_screen.dart';
 import '../Screen/HRM/loans/loans_screen.dart';
@@ -850,7 +850,7 @@ abstract class AcnooAppRoutes {
               GoRoute(
                 path: 'employee',
                 pageBuilder: (context, state) => const NoTransitionPage<void>(
-                  child: EmployeeListScreen(),
+                  child: EmployeeListV2Screen(),
                 ),
               ),
 
