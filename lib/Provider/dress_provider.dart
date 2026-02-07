@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../model/dress_model.dart';
 import '../services/api_service.dart';
 import 'branch_provider.dart';
@@ -23,48 +24,70 @@ import 'branch_provider.dart';
 /// Servicio API compartido
 final ApiService _apiService = ApiService();
 
-/// Subir imagen a Firebase Storage (se mantiene para almacenamiento de imágenes)
-Future<String> uploadImageToFirebase(dynamic imageFile) async {
+/// Subir imagen al servidor propio (en lugar de Firebase Storage)
+/// Usa el endpoint /api/upload/single con la categoría dress_images
+Future<String> uploadImageToServer(dynamic imageFile) async {
   try {
-    String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    Reference storageRef = FirebaseStorage.instance
-        .ref()
-        .child('Admin Panel/dress_images/$fileName');
+    // Obtener bytes de la imagen
+    Uint8List bytes;
+    String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-    if (kIsWeb) {
-      // Handle web platform
-      if (imageFile is XFile) {
-        Uint8List bytes = await imageFile.readAsBytes();
-        await storageRef.putData(
-            bytes, SettableMetadata(contentType: 'image/jpeg'));
-      } else if (imageFile is Uint8List) {
-        await storageRef.putData(
-            imageFile, SettableMetadata(contentType: 'image/jpeg'));
-      } else if (imageFile is File) {
-        // For web, when File object is passed (might happen in some cases)
-        Uint8List bytes = await imageFile.readAsBytes();
-        await storageRef.putData(
-            bytes, SettableMetadata(contentType: 'image/jpeg'));
-      } else {
-        throw Exception(
-            "Unsupported file type for web: ${imageFile.runtimeType}");
+    if (imageFile is XFile) {
+      bytes = await imageFile.readAsBytes();
+      // Usar nombre original si está disponible
+      if (imageFile.name.isNotEmpty) {
+        fileName = imageFile.name;
       }
+    } else if (imageFile is Uint8List) {
+      bytes = imageFile;
+    } else if (imageFile is File) {
+      bytes = await imageFile.readAsBytes();
+      fileName = imageFile.path.split('/').last;
     } else {
-      // Handle mobile platforms
-      File file;
-      if (imageFile is XFile) {
-        file = File(imageFile.path);
-      } else if (imageFile is File) {
-        file = imageFile;
-      } else {
-        throw Exception(
-            "Unsupported file type for mobile: ${imageFile.runtimeType}");
-      }
-      await storageRef.putFile(file);
+      throw Exception("Unsupported file type: ${imageFile.runtimeType}");
     }
 
-    return await storageRef.getDownloadURL();
+    // Preparar multipart request
+    final uri = Uri.parse('https://sistema.victorguzmanfotografia.com/api/upload/single?category=dress_images');
+    final request = http.MultipartRequest('POST', uri);
+
+    // Agregar headers de autenticación
+    final token = _apiService.token;
+    final branchId = _apiService.branchId;
+
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    if (branchId != null && branchId.isNotEmpty) {
+      request.headers['X-Branch-Id'] = branchId;
+    }
+
+    // Agregar el archivo
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: fileName,
+    ));
+
+    debugPrint('📤 [uploadImageToServer] Subiendo imagen: $fileName');
+    debugPrint('📤 [uploadImageToServer] Branch: $branchId');
+
+    // Enviar request
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse['success'] == true && jsonResponse['url'] != null) {
+        debugPrint('✅ [uploadImageToServer] Imagen subida: ${jsonResponse['url']}');
+        return jsonResponse['url'];
+      }
+    }
+
+    debugPrint('❌ [uploadImageToServer] Error: ${response.statusCode} - ${response.body}');
+    throw Exception('Error al subir imagen: ${response.statusCode}');
   } catch (e) {
+    debugPrint('❌ [uploadImageToServer] Exception: $e');
     rethrow;
   }
 }
@@ -74,7 +97,7 @@ Future<List<String>> uploadMultipleImages(List<dynamic> imageFiles) async {
   List<String> imageUrls = [];
 
   for (var imageFile in imageFiles) {
-    String url = await uploadImageToFirebase(imageFile);
+    String url = await uploadImageToServer(imageFile);
     if (url.isNotEmpty) {
       imageUrls.add(url);
     }
@@ -103,7 +126,7 @@ final addDressProvider =
       imageFiles = webImages;
     }
 
-    // Upload new images if any (still uses Firebase Storage)
+    // Subir imágenes al servidor propio
     List<String> newImageUrls = await uploadMultipleImages(imageFiles);
 
     // Combine with existing image URLs if editing
@@ -149,7 +172,7 @@ final updateDressProvider =
       newImageFiles = webImages;
     }
 
-    // Upload new images if any (still uses Firebase Storage)
+    // Subir imágenes al servidor propio
     List<String> newImageUrls = [];
     if (newImageFiles.isNotEmpty) {
       newImageUrls = await uploadMultipleImages(newImageFiles);

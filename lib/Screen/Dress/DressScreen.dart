@@ -1320,13 +1320,44 @@ class _DressScreenState extends State<DressScreen> {
     }
   }
 
+  /// Convierte el nombre de sucursal a ID técnico para compatibilidad
+  /// con vestidos antiguos que tienen el nombre en lugar del ID
+  String _convertBranchNameToId(String branchIdOrName) {
+    // Si ya es un ID técnico válido (stg, sde, sdo, rom), devolverlo tal cual
+    final validIds = ['stg', 'sde', 'sdo', 'rom'];
+    if (validIds.contains(branchIdOrName.toLowerCase())) {
+      return branchIdOrName.toLowerCase();
+    }
+
+    // Mapeo de nombres comunes a IDs técnicos
+    final nameToId = {
+      'victor guzmán santiago': 'stg',
+      'victor guzman santiago': 'stg',
+      'santiago': 'stg',
+      'victor guzmán santo domingo este': 'sde',
+      'victor guzman santo domingo este': 'sde',
+      'santo domingo este': 'sde',
+      'victor guzmán santo domingo oeste': 'sdo',
+      'victor guzman santo domingo oeste': 'sdo',
+      'santo domingo oeste': 'sdo',
+      'romana': 'rom',
+      'la romana': 'rom',
+    };
+
+    final normalized = branchIdOrName.toLowerCase().trim();
+    return nameToId[normalized] ?? branchIdOrName;
+  }
+
 // Show dialog to edit an existing dress
   void _showEditDressDialog(
       BuildContext context, WidgetRef ref, DressModel dress) {
     // Set form values with existing dress data
     _nameController.text = dress.name;
     _selectedCategory = dress.category;
-    _selectedBranch = dress.branchId;
+    // Compatibilidad: convertir nombre de sucursal a ID si es necesario
+    // Los vestidos antiguos pueden tener branch_id con el nombre (ej: "Victor Guzmán Santiago")
+    // pero ahora necesitamos el ID técnico (ej: "stg")
+    _selectedBranch = _convertBranchNameToId(dress.branchId);
     _subcategoryController.text = dress.subcategory;
     _isAvailable = dress.available;
     _priceController.text = dress.price.toStringAsFixed(2);
@@ -1487,7 +1518,9 @@ class _DressScreenState extends State<DressScreen> {
                                         ),
                                         items: warehouseList.map((warehouse) {
                                           return DropdownMenuItem<String>(
-                                            value: warehouse.warehouseName,
+                                            // CRÍTICO: Usar warehouse.id (ej: "stg") como valor
+                                            // en lugar de warehouseName para el sistema multi-tenant
+                                            value: warehouse.id,
                                             child:
                                                 Text(warehouse.warehouseName),
                                           );
@@ -1794,7 +1827,9 @@ class _DressScreenState extends State<DressScreen> {
                                         ),
                                         items: warehouseList.map((warehouse) {
                                           return DropdownMenuItem<String>(
-                                            value: warehouse.warehouseName,
+                                            // CRÍTICO: Usar warehouse.id (ej: "stg") como valor
+                                            // en lugar de warehouseName para el sistema multi-tenant
+                                            value: warehouse.id,
                                             child:
                                                 Text(warehouse.warehouseName),
                                           );
