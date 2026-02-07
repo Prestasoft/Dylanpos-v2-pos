@@ -149,10 +149,13 @@ class PadronElectoralService {
     }
 
     try {
+      print('📷 [PadronService.actualizarFoto] Iniciando para empleado: $employeeId, cédula: $cedula');
+
       // Consultar Padrón Electoral
       final response = await consultarCedula(cedula);
 
       if (!response.success || response.data == null) {
+        print('📷 [PadronService.actualizarFoto] No encontrado en Padrón: ${response.message}');
         return {
           'result': resultNotFound,
           'message': response.message ?? 'No encontrado en Padrón Electoral',
@@ -161,6 +164,7 @@ class PadronElectoralService {
 
       // Verificar si tiene foto
       if (!response.data!.tieneFoto) {
+        print('📷 [PadronService.actualizarFoto] Sin foto en Padrón Electoral');
         return {
           'result': resultNoPhoto,
           'message': 'No hay foto disponible en el Padrón Electoral',
@@ -169,26 +173,34 @@ class PadronElectoralService {
 
       // Obtener foto en formato data URL
       final photoUrl = response.data!.fotoDataUrl;
+      print('📷 [PadronService.actualizarFoto] Foto obtenida, longitud: ${photoUrl?.length ?? 0}');
+      print('📷 [PadronService.actualizarFoto] Prefijo: ${photoUrl?.substring(0, 50) ?? "null"}...');
 
       // Actualizar en la base de datos
+      print('📷 [PadronService.actualizarFoto] Llamando PUT hrm/employees/$employeeId');
       final updateResponse = await _apiService.put(
         'hrm/employees/$employeeId',
         {'image_url': photoUrl},
       );
 
+      print('📷 [PadronService.actualizarFoto] Respuesta: success=${updateResponse.success}, message=${updateResponse.message}');
+
       if (updateResponse.success) {
+        print('📷 [PadronService.actualizarFoto] ✅ Foto guardada exitosamente');
         return {
           'result': resultSuccess,
           'photoUrl': photoUrl,
           'message': 'Foto actualizada correctamente',
         };
       } else {
+        print('📷 [PadronService.actualizarFoto] ❌ Error guardando: ${updateResponse.message}');
         return {
           'result': resultError,
           'message': updateResponse.message ?? 'Error al actualizar en base de datos',
         };
       }
     } catch (e) {
+      print('📷 [PadronService.actualizarFoto] ❌ Excepción: $e');
       return {
         'result': resultError,
         'message': 'Error: ${e.toString()}',

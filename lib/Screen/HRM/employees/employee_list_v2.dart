@@ -823,12 +823,19 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
       // Agregar foto si está disponible
       if (padronData.tieneFoto) {
         updateData['image_url'] = padronData.fotoDataUrl;
+        debugPrint('📷 [UpdateFromPadron] Foto disponible, longitud: ${padronData.fotoDataUrl?.length ?? 0}');
+        debugPrint('📷 [UpdateFromPadron] Prefijo foto: ${padronData.fotoDataUrl?.substring(0, 30) ?? "null"}...');
+      } else {
+        debugPrint('📷 [UpdateFromPadron] No hay foto disponible');
       }
 
       if (updateData.isEmpty) {
         EasyLoading.showInfo('No hay datos nuevos para actualizar');
         return;
       }
+
+      debugPrint('📷 [UpdateFromPadron] Datos a enviar: ${updateData.keys.toList()}');
+      debugPrint('📷 [UpdateFromPadron] Tiene image_url: ${updateData.containsKey('image_url')}');
 
       EasyLoading.show(status: 'Actualizando empleado...');
 
@@ -837,6 +844,8 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
         id: employee.id.toString(),
         data: updateData,
       );
+
+      debugPrint('📷 [UpdateFromPadron] Resultado de actualización: $updateResult');
 
       if (updateResult) {
         EasyLoading.showSuccess('Empleado actualizado correctamente');

@@ -22,65 +22,84 @@ class EmployeeInfoTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Foto y datos básicos
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Foto del empleado (soporta URLs y base64)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: kMainColor, width: 2),
+          // Foto y datos básicos - Contenedor blanco para evitar fondo negro
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
                 ),
-                child: EmployeePhotoWidget(
-                  photoUrl: employee.photoUrl,
-                  size: 120,
-                  borderRadius: 10,
-                  backgroundColor: kMainColor.withValues(alpha: 0.1),
-                  fallbackIconSize: 60,
-                  fallbackIconColor: kMainColor,
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Foto del empleado (soporta URLs y base64)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: kMainColor, width: 2),
+                  ),
+                  child: EmployeePhotoWidget(
+                    photoUrl: employee.photoUrl,
+                    size: 120,
+                    borderRadius: 10,
+                    backgroundColor: Colors.grey[100],
+                    fallbackIconSize: 60,
+                    fallbackIconColor: kMainColor,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 20),
-              // Datos básicos
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      employee.fullName,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _buildStatusBadge(employee.status),
-                        const SizedBox(width: 12),
-                        Text(
-                          employee.designation,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
+                const SizedBox(width: 20),
+                // Datos básicos
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        employee.fullName,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'ID: ${employee.cedula}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildStatusBadge(employee.status),
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: Text(
+                              employee.designation,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'ID: ${employee.cedula}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 30),
 
@@ -199,6 +218,10 @@ class EmployeeInfoTab extends StatelessWidget {
         break;
       case 'licencia':
         color = Colors.blue;
+        icon = Icons.medical_services;
+        break;
+      case 'vacaciones':
+        color = Colors.teal;
         icon = Icons.beach_access;
         break;
       default:

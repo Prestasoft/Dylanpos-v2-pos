@@ -354,13 +354,21 @@ class ApiService {
   /// PUT request
   Future<ApiResponse> put(String endpoint, Map<String, dynamic> body) async {
     try {
+      print('📤 [ApiService.PUT] Endpoint: $endpoint');
+      print('📤 [ApiService.PUT] Body keys: ${body.keys.toList()}');
+
       final response = await http.put(
         Uri.parse('$baseUrl/$endpoint'),
         headers: _headers,
         body: jsonEncode(body),
       );
+
+      print('📥 [ApiService.PUT] Status: ${response.statusCode}');
+      print('📥 [ApiService.PUT] Response: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+
       return _handleResponse(response);
     } catch (e) {
+      print('❌ [ApiService.PUT] Error: $e');
       return ApiResponse(success: false, error: 'Error de conexión: $e');
     }
   }

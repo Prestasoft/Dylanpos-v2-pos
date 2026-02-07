@@ -9,12 +9,16 @@ class EmployeeRepository {
   final ApiService _apiService = ApiService();
 
   /// Obtener todos los empleados desde PostgreSQL
-  Future<List<EmployeeModel>> getAllEmployees() async {
+  /// [includePhotos] - Si es true, incluye el campo image_url (base64) de cada empleado
+  Future<List<EmployeeModel>> getAllEmployees({bool includePhotos = true}) async {
     List<EmployeeModel> employees = [];
 
     try {
-      print('🔵 [EmployeeRepo] Obteniendo empleados...');
-      final response = await _apiService.get('hrm/employees', queryParams: {'limit': '1000'});
+      print('🔵 [EmployeeRepo] Obteniendo empleados (includePhotos: $includePhotos)...');
+      final response = await _apiService.get('hrm/employees', queryParams: {
+        'limit': '1000',
+        'include_photos': includePhotos.toString(),
+      });
 
       print('🔵 [EmployeeRepo] Respuesta: success=${response.success}');
       print('🔵 [EmployeeRepo] Data: ${response.data}');
@@ -27,7 +31,13 @@ class EmployeeRepository {
           try {
             final data = Map<String, dynamic>.from(element as Map);
             data['id'] = data['id'] ?? data['employee_id'];
-            print('🔵 [EmployeeRepo] Parseando empleado: ${data['first_name']} ${data['last_name']} (ID: ${data['id']})');
+
+            // Debug: Verificar campo image_url
+            final imageUrl = data['image_url'];
+            print('📷 [EmployeeRepo] Empleado: ${data['first_name']} ${data['last_name']}');
+            print('📷 [EmployeeRepo]   image_url presente: ${imageUrl != null}');
+            print('📷 [EmployeeRepo]   image_url length: ${imageUrl?.toString().length ?? 0}');
+
             employees.add(EmployeeModel.fromJson(data));
           } catch (parseError) {
             print('🔴 [EmployeeRepo] Error parseando empleado: $parseError');
@@ -171,10 +181,24 @@ class EmployeeRepository {
     required Map<String, dynamic> data,
   }) async {
     try {
+      debugPrint('📷 [EmployeeRepo.updateEmployeePartial] ID: $id');
+      debugPrint('📷 [EmployeeRepo.updateEmployeePartial] Campos: ${data.keys.toList()}');
+      if (data.containsKey('image_url')) {
+        final imageUrl = data['image_url'] as String?;
+        debugPrint('📷 [EmployeeRepo.updateEmployeePartial] image_url length: ${imageUrl?.length ?? 0}');
+      }
+
       final response = await _apiService.put('hrm/employees/$id', data);
+
+      debugPrint('📷 [EmployeeRepo.updateEmployeePartial] Response success: ${response.success}');
+      debugPrint('📷 [EmployeeRepo.updateEmployeePartial] Response message: ${response.message}');
+      if (!response.success) {
+        debugPrint('📷 [EmployeeRepo.updateEmployeePartial] Response data: ${response.data}');
+      }
+
       return response.success;
     } catch (e) {
-      debugPrint('Error al actualizar empleado parcialmente: $e');
+      debugPrint('📷 [EmployeeRepo.updateEmployeePartial] ERROR: $e');
       return false;
     }
   }

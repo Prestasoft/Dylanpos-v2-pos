@@ -7,6 +7,7 @@ import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_work_tab.da
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_salary_tab.dart';
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_contact_tab.dart';
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_history_tab.dart';
+import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_photo_widget.dart';
 import 'package:salespro_admin/Screen/HRM/employees/add_employee.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/repo/designation_repo.dart';
 import 'package:salespro_admin/Screen/HRM/employees/repo/employee_repo.dart';
@@ -49,9 +50,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
     return Scaffold(
       backgroundColor: kAppSurfaceBg,
       appBar: AppBar(
-        backgroundColor: kMainColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 1,
+        shadowColor: Colors.grey.withValues(alpha: 0.3),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -61,11 +63,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
           children: [
             const Text(
               'Perfil de Empleado',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             Text(
               widget.employee.fullName,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -81,16 +83,20 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
       ),
       body: Column(
         children: [
-          // Header Card con foto y datos básicos
+          // Header Card con foto y datos básicos - Tema Blanco
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: kMainColor,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.15),
+                  spreadRadius: 1,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -99,25 +105,18 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white, width: 3),
+                    border: Border.all(color: kMainColor, width: 2),
                   ),
-                  child: widget.employee.photoUrl != null &&
-                          widget.employee.photoUrl!.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(9),
-                          child: Image.network(
-                            widget.employee.photoUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.person,
-                              size: 50,
-                              color: kMainColor,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.person, size: 50, color: kMainColor),
+                  child: EmployeePhotoWidget(
+                    photoUrl: widget.employee.photoUrl,
+                    size: 96,
+                    borderRadius: 10,
+                    backgroundColor: Colors.grey[100],
+                    fallbackIconSize: 50,
+                    fallbackIconColor: kMainColor,
+                  ),
                 ),
                 const SizedBox(width: 20),
                 // Datos básicos
@@ -130,15 +129,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         widget.employee.designation,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white70,
+                          color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -149,9 +148,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                           const SizedBox(width: 12),
                           Text(
                             'ID: ${widget.employee.cedula}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white60,
+                              color: Colors.grey[500],
                             ),
                           ),
                         ],
@@ -203,17 +202,20 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
             ),
           ),
 
-          // TabBarView
+          // TabBarView - Con fondo blanco para consistencia de tema claro
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                EmployeeInfoTab(employee: widget.employee),
-                EmployeeWorkTab(employee: widget.employee),
-                EmployeeSalaryTab(employee: widget.employee),
-                EmployeeContactTab(employee: widget.employee),
-                EmployeeHistoryTab(employee: widget.employee),
-              ],
+            child: Container(
+              color: Colors.white,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  EmployeeInfoTab(employee: widget.employee),
+                  EmployeeWorkTab(employee: widget.employee),
+                  EmployeeSalaryTab(employee: widget.employee),
+                  EmployeeContactTab(employee: widget.employee),
+                  EmployeeHistoryTab(employee: widget.employee),
+                ],
+              ),
             ),
           ),
         ],
@@ -227,7 +229,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
 
     switch (status.toLowerCase()) {
       case 'activo':
-        color = Colors.greenAccent;
+        color = Colors.green;
         icon = Icons.check_circle;
         break;
       case 'inactivo':
@@ -235,11 +237,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
         icon = Icons.cancel;
         break;
       case 'suspendido':
-        color = Colors.orangeAccent;
+        color = Colors.orange;
         icon = Icons.pause_circle;
         break;
       case 'licencia':
-        color = Colors.blueAccent;
+        color = Colors.blue;
+        icon = Icons.medical_services;
+        break;
+      case 'vacaciones':
+        color = Colors.teal;
         icon = Icons.beach_access;
         break;
       default:
@@ -250,8 +256,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -278,9 +285,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(25),
+        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withAlpha(76)),
+        border: Border.all(color: kMainColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -307,21 +314,21 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
   }) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white70, size: 20),
+        Icon(icon, color: kMainColor, size: 20),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black87,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
-            color: Colors.white60,
+            color: Colors.grey[600],
           ),
         ),
       ],

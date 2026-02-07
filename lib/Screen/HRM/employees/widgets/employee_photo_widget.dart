@@ -41,14 +41,20 @@ class EmployeePhotoWidget extends StatelessWidget {
 
   Widget _buildImage(BuildContext context) {
     if (photoUrl == null || photoUrl!.isEmpty) {
+      debugPrint('📷 [EmployeePhotoWidget] photoUrl es null o vacío');
       return _buildFallback(context);
     }
 
+    debugPrint('📷 [EmployeePhotoWidget] photoUrl length: ${photoUrl!.length}');
+    debugPrint('📷 [EmployeePhotoWidget] photoUrl starts with: ${photoUrl!.substring(0, photoUrl!.length > 30 ? 30 : photoUrl!.length)}...');
+
     // Verificar si es base64 (con o sin prefijo data:image)
     if (_isBase64Image(photoUrl!)) {
+      debugPrint('📷 [EmployeePhotoWidget] Detectado como base64, construyendo imagen');
       return _buildBase64Image(context);
     }
 
+    debugPrint('📷 [EmployeePhotoWidget] Tratando como URL de red');
     // URL normal
     return Image.network(
       photoUrl!,
@@ -102,15 +108,20 @@ class EmployeePhotoWidget extends StatelessWidget {
       base64Data = base64Data.replaceAll(RegExp(r'\s'), '');
 
       final bytes = base64.decode(base64Data);
+      debugPrint('📷 [EmployeePhotoWidget] Base64 decodificado: ${bytes.length} bytes');
 
       return Image.memory(
         bytes,
         fit: fit,
         width: size,
         height: size,
-        errorBuilder: (context, error, stackTrace) => _buildFallback(context),
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('📷 [EmployeePhotoWidget] Error mostrando imagen: $error');
+          return _buildFallback(context);
+        },
       );
     } catch (e) {
+      debugPrint('📷 [EmployeePhotoWidget] Error decodificando base64: $e');
       return _buildFallback(context);
     }
   }
