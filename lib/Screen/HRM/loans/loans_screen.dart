@@ -363,10 +363,24 @@ class _LoansScreenState extends State<LoansScreen>
         statusIcon = Icons.help;
     }
 
+    // Determinar color e icono según si es penalidad
+    final isPenalty = loan.isPenalty;
+    final cardColor = isPenalty ? Colors.red : kMainColor;
+    final IconData typeIcon = isPenalty
+        ? Icons.warning_amber
+        : loan.loanType.contains('Adelanto')
+            ? Icons.fast_forward
+            : Icons.account_balance;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isPenalty
+            ? BorderSide(color: Colors.red.withValues(alpha: 0.3), width: 2)
+            : BorderSide.none,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -378,14 +392,12 @@ class _LoansScreenState extends State<LoansScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: kMainColor.withValues(alpha: 0.1),
+                    color: cardColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    loan.loanType.contains('Adelanto')
-                        ? Icons.fast_forward
-                        : Icons.account_balance,
-                    color: kMainColor,
+                    typeIcon,
+                    color: cardColor,
                     size: 24,
                   ),
                 ),
@@ -409,6 +421,26 @@ class _LoansScreenState extends State<LoansScreen>
                           fontSize: 13,
                         ),
                       ),
+                      // Mostrar tipo de penalidad si aplica
+                      if (isPenalty && loan.penaltyType != null)
+                        Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.red[200]!),
+                          ),
+                          child: Text(
+                            '${PenaltyTypes.getIcon(loan.penaltyType!)} ${loan.penaltyType}',
+                            style: TextStyle(
+                              color: Colors.red[700],
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -418,17 +450,26 @@ class _LoansScreenState extends State<LoansScreen>
                   children: [
                     Text(
                       currencyFormat.format(loan.amount),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: kMainColor,
+                        color: cardColor,
                       ),
                     ),
                     Text(
-                      loan.loanType,
+                      isPenalty ? 'Penalidad' : loan.loanType,
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: isPenalty ? Colors.red : Colors.grey[600],
                         fontSize: 12,
+                        fontWeight: isPenalty ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    // Mostrar frecuencia de pago
+                    Text(
+                      loan.paymentFrequency,
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -469,14 +510,14 @@ class _LoansScreenState extends State<LoansScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Progreso: ${loan.paidInstallments}/${loan.totalInstallments} cuotas',
+                        'Progreso: ${loan.paidInstallments}/${loan.totalInstallments} cuotas (${loan.paymentFrequency})',
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       Text(
                         '${loan.progressPercentage.toStringAsFixed(0)}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: kMainColor,
+                          color: cardColor,
                         ),
                       ),
                     ],
@@ -485,7 +526,7 @@ class _LoansScreenState extends State<LoansScreen>
                   LinearProgressIndicator(
                     value: loan.progressPercentage / 100,
                     backgroundColor: Colors.grey[200],
-                    valueColor: const AlwaysStoppedAnimation<Color>(kMainColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(cardColor),
                   ),
                 ],
               ),
@@ -493,7 +534,12 @@ class _LoansScreenState extends State<LoansScreen>
               // Detalles de pago
               Row(
                 children: [
-                  _buildLoanDetail('Cuota', currencyFormat.format(loan.installmentAmount)),
+                  _buildLoanDetail(
+                    loan.paymentFrequency == 'Quincenal'
+                        ? 'Cuota Quinc.'
+                        : 'Cuota Mensual',
+                    currencyFormat.format(loan.installmentAmount),
+                  ),
                   const SizedBox(width: 24),
                   _buildLoanDetail('Pagado', currencyFormat.format(loan.amountPaid)),
                   const SizedBox(width: 24),
@@ -518,11 +564,50 @@ class _LoansScreenState extends State<LoansScreen>
             ],
             if (loan.status == LoanStatus.pendiente) ...[
               const SizedBox(height: 16),
+              // Mostrar info de penalidad si aplica
+              if (isPenalty && loan.incidentDescription != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (loan.affectedItem != null)
+                        Text(
+                          'Equipo: ${loan.affectedItem}',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      if (loan.incidentDate != null)
+                        Text(
+                          'Fecha incidente: ${DateFormat('dd/MM/yyyy').format(loan.incidentDate!)}',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        ),
+                      if (loan.incidentDescription!.isNotEmpty)
+                        Text(
+                          loan.incidentDescription!,
+                          style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
               Row(
                 children: [
                   _buildLoanDetail('Cuotas', '${loan.totalInstallments}'),
                   const SizedBox(width: 24),
-                  _buildLoanDetail('Cuota Mensual', currencyFormat.format(loan.installmentAmount)),
+                  _buildLoanDetail(
+                    loan.paymentFrequency == 'Quincenal'
+                        ? 'Cuota Quinc.'
+                        : 'Cuota Mensual',
+                    currencyFormat.format(loan.installmentAmount),
+                  ),
                   const SizedBox(width: 24),
                   _buildLoanDetail(
                     'Inicio',
@@ -770,21 +855,59 @@ class _LoansScreenState extends State<LoansScreen>
 
     EmployeeModel? selectedEmployee;
     String selectedType = LoanTypes.prestamo;
+    String selectedFrequency = PaymentFrequency.mensual;
+    String selectedPenaltyType = PenaltyTypes.danoEquipo;
+    bool isPenalty = false;
+    bool calculateByInstallments = true; // true = por número de cuotas, false = por monto de cuota
+
     final amountController = TextEditingController();
     final installmentsController = TextEditingController(text: '12');
+    final installmentAmountController = TextEditingController();
     final reasonController = TextEditingController();
+    final incidentDescriptionController = TextEditingController();
+    final affectedItemController = TextEditingController();
+    final originalValueController = TextEditingController();
+
     DateTime startDate = DateTime.now().add(const Duration(days: 1));
+    DateTime incidentDate = DateTime.now();
     double installmentAmount = 0;
+    int calculatedInstallments = 0;
+    double selectedPenaltyPercentage = 100.0;
+    double penaltyAmount = 0;
 
     void calculateInstallment() {
-      final amount = double.tryParse(amountController.text) ?? 0;
-      final installments = int.tryParse(installmentsController.text) ?? 1;
-      if (amount > 0 && installments > 0) {
-        installmentAmount = LoanRepository.calculateInstallment(
-          amount: amount,
-          installments: installments,
-        );
+      final amount = isPenalty ? penaltyAmount : (double.tryParse(amountController.text) ?? 0);
+
+      if (calculateByInstallments) {
+        // Calcular monto de cuota basado en número de cuotas
+        final installments = int.tryParse(installmentsController.text) ?? 1;
+        if (amount > 0 && installments > 0) {
+          installmentAmount = LoanRepository.calculateInstallment(
+            amount: amount,
+            installments: installments,
+          );
+          calculatedInstallments = installments;
+        }
+      } else {
+        // Calcular número de cuotas basado en monto de cuota
+        final cuotaAmount = double.tryParse(installmentAmountController.text) ?? 0;
+        if (amount > 0 && cuotaAmount > 0) {
+          calculatedInstallments = (amount / cuotaAmount).ceil();
+          installmentAmount = cuotaAmount;
+          // Ajustar si la última cuota sería diferente
+          final totalWithFullInstallments = cuotaAmount * calculatedInstallments;
+          if (totalWithFullInstallments > amount) {
+            // La última cuota será menor
+          }
+        }
       }
+    }
+
+    void calculatePenaltyAmount() {
+      final originalValue = double.tryParse(originalValueController.text) ?? 0;
+      penaltyAmount = originalValue * (selectedPenaltyPercentage / 100);
+      amountController.text = penaltyAmount.toStringAsFixed(2);
+      calculateInstallment();
     }
 
     showDialog(
@@ -792,19 +915,113 @@ class _LoansScreenState extends State<LoansScreen>
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Nuevo Préstamo/Adelanto'),
+            title: Row(
+              children: [
+                Icon(
+                  isPenalty ? Icons.warning_amber : Icons.account_balance_wallet,
+                  color: isPenalty ? Colors.red : kMainColor,
+                ),
+                const SizedBox(width: 8),
+                Text(isPenalty ? 'Nueva Penalidad/Descuento' : 'Nuevo Préstamo/Adelanto'),
+              ],
+            ),
             content: SizedBox(
-              width: 500,
+              width: 550,
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Selector de tipo: Préstamo o Penalidad
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  isPenalty = false;
+                                  calculateInstallment();
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: !isPenalty ? kMainColor : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.account_balance_wallet,
+                                      size: 18,
+                                      color: !isPenalty ? Colors.white : Colors.grey[600],
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Préstamo/Adelanto',
+                                      style: TextStyle(
+                                        color: !isPenalty ? Colors.white : Colors.grey[600],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  isPenalty = true;
+                                  calculatePenaltyAmount();
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isPenalty ? Colors.red : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber,
+                                      size: 18,
+                                      color: isPenalty ? Colors.white : Colors.grey[600],
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Penalidad/Descuento',
+                                      style: TextStyle(
+                                        color: isPenalty ? Colors.white : Colors.grey[600],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     // Empleado
                     DropdownButtonFormField<EmployeeModel>(
                       decoration: const InputDecoration(
                         labelText: 'Empleado',
                         border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
                       ),
                       items: employees.map((e) {
                         return DropdownMenuItem(
@@ -817,51 +1034,321 @@ class _LoansScreenState extends State<LoansScreen>
                       },
                     ),
                     const SizedBox(height: 16),
-                    // Tipo
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedType,
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo',
-                        border: OutlineInputBorder(),
+
+                    // ═══════════ SECCIÓN PRÉSTAMO/ADELANTO ═══════════
+                    if (!isPenalty) ...[
+                      // Tipo de préstamo
+                      DropdownButtonFormField<String>(
+                        value: selectedType,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de Préstamo',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category),
+                        ),
+                        items: LoanTypes.all.map((type) {
+                          return DropdownMenuItem(value: type, child: Text(type));
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => selectedType = value!);
+                        },
                       ),
-                      items: LoanTypes.all.map((type) {
-                        return DropdownMenuItem(value: type, child: Text(type));
+                      const SizedBox(height: 16),
+
+                      // Monto total
+                      TextFormField(
+                        controller: amountController,
+                        decoration: const InputDecoration(
+                          labelText: 'Monto Total (RD\$)',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.attach_money),
+                          prefixText: 'RD\$ ',
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) {
+                          calculateInstallment();
+                          setState(() {});
+                        },
+                      ),
+                    ],
+
+                    // ═══════════ SECCIÓN PENALIDAD ═══════════
+                    if (isPenalty) ...[
+                      // Tipo de penalidad
+                      DropdownButtonFormField<String>(
+                        value: selectedPenaltyType,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de Penalidad',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.warning, color: Colors.red),
+                        ),
+                        items: PenaltyTypes.all.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text('${PenaltyTypes.getIcon(type)} $type'),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => selectedPenaltyType = value!);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Fecha del incidente
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: incidentDate,
+                            firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setState(() => incidentDate = date);
+                          }
+                        },
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Fecha del Incidente',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.event, color: Colors.red),
+                          ),
+                          child: Text(DateFormat('dd/MM/yyyy').format(incidentDate)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Equipo/Producto afectado
+                      TextFormField(
+                        controller: affectedItemController,
+                        decoration: const InputDecoration(
+                          labelText: 'Equipo/Producto Afectado',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.devices),
+                          hintText: 'Ej: Canon EOS R5 + Lente 24-70mm',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Valor original del equipo
+                      TextFormField(
+                        controller: originalValueController,
+                        decoration: const InputDecoration(
+                          labelText: 'Valor del Daño/Pérdida (RD\$)',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.price_change),
+                          prefixText: 'RD\$ ',
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) {
+                          calculatePenaltyAmount();
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Porcentaje a cobrar
+                      DropdownButtonFormField<double>(
+                        value: selectedPenaltyPercentage,
+                        decoration: const InputDecoration(
+                          labelText: 'Porcentaje a Cobrar',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.percent),
+                        ),
+                        items: PenaltyPercentages.all.map((pct) {
+                          final originalValue = double.tryParse(originalValueController.text) ?? 0;
+                          final calculatedAmount = originalValue * (pct / 100);
+                          return DropdownMenuItem(
+                            value: pct,
+                            child: Text(
+                              '${pct.toInt()}% ${originalValue > 0 ? '- ${currencyFormat.format(calculatedAmount)}' : ''}',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedPenaltyPercentage = value!;
+                            calculatePenaltyAmount();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Monto calculado de penalidad
+                      if (penaltyAmount > 0)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total a Descontar:',
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                currencyFormat.format(penaltyAmount),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+
+                      // Descripción del incidente
+                      TextFormField(
+                        controller: incidentDescriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Descripción del Incidente',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.description),
+                          hintText: 'Detalle qué sucedió...',
+                        ),
+                        maxLines: 3,
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+                    const Divider(),
+                    const SizedBox(height: 16),
+
+                    // ═══════════ CONFIGURACIÓN DE PAGO ═══════════
+                    Text(
+                      'Configuración de Pago',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Frecuencia de pago
+                    DropdownButtonFormField<String>(
+                      value: selectedFrequency,
+                      decoration: const InputDecoration(
+                        labelText: 'Frecuencia de Pago',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.calendar_month),
+                      ),
+                      items: PaymentFrequency.all.map((freq) {
+                        return DropdownMenuItem(
+                          value: freq,
+                          child: Text(freq),
+                        );
                       }).toList(),
                       onChanged: (value) {
-                        setState(() => selectedType = value!);
+                        setState(() {
+                          selectedFrequency = value!;
+                          calculateInstallment();
+                        });
                       },
                     ),
                     const SizedBox(height: 16),
-                    // Monto
-                    TextFormField(
-                      controller: amountController,
-                      decoration: const InputDecoration(
-                        labelText: 'Monto Total (RD\$)',
-                        border: OutlineInputBorder(),
-                        prefixText: 'RD\$ ',
+
+                    // Selector de modo de cálculo
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue[200]!),
                       ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) {
-                        calculateInstallment();
-                        setState(() {});
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    // Cuotas
-                    TextFormField(
-                      controller: installmentsController,
-                      decoration: const InputDecoration(
-                        labelText: 'Número de Cuotas',
-                        border: OutlineInputBorder(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12, top: 8),
+                            child: Text(
+                              'Calcular por:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: RadioListTile<bool>(
+                                  title: const Text('Número de Cuotas', style: TextStyle(fontSize: 13)),
+                                  value: true,
+                                  groupValue: calculateByInstallments,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      calculateByInstallments = value!;
+                                      calculateInstallment();
+                                    });
+                                  },
+                                  dense: true,
+                                  activeColor: kMainColor,
+                                ),
+                              ),
+                              Expanded(
+                                child: RadioListTile<bool>(
+                                  title: const Text('Monto de Cuota', style: TextStyle(fontSize: 13)),
+                                  value: false,
+                                  groupValue: calculateByInstallments,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      calculateByInstallments = value!;
+                                      calculateInstallment();
+                                    });
+                                  },
+                                  dense: true,
+                                  activeColor: kMainColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) {
-                        calculateInstallment();
-                        setState(() {});
-                      },
                     ),
                     const SizedBox(height: 16),
-                    // Fecha inicio
+
+                    // Campo según modo de cálculo
+                    if (calculateByInstallments)
+                      TextFormField(
+                        controller: installmentsController,
+                        decoration: InputDecoration(
+                          labelText: 'Número de Cuotas',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.format_list_numbered),
+                          suffixText: selectedFrequency == 'Quincenal' ? 'quincenas' : 'meses',
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) {
+                          calculateInstallment();
+                          setState(() {});
+                        },
+                      )
+                    else
+                      TextFormField(
+                        controller: installmentAmountController,
+                        decoration: InputDecoration(
+                          labelText: 'Monto por Cuota (RD\$)',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.payments),
+                          prefixText: 'RD\$ ',
+                          suffixText: selectedFrequency == 'Quincenal' ? '/quincena' : '/mes',
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) {
+                          calculateInstallment();
+                          setState(() {});
+                        },
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Fecha inicio descuentos
                     InkWell(
                       onTap: () async {
                         final date = await showDatePicker(
@@ -878,48 +1365,105 @@ class _LoansScreenState extends State<LoansScreen>
                         decoration: const InputDecoration(
                           labelText: 'Fecha Inicio Descuentos',
                           border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.event_available),
                         ),
                         child: Text(DateFormat('dd/MM/yyyy').format(startDate)),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Cuota calculada
-                    if (installmentAmount > 0)
+
+                    // Resumen de cálculo
+                    if (installmentAmount > 0 || calculatedInstallments > 0)
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.green[50],
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.green),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Column(
                           children: [
-                            const Text(
-                              'Cuota Mensual:',
-                              style: TextStyle(fontWeight: FontWeight.w500),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.payments, color: Colors.green, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      selectedFrequency == 'Quincenal'
+                                          ? 'Cuota Quincenal:'
+                                          : 'Cuota Mensual:',
+                                      style: const TextStyle(fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  currencyFormat.format(installmentAmount),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              currencyFormat.format(installmentAmount),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Colors.green,
-                              ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.format_list_numbered, color: Colors.green, size: 20),
+                                    const SizedBox(width: 8),
+                                    const Text('Total de Cuotas:'),
+                                  ],
+                                ),
+                                Text(
+                                  '$calculatedInstallments ${selectedFrequency == 'Quincenal' ? 'quincenas' : 'meses'}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.event, color: Colors.green, size: 20),
+                                    const SizedBox(width: 8),
+                                    const Text('Fin Estimado:'),
+                                  ],
+                                ),
+                                Text(
+                                  DateFormat('dd/MM/yyyy').format(
+                                    startDate.add(Duration(
+                                      days: selectedFrequency == 'Quincenal'
+                                          ? calculatedInstallments * 15
+                                          : calculatedInstallments * 30,
+                                    )),
+                                  ),
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     const SizedBox(height: 16),
-                    // Motivo
-                    TextFormField(
-                      controller: reasonController,
-                      decoration: const InputDecoration(
-                        labelText: 'Motivo (opcional)',
-                        border: OutlineInputBorder(),
+
+                    // Motivo/Notas
+                    if (!isPenalty)
+                      TextFormField(
+                        controller: reasonController,
+                        decoration: const InputDecoration(
+                          labelText: 'Motivo/Notas (opcional)',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.note),
+                        ),
+                        maxLines: 2,
                       ),
-                      maxLines: 2,
-                    ),
                   ],
                 ),
               ),
@@ -930,11 +1474,20 @@ class _LoansScreenState extends State<LoansScreen>
                 child: const Text('Cancelar'),
               ),
               ElevatedButton(
-                onPressed: selectedEmployee != null && installmentAmount > 0
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isPenalty ? Colors.red : kMainColor,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: selectedEmployee != null &&
+                        (installmentAmount > 0 || calculatedInstallments > 0)
                     ? () async {
                         Navigator.pop(context);
-                        final amount = double.parse(amountController.text);
-                        final installments = int.parse(installmentsController.text);
+                        final amount = isPenalty
+                            ? penaltyAmount
+                            : double.parse(amountController.text);
+                        final installments = calculateByInstallments
+                            ? int.parse(installmentsController.text)
+                            : calculatedInstallments;
 
                         final loan = EmployeeLoanModel(
                           id: DateTime.now().millisecondsSinceEpoch,
@@ -943,7 +1496,7 @@ class _LoansScreenState extends State<LoansScreen>
                           employeeCedula: selectedEmployee!.cedula,
                           designation: selectedEmployee!.designation,
                           department: selectedEmployee!.department,
-                          loanType: selectedType,
+                          loanType: isPenalty ? 'Penalidad' : selectedType,
                           amount: amount,
                           totalInstallments: installments,
                           installmentAmount: installmentAmount,
@@ -951,16 +1504,35 @@ class _LoansScreenState extends State<LoansScreen>
                           requestDate: DateTime.now(),
                           startDate: startDate,
                           status: LoanStatus.pendiente,
-                          reason: reasonController.text.isNotEmpty
-                              ? reasonController.text
+                          reason: isPenalty
+                              ? incidentDescriptionController.text
+                              : reasonController.text.isNotEmpty
+                                  ? reasonController.text
+                                  : null,
+                          paymentFrequency: selectedFrequency,
+                          isPenalty: isPenalty,
+                          penaltyType: isPenalty ? selectedPenaltyType : null,
+                          incidentDescription: isPenalty
+                              ? incidentDescriptionController.text
                               : null,
+                          incidentDate: isPenalty ? incidentDate : null,
+                          affectedItem: isPenalty
+                              ? affectedItemController.text.isNotEmpty
+                                  ? affectedItemController.text
+                                  : null
+                              : null,
+                          originalItemValue: isPenalty
+                              ? double.tryParse(originalValueController.text)
+                              : null,
+                          penaltyPercentage:
+                              isPenalty ? selectedPenaltyPercentage : null,
                         );
 
                         await _loanRepo.createLoanRequest(loan: loan);
                         _loadData();
                       }
                     : null,
-                child: const Text('Crear Solicitud'),
+                child: Text(isPenalty ? 'Crear Penalidad' : 'Crear Solicitud'),
               ),
             ],
           );
@@ -1099,29 +1671,153 @@ class _LoansScreenState extends State<LoansScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Detalles - ${loan.employeeName}'),
+        title: Row(
+          children: [
+            Icon(
+              loan.isPenalty ? Icons.warning_amber : Icons.account_balance_wallet,
+              color: loan.isPenalty ? Colors.red : kMainColor,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Detalles - ${loan.employeeName}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
         content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDetailRow('Tipo', loan.loanType),
-              _buildDetailRow('Monto Total', currencyFormat.format(loan.amount)),
-              _buildDetailRow('Cuotas', '${loan.totalInstallments}'),
-              _buildDetailRow('Cuota Mensual', currencyFormat.format(loan.installmentAmount)),
-              _buildDetailRow('Pagado', currencyFormat.format(loan.amountPaid)),
-              _buildDetailRow('Pendiente', currencyFormat.format(loan.amountPending)),
-              _buildDetailRow('Cuotas Pagadas', '${loan.paidInstallments}'),
-              _buildDetailRow('Estado', loan.status),
-              _buildDetailRow('Fecha Solicitud',
-                  DateFormat('dd/MM/yyyy').format(loan.requestDate)),
-              _buildDetailRow('Fecha Inicio',
-                  DateFormat('dd/MM/yyyy').format(loan.startDate)),
-              if (loan.approvedBy != null)
-                _buildDetailRow('Aprobado por', loan.approvedBy!),
-              if (loan.reason != null) _buildDetailRow('Motivo', loan.reason!),
-            ],
+          width: 450,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sección: Información General
+                _buildDetailSection('INFORMACIÓN GENERAL'),
+                _buildDetailRow('Tipo', loan.isPenalty ? 'Penalidad' : loan.loanType),
+                _buildDetailRow('Monto Total', currencyFormat.format(loan.amount)),
+                _buildDetailRow('Frecuencia de Pago', loan.paymentFrequency),
+                _buildDetailRow('Estado', loan.status),
+
+                const SizedBox(height: 16),
+                _buildDetailSection('PLAN DE PAGOS'),
+                _buildDetailRow('Total de Cuotas', '${loan.totalInstallments}'),
+                _buildDetailRow(
+                  loan.paymentFrequency == 'Quincenal'
+                      ? 'Cuota Quincenal'
+                      : 'Cuota Mensual',
+                  currencyFormat.format(loan.installmentAmount),
+                ),
+                _buildDetailRow('Cuotas Pagadas', '${loan.paidInstallments}'),
+                _buildDetailRow('Cuotas Pendientes', '${loan.remainingInstallments}'),
+                _buildDetailRow('Monto Pagado', currencyFormat.format(loan.amountPaid)),
+                _buildDetailRow('Monto Pendiente', currencyFormat.format(loan.amountPending)),
+
+                const SizedBox(height: 16),
+                _buildDetailSection('FECHAS'),
+                _buildDetailRow(
+                  'Fecha Solicitud',
+                  DateFormat('dd/MM/yyyy').format(loan.requestDate),
+                ),
+                _buildDetailRow(
+                  'Fecha Inicio Descuentos',
+                  DateFormat('dd/MM/yyyy').format(loan.startDate),
+                ),
+                if (loan.endDate != null)
+                  _buildDetailRow(
+                    'Fecha Fin Estimada',
+                    DateFormat('dd/MM/yyyy').format(loan.endDate!),
+                  ),
+                if (loan.approvalDate != null)
+                  _buildDetailRow(
+                    'Fecha Aprobación',
+                    DateFormat('dd/MM/yyyy').format(loan.approvalDate!),
+                  ),
+
+                // Sección de Penalidad (si aplica)
+                if (loan.isPenalty) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.warning, color: Colors.red[700], size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'INFORMACIÓN DE PENALIDAD',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red[700],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (loan.penaltyType != null)
+                          _buildDetailRow(
+                            'Tipo de Penalidad',
+                            '${PenaltyTypes.getIcon(loan.penaltyType!)} ${loan.penaltyType}',
+                          ),
+                        if (loan.incidentDate != null)
+                          _buildDetailRow(
+                            'Fecha del Incidente',
+                            DateFormat('dd/MM/yyyy').format(loan.incidentDate!),
+                          ),
+                        if (loan.affectedItem != null)
+                          _buildDetailRow('Equipo Afectado', loan.affectedItem!),
+                        if (loan.originalItemValue != null)
+                          _buildDetailRow(
+                            'Valor Original',
+                            currencyFormat.format(loan.originalItemValue),
+                          ),
+                        if (loan.penaltyPercentage != null)
+                          _buildDetailRow(
+                            'Porcentaje Cobrado',
+                            '${loan.penaltyPercentage!.toInt()}%',
+                          ),
+                        if (loan.incidentDescription != null &&
+                            loan.incidentDescription!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Descripción:',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            loan.incidentDescription!,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Aprobación y notas
+                if (loan.approvedBy != null || loan.reason != null) ...[
+                  const SizedBox(height: 16),
+                  _buildDetailSection('NOTAS'),
+                  if (loan.approvedBy != null)
+                    _buildDetailRow('Aprobado por', loan.approvedBy!),
+                  if (loan.reason != null && !loan.isPenalty)
+                    _buildDetailRow('Motivo', loan.reason!),
+                ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -1130,6 +1826,21 @@ class _LoansScreenState extends State<LoansScreen>
             child: const Text('Cerrar'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDetailSection(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          color: kMainColor,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
