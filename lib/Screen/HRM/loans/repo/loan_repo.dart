@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:salespro_admin/Screen/HRM/loans/model/loan_model.dart';
 
@@ -12,10 +13,18 @@ class LoanRepository {
     List<EmployeeLoanModel> loans = [];
 
     try {
+      debugPrint('🔵 [LoanRepo] Obteniendo préstamos...');
       final response = await _apiService.get('employee-loans', queryParams: {'limit': '1000'});
 
+      debugPrint('🔵 [LoanRepo] Respuesta: success=${response.success}, error=${response.error}');
+      debugPrint('🔵 [LoanRepo] Data: ${response.data}');
+
       if (response.success && response.data != null) {
-        final loansData = response.data['employee_loans'] as List<dynamic>? ?? [];
+        // La respuesta del API tiene estructura: {success, data: {employee_loans: [...]}, message}
+        // Por lo tanto debemos acceder a response.data['data']['employee_loans']
+        final dataWrapper = response.data['data'] as Map<String, dynamic>? ?? response.data;
+        final loansData = dataWrapper['employee_loans'] as List<dynamic>? ?? [];
+        debugPrint('🔵 [LoanRepo] Encontrados ${loansData.length} préstamos');
 
         for (var element in loansData) {
           final data = Map<String, dynamic>.from(element as Map);
@@ -24,7 +33,7 @@ class LoanRepository {
         }
       }
     } catch (e) {
-      // Error silencioso
+      debugPrint('🔴 [LoanRepo] Error obteniendo préstamos: $e');
     }
 
     return loans;
@@ -60,7 +69,12 @@ class LoanRepository {
       EasyLoading.show(status: 'Guardando solicitud...', dismissOnTap: false);
 
       final loanData = Map<String, dynamic>.from(loan.toJson());
+      debugPrint('🔵 [LoanRepo] Creando préstamo: $loanData');
+
       final response = await _apiService.post('employee-loans', loanData);
+
+      debugPrint('🔵 [LoanRepo] Respuesta POST: success=${response.success}, error=${response.error}');
+      debugPrint('🔵 [LoanRepo] Data: ${response.data}');
 
       if (response.success) {
         EasyLoading.showSuccess('Solicitud creada exitosamente');
@@ -70,6 +84,7 @@ class LoanRepository {
       EasyLoading.showError(response.message ?? 'Error al crear solicitud');
       return false;
     } catch (e) {
+      debugPrint('🔴 [LoanRepo] Error creando préstamo: $e');
       EasyLoading.showError('Error: ${e.toString()}');
       return false;
     }
@@ -212,7 +227,9 @@ class LoanRepository {
       });
 
       if (response.success && response.data != null) {
-        final paymentsData = response.data['loan_payments'] as List<dynamic>? ?? [];
+        // La respuesta del API tiene estructura: {success, data: {loan_payments: [...]}, message}
+        final dataWrapper = response.data['data'] as Map<String, dynamic>? ?? response.data;
+        final paymentsData = dataWrapper['loan_payments'] as List<dynamic>? ?? [];
 
         for (var element in paymentsData) {
           final data = Map<String, dynamic>.from(element as Map);
