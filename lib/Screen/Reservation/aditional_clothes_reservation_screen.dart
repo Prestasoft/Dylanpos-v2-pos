@@ -2,7 +2,7 @@ import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:salespro_admin/Provider/product_provider.dart';
+import 'package:salespro_admin/Provider/dress_provider.dart';
 import 'package:salespro_admin/Screen/Reservation/clothes_reservation_screen.dart';
 import 'package:salespro_admin/Screen/Reservation/dress_selection_screen_package.dart';
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
@@ -369,7 +369,8 @@ class _AdditionalClothesReservationScreen extends ConsumerState<AdditionalClothe
           padding: const EdgeInsets.all(12),
           child: Consumer(
             builder: (context, ref, child) {
-              final categoriesAsync = ref.watch(categoryProvider);
+              // Usar dressCategoriesProvider para obtener categorías de vestidos reales
+              final categoriesAsync = ref.watch(dressCategoriesProvider);
 
               return categoriesAsync.when(
                 data: (categories) {
@@ -424,10 +425,11 @@ class _AdditionalClothesReservationScreen extends ConsumerState<AdditionalClothe
                                                 border: OutlineInputBorder(),
                                                 hintText: "Seleccione categoría",
                                               ),
-                                              items: categories.map((category) {
+                                              // dressCategoriesProvider retorna List<String> directamente
+                                              items: categories.map((categoryName) {
                                                 return DropdownMenuItem<String>(
-                                                  value: category.categoryName,
-                                                  child: Text(category.categoryName),
+                                                  value: categoryName,
+                                                  child: Text(categoryName),
                                                 );
                                               }).toList(),
                                               onChanged: (value) {

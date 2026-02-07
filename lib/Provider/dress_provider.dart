@@ -276,6 +276,7 @@ final dressesProvider = StreamProvider<List<DressModel>>((ref) {
               'name': data['name'] ?? data['n'] ?? '',
               'category': data['category'] ?? data['c'] ?? '',
               'subcategory': data['subcategory'] ?? '',
+              'branch_id': data['branch_id'] ?? data['b'] ?? '',  // Sucursal (formato compacto: b)
               'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
               'state': data['state'] ?? data['s'] ?? 'available',
               'images': data['images'] ?? (originalUrl != null ? [originalUrl] : []),
@@ -356,6 +357,7 @@ final availableDressesByComponentsProvider =
               'name': data['name'] ?? data['n'] ?? '',
               'category': data['category'] ?? data['c'] ?? '',
               'subcategory': data['subcategory'] ?? '',
+              'branch_id': data['branch_id'] ?? data['b'] ?? '',  // Sucursal
               'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
               'state': data['state'] ?? data['s'] ?? 'available',
               'images': data['images'] ?? (origUrl != null ? [origUrl] : []),
@@ -433,6 +435,7 @@ final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>(
           'name': data['name'] ?? data['n'] ?? '',
           'category': data['category'] ?? data['c'] ?? '',
           'subcategory': data['subcategory'] ?? '',
+          'branch_id': data['branch_id'] ?? data['b'] ?? '',  // Sucursal
           'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
           'state': data['state'] ?? data['s'] ?? 'available',
           'images': data['images'] ?? (origUrl2 != null ? [origUrl2] : []),
@@ -478,6 +481,7 @@ final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>(
             'name': data['name'] ?? data['n'] ?? '',
             'category': data['category'] ?? data['c'] ?? '',
             'subcategory': data['subcategory'] ?? '',
+            'branch_id': data['branch_id'] ?? data['b'] ?? '',  // Sucursal
             'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
             'state': data['state'] ?? data['s'] ?? 'available',
             'images': data['images'] ?? (origUrl3 != null ? [origUrl3] : []),
@@ -584,6 +588,7 @@ final dressesByCategoryProvider =
               'name': data['name'] ?? data['n'] ?? '',
               'category': data['category'] ?? data['c'] ?? '',
               'subcategory': data['subcategory'] ?? '',
+              'branch_id': data['branch_id'] ?? data['b'] ?? '',  // Sucursal
               'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
               'state': data['state'] ?? data['s'] ?? 'available',
               'images': data['images'] ?? (origUrl4 != null ? [origUrl4] : []),
@@ -633,27 +638,21 @@ final dressCategoriesProvider = FutureProvider<List<String>>((ref) async {
   try {
     debugPrint('🔄 [dressCategoriesProvider] Cargando categorías de vestidos para branch: $branchId');
 
-    final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
+    // Usar endpoint dedicado /api/dresses/categories que devuelve TODAS las categorías
+    // directamente desde la BD, sin límite de vestidos
+    final response = await _apiService.get('dresses/categories');
 
     if (response.success && response.data != null) {
-      // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
-      final dressesData = response.data['dresses'] as List<dynamic>? ??
-                          response.data['d'] as List<dynamic>? ?? [];
+      // El endpoint devuelve { categories: [...], total: N }
+      final categoriesData = response.data['categories'] as List<dynamic>? ?? [];
 
-      // Extraer categorías únicas (soportando formato compacto 'c' = category)
-      final Set<String> categoriesSet = {};
-      for (var item in dressesData) {
-        if (item is Map) {
-          // Soportar 'category' (completo) o 'c' (compacto)
-          final category = (item['category'] ?? item['c'])?.toString();
-          if (category != null && category.isNotEmpty) {
-            categoriesSet.add(category);
-          }
-        }
-      }
+      final categories = categoriesData
+          .map((c) => c?.toString() ?? '')
+          .where((c) => c.isNotEmpty)
+          .toList();
 
-      // Convertir a lista y ordenar
-      final categories = categoriesSet.toList()..sort();
+      // Ya vienen ordenadas del backend, pero ordenamos por si acaso
+      categories.sort();
 
       debugPrint('✅ [dressCategoriesProvider] Encontradas ${categories.length} categorías: $categories');
       return categories;
@@ -703,6 +702,7 @@ final dressesByBranchProvider =
               'name': data['name'] ?? data['n'] ?? '',
               'category': data['category'] ?? data['c'] ?? '',
               'subcategory': data['subcategory'] ?? '',
+              'branch_id': data['branch_id'] ?? data['b'] ?? '',  // Sucursal
               'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
               'state': data['state'] ?? data['s'] ?? 'available',
               'images': data['images'] ?? (origUrl5 != null ? [origUrl5] : []),

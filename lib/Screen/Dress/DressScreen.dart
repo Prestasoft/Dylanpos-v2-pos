@@ -94,6 +94,10 @@ class _DressScreenState extends State<DressScreen> {
         backgroundColor: kDarkWhite,
         body: Consumer(builder: (_, ref, watch) {
           AsyncValue<List<DressModel>> dresses = ref.watch(dressesProvider);
+          // Cargar categorías desde el endpoint dedicado (incluye TODAS las categorías)
+          final categoriesAsync = ref.watch(dressCategoriesProvider);
+          final allCategories = categoriesAsync.valueOrNull ?? [];
+
           return dresses.when(data: (list) {
 
             List<DressModel> showAbleDresses = [];
@@ -248,9 +252,8 @@ class _DressScreenState extends State<DressScreen> {
                                   value: null,
                                   child: Text('Todas las categorías'),
                                 ),
-                                ...{
-                                  for (var d in list) d.category
-                                }.map((cat) => DropdownMenuItem<String>(
+                                // Usar allCategories del endpoint dedicado (incluye TODAS las categorías)
+                                ...allCategories.map((cat) => DropdownMenuItem<String>(
                                       value: cat,
                                       child: Text(cat),
                                     ))
