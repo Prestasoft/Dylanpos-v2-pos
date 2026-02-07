@@ -63,12 +63,11 @@ class CustomerRepo {
   /// Crear un nuevo cliente
   Future<CustomerModel?> createCustomer(CustomerModel customer) async {
     try {
-      // Cast Map<dynamic, dynamic> a Map<String, dynamic>
-      final customerData = Map<String, dynamic>.from(customer.toJson());
-      final response = await _apiService.createCustomer(customerData);
+      final response = await _apiService.createCustomer(customer.toJson());
 
       if (response.success && response.data != null) {
-        return CustomerModel.fromJson(response.data['customer']);
+        final customerData = response.data['customer'];
+        return CustomerModel.fromJson(Map<String, dynamic>.from(customerData as Map));
       }
       return null;
     } catch (e) {
@@ -79,12 +78,11 @@ class CustomerRepo {
   /// Actualizar un cliente existente
   Future<CustomerModel?> updateCustomer(String id, CustomerModel customer) async {
     try {
-      // Cast Map<dynamic, dynamic> a Map<String, dynamic>
-      final customerData = Map<String, dynamic>.from(customer.toJson());
-      final response = await _apiService.updateCustomer(id, customerData);
+      final response = await _apiService.updateCustomer(id, customer.toJson());
 
       if (response.success && response.data != null) {
-        return CustomerModel.fromJson(response.data['customer']);
+        final customerData = response.data['customer'];
+        return CustomerModel.fromJson(Map<String, dynamic>.from(customerData as Map));
       }
       return null;
     } catch (e) {

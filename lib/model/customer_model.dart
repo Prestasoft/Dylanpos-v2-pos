@@ -43,7 +43,7 @@ class CustomerModel {
     );
   }
 
-  factory CustomerModel.fromJson(Map<dynamic, dynamic> json) {
+  factory CustomerModel.fromJson(Map<String, dynamic> json) {
     // Helper para convertir fechas desde int (milliseconds), String, o null
     String parseDateTime(dynamic value) {
       if (value == null) {
@@ -74,21 +74,23 @@ class CustomerModel {
     );
   }
 
-  Map<dynamic, dynamic> toJson() => <dynamic, dynamic>{
-    if (id != null) 'id': id,
-    'customerName': customerName,
-    'phoneNumber': phoneNumber,
-    'type': type,
-    'profilePicture': profilePicture,
-    'emailAddress': emailAddress,
-    'customerAddress': customerAddress,
-    'dueAmount': dueAmount,
-    'due': dueAmount, // Mantener ambos para compatibilidad
-    'openingBalance': openingBalance,
-    'remainedBalance': remainedBalance,
-    'gst': gst,
-    'receiveWhatsappUpdates': receiveWhatsappUpdates,
-    'created_at': createdAt,
-    'updated_at': updatedAt,
-  };
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (id != null && id!.isNotEmpty) 'id': id,
+      'customerName': customerName,
+      'phoneNumber': phoneNumber,
+      'type': type,
+      'profilePicture': profilePicture,
+      'emailAddress': emailAddress,
+      'customerAddress': customerAddress,
+      'dueAmount': dueAmount,
+      'due': dueAmount, // Mantener ambos para compatibilidad
+      'openingBalance': openingBalance,
+      'remainedBalance': remainedBalance,
+      'gst': gst,
+      'receiveWhatsappUpdates': receiveWhatsappUpdates ?? false,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    };
+  }
 }

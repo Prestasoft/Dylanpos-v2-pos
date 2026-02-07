@@ -709,11 +709,8 @@ class _AddCustomerState extends State<AddCustomer> {
                                                           });
                                                           EasyLoading.show(status: '${lang.S.of(context).loading}...', dismissOnTap: false);
 
-                                                          // Subir imagen a Firebase si se obtuvo del API
-                                                          if (image != null) {
-                                                            var snapshot = await FirebaseStorage.instance.ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}').putData(image!);
-                                                            profilePicture = await snapshot.ref.getDownloadURL();
-                                                          }
+                                                          // Nota: Firebase Storage deshabilitado - usamos imagen por defecto
+                                                          // TODO: Implementar subida de imágenes al servidor propio
 
                                                           CustomerModel customerModel = CustomerModel(
                                                             customerName: customerNameController.text,
@@ -725,16 +722,18 @@ class _AddCustomerState extends State<AddCustomer> {
                                                             dueAmount: openingBalance.isEmpty ? '0' : openingBalance,
                                                             openingBalance: openingBalance.isEmpty ? '0' : openingBalance,
                                                             remainedBalance: openingBalance.isEmpty ? '0' : openingBalance,
-                                                            gst: searchCedulaController.text, // Guardamos la cédula aquí
+                                                            gst: searchCedulaController.text,
                                                             receiveWhatsappUpdates: receiveWhatsappUpdates,
                                                           );
 
                                                           // Guardar cliente usando PostgreSQL API
                                                           final apiService = ApiService();
-                                                          final response = await apiService.post('customers', Map<String, dynamic>.from(customerModel.toJson()));
+                                                          final jsonData = customerModel.toJson();
+                                                          final response = await apiService.post('customers', jsonData);
 
-                                                          if (response.success && response.data != null) {
-                                                            ///________subscription_plan_update_________________________________________________
+                                                          final dynamic responseData = response.data;
+
+                                                          if (response.success && responseData != null) {
                                                             Subscription.decreaseSubscriptionLimits(itemType: 'partiesNumber', context: context);
 
                                                             EasyLoading.showSuccess('${lang.S.of(context).addedSuccessfully}!');
@@ -743,10 +742,29 @@ class _AddCustomerState extends State<AddCustomer> {
                                                             ref.invalidate(allCustomerProvider);
 
                                                             // Obtener el cliente creado de la respuesta
-                                                            final createdCustomer = CustomerModel.fromJson(response.data['customer'] ?? response.data);
-                                                            Future.delayed(const Duration(milliseconds: 100), () {
-                                                              GoRouter.of(context).pop(createdCustomer);
-                                                            });
+                                                            try {
+                                                              Map<String, dynamic> customerData;
+
+                                                              if (responseData is Map) {
+                                                                if (responseData.containsKey('customer') && responseData['customer'] != null) {
+                                                                  customerData = Map<String, dynamic>.from(responseData['customer'] as Map);
+                                                                } else {
+                                                                  customerData = Map<String, dynamic>.from(responseData);
+                                                                }
+                                                              } else {
+                                                                customerData = <String, dynamic>{};
+                                                              }
+
+                                                              final createdCustomer = CustomerModel.fromJson(customerData);
+                                                              Future.delayed(const Duration(milliseconds: 100), () {
+                                                                GoRouter.of(context).pop(createdCustomer);
+                                                              });
+                                                            } catch (parseError) {
+                                                              // Aún así cerrar el diálogo ya que el cliente se creó
+                                                              Future.delayed(const Duration(milliseconds: 100), () {
+                                                                GoRouter.of(context).pop();
+                                                              });
+                                                            }
                                                           } else {
                                                             EasyLoading.showError(response.error ?? 'Error al crear cliente');
                                                             setState(() {
@@ -754,7 +772,6 @@ class _AddCustomerState extends State<AddCustomer> {
                                                             });
                                                           }
                                                         } catch (e) {
-                                                          print('[AddCustomer] Error: $e');
                                                           EasyLoading.showError('Error al crear cliente: $e');
                                                           setState(() {
                                                             saleButtonClicked = false;
