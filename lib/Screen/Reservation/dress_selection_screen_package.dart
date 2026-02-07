@@ -29,7 +29,6 @@ class _DressSelectionPackageScreenState
     extends ConsumerState<DressSelectionPackageScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  bool isUsingOneTimeProvider = true;
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 0;
   final int _itemsPerPage = 200; // Múltiplo de 4 para mejor alineación
@@ -42,7 +41,6 @@ class _DressSelectionPackageScreenState
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
-    Future.delayed(Duration(seconds: 5), _switchToOneTimeProvider);
   }
 
   @override
@@ -50,14 +48,6 @@ class _DressSelectionPackageScreenState
     searchController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _switchToOneTimeProvider() {
-    if (mounted && !isUsingOneTimeProvider) {
-      setState(() {
-        isUsingOneTimeProvider = true;
-      });
-    }
   }
 
   void _loadMoreItems() {
@@ -113,13 +103,9 @@ class _DressSelectionPackageScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dressesAsync = isUsingOneTimeProvider
-        ? ref.watch(dressesOnceProvider(widget.CategoryComposite))
-        : ref.watch(
-            availableDressesByComponentsProvider(widget.CategoryComposite));
-
-    ref.watch(availableDressesByComponentsProvider(widget.CategoryComposite));
-    //ref.watch(dressesOnceProvider(widget.CategoryComposite));
+    // Usar dressesProvider (sin categoría) y filtrar localmente con igualdad exacta
+    // Esto es el mismo patrón que usa DressScreen y funciona correctamente
+    final dressesAsync = ref.watch(dressesProvider);
 
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
@@ -142,8 +128,9 @@ class _DressSelectionPackageScreenState
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
+              // Invalidar el provider para recargar los datos
+              ref.invalidate(dressesProvider);
               setState(() {
-                isUsingOneTimeProvider = !isUsingOneTimeProvider;
                 _allDresses = [];
                 _displayedDresses = [];
                 _currentPage = 0;
@@ -187,19 +174,12 @@ class _DressSelectionPackageScreenState
             CircularProgressIndicator(color: theme.primaryColor),
             SizedBox(height: 16),
             Text(
-              isUsingOneTimeProvider
-                  ? 'Cargando vestidos...'
-                  : 'Buscando vestidos disponibles...',
+              'Cargando vestidos...',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[700],
               ),
             ),
-            if (!isUsingOneTimeProvider)
-              TextButton(
-                onPressed: _switchToOneTimeProvider,
-                child: Text('¿Carga lenta? Toca aquí'),
-              )
           ],
         )),
         error: (e, stack) => Center(
@@ -218,9 +198,7 @@ class _DressSelectionPackageScreenState
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                    isUsingOneTimeProvider = !isUsingOneTimeProvider;
-                  });
+                  ref.invalidate(dressesProvider);
                 },
                 child: Text('Intentar otra vez'),
               ),
@@ -228,8 +206,16 @@ class _DressSelectionPackageScreenState
           ),
         ),
         data: (dresses) {
-          if (_allDresses.length != dresses.length) {
-            _allDresses = dresses;
+          // Filtrar por categoría de vestido con comparación robusta (trim para espacios)
+          // CategoryComposite viene de packagesAsync.components[index] que es la categoría del vestido
+          final searchCategory = widget.CategoryComposite.trim().toLowerCase();
+          final categoryFiltered = dresses.where((dress) {
+            final dressCategory = dress.category.trim().toLowerCase();
+            return dressCategory == searchCategory;
+          }).toList();
+
+          if (_allDresses.length != categoryFiltered.length) {
+            _allDresses = categoryFiltered;
             _displayedDresses = _allDresses
                 .where(
                     (dress) => dress.name.toLowerCase().contains(searchQuery))

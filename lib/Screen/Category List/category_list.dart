@@ -565,8 +565,10 @@ class _CategoryListState extends State<CategoryList> {
                                                                         isWarranty,
                                                                   );
                                                                   // Guardar categoría usando PostgreSQL API
+                                                                  // IMPORTANTE: Usar 'categories/services' para insertar en tabla 'categories'
+                                                                  // El endpoint 'categories' sin subfijo inserta en 'product_categories' que es una tabla diferente
                                                                   final apiService = ApiService();
-                                                                  await apiService.post('categories', Map<String, dynamic>.from(categoryModel.toJson()));
+                                                                  await apiService.post('categories/services', Map<String, dynamic>.from(categoryModel.toJson()));
                                                                   // ignore: unused_result
                                                                   ref.refresh(
                                                                       categoryProvider);
@@ -1218,8 +1220,9 @@ class _CategoryListState extends State<CategoryList> {
                                                                                                     EasyLoading.show(status: lang.S.of(context).addingCategory);
                                                                                                     try {
                                                                                                       // Buscar categoría por nombre usando PostgreSQL API
+                                                                                                      // IMPORTANTE: Usar 'categories/services' para buscar en tabla 'categories'
                                                                                                       final apiService = ApiService();
-                                                                                                      final searchResponse = await apiService.get('categories', queryParams: {
+                                                                                                      final searchResponse = await apiService.get('categories/services', queryParams: {
                                                                                                         'categoryName': showAbleCategories[index].categoryName,
                                                                                                         'limit': '1',
                                                                                                       });
@@ -1230,7 +1233,7 @@ class _CategoryListState extends State<CategoryList> {
                                                                                                           final categoryData = Map<String, dynamic>.from(categories.first);
                                                                                                           final categoryId = categoryData['id']?.toString();
                                                                                                           if (categoryId != null) {
-                                                                                                            await apiService.put('categories/$categoryId', {
+                                                                                                            await apiService.put('categories/services/$categoryId', {
                                                                                                               'categoryName': itemCategoryController.text,
                                                                                                               'variationSize': isSize,
                                                                                                               'variationColor': isColor,
@@ -1399,8 +1402,9 @@ class _CategoryListState extends State<CategoryList> {
                                                                                             if (!isDemo) {
                                                                                               try {
                                                                                                 // Buscar categoría por nombre usando PostgreSQL API
+                                                                                                // IMPORTANTE: Usar 'categories/services' para buscar en tabla 'categories'
                                                                                                 final apiService = ApiService();
-                                                                                                final searchResponse = await apiService.get('categories', queryParams: {
+                                                                                                final searchResponse = await apiService.get('categories/services', queryParams: {
                                                                                                   'categoryName': showAbleCategories[index].categoryName,
                                                                                                   'limit': '1',
                                                                                                 });
@@ -1412,7 +1416,7 @@ class _CategoryListState extends State<CategoryList> {
                                                                                                     final categoryId = categoryData['id']?.toString();
                                                                                                     if (categoryId != null) {
                                                                                                       // Eliminar categoría usando PostgreSQL API
-                                                                                                      await apiService.delete('categories/$categoryId');
+                                                                                                      await apiService.delete('categories/services/$categoryId');
 
                                                                                                       // ignore: unused_result
                                                                                                       ref.refresh(categoryProvider);

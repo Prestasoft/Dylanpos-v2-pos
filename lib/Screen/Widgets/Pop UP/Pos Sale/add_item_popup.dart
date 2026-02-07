@@ -305,7 +305,8 @@ class _AddItemPopUPState extends State<AddItemPopUP> {
                                   type: isType,
                                   weight: isWeight,
                                   warranty: isWarranty);
-                              await apiService.post('categories',
+                              // IMPORTANTE: Usar 'categories/services' para insertar en tabla 'categories'
+                              await apiService.post('categories/services',
                                   Map<String, dynamic>.from(categoryModel.toJson()));
                               final _ = ref.refresh(categoryProvider);
                               setState(() {

@@ -28,7 +28,6 @@ class DressSelectionScreen extends ConsumerStatefulWidget {
 class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
-  bool isUsingOneTimeProvider = true;
   final ScrollController _scrollController = ScrollController();
   int _currentPage = 0;
   final int _itemsPerPage = 200; // Múltiplo de 4 para mejor alineación
@@ -41,7 +40,6 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
-    Future.delayed(Duration(seconds: 5), _switchToOneTimeProvider);
   }
 
   @override
@@ -49,14 +47,6 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
     searchController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _switchToOneTimeProvider() {
-    if (mounted && !isUsingOneTimeProvider) {
-      setState(() {
-        isUsingOneTimeProvider = true;
-      });
-    }
   }
 
   void _loadMoreItems() {
@@ -112,10 +102,9 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dressesAsync = isUsingOneTimeProvider
-        ? ref.watch(dressesOnceProvider(widget.packagesAsync.category))
-        : ref.watch(availableDressesByComponentsProvider(
-            widget.packagesAsync.category));
+    // Usar dressesProvider (sin categoría) y filtrar localmente con igualdad exacta
+    // Esto es el mismo patrón que usa DressScreen y funciona correctamente
+    final dressesAsync = ref.watch(dressesProvider);
 
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
@@ -138,8 +127,9 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
+              // Invalidar el provider para recargar los datos
+              ref.invalidate(dressesProvider);
               setState(() {
-                isUsingOneTimeProvider = !isUsingOneTimeProvider;
                 _allDresses = [];
                 _displayedDresses = [];
                 _currentPage = 0;
@@ -183,19 +173,12 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
             CircularProgressIndicator(color: theme.primaryColor),
             SizedBox(height: 16),
             Text(
-              isUsingOneTimeProvider
-                  ? 'Cargando vestidos...'
-                  : 'Buscando vestidos disponibles...',
+              'Cargando vestidos...',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[700],
               ),
             ),
-            if (!isUsingOneTimeProvider)
-              TextButton(
-                onPressed: _switchToOneTimeProvider,
-                child: Text('¿Carga lenta? Toca aquí'),
-              )
           ],
         )),
         error: (e, stack) => Center(
@@ -214,9 +197,7 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                    isUsingOneTimeProvider = !isUsingOneTimeProvider;
-                  });
+                  ref.invalidate(dressesProvider);
                 },
                 child: Text('Intentar otra vez'),
               ),
@@ -224,8 +205,16 @@ class _DressSelectionScreenState extends ConsumerState<DressSelectionScreen> {
           ),
         ),
         data: (dresses) {
-          if (_allDresses.length != dresses.length) {
-            _allDresses = dresses;
+          // NOTA: Esta pantalla se usa cuando package.components está vacío
+          // En ese caso, mostramos TODOS los vestidos disponibles sin filtrar por categoría
+          // porque packagesAsync.category es la categoría del SERVICIO (ej: "Boda"),
+          // no la categoría de los vestidos (ej: "Vestido de Madre")
+
+          // Solo filtrar vestidos que están disponibles
+          final availableDresses = dresses.where((dress) => dress.available).toList();
+
+          if (_allDresses.length != availableDresses.length) {
+            _allDresses = availableDresses;
             _displayedDresses = _allDresses
                 .where(
                     (dress) => dress.name.toLowerCase().contains(searchQuery))
