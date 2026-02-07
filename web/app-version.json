@@ -1,11 +1,11 @@
 {
-  "version": "2.1.98",
-  "build": "20260207-1104",
+  "version": "2.1.99",
+  "build": "20260207-1110",
   "releaseDate": "2026-02-07",
   "environment": "production",
-  "description": "Actualización a versión 2.1.98",
+  "description": "Actualización a versión 2.1.99",
   "changelog": [
-    "Actualización a versión 2.1.98"
+    "Actualización a versión 2.1.99"
   ],
   "forceUpdate": true
 }

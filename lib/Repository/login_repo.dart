@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -84,7 +86,15 @@ class LogInRepo extends ChangeNotifier {
           print('[LogInRepo.signIn] Login automático a única sucursal: ${tenant.displayName}');
         } else {
           // Múltiples sucursales: mostrar modal de selección
-          await _showBranchSelectorModal(context, availableTenants);
+          // Pasamos los datos del usuario para que el modal pueda completar el flujo
+          await _showBranchSelectorModal(
+            context,
+            availableTenants,
+            userId: userId,
+            userName: userName,
+            userEmail: userEmail,
+            isAdmin: isAdmin,
+          );
           // El modal configurará la sucursal seleccionada
           return; // No continuar aquí, el modal manejará la navegación
         }
@@ -128,7 +138,14 @@ class LogInRepo extends ChangeNotifier {
   }
 
   /// Mostrar modal para seleccionar sucursal (post-login) - Tema Oscuro/Dorado
-  Future<void> _showBranchSelectorModal(BuildContext context, List<TenantModel> tenants) async {
+  Future<void> _showBranchSelectorModal(
+    BuildContext context,
+    List<TenantModel> tenants, {
+    required String userId,
+    required String userName,
+    required String userEmail,
+    required bool isAdmin,
+  }) async {
     String selectedId = tenants.first.id;
 
     await showGeneralDialog(
@@ -407,6 +424,26 @@ class LogInRepo extends ChangeNotifier {
                                           await _apiService.setBranchId(selectedId);
                                           final prefs = await SharedPreferences.getInstance();
                                           await prefs.setString('selected_tenant_id', selectedId);
+
+                                          // CRÍTICO: También guardar en localStorage para que otros providers lo lean
+                                          html.window.localStorage['selected_tenant_id'] = selectedId;
+
+                                          // CRÍTICO: Completar el flujo de inicialización del usuario
+                                          // (igual que cuando hay una sola sucursal)
+                                          await setUserDataOnLocalData(
+                                            uid: userId,
+                                            subUserTitle: userName,
+                                            isSubUser: !isAdmin,
+                                          );
+
+                                          putUserDataImidiyate(
+                                            uid: userId,
+                                            title: userName,
+                                            isSubUse: !isAdmin,
+                                          );
+
+                                          // Registrar login en auditoría
+                                          await AuditService().logLogin(userId, userName, userEmail);
 
                                           // Cerrar modal y navegar
                                           if (context.mounted) {
