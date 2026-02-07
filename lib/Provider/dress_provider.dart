@@ -244,20 +244,49 @@ final dressesProvider = StreamProvider<List<DressModel>>((ref) {
   Future<void> fetchDresses() async {
     try {
       debugPrint('🔄 [dressesProvider] Cargando vestidos para branch: $branchId');
+      debugPrint('🔄 [dressesProvider] ApiService.isAuthenticated: ${_apiService.isAuthenticated}');
+      debugPrint('🔄 [dressesProvider] ApiService.branchId: ${_apiService.branchId}');
 
       final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
 
+      debugPrint('🔄 [dressesProvider] Response success: ${response.success}');
+      debugPrint('🔄 [dressesProvider] Response error: ${response.error}');
+      debugPrint('🔄 [dressesProvider] Response statusCode: ${response.statusCode}');
+
       if (response.success && response.data != null) {
-        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+        final dressesData = response.data['dresses'] as List<dynamic>? ??
+                            response.data['d'] as List<dynamic>? ?? [];
+
+        debugPrint('🔄 [dressesProvider] Datos recibidos: ${dressesData.length} items');
+
         List<DressModel> dresses = [];
 
         for (var item in dressesData) {
           if (item is Map) {
             final data = Map<String, dynamic>.from(item);
+
+            // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+            // Convertir thumbnail URL a imagen original (thumbnails no preservan orientación EXIF)
+            String? thumbnailUrl = data['t']?.toString();
+            String? originalUrl = thumbnailUrl?.replaceAll('/thumbnails/', '/');
+
+            final Map<String, dynamic> normalizedData = {
+              'id': data['id'] ?? data['i'] ?? '',
+              'name': data['name'] ?? data['n'] ?? '',
+              'category': data['category'] ?? data['c'] ?? '',
+              'subcategory': data['subcategory'] ?? '',
+              'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+              'state': data['state'] ?? data['s'] ?? 'available',
+              'images': data['images'] ?? (originalUrl != null ? [originalUrl] : []),
+              'price': data['price'] ?? data['p'] ?? 0,
+              'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+            };
+
             // Verificar campos mínimos
-            if (data.containsKey('name') && data.containsKey('category')) {
-              final id = data['id']?.toString() ?? '';
-              dresses.add(DressModel.fromMap(data, id));
+            if (normalizedData['name'] != null && normalizedData['name'].toString().isNotEmpty) {
+              final id = normalizedData['id']?.toString() ?? '';
+              dresses.add(DressModel.fromMap(normalizedData, id));
             }
           }
         }
@@ -265,10 +294,12 @@ final dressesProvider = StreamProvider<List<DressModel>>((ref) {
         debugPrint('✅ [dressesProvider] Cargados ${dresses.length} vestidos para branch: $branchId');
         controller.add(dresses);
       } else {
+        debugPrint('⚠️ [dressesProvider] No hay datos o error: ${response.error}');
         controller.add([]);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ [dressesProvider] Error: $e');
+      debugPrint('❌ [dressesProvider] StackTrace: $stackTrace');
       controller.add([]);
     }
   }
@@ -306,16 +337,36 @@ final availableDressesByComponentsProvider =
       });
 
       if (response.success && response.data != null) {
-        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+        final dressesData = response.data['dresses'] as List<dynamic>? ??
+                            response.data['d'] as List<dynamic>? ?? [];
         List<DressModel> dresses = [];
 
         for (var item in dressesData) {
           if (item is Map) {
             final data = Map<String, dynamic>.from(item);
-            final dressCategory = data['category'];
+
+            // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+            // Convertir thumbnail URL a imagen original
+            String? thumbUrl = data['t']?.toString();
+            String? origUrl = thumbUrl?.replaceAll('/thumbnails/', '/');
+
+            final Map<String, dynamic> normalizedData = {
+              'id': data['id'] ?? data['i'] ?? '',
+              'name': data['name'] ?? data['n'] ?? '',
+              'category': data['category'] ?? data['c'] ?? '',
+              'subcategory': data['subcategory'] ?? '',
+              'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+              'state': data['state'] ?? data['s'] ?? 'available',
+              'images': data['images'] ?? (origUrl != null ? [origUrl] : []),
+              'price': data['price'] ?? data['p'] ?? 0,
+              'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+            };
+
+            final dressCategory = normalizedData['category'];
             if (dressCategory != null && dressCategory == category) {
-              final id = data['id']?.toString() ?? '';
-              dresses.add(DressModel.fromMap(data, id));
+              final id = normalizedData['id']?.toString() ?? '';
+              dresses.add(DressModel.fromMap(normalizedData, id));
             }
           }
         }
@@ -363,20 +414,40 @@ final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>(
 
     if (!response.success || response.data == null) return [];
 
-    final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+    // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+    final dressesData = response.data['dresses'] as List<dynamic>? ??
+                        response.data['d'] as List<dynamic>? ?? [];
     List<DressModel> dresses = [];
 
     for (var item in dressesData) {
       if (item is Map) {
         final data = Map<String, dynamic>.from(item);
-        final id = data['id']?.toString() ?? '';
+
+        // Convertir thumbnail URL a imagen original
+        String? thumbUrl2 = data['t']?.toString();
+        String? origUrl2 = thumbUrl2?.replaceAll('/thumbnails/', '/');
+
+        // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+        final Map<String, dynamic> normalizedData = {
+          'id': data['id'] ?? data['i'] ?? '',
+          'name': data['name'] ?? data['n'] ?? '',
+          'category': data['category'] ?? data['c'] ?? '',
+          'subcategory': data['subcategory'] ?? '',
+          'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+          'state': data['state'] ?? data['s'] ?? 'available',
+          'images': data['images'] ?? (origUrl2 != null ? [origUrl2] : []),
+          'price': data['price'] ?? data['p'] ?? 0,
+          'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+        };
+
+        final id = normalizedData['id']?.toString() ?? '';
+        final dressCategory = (normalizedData['category'] ?? '').toString().toLowerCase();
 
         // Si no hay categoría especificada, incluir todos
         if (category.isEmpty) {
-          dresses.add(DressModel.fromMap(data, id));
+          dresses.add(DressModel.fromMap(normalizedData, id));
         } else {
           // Filtro flexible: coincidencia exacta o si la categoría del vestido contiene el término
-          final dressCategory = (data['category'] ?? '').toString().toLowerCase();
           final searchCategory = category.toLowerCase();
 
           // Incluir si: coincide exactamente, contiene el término, o términos relacionados
@@ -385,7 +456,7 @@ final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>(
               searchCategory.contains(dressCategory) ||
               // Mapeo de categorías de productos a categorías de vestidos
               _categoryMatches(searchCategory, dressCategory)) {
-            dresses.add(DressModel.fromMap(data, id));
+            dresses.add(DressModel.fromMap(normalizedData, id));
           }
         }
       }
@@ -396,8 +467,25 @@ final dressesOnceProvider = FutureProvider.family<List<DressModel>, String>(
       for (var item in dressesData) {
         if (item is Map) {
           final data = Map<String, dynamic>.from(item);
-          final id = data['id']?.toString() ?? '';
-          dresses.add(DressModel.fromMap(data, id));
+
+          // Convertir thumbnail URL a imagen original
+          String? thumbUrl3 = data['t']?.toString();
+          String? origUrl3 = thumbUrl3?.replaceAll('/thumbnails/', '/');
+
+          // Normalizar también aquí
+          final Map<String, dynamic> normalizedData = {
+            'id': data['id'] ?? data['i'] ?? '',
+            'name': data['name'] ?? data['n'] ?? '',
+            'category': data['category'] ?? data['c'] ?? '',
+            'subcategory': data['subcategory'] ?? '',
+            'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+            'state': data['state'] ?? data['s'] ?? 'available',
+            'images': data['images'] ?? (origUrl3 != null ? [origUrl3] : []),
+            'price': data['price'] ?? data['p'] ?? 0,
+            'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+          };
+          final id = normalizedData['id']?.toString() ?? '';
+          dresses.add(DressModel.fromMap(normalizedData, id));
         }
       }
     }
@@ -477,14 +565,34 @@ final dressesByCategoryProvider =
       });
 
       if (response.success && response.data != null) {
-        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+        final dressesData = response.data['dresses'] as List<dynamic>? ??
+                            response.data['d'] as List<dynamic>? ?? [];
         List<DressModel> dresses = [];
 
         for (var item in dressesData) {
           if (item is Map) {
             final data = Map<String, dynamic>.from(item);
-            final id = data['id']?.toString() ?? '';
-            dresses.add(DressModel.fromMap(data, id));
+
+            // Convertir thumbnail URL a imagen original
+            String? thumbUrl4 = data['t']?.toString();
+            String? origUrl4 = thumbUrl4?.replaceAll('/thumbnails/', '/');
+
+            // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+            final Map<String, dynamic> normalizedData = {
+              'id': data['id'] ?? data['i'] ?? '',
+              'name': data['name'] ?? data['n'] ?? '',
+              'category': data['category'] ?? data['c'] ?? '',
+              'subcategory': data['subcategory'] ?? '',
+              'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+              'state': data['state'] ?? data['s'] ?? 'available',
+              'images': data['images'] ?? (origUrl4 != null ? [origUrl4] : []),
+              'price': data['price'] ?? data['p'] ?? 0,
+              'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+            };
+
+            final id = normalizedData['id']?.toString() ?? '';
+            dresses.add(DressModel.fromMap(normalizedData, id));
           }
         }
 
@@ -528,13 +636,16 @@ final dressCategoriesProvider = FutureProvider<List<String>>((ref) async {
     final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
 
     if (response.success && response.data != null) {
-      final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+      // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+      final dressesData = response.data['dresses'] as List<dynamic>? ??
+                          response.data['d'] as List<dynamic>? ?? [];
 
-      // Extraer categorías únicas
+      // Extraer categorías únicas (soportando formato compacto 'c' = category)
       final Set<String> categoriesSet = {};
       for (var item in dressesData) {
         if (item is Map) {
-          final category = item['category']?.toString();
+          // Soportar 'category' (completo) o 'c' (compacto)
+          final category = (item['category'] ?? item['c'])?.toString();
           if (category != null && category.isNotEmpty) {
             categoriesSet.add(category);
           }
@@ -573,14 +684,34 @@ final dressesByBranchProvider =
       });
 
       if (response.success && response.data != null) {
-        final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+        // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+        final dressesData = response.data['dresses'] as List<dynamic>? ??
+                            response.data['d'] as List<dynamic>? ?? [];
         List<DressModel> dresses = [];
 
         for (var item in dressesData) {
           if (item is Map) {
             final data = Map<String, dynamic>.from(item);
-            final id = data['id']?.toString() ?? '';
-            dresses.add(DressModel.fromMap(data, id));
+
+            // Convertir thumbnail URL a imagen original
+            String? thumbUrl5 = data['t']?.toString();
+            String? origUrl5 = thumbUrl5?.replaceAll('/thumbnails/', '/');
+
+            // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+            final Map<String, dynamic> normalizedData = {
+              'id': data['id'] ?? data['i'] ?? '',
+              'name': data['name'] ?? data['n'] ?? '',
+              'category': data['category'] ?? data['c'] ?? '',
+              'subcategory': data['subcategory'] ?? '',
+              'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+              'state': data['state'] ?? data['s'] ?? 'available',
+              'images': data['images'] ?? (origUrl5 != null ? [origUrl5] : []),
+              'price': data['price'] ?? data['p'] ?? 0,
+              'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+            };
+
+            final id = normalizedData['id']?.toString() ?? '';
+            dresses.add(DressModel.fromMap(normalizedData, id));
           }
         }
 
