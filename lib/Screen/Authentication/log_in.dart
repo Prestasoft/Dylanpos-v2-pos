@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usar ApiService para autenticación
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -198,7 +199,8 @@ class _EmailLogInState extends State<EmailLogIn> {
     );
   }
 
-  var currentUser = FirebaseAuth.instance.currentUser;
+  // Firebase Auth deshabilitado - Ya no se usa currentUser de Firebase
+  // var currentUser = FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -666,7 +668,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                             ),
                             const SizedBox(width: 8),
                             const Text(
-                              'v2.1.111',
+                              'v2.1.115',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

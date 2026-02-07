@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usar ApiService para autenticación
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -233,9 +234,9 @@ class VersionCheckService {
       // Delay para asegurar que todo se guarde correctamente
       await Future.delayed(const Duration(milliseconds: 500));
       
-      // Cerrar sesión de Firebase
-      debugPrint('performUpdate: Cerrando sesión de Firebase');
-      await FirebaseAuth.instance.signOut();
+      // Firebase Auth deshabilitado
+      debugPrint('performUpdate: Firebase Auth deshabilitado, continuando...');
+      // await FirebaseAuth.instance.signOut();
       
       // Otro delay después del signOut
       await Future.delayed(const Duration(milliseconds: 500));

@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:expansion_widget/expansion_widget.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usar ApiService para autenticación
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -69,8 +70,9 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
 
   @override
   void initState() {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user?.uid == null) {
+    // Firebase Auth deshabilitado - Usar ApiService para verificar autenticación
+    final apiService = ApiService();
+    if (!apiService.isAuthenticated) {
       Restart.restartApp();
     }
     checkSubscriptionData();
@@ -81,14 +83,16 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
 
   /// Configurar AuditService con información del usuario actual si está logueado
   void _configureAuditService() async {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    // Firebase Auth deshabilitado - Usar ApiService para obtener datos del usuario
+    final apiService = ApiService();
+    if (apiService.isAuthenticated) {
       await getUserDataFromLocal(); // Asegurar que los datos estén cargados
-      
+
       String userName = 'Usuario';
-      String userEmail = user.email ?? 'email_no_disponible';
-      String userId = user.uid;
-      
+      // Obtener email y userId desde currentUser map de ApiService
+      String userEmail = apiService.currentUser?['email']?.toString() ?? 'email_no_disponible';
+      String userId = apiService.currentUser?['id']?.toString() ?? '';
+
       // Si es sub-usuario, usar esa información
       if (isSubUser && constSubUserTitle.isNotEmpty) {
         userName = constSubUserTitle;
@@ -104,7 +108,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
           userName = userEmail.split('@')[0];
         }
       }
-      
+
       // Configurar AuditService sin triggear un nuevo login
       AuditService.setCurrentUser(
         userId: userId,

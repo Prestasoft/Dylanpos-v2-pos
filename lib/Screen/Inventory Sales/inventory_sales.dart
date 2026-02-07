@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usando PostgreSQL API
+// import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';

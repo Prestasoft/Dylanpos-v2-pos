@@ -1,16 +1,17 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+// Firebase deshabilitado - Usando PostgreSQL API
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_database/firebase_database.dart';
+// import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nb_utils/nb_utils.dart';
 
 import 'tenant_model.dart';
 
 /// Servicio singleton para gestionar la conexión multi-tenant
-/// Permite cambiar dinámicamente entre diferentes sucursales/bases de datos Firebase
+/// Ahora usa PostgreSQL API en lugar de Firebase
 class TenantManager {
   static final TenantManager _instance = TenantManager._internal();
   factory TenantManager() => _instance;
@@ -18,11 +19,9 @@ class TenantManager {
 
   // Clave para persistencia
   static const String _tenantKey = 'selected_tenant_id';
-  static const String _defaultAppName = '[DEFAULT]';
 
   // Estado actual
   TenantModel? _currentTenant;
-  FirebaseApp? _currentApp;
   bool _isInitialized = false;
   bool _isSwitching = false;
 
@@ -37,11 +36,11 @@ class TenantManager {
   String get currentTenantId => _currentTenant?.id ?? '';
   String get currentTenantName => _currentTenant?.displayName ?? 'Sin sucursal';
 
-  // Instancias de Firebase para el tenant actual
-  FirebaseFirestore get firestore => FirebaseFirestore.instance;
-  FirebaseAuth get auth => FirebaseAuth.instance;
-  FirebaseDatabase get database => FirebaseDatabase.instance;
-  FirebaseStorage get storage => FirebaseStorage.instance;
+  // Firebase deshabilitado - Estos getters ya no se usan
+  // FirebaseFirestore get firestore => FirebaseFirestore.instance;
+  // FirebaseAuth get auth => FirebaseAuth.instance;
+  // FirebaseDatabase get database => FirebaseDatabase.instance;
+  // FirebaseStorage get storage => FirebaseStorage.instance;
 
   /// Inicializa el sistema de tenants
   /// Carga el último tenant seleccionado o usa el por defecto
@@ -62,8 +61,8 @@ class TenantManager {
         targetTenant = TenantConfig.defaultTenant;
       }
 
-      // Inicializar Firebase con el tenant
-      await _initializeFirebaseForTenant(targetTenant);
+      // Firebase deshabilitado - Ya no se inicializa
+      // await _initializeFirebaseForTenant(targetTenant);
 
       _currentTenant = targetTenant;
       _isInitialized = true;
@@ -78,7 +77,7 @@ class TenantManager {
   }
 
   /// Cambia a una sucursal diferente
-  /// Esto reinicializa Firebase con la nueva configuración
+  /// Ahora solo actualiza el estado local, la API usa X-Branch-Id header
   Future<bool> switchTenant(TenantModel newTenant) async {
     if (_isSwitching) {
       debugPrint('⚠️ TenantManager: Ya hay un cambio de tenant en progreso');
@@ -95,24 +94,12 @@ class TenantManager {
     try {
       debugPrint('🔄 TenantManager: Cambiando a ${newTenant.displayName}...');
 
-      // Cerrar sesión del usuario actual si existe
-      try {
-        await FirebaseAuth.instance.signOut();
-      } catch (e) {
-        debugPrint('⚠️ TenantManager: Error al cerrar sesión - $e');
-      }
-
-      // Eliminar la app actual si no es la default
-      if (_currentApp != null && _currentApp!.name != _defaultAppName) {
-        try {
-          await _currentApp!.delete();
-        } catch (e) {
-          debugPrint('⚠️ TenantManager: Error al eliminar app anterior - $e');
-        }
-      }
-
-      // Inicializar con el nuevo tenant
-      await _initializeFirebaseForTenant(newTenant);
+      // Firebase Auth deshabilitado
+      // try {
+      //   await FirebaseAuth.instance.signOut();
+      // } catch (e) {
+      //   debugPrint('⚠️ TenantManager: Error al cerrar sesión - $e');
+      // }
 
       // Guardar preferencia
       await setValue(_tenantKey, newTenant.id);
@@ -128,48 +115,6 @@ class TenantManager {
       debugPrint('❌ TenantManager: Error al cambiar tenant - $e');
       _isSwitching = false;
       return false;
-    }
-  }
-
-  /// Inicializa Firebase para un tenant específico
-  Future<void> _initializeFirebaseForTenant(TenantModel tenant) async {
-    try {
-      // Para web, usamos la app default y reconfiguramos
-      // Firebase Web no soporta múltiples apps de la misma manera que mobile
-      if (kIsWeb) {
-        // En web, necesitamos reiniciar la aplicación para cambiar la configuración
-        // Por ahora, usamos la app default
-        final apps = Firebase.apps;
-
-        if (apps.isEmpty) {
-          _currentApp = await Firebase.initializeApp(
-            options: tenant.firebaseOptions,
-          );
-        } else {
-          // La app ya está inicializada, usamos la existente
-          _currentApp = Firebase.app();
-
-          // En producción, para cambiar de tenant en web,
-          // se recomienda recargar la página con un parámetro de tenant
-        }
-      } else {
-        // Para mobile, podemos usar apps secundarias
-        final appName = 'tenant_${tenant.id}';
-
-        try {
-          _currentApp = Firebase.app(appName);
-        } catch (e) {
-          _currentApp = await Firebase.initializeApp(
-            name: appName,
-            options: tenant.firebaseOptions,
-          );
-        }
-      }
-
-      debugPrint('🔥 Firebase inicializado para: ${tenant.city}');
-    } catch (e) {
-      debugPrint('❌ Error inicializando Firebase: $e');
-      rethrow;
     }
   }
 

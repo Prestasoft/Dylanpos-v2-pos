@@ -1697,17 +1697,15 @@ class _AddUserRoleState extends State<AddUserRole> {
                         }
 
                         // DEBUG: Log data being sent
-                        print('🔍 [UPDATE USER] userId: $userId');
-                        print('🔍 [UPDATE USER] selectedAllowedBranches: $selectedAllowedBranches');
-                        print('🔍 [UPDATE USER] backendData[allowed_branches]: ${backendData['allowed_branches']}');
-                        print('🔍 [UPDATE USER] Número de permisos: ${(backendData['permissions'] as Map).length}');
-                        print('🔍 [UPDATE USER] backendData completo: $backendData');
+                        debugPrint('🔍 [UPDATE USER] userId: $userId');
+                        debugPrint('🔍 [UPDATE USER] selectedAllowedBranches: $selectedAllowedBranches');
+                        debugPrint('🔍 [UPDATE USER] backendData[allowed_branches]: ${backendData['allowed_branches']}');
+                        debugPrint('🔍 [UPDATE USER] Número de permisos: ${(backendData['permissions'] as Map).length}');
 
                         final response = await apiService.put('users/$userId', backendData);
 
-                        print('🔍 [UPDATE USER RESPONSE] success: ${response.success}');
-                        print('🔍 [UPDATE USER RESPONSE] message: ${response.message}');
-                        print('🔍 [UPDATE USER RESPONSE] data: ${response.data}');
+                        debugPrint('🔍 [UPDATE USER RESPONSE] success: ${response.success}');
+                        debugPrint('🔍 [UPDATE USER RESPONSE] message: ${response.message}');
                       }
 
                       ref.refresh(userRoleProvider);

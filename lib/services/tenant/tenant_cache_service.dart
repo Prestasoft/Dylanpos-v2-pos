@@ -1,4 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usando PostgreSQL API
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nb_utils/nb_utils.dart';
 // ignore: avoid_web_libraries_in_flutter
@@ -64,16 +65,19 @@ class TenantCacheService {
   }
 
   /// Cierra la sesión de Firebase Auth
+  /// Firebase Auth deshabilitado - Ahora solo limpia datos locales
   Future<void> _signOutFirebase() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await FirebaseAuth.instance.signOut();
-        debugPrint('🔐 Firebase Auth: Sesión cerrada');
-      }
-    } catch (e) {
-      debugPrint('⚠️ Error al cerrar sesión de Firebase: $e');
-    }
+    // Firebase Auth deshabilitado - No hay sesión de Firebase que cerrar
+    debugPrint('🔐 Firebase Auth deshabilitado - Continuando con limpieza local');
+    // try {
+    //   final user = FirebaseAuth.instance.currentUser;
+    //   if (user != null) {
+    //     await FirebaseAuth.instance.signOut();
+    //     debugPrint('🔐 Firebase Auth: Sesión cerrada');
+    //   }
+    // } catch (e) {
+    //   debugPrint('⚠️ Error al cerrar sesión de Firebase: $e');
+    // }
   }
 
   /// Limpia SharedPreferences preservando claves importantes

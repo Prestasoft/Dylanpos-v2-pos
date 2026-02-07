@@ -1,5 +1,6 @@
 // top_bar.dart - Migrado a PostgreSQL API
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usar ApiService para autenticación
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -221,8 +222,8 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
 
   @override
   void initState() {
-    final User? user = FirebaseAuth.instance.currentUser;
-    if (user?.uid == null) {
+    // Firebase Auth deshabilitado - Usar ApiService para verificar autenticación
+    if (!_apiService.isAuthenticated) {
       Restart.restartApp();
     }
     super.initState();
@@ -1117,7 +1118,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'v2.1.111',
+                  'v2.1.115',
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -1230,8 +1231,8 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                       // Limpiar token del API (PostgreSQL)
                       await _apiService.logout();
 
-                      // Cerrar sesión de Firebase
-                      await FirebaseAuth.instance.signOut();
+                      // Firebase Auth deshabilitado
+                      // await FirebaseAuth.instance.signOut();
 
                       EasyLoading.showSuccess('Sesión cerrada correctamente');
                       if (context.mounted) {

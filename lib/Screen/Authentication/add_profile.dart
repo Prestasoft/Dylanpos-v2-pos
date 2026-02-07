@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart' as firebase_core;
-import 'package:firebase_storage/firebase_storage.dart';
+// Firebase deshabilitado - Usando PostgreSQL API
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_core/firebase_core.dart' as firebase_core;
+// import 'package:firebase_storage/firebase_storage.dart';
 import '../../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -54,21 +55,23 @@ class _ProfileAddState extends State<ProfileAdd> {
                 dismissOnTap: false,
               )
             : null;
-        var snapshot = await FirebaseStorage.instance
-            .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
-            .putData(bytesFromPicker!);
-        var url = await snapshot.ref.getDownloadURL();
+        // Firebase Storage deshabilitado - Usar imagen local
+        // var snapshot = await FirebaseStorage.instance
+        //     .ref('Profile Picture/${DateTime.now().millisecondsSinceEpoch}')
+        //     .putData(bytesFromPicker!);
+        // var url = await snapshot.ref.getDownloadURL();
         EasyLoading.showSuccess('Upload Successful!');
         setState(() {
           image = bytesFromPicker;
-          profilePicture = url.toString();
+          // Sin Firebase Storage, usar una URL placeholder o manejar localmente
+          profilePicture = '';
         });
-      } on firebase_core.FirebaseException catch (e) {
+      } catch (e) {
         EasyLoading.dismiss();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.code.toString(),
+              e.toString(),
             ),
           ),
         );
@@ -697,10 +700,9 @@ class _ProfileAddState extends State<ProfileAdd> {
                                                       addressController.text,
                                                   language: '',
                                                   pictureUrl: profilePicture,
-                                                  userID: FirebaseAuth.instance
-                                                      .currentUser!.uid,
-                                                  email: FirebaseAuth.instance
-                                                      .currentUser!.email,
+                                                  // Firebase Auth deshabilitado - Usar ApiService
+                                                  userID: ApiService().currentUser?['id'] ?? '',
+                                                  email: ApiService().currentUser?['email'],
                                                   subscriptionDate:
                                                       DateTime.now().toString(),
                                                   subscriptionName: 'Free',
@@ -1165,10 +1167,9 @@ class _ProfileAddState extends State<ProfileAdd> {
                                           countryName: addressController.text,
                                           language: '',
                                           pictureUrl: profilePicture,
-                                          userID: FirebaseAuth
-                                              .instance.currentUser!.uid,
-                                          email: FirebaseAuth
-                                              .instance.currentUser!.email,
+                                          // Firebase Auth deshabilitado - Usar ApiService
+                                          userID: ApiService().currentUser?['id'] ?? '',
+                                          email: ApiService().currentUser?['email'],
                                           subscriptionDate:
                                               DateTime.now().toString(),
                                           subscriptionName: 'Free',

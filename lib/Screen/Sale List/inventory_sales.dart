@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usando PostgreSQL API
+// import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -2105,9 +2106,9 @@ class _InventorySalesState extends State<InventorySales> {
                                                                     transitionModel.lossProfit = 0;
                                                                     transitionModel.returnAmount = 0;
                                                                     transitionModel.paymentType = 'Just Quotation';
-                                                                    // Obtener el nombre real del usuario actual
-                                                                    final currentUser = FirebaseAuth.instance.currentUser;
-                                                                    transitionModel.sellerName = currentUser?.displayName ?? currentUser?.email ?? (isSubUser ? constSubUserTitle : 'Admin');
+                                                                    // Firebase Auth deshabilitado - Usar ApiService
+                                                                    final currentUser = ApiService().currentUser;
+                                                                    transitionModel.sellerName = currentUser?['name'] ?? currentUser?['email'] ?? (isSubUser ? constSubUserTitle : 'Admin');
 
                                                                     await apiServiceQuotation.post('quotations', Map<String, dynamic>.from(transitionModel.toJson()));
                                                                     updateInvoice(typeOfInvoice: 'saleInvoiceCounter', invoice: transitionModel.invoiceNumber.toInt());
@@ -2321,9 +2322,9 @@ class _InventorySalesState extends State<InventorySales> {
                                                 (double.tryParse(dueAmountController.text) ?? 0) <= 0 ? transitionModel.dueAmount = 0 : transitionModel.dueAmount = (double.tryParse(dueAmountController.text) ?? 0);
                                                 (double.tryParse(changeAmountController.text) ?? 0) > 0 ? transitionModel.returnAmount = (double.tryParse(changeAmountController.text) ?? 0).abs() : transitionModel.returnAmount = 0;
                                                 transitionModel.paymentType = selectedPaymentOption;
-                                                // Obtener el nombre real del usuario actual
-                                                final currentUser = FirebaseAuth.instance.currentUser;
-                                                transitionModel.sellerName = currentUser?.displayName ?? currentUser?.email ?? (isSubUser ? constSubUserTitle : 'Admin');
+                                                // Firebase Auth deshabilitado - Usar ApiService
+                                                final currentUser = ApiService().currentUser;
+                                                transitionModel.sellerName = currentUser?['name'] ?? currentUser?['email'] ?? (isSubUser ? constSubUserTitle : 'Admin');
                                                 SaleTransactionModel post = checkLossProfit(transitionModel: transitionModel);
                                                 await apiServiceSale.post('sales', Map<String, dynamic>.from(post.toJson()));
 

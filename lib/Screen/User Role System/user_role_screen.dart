@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usando PostgreSQL API
+// import 'package:firebase_auth/firebase_auth.dart';
+import 'package:salespro_admin/services/api_service.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/user_role_model.dart';
@@ -701,113 +703,6 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                             ],
                                           ),
                                         ),
-                                        // Container(
-                                        //   padding: const EdgeInsets.all(15),
-                                        //   decoration: BoxDecoration(color: kbgColor),
-                                        //   child: Row(
-                                        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        //     children: [
-                                        //       SizedBox(width: 50, child: Text(lang.S.of(context).SL)),
-                                        //       SizedBox(width: 200, child: Text(lang.S.of(context).userName)),
-                                        //       SizedBox(width: 200, child: Text(lang.S.of(context).userRole)),
-                                        //       SizedBox(width: 200, child: Text(lang.S.of(context).email)),
-                                        //       SizedBox(width: 50, child: Text(lang.S.of(context).action)),
-                                        //     ],
-                                        //   ),
-                                        // ),
-                                        // SizedBox(
-                                        //   height: (MediaQuery.of(context).size.height - 240).isNegative ? 0 : MediaQuery.of(context).size.height - 240,
-                                        //   child: ListView.builder(
-                                        //     shrinkWrap: true,
-                                        //     physics: const AlwaysScrollableScrollPhysics(),
-                                        //     itemCount: customerList.length,
-                                        //     itemBuilder: (BuildContext context, int index) {
-                                        //       return Column(
-                                        //         children: [
-                                        //           Padding(
-                                        //             padding: const EdgeInsets.all(15),
-                                        //             child: Row(
-                                        //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        //               children: [
-                                        //                 ///______________S.L__________________________________________________
-                                        //                 SizedBox(
-                                        //                   width: 50,
-                                        //                   child: Text((index + 1).toString(), style: kTextStyle.copyWith(color: kGreyTextColor)),
-                                        //                 ),
-                                        //
-                                        //                 ///______________Date__________________________________________________
-                                        //                 SizedBox(
-                                        //                   width: 200,
-                                        //                   child: Text(
-                                        //                     customerList[index].userTitle ?? '',
-                                        //                     maxLines: 2,
-                                        //                     overflow: TextOverflow.ellipsis,
-                                        //                     style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                                        //                   ),
-                                        //                 ),
-                                        //
-                                        //                 SizedBox(
-                                        //                   width: 200,
-                                        //                   child: Text(
-                                        //                     customerList[index].userTitle ?? '',
-                                        //                     maxLines: 2,
-                                        //                     overflow: TextOverflow.ellipsis,
-                                        //                     style: kTextStyle.copyWith(color: kTitleColor, fontWeight: FontWeight.bold),
-                                        //                   ),
-                                        //                 ),
-                                        //
-                                        //                 ///____________Invoice_________________________________________________
-                                        //                 SizedBox(
-                                        //                   width: 200,
-                                        //                   child: Text(customerList[index].email ?? '',
-                                        //                       maxLines: 2, overflow: TextOverflow.ellipsis, style: kTextStyle.copyWith(color: kGreyTextColor)),
-                                        //                 ),
-                                        //
-                                        //                 ///______Party Name___________________________________________________________
-                                        //                 GestureDetector(
-                                        //                   onTap: () {
-                                        //                     showDialog(
-                                        //                       barrierDismissible: false,
-                                        //                       context: context,
-                                        //                       builder: (BuildContext context) {
-                                        //                         return StatefulBuilder(builder: (context, setState1) {
-                                        //                           return Dialog(
-                                        //                               shape: RoundedRectangleBorder(
-                                        //                                 borderRadius: BorderRadius.circular(10.0),
-                                        //                               ),
-                                        //                               child: SizedBox(
-                                        //                                 width: 700,
-                                        //                                 child: AddUserRole(
-                                        //                                   userRoleModel: customerList[index],
-                                        //                                 ),
-                                        //                               ));
-                                        //                         });
-                                        //                       },
-                                        //                     );
-                                        //                   },
-                                        //                   child: SizedBox(
-                                        //                     width: 50,
-                                        //                     child: Text(
-                                        //                       '${lang.S.of(context).view} >',
-                                        //                       style: kTextStyle.copyWith(color: Colors.blue),
-                                        //                       maxLines: 2,
-                                        //                       overflow: TextOverflow.ellipsis,
-                                        //                     ),
-                                        //                   ),
-                                        //                 ),
-                                        //               ],
-                                        //             ),
-                                        //           ),
-                                        //           Container(
-                                        //             width: double.infinity,
-                                        //             height: 1,
-                                        //             color: kGreyTextColor.withValues(alpha: 0.2),
-                                        //           )
-                                        //         ],
-                                        //       );
-                                        //     },
-                                        //   ),
-                                        // ),
                                       ],
                                     ),
                                   ],
@@ -864,7 +759,7 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
-                    'Nota: Esta acción eliminará el rol del usuario de la base de datos, pero no eliminará la cuenta de Firebase Authentication del usuario.',
+                    'Nota: Esta acción eliminará permanentemente el usuario y todos sus datos asociados de la base de datos.',
                     style: TextStyle(fontSize: 12),
                   ),
                 ),
@@ -920,7 +815,9 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
         String errorMessage = 'No se puede eliminar este usuario';
         
         // Personalizar mensaje según el motivo
-        if (user.email == FirebaseAuth.instance.currentUser?.email) {
+        // Firebase Auth deshabilitado - Usar ApiService para verificar usuario actual
+        final currentUserEmail = ApiService().currentUser?['email'];
+        if (user.email == currentUserEmail) {
           errorMessage = 'No puedes eliminar tu propia cuenta';
         } else if (user.email == null || user.email!.isEmpty) {
           errorMessage = 'No se puede eliminar un usuario sin email';

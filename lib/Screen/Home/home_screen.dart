@@ -1,7 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
+// Firebase Auth deshabilitado - Usar ApiService para autenticación
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
@@ -537,7 +538,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
   List<SaleTransactionModel> recentFive = [];
 
   double totalPaid = 0;
-  final User? user = FirebaseAuth.instance.currentUser;
+  // Firebase Auth deshabilitado - Ya no se usa currentUser de Firebase
+  // final User? user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
