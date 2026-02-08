@@ -281,6 +281,13 @@ class _DailyTransactionState extends State<DailyTransaction> {
   String _getPaymentType(DailyTransactionModel transaction) {
     String paymentType = 'N/A';
 
+    // DEBUG: Verificar qué datos llegan
+    if (transaction.type == 'Sale' || transaction.type == 'Producto') {
+      debugPrint('💳 _getPaymentType - ID: ${transaction.id}, Type: ${transaction.type}');
+      debugPrint('   paymentType directo: "${transaction.paymentType}"');
+      debugPrint('   saleModel?.paymentType: "${transaction.saleTransactionModel?.paymentType}"');
+    }
+
     // ✅ PRIMERO: Intentar campo directo del modelo (viene directamente de la API)
     if (transaction.paymentType != null && transaction.paymentType!.isNotEmpty) {
       paymentType = transaction.paymentType!;
@@ -404,16 +411,24 @@ class _DailyTransactionState extends State<DailyTransaction> {
               
               // Función para convertir SaleTransactionModel a DailyTransactionModel
               DailyTransactionModel convertSaleToDaily(SaleTransactionModel sale) {
+                // DEBUG: Verificar qué datos tiene la venta
+                debugPrint('🔄 convertSaleToDaily - Invoice: ${sale.invoiceNumber}, paymentType: "${sale.paymentType}", sellerName: "${sale.sellerName}"');
+
                 return DailyTransactionModel(
                   name: sale.customerName,
                   date: sale.purchaseDate,
-                  type: sale.saleType == 'adicionales' ? 'Adicionales' : 
+                  type: sale.saleType == 'adicionales' ? 'Adicionales' :
                         sale.saleType == 'impresiones' ? 'Impresiones' : 'Sale',
                   total: sale.totalAmount ?? 0.0,
                   paymentIn: sale.totalAmount ?? 0.0,
                   paymentOut: 0.0,
                   remainingBalance: sale.dueAmount ?? 0.0,
                   id: sale.invoiceNumber,
+                  // ✅ Pasar campos directos para mostrar en la tabla
+                  paymentType: sale.paymentType,
+                  sellerName: sale.sellerName,
+                  invoiceNumber: sale.invoiceNumber,
+                  dueAmount: sale.dueAmount,
                   saleTransactionModel: sale,
                 );
               }
@@ -534,10 +549,16 @@ class _DailyTransactionState extends State<DailyTransaction> {
           debugPrint('💰 Ventas en reTransaction desde Daily: ${reTransaction.where((t) => t.type == 'Sale').length}');
 
           // Agregar ventas del transitionProvider que no estén ya en dailyReport
-          Set<String> existingInvoiceNumbers = reTransaction
-              .where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones')
-              .map((t) => t.id)
-              .toSet();
+          // ✅ FIX: Extraer invoiceNumber correctamente de campos directos o modelos anidados
+          Set<String> existingInvoiceNumbers = {};
+          for (var t in reTransaction.where((t) => t.type == 'Sale' || t.type == 'Adicionales' || t.type == 'Impresiones' || t.type == 'Reserva')) {
+            // Prioridad: campo directo invoiceNumber > saleTransactionModel.invoiceNumber > id
+            final invoice = t.invoiceNumber ?? t.saleTransactionModel?.invoiceNumber ?? t.id;
+            debugPrint('🔍 Extrayendo factura - Type: ${t.type}, invoiceNumber: ${t.invoiceNumber}, saleModel.invoice: ${t.saleTransactionModel?.invoiceNumber}, usando: $invoice');
+            if (invoice.isNotEmpty) {
+              existingInvoiceNumbers.add(invoice);
+            }
+          }
 
           for (var sale in salesReport.reversed.toList()) {
             // Solo agregar si no está ya en reTransaction
