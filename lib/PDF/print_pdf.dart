@@ -32,6 +32,26 @@ import '../model/purchase_transation_model.dart';
 import '../model/sale_transaction_model.dart';
 import 'due_invoice_pdf.dart';
 
+/// Helper para parsear fechas de forma segura en print_pdf.dart
+DateTime _safeParseDatePrintPdf(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) {
+    return DateTime.now();
+  }
+  try {
+    return DateTime.parse(dateStr);
+  } catch (e) {
+    // Intentar formato alternativo dd/MM/yyyy
+    try {
+      final parts = dateStr.split('/');
+      if (parts.length == 3) {
+        return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+      }
+    } catch (_) {}
+    debugPrint('⚠️ [print_pdf] Error parseando fecha: $dateStr, usando fecha actual');
+    return DateTime.now();
+  }
+}
+
 class GeneratePdfAndPrint {
   Future<void> uploadPdfToFirebase(Uint8List pdfData, String fileType, String invoiceNumber) async {
     // Get a reference to the Firebase Storage bucket
@@ -69,7 +89,7 @@ class GeneratePdfAndPrint {
     } else {
     }
     // EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
-    var pdfData = await generateSaleDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting.companyName as GeneralSettingModel, context: context);
+    var pdfData = await generateSaleDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting, context: context);
     //Convert unint8List to pdf and upload in to firebase storage
     await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber);
     EasyLoading.dismiss();
@@ -244,16 +264,33 @@ class GeneratePdfAndPrint {
     return null;
   }
 
+  debugPrint('🔵 [printSaleInvoice] PDF generado, tamaño: ${pdfData.length} bytes');
+
   if (!returnPdfData) {
-    await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber);
+    debugPrint('🔵 [printSaleInvoice] Iniciando uploadPdfToFirebase...');
+    try {
+      await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber);
+      debugPrint('🔵 [printSaleInvoice] uploadPdfToFirebase completado');
+    } catch (e, stackTrace) {
+      debugPrint('🔴 [printSaleInvoice] ERROR en uploadPdfToFirebase: $e');
+      debugPrint('🔴 [printSaleInvoice] StackTrace: $stackTrace');
+      // Continuar sin subir a Firebase - no es crítico
+    }
   }
 
   // Modificación clave: Solo mostrar diálogo de impresión si no se debe saltar
   if (!skipPrinting && !returnPdfData) {
-    await Printing.layoutPdf(
-      dynamicLayout: true,
-      onLayout: (PdfPageFormat format) async => pdfData,
-    );
+    debugPrint('🔵 [printSaleInvoice] Iniciando Printing.layoutPdf...');
+    try {
+      await Printing.layoutPdf(
+        dynamicLayout: true,
+        onLayout: (PdfPageFormat format) async => pdfData,
+      );
+      debugPrint('🔵 [printSaleInvoice] Printing.layoutPdf completado');
+    } catch (e, stackTrace) {
+      debugPrint('🔴 [printSaleInvoice] ERROR en Printing.layoutPdf: $e');
+      debugPrint('🔴 [printSaleInvoice] StackTrace: $stackTrace');
+    }
   }
 
   EasyLoading.dismiss();
@@ -450,7 +487,10 @@ class GeneratePdfAndPrint {
       double amount = 0;
 
       for (var element in transactions.productList!) {
-        amount = amount + double.parse(element.subTotal.toString()) * double.parse(element.quantity.toString());
+        // Convertir valores de forma segura
+        final subTotalValue = double.tryParse(element.subTotal?.toString() ?? '0') ?? 0.0;
+        final quantityValue = double.tryParse(element.quantity.toString()) ?? 1.0;
+        amount = amount + subTotalValue * quantityValue;
       }
 
       return amount;
@@ -745,8 +785,8 @@ class GeneratePdfAndPrint {
                       pw.Container(
                         width: 125.0,
                         child: pw.Text(
-                          '${DateFormat.yMd().format(DateTime.parse(transactions.purchaseDate))}, ${DateFormat.jm().format(DateTime.parse(transactions.purchaseDate))}',
-                          // DateTimeFormat.format(DateTime.parse(transactions.purchaseDate), format: AmericanDateTimeFormats.),
+                          '${DateFormat.yMd().format(_safeParseDatePrintPdf(transactions.purchaseDate))}, ${DateFormat.jm().format(_safeParseDatePrintPdf(transactions.purchaseDate))}',
+                          // DateTimeFormat.format(_safeParseDatePrintPdf(transactions.purchaseDate), format: AmericanDateTimeFormats.),
                           style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                         ),
                       ),
@@ -892,7 +932,7 @@ class GeneratePdfAndPrint {
                   },
                   data: <List<String>>[
                     <String>['SL', 'Product Description', 'Warranty', 'Quantity', 'Unit Price', 'Price'],
-                    for (int i = 0; i < transactions.productList!.length; i++) <String>[('${i + 1}'), (transactions.productList!.elementAt(i).productName.toString()), (''), (myFormat.format(double.tryParse(transactions.productList!.elementAt(i).quantity.toString()) ?? 0)), (myFormat.format(double.tryParse(transactions.productList!.elementAt(i).subTotal.toString()) ?? 0)), (myFormat.format(double.tryParse(((double.tryParse(transactions.productList!.elementAt(i).subTotal) ?? 0) * transactions.productList!.elementAt(i).quantity.toInt()).toString()) ?? 0))],
+                    for (int i = 0; i < transactions.productList!.length; i++) <String>[('${i + 1}'), (transactions.productList!.elementAt(i).productName.toString()), (''), (myFormat.format(double.tryParse(transactions.productList!.elementAt(i).quantity.toString()) ?? 0)), (myFormat.format(double.tryParse(transactions.productList!.elementAt(i).subTotal?.toString() ?? '0') ?? 0)), (myFormat.format(double.tryParse(((double.tryParse(transactions.productList!.elementAt(i).subTotal?.toString() ?? '0') ?? 0) * transactions.productList!.elementAt(i).quantity.toInt()).toString()) ?? 0))],
                   ],
                 ),
                 // pw.SizedBox(width: 5),
@@ -1286,7 +1326,7 @@ class GeneratePdfAndPrint {
                       ),
                       pw.Text(
                         DateTimeFormat.format(
-                          DateTime.parse(transactions.purchaseDate),
+                          _safeParseDatePrintPdf(transactions.purchaseDate),
                         ).substring(0, 10),
                         style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
                       ),
@@ -1760,8 +1800,8 @@ class GeneratePdfAndPrint {
   //                             pw.Container(
   //                               width: 125.0,
   //                               child: pw.Text(
-  //                                 '${DateFormat.yMd().format(DateTime.parse(transactions.purchaseDate))}, ${DateFormat.jm().format(DateTime.parse(transactions.purchaseDate))}',
-  //                                 // DateTimeFormat.format(DateTime.parse(transactions.purchaseDate), format: AmericanDateTimeFormats.),
+  //                                 '${DateFormat.yMd().format(_safeParseDatePrintPdf(transactions.purchaseDate))}, ${DateFormat.jm().format(_safeParseDatePrintPdf(transactions.purchaseDate))}',
+  //                                 // DateTimeFormat.format(_safeParseDatePrintPdf(transactions.purchaseDate), format: AmericanDateTimeFormats.),
   //                                 style: pw.Theme.of(context)
   //                                     .defaultTextStyle
   //                                     .copyWith(color: PdfColors.black),
@@ -2292,8 +2332,8 @@ FutureOr<Uint8List> generateLedgerDocument({required PersonalInformationModel pe
   double receivedAmount = 0;
   double dueAmount = 0;
   for (var element in saleTransactionModel) {
-    total = total + double.parse(element.totalAmount.toString());
-    dueAmount = dueAmount + double.parse(element.dueAmount.toString());
+    total = total + (double.tryParse(element.totalAmount.toString()) ?? 0.0);
+    dueAmount = dueAmount + (double.tryParse(element.dueAmount.toString()) ?? 0.0);
     receivedAmount = receivedAmount + (double.tryParse((element.totalAmount! - element.dueAmount!.toDouble()).toString()) ?? 0);
   }
 
@@ -2539,7 +2579,7 @@ FutureOr<Uint8List> generateLedgerDocument({required PersonalInformationModel pe
                   ],
                   for (int i = 0; i < saleTransactionModel.length; i++)
                     <String>[
-                      (DateFormat.yMd().format(DateTime.parse(saleTransactionModel.elementAt(i).purchaseDate.toString()))),
+                      (DateFormat.yMd().format(_safeParseDatePrintPdf(saleTransactionModel.elementAt(i).purchaseDate.toString()))),
                       ('Sale'),
                       (saleTransactionModel.elementAt(i).paymentType.toString()),
                       ('Admin'),
@@ -2579,8 +2619,8 @@ FutureOr<Uint8List> generatePurchaseLedgerDocument({required PersonalInformation
   double receivedAmount = 0;
   double dueAmount = 0;
   for (var element in purchaseTransactionModel) {
-    total = total + double.parse(element.totalAmount.toString());
-    dueAmount = dueAmount + double.parse(element.dueAmount.toString());
+    total = total + (double.tryParse(element.totalAmount.toString()) ?? 0.0);
+    dueAmount = dueAmount + (double.tryParse(element.dueAmount.toString()) ?? 0.0);
     receivedAmount = receivedAmount + (double.tryParse((element.totalAmount! - element.dueAmount!.toDouble()).toString()) ?? 0);
   }
 
@@ -2826,7 +2866,7 @@ FutureOr<Uint8List> generatePurchaseLedgerDocument({required PersonalInformation
                   ],
                   for (int i = 0; i < purchaseTransactionModel.length; i++)
                     <String>[
-                      (DateFormat.yMd().format(DateTime.parse(purchaseTransactionModel.elementAt(i).purchaseDate.toString()))),
+                      (DateFormat.yMd().format(_safeParseDatePrintPdf(purchaseTransactionModel.elementAt(i).purchaseDate.toString()))),
                       ('Purchase'),
                       (purchaseTransactionModel.elementAt(i).paymentType.toString()),
                       ('Admin'),

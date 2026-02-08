@@ -25,6 +25,11 @@ FutureOr<Uint8List> generateSaleDocument({
   SaleTransactionModel? post,
   required BuildContext context,
 }) async {
+  debugPrint('🔵 [generateSaleDocument] INICIO - Invoice: ${transactions.invoiceNumber}');
+  debugPrint('🔵 [generateSaleDocument] purchaseDate: "${transactions.purchaseDate}"');
+  debugPrint('🔵 [generateSaleDocument] productList null: ${transactions.productList == null}');
+  debugPrint('🔵 [generateSaleDocument] productList length: ${transactions.productList?.length ?? 0}');
+
   final imageData = await rootBundle.load('images/vg_logo.png');
   final imageBytes = imageData.buffer.asUint8List();
   final image = pw.MemoryImage(imageBytes);
@@ -113,11 +118,19 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
     }
   }
 
+  // Validar que productList no sea null para evitar errores
+  final productListSafe = transactions.productList ?? [];
+  debugPrint('🔵 [generateSaleDocument] productListSafe length: ${productListSafe.length}');
+
   double totalAmount({required SaleTransactionModel transactions}) {
     double amount = 0;
+    final products = transactions.productList ?? [];
 
-    for (var element in transactions.productList!) {
-      amount = amount + double.parse(element.subTotal) * double.parse(element.quantity.toString());
+    for (var element in products) {
+      // Convertir subTotal de forma segura (puede ser String, num o null)
+      final subTotalValue = double.tryParse(element.subTotal?.toString() ?? '0') ?? 0.0;
+      final quantityValue = double.tryParse(element.quantity.toString()) ?? 1.0;
+      amount = amount + subTotalValue * quantityValue;
     }
 
     return double.parse(amount.toStringAsFixed(2));
@@ -140,20 +153,27 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
         orElse: () => '-',
       );
 
-  for (int i = 0; i < transactions.productList!.length; i++) {
-    final item = transactions.productList![i];
+  debugPrint('🔵 [generateSaleDocument] Iterando productos para rows...');
+  for (int i = 0; i < productListSafe.length; i++) {
+    final item = productListSafe[i];
+    debugPrint('🔵 [generateSaleDocument] Procesando item $i: ${item.productName}');
     
+    // Convertir valores de forma segura
+    final subTotalValue = double.tryParse(item.subTotal?.toString() ?? '0') ?? 0.0;
+    final quantityValue = item.quantity.toInt();
+    final totalLine = subTotalValue * quantityValue;
+
     // Usar la descripción del item directamente para adicionales
     if (item.isAdditional == true) {
       rows.add(<String>[
         '${i + 1}',
         '''${item.productName}\n${item.descricpion ?? 'Adicional de reserva'}''',
         myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
-        myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
+        myFormat.format(subTotalValue),
         calculateProductVat(product: item),
-        myFormat.format(double.tryParse((double.parse(item.subTotal) * item.quantity.toInt()).toStringAsFixed(2)) ?? 0),
+        myFormat.format(double.tryParse(totalLine.toStringAsFixed(2)) ?? 0),
       ]);
-    } 
+    }
     // Para reservas normales, usar la descripción del servicio
     else {
       // Intentar obtener la reservación de las ya cargadas
@@ -162,18 +182,23 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
         orElse: () => null,
       );
       final serviceDescription = fullReservation?.service?['description'] ?? item.descricpion ?? '';
-      
+
       rows.add(<String>[
         '${i + 1}',
         '''${item.productName}\n$serviceDescription''',
         myFormat.format(double.tryParse(item.quantity.toString()) ?? 0),
-        myFormat.format(double.tryParse(item.subTotal.toString()) ?? 0),
+        myFormat.format(subTotalValue),
         calculateProductVat(product: item),
-        myFormat.format(double.tryParse((double.parse(item.subTotal) * item.quantity.toInt()).toStringAsFixed(2)) ?? 0),
+        myFormat.format(double.tryParse(totalLine.toStringAsFixed(2)) ?? 0),
       ]);
     }
   }
 
+  debugPrint('🔵 [generateSaleDocument] Rows preparadas: ${rows.length}');
+  debugPrint('🔵 [generateSaleDocument] branchSettings: ${branchSettings?.companyName ?? "NULL"}');
+  debugPrint('🔵 [generateSaleDocument] Iniciando doc.addPage...');
+
+  try {
   doc.addPage(
     pw.MultiPage(
       // pageFormat: PdfPageFormat.letter.copyWith(marginBottom: 1.5 * PdfPageFormat.cm),
@@ -1100,7 +1125,13 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
       },
     ),
   );
+  } catch (e, stackTrace) {
+    debugPrint('🔴 [generateSaleDocument] ERROR en doc.addPage: $e');
+    debugPrint('🔴 [generateSaleDocument] StackTrace: $stackTrace');
+    rethrow;
+  }
 
+  debugPrint('🔵 [generateSaleDocument] doc.addPage completado exitosamente');
   return doc.save();
 }
 
