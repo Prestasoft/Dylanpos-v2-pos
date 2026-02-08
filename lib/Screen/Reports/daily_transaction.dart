@@ -2180,16 +2180,34 @@ class _DailyTransactionState extends State<DailyTransaction> {
               final setting = settingProvider.valueOrNull;
               final profileInfo = profile.valueOrNull;
               if (setting != null && profileInfo != null) {
-                // Verificar que el modelo de venta existe antes de procesar PDF
-                if (transaction.saleTransactionModel == null) {
-                  debugPrint('⚠️ saleTransactionModel es null - no se puede generar PDF');
+                // Obtener modelo de venta - si es null, buscar en transitionProvider por invoiceNumber
+                SaleTransactionModel? saleModel = transaction.saleTransactionModel;
+
+                if (saleModel == null && invoiceNumber.isNotEmpty) {
+                  debugPrint('🔍 saleTransactionModel es null - buscando factura $invoiceNumber en Sales...');
+                  final allSalesTransitions = ref.read(transitionProvider).valueOrNull;
+                  if (allSalesTransitions != null) {
+                    try {
+                      saleModel = allSalesTransitions.firstWhere(
+                        (sale) => sale.invoiceNumber == invoiceNumber,
+                      );
+                      debugPrint('✅ Factura encontrada en Sales Transition');
+                    } catch (e) {
+                      debugPrint('❌ Factura $invoiceNumber no encontrada en Sales Transition');
+                    }
+                  }
+                }
+
+                // Si aún es null, no podemos generar PDF
+                if (saleModel == null) {
+                  debugPrint('⚠️ No se pudo obtener datos de la venta para generar PDF');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('No se puede generar PDF para esta venta (Invoice: $invoiceNumber)')),
                   );
                   return;
                 }
+
                 // Verificar que tenga productos antes de procesar
-                final saleModel = transaction.saleTransactionModel!;
                 debugPrint('🔍 DEBUG PDF - Factura: ${saleModel.invoiceNumber}');
                 debugPrint('📦 Productos en la transacción: ${saleModel.productList?.length ?? 0}');
                 debugPrint('📋 productList es null?: ${saleModel.productList == null}');
@@ -2199,35 +2217,44 @@ class _DailyTransactionState extends State<DailyTransaction> {
                 
                 if (saleModel.productList == null || saleModel.productList!.isEmpty) {
                   debugPrint('❌ Esta venta no tiene productos - buscando en Sales Transition...');
-                  
+
+                  // Guardar invoiceNumber antes de usar en closure
+                  final saleInvoiceNumber = saleModel.invoiceNumber;
+
                   // Intentar buscar la venta completa en Sales Transition
                   final allSalesTransitions = ref.read(transitionProvider).valueOrNull;
                   if (allSalesTransitions != null) {
-                    final fullSale = allSalesTransitions.firstWhere(
-                      (sale) => sale.invoiceNumber == saleModel.invoiceNumber,
-                      orElse: () => saleModel,
-                    );
-                    
-                    debugPrint('🔍 Venta encontrada en Sales Transition - productos: ${fullSale.productList?.length ?? 0}');
-                    
-                    if (fullSale.productList != null && fullSale.productList!.isNotEmpty) {
-                      // Usar la venta completa de Sales Transition
-                      SaleTransactionModel post = checkLossProfit(transitionModel: fullSale);
-                      EasyLoading.show(status: 'Preparando vista previa...');
-                      await GeneratePdfAndPrint().printSaleInvoice(
-                        setting: setting,
-                        personalInformationModel: profileInfo,
-                        saleTransactionModel: fullSale,
-                        context: context,
-                        printType: 'normal',
-                        fromSaleReports: true,
-                        post: post,
+                    SaleTransactionModel? fullSale;
+                    try {
+                      fullSale = allSalesTransitions.firstWhere(
+                        (sale) => sale.invoiceNumber == saleInvoiceNumber,
                       );
-                      EasyLoading.dismiss();
-                      return;
+                    } catch (e) {
+                      fullSale = null;
+                    }
+
+                    if (fullSale != null) {
+                      debugPrint('🔍 Venta encontrada en Sales Transition - productos: ${fullSale.productList?.length ?? 0}');
+
+                      if (fullSale.productList != null && fullSale.productList!.isNotEmpty) {
+                        // Usar la venta completa de Sales Transition
+                        SaleTransactionModel post = checkLossProfit(transitionModel: fullSale);
+                        EasyLoading.show(status: 'Preparando vista previa...');
+                        await GeneratePdfAndPrint().printSaleInvoice(
+                          setting: setting,
+                          personalInformationModel: profileInfo,
+                          saleTransactionModel: fullSale,
+                          context: context,
+                          printType: 'normal',
+                          fromSaleReports: true,
+                          post: post,
+                        );
+                        EasyLoading.dismiss();
+                        return;
+                      }
                     }
                   }
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Esta venta (${saleModel.invoiceNumber}) no tiene productos asociados')),
                   );
