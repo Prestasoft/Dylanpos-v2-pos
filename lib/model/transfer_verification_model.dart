@@ -78,31 +78,32 @@ class TransferVerificationModel {
     );
   }
 
+  /// Convierte el modelo a JSON con snake_case para el backend PostgreSQL
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'branchId': branchId,
-      'saleId': saleId,
-      'invoiceNumber': invoiceNumber,
-      'customerName': customerName,
-      'customerPhone': customerPhone,
-      'customerEmail': customerEmail,
-      'bankName': bankName,
-      'holderName': holderName,
-      'referenceNumber': referenceNumber,
-      'transferDate': transferDate,
+      'branch_id': branchId,
+      'sale_id': saleId,
+      'invoice_number': invoiceNumber,
+      'customer_name': customerName,
+      'customer_phone': customerPhone,
+      'customer_email': customerEmail,
+      'bank_name': bankName,
+      'holder_name': holderName,
+      'reference_number': referenceNumber,
+      'transfer_date': transferDate,
       'amount': amount,
-      'receiptUrl': receiptUrl,
-      'receiptFilename': receiptFilename,
+      'receipt_url': receiptUrl,
+      'receipt_filename': receiptFilename,
       'status': status,
-      'verifiedBy': verifiedBy,
-      'verifiedAt': verifiedAt,
-      'operatorNotes': operatorNotes,
-      'rejectionReason': rejectionReason,
-      'sellerId': sellerId,
-      'sellerName': sellerName,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
+      'verified_by': verifiedBy,
+      'verified_at': verifiedAt,
+      'operator_notes': operatorNotes,
+      'rejection_reason': rejectionReason,
+      'seller_id': sellerId,
+      'seller_name': sellerName,
+      'created_at': createdAt,
+      'updated_at': updatedAt,
     };
   }
 
