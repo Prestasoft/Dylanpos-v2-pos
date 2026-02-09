@@ -428,8 +428,8 @@ class GeneratePdfAndPrint {
     BuildContext? context,
     required GeneralSettingModel setting,
     bool returnPdfData = false,
-    bool skipWhatsappCheck = false, // Nuevo parámetro para saltar verificación WhatsApp
-    bool fromSaleReports = false, // Nuevo parámetro para evitar redirección desde reportes
+    bool skipWhatsappCheck = false,
+    bool fromSaleReports = false,
   }) async {
     // 1. Verificación inicial de WhatsApp (solo si no se salta)
     if (!skipWhatsappCheck) {
@@ -448,33 +448,53 @@ class GeneratePdfAndPrint {
     // 2. Generación del PDF
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generateDueDocument(
-      personalInformation: personalInformationModel, 
-      transactions: dueTransactionModel, 
+      personalInformation: personalInformationModel,
+      transactions: dueTransactionModel,
       setting: setting
     );
 
-    // 3. Subir a Firebase
-    await uploadPdfToFirebase(pdfData, 'due', dueTransactionModel.invoiceNumber);
+    debugPrint('🔵 [printDueInvoice] PDF generado, tamaño: ${pdfData.length} bytes');
+
+    // 3. Subir a Firebase (con manejo de errores como en printSaleInvoice)
+    if (!returnPdfData) {
+      debugPrint('🔵 [printDueInvoice] Iniciando uploadPdfToFirebase...');
+      try {
+        await uploadPdfToFirebase(pdfData, 'due', dueTransactionModel.invoiceNumber);
+        debugPrint('🔵 [printDueInvoice] uploadPdfToFirebase completado');
+      } catch (e, stackTrace) {
+        debugPrint('🔴 [printDueInvoice] ERROR en uploadPdfToFirebase: $e');
+        debugPrint('🔴 [printDueInvoice] StackTrace: $stackTrace');
+        // Continuar sin subir a Firebase - no es crítico
+      }
+    }
+
     EasyLoading.dismiss();
 
     if (returnPdfData) {
       return pdfData;
     } else {
-      await Printing.layoutPdf(
-        dynamicLayout: true,
-        onLayout: (PdfPageFormat format) async => pdfData,
-      );
-      
+      // Mostrar diálogo de impresión con manejo de errores
+      debugPrint('🔵 [printDueInvoice] Iniciando Printing.layoutPdf...');
+      try {
+        await Printing.layoutPdf(
+          dynamicLayout: true,
+          onLayout: (PdfPageFormat format) async => pdfData,
+        );
+        debugPrint('🔵 [printDueInvoice] Printing.layoutPdf completado');
+      } catch (e, stackTrace) {
+        debugPrint('🔴 [printDueInvoice] ERROR en Printing.layoutPdf: $e');
+        debugPrint('🔴 [printDueInvoice] StackTrace: $stackTrace');
+      }
+
       // NO REDIRECCIONAR DESDE REPORTS
-      if (!fromSaleReports) {
+      if (!fromSaleReports && context != null) {
         Future.delayed(const Duration(milliseconds: 200), () {
-          if (context != null) {
-            // Usar GoRouter en lugar de launch() para evitar conflicto con navegación page-based
+          if (context.mounted) {
             context.go('/sales/inventory-sales');
           }
         });
       }
-      
+
       return null;
     }
   }
