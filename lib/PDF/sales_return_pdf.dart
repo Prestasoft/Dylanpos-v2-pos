@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:pdf/pdf.dart';
@@ -13,17 +14,43 @@ import '../model/general_setting_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
 
+/// Helper para parsear fechas de forma segura
+DateTime _safeParseDateForSalesReturn(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) {
+    return DateTime.now();
+  }
+  try {
+    return DateTime.parse(dateStr);
+  } catch (e) {
+    // Intentar formato alternativo dd/MM/yyyy
+    try {
+      final parts = dateStr.split('/');
+      if (parts.length == 3) {
+        return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+      }
+    } catch (_) {}
+    debugPrint('⚠️ [sales_return_pdf] Error parseando fecha: $dateStr, usando fecha actual');
+    return DateTime.now();
+  }
+}
+
 FutureOr<Uint8List> generateSaleReturnDocument(
     {required SaleTransactionModel transactions,
     required PersonalInformationModel personalInformation,
     required GeneralSettingModel generalSetting}) async {
   final pw.Document doc = pw.Document();
+
+  // Validar que productList no sea null para evitar errores
+  final productListSafe = transactions.productList ?? [];
+
   double totalAmount({required SaleTransactionModel transactions}) {
     double amount = 0;
-    for (var element in transactions.productList!) {
-      amount = amount +
-          double.parse(element.subTotal) *
-              double.parse(element.quantity.toString());
+    final products = transactions.productList ?? [];
+    for (var element in products) {
+      // Convertir subTotal de forma segura (puede ser String, num o null)
+      final subTotalValue = double.tryParse(element.subTotal?.toString() ?? '0') ?? 0.0;
+      final quantityValue = double.tryParse(element.quantity.toString()) ?? 1.0;
+      amount = amount + subTotalValue * quantityValue;
     }
     return double.parse(amount.toStringAsFixed(2));
   }
@@ -383,8 +410,8 @@ FutureOr<Uint8List> generateSaleReturnDocument(
                             pw.Container(
                               width: 125.0,
                               child: pw.Text(
-                                '${DateFormat.yMd().format(DateTime.parse(transactions.purchaseDate))}, ${DateFormat.jm().format(DateTime.parse(transactions.purchaseDate))}',
-                                // DateTimeFormat.format(DateTime.parse(transactions.purchaseDate), format: AmericanDateTimeFormats.),
+                                '${DateFormat.yMd().format(_safeParseDateForSalesReturn(transactions.purchaseDate))}, ${DateFormat.jm().format(_safeParseDateForSalesReturn(transactions.purchaseDate))}',
+                                // DateTimeFormat.format(_safeParseDateForSalesReturn(transactions.purchaseDate), format: AmericanDateTimeFormats.),
                                 style: pw.Theme.of(context)
                                     .defaultTextStyle
                                     .copyWith(color: PdfColors.black),
@@ -557,26 +584,26 @@ FutureOr<Uint8List> generateSaleReturnDocument(
                     'Unit Price',
                     'Price'
                   ],
-                  for (int i = 0; i < transactions.productList!.length; i++)
+                  for (int i = 0; i < productListSafe.length; i++)
                     <String>[
                       ('${i + 1}'),
-                      ("${transactions.productList!.elementAt(i).productName.toString()}\n${(transactions.productList!.elementAt(i).serialNumber?.isEmpty ?? true) ? '' : transactions.productList!.elementAt(i).serialNumber.toString()}"),
-                      ('${transactions.productList!.elementAt(i).productWarranty.isEmptyOrNull ? '' : transactions.productList!.elementAt(i).productWarranty}'),
-                      (myFormat.format(double.tryParse(transactions.productList!
+                      ("${productListSafe.elementAt(i).productName.toString()}\n${(productListSafe.elementAt(i).serialNumber?.isEmpty ?? true) ? '' : productListSafe.elementAt(i).serialNumber.toString()}"),
+                      ('${productListSafe.elementAt(i).productWarranty.isEmptyOrNull ? '' : productListSafe.elementAt(i).productWarranty}'),
+                      (myFormat.format(double.tryParse(productListSafe
                               .elementAt(i)
                               .quantity
                               .toString()) ??
                           0)),
-                      (myFormat.format(double.tryParse(transactions.productList!
+                      (myFormat.format(double.tryParse(productListSafe
                               .elementAt(i)
                               .subTotal
                               .toString()) ??
                           0)),
-                      (myFormat.format(double.tryParse((double.parse(
-                                      transactions.productList!
+                      (myFormat.format(double.tryParse(((double.tryParse(
+                                      productListSafe
                                           .elementAt(i)
-                                          .subTotal) *
-                                  transactions.productList!
+                                          .subTotal?.toString() ?? '0') ?? 0.0) *
+                                  productListSafe
                                       .elementAt(i)
                                       .quantity
                                       .toInt())

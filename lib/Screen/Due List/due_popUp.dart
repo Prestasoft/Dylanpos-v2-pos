@@ -127,13 +127,30 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
               'contentType': file.type,
             });
 
+            debugPrint('🔵 [DuePopUp Transfer] Respuesta upload: ${response.data}');
+
             if (response.success && response.data != null) {
-              final downloadUrl = response.data['url'] as String;
-              setState(() {
-                transferReceiptUrl = downloadUrl;
-                isUploadingReceipt = false;
-              });
-              EasyLoading.showSuccess('Comprobante cargado');
+              // Manejar ambas estructuras de respuesta:
+              // 1. {url: "..."} - directo
+              // 2. {success: true, data: {url: "..."}} - anidado
+              String? downloadUrl;
+
+              if (response.data['url'] != null) {
+                downloadUrl = response.data['url'] as String;
+              } else if (response.data['data'] != null && response.data['data']['url'] != null) {
+                downloadUrl = response.data['data']['url'] as String;
+              }
+
+              if (downloadUrl != null && downloadUrl.isNotEmpty) {
+                setState(() {
+                  transferReceiptUrl = downloadUrl;
+                  isUploadingReceipt = false;
+                });
+                EasyLoading.showSuccess('Comprobante cargado');
+                debugPrint('✅ [DuePopUp Transfer] URL obtenida: $downloadUrl');
+              } else {
+                throw Exception('URL del comprobante no recibida');
+              }
             } else {
               throw Exception(response.message ?? 'Error al subir imagen');
             }
@@ -927,12 +944,19 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
 
                                             // 3. Siempre imprimir el PDF (independientemente de si se envió por WhatsApp)
                                             try {
+                                              debugPrint('🖨️ [DuePopup] Iniciando generación de PDF...');
+                                              debugPrint('🖨️ [DuePopup] dueTransactionModel.totalDue: ${dueTransactionModel.totalDue}');
+                                              debugPrint('🖨️ [DuePopup] dueTransactionModel.dueAmountAfterPay: ${dueTransactionModel.dueAmountAfterPay}');
+                                              debugPrint('🖨️ [DuePopup] dueTransactionModel.invoiceNumber: ${dueTransactionModel.invoiceNumber}');
                                               await GeneratePdfAndPrint().printDueInvoice(
                                                 personalInformationModel: data,
                                                 dueTransactionModel: dueTransactionModel,
                                                 setting: setting,
                                               );
-                                            } catch (e) {
+                                              debugPrint('✅ [DuePopup] PDF generado exitosamente');
+                                            } catch (e, stackTrace) {
+                                              debugPrint('❌ [DuePopup] Error al generar PDF: $e');
+                                              debugPrint('❌ [DuePopup] StackTrace: $stackTrace');
                                               EasyLoading.showError('Error al imprimir: ${e.toString()}');
                                             }
 

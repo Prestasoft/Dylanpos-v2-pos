@@ -1207,9 +1207,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen>
                                                             element.quantity);
                                               }
 
+                                              final subTotalValue = double.tryParse(element.subTotal?.toString() ?? '0') ?? 0.0;
                                               totalSalePrice = totalSalePrice +
-                                                  (double.parse(element.subTotal
-                                                          .toString()) *
+                                                  (subTotalValue *
                                                       element.quantity);
 
                                               totalQuantity = totalQuantity +

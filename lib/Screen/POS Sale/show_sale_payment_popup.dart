@@ -124,7 +124,8 @@ class _ShowPaymentPopUpState extends State<ShowPaymentPopUp> {
   String getTotalAmount() {
     double total = 0.0;
     for (var item in widget.transitionModel.productList!) {
-      total = total + (double.parse(item.subTotal) * item.quantity);
+      final subTotalValue = double.tryParse(item.subTotal?.toString() ?? '0') ?? 0.0;
+      total = total + (subTotalValue * item.quantity);
     }
     return total.toStringAsFixed(2);
   }

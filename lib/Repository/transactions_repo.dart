@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:intl/intl.dart';
 
 import '../model/due_transaction_model.dart';
@@ -42,14 +44,45 @@ class TransitionRepo {
       print('[TransitionRepo] BranchId actual: ${_apiService.branchId}');
       print('[TransitionRepo] Token presente: ${_apiService.token != null}');
 
-      final response = await _apiService.getSales(limit: 1000);
+      // Intentar con límite reducido primero para evitar respuestas truncadas
+      final response = await _apiService.getSales(limit: 500);
 
       print('[TransitionRepo] Response success: ${response.success}');
       print('[TransitionRepo] Response error: ${response.error}');
       print('[TransitionRepo] Response data null: ${response.data == null}');
+      print('[TransitionRepo] Response data type: ${response.data?.runtimeType}');
 
       if (response.success && response.data != null) {
-        final salesData = response.data['sales'] as List<dynamic>? ?? [];
+        // Manejar múltiples formatos de respuesta
+        List<dynamic> salesData;
+        dynamic data = response.data;
+
+        // Si es String, verificar tamaño y parsear
+        if (data is String) {
+          print('[TransitionRepo] Response data es String, longitud: ${data.length}');
+          print('[TransitionRepo] Primeros 200 chars: ${data.length > 200 ? data.substring(0, 200) : data}');
+          print('[TransitionRepo] Últimos 100 chars: ${data.length > 100 ? data.substring(data.length - 100) : data}');
+
+          try {
+            data = jsonDecode(data);
+            print('[TransitionRepo] JSON parseado exitosamente');
+          } catch (e) {
+            print('[TransitionRepo] ❌ Error parseando JSON string: $e');
+            print('[TransitionRepo] ❌ Esto indica que el servidor devolvió JSON truncado/incompleto');
+            data = null;
+          }
+        }
+
+        if (data is List) {
+          salesData = data;
+          print('[TransitionRepo] Response data es una lista directa');
+        } else if (data is Map) {
+          salesData = data['sales'] as List<dynamic>? ?? [];
+          print('[TransitionRepo] Response data es un mapa con key "sales"');
+        } else {
+          print('[TransitionRepo] Formato de response.data desconocido: ${response.data.runtimeType}');
+          salesData = [];
+        }
         print('[TransitionRepo] Total sales recibidas: ${salesData.length}');
 
         final List<SaleTransactionModel> result = [];

@@ -34,7 +34,8 @@ class _SaleInvoiceState extends State<SaleInvoice> {
   String getTotalAmount() {
     double total = 0.0;
     for (var item in widget.transitionModel.productList!) {
-      total = total + (double.parse(item.subTotal) * item.quantity);
+      final subTotalValue = double.tryParse(item.subTotal?.toString() ?? '0') ?? 0.0;
+      total = total + (subTotalValue * item.quantity);
     }
     return total.toString();
   }
@@ -311,7 +312,7 @@ class _SaleInvoiceState extends State<SaleInvoice> {
                                       ),
                                       SizedBox(width: 110, child: Text(widget.transitionModel.productList?[index].quantity.toString() ?? '')),
                                       SizedBox(width: 130, child: Text('$globalCurrency ${widget.transitionModel.productList?[index].subTotal ?? ''}')),
-                                      Text('$globalCurrency ${double.parse(widget.transitionModel.productList![index].subTotal) * widget.transitionModel.productList![index].quantity.toDouble()}'),
+                                      Text('$globalCurrency ${(double.tryParse(widget.transitionModel.productList![index].subTotal?.toString() ?? '0') ?? 0) * widget.transitionModel.productList![index].quantity.toDouble()}'),
                                     ],
                                   ),
                                   const SizedBox(height: 5),

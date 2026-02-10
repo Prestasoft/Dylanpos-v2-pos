@@ -24,7 +24,9 @@ class CartNotifier extends ChangeNotifier {
   double getTotalAmount() {
     double totalAmountOfCart = 0;
     for (var element in cartItemList) {
-      totalAmountOfCart = totalAmountOfCart + (double.parse(element.subTotal.toString()) * double.parse(element.quantity.toString()));
+      final subTotalValue = double.tryParse(element.subTotal?.toString() ?? '0') ?? 0.0;
+      final quantityValue = double.tryParse(element.quantity.toString()) ?? 0.0;
+      totalAmountOfCart = totalAmountOfCart + (subTotalValue * quantityValue);
     }
 
     if (discount >= 0) {

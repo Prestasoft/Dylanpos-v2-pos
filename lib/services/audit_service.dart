@@ -210,13 +210,21 @@ class AuditService {
       if (startDate != null) queryParams['start_date'] = startDate.toIso8601String();
       if (endDate != null) queryParams['end_date'] = endDate.toIso8601String();
 
+      debugPrint('🔍 [AuditService.getAuditLogs] Consultando audits con params: $queryParams');
       final response = await _apiService.get('audits', queryParams: queryParams);
 
+      debugPrint('🔍 [AuditService.getAuditLogs] Response success: ${response.success}');
+      debugPrint('🔍 [AuditService.getAuditLogs] Response error: ${response.error}');
+      debugPrint('🔍 [AuditService.getAuditLogs] Response data type: ${response.data?.runtimeType}');
+      debugPrint('🔍 [AuditService.getAuditLogs] Response data: ${response.data}');
+
       if (!response.success || response.data == null) {
+        debugPrint('❌ [AuditService.getAuditLogs] No hay datos o respuesta fallida');
         return [];
       }
 
       final auditsData = response.data['audits'] as List<dynamic>? ?? [];
+      debugPrint('🔍 [AuditService.getAuditLogs] Audits encontrados: ${auditsData.length}');
       final List<AuditModel> audits = [];
 
       for (var item in auditsData) {

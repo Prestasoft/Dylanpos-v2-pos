@@ -24,6 +24,9 @@ SERVER_PASS="Elary16081991@"
 REMOTE_PATH="/var/www/victorpos-app"
 PROJECT_PATH="/Users/miguelcastillo/Desktop/Dylanpos-v2-pos"
 
+# Agregar paths de herramientas
+export PATH="$PATH:/opt/homebrew/bin:$HOME/development/flutter/bin"
+
 # Archivos de versión
 PUBSPEC_FILE="$PROJECT_PATH/pubspec.yaml"
 INDEX_FILE="$PROJECT_PATH/web/index.html"
@@ -128,6 +131,7 @@ echo -e "   ${GREEN}✓${NC} app-version.json: $NEW_VERSION (build: $BUILD_DATE)
 echo ""
 echo -e "${YELLOW}🔨 Paso 2: Compilando Flutter Web...${NC}"
 cd "$PROJECT_PATH"
+export PATH="$PATH:$HOME/development/flutter/bin"
 flutter build web --release 2>&1 | tail -5
 if [ $? -eq 0 ]; then
     echo -e "   ${GREEN}✓${NC} Build completado exitosamente"

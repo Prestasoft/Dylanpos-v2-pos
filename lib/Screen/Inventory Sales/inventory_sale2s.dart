@@ -337,7 +337,8 @@ class _InventorySalesState extends State<InventorySales> {
   String getTotalAmount() {
     double total = 0.0;
     for (var item in cartList) {
-      total = total + (double.parse(item.subTotal) * item.quantity);
+      final subTotalValue = double.tryParse(item.subTotal?.toString() ?? '0') ?? 0.0;
+      total = total + (subTotalValue * item.quantity);
     }
 
     return total.toStringAsFixed(2);
@@ -2352,7 +2353,7 @@ class _InventorySalesState extends State<InventorySales> {
                                               Align(
                                                 alignment: Alignment.center,
                                                 child: Text(
-                                                  '$globalCurrency${myFormat.format(double.tryParse((double.parse(cartList[index].subTotal) * cartList[index].quantity).toStringAsFixed(2)) ?? 0)}',
+                                                  '$globalCurrency${myFormat.format(double.tryParse(((double.tryParse(cartList[index].subTotal?.toString() ?? '0') ?? 0) * cartList[index].quantity).toStringAsFixed(2)) ?? 0)}',
                                                   style:
                                                       theme.textTheme.bodyLarge,
                                                   textAlign: TextAlign.center,

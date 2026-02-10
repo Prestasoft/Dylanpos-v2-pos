@@ -388,12 +388,22 @@ class ApiService {
 
   /// Manejar respuesta HTTP
   ApiResponse _handleResponse(http.Response response) {
+    print('[ApiService._handleResponse] Status: ${response.statusCode}, Body length: ${response.body.length}');
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       try {
         final data = jsonDecode(response.body);
         return ApiResponse(success: true, data: data);
       } catch (e) {
-        return ApiResponse(success: true, data: response.body);
+        // Error parseando JSON - puede ser respuesta truncada
+        print('[ApiService._handleResponse] ❌ Error parseando JSON: $e');
+        print('[ApiService._handleResponse] Body length: ${response.body.length}');
+        if (response.body.length > 0) {
+          print('[ApiService._handleResponse] Primeros 200 chars: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+          print('[ApiService._handleResponse] Últimos 50 chars: ${response.body.length > 50 ? response.body.substring(response.body.length - 50) : response.body}');
+        }
+        // Retornar error en lugar de string crudo para facilitar debug
+        return ApiResponse(success: false, error: 'Error parseando respuesta JSON: $e');
       }
     } else if (response.statusCode == 401) {
       // Token expirado o inválido

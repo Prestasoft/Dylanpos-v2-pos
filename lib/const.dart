@@ -73,8 +73,9 @@ SaleTransactionModel checkLossProfit(
               element.quantity);
     }
 
+    final subTotalValue = double.tryParse(element.subTotal?.toString() ?? '0') ?? 0.0;
     totalSalePrice =
-        totalSalePrice + (double.parse(element.subTotal) * element.quantity);
+        totalSalePrice + (subTotalValue * element.quantity);
 
     totalQuantity = totalQuantity + element.quantity;
   }

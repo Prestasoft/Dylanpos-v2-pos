@@ -1327,13 +1327,30 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
               'contentType': file.type,
             });
 
+            debugPrint('🔵 [Transfer] Respuesta upload: ${response.data}');
+
             if (response.success && response.data != null) {
-              final downloadUrl = response.data['url'] as String;
-              setState(() {
-                transferReceiptUrl = downloadUrl;
-                isUploadingReceipt = false;
-              });
-              EasyLoading.showSuccess('Comprobante cargado');
+              // Manejar ambas estructuras de respuesta:
+              // 1. {url: "..."} - directo
+              // 2. {success: true, data: {url: "..."}} - anidado
+              String? downloadUrl;
+
+              if (response.data['url'] != null) {
+                downloadUrl = response.data['url'] as String;
+              } else if (response.data['data'] != null && response.data['data']['url'] != null) {
+                downloadUrl = response.data['data']['url'] as String;
+              }
+
+              if (downloadUrl != null && downloadUrl.isNotEmpty) {
+                setState(() {
+                  transferReceiptUrl = downloadUrl;
+                  isUploadingReceipt = false;
+                });
+                EasyLoading.showSuccess('Comprobante cargado');
+                debugPrint('✅ [Transfer] URL obtenida: $downloadUrl');
+              } else {
+                throw Exception('URL del comprobante no recibida');
+              }
             } else {
               throw Exception(response.message ?? 'Error al subir imagen');
             }
@@ -1384,7 +1401,8 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
   String getTotalAmount() {
     double total = 0.0;
     for (var item in cartList) {
-      total = total + (double.parse(item.subTotal) * item.quantity);
+      final subTotalValue = double.tryParse(item.subTotal?.toString() ?? '0') ?? 0.0;
+      total = total + (subTotalValue * item.quantity);
     }
     return total.toStringAsFixed(2);
   }
@@ -2483,7 +2501,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   height: 35,
                                                   child: TextFormField(
                                                     textAlign: TextAlign.center,
-                                                    initialValue: myFormat.format(double.tryParse(cartList[index].subTotal) ?? 0),
+                                                    initialValue: myFormat.format(double.tryParse(cartList[index].subTotal?.toString() ?? '0') ?? 0),
                                                     onChanged: (value) {
                                                       if (value == '') {
                                                         setState(() {
@@ -2522,7 +2540,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                               Align(
                                                 alignment: Alignment.center,
                                                 child: Text(
-                                                  '$globalCurrency${myFormat.format(double.tryParse((double.parse(cartList[index].subTotal) * cartList[index].quantity).toStringAsFixed(2)) ?? 0)}',
+                                                  '$globalCurrency${myFormat.format(double.tryParse(((double.tryParse(cartList[index].subTotal?.toString() ?? '0') ?? 0) * cartList[index].quantity).toStringAsFixed(2)) ?? 0)}',
                                                   style: theme.textTheme.bodyLarge,
                                                   textAlign: TextAlign.center,
                                                 ),
@@ -3481,17 +3499,33 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                       backgroundColor: kMainColor,
                                     ),
                                     onPressed: () async {
+                                      print('════════════════════════════════════════════════════════════════');
                                       print('DEBUG: Botón de pago presionado');
-                                      
+                                      print('DEBUG: Estado actual:');
+                                      print('  - saleButtonClicked: $saleButtonClicked');
+                                      print('  - selectedPaymentOption: $selectedPaymentOption');
+                                      print('  - transferReceiptUrl: $transferReceiptUrl');
+                                      print('  - selectedBankId: $selectedBankId');
+                                      print('  - cartList.length: ${cartList.length}');
+                                      print('  - selectedUserId: $selectedUserId');
+                                      print('  - selectedWareHouse: ${selectedWareHouse?.warehouseName}');
+                                      print('════════════════════════════════════════════════════════════════');
+
                                       // Evitar múltiples clics
                                       if (saleButtonClicked) {
                                         print('DEBUG: Botón ya presionado, ignorando clic');
                                         return;
                                       }
-                                      
-                                      if (checkUserRoleEditPermissionV2(type: 'sales')) {
+
+                                      final hasPermission = checkUserRoleEditPermissionV2(type: 'sales');
+                                      print('DEBUG: checkUserRoleEditPermissionV2 retornó: $hasPermission');
+
+                                      if (hasPermission) {
                                         print('DEBUG: Usuario tiene permisos de venta');
-                                        if (await Subscription.subscriptionChecker(item: 'Sales')) {
+                                        final subscriptionOk = await Subscription.subscriptionChecker(item: 'Sales');
+                                        print('DEBUG: Subscription.subscriptionChecker retornó: $subscriptionOk');
+
+                                        if (subscriptionOk) {
                                           print('Carrito actual: ${jsonEncode(cartList)}');
                                           print('DEBUG: Verificación de suscripción exitosa');
                                           if (cartList.isEmpty) {
@@ -3718,13 +3752,17 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   // Crear registro de verificación de transferencia si aplica
                                                   if (selectedPaymentOption == 'Transferencia' && transferReceiptUrl != null) {
                                                     try {
+                                                      // CORREGIDO: Usar post.totalAmount en lugar de payingAmountController.text
+                                                      // porque payingAmountController puede estar vacío o con valor incorrecto
+                                                      final transferAmount = post.totalAmount ?? 0.0;
+
                                                       print('DEBUG: Creando registro de verificación de transferencia...');
                                                       print('DEBUG: branchId: ${ApiService().branchId}');
                                                       print('DEBUG: invoiceNumber: ${post.invoiceNumber}');
                                                       print('DEBUG: customerName: ${post.customerName}');
                                                       print('DEBUG: bankName: $selectedBankName');
                                                       print('DEBUG: holderName: ${transferHolderNameController.text.trim()}');
-                                                      print('DEBUG: amount: ${payingAmountController.text}');
+                                                      print('DEBUG: amount (post.totalAmount): $transferAmount');
                                                       print('DEBUG: receiptUrl: $transferReceiptUrl');
 
                                                       final transferVerification = TransferVerificationModel(
@@ -3740,7 +3778,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                             ? transferReferenceController.text.trim()
                                                             : null,
                                                         transferDate: DateTime.now().toIso8601String(),
-                                                        amount: double.tryParse(payingAmountController.text) ?? 0.0,
+                                                        amount: transferAmount,
                                                         receiptUrl: transferReceiptUrl!,
                                                         status: 'pending',
                                                         sellerName: isSubUser ? constSubUserTitle : 'Admin',
@@ -3768,8 +3806,12 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                 }
 
                                                 //imprimir factura
+                                                print('DEBUG POST-TRANSFER: Iniciando proceso de impresión/WhatsApp');
+                                                print('DEBUG POST-TRANSFER: sendWhatsApp=$sendWhatsApp, printType=$printType');
+
                                                 if (sendWhatsApp) {
                                                   try {
+                                                    print('DEBUG POST-TRANSFER: Generando PDF para WhatsApp...');
                                                     // Generar PDF para WhatsApp
                                                     final pdfData = await GeneratePdfAndPrint().printSaleInvoice(
                                                       personalInformationModel: data,
@@ -3781,81 +3823,111 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                       post: post,
                                                       returnPdfData: true,
                                                     );
+                                                    print('DEBUG POST-TRANSFER: PDF generado, pdfData=${pdfData != null ? "OK" : "NULL"}');
 
                                                     if (pdfData != null) {
+                                                      print('DEBUG POST-TRANSFER: Enviando PDF por WhatsApp...');
                                                       await _sendPdfViaWhatsApp(
                                                         phoneNumber: transitionModel.customerPhone,
                                                         pdfData: pdfData,
                                                         invoiceNumber: transitionModel.invoiceNumber,
                                                         customerName: transitionModel.customerName,
                                                       );
+                                                      print('DEBUG POST-TRANSFER: PDF enviado por WhatsApp');
                                                     }
-                                                  } catch (e) {
+                                                  } catch (e, stackTrace) {
+                                                    print('ERROR POST-TRANSFER WhatsApp: $e');
+                                                    print('Stack trace: $stackTrace');
                                                     EasyLoading.showError('Error al enviar por WhatsApp: ${e.toString()}');
                                                   }
                                                 }
 
-                                                if (printType == 'normal' || printType == 'both') {
-                                                  await GeneratePdfAndPrint().printSaleInvoice(
-                                                    personalInformationModel: data, 
-                                                    saleTransactionModel: transitionModel, 
-                                                    context: context, 
-                                                    fromInventorySale: true, 
-                                                    setting: setting, 
-                                                    printType: 'normal', 
-                                                    post: post
-                                                  );
-                                                  
-                                                  // Registrar auditoría de impresión
-                                                  await AuditService().logPrint(
-                                                    module: AuditModule.sales,
-                                                    documentType: 'Factura de Venta',
-                                                    documentId: post.invoiceNumber,
-                                                  );
+                                                try {
+                                                  if (printType == 'normal' || printType == 'both') {
+                                                    print('DEBUG POST-TRANSFER: Generando factura normal...');
+                                                    await GeneratePdfAndPrint().printSaleInvoice(
+                                                      personalInformationModel: data,
+                                                      saleTransactionModel: transitionModel,
+                                                      context: context,
+                                                      fromInventorySale: true,
+                                                      setting: setting,
+                                                      printType: 'normal',
+                                                      post: post
+                                                    );
+                                                    print('DEBUG POST-TRANSFER: Factura normal generada');
+
+                                                    // Registrar auditoría de impresión
+                                                    await AuditService().logPrint(
+                                                      module: AuditModule.sales,
+                                                      documentType: 'Factura de Venta',
+                                                      documentId: post.invoiceNumber,
+                                                    );
+                                                  }
+                                                } catch (e, stackTrace) {
+                                                  print('ERROR POST-TRANSFER factura normal: $e');
+                                                  print('Stack trace: $stackTrace');
                                                 }
 
-                                                final token = const Uuid().v4();
+                                                try {
+                                                  print('DEBUG POST-TRANSFER: Creando confirmación de venta...');
+                                                  final token = const Uuid().v4();
 
-                                                final userId = await getUserID();
+                                                  final userId = await getUserID();
+                                                  print('DEBUG POST-TRANSFER: userId=$userId');
 
-                                                final confirmation = SaleConfirmationModel(
-                                                  token: token,
-                                                  saleId: saleId ?? post.invoiceNumber,
-                                                  userId: userId,
-                                                  confirmed: false,
-                                                  createdAt: DateTime.now().toIso8601String(),
-                                                  expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
-                                                  saleData: post,
-                                                );
-
-                                                await apiServiceSale.post('sale-confirmations', Map<String, dynamic>.from(confirmation.toJson()));
-
-                                                final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santo domingo
-                                                //final link = 'https://stg.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santiago
-
-                                                await _sendConfirmationLinkViaWhatsApp(
-                                                  phoneNumber: post.customerPhone,
-                                                  customerName: post.customerName,
-                                                  confirmationLink: link,
-                                                );
-
-                                                if (printType == 'thermal' || printType == 'both') {
-                                                  await GeneratePdfAndPrint().printSaleInvoice(
-                                                    personalInformationModel: data,
-                                                    saleTransactionModel: transitionModel,
-                                                    context: context,
-                                                    fromInventorySale: true,
-                                                    setting: setting,
-                                                    printType: 'thermal',
-                                                    post: post,
+                                                  final confirmation = SaleConfirmationModel(
+                                                    token: token,
+                                                    saleId: saleId ?? post.invoiceNumber,
+                                                    userId: userId,
+                                                    confirmed: false,
+                                                    createdAt: DateTime.now().toIso8601String(),
+                                                    expiresAt: DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+                                                    saleData: post,
                                                   );
 
-                                                  // Registrar auditoría de impresión térmica
-                                                  await AuditService().logPrint(
-                                                    module: AuditModule.sales,
-                                                    documentType: 'Factura Térmica',
-                                                    documentId: post.invoiceNumber,
+                                                  print('DEBUG POST-TRANSFER: Enviando confirmación al API...');
+                                                  await apiServiceSale.post('sale-confirmations', Map<String, dynamic>.from(confirmation.toJson()));
+                                                  print('DEBUG POST-TRANSFER: Confirmación enviada');
+
+                                                  final link = 'https://app.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santo domingo
+                                                  //final link = 'https://stg.victorguzmanfotografia.com/confirmacion/${confirmation.token}'; //santiago
+
+                                                  print('DEBUG POST-TRANSFER: Enviando link de confirmación por WhatsApp...');
+                                                  await _sendConfirmationLinkViaWhatsApp(
+                                                    phoneNumber: post.customerPhone,
+                                                    customerName: post.customerName,
+                                                    confirmationLink: link,
                                                   );
+                                                  print('DEBUG POST-TRANSFER: Link de confirmación enviado');
+                                                } catch (e, stackTrace) {
+                                                  print('ERROR POST-TRANSFER confirmación: $e');
+                                                  print('Stack trace: $stackTrace');
+                                                }
+
+                                                try {
+                                                  if (printType == 'thermal' || printType == 'both') {
+                                                    print('DEBUG POST-TRANSFER: Generando factura térmica...');
+                                                    await GeneratePdfAndPrint().printSaleInvoice(
+                                                      personalInformationModel: data,
+                                                      saleTransactionModel: transitionModel,
+                                                      context: context,
+                                                      fromInventorySale: true,
+                                                      setting: setting,
+                                                      printType: 'thermal',
+                                                      post: post,
+                                                    );
+                                                    print('DEBUG POST-TRANSFER: Factura térmica generada');
+
+                                                    // Registrar auditoría de impresión térmica
+                                                    await AuditService().logPrint(
+                                                      module: AuditModule.sales,
+                                                      documentType: 'Factura Térmica',
+                                                      documentId: post.invoiceNumber,
+                                                    );
+                                                  }
+                                                } catch (e, stackTrace) {
+                                                  print('ERROR POST-TRANSFER factura térmica: $e');
+                                                  print('Stack trace: $stackTrace');
                                                 }
 
                                                 limpiarCarro();
@@ -3972,8 +4044,12 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                             }
                                           }
                                         } else {
+                                          print('DEBUG: Suscripción no válida o límite excedido');
                                           EasyLoading.showError('${lang.S.of(context).updateYourPlanFirstSaleLimitIsOver}.');
                                         }
+                                      } else {
+                                        print('DEBUG: Usuario NO tiene permisos de venta (checkUserRoleEditPermissionV2 retornó false)');
+                                        EasyLoading.showError('No tiene permisos para realizar ventas');
                                       }
                                     },
                                     child: Text(

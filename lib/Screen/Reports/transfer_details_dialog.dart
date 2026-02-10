@@ -41,45 +41,46 @@ class TransferDetailsDialog extends ConsumerWidget {
     
     dailyTransactions.forEach((key, value) {
       final type = value['type'];
-      
+
       print('DEBUG: Procesando transacción $key - Tipo: $type');
-      print('DEBUG: Contenido completo de value: $value');
-      
+
       // Intentar obtener la transacción según el tipo
       Map<String, dynamic>? transaction;
-      if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones') {
+      if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones' || type == 'Reserva') {
         transaction = value['saleTransactionModel'];
-      } else if (type == 'Due Collection' || type == 'Due Payment') {
+      } else if (type == 'Due Collection' || type == 'Due Payment' || type == 'Cuenta x Cobrar') {
         transaction = value['dueTransactionModel'];
       }
-      
-      print('DEBUG: Transaction data: ${transaction != null ? "encontrada" : "null"}');
-      
-      final paymentType = transaction?['paymentType'];
-      print('DEBUG: PaymentType extraído: $paymentType');
-      
+
+      // Obtener paymentType: primero del modelo anidado, luego del campo directo
+      String? paymentType = transaction?['paymentType']?.toString() ?? value['paymentType']?.toString();
+      print('DEBUG: PaymentType extraído: $paymentType (modelo: ${transaction?['paymentType']}, directo: ${value['paymentType']})');
+
       if (_isTransfer(paymentType)) {
-        final bankId = transaction?['bankId'];
-        final bankName = transaction?['bankName'] ?? 'Banco no especificado';
+        // Obtener campos: primero del modelo anidado, luego del campo directo
+        final bankId = transaction?['bankId'] ?? value['bankId'];
+        final bankName = transaction?['bankName'] ?? value['bankName'] ?? 'Banco no especificado';
+        final customerName = transaction?['customerName'] ?? value['customerName'] ?? 'Cliente desconocido';
+        final invoiceNumber = transaction?['invoiceNumber'] ?? value['invoiceNumber'] ?? key;
         final amount = (value['paymentIn'] as num).toDouble();
-        
+
         print('DEBUG: Es transferencia - BankId: $bankId - BankName: $bankName - Amount: $amount');
-        
+
         // Agrupar por banco
         if (!transfersByBank.containsKey(bankId)) {
           transfersByBank[bankId] = [];
           totalsByBank[bankId] = 0.0;
         }
-        
+
         transfersByBank[bankId]!.add({
-          'customerName': transaction?['customerName'] ?? 'Cliente desconocido',
-          'invoiceNumber': transaction?['invoiceNumber'] ?? key,
+          'customerName': customerName,
+          'invoiceNumber': invoiceNumber,
           'amount': amount,
           'date': value['time'] ?? DateTime.now().toString(),
           'bankName': bankName,
           'type': type,
         });
-        
+
         totalsByBank[bankId] = (totalsByBank[bankId] ?? 0) + amount;
         totalGeneral += amount;
       }
@@ -96,13 +97,14 @@ class TransferDetailsDialog extends ConsumerWidget {
       dailyTransactions.forEach((key, value) {
         final type = value['type'];
         Map<String, dynamic>? transaction;
-        if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones') {
+        if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones' || type == 'Reserva') {
           transaction = value['saleTransactionModel'];
-        } else if (type == 'Due Collection' || type == 'Due Payment') {
+        } else if (type == 'Due Collection' || type == 'Due Payment' || type == 'Cuenta x Cobrar') {
           transaction = value['dueTransactionModel'];
         }
-        
-        final paymentType = transaction?['paymentType']?.toString() ?? 'Sin tipo';
+
+        // Usar campo directo como fallback si el modelo anidado no tiene paymentType
+        final paymentType = transaction?['paymentType']?.toString() ?? value['paymentType']?.toString() ?? 'Sin tipo';
         paymentTypeCounts[paymentType] = (paymentTypeCounts[paymentType] ?? 0) + 1;
       });
       

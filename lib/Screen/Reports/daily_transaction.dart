@@ -44,6 +44,107 @@ class DailyTransaction extends StatefulWidget {
 
 class _DailyTransactionState extends State<DailyTransaction> {
   List<String> _problematicInvoices = [];
+
+  // Lista de facturas eliminadas obtenidas de auditoría
+  List<Map<String, dynamic>> _deletedInvoices = [];
+  bool _isLoadingDeletedInvoices = false;
+
+  // Obtener facturas eliminadas del rango de fechas seleccionado
+  Future<void> _loadDeletedInvoices() async {
+    if (_isLoadingDeletedInvoices) return;
+
+    setState(() {
+      _isLoadingDeletedInvoices = true;
+    });
+
+    try {
+      debugPrint('🔍 Buscando eliminaciones - Fecha inicio: ${selectedDate.start}, Fecha fin: ${selectedDate.end}');
+
+      // Buscar TODAS las transacciones y filtrar por tipo "Deleted" en el cliente
+      // (El backend puede no soportar el filtro por type correctamente)
+      final apiService = ApiService();
+      final response = await apiService.get('daily-transactions', queryParams: {
+        'start_date': selectedDate.start.toIso8601String(),
+        'end_date': selectedDate.end.toIso8601String(),
+        'limit': '1000',
+      });
+
+      debugPrint('🔍 Response de daily-transactions: ${response.success}');
+
+      List<Map<String, dynamic>> deletedList = [];
+
+      if (response.success && response.data != null) {
+        final transactions = response.data['transactions'] as List<dynamic>? ?? [];
+        debugPrint('📊 Total transacciones encontradas: ${transactions.length}');
+
+        // Filtrar en el cliente por tipo "Deleted"
+        for (var tx in transactions) {
+          if (tx is Map) {
+            final txMap = Map<String, dynamic>.from(tx);
+            final txType = txMap['type']?.toString() ?? '';
+
+            debugPrint('🔍 Transacción tipo: $txType, factura: ${txMap['invoiceNumber'] ?? txMap['invoice_number']}');
+
+            // Solo incluir si el tipo es "Deleted" (case insensitive)
+            if (txType.toLowerCase() == 'deleted') {
+              deletedList.add({
+                'invoiceNumber': txMap['invoiceNumber'] ?? txMap['invoice_number'] ?? 'N/A',
+                'customerName': txMap['name'] ?? 'Cliente desconocido',
+                'deletedBy': txMap['sellerName'] ?? txMap['seller_name'] ?? txMap['data']?['deletedBy'] ?? 'Desconocido',
+                'deletedAt': txMap['date'] ?? txMap['created_at'] ?? '',
+                'totalAmount': txMap['total'] ?? 0,
+                'paymentType': txMap['paymentType'] ?? txMap['payment_type'] ?? 'N/A',
+                'data': txMap['data'],
+              });
+              debugPrint('✅ Factura eliminada encontrada: ${txMap['invoiceNumber'] ?? txMap['invoice_number']}');
+            }
+          }
+        }
+      }
+
+      // Si no hay resultados de daily_transactions, intentar con audits como fallback
+      if (deletedList.isEmpty) {
+        debugPrint('🔍 No hay Deleted en daily_transactions, intentando con audits...');
+        final auditService = AuditService();
+        final filteredLogs = await auditService.getAuditLogs(
+          action: 'delete',
+          module: 'sales',
+          startDate: selectedDate.start,
+          endDate: selectedDate.end,
+          limit: 500,
+        );
+
+        debugPrint('📊 Audits de eliminación encontrados: ${filteredLogs.length}');
+
+        for (var log in filteredLogs) {
+          // Extraer número de factura de la descripción
+          final match = RegExp(r'ID:\s*(\d+)').firstMatch(log.description);
+          final invoiceNumber = match?.group(1) ?? log.beforeData?['invoiceNumber'] ?? 'N/A';
+
+          deletedList.add({
+            'invoiceNumber': invoiceNumber,
+            'customerName': log.beforeData?['customerName'] ?? 'Cliente desconocido',
+            'deletedBy': log.userName,
+            'deletedAt': log.createdAt,
+            'totalAmount': log.beforeData?['totalAmount'] ?? 0,
+            'paymentType': log.beforeData?['paymentMethod'] ?? 'N/A',
+            'data': log.beforeData,
+          });
+        }
+      }
+
+      _deletedInvoices = deletedList;
+      debugPrint('📋 Total facturas eliminadas encontradas: ${_deletedInvoices.length}');
+    } catch (e) {
+      debugPrint('❌ Error cargando facturas eliminadas: $e');
+      _deletedInvoices = [];
+    } finally {
+      setState(() {
+        _isLoadingDeletedInvoices = false;
+      });
+    }
+  }
+
   double calculateTotalPaymentIn(List<DailyTransactionModel> dailyTransaction) {
     double total = 0.0;
     for (var element in dailyTransaction) {
@@ -96,6 +197,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
       setState(() {
         selectedDate = DateTimeRange(start: start, end: end);
       });
+      // Cargar facturas eliminadas para el nuevo rango
+      _loadDeletedInvoices();
     }
   }
 
@@ -230,6 +333,15 @@ class _DailyTransactionState extends State<DailyTransaction> {
         });
       },
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargar facturas eliminadas al inicio
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDeletedInvoices();
+    });
   }
 
   // Función para traducir el tipo a español
@@ -412,13 +524,28 @@ class _DailyTransactionState extends State<DailyTransaction> {
               // Función para convertir SaleTransactionModel a DailyTransactionModel
               DailyTransactionModel convertSaleToDaily(SaleTransactionModel sale) {
                 // DEBUG: Verificar qué datos tiene la venta
-                debugPrint('🔄 convertSaleToDaily - Invoice: ${sale.invoiceNumber}, paymentType: "${sale.paymentType}", sellerName: "${sale.sellerName}"');
+                debugPrint('🔄 convertSaleToDaily - Invoice: ${sale.invoiceNumber}, saleType: "${sale.saleType}", paymentType: "${sale.paymentType}", sellerName: "${sale.sellerName}"');
+
+                // Mapear saleType a type correcto
+                String type;
+                switch (sale.saleType?.toLowerCase()) {
+                  case 'adicionales':
+                    type = 'Adicionales';
+                    break;
+                  case 'impresiones':
+                    type = 'Impresiones';
+                    break;
+                  case 'reserva':
+                    type = 'Reserva';
+                    break;
+                  default:
+                    type = 'Sale';
+                }
 
                 return DailyTransactionModel(
                   name: sale.customerName,
                   date: sale.purchaseDate,
-                  type: sale.saleType == 'adicionales' ? 'Adicionales' :
-                        sale.saleType == 'impresiones' ? 'Impresiones' : 'Sale',
+                  type: type,
                   total: sale.totalAmount ?? 0.0,
                   paymentIn: sale.totalAmount ?? 0.0,
                   paymentOut: 0.0,
@@ -1105,27 +1232,46 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                     Map<String, dynamic> dailyTransactions = {};
                                     int transferCount = 0;
                                     for (var transaction in reTransaction) {
+                                      // DEBUG: Mostrar todos los campos disponibles
+                                      print('DEBUG TX: type=${transaction.type}, paymentType=${transaction.paymentType}, dueModel=${transaction.dueTransactionModel != null}, saleModel=${transaction.saleTransactionModel != null}');
+
                                       // Verificar si es una transferencia
+                                      // Prioridad: modelo anidado > campo directo del DailyTransactionModel
                                       String? paymentType;
+                                      String? bankId;
+                                      String? bankName;
+                                      String? customerName;
+                                      String? invoiceNumber;
+
                                       if (transaction.saleTransactionModel != null) {
                                         paymentType = transaction.saleTransactionModel!.paymentType;
+                                        bankId = transaction.saleTransactionModel!.bankId;
+                                        bankName = transaction.saleTransactionModel!.bankName;
+                                        customerName = transaction.saleTransactionModel!.customerName;
+                                        invoiceNumber = transaction.saleTransactionModel!.invoiceNumber;
                                       } else if (transaction.dueTransactionModel != null) {
                                         paymentType = transaction.dueTransactionModel!.paymentType;
+                                        bankId = transaction.dueTransactionModel!.bankId;
+                                        bankName = transaction.dueTransactionModel!.bankName;
+                                        customerName = transaction.dueTransactionModel!.customerName;
+                                        invoiceNumber = transaction.dueTransactionModel!.invoiceNumber;
+                                        print('DEBUG: dueTransactionModel.paymentType = $paymentType');
                                       }
-                                      
-                                      if (paymentType != null && 
-                                          (paymentType.toLowerCase().contains('transfer') || 
+
+                                      // Fallback: usar campo directo del DailyTransactionModel si los modelos están vacíos
+                                      paymentType ??= transaction.paymentType;
+                                      invoiceNumber ??= transaction.invoiceNumber;
+                                      print('DEBUG: Final paymentType = $paymentType (directo: ${transaction.paymentType})');
+
+                                      if (paymentType != null &&
+                                          (paymentType.toLowerCase().contains('transfer') ||
                                            paymentType.toLowerCase().contains('transferencia'))) {
                                         transferCount++;
                                         print('DEBUG: Transferencia encontrada - ID: ${transaction.id}, PaymentType: $paymentType');
-                                        if (transaction.saleTransactionModel != null) {
-                                          print('DEBUG: Sale - BankId: ${transaction.saleTransactionModel!.bankId}, BankName: ${transaction.saleTransactionModel!.bankName}');
-                                        }
-                                        if (transaction.dueTransactionModel != null) {
-                                          print('DEBUG: Due - BankId: ${transaction.dueTransactionModel!.bankId}, BankName: ${transaction.dueTransactionModel!.bankName}');
-                                        }
+                                        print('DEBUG: BankId: $bankId, BankName: $bankName');
                                       }
-                                      
+
+                                      // Incluir campos directos además de los modelos anidados
                                       dailyTransactions[transaction.id] = {
                                         'type': transaction.type,
                                         'saleTransactionModel': transaction.saleTransactionModel?.toJson(),
@@ -1134,6 +1280,12 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                         'paymentIn': transaction.paymentIn,
                                         'paymentOut': transaction.paymentOut,
                                         'time': transaction.date,
+                                        // Campos directos como fallback
+                                        'paymentType': paymentType,
+                                        'bankId': bankId,
+                                        'bankName': bankName,
+                                        'customerName': customerName ?? transaction.name,
+                                        'invoiceNumber': invoiceNumber,
                                       };
                                     }
                                     
@@ -1235,6 +1387,71 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                       textAlign: TextAlign.center,
                                     ),
                                   ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]);
+                      }),
+                      // Tercera fila: Facturas Eliminadas
+                      Builder(builder: (context) {
+                        return ResponsiveGridRow(rowSegments: 100, children: [
+                          ResponsiveGridCol(
+                            xs: 100,
+                            md: screenWidth < 950 ? 50 : 33,
+                            lg: 33,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    _showDeletedInvoicesDialog(context);
+                                  },
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  child: Container(
+                                    padding: const EdgeInsets.only(
+                                        left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                                      border: Border.all(color: const Color(0xFFE53935), width: 1),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.delete_outline, color: const Color(0xFFE53935), size: 24),
+                                        const SizedBox(height: 8),
+                                        _isLoadingDeletedInvoices
+                                            ? const SizedBox(
+                                                height: 20,
+                                                width: 20,
+                                                child: CircularProgressIndicator(strokeWidth: 2),
+                                              )
+                                            : Text(
+                                                '${_deletedInvoices.length}',
+                                                style: theme.textTheme.titleLarge?.copyWith(
+                                                    color: const Color(0xFFE53935),
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 18),
+                                              ),
+                                        Text(
+                                          'Facturas Eliminadas',
+                                          style: theme.textTheme.bodyMedium,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Click para ver detalles',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: const Color(0xFFE53935),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -3365,5 +3582,282 @@ class _DailyTransactionState extends State<DailyTransaction> {
       default:
         return Icons.receipt;
     }
+  }
+
+  /// Mostrar diálogo con las facturas eliminadas
+  void _showDeletedInvoicesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            constraints: BoxConstraints(
+              maxWidth: 800,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE53935),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Facturas Eliminadas',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Del ${DateFormat('dd/MM/yyyy').format(selectedDate.start)} al ${DateFormat('dd/MM/yyyy').format(selectedDate.end)}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Flexible(
+                  child: _deletedInvoices.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline,
+                                  size: 64,
+                                  color: Colors.green.shade300,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'No hay facturas eliminadas',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No se encontraron eliminaciones en el período seleccionado',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _deletedInvoices.length,
+                          itemBuilder: (context, index) {
+                            final deleted = _deletedInvoices[index];
+
+                            // Extraer datos del mapa
+                            final invoiceNumber = deleted['invoiceNumber']?.toString() ?? 'N/A';
+                            final customerName = deleted['customerName']?.toString() ?? 'Desconocido';
+                            final deletedBy = deleted['deletedBy']?.toString() ?? 'Desconocido';
+                            final totalAmount = deleted['totalAmount'];
+                            final amount = totalAmount != null ? 'RD\$ $totalAmount' : '';
+
+                            // Formatear fecha
+                            String formattedDate = '';
+                            try {
+                              final deletedAt = deleted['deletedAt']?.toString() ?? '';
+                              if (deletedAt.isNotEmpty) {
+                                final date = DateTime.parse(deletedAt);
+                                formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(date);
+                              }
+                            } catch (e) {
+                              formattedDate = deleted['deletedAt']?.toString() ?? '';
+                            }
+
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              elevation: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE53935),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            'Factura #$invoiceNumber',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        if (amount.isNotEmpty)
+                                          Text(
+                                            amount,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color: Color(0xFFE53935),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.person, size: 18, color: Colors.grey.shade600),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Cliente: $customerName',
+                                            style: const TextStyle(fontSize: 14),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.account_circle, size: 18, color: Colors.orange.shade600),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Eliminado por: $deletedBy',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.orange.shade800,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.access_time, size: 18, color: Colors.grey.shade600),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          formattedDate,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (deleted['paymentType'] != null && deleted['paymentType'] != 'N/A') ...[
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.payment, size: 16, color: Colors.grey.shade600),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Método de pago: ${deleted['paymentType']}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade700,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                // Footer con resumen
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total: ${_deletedInvoices.length} factura(s) eliminada(s)',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          _loadDeletedInvoices();
+                          Navigator.of(dialogContext).pop();
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            _showDeletedInvoicesDialog(context);
+                          });
+                        },
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Actualizar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE53935),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

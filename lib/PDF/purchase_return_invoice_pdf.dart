@@ -24,9 +24,9 @@ FutureOr<Uint8List> generatePurchaseReturnDocument(
     double amount = 0;
 
     for (var element in transactions.productList!) {
-      amount = amount +
-          double.parse(element.productPurchasePrice.toString()) *
-              double.parse(element.productStock.toString());
+      final purchasePrice = double.tryParse(element.productPurchasePrice.toString()) ?? 0.0;
+      final stock = double.tryParse(element.productStock.toString()) ?? 0.0;
+      amount = amount + (purchasePrice * stock);
     }
 
     return double.parse(amount.toStringAsFixed(2));
@@ -582,13 +582,13 @@ FutureOr<Uint8List> generatePurchaseReturnDocument(
                               .productPurchasePrice
                               .toString()) ??
                           0)),
-                      (myFormat.format(double.tryParse((double.parse(
+                      (myFormat.format(double.tryParse(((double.tryParse(
                                       transactions.productList!
                                           .elementAt(i)
-                                          .productPurchasePrice) *
-                                  double.parse(transactions.productList!
+                                          .productPurchasePrice.toString()) ?? 0.0) *
+                                  (double.tryParse(transactions.productList!
                                       .elementAt(i)
-                                      .productStock))
+                                      .productStock.toString()) ?? 0.0))
                               .toStringAsFixed(2)) ??
                           0))
                     ],

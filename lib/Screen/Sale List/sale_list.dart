@@ -1098,6 +1098,50 @@ class _SaleListState extends State<SaleList> {
         },
       );
 
+      // NUEVO: Registrar eliminación en daily_transactions para tracking
+      final apiServiceForDelete = ApiService();
+      final prefs = await SharedPreferences.getInstance();
+      final userName = prefs.getString('subUserTitle') ?? 'Admin';
+
+      try {
+        debugPrint('🗑️ [DELETE TRACKING] Registrando eliminación en daily_transactions...');
+        debugPrint('🗑️ [DELETE TRACKING] Invoice: ${transaction.invoiceNumber}');
+        debugPrint('🗑️ [DELETE TRACKING] Customer: ${transaction.customerName}');
+        debugPrint('🗑️ [DELETE TRACKING] DeletedBy: $userName');
+
+        final deleteResponse = await apiServiceForDelete.post('daily-transactions', {
+          'type': 'Deleted',
+          'name': transaction.customerName ?? 'Cliente',
+          'date': DateTime.now().toIso8601String(),
+          'total': transaction.totalAmount ?? 0,
+          'paymentIn': 0,
+          'paymentOut': 0,
+          'remainingBalance': 0,
+          'paymentType': transaction.paymentType ?? 'N/A',
+          'sellerName': userName,
+          'invoiceNumber': transaction.invoiceNumber ?? '',
+          'data': {
+            'deletedBy': userName,
+            'deletedAt': DateTime.now().toIso8601String(),
+            'originalSaleType': transaction.saleType ?? '',
+            'customerPhone': transaction.customerPhone ?? '',
+            'productCount': transaction.productList?.length ?? 0,
+          },
+        });
+
+        debugPrint('🗑️ [DELETE TRACKING] Response success: ${deleteResponse.success}');
+        debugPrint('🗑️ [DELETE TRACKING] Response data: ${deleteResponse.data}');
+        debugPrint('🗑️ [DELETE TRACKING] Response error: ${deleteResponse.error}');
+
+        if (deleteResponse.success) {
+          debugPrint('✅ [DELETE TRACKING] Eliminación registrada exitosamente');
+        } else {
+          debugPrint('⚠️ [DELETE TRACKING] Error en respuesta: ${deleteResponse.error}');
+        }
+      } catch (e) {
+        debugPrint('❌ [DELETE TRACKING] Error registrando eliminación: $e');
+      }
+
       DeleteInvoice delete = DeleteInvoice();
       
       // Paso 1: Restaurar stock

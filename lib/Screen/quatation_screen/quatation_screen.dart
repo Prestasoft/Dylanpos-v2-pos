@@ -255,7 +255,8 @@ class _QuotationScreenState extends State<QuotationScreen> {
   String getTotalAmount() {
     double total = 0.0;
     for (var item in cartList) {
-      total = total + (double.parse(item.subTotal) * item.quantity);
+      final subTotalValue = double.tryParse(item.subTotal?.toString() ?? '0') ?? 0.0;
+      total = total + (subTotalValue * item.quantity);
     }
 
     return total.toStringAsFixed(2);

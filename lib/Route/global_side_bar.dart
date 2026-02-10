@@ -691,6 +691,11 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
     final currentUserModel = apiService.toUserRoleModel();
     final allowedBranches = currentUserModel.allowedBranches;
 
+    // Debug log para diagnóstico
+    debugPrint('🔐 [BranchSelector] Usuario: ${currentUserModel.userTitle}');
+    debugPrint('🔐 [BranchSelector] allowedBranches del usuario: $allowedBranches');
+    debugPrint('🔐 [BranchSelector] Total sucursales configuradas: ${TenantConfig.allTenants.length}');
+
     // Filtrar sucursales según permisos
     // PRIORIDAD: Si tiene allowedBranches definidas, filtrar por esas (sin importar si es admin)
     // Solo mostrar todas si allowedBranches es null o vacío
@@ -699,6 +704,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
             allowedBranches.contains(tenant.id)
           ).toList()
         : TenantConfig.allTenants;
+
+    debugPrint('🔐 [BranchSelector] Sucursales disponibles para este usuario: ${availableTenants.map((t) => t.id).toList()}');
 
     showDialog(
       context: context,

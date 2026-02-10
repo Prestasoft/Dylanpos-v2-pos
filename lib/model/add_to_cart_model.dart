@@ -164,8 +164,7 @@ class AddToCartModel {
         "item_cart_index": itemCartIndex,
         "stock": stock,
         "productPurchasePrice": productPurchasePrice,
-        "product_details":
-            productDetails == null ? null : productDetails.toJson(),
+        "product_details": _serializeProductDetails(productDetails),
         'serialNumber': serialNumber?.map((e) => e).toList(),
         'productWarranty': productWarranty,
         'productImage': productImage,
@@ -188,4 +187,24 @@ class AddToCartModel {
         "dressAvailable": dressAvailable,
         "dressCategory": dressCategory,
       };
+
+  /// Serializa productDetails de forma segura
+  /// Maneja casos donde puede ser Map, String, o un objeto con toJson()
+  dynamic _serializeProductDetails(dynamic details) {
+    if (details == null) return null;
+
+    // Si ya es un Map, retornarlo directamente
+    if (details is Map) return details;
+
+    // Si es un String, retornarlo directamente
+    if (details is String) return details;
+
+    // Intentar llamar toJson() si existe
+    try {
+      return details.toJson();
+    } catch (e) {
+      // Si falla, intentar convertir a String
+      return details.toString();
+    }
+  }
 }

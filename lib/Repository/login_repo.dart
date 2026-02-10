@@ -60,17 +60,25 @@ class LogInRepo extends ChangeNotifier {
         final allowedBranches = user['allowed_branches'] as List<dynamic>?;
         List<String>? branches = allowedBranches?.map((e) => e.toString()).toList();
 
+        // Debug log para diagnóstico
+        print('🔐 [Login] Usuario: $userName');
+        print('🔐 [Login] isAdmin: $isAdmin');
+        print('🔐 [Login] allowed_branches desde API: $allowedBranches');
+        print('🔐 [Login] branches parseado: $branches');
+
         // Filtrar sucursales según permisos del usuario
         List<TenantModel> availableTenants;
 
         if (isAdmin || branches == null || branches.isEmpty) {
           // Administrador o sin restricciones: todas las sucursales
           availableTenants = TenantConfig.allTenants;
+          print('🔐 [Login] Mostrando TODAS las sucursales (admin o sin restricciones)');
         } else {
           // Usuario con restricciones: solo sus sucursales asignadas
           availableTenants = TenantConfig.allTenants
               .where((tenant) => branches.contains(tenant.id))
               .toList();
+          print('🔐 [Login] Sucursales filtradas: ${availableTenants.map((t) => t.id).toList()}');
         }
 
         // Decidir flujo según cantidad de sucursales disponibles
