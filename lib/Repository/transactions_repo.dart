@@ -44,8 +44,10 @@ class TransitionRepo {
       print('[TransitionRepo] BranchId actual: ${_apiService.branchId}');
       print('[TransitionRepo] Token presente: ${_apiService.token != null}');
 
-      // Intentar con límite reducido primero para evitar respuestas truncadas
-      final response = await _apiService.getSales(limit: 500);
+      // CRÍTICO: Usar límite muy reducido para evitar error de memoria en el navegador
+      // El error "ArrayBuffer allocation failed" ocurre cuando se piden demasiados datos
+      // Reducido de 500 a 100 para evitar que el navegador se quede sin memoria
+      final response = await _apiService.getSales(limit: 100);
 
       print('[TransitionRepo] Response success: ${response.success}');
       print('[TransitionRepo] Response error: ${response.error}');
