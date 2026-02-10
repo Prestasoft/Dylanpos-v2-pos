@@ -6,12 +6,10 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
-import 'package:salespro_admin/Provider/transactions_provider.dart';
 import 'package:salespro_admin/Provider/profile_provider.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:salespro_admin/model/dress_model.dart';
-import 'package:salespro_admin/model/sale_transaction_model.dart';
 import 'package:salespro_admin/Provider/dress_with_reservations.dart';
 import 'package:salespro_admin/PDF/print_pdf.dart';
 import 'package:salespro_admin/commas.dart';
@@ -327,28 +325,20 @@ class ReservationCard extends ConsumerWidget {
                                       ),
                                     ),
                                   // Mostrar número de factura si existe
+                                  // CRÍTICO: Usar saleTransactionByReservationProvider para evitar límite de 100 ventas
                                   Consumer(
                                     builder: (context, ref, child) {
-                                      final invoiceNumberAsync = ref.watch(invoiceNumberByReservationProvider(reservation.id));
+                                      // Usar provider directo que busca por reservation_id (sin límite de 100)
+                                      final saleTransactionAsync = ref.watch(saleTransactionByReservationProvider(reservation.id));
                                       final settingProvider = ref.watch(generalSettingProvider);
                                       final profile = ref.watch(profileDetailsProvider);
-                                      final salesTransactionsAsync = ref.watch(transitionProvider);
-                                      
-                                      return invoiceNumberAsync.when(
-                                        data: (invoiceNumber) {
-                                          if (invoiceNumber != null && invoiceNumber.isNotEmpty) {
-                                            // Buscar la transacción actual
-                                            SaleTransactionModel? currentTransaction;
-                                            if (salesTransactionsAsync.hasValue) {
-                                              for (final t in salesTransactionsAsync.value!) {
-                                                if (t.reservationIds.contains(reservation.id)) {
-                                                  currentTransaction = t;
-                                                  break;
-                                                }
-                                              }
-                                            }
-                                            
-                                            final hasDueAmount = currentTransaction != null && 
+
+                                      return saleTransactionAsync.when(
+                                        data: (currentTransaction) {
+                                          if (currentTransaction != null && currentTransaction.invoiceNumber.isNotEmpty) {
+                                            final invoiceNumber = currentTransaction.invoiceNumber;
+
+                                            final hasDueAmount =
                                                 double.parse(currentTransaction.dueAmount.toString()) > 0;
                                             
                                             return InkWell(

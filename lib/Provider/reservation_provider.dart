@@ -10,6 +10,7 @@ import 'package:salespro_admin/Provider/branch_provider.dart';
 
 import 'package:salespro_admin/model/FullReservation.dart';
 import 'package:salespro_admin/model/customer_model.dart';
+import 'package:salespro_admin/model/sale_transaction_model.dart';
 import 'package:salespro_admin/services/api_service.dart';
 
 import '../model/reservation_model.dart';
@@ -923,9 +924,22 @@ final fullReservationByIdProviderVQ =
   }
 });
 
+/// Provider para obtener el número de factura de una reservación
+/// Usa el endpoint directo del API para evitar límite de 100 ventas
 final invoiceNumberByReservationProvider =
     FutureProvider.family<String?, String>((ref, reservationId) async {
   try {
+    // Primero intentar con el endpoint directo (más eficiente)
+    final response = await _apiService.get('sales/by-reservation/$reservationId');
+
+    if (response.success && response.data != null) {
+      final saleData = response.data['sale'];
+      if (saleData != null) {
+        return saleData['invoice_number']?.toString();
+      }
+    }
+
+    // Fallback: buscar en el listado general (solo si el endpoint falla)
     final salesTransactions = await ref.read(transitionProvider.future);
 
     for (final transaction in salesTransactions) {
@@ -937,6 +951,29 @@ final invoiceNumberByReservationProvider =
     return null;
   } catch (e) {
     print('Error getting invoice number for reservation: $e');
+    return null;
+  }
+});
+
+/// Provider para obtener la transacción de venta completa asociada a una reservación
+/// CRÍTICO: Usa endpoint directo para evitar límite de 100 ventas
+final saleTransactionByReservationProvider =
+    FutureProvider.family<SaleTransactionModel?, String>((ref, reservationId) async {
+  try {
+    final response = await _apiService.get('sales/by-reservation/$reservationId');
+
+    if (response.success && response.data != null) {
+      final saleData = response.data['sale'];
+      if (saleData != null) {
+        final sale = SaleTransactionModel.fromJson(saleData);
+        sale.key = saleData['id']?.toString();
+        return sale;
+      }
+    }
+
+    return null;
+  } catch (e) {
+    print('Error getting sale transaction for reservation: $e');
     return null;
   }
 });
