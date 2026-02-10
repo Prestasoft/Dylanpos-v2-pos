@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// GoogleFonts eliminado para reducir consumo de memoria
+// Las fuentes se cargan localmente desde fonts/
 import 'package:salespro_admin/model/daily_transaction_model.dart';
 
 import '../../../const.dart';
@@ -67,10 +68,13 @@ const List<Color> kAppGoldGradient = [
   Color(0xFFE8C778),  // kAppGoldLight
 ];
 
-final kTextStyle = GoogleFonts.manrope(
+// Usar fuentes locales en lugar de GoogleFonts para reducir consumo de memoria
+const kTextStyle = TextStyle(
+  fontFamily: 'Poppins',
   color: Colors.white,
 );
-final bTextStyle = GoogleFonts.manrope(
+const bTextStyle = TextStyle(
+  fontFamily: 'Poppins',
   color: Colors.black,
 );
 const kButtonDecoration = BoxDecoration(

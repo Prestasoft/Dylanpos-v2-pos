@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart' as pro;
@@ -918,8 +918,8 @@ class _IncomeExpenseLineChartState extends State<IncomeExpenseLineChart> {
             padding: const EdgeInsets.all(10.0),
             child: Row(
               children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedActivity02,
+                Icon(
+                  Icons.show_chart,
                   color: Colors.black,
                   size: 24.0,
                 ),

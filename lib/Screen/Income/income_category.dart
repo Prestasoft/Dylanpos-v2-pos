@@ -5,7 +5,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:iconly/iconly.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/expense_category_proivder.dart';
@@ -577,8 +577,8 @@ class _IncomeCategoryState extends State<IncomeCategory> {
                                                                     },
                                                                     child: Row(
                                                                       children: [
-                                                                         HugeIcon(
-                                                                          icon: HugeIcons.strokeRoundedDelete02,
+                                                                         Icon(
+                                                                          Icons.delete_outline,
                                                                           color: Colors.red,
                                                                           size: 22,
                                                                         ),

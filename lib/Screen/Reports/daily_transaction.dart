@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:iconly/iconly.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -1974,7 +1974,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                                                         children: [
                                                                           paginatedList[index].type == 'Income' || paginatedList[index].type == 'Expense'
                                                                               ? Icon(IconlyLight.show, size: 22.0, color: kGreyTextColor)
-                                                                              : HugeIcon(icon: HugeIcons.strokeRoundedPrinter, size: 22.0, color: kGreyTextColor),
+                                                                              : Icon(Icons.print, size: 22.0, color: kGreyTextColor),
                                                                           const SizedBox(
                                                                               width: 4.0),
                                                                           Text(

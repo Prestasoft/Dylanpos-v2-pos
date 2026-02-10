@@ -6,7 +6,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+// GoogleFonts eliminado para reducir consumo de memoria - usar fuentes locales
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_framework/responsive_framework.dart' as rf;
@@ -312,7 +312,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                     const SizedBox(width: 12),
                     Text(
                       'Notificaciones de Confirmación',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(fontFamily: 'Poppins',
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -337,7 +337,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                       const SizedBox(height: 16),
                       Text(
                         'No hay notificaciones nuevas',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(fontFamily: 'Poppins',
                           fontSize: 16,
                           color: Colors.grey.shade600,
                         ),
@@ -441,7 +441,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                                                 ),
                                                 child: Text(
                                                   'Factura de Reserva #${notification.saleData.invoiceNumber.toString().isNotEmpty ? notification.saleData.invoiceNumber : 'N/A'}',
-                                                  style: GoogleFonts.poppins(
+                                                  style: TextStyle(fontFamily: 'Poppins',
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 14,
                                                     color: kMainColor,
@@ -462,7 +462,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                                   const SizedBox(width: 4),
                                   Text(
                                     'Confirmada',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(fontFamily: 'Poppins',
                                       fontSize: 12,
                                       color: Colors.grey.shade600,
                                     ),
@@ -472,7 +472,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                               const SizedBox(height: 12),
                               Text(
                                 'Cliente: ${notification.saleData.customerName.isNotEmpty ? notification.saleData.customerName : 'No especificado'}',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(fontFamily: 'Poppins',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -482,14 +482,14 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                                 children: [
                                   Text(
                                     'Total: ',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(fontFamily: 'Poppins',
                                       fontSize: 14,
                                       color: Colors.grey.shade600,
                                     ),
                                   ),
                                   Text(
                                     '\$${notification.saleData.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(fontFamily: 'Poppins',
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                       color: kMainColor,
@@ -502,7 +502,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                                   Text(
                                     dateFormat.format(
                                         DateTime.parse(notification.createdAt)),
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(fontFamily: 'Poppins',
                                       fontSize: 12,
                                       color: Colors.grey.shade600,
                                     ),
@@ -534,7 +534,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                         onPressed: () => Navigator.pop(context),
                         child: Text(
                           'Cerrar',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(fontFamily: 'Poppins',
                             color: Colors.grey.shade600,
                           ),
                         ),
@@ -553,7 +553,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                             _markAllAsRead(context, notifications, ref),
                         child: Text(
                           'Marcar como leídas',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(fontFamily: 'Poppins',
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
                           ),
@@ -567,7 +567,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                         },
                         child: Text(
                           'Ver todas',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(fontFamily: 'Poppins',
                             color: kMainColor,
                             fontWeight: FontWeight.w500,
                           ),
@@ -827,7 +827,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                         : details.companyName,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(fontFamily: 'Poppins',
                       fontSize: screenWidth < 400 ? 14 : 
                               context.width() < 900 ? 18 : context.width() * 0.005,
                       fontWeight: FontWeight.w500,

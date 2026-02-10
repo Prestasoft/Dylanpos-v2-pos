@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import '../../model/audit_model.dart';
 import '../../services/audit_service.dart';
 import '../Widgets/Constant Data/constant.dart';
@@ -172,8 +172,8 @@ class _AuditScreenState extends ConsumerState<AuditScreen> {
               color: kMainColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const HugeIcon(
-              icon: HugeIcons.strokeRoundedAudit01,
+            child: const Icon(
+              Icons.fact_check,
               color: kMainColor,
               size: 24,
             ),

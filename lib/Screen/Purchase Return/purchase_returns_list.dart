@@ -6,7 +6,7 @@ import '../../services/api_service.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
@@ -474,13 +474,10 @@ class _PurchaseReturnState extends State<PurchaseReturn> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    HugeIcon(
-                                                                        icon: HugeIcons
-                                                                            .strokeRoundedPrinter,
-                                                                        size:
-                                                                            22.0,
-                                                                        color:
-                                                                            kGreyTextColor),
+                                                                    Icon(
+                                                                        Icons.print,
+                                                                        size: 22.0,
+                                                                        color: kGreyTextColor),
                                                                     const SizedBox(
                                                                         width:
                                                                             4.0),

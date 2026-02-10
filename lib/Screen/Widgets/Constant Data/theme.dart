@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'constant.dart';
 
 abstract class AcnooTheme {
-  static const _fontFamily = 'NotoSans';
+  static const _fontFamily = 'Poppins'; // Cambiado de NotoSans para reducir memoria
   static ThemeData kLightTheme(BuildContext context) {
     final mainTheme = ThemeData.light();
     final textTheme = _getTextTheme(mainTheme.textTheme);

@@ -4,7 +4,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
@@ -194,11 +194,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                                                           kBorderColor)),
                                                               // color: Color(0xff98A2B3),
                                                             ),
-                                                            child: HugeIcon(
-                                                              icon: HugeIcons
-                                                                  .strokeRoundedMail01,
-                                                              color:
-                                                                  kNeutral600,
+                                                            child: Icon(
+                                                              Icons.mail_outline,
+                                                              color: kNeutral600,
                                                               size: 24.0,
                                                             ),
                                                           ),

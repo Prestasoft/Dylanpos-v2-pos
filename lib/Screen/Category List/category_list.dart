@@ -4,7 +4,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:iconly/iconly.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
@@ -1453,13 +1453,10 @@ class _CategoryListState extends State<CategoryList> {
                                                                 },
                                                                 child: Row(
                                                                   children: [
-                                                                    HugeIcon(
-                                                                      icon: HugeIcons
-                                                                          .strokeRoundedDelete02,
-                                                                      color:
-                                                                          kNeutral500,
-                                                                      size:
-                                                                          20.0,
+                                                                    Icon(
+                                                                      Icons.delete_outline,
+                                                                      color: kNeutral500,
+                                                                      size: 20.0,
                                                                     ),
                                                                     const SizedBox(
                                                                         width:

@@ -3,7 +3,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:iconly/iconly.dart';
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Screen/HRM/employees/provider/designation_provider.dart';
@@ -602,8 +602,8 @@ class _SalariesListScreenState extends State<SalariesListScreen> {
                                                                       child:
                                                                           Row(
                                                                         children: [
-                                                                          HugeIcon(
-                                                                              icon: HugeIcons.strokeRoundedDelete02,
+                                                                          Icon(
+                                                                              Icons.delete_outline,
                                                                               size: 22.0,
                                                                               color: kErrorColor),
                                                                           const SizedBox(

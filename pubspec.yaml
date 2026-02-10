@@ -17,7 +17,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.1.197+188
+version: 2.1.202+193
 
 environment:
   sdk: ">=2.17.5 <3.0.0"
@@ -41,7 +41,7 @@ dependencies:
   firebase_messaging: ^15.2.8
   cupertino_icons: ^1.0.2
   nb_utils: ^7.0.4
-  google_fonts: ^6.1.0
+  # google_fonts eliminado para reducir consumo de memoria - usar fuentes locales (Poppins, NotoSans)
   flutter_feather_icons: ^2.0.0+1
   material_design_icons_flutter: ^7.0.7296
   font_awesome_flutter: ^10.8.0
@@ -94,7 +94,7 @@ dependencies:
   expansion_widget: ^0.1.0
   collection: ^1.18.0
   html: ^0.15.4
-  hugeicons: ^0.0.7
+  # hugeicons: ^0.0.7 # Eliminado - fuente de 1.9MB causa error de memoria
   web: ^1.1.0
   mime: ^1.0.4
 
@@ -138,27 +138,14 @@ flutter:
     - images/dashboard_icon/
     - images/dinero/
     - assets/version.json
+  # IMPORTANTE: Fuentes reducidas al mínimo para evitar error de memoria "Array buffer allocation failed"
+  # El navegador tiene límite de memoria para fuentes - usar solo Regular y Bold
   fonts:
-    - family: NotoSans
-      fonts:
-        - asset: fonts/NotoSans/NotoSans-Regular.ttf
-        - asset: fonts/NotoSans/NotoSans-Bold.ttf
-          weight: 700
-        - asset: fonts/NotoSans/NotoSans-Italic.ttf
-          style: italic
-        - asset: fonts/NotoSans/NotoSans-BoldItalic.ttf
-          weight: 700
-          style: italic
     - family: Poppins
       fonts:
         - asset: fonts/Poppins/Poppins-Regular.ttf
         - asset: fonts/Poppins/Poppins-Bold.ttf
           weight: 700
-        - asset: fonts/Poppins/Poppins-Italic.ttf
-          style: italic
-        - asset: fonts/Poppins/Poppins-BoldItalic.ttf
-          weight: 700
-          style: italic
 
 flutter_intl:
   enabled: true

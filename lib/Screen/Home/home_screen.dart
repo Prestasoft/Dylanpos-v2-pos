@@ -10,7 +10,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart' as pro;
@@ -1172,8 +1172,8 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
                               Flexible(
                                 child: Row(
                                   children: [
-                                    HugeIcon(
-                                      icon: HugeIcons.strokeRoundedActivity02,
+                                    Icon(
+                                      Icons.show_chart,
                                       color: Colors.black,
                                       size: 24.0,
                                     ),

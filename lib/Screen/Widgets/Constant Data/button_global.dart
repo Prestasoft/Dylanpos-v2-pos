@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// GoogleFonts eliminado para reducir consumo de memoria
 
 import 'constant.dart';
 
@@ -62,7 +62,7 @@ class ButtonGlobalWithoutIcon extends StatelessWidget {
           children: [
             Text(
               buttontext,
-              style: GoogleFonts.jost(fontSize: 20.0, color: buttonTextColor),
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 20.0, color: buttonTextColor),
             ),
           ],
         ),

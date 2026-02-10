@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hugeicons/hugeicons.dart';
+// import 'package:hugeicons/hugeicons.dart'; // Eliminado
 import 'package:provider/provider.dart' as pro;
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
@@ -231,8 +231,8 @@ class TopCustomerTable extends StatelessWidget {
                 horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedUserGroup,
+                Icon(
+                  Icons.group,
                   color: Colors.black,
                   size: 24.0,
                 ),
