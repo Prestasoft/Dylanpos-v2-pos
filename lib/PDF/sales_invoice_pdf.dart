@@ -333,59 +333,50 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                   children: [
 
               // ═══════════════════════════════════════════════════════════════════════
-              // SECCIÓN COMPROBANTE FISCAL (Estilo DGII Prominente)
+              // SECCIÓN COMPROBANTE FISCAL - Solo se muestra si tiene NCF válido
               // ═══════════════════════════════════════════════════════════════════════
-              pw.Container(
-                width: double.infinity,
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(
-                    color: _hasValidNcf(transactions.ncfType)
-                        ? PdfColors.black
-                        : PdfColors.grey400,
-                    width: _hasValidNcf(transactions.ncfType) ? 2 : 1,
+              if (_hasValidNcf(transactions.ncfType)) ...[
+                pw.Container(
+                  width: double.infinity,
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.black, width: 2),
                   ),
-                ),
-                child: pw.Column(
-                  children: [
-                    // Encabezado con fondo de color
-                    pw.Container(
-                      width: double.infinity,
-                      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 15),
-                      decoration: pw.BoxDecoration(
-                        color: _hasValidNcf(transactions.ncfType)
-                            ? PdfColors.grey200
-                            : PdfColors.grey200,
-                      ),
-                      child: pw.Text(
-                        _hasValidNcf(transactions.ncfType) ? 'COMPROBANTE FISCAL' : 'DOCUMENTO INTERNO',
-                        textAlign: pw.TextAlign.center,
-                        style: pw.TextStyle(
-                          fontSize: 12,
-                          fontWeight: pw.FontWeight.bold,
-                          letterSpacing: 2,
-                          color: PdfColors.black,
+                  child: pw.Column(
+                    children: [
+                      // Encabezado con fondo de color
+                      pw.Container(
+                        width: double.infinity,
+                        padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 15),
+                        decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                        child: pw.Text(
+                          'COMPROBANTE FISCAL',
+                          textAlign: pw.TextAlign.center,
+                          style: pw.TextStyle(
+                            fontSize: 12,
+                            fontWeight: pw.FontWeight.bold,
+                            letterSpacing: 2,
+                            color: PdfColors.black,
+                          ),
                         ),
                       ),
-                    ),
-                    // Contenido principal
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(12),
-                      child: pw.Column(
-                        children: [
-                          // Tipo de comprobante
-                          pw.Row(
-                            children: [
-                              pw.Text('Tipo:', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-                              pw.SizedBox(width: 10),
-                              pw.Expanded(
-                                child: pw.Text(
-                                  _getInvoiceTitle(transactions.ncfType),
-                                  style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                      // Contenido principal
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(12),
+                        child: pw.Column(
+                          children: [
+                            // Tipo de comprobante
+                            pw.Row(
+                              children: [
+                                pw.Text('Tipo:', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                                pw.SizedBox(width: 10),
+                                pw.Expanded(
+                                  child: pw.Text(
+                                    _getInvoiceTitle(transactions.ncfType),
+                                    style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          if (_hasValidNcf(transactions.ncfType)) ...[
+                              ],
+                            ),
                             pw.SizedBox(height: 8),
                             // NCF en recuadro destacado
                             pw.Row(
@@ -423,14 +414,13 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                               ),
                             ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-
-              pw.SizedBox(height: 12),
+                pw.SizedBox(height: 12),
+              ],
 
               // ═══════════════════════════════════════════════════════════════════════
               // SECCIÓN: FACTURADO A (Cliente) - Estilo Formulario Oficial
@@ -483,95 +473,69 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
               // ═══════════════════════════════════════════════════════════════════════
               // SECCIÓN: CONDICIONES + RESPONSABLES
               // ═══════════════════════════════════════════════════════════════════════
-              pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  // ─── Condiciones ───
-                  pw.Expanded(
-                    child: pw.Container(
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey400, width: 1),
+              // ─── Responsables (ancho completo) ───
+              pw.Container(
+                width: double.infinity,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey400, width: 1),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey200,
+                        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1)),
                       ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Container(
-                            width: double.infinity,
-                            padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                            decoration: const pw.BoxDecoration(
-                              color: PdfColors.grey200,
-                              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1)),
-                            ),
-                            child: pw.Text('CONDICIONES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Column(
-                              children: [
-                                _buildInfoRow('Condición', transactions.isPaid! ? 'PAGADO' : 'PENDIENTE'),
-                                _buildInfoRow('Método', transactions.paymentType ?? 'N/A'),
-                                if (place != null && place != '-')
-                                  _buildInfoRow('Lugar', place),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: pw.Text('RESPONSABLES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                     ),
-                  ),
-                  pw.SizedBox(width: 8),
-                  // ─── Responsables ───
-                  pw.Expanded(
-                    child: pw.Container(
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey400, width: 1),
-                      ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
-                          pw.Container(
-                            width: double.infinity,
-                            padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                            decoration: const pw.BoxDecoration(
-                              color: PdfColors.grey200,
-                              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1)),
-                            ),
-                            child: pw.Text('RESPONSABLES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
+                          // Columna izquierda
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              _buildInfoRowCompact('Vendedor', transactions.sellerName ?? 'Admin'),
+                              _buildInfoRowCompact('Reservó', reservationSellerName),
+                              _buildInfoRowCompact('Hora', DateFormat('h:mm a').format(DateTime.parse(transactions.purchaseDate))),
+                            ],
                           ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Column(
-                              children: [
-                                _buildInfoRow('Vendedor', transactions.sellerName ?? 'Admin'),
-                                _buildInfoRow('Reservó', reservationSellerName),
-                                _buildInfoRow('Hora', DateFormat('HH:mm').format(DateTime.parse(transactions.purchaseDate))),
-                                // Fechas de reservación
-                                ...() {
-                                  List<pw.Widget> dateWidgets = [];
-                                  final mainReservation = preQuinceFiestaReservation ?? normalReservation ??
-                                      (reservaciones.where((r) => r != null).isNotEmpty ? reservaciones.where((r) => r != null).first : null);
-                                  if (mainReservation != null) {
-                                    if (preQuinceFiestaReservation != null) {
-                                      dateWidgets.add(_buildInfoRow('Pre-Quince', _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time'])));
-                                      final fiestaDate = mainReservation.reservation['fiesta_date']?.toString();
-                                      final fiestaTime = mainReservation.reservation['fiesta_time']?.toString();
-                                      if (fiestaDate != null && fiestaDate.isNotEmpty && fiestaTime != null && fiestaTime.isNotEmpty) {
-                                        dateWidgets.add(_buildInfoRow('Fiesta', _formatearFechaYHora(fiestaDate, fiestaTime), bold: true));
-                                      }
-                                    } else {
-                                      dateWidgets.add(_buildInfoRow('Reservación', _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time'])));
+                          // Columna derecha - Fechas de reservación
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              _buildInfoRowCompact('Tipo', _getInvoiceTitle(transactions.ncfType)),
+                              _buildInfoRowCompact('Estado', transactions.isPaid! ? 'PAGADO' : 'PENDIENTE'),
+                              ...() {
+                                List<pw.Widget> dateWidgets = [];
+                                final mainReservation = preQuinceFiestaReservation ?? normalReservation ??
+                                    (reservaciones.where((r) => r != null).isNotEmpty ? reservaciones.where((r) => r != null).first : null);
+                                if (mainReservation != null) {
+                                  if (preQuinceFiestaReservation != null) {
+                                    dateWidgets.add(_buildInfoRowCompact('Pre-Quince', _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time'])));
+                                    final fiestaDate = mainReservation.reservation['fiesta_date']?.toString();
+                                    final fiestaTime = mainReservation.reservation['fiesta_time']?.toString();
+                                    if (fiestaDate != null && fiestaDate.isNotEmpty && fiestaTime != null && fiestaTime.isNotEmpty) {
+                                      dateWidgets.add(_buildInfoRowCompact('Fiesta', _formatearFechaYHora(fiestaDate, fiestaTime)));
                                     }
+                                  } else {
+                                    dateWidgets.add(_buildInfoRowCompact('Cita', _formatearFechaYHora(mainReservation.reservation['reservation_date'], mainReservation.reservation['reservation_time'])));
                                   }
-                                  return dateWidgets;
-                                }(),
-                              ],
-                            ),
+                                }
+                                return dateWidgets;
+                              }(),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
 
               pw.SizedBox(height: 10),
@@ -752,7 +716,21 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                           fontSize: 11,
                         ),
                       ),
-                    )
+                    ),
+                    // Lugar (si existe)
+                    if (place != null && place != '-') ...[
+                      pw.SizedBox(height: 6.0),
+                      pw.Container(
+                        width: 300,
+                        child: pw.Text(
+                          "Lugar: $place",
+                          style: pw.TextStyle(
+                            color: PdfColors.black,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
                   ]),
                   pw.SizedBox(
                     width: 250.0,
@@ -1716,9 +1694,37 @@ String _formatearFechaYHora(String? fecha, String? hora) {
   try {
     final date = DateTime.parse(fecha);
     final fechaFormateada = DateFormat('dd/MM/yyyy').format(date);
-    return hora != null && hora.isNotEmpty ? '$fechaFormateada $hora' : fechaFormateada;
+    if (hora != null && hora.isNotEmpty) {
+      // Convertir hora a formato 12h AM/PM
+      final horaFormateada = _convertirHora12h(hora);
+      return '$fechaFormateada $horaFormateada';
+    }
+    return fechaFormateada;
   } catch (e) {
     return '-';
+  }
+}
+
+/// Convierte hora de formato 24h (HH:mm) a formato 12h (h:mm AM/PM)
+String _convertirHora12h(String hora) {
+  try {
+    // Parsear hora en formato HH:mm o H:mm
+    final parts = hora.split(':');
+    if (parts.length < 2) return hora;
+
+    int hour = int.parse(parts[0]);
+    final minutes = parts[1].substring(0, 2); // Solo los primeros 2 caracteres (minutos)
+
+    final period = hour >= 12 ? 'PM' : 'AM';
+    if (hour == 0) {
+      hour = 12;
+    } else if (hour > 12) {
+      hour = hour - 12;
+    }
+
+    return '$hour:$minutes $period';
+  } catch (e) {
+    return hora; // Si falla, retornar la hora original
   }
 }
 
@@ -1762,30 +1768,25 @@ String _formatExpirationDate(String dateStr) {
   }
 }
 
-/// Widget auxiliar para construir filas de información en formato etiqueta: valor
-pw.Widget _buildInfoRow(String label, String value, {bool bold = false}) {
+/// Widget auxiliar para construir filas de información compactas (para layout horizontal)
+pw.Widget _buildInfoRowCompact(String label, String value) {
   return pw.Padding(
-    padding: const pw.EdgeInsets.only(bottom: 3),
+    padding: const pw.EdgeInsets.only(bottom: 2),
     child: pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      mainAxisSize: pw.MainAxisSize.min,
       children: [
-        pw.SizedBox(
-          width: 70,
-          child: pw.Text(
-            '$label:',
-            style: pw.TextStyle(
-              fontSize: 9,
-              color: PdfColors.grey700,
-            ),
+        pw.Text(
+          '$label: ',
+          style: pw.TextStyle(
+            fontSize: 8,
+            color: PdfColors.grey700,
           ),
         ),
-        pw.Expanded(
-          child: pw.Text(
-            value,
-            style: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
-            ),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 8,
+            fontWeight: pw.FontWeight.bold,
           ),
         ),
       ],

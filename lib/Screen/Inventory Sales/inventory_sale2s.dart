@@ -2328,73 +2328,10 @@ class _InventorySalesState extends State<InventorySales> {
                                             )),
                                             DataCell(
                                               Center(
-                                                child: SizedBox(
-                                                  width: 70,
-                                                  height: 35,
-                                                  child: TextFormField(
-                                                    textAlign: TextAlign.center,
-                                                    initialValue: myFormat
-                                                        .format(double.tryParse(
-                                                                cartList[index]
-                                                                    .subTotal) ??
-                                                            0),
-                                                    onChanged: (value) {
-                                                      if (value == '') {
-                                                        setState(() {
-                                                          cartList[index]
-                                                                  .subTotal =
-                                                              0.toString();
-                                                        });
-                                                      } else if (double
-                                                              .tryParse(
-                                                                  value) ==
-                                                          null) {
-                                                        EasyLoading.showError(lang
-                                                            .S
-                                                            .of(context)
-                                                            .enterAValidPrice);
-                                                      } else {
-                                                        setState(() {
-                                                          cartList[index]
-                                                              .subTotal = double
-                                                                  .parse(value)
-                                                              .toStringAsFixed(
-                                                                  2);
-                                                        });
-                                                      }
-                                                      updateDueAmount();
-                                                    },
-                                                    onFieldSubmitted: (value) {
-                                                      if (value == '') {
-                                                        setState(() {
-                                                          cartList[index]
-                                                                  .subTotal =
-                                                              0.toString();
-                                                          updateDueAmount();
-                                                        });
-                                                      } else if (double
-                                                              .tryParse(
-                                                                  value) ==
-                                                          null) {
-                                                        EasyLoading.showError(lang
-                                                            .S
-                                                            .of(context)
-                                                            .enterAValidPrice);
-                                                      } else {
-                                                        setState(() {
-                                                          cartList[index]
-                                                              .subTotal = double
-                                                                  .parse(value)
-                                                              .toStringAsFixed(
-                                                                  2);
-                                                          updateDueAmount();
-                                                        });
-                                                      }
-                                                    },
-                                                    decoration: InputDecoration(
-                                                        border:
-                                                            InputBorder.none),
-                                                  ),
+                                                child: Text(
+                                                  '$globalCurrency${myFormat.format(double.tryParse(cartList[index].subTotal?.toString() ?? '0') ?? 0)}',
+                                                  style: theme.textTheme.bodyLarge,
+                                                  textAlign: TextAlign.center,
                                                 ),
                                               ),
                                             ),

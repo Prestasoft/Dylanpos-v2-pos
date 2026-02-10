@@ -1118,7 +1118,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'v2.1.222',
+                  'v2.1.225',
                   style: TextStyle(fontFamily: 'Poppins',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
