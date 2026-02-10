@@ -141,7 +141,10 @@ class _InventorySalesState extends State<InventorySales> {
     checkCurrentUserAndRestartApp();
     payingAmountController.text = '0';
     checkInternet();
-    updateDueAmount();
+    // NOTA: updateDueAmount() se llama después en addPostFrameCallback para asegurar que el widget esté construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      updateDueAmount();
+    });
 
     if (widget.quotation != null) {
       for (var element in widget.quotation!.productList!) {
@@ -154,6 +157,10 @@ class _InventorySalesState extends State<InventorySales> {
       selectedUserName?.customerName = widget.quotation!.customerName;
       selectedUserName?.phoneNumber = widget.quotation!.customerPhone;
       selectedUserName?.type = widget.quotation!.customerType;
+      // CRÍTICO: Actualizar dueAmount después de cargar cotización
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        updateDueAmount();
+      });
     }
 
     // Si viene un reservationId, cargar la reservación automáticamente
