@@ -29,7 +29,9 @@ FutureOr<Uint8List> generateSaleDocument({
   debugPrint('🔵 [generateSaleDocument] purchaseDate: "${transactions.purchaseDate}"');
   debugPrint('🔵 [generateSaleDocument] productList null: ${transactions.productList == null}');
   debugPrint('🔵 [generateSaleDocument] productList length: ${transactions.productList?.length ?? 0}');
+  debugPrint('🔵 [generateSaleDocument] reservationIds: ${transactions.reservationIds}');
 
+  debugPrint('🔵 [generateSaleDocument] Cargando imagen logo...');
   final imageData = await rootBundle.load('images/vg_logo.png');
   final imageBytes = imageData.buffer.asUint8List();
   final image = pw.MemoryImage(imageBytes);
@@ -87,19 +89,31 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones con timeout
   List<FullReservation?> reservaciones = [];
+  debugPrint('🔵 [generateSaleDocument] Iniciando carga de ${idReservaciones.length} reservaciones...');
   try {
     reservaciones = await Future.wait(
-      idReservaciones.map((id) => 
-        ref.read(fullReservationByIdProviderVQ(id).future)
-          .timeout(const Duration(seconds: 3), onTimeout: () => null)
-          .catchError((_) => null)
-      )
+      idReservaciones.map((id) {
+        debugPrint('🔵 [generateSaleDocument] Cargando reservación: $id');
+        return ref.read(fullReservationByIdProviderVQ(id).future)
+          .timeout(const Duration(seconds: 3), onTimeout: () {
+            debugPrint('⚠️ [generateSaleDocument] TIMEOUT cargando reservación: $id');
+            return null;
+          })
+          .catchError((e) {
+            debugPrint('❌ [generateSaleDocument] ERROR cargando reservación $id: $e');
+            return null;
+          });
+      })
     ).timeout(
       const Duration(seconds: 10),
-      onTimeout: () => <FullReservation?>[],
+      onTimeout: () {
+        debugPrint('⚠️ [generateSaleDocument] TIMEOUT GLOBAL cargando reservaciones');
+        return <FullReservation?>[];
+      },
     );
+    debugPrint('🔵 [generateSaleDocument] Reservaciones cargadas: ${reservaciones.length}');
   } catch (e) {
-    print('Error obteniendo reservaciones: $e');
+    debugPrint('❌ [generateSaleDocument] ERROR obteniendo reservaciones: $e');
     reservaciones = [];
   }
   
