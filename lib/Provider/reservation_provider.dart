@@ -254,15 +254,20 @@ final ReservaPendientProvider =
 
       if (response.success && response.data != null) {
         final reservationsData = response.data['reservations'] as List<dynamic>? ?? [];
-        final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ?? [];
-        final servicesData = servicesResponse.data?['services'] as List<dynamic>? ?? [];
+        // Soportar formato completo ('dresses') y compacto ('d')
+        final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ??
+                            dressesResponse.data?['d'] as List<dynamic>? ?? [];
+        // Soportar formato completo ('services') y compacto ('s')
+        final servicesData = servicesResponse.data?['services'] as List<dynamic>? ??
+                             servicesResponse.data?['s'] as List<dynamic>? ?? [];
 
         // Build maps - indexar por UUID y firebase_id para compatibilidad
         final dressesMap = <String, Map<String, dynamic>>{};
         for (var d in dressesData) {
           if (d is Map) {
             final dressData = Map<String, dynamic>.from(d);
-            final id = d['id']?.toString() ?? d['dress_id']?.toString() ?? '';
+            // Soportar formato completo (id) y compacto (i)
+            final id = d['id']?.toString() ?? d['i']?.toString() ?? d['dress_id']?.toString() ?? '';
             final firebaseId = d['firebase_id']?.toString() ?? '';
             if (id.isNotEmpty) dressesMap[id] = dressData;
             if (firebaseId.isNotEmpty) dressesMap[firebaseId] = dressData;
@@ -272,7 +277,8 @@ final ReservaPendientProvider =
         final servicesMap = <String, Map<String, dynamic>>{};
         for (var s in servicesData) {
           if (s is Map) {
-            final id = s['id']?.toString() ?? s['service_id']?.toString() ?? '';
+            // Soportar formato completo (id) y compacto (i)
+            final id = s['id']?.toString() ?? s['i']?.toString() ?? s['service_id']?.toString() ?? '';
             servicesMap[id] = Map<String, dynamic>.from(s);
           }
         }
@@ -793,15 +799,20 @@ final fullReservationsProvider =
     if (!response.success) return [];
 
     final reservationsData = response.data?['reservations'] as List<dynamic>? ?? [];
-    final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ?? [];
-    final servicesData = servicesResponse.data?['services'] as List<dynamic>? ?? [];
+    // Soportar formato completo ('dresses') y compacto ('d')
+    final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ??
+                        dressesResponse.data?['d'] as List<dynamic>? ?? [];
+    // Soportar formato completo ('services') y compacto ('s')
+    final servicesData = servicesResponse.data?['services'] as List<dynamic>? ??
+                         servicesResponse.data?['s'] as List<dynamic>? ?? [];
 
     // Build maps - indexar por UUID y firebase_id para compatibilidad
     final dressesMap = <String, Map<String, dynamic>>{};
     for (var d in dressesData) {
       if (d is Map) {
         final dressData = Map<String, dynamic>.from(d);
-        final id = d['id']?.toString() ?? d['dress_id']?.toString() ?? '';
+        // Soportar formato completo (id) y compacto (i)
+        final id = d['id']?.toString() ?? d['i']?.toString() ?? d['dress_id']?.toString() ?? '';
         final firebaseId = d['firebase_id']?.toString() ?? '';
         if (id.isNotEmpty) dressesMap[id] = dressData;
         if (firebaseId.isNotEmpty) dressesMap[firebaseId] = dressData;
@@ -812,7 +823,8 @@ final fullReservationsProvider =
     for (var s in servicesData) {
       if (s is Map) {
         final serviceData = Map<String, dynamic>.from(s);
-        final id = s['id']?.toString() ?? s['service_id']?.toString() ?? '';
+        // Soportar formato completo (id) y compacto (i)
+        final id = s['id']?.toString() ?? s['i']?.toString() ?? s['service_id']?.toString() ?? '';
         final firebaseId = s['firebase_id']?.toString() ?? '';
         if (id.isNotEmpty) servicesMap[id] = serviceData;
         if (firebaseId.isNotEmpty) servicesMap[firebaseId] = serviceData;
@@ -864,15 +876,20 @@ final fullReservationByIdProviderVQ =
     // Buscar cliente usando la función que normaliza teléfonos
     final client = _findClientByIdOrPhone(customerList, clientId);
 
-    final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ?? [];
-    final servicesData = servicesResponse.data?['services'] as List<dynamic>? ?? [];
+    // Soportar formato completo ('dresses') y compacto ('d')
+    final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ??
+                        dressesResponse.data?['d'] as List<dynamic>? ?? [];
+    // Soportar formato completo ('services') y compacto ('s')
+    final servicesData = servicesResponse.data?['services'] as List<dynamic>? ??
+                         servicesResponse.data?['s'] as List<dynamic>? ?? [];
 
     // Indexar por UUID y firebase_id para compatibilidad
     final dressesMap = <String, Map<String, dynamic>>{};
     for (var d in dressesData) {
       if (d is Map) {
         final dressData = Map<String, dynamic>.from(d);
-        final id = d['id']?.toString() ?? d['dress_id']?.toString() ?? '';
+        // Soportar formato completo (id) y compacto (i)
+        final id = d['id']?.toString() ?? d['i']?.toString() ?? d['dress_id']?.toString() ?? '';
         final firebaseId = d['firebase_id']?.toString() ?? '';
         if (id.isNotEmpty) dressesMap[id] = dressData;
         if (firebaseId.isNotEmpty) dressesMap[firebaseId] = dressData;
@@ -883,7 +900,8 @@ final fullReservationByIdProviderVQ =
     for (var s in servicesData) {
       if (s is Map) {
         final serviceData = Map<String, dynamic>.from(s);
-        final id = s['id']?.toString() ?? s['service_id']?.toString() ?? '';
+        // Soportar formato completo (id) y compacto (i)
+        final id = s['id']?.toString() ?? s['i']?.toString() ?? s['service_id']?.toString() ?? '';
         final firebaseId = s['firebase_id']?.toString() ?? '';
         if (id.isNotEmpty) servicesMap[id] = serviceData;
         if (firebaseId.isNotEmpty) servicesMap[firebaseId] = serviceData;
@@ -953,15 +971,20 @@ final fullReservationByIdProvider =
       // Buscar cliente usando la función que normaliza teléfonos
       final client = _findClientByIdOrPhone(customerList, clientId);
 
-      final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ?? [];
-      final servicesData = servicesResponse.data?['services'] as List<dynamic>? ?? [];
+      // Soportar formato completo ('dresses') y compacto ('d')
+    final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ??
+                        dressesResponse.data?['d'] as List<dynamic>? ?? [];
+      // Soportar formato completo ('services') y compacto ('s')
+    final servicesData = servicesResponse.data?['services'] as List<dynamic>? ??
+                         servicesResponse.data?['s'] as List<dynamic>? ?? [];
 
       // Indexar por UUID y firebase_id para compatibilidad
       final dressesMap = <String, Map<String, dynamic>>{};
       for (var d in dressesData) {
         if (d is Map) {
           final dressData = Map<String, dynamic>.from(d);
-          final id = d['id']?.toString() ?? d['dress_id']?.toString() ?? '';
+          // Soportar formato completo (id) y compacto (i)
+          final id = d['id']?.toString() ?? d['i']?.toString() ?? d['dress_id']?.toString() ?? '';
           final firebaseId = d['firebase_id']?.toString() ?? '';
           if (id.isNotEmpty) dressesMap[id] = dressData;
           if (firebaseId.isNotEmpty) dressesMap[firebaseId] = dressData;
@@ -972,7 +995,8 @@ final fullReservationByIdProvider =
       for (var s in servicesData) {
         if (s is Map) {
           final serviceData = Map<String, dynamic>.from(s);
-          final id = s['id']?.toString() ?? s['service_id']?.toString() ?? '';
+          // Soportar formato completo (id) y compacto (i)
+          final id = s['id']?.toString() ?? s['i']?.toString() ?? s['service_id']?.toString() ?? '';
           final firebaseId = s['firebase_id']?.toString() ?? '';
           if (id.isNotEmpty) servicesMap[id] = serviceData;
           if (firebaseId.isNotEmpty) servicesMap[firebaseId] = serviceData;
@@ -1292,15 +1316,20 @@ final fullReservationsByDressProvider =
       }
 
       final reservationsData = response.data?['reservations'] as List<dynamic>? ?? [];
-      final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ?? [];
-      final servicesData = servicesResponse.data?['services'] as List<dynamic>? ?? [];
+      // Soportar formato completo ('dresses') y compacto ('d')
+    final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ??
+                        dressesResponse.data?['d'] as List<dynamic>? ?? [];
+      // Soportar formato completo ('services') y compacto ('s')
+    final servicesData = servicesResponse.data?['services'] as List<dynamic>? ??
+                         servicesResponse.data?['s'] as List<dynamic>? ?? [];
 
       // Indexar por UUID y firebase_id para compatibilidad
       final dressesMap = <String, Map<String, dynamic>>{};
       for (var d in dressesData) {
         if (d is Map) {
           final dressData = Map<String, dynamic>.from(d);
-          final id = d['id']?.toString() ?? d['dress_id']?.toString() ?? '';
+          // Soportar formato completo (id) y compacto (i)
+          final id = d['id']?.toString() ?? d['i']?.toString() ?? d['dress_id']?.toString() ?? '';
           final firebaseId = d['firebase_id']?.toString() ?? '';
           if (id.isNotEmpty) dressesMap[id] = dressData;
           if (firebaseId.isNotEmpty) dressesMap[firebaseId] = dressData;
@@ -1311,7 +1340,8 @@ final fullReservationsByDressProvider =
       for (var s in servicesData) {
         if (s is Map) {
           final serviceData = Map<String, dynamic>.from(s);
-          final id = s['id']?.toString() ?? s['service_id']?.toString() ?? '';
+          // Soportar formato completo (id) y compacto (i)
+          final id = s['id']?.toString() ?? s['i']?.toString() ?? s['service_id']?.toString() ?? '';
           final firebaseId = s['firebase_id']?.toString() ?? '';
           if (id.isNotEmpty) servicesMap[id] = serviceData;
           if (firebaseId.isNotEmpty) servicesMap[firebaseId] = serviceData;
@@ -1371,6 +1401,10 @@ final fullReservationsByDressProvider =
 
 final fullReservationsByDressProvider2 =
     StreamProvider.family<List<FullReservation>, String>((ref, dressId) {
+  // ⚠️ CRÍTICO: Observar branchId para que el provider se invalide cuando cambie la sucursal
+  final branchId = ref.watch(branchIdProvider);
+  debugPrint('🔍 [fullReservationsByDressProvider2] Iniciando para dressId: $dressId, branch: $branchId');
+
   final controller = StreamController<List<FullReservation>>();
 
   Future<void> fetchReservations() async {
@@ -1379,30 +1413,48 @@ final fullReservationsByDressProvider2 =
       final formattedToday =
           "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
-      final customers = await ref.watch(allCustomerProvider.future);
+      debugPrint('📡 [fullReservationsByDressProvider2] Buscando reservas desde: $formattedToday para vestido: $dressId');
 
-      final response = await _apiService.get('reservations', queryParams: {
-        'start_date': formattedToday,
-        'limit': '1000',
-      });
-      final dressesResponse = await _apiService.get('dresses', queryParams: {'limit': '1000'});
-      final servicesResponse = await _apiService.get('services', queryParams: {'limit': '1000'});
+      // Ejecutar todas las llamadas API en PARALELO para mejor rendimiento
+      final results = await Future.wait([
+        ref.read(allCustomerProvider.future),
+        _apiService.get('reservations', queryParams: {
+          'start_date': formattedToday,
+          'limit': '1000',
+        }),
+        _apiService.get('dresses', queryParams: {'limit': '1000'}),
+        _apiService.get('services', queryParams: {'limit': '1000'}),
+      ]);
+
+      final customers = results[0] as List<CustomerModel>;
+      final response = results[1] as ApiResponse;
+      final dressesResponse = results[2] as ApiResponse;
+      final servicesResponse = results[3] as ApiResponse;
 
       if (!response.success) {
+        debugPrint('⚠️ [fullReservationsByDressProvider2] Error en respuesta de reservas');
         controller.add([]);
         return;
       }
 
       final reservationsData = response.data?['reservations'] as List<dynamic>? ?? [];
-      final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ?? [];
-      final servicesData = servicesResponse.data?['services'] as List<dynamic>? ?? [];
+      // Soportar formato completo ('dresses') y compacto ('d')
+      final dressesData = dressesResponse.data?['dresses'] as List<dynamic>? ??
+                          dressesResponse.data?['d'] as List<dynamic>? ?? [];
+      // Soportar formato completo ('services') y compacto ('s')
+      final servicesData = servicesResponse.data?['services'] as List<dynamic>? ??
+                           servicesResponse.data?['s'] as List<dynamic>? ?? [];
+
+      debugPrint('📡 [fullReservationsByDressProvider2] Reservas: ${reservationsData.length}, Vestidos: ${dressesData.length}, Servicios: ${servicesData.length}');
 
       // Indexar por UUID y firebase_id para compatibilidad
+      // Soportar formato compacto (i=id) y completo (id)
       final dressesMap = <String, Map<String, dynamic>>{};
       for (var d in dressesData) {
         if (d is Map) {
           final dressData = Map<String, dynamic>.from(d);
-          final id = d['id']?.toString() ?? d['dress_id']?.toString() ?? '';
+          // Formato compacto: i=id, n=name, c=category
+          final id = d['id']?.toString() ?? d['i']?.toString() ?? d['dress_id']?.toString() ?? '';
           final firebaseId = d['firebase_id']?.toString() ?? '';
           if (id.isNotEmpty) dressesMap[id] = dressData;
           if (firebaseId.isNotEmpty) dressesMap[firebaseId] = dressData;
@@ -1413,22 +1465,31 @@ final fullReservationsByDressProvider2 =
       for (var s in servicesData) {
         if (s is Map) {
           final serviceData = Map<String, dynamic>.from(s);
-          final id = s['id']?.toString() ?? s['service_id']?.toString() ?? '';
+          // Formato compacto: i=id
+          final id = s['id']?.toString() ?? s['i']?.toString() ?? s['service_id']?.toString() ?? '';
           final firebaseId = s['firebase_id']?.toString() ?? '';
           if (id.isNotEmpty) servicesMap[id] = serviceData;
           if (firebaseId.isNotEmpty) servicesMap[firebaseId] = serviceData;
         }
       }
 
+      debugPrint('📡 [fullReservationsByDressProvider2] dressesMap keys: ${dressesMap.length}, servicesMap keys: ${servicesMap.length}');
+
       final filteredReservations = reservationsData.where((item) {
         if (item is! Map) return false;
         // Firebase usa 'multiple_dress', PostgreSQL usa 'dress_ids'
         final multipleDress = item['multiple_dress'] ?? item['dress_ids'];
         if (multipleDress is List) {
-          return multipleDress.any((dress) => dress is Map && dress['dress_id'] == dressId);
+          final matches = multipleDress.any((dress) => dress is Map && dress['dress_id'] == dressId);
+          if (matches) {
+            debugPrint('✅ [fullReservationsByDressProvider2] Encontrada reserva para vestido $dressId: ${item['id']}');
+          }
+          return matches;
         }
         return false;
       }).toList();
+
+      debugPrint('📡 [fullReservationsByDressProvider2] Reservas filtradas: ${filteredReservations.length}');
 
       final fullReservations = filteredReservations.map((item) {
         final data = Map<String, dynamic>.from(item as Map);

@@ -638,10 +638,13 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                                                             // Reserve
                                                             PopupMenuItem(
                                                                 onTap: () {
-                                                                  _showCalendarDressDialog(
-                                                                      context,
-                                                                      ref,
-                                                                      dress);
+                                                                  // Usar addPostFrameCallback para asegurar que el popup se cierra antes de abrir el diálogo
+                                                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                                    _showCalendarDressDialog(
+                                                                        context,
+                                                                        ref,
+                                                                        dress);
+                                                                  });
                                                                 },
                                                                 child: Row(
                                                                   children: [
@@ -1176,16 +1179,23 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
     // Solo inicializar el año, quitar el mes
     selectedYear ??= DateTime.now().year.toString();
 
-    final reservations =
-        await ref.read(fullReservationsByDressProvider2(dress.id).future);
+    // NOTA: Removido el await ref.read() que bloqueaba la UI
+    // El diálogo maneja el estado de carga internamente con ref.watch()
 
     // Variable de Rentas de Vestimenta
     final rentas = ref
         .watch(servicePackagesProvider.notifier)
         .searchPackages("Renta de Vestimenta");
-    final String packageRentaId =
-        rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
+    // Usar orElse para evitar excepción si no existe el paquete
+    String packageRentaId = '';
+    try {
+      packageRentaId = rentas.firstWhere((e) => e.name == "Renta de Vestimenta").id;
+    } catch (e) {
+      // Si no existe el paquete "Renta de Vestimenta", usar string vacío
+      debugPrint('⚠️ Paquete "Renta de Vestimenta" no encontrado');
+    }
 
+    // Mostrar diálogo inmediatamente (los datos se cargan dentro con ref.watch)
     showDialog(
       barrierDismissible: true,
       context: context,

@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, unused_result
 import 'dart:async';
 import 'dart:convert';
+import 'dart:html' as html;
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
@@ -1021,13 +1022,24 @@ class _InventorySalesState extends State<InventorySales> {
   //____________________________WareHouseModel_________________
 
   WareHouseModel? selectedWareHouse;
+  String? _lastKnownBranchId; // Para detectar cambios de sucursal
 
   int i = 0;
 
   DropdownButton<WareHouseModel> getWare({required List<WareHouseModel> list}) {
-    // Set initial value to the first item in the list, if available
-    // selectedWareHouse = list.isNotEmpty ? list.first : null;
     List<DropdownMenuItem<WareHouseModel>> dropDownItems = [];
+
+    // Obtener sucursal actual de localStorage
+    final currentBranchId = html.window.localStorage['selected_tenant_id'] ?? '';
+
+    // CRÍTICO: Si la sucursal cambió, resetear el warehouse seleccionado
+    if (_lastKnownBranchId != null && _lastKnownBranchId != currentBranchId) {
+      selectedWareHouse = null;
+      i = 0; // Resetear contador
+      debugPrint('🔄 Sucursal cambió de $_lastKnownBranchId a $currentBranchId - Reseteando warehouse');
+    }
+    _lastKnownBranchId = currentBranchId;
+
     for (var element in list) {
       dropDownItems.add(DropdownMenuItem(
         value: element,
@@ -1037,10 +1049,40 @@ class _InventorySalesState extends State<InventorySales> {
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      if (i == 0) {
-        selectedWareHouse = element;
+
+      // Seleccionar warehouse basado en la sucursal actual
+      if (selectedWareHouse == null) {
+        final warehouseNameUpper = element.warehouseName.toUpperCase();
+        bool matches = false;
+
+        // Mapeo de sucursal a warehouse
+        switch (currentBranchId) {
+          case 'sde':
+            matches = warehouseNameUpper.contains('SANTO DOMINGO ESTE') || warehouseNameUpper.contains('SDE');
+            break;
+          case 'sdo':
+            matches = warehouseNameUpper.contains('SANTO DOMINGO OESTE') || warehouseNameUpper.contains('SDO') || warehouseNameUpper.contains('OESTE');
+            break;
+          case 'stg':
+            matches = warehouseNameUpper.contains('SANTIAGO') || warehouseNameUpper.contains('STG');
+            break;
+          case 'rom':
+            matches = warehouseNameUpper.contains('ROMANA') || warehouseNameUpper.contains('ROM');
+            break;
+        }
+
+        if (matches) {
+          selectedWareHouse = element;
+          debugPrint('✅ Warehouse seleccionado: ${element.warehouseName} para sucursal $currentBranchId');
+        }
       }
       i++;
+    }
+
+    // Si no se encontró ninguno basado en la sucursal, seleccionar el primer warehouse disponible
+    if (selectedWareHouse == null && list.isNotEmpty) {
+      selectedWareHouse = list.first;
+      debugPrint('⚠️ No se encontró warehouse específico - usando primero: ${list.first.warehouseName}');
     }
 
     return DropdownButton(

@@ -149,8 +149,10 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
           'dress_id': dress.id,
           'branch_id': dress.branchId,
           'dress_name': dress.name,
+          'dress_price': dress.price.toString(), // AGREGADO: precio del vestido para facturación
         };
       }).toList();
+      debugPrint('👗 [ClothesReservation] multipleDress con precios: $multipleDress');
     }
 
     double totalReservationPrice = selectedValues.values.where((e) => e['vestidoPrice'] != null).map((e) => double.tryParse(e['vestidoPrice'].toString()) ?? 0.0).fold(0.0, (a, b) => a + b);
@@ -174,6 +176,10 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
     });
 
     if (success.statusReservation) {
+      debugPrint('✅ [ClothesReservation] Renta creada exitosamente');
+      debugPrint('🎯 [ClothesReservation] reservationId obtenido: ${success.reservationId}');
+      debugPrint('👤 [ClothesReservation] clientId enviado: ${selectedCustomer?.id ?? selectedCustomer?.phoneNumber ?? ""}');
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -190,6 +196,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
           ..selectItem('/sales/inventory-sales'); // Selecciona el ítem
 
         // Navega a la pantalla con el ID de la reservación
+        debugPrint('🚀 [ClothesReservation] Navegando a inventory-sales con reservationId: ${success.reservationId}');
         Navigator.of(context).popUntil((route) => route.isFirst);
         context.go('/sales/inventory-sales', extra: {'reservationId': success.reservationId});
       }

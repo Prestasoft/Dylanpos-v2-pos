@@ -1,32 +1,49 @@
 // Provider mejorado - Migrado a PostgreSQL API
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nb_utils/nb_utils.dart';
 
 import '../model/dress_model.dart';
 import '../services/api_service.dart';
+import 'branch_provider.dart';
 
 /// Servicio API compartido
 final ApiService _apiService = ApiService();
 
 /// Provider de vestidos por estado - Usa PostgreSQL API
+/// ⚠️ CLAVE: Observa branchIdProvider para ser reactivo a cambios de sucursal
 final dressesByStatusProvider = FutureProvider.family<List<DressModel>, String>(
   (ref, params) async {
+    // ⚠️ CRÍTICO: Observar branchId para que el provider se invalide cuando cambie la sucursal
+    final branchId = ref.watch(branchIdProvider);
+    debugPrint('🔍 [dressesByStatusProvider] Iniciando con params: $params, branch: $branchId');
+
     try {
       final dressesResult = await _fetchDresses();
-      if (dressesResult.isEmpty) return [];
+      debugPrint('🔍 [dressesByStatusProvider] _fetchDresses retornó: ${dressesResult.length} vestidos para branch: $branchId');
+      if (dressesResult.isEmpty) {
+        debugPrint('⚠️ [dressesByStatusProvider] Lista de vestidos vacía para branch: $branchId');
+        return [];
+      }
 
       switch (params) {
         case 'Todos':
+          debugPrint('✅ [dressesByStatusProvider] Retornando todos: ${dressesResult.length}');
           return dressesResult;
         case 'Lavanderia':
-          return dressesResult.where((dress) => !dress.available).toList();
+          final filtered = dressesResult.where((dress) => !dress.available).toList();
+          debugPrint('✅ [dressesByStatusProvider] Lavanderia: ${filtered.length}');
+          return filtered;
         default:
           final reservedIds = await _getReservedDressIds();
-          return _filterByStatus(dressesResult, params, reservedIds);
+          final filtered = _filterByStatus(dressesResult, params, reservedIds);
+          debugPrint('✅ [dressesByStatusProvider] Filtrado por $params: ${filtered.length}');
+          return filtered;
       }
     } catch (e) {
+      debugPrint('❌ [dressesByStatusProvider] Error: $e');
       return <DressModel>[];
     }
   },
@@ -35,31 +52,64 @@ final dressesByStatusProvider = FutureProvider.family<List<DressModel>, String>(
 /// Obtener todos los vestidos desde PostgreSQL
 Future<List<DressModel>> _fetchDresses() async {
   try {
+    debugPrint('📡 [_fetchDresses] Llamando API dresses...');
     final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
+    debugPrint('📡 [_fetchDresses] Respuesta success: ${response.success}, data: ${response.data != null}');
 
     if (!response.success || response.data == null) {
+      debugPrint('⚠️ [_fetchDresses] Respuesta fallida o sin datos');
       return [];
     }
 
-    final dressesData = response.data['dresses'] as List<dynamic>? ?? [];
+    debugPrint('📡 [_fetchDresses] response.data keys: ${response.data.keys.toList()}');
+
+    // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+    final dressesData = response.data['dresses'] as List<dynamic>? ??
+                        response.data['d'] as List<dynamic>? ?? [];
+    debugPrint('📡 [_fetchDresses] dressesData.length: ${dressesData.length}');
     final List<DressModel> dresses = [];
 
     for (var item in dressesData) {
       try {
-        if (item is Map && item.containsKey('name')) {
+        if (item is Map) {
           final data = Map<String, dynamic>.from(item);
-          final id = data['id']?.toString() ?? '';
-          dresses.add(DressModel.fromMap(data, id));
+
+          // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+          // Convertir thumbnail URL a imagen original (thumbnails no preservan orientación EXIF)
+          String? thumbnailUrl = data['t']?.toString();
+          String? originalUrl = thumbnailUrl?.replaceAll('/thumbnails/', '/');
+
+          final Map<String, dynamic> normalizedData = {
+            'id': data['id'] ?? data['i'] ?? '',
+            'name': data['name'] ?? data['n'] ?? '',
+            'category': data['category'] ?? data['c'] ?? '',
+            'subcategory': data['subcategory'] ?? '',
+            'branch_id': data['branch_id'] ?? data['b'] ?? '',
+            'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+            'state': data['state'] ?? data['s'] ?? 'available',
+            'images': data['images'] ?? (originalUrl != null ? [originalUrl] : []),
+            'price': data['price'] ?? data['p'] ?? 0,
+            'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+          };
+
+          // Verificar campos mínimos
+          if (normalizedData['name'] != null && normalizedData['name'].toString().isNotEmpty) {
+            final id = normalizedData['id']?.toString() ?? '';
+            dresses.add(DressModel.fromMap(normalizedData, id));
+          }
         }
       } catch (e) {
-        // Error silencioso
+        debugPrint('⚠️ [_fetchDresses] Error parseando item: $e');
       }
     }
 
+    debugPrint('✅ [_fetchDresses] Vestidos parseados: ${dresses.length}');
     return dresses;
   } on TimeoutException {
+    debugPrint('❌ [_fetchDresses] Timeout');
     throw Exception('Timeout al cargar vestidos');
   } catch (e) {
+    debugPrint('❌ [_fetchDresses] Error: $e');
     rethrow;
   }
 }

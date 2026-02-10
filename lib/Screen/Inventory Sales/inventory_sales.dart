@@ -130,6 +130,7 @@ class _InventorySalesState extends State<InventorySales> {
   bool isLoadingNcfTypes = false;
 
   WareHouseModel? selectedWareHouse;
+  String? _lastKnownBranchId; // Para detectar cambios de sucursal
   int i = 0;
 
   List<String> get paymentItem => ['Efectivo', 'Transferencia', 'Tarjeta'];
@@ -165,9 +166,18 @@ class _InventorySalesState extends State<InventorySales> {
 
     // Si viene un reservationId, cargar la reservación automáticamente
     if (widget.reservationId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadReservationById(widget.reservationId!);
+      debugPrint('🎯 [InventorySales] reservationId recibido: ${widget.reservationId}');
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        debugPrint('🚀 [InventorySales] Ejecutando addPostFrameCallback para cargar reservación');
+        try {
+          await _loadReservationById(widget.reservationId!);
+        } catch (e, stack) {
+          debugPrint('❌ [InventorySales] Error al cargar reservación: $e');
+          debugPrint('❌ [InventorySales] Stack: $stack');
+        }
       });
+    } else {
+      debugPrint('⚠️ [InventorySales] NO se recibió reservationId');
     }
 
     // Cargar tipos de NCF
@@ -220,22 +230,49 @@ class _InventorySalesState extends State<InventorySales> {
 
   /// Carga una reservación por ID desde la API y la agrega al carrito
   Future<void> _loadReservationById(String reservationId) async {
+    debugPrint('🔄 [_loadReservationById] Iniciando carga de reservación: $reservationId');
     try {
       EasyLoading.show(status: 'Cargando reservación...');
 
       final apiService = ApiService();
+      debugPrint('🌐 [_loadReservationById] Llamando API: reservations/$reservationId');
       final response = await apiService.get('reservations/$reservationId');
+      debugPrint('📥 [_loadReservationById] Response success: ${response.success}');
+      debugPrint('📥 [_loadReservationById] Response data: ${response.data}');
 
       if (!response.success || response.data == null) {
         EasyLoading.showError('No se pudo cargar la reservación');
         return;
       }
 
-      final data = Map<String, dynamic>.from(response.data);
-      final reservation = data;
-      final service = data['service'] as Map<String, dynamic>?;
-      final dresses = data['dresses_data'] as List<dynamic>? ?? data['multiple_dress'] as List<dynamic>? ?? [];
-      final aditionals = data['aditionals'] as List<dynamic>? ?? [];
+      final rawData = Map<String, dynamic>.from(response.data);
+      // La API devuelve los datos anidados en 'reservation'
+      final reservation = rawData.containsKey('reservation')
+          ? Map<String, dynamic>.from(rawData['reservation'])
+          : rawData;
+
+      final service = reservation['service'] as Map<String, dynamic>?;
+      // Buscar vestidos en múltiples lugares posibles (la API usa diferentes campos)
+      List<dynamic> dresses = [];
+      if ((reservation['dresses_data'] as List<dynamic>?)?.isNotEmpty == true) {
+        dresses = reservation['dresses_data'] as List<dynamic>;
+      } else if ((reservation['dresses_full'] as List<dynamic>?)?.isNotEmpty == true) {
+        dresses = reservation['dresses_full'] as List<dynamic>;
+      } else if ((reservation['dress_ids'] as List<dynamic>?)?.isNotEmpty == true) {
+        dresses = reservation['dress_ids'] as List<dynamic>;
+      } else if ((reservation['multiple_dress'] as List<dynamic>?)?.isNotEmpty == true) {
+        dresses = reservation['multiple_dress'] as List<dynamic>;
+      }
+      final aditionals = reservation['aditionals'] as List<dynamic>? ?? [];
+
+      // Debug: Mostrar datos completos de la reservación
+      debugPrint('📦 [_loadReservationById] rawData keys: ${rawData.keys.toList()}');
+      debugPrint('📦 [_loadReservationById] reservation keys: ${reservation.keys.toList()}');
+      debugPrint('👗 [_loadReservationById] dresses encontrados (${dresses.length}): $dresses');
+      debugPrint('🎁 [_loadReservationById] service: $service');
+      debugPrint('💰 [_loadReservationById] package_price: ${reservation['package_price']}');
+      debugPrint('👤 [_loadReservationById] client_id: ${reservation['client_id']}');
+      debugPrint('👤 [_loadReservationById] customer_id: ${reservation['customer_id']}');
 
       // Crear el modelo de reservación para el carrito
       // Si hay múltiples vestidos, usar el formato compuesto
@@ -252,22 +289,30 @@ class _InventorySalesState extends State<InventorySales> {
           return d;
         }).toList();
 
+        // Calcular precio total de todos los vestidos
+        double totalDressPrice = 0.0;
+        for (var d in dresses) {
+          if (d is Map) {
+            final dPrice = double.tryParse(d['dress_price']?.toString() ?? '0') ?? 0.0;
+            totalDressPrice += dPrice;
+          }
+        }
+        debugPrint('💵 [_loadReservationById] Total dress price (multiple): $totalDressPrice');
+
         final compositeModel = ReservationProductCompositeModel.fromMap({
           'id': reservationId,
           'service_id': service?['id'] ?? reservation['service_id'] ?? '',
-          'service_name': service?['name'] ?? reservation['package_name'] ?? 'Servicio',
+          'service_name': 'Renta de Vestimenta', // Nombre genérico para renta
           'client_id': reservation['client_id'] ?? reservation['customer_id'] ?? '',
           'multiple_dress': multipleDress,
           'branch_id': reservation['branch_id'] ?? '',
           'reservation_date': reservation['reservation_date'] ?? '',
           'reservation_time': reservation['reservation_time'] ?? '',
-          'price': service != null && service['price'] != null
-              ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0)
-              : (reservation['package_price'] is num ? (reservation['package_price'] as num).toDouble() : 0.0),
+          'price': totalDressPrice > 0 ? totalDressPrice : double.tryParse(reservation['package_price']?.toString() ?? '0') ?? 0.0,
           'created_at': reservation['created_at'],
           'updated_at': reservation['updated_at'],
           'duration': service?['duration'] ?? {},
-          'package_price': double.tryParse(reservation['package_price']?.toString() ?? '0.0'),
+          'package_price': totalDressPrice > 0 ? totalDressPrice : double.tryParse(reservation['package_price']?.toString() ?? '0.0'),
           'descricpion': service?['description'] ?? reservation['notes'] ?? '',
         });
 
@@ -276,25 +321,43 @@ class _InventorySalesState extends State<InventorySales> {
         // Un solo vestido o ninguno - usar ReservationProductModel
         final firstDress = dresses.isNotEmpty ? dresses.first : null;
 
+        // Obtener el precio del vestido desde dresses_data o package_price
+        double dressPrice = 0.0;
+        if (firstDress != null) {
+          dressPrice = double.tryParse(firstDress['dress_price']?.toString() ?? '') ??
+                       double.tryParse(firstDress['price']?.toString() ?? '') ??
+                       double.tryParse(firstDress['rental_price']?.toString() ?? '') ?? 0.0;
+        }
+        // Fallback al package_price si no hay precio en el vestido
+        if (dressPrice == 0.0) {
+          dressPrice = double.tryParse(reservation['package_price']?.toString() ?? '0') ?? 0.0;
+        }
+
+        final dressName = firstDress?['dress_name'] ?? firstDress?['name'] ?? reservation['dress_name'] ?? 'Vestido';
+
+        debugPrint('👗 [_loadReservationById] firstDress: $firstDress');
+        debugPrint('💵 [_loadReservationById] dressPrice: $dressPrice');
+        debugPrint('📝 [_loadReservationById] dressName: $dressName');
+
         final reservationModel = ReservationProductModel.fromMap({
           'id': reservationId,
           'service_id': service?['id'] ?? reservation['service_id'] ?? '',
-          'service_name': service?['name'] ?? reservation['package_name'] ?? 'Servicio',
+          'service_name': 'Renta', // Prefijo corto
           'client_id': reservation['client_id'] ?? reservation['customer_id'] ?? '',
           'dress_id': firstDress?['dress_id'] ?? firstDress?['id'] ?? reservation['dress_id'] ?? '',
-          'dress_name': firstDress?['dress_name'] ?? firstDress?['name'] ?? reservation['dress_name'] ?? 'Vestido',
+          'dress_name': dressName,
           'branch_id': reservation['branch_id'] ?? '',
           'reservation_date': reservation['reservation_date'] ?? '',
           'reservation_time': reservation['reservation_time'] ?? '',
-          'price': service != null && service['price'] != null
-              ? (service['price'] is num ? (service['price'] as num).toDouble() : 0.0)
-              : (reservation['package_price'] is num ? (reservation['package_price'] as num).toDouble() : 0.0),
+          'price': dressPrice, // Usar el precio del vestido
           'created_at': reservation['created_at'],
           'updated_at': reservation['updated_at'],
           'duration': service?['duration'] ?? {},
-          'package_price': double.tryParse(reservation['package_price']?.toString() ?? '0.0'),
+          'package_price': dressPrice, // Usar el precio del vestido
           'descricpion': service?['description'] ?? reservation['notes'] ?? '',
         });
+
+        debugPrint('🛒 [_loadReservationById] Agregando al carrito: ${reservationModel.serviceName} - ${reservationModel.dressName} @ ${reservationModel.packagePrice}');
 
         _addReservationToCart(reservationModel);
       }
@@ -305,12 +368,17 @@ class _InventorySalesState extends State<InventorySales> {
       }
 
       // Cargar información del cliente si está disponible
-      final customerId = reservation['customer_id'] ?? reservation['client_id'];
-      if (customerId != null) {
+      // IMPORTANTE: Buscar primero en client_id porque customer_id a veces viene null
+      final customerId = reservation['client_id'] ?? reservation['customer_id'];
+      debugPrint('👤 [_loadReservationById] customerId final: $customerId');
+      if (customerId != null && customerId.toString().isNotEmpty) {
         try {
+          debugPrint('🌐 [_loadReservationById] Llamando API: customers/$customerId');
           final customerResponse = await apiService.get('customers/$customerId');
+          debugPrint('📥 [_loadReservationById] Customer response: ${customerResponse.success}');
           if (customerResponse.success && customerResponse.data != null) {
             final customerData = Map<String, dynamic>.from(customerResponse.data['customer'] ?? customerResponse.data);
+            debugPrint('✅ [_loadReservationById] Cliente cargado: ${customerData['customer_name'] ?? customerData['name']}');
             setState(() {
               selectedUserId = customerId;
               selectedUserName = CustomerModel.fromJson(customerData);
@@ -318,12 +386,15 @@ class _InventorySalesState extends State<InventorySales> {
             });
           }
         } catch (e) {
-          print('Error al cargar cliente: $e');
+          debugPrint('❌ [_loadReservationById] Error al cargar cliente: $e');
         }
+      } else {
+        debugPrint('⚠️ [_loadReservationById] No hay customerId en la reservación');
       }
 
       EasyLoading.dismiss();
       EasyLoading.showSuccess('Reservación cargada');
+      debugPrint('✅ [_loadReservationById] Reservación cargada completamente');
 
     } catch (e) {
       EasyLoading.dismiss();
@@ -1864,6 +1935,17 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
 
   DropdownButton<WareHouseModel> getWare({required List<WareHouseModel> list}) {
     List<DropdownMenuItem<WareHouseModel>> dropDownItems = [];
+
+    // Obtener sucursal actual de localStorage
+    final currentBranchId = html.window.localStorage['selected_tenant_id'] ?? '';
+
+    // CRÍTICO: Si la sucursal cambió, resetear el warehouse seleccionado
+    if (_lastKnownBranchId != null && _lastKnownBranchId != currentBranchId) {
+      selectedWareHouse = null;
+      debugPrint('🔄 Sucursal cambió de $_lastKnownBranchId a $currentBranchId - Reseteando warehouse');
+    }
+    _lastKnownBranchId = currentBranchId;
+
     for (var element in list) {
       dropDownItems.add(DropdownMenuItem(
         value: element,
@@ -1873,15 +1955,39 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
           overflow: TextOverflow.ellipsis,
         ),
       ));
-      // Buscar warehouse que contenga 'SANTO DOMINGO' o 'SDE' (para Santo Domingo Este)
-      if (selectedWareHouse == null && (element.warehouseName.toUpperCase().contains('SANTO DOMINGO') || element.warehouseName.toUpperCase().contains('SDE'))) {
-        selectedWareHouse = element;
+
+      // Seleccionar warehouse basado en la sucursal actual
+      if (selectedWareHouse == null) {
+        final warehouseNameUpper = element.warehouseName.toUpperCase();
+        bool matches = false;
+
+        // Mapeo de sucursal a warehouse
+        switch (currentBranchId) {
+          case 'sde':
+            matches = warehouseNameUpper.contains('SANTO DOMINGO ESTE') || warehouseNameUpper.contains('SDE');
+            break;
+          case 'sdo':
+            matches = warehouseNameUpper.contains('SANTO DOMINGO OESTE') || warehouseNameUpper.contains('SDO') || warehouseNameUpper.contains('OESTE');
+            break;
+          case 'stg':
+            matches = warehouseNameUpper.contains('SANTIAGO') || warehouseNameUpper.contains('STG');
+            break;
+          case 'rom':
+            matches = warehouseNameUpper.contains('ROMANA') || warehouseNameUpper.contains('ROM');
+            break;
+        }
+
+        if (matches) {
+          selectedWareHouse = element;
+          debugPrint('✅ Warehouse seleccionado: ${element.warehouseName} para sucursal $currentBranchId');
+        }
       }
       i++;
     }
-    // Si no se encontró ninguno, seleccionar el primer warehouse disponible
+    // Si no se encontró ninguno basado en la sucursal, seleccionar el primer warehouse disponible
     if (selectedWareHouse == null && list.isNotEmpty) {
       selectedWareHouse = list.first;
+      debugPrint('⚠️ No se encontró warehouse específico - usando primero: ${list.first.warehouseName}');
     }
     return DropdownButton(
       icon: const Icon(Icons.keyboard_arrow_down, color: kNeutral700),
