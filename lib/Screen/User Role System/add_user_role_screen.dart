@@ -137,6 +137,13 @@ class _AddUserRoleState extends State<AddUserRole> {
     userRoleName.text = widget.userRoleModel?.userRoleName ?? '';
     selectedBranchId = widget.userRoleModel?.branchId ?? 'stg';
     selectedAllowedBranches = widget.userRoleModel?.allowedBranches ?? [];
+
+    // DEBUG: Verificar datos cargados
+    debugPrint('🔵 [setEditData] email: ${emailController.text}');
+    debugPrint('🔵 [setEditData] userTitle: ${titleController.text}');
+    debugPrint('🔵 [setEditData] widget.userRoleModel?.allowedBranches: ${widget.userRoleModel?.allowedBranches}');
+    debugPrint('🔵 [setEditData] selectedAllowedBranches: $selectedAllowedBranches');
+
     if (widget.userRoleModel == null) return;
     if (widget.userRoleModel!.permissions.isNotEmpty) {
       // Migrar permisos faltantes antes de asignar
@@ -1730,12 +1737,14 @@ class _AddUserRoleState extends State<AddUserRole> {
                         debugPrint('🔍 [UPDATE USER] userId: $userId');
                         debugPrint('🔍 [UPDATE USER] selectedAllowedBranches: $selectedAllowedBranches');
                         debugPrint('🔍 [UPDATE USER] backendData[allowed_branches]: ${backendData['allowed_branches']}');
+                        debugPrint('🔍 [UPDATE USER] backendData COMPLETO: $backendData');
                         debugPrint('🔍 [UPDATE USER] Número de permisos: ${(backendData['permissions'] as Map).length}');
 
                         final response = await apiService.put('users/$userId', backendData);
 
                         debugPrint('🔍 [UPDATE USER RESPONSE] success: ${response.success}');
                         debugPrint('🔍 [UPDATE USER RESPONSE] message: ${response.message}');
+                        debugPrint('🔍 [UPDATE USER RESPONSE] data: ${response.data}');
                       }
 
                       ref.refresh(userRoleProvider);

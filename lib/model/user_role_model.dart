@@ -135,8 +135,9 @@ class UserRoleModel {
         userRoleName: json["userRoleName"]?.toString() ?? '',
         branchId: json["branchId"]?.toString() ?? '',
         branchName: json["branchName"]?.toString() ?? '',
-        allowedBranches: json["allowedBranches"] is List
-            ? List<String>.from(json["allowedBranches"].map((x) => x.toString()))
+        // Soporte para ambos formatos: camelCase (Firebase) y snake_case (PostgreSQL API)
+        allowedBranches: (json["allowedBranches"] ?? json["allowed_branches"]) is List
+            ? List<String>.from((json["allowedBranches"] ?? json["allowed_branches"]).map((x) => x.toString()))
             : null,
         permissions: parsePermissions(json["permissions"]),
         saleView: json["saleView"] ?? false,

@@ -480,16 +480,32 @@ class _DailyTransactionState extends State<DailyTransaction> {
       return transaction.dueTransactionModel?.dueAmountAfterPay ?? 0.0;
     }
 
-    // Para otros tipos: usar dueAmount directo
+    // Para ventas (Sale, Adicionales, Impresiones, Reserva, Producto):
+    // PRIORIDAD: remainingBalance (viene de BD) > dueAmount > saleTransactionModel.dueAmount
+    if (transaction.type == 'Sale' ||
+        transaction.type == 'Adicionales' ||
+        transaction.type == 'Impresiones' ||
+        transaction.type == 'Reserva' ||
+        transaction.type == 'Producto') {
+      // 1. Usar remainingBalance si tiene valor (viene de la columna de la BD)
+      if (transaction.remainingBalance > 0) {
+        return transaction.remainingBalance;
+      }
+      // 2. Usar dueAmount directo si está disponible
+      if (transaction.dueAmount != null && transaction.dueAmount! > 0) {
+        return transaction.dueAmount!;
+      }
+      // 3. Fallback a modelo anidado
+      return transaction.saleTransactionModel?.dueAmount ?? 0.0;
+    }
+
+    // Para otros tipos: usar dueAmount directo si está disponible
     if (transaction.dueAmount != null && transaction.dueAmount! > 0) {
       return transaction.dueAmount!;
     }
 
-    // TERCERO: Fallback a modelos anidados según el tipo de transacción
+    // Fallback a modelos anidados según el tipo de transacción
     switch (transaction.type) {
-      case 'Sale':
-      case 'Sale Return':
-        return transaction.saleTransactionModel?.dueAmount ?? 0.0;
       case 'Purchase':
       case 'Purchase Return':
         return transaction.remainingBalance;
@@ -543,12 +559,15 @@ class _DailyTransactionState extends State<DailyTransaction> {
                     type = 'Sale';
                 }
 
+                // Calcular el monto pagado: total - due (pendiente)
+                final paidAmount = (sale.totalAmount ?? 0.0) - (sale.dueAmount ?? 0.0);
+
                 return DailyTransactionModel(
                   name: sale.customerName,
                   date: sale.purchaseDate,
                   type: type,
                   total: sale.totalAmount ?? 0.0,
-                  paymentIn: sale.totalAmount ?? 0.0,
+                  paymentIn: paidAmount, // ✅ CORREGIDO: Mostrar el monto pagado, no el total
                   paymentOut: 0.0,
                   remainingBalance: sale.dueAmount ?? 0.0,
                   id: sale.invoiceNumber,
