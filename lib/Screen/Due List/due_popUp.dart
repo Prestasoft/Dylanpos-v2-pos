@@ -33,6 +33,7 @@ import '../../services/whatsapp_template_service.dart';
 import '../../services/whatsapp_credentials_service.dart';
 import '../../model/transfer_verification_model.dart';
 import '../../Provider/transfer_verification_provider.dart';
+import '../../Provider/reservation_provider.dart';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
@@ -1034,6 +1035,32 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                               await apiService.put('customers/$customerId', {'due': '$totalDue'});
                                               if (selectedInvoice == 'Select Invoice') {
                                                 await apiService.put('customers/$customerId', {'remainedBalance': '$remainedDue'});
+                                              }
+                                            }
+
+                                            // IMPORTANTE: Actualizar estado_factura de reservaciones si la venta quedó completamente pagada
+                                            if (dueTransactionModel.isPaid == true && selectedInvoice != 'Select Invoice') {
+                                              try {
+                                                // Obtener los reservation_ids de la venta
+                                                final saleResponse = await apiService.get('sales/$selectedInvoice');
+                                                if (saleResponse.success && saleResponse.data != null) {
+                                                  final saleData = saleResponse.data['sale'] ?? saleResponse.data;
+                                                  final reservationIds = saleData['reservation_ids'];
+
+                                                  if (reservationIds != null && reservationIds is List && reservationIds.isNotEmpty) {
+                                                    final List<String> ids = reservationIds.map((e) => e.toString()).toList();
+                                                    debugPrint('✅ [DuePopup] Actualizando estado_factura=true para reservaciones: $ids');
+
+                                                    // Actualizar estado_factura de las reservaciones a true
+                                                    await consumerRef.read(ActualizarEstadoReservaProvider({
+                                                      'id': ids,
+                                                      'estado_factura': true,
+                                                    }).future);
+                                                  }
+                                                }
+                                              } catch (e) {
+                                                debugPrint('⚠️ [DuePopup] Error al actualizar estado_factura de reservaciones: $e');
+                                                // No bloquear el flujo si falla la actualización
                                               }
                                             }
 
