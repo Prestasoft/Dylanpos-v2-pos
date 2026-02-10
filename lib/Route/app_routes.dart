@@ -100,6 +100,7 @@ import 'package:salespro_admin/Screen/Admin/database_migration_screen.dart';
 import 'package:salespro_admin/Screen/test_supabase_login.dart';
 import 'package:salespro_admin/Screen/Transfer%20Verifications/transfer_verifications_screen.dart';
 import 'package:salespro_admin/Screen/DGII/dgii_screen.dart';
+import 'package:salespro_admin/Screen/Invoice%20Corrections/invoice_corrections_screen.dart';
 abstract class AcnooAppRoutes {
   // Instancia global de ApiService para verificar autenticación
   static final ApiService _apiService = ApiService();
@@ -597,6 +598,14 @@ abstract class AcnooAppRoutes {
             path: '/dgii',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: DgiiScreen(),
+            ),
+          ),
+
+          ///-----------------------Invoice Corrections Route--------------------------
+          GoRoute(
+            path: '/invoice-corrections',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: InvoiceCorrectionsScreen(),
             ),
           ),
 
