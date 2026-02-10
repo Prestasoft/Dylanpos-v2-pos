@@ -668,7 +668,7 @@ class _EmailLogInState extends State<EmailLogIn> {
                             ),
                             const SizedBox(width: 8),
                             const Text(
-                              'v2.1.202',
+                              'v2.1.204',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

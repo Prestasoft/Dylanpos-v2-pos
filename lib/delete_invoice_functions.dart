@@ -238,6 +238,13 @@ class DeleteInvoice {
         try {
           final transactionData = Map<String, dynamic>.from(transaction);
           final transactionId = transactionData['id']?.toString();
+          final transactionType = transactionData['type']?.toString() ?? '';
+
+          // CRÍTICO: NO eliminar registros de tipo 'Deleted' - estos son tracking de eliminaciones
+          if (transactionType.toLowerCase() == 'deleted') {
+            print('⚠️ Saltando registro Deleted (tracking) - id: $transactionId');
+            continue;
+          }
 
           if (transactionId != null) {
             await _apiService.delete('daily-transactions/$transactionId');

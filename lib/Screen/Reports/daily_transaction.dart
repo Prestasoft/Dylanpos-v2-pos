@@ -74,7 +74,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
       List<Map<String, dynamic>> deletedList = [];
 
       if (response.success && response.data != null) {
-        final transactions = response.data['transactions'] as List<dynamic>? ?? [];
+        // IMPORTANTE: El backend retorna 'daily_transactions', no 'transactions'
+        final transactions = response.data['daily_transactions'] as List<dynamic>? ?? response.data['transactions'] as List<dynamic>? ?? [];
         debugPrint('📊 Total transacciones encontradas: ${transactions.length}');
 
         // Filtrar en el cliente por tipo "Deleted"
