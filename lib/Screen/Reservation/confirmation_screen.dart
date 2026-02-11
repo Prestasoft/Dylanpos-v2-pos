@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
+import 'package:salespro_admin/Provider/branch_provider.dart';
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import 'package:salespro_admin/model/customer_model.dart';
 import '../../Provider/reservation_provider.dart';
 import '../../const.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 class ConfirmationScreen extends ConsumerStatefulWidget {
   final String packageId;
   final String packageName;
@@ -61,7 +64,16 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
 
   String _formatTime(TimeOfDay time) {
     return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
-  }  void _confirmReservation() async {
+  }
+
+  void _confirmReservation() async {
+    // VALIDACIÓN DE SEGURIDAD: Verificar que el usuario tiene acceso a esta sucursal
+    if (!validateUserBranchAccess(context)) {
+      debugPrint('🚫 DEBUG: Usuario NO autorizado para esta sucursal - Reservación bloqueada');
+      return;
+    }
+    debugPrint('✅ DEBUG: Usuario autorizado para esta sucursal - Procesando reservación');
+
     setState(() {
       isSubmitting = true;
     });
@@ -205,6 +217,22 @@ class _ConfirmationScreenState extends ConsumerState<ConfirmationScreen> {
           'dress_name': dress.name,
         };
       }).toList();
+
+      // CRÍTICO: Obtener branchId del primer vestido o del provider
+      if (widget.dressReservations.isNotEmpty && widget.dressReservations.first.branchId.isNotEmpty) {
+        branchIdTmp = widget.dressReservations.first.branchId;
+        debugPrint('🏢 [ConfirmationScreen] branchId desde primer vestido: $branchIdTmp');
+      } else {
+        branchIdTmp = ref.read(branchIdProvider);
+        debugPrint('🏢 [ConfirmationScreen] branchId desde provider: $branchIdTmp');
+      }
+
+      // Verificación de seguridad
+      final localStorageBranch = html.window.localStorage['selected_tenant_id'] ?? '';
+      debugPrint('🔍 [ConfirmationScreen] localStorage branch: $localStorageBranch');
+      if (branchIdTmp != localStorageBranch && localStorageBranch.isNotEmpty) {
+        debugPrint('⚠️ [ConfirmationScreen] ADVERTENCIA: branchId difiere de localStorage!');
+      }
     }
 
     // Preparar datos para la reserva

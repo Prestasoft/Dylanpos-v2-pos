@@ -1,5 +1,8 @@
 import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:restart_app/restart_app.dart';
@@ -388,4 +391,126 @@ void checkCurrentUserAndRestartApp() {
   if (!apiService.isAuthenticated) {
     Restart.restartApp();
   }
+}
+
+/// VALIDACIÓN DE SEGURIDAD: Verifica si el usuario tiene permiso para operar en la sucursal actual
+/// Retorna true si el usuario está autorizado, false si no lo está
+///
+/// Esta función DEBE llamarse antes de crear:
+/// - Facturas (ventas)
+/// - Reservaciones
+/// - Rentas de vestidos
+/// - Cualquier transacción que dependa de la sucursal
+///
+/// Ejemplo de uso:
+/// ```dart
+/// if (!validateUserBranchAccess(context)) {
+///   return; // No continuar con la operación
+/// }
+/// // Continuar con la creación de la transacción
+/// ```
+bool validateUserBranchAccess(BuildContext context, {bool showError = true}) {
+  try {
+    // Obtener la sucursal actual del localStorage
+    final currentBranchId = html.window.localStorage['selected_tenant_id'] ?? '';
+
+    if (currentBranchId.isEmpty) {
+      debugPrint('⚠️ [validateUserBranchAccess] No hay sucursal seleccionada en localStorage');
+      if (showError) {
+        _showBranchAccessError(context, 'No hay sucursal seleccionada. Por favor, seleccione una sucursal.');
+      }
+      return false;
+    }
+
+    // Los admins tienen acceso a todas las sucursales
+    if (!isSubUser) {
+      debugPrint('✅ [validateUserBranchAccess] Usuario es Admin - Acceso permitido a todas las sucursales');
+      return true;
+    }
+
+    // Obtener allowed_branches del modelo de usuario
+    final allowedBranches = finalUserRoleModel.allowedBranches;
+
+    // Si no hay restricciones definidas (null o vacío), permitir acceso
+    // Esto es un fallback para usuarios legacy sin configuración
+    if (allowedBranches == null || allowedBranches.isEmpty) {
+      debugPrint('⚠️ [validateUserBranchAccess] Usuario sin allowed_branches definido - Permitiendo por compatibilidad');
+      return true;
+    }
+
+    // Verificar si la sucursal actual está en la lista de sucursales permitidas
+    final isAuthorized = allowedBranches.contains(currentBranchId);
+
+    if (isAuthorized) {
+      debugPrint('✅ [validateUserBranchAccess] Usuario autorizado para sucursal $currentBranchId');
+      debugPrint('   Sucursales permitidas: $allowedBranches');
+      return true;
+    } else {
+      debugPrint('🚫 [validateUserBranchAccess] ACCESO DENEGADO');
+      debugPrint('   Usuario: ${finalUserRoleModel.userTitle}');
+      debugPrint('   Sucursal actual: $currentBranchId');
+      debugPrint('   Sucursales permitidas: $allowedBranches');
+
+      if (showError) {
+        final branchNames = _getBranchNames(allowedBranches);
+        _showBranchAccessError(
+          context,
+          'No tiene permisos para realizar operaciones en esta sucursal.\n\n'
+          'Sus sucursales autorizadas son: $branchNames\n\n'
+          'Por favor, cambie a una sucursal autorizada desde el selector de sucursales.',
+        );
+      }
+      return false;
+    }
+  } catch (e) {
+    debugPrint('❌ [validateUserBranchAccess] Error en validación: $e');
+    // En caso de error, permitir por seguridad para no bloquear operaciones
+    // pero registrar el error para debugging
+    return true;
+  }
+}
+
+/// Convierte códigos de sucursal a nombres legibles
+String _getBranchNames(List<String> branchCodes) {
+  final Map<String, String> branchNameMap = {
+    'stg': 'Santiago',
+    'sde': 'Santo Domingo Este',
+    'sdo': 'Santo Domingo Oeste',
+    'rom': 'La Romana',
+  };
+
+  return branchCodes
+      .map((code) => branchNameMap[code] ?? code)
+      .join(', ');
+}
+
+/// Muestra un diálogo de error cuando el usuario no tiene acceso a la sucursal
+void _showBranchAccessError(BuildContext context, String message) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.security, color: Colors.red, size: 28),
+            SizedBox(width: 10),
+            Text('Acceso Denegado'),
+          ],
+        ),
+        content: Text(
+          message,
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+            },
+            child: Text('Entendido'),
+          ),
+        ],
+      );
+    },
+  );
 }

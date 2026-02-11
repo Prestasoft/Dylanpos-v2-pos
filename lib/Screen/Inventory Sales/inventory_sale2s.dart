@@ -3911,6 +3911,12 @@ class _InventorySalesState extends State<InventorySales> {
                                       backgroundColor: Colors.black,
                                     ),
                                     onPressed: () async {
+                                      // VALIDACIÓN DE SEGURIDAD: Verificar que el usuario tiene acceso a esta sucursal
+                                      if (!validateUserBranchAccess(context)) {
+                                        debugPrint('🚫 DEBUG: Usuario NO autorizado para esta sucursal - Cotización bloqueada');
+                                        return;
+                                      }
+
                                       if (await Subscription
                                           .subscriptionChecker(
                                               item: 'Ventas')) {
@@ -4162,6 +4168,13 @@ class _InventorySalesState extends State<InventorySales> {
                                         onPressed: () async {
                                           if (checkUserRoleEditPermissionV2(
                                               type: 'sales')) {
+                                            // VALIDACIÓN DE SEGURIDAD: Verificar que el usuario tiene acceso a esta sucursal
+                                            if (!validateUserBranchAccess(context)) {
+                                              debugPrint('🚫 DEBUG: Usuario NO autorizado para esta sucursal - Venta bloqueada');
+                                              return;
+                                            }
+                                            debugPrint('✅ DEBUG: Usuario autorizado para esta sucursal');
+
                                             if (await Subscription
                                                 .subscriptionChecker(
                                                     item: 'Sales')) {
@@ -4405,11 +4418,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                           post.dueAmount!
                                                               .toDouble(),
                                                       paymentOut: 0,
-                                                      remainingBalance: post
-                                                              .totalAmount!
-                                                              .toDouble() -
-                                                          post.dueAmount!
-                                                              .toDouble(),
+                                                      remainingBalance: post.dueAmount!.toDouble(),
                                                       id: post.invoiceNumber,
                                                       saleTransactionModel:
                                                           post,

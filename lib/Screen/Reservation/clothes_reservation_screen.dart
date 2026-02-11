@@ -1,4 +1,6 @@
 import 'dart:developer';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
@@ -6,12 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
+import 'package:salespro_admin/Provider/branch_provider.dart';
 import 'package:salespro_admin/Screen/Reservation/customer_selection_modal.dart';
 import 'package:salespro_admin/Screen/Reservation/dress_selection_screen_package.dart';
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
 import 'package:salespro_admin/model/customer_model.dart';
 import '../../Provider/reservation_provider.dart';
+import '../../const.dart';
 import 'package:go_router/go_router.dart';
 
 class ClothesReservationScreen extends ConsumerStatefulWidget {
@@ -115,6 +119,13 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
   }
 
   void _confirmReservation() async {
+    // VALIDACIÓN DE SEGURIDAD: Verificar que el usuario tiene acceso a esta sucursal
+    if (!validateUserBranchAccess(context)) {
+      debugPrint('🚫 DEBUG: Usuario NO autorizado para esta sucursal - Renta de vestido bloqueada');
+      return;
+    }
+    debugPrint('✅ DEBUG: Usuario autorizado para esta sucursal - Procesando renta');
+
     setState(() {
       isSubmitting = true;
     });
@@ -157,12 +168,33 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
 
     double totalReservationPrice = selectedValues.values.where((e) => e['vestidoPrice'] != null).map((e) => double.tryParse(e['vestidoPrice'].toString()) ?? 0.0).fold(0.0, (a, b) => a + b);
 
+    // CRÍTICO: Obtener el branchId correcto
+    // Prioridad: 1) Primer vestido seleccionado, 2) branchIdProvider, 3) localStorage
+    String effectiveBranchId = '';
+    if (dressReservations.isNotEmpty && dressReservations.first.branchId.isNotEmpty) {
+      effectiveBranchId = dressReservations.first.branchId;
+      debugPrint('🏢 [ClothesReservation] branchId desde primer vestido: $effectiveBranchId');
+    } else {
+      // Fallback al provider o localStorage
+      effectiveBranchId = ref.read(branchIdProvider);
+      debugPrint('🏢 [ClothesReservation] branchId desde provider: $effectiveBranchId');
+    }
+
+    // Verificación de seguridad
+    final localStorageBranch = html.window.localStorage['selected_tenant_id'] ?? '';
+    debugPrint('🔍 [ClothesReservation] localStorage branch: $localStorageBranch');
+    debugPrint('🔍 [ClothesReservation] effectiveBranchId final: $effectiveBranchId');
+
+    if (effectiveBranchId != localStorageBranch && localStorageBranch.isNotEmpty) {
+      debugPrint('⚠️ [ClothesReservation] ADVERTENCIA: branchId difiere de localStorage!');
+    }
+
     // Crear la reserva
     final success = await ref.read(crearReservaProvider({
       'serviceId': packageId,
       'clientId': selectedCustomer?.id ?? selectedCustomer?.phoneNumber ?? '',
-      'dressId': '',
-      'branchId': '',
+      'dressId': dressReservations.isNotEmpty ? dressReservations.first.id : '',
+      'branchId': effectiveBranchId,
       'date': formattedDate,
       'time': formattedTime,
       'multiple_dress': multipleDress,

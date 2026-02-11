@@ -3343,6 +3343,12 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                   backgroundColor: Colors.black,
                                 ),
                                 onPressed: () async {
+                                  // VALIDACIÓN DE SEGURIDAD: Verificar que el usuario tiene acceso a esta sucursal
+                                  if (!validateUserBranchAccess(context)) {
+                                    print('🚫 DEBUG: Usuario NO autorizado para esta sucursal - Cotización bloqueada');
+                                    return;
+                                  }
+
                                   if (await Subscription.subscriptionChecker(item: 'Ventas')) {
                                     if (cartList.isEmpty) {
                                       EasyLoading.showError(lang.S.of(context).pleaseAddSomeProductFirst);
@@ -3602,6 +3608,14 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
 
                                       if (hasPermission) {
                                         print('DEBUG: Usuario tiene permisos de venta');
+
+                                        // VALIDACIÓN DE SEGURIDAD: Verificar que el usuario tiene acceso a esta sucursal
+                                        if (!validateUserBranchAccess(context)) {
+                                          print('🚫 DEBUG: Usuario NO autorizado para esta sucursal - Venta bloqueada');
+                                          return;
+                                        }
+                                        print('✅ DEBUG: Usuario autorizado para esta sucursal');
+
                                         final subscriptionOk = await Subscription.subscriptionChecker(item: 'Sales');
                                         print('DEBUG: Subscription.subscriptionChecker retornó: $subscriptionOk');
 
@@ -4061,7 +4075,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   total: post.totalAmount!.toDouble(),
                                                   paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
                                                   paymentOut: 0,
-                                                  remainingBalance: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
+                                                  remainingBalance: post.dueAmount!.toDouble(),
                                                   id: post.invoiceNumber,
                                                   saleTransactionModel: post,
                                                 );
