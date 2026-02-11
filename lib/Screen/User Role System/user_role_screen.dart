@@ -498,55 +498,67 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                   Row(
                                                                     mainAxisSize: MainAxisSize.min,
                                                                     children: [
-                                                                      // Botón de editar
-                                                                      IconButton(
-                                                                        onPressed: () {
-                                                                          showDialog(
-                                                                            barrierDismissible: false,
-                                                                            context: context,
-                                                                            builder: (BuildContext context) {
-                                                                              return StatefulBuilder(builder: (context, setState1) {
-                                                                                return Dialog(
-                                                                                    shape: RoundedRectangleBorder(
-                                                                                      borderRadius: BorderRadius.circular(10.0),
-                                                                                    ),
-                                                                                    child: SizedBox(
-                                                                                      width: 700,
-                                                                                      child: Padding(
-                                                                                        padding: const EdgeInsets.all(10.0),
-                                                                                        child: AddUserRole(
-                                                                                          userRoleModel: paginatedList[index],
-                                                                                        ),
+                                                                      // Botón de editar (oculto para usuarios protegidos)
+                                                                      if (!isProtectedUser(paginatedList[index].databaseId, paginatedList[index].email))
+                                                                        IconButton(
+                                                                          onPressed: () {
+                                                                            showDialog(
+                                                                              barrierDismissible: false,
+                                                                              context: context,
+                                                                              builder: (BuildContext context) {
+                                                                                return StatefulBuilder(builder: (context, setState1) {
+                                                                                  return Dialog(
+                                                                                      shape: RoundedRectangleBorder(
+                                                                                        borderRadius: BorderRadius.circular(10.0),
                                                                                       ),
-                                                                                    ));
-                                                                              });
-                                                                            },
-                                                                          );
-                                                                        },
-                                                                        icon: const Icon(
-                                                                          FeatherIcons.edit,
-                                                                          color: kMainColor,
-                                                                          size: 18,
+                                                                                      child: SizedBox(
+                                                                                        width: 700,
+                                                                                        child: Padding(
+                                                                                          padding: const EdgeInsets.all(10.0),
+                                                                                          child: AddUserRole(
+                                                                                            userRoleModel: paginatedList[index],
+                                                                                          ),
+                                                                                        ),
+                                                                                      ));
+                                                                                });
+                                                                              },
+                                                                            );
+                                                                          },
+                                                                          icon: const Icon(
+                                                                            FeatherIcons.edit,
+                                                                            color: kMainColor,
+                                                                            size: 18,
+                                                                          ),
+                                                                          tooltip: 'Editar usuario',
                                                                         ),
-                                                                        tooltip: 'Editar usuario',
-                                                                      ),
+                                                                      // Indicador de usuario protegido
+                                                                      if (isProtectedUser(paginatedList[index].databaseId, paginatedList[index].email))
+                                                                        Tooltip(
+                                                                          message: 'Usuario Super Admin protegido',
+                                                                          child: Icon(
+                                                                            Icons.shield,
+                                                                            color: Colors.green[700],
+                                                                            size: 20,
+                                                                          ),
+                                                                        ),
                                                                       const SizedBox(width: 4),
-                                                                      // Botón de eliminar
-                                                                      IconButton(
-                                                                        onPressed: () async {
-                                                                          await _showDeleteConfirmation(
-                                                                            context,
-                                                                            paginatedList[index],
-                                                                            ref
-                                                                          );
-                                                                        },
-                                                                        icon: const Icon(
-                                                                          FeatherIcons.trash2,
-                                                                          color: Colors.red,
-                                                                          size: 18,
+                                                                      // Botón de eliminar (oculto para usuarios protegidos)
+                                                                      if (!isProtectedUser(paginatedList[index].databaseId, paginatedList[index].email))
+                                                                        IconButton(
+                                                                          onPressed: () async {
+                                                                            await _showDeleteConfirmation(
+                                                                              context,
+                                                                              paginatedList[index],
+                                                                              ref
+                                                                            );
+                                                                          },
+                                                                          icon: const Icon(
+                                                                            FeatherIcons.trash2,
+                                                                            color: Colors.red,
+                                                                            size: 18,
+                                                                          ),
+                                                                          tooltip: 'Eliminar usuario',
                                                                         ),
-                                                                        tooltip: 'Eliminar usuario',
-                                                                      ),
                                                                       const SizedBox(width: 4),
                                                                       // Botón de cambiar contraseña
                                                                       IconButton(
@@ -792,6 +804,17 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
 
   // Método para eliminar usuario
   Future<void> _deleteUser(BuildContext context, UserRoleModel user, WidgetRef ref) async {
+    // PROTECCIÓN: Verificar si es un usuario Super Admin protegido
+    if (isProtectedUser(user.databaseId, user.email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Este usuario es Super Admin y no puede ser eliminado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     try {
       // Mostrar loading
       ScaffoldMessenger.of(context).showSnackBar(

@@ -18,6 +18,31 @@ String appsName = 'VICTOR GUZMAN FOTOGRAFIA';
 String appsTitle = 'VICTOR GUZMAN FOTOGRAFIA';
 String pdfFooter = 'VICTOR GUZMAN FOTOGRAFIA SRL';
 String madeBy = 'Prestasoft.do';
+
+/// USUARIOS SUPER ADMIN PROTEGIDOS
+/// Estos usuarios NO pueden ser eliminados ni se pueden modificar sus permisos
+/// IDs de usuarios protegidos (Admin principal y Victor Guzman)
+const List<String> protectedUserIds = [
+  '912f2616-c341-4327-96f3-608d7d53a011', // admin@victorguzmanfotografia.com (Administrador)
+  '73fc7cc9-8753-4702-bd1b-cb3a8fa53773', // Victor Guzman@gmail.com (Victor Guzman)
+];
+
+/// Emails de usuarios protegidos (para validación adicional)
+const List<String> protectedUserEmails = [
+  'admin@victorguzmanfotografia.com',
+  'Victor Guzman@gmail.com',
+];
+
+/// Verifica si un usuario está protegido (no puede ser eliminado ni modificado)
+bool isProtectedUser(String? userId, String? email) {
+  if (userId != null && protectedUserIds.contains(userId)) {
+    return true;
+  }
+  if (email != null && protectedUserEmails.contains(email)) {
+    return true;
+  }
+  return false;
+}
 bool isDemo = false;
 String invoiceFileName = "VICTOR GUZMAN FOTOGRAFIA";
 String demoText = 'You Can\'t change anything in demo mode';

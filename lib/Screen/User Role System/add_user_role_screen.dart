@@ -1663,6 +1663,12 @@ class _AddUserRoleState extends State<AddUserRole> {
                     return;
                   }
                   if (widget.userRoleModel != null) {
+                    // PROTECCIÓN: Verificar si es un usuario Super Admin protegido
+                    if (isProtectedUser(widget.userRoleModel?.databaseId, widget.userRoleModel?.email)) {
+                      EasyLoading.showError('Este usuario es Super Admin y no se pueden modificar sus permisos');
+                      return;
+                    }
+
                     try {
                       EasyLoading.show(
                           status: '${lang.S.of(context).loading}...',
