@@ -19,6 +19,7 @@ import 'package:salespro_admin/model/daily_summary_model.dart';
 import 'package:salespro_admin/model/general_setting_model.dart';
 import 'package:salespro_admin/model/personal_information_model.dart';
 import 'package:salespro_admin/model/sale_transaction_model.dart';
+import 'package:salespro_admin/model/due_transaction_model.dart';
 
 import '../../PDF/print_pdf.dart';
 import '../../Provider/profile_provider.dart';
@@ -2271,35 +2272,49 @@ class _DailyTransactionState extends State<DailyTransaction> {
               : (transaction.dueTransactionModel?.invoiceNumber.isNotEmpty == true
                   ? transaction.dueTransactionModel!.invoiceNumber
                   : (transaction.id.isNotEmpty ? transaction.id : 'Due Payment'));
-          
+
           return InkWell(
             onTap: () async {
               final setting = settingProvider.valueOrNull;
               final profileInfo = profile.valueOrNull;
               if (setting != null && profileInfo != null) {
                 debugPrint('🧾 Generando recibo de Due Payment - Display: $displayText');
-                
+
                 try {
                   EasyLoading.show(status: 'Generando recibo de pago...');
-                  
-                  // Si tiene dueTransactionModel, usarlo
+
+                  // Si tiene dueTransactionModel, usarlo; si no, crear uno desde los datos disponibles
+                  DueTransactionModel dueModel;
                   if (transaction.dueTransactionModel != null) {
-                    await GeneratePdfAndPrint().printDueInvoice(
-                      personalInformationModel: profileInfo,
-                      dueTransactionModel: transaction.dueTransactionModel!,
-                      setting: setting,
-                      context: context,
-                      fromSaleReports: true,
-                    );
+                    dueModel = transaction.dueTransactionModel!;
                   } else {
-                    // Si no tiene dueTransactionModel, crear uno básico o mostrar mensaje
-                    EasyLoading.dismiss();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No se pueden generar recibos para este tipo de pago')),
+                    // Crear DueTransactionModel desde los datos de la transacción
+                    dueModel = DueTransactionModel(
+                      customerName: transaction.name,
+                      customerType: 'Customer',
+                      customerAddress: '',
+                      customerPhone: '',
+                      customerGst: '',
+                      invoiceNumber: displayText,
+                      purchaseDate: transaction.date,
+                      totalDue: transaction.total,
+                      dueAmountAfterPay: transaction.dueAmountAfterPay ?? 0,
+                      payDueAmount: transaction.paymentIn,
+                      isPaid: (transaction.dueAmountAfterPay ?? 0) <= 0,
+                      paymentType: transaction.paymentType ?? 'Efectivo',
+                      sellerName: transaction.sellerName ?? 'Admin',
                     );
-                    return;
+                    debugPrint('📝 DueTransactionModel creado desde datos de transacción');
                   }
-                  
+
+                  await GeneratePdfAndPrint().printDueInvoice(
+                    personalInformationModel: profileInfo,
+                    dueTransactionModel: dueModel,
+                    setting: setting,
+                    context: context,
+                    fromSaleReports: true,
+                  );
+
                   EasyLoading.dismiss();
                   debugPrint('✅ Recibo de Due Payment generado exitosamente');
                 } catch (e) {
@@ -2351,14 +2366,39 @@ class _DailyTransactionState extends State<DailyTransaction> {
               onTap: () async {
                 final setting = settingProvider.valueOrNull;
                 final profileInfo = profile.valueOrNull;
-                if (setting != null && profileInfo != null && transaction.dueTransactionModel != null) {
+                if (setting != null && profileInfo != null) {
                   debugPrint('🧾 Generando recibo de Due Collection - Factura: $invoiceNumber');
 
                   try {
                     EasyLoading.show(status: 'Generando recibo de cobro...');
+
+                    // Si tiene dueTransactionModel, usarlo; si no, crear uno desde los datos disponibles
+                    DueTransactionModel dueModel;
+                    if (transaction.dueTransactionModel != null) {
+                      dueModel = transaction.dueTransactionModel!;
+                    } else {
+                      // Crear DueTransactionModel desde los datos de la transacción
+                      dueModel = DueTransactionModel(
+                        customerName: transaction.name,
+                        customerType: 'Customer',
+                        customerAddress: '',
+                        customerPhone: '',
+                        customerGst: '',
+                        invoiceNumber: invoiceNumber,
+                        purchaseDate: transaction.date,
+                        totalDue: transaction.total,
+                        dueAmountAfterPay: transaction.dueAmountAfterPay ?? 0,
+                        payDueAmount: transaction.paymentIn,
+                        isPaid: (transaction.dueAmountAfterPay ?? 0) <= 0,
+                        paymentType: transaction.paymentType ?? 'Efectivo',
+                        sellerName: transaction.sellerName ?? 'Admin',
+                      );
+                      debugPrint('📝 DueTransactionModel creado desde datos de transacción (Due Collection)');
+                    }
+
                     await GeneratePdfAndPrint().printDueInvoice(
                       personalInformationModel: profileInfo,
-                      dueTransactionModel: transaction.dueTransactionModel!,
+                      dueTransactionModel: dueModel,
                       setting: setting,
                       context: context,
                       fromSaleReports: true,
@@ -2372,9 +2412,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
                       SnackBar(content: Text('Error generando recibo: $e')),
                     );
                   }
-                } else {
-                  // Si no hay modelo, solo mostrar el número sin opción de PDF
-                  debugPrint('⚠️ Due Collection sin modelo - solo mostrando número: $invoiceNumber');
                 }
               },
               child: Container(
@@ -2538,9 +2575,203 @@ class _DailyTransactionState extends State<DailyTransaction> {
             ),
           );
         }
+
+        // PARA TRANSACCIONES ELIMINADAS (Deleted) - Mostrar botón rojo para ver PDF
+        if (transaction.type == 'Deleted') {
+          final invoiceNumber = directInvoiceNumber.isNotEmpty
+              ? directInvoiceNumber
+              : (transaction.id.isNotEmpty ? transaction.id : '');
+
+          if (invoiceNumber.isNotEmpty) {
+            return InkWell(
+              onTap: () async {
+                // Intentar generar PDF desde los datos guardados
+                await _generateDeletedInvoicePdfFromTransaction(context, transaction);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(6.0),
+                  border: Border.all(color: Colors.red.shade200, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.delete_outline, size: 16.0, color: Colors.red.shade700),
+                    const SizedBox(width: 4.0),
+                    Text(
+                      invoiceNumber,
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        }
+
         return const Text('-');
       },
     );
+  }
+
+  /// Generar PDF de una factura eliminada desde DailyTransactionModel
+  Future<void> _generateDeletedInvoicePdfFromTransaction(BuildContext context, DailyTransactionModel transaction) async {
+    try {
+      EasyLoading.show(status: 'Preparando PDF...');
+
+      final invoiceNumber = transaction.invoiceNumber ?? '';
+      debugPrint('📄 Intentando generar PDF para factura eliminada: $invoiceNumber');
+
+      // Los datos de la factura eliminada deberían estar en saleTransactionModel
+      // o se pueden reconstruir desde los datos disponibles
+      SaleTransactionModel? saleModel = transaction.saleTransactionModel;
+
+      // Si no tiene saleTransactionModel, buscar en Sales Transition por invoiceNumber
+      if (saleModel == null && invoiceNumber.isNotEmpty) {
+        debugPrint('⚠️ saleTransactionModel es null - Buscando en Sales Transition...');
+
+        final ref = ProviderScope.containerOf(context);
+        final allSalesTransitions = ref.read(transitionProvider).valueOrNull;
+
+        if (allSalesTransitions != null) {
+          try {
+            saleModel = allSalesTransitions.firstWhere(
+              (sale) => sale.invoiceNumber == invoiceNumber,
+            );
+            debugPrint('✅ Factura $invoiceNumber encontrada en Sales Transition');
+          } catch (e) {
+            debugPrint('❌ Factura $invoiceNumber NO encontrada en Sales Transition');
+          }
+        }
+      }
+
+      if (saleModel == null) {
+        debugPrint('⚠️ No se pudo encontrar la factura eliminada en ninguna fuente');
+        EasyLoading.dismiss();
+
+        if (context.mounted) {
+          // Mostrar diálogo con información detallada
+          showDialog(
+            context: context,
+            builder: (BuildContext dialogContext) {
+              return AlertDialog(
+                title: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange, size: 28),
+                    SizedBox(width: 10),
+                    Text('Datos No Disponibles'),
+                  ],
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'La factura #$invoiceNumber fue eliminada antes de la actualización del sistema que guarda los datos completos.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    SizedBox(height: 12),
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Información disponible:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          SizedBox(height: 6),
+                          Text('• Cliente: ${transaction.name}', style: TextStyle(fontSize: 12)),
+                          Text('• Total: \$${myFormat.format(transaction.total)}', style: TextStyle(fontSize: 12)),
+                          Text('• Fecha: ${transaction.date}', style: TextStyle(fontSize: 12)),
+                          if (transaction.sellerName != null && transaction.sellerName!.isNotEmpty)
+                            Text('• Vendedor: ${transaction.sellerName}', style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Las facturas eliminadas a partir de ahora sí podrán generar PDF.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text('Entendido'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+        return;
+      }
+
+      // Verificar que tenga productos
+      if (saleModel.productList == null || saleModel.productList!.isEmpty) {
+        EasyLoading.dismiss();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('La factura eliminada no tiene productos para mostrar en el PDF.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Obtener información del perfil y configuración
+      final ref = ProviderScope.containerOf(context);
+      final profileInfo = await ref.read(profileDetailsProvider.future);
+      final setting = await ref.read(generalSettingProvider.future);
+
+      debugPrint('✅ Modelo de venta encontrado: ${saleModel.invoiceNumber}');
+      debugPrint('✅ Productos: ${saleModel.productList?.length ?? 0}');
+
+      if (!context.mounted) {
+        EasyLoading.dismiss();
+        return;
+      }
+
+      // Generar el PDF
+      await GeneratePdfAndPrint().printSaleInvoice(
+        setting: setting,
+        personalInformationModel: profileInfo,
+        saleTransactionModel: saleModel,
+        context: context,
+        printType: 'normal',
+        fromSaleReports: true,
+      );
+
+      EasyLoading.dismiss();
+      debugPrint('✅ PDF de factura eliminada generado exitosamente');
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error generando PDF de factura eliminada: $e');
+      debugPrint('❌ StackTrace: $stackTrace');
+      EasyLoading.dismiss();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al generar PDF: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showPaymentDetails({
@@ -3604,6 +3835,124 @@ class _DailyTransactionState extends State<DailyTransaction> {
     }
   }
 
+  /// Generar PDF de una factura eliminada
+  Future<void> _generateDeletedInvoicePdf(BuildContext context, Map<String, dynamic> deleted) async {
+    try {
+      EasyLoading.show(status: 'Preparando PDF...');
+
+      // Obtener los datos originales de la factura desde el campo 'data'
+      final invoiceData = deleted['data'];
+
+      if (invoiceData == null) {
+        EasyLoading.dismiss();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se encontraron datos de la factura original'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      debugPrint('📄 Generando PDF para factura eliminada: ${deleted['invoiceNumber']}');
+      debugPrint('📄 Datos de factura: $invoiceData');
+
+      // Intentar extraer el modelo de venta
+      SaleTransactionModel? saleModel;
+
+      // Los datos pueden estar en diferentes formatos según cómo se guardaron
+      if (invoiceData is Map) {
+        final dataMap = Map<String, dynamic>.from(invoiceData);
+
+        // Buscar el modelo de venta en diferentes ubicaciones posibles
+        if (dataMap.containsKey('saleTransactionModel')) {
+          final saleData = dataMap['saleTransactionModel'];
+          if (saleData is Map) {
+            saleModel = SaleTransactionModel.fromJson(Map<String, dynamic>.from(saleData));
+          }
+        } else if (dataMap.containsKey('sale_transaction_model')) {
+          final saleData = dataMap['sale_transaction_model'];
+          if (saleData is Map) {
+            saleModel = SaleTransactionModel.fromJson(Map<String, dynamic>.from(saleData));
+          }
+        } else {
+          // Intentar crear el modelo directamente desde los datos
+          // Los campos pueden estar en el nivel superior del data
+          saleModel = SaleTransactionModel.fromJson(dataMap);
+        }
+      }
+
+      if (saleModel == null) {
+        EasyLoading.dismiss();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Esta factura fue eliminada antes de que se guardaran los datos completos. Las nuevas eliminaciones sí podrán generar PDF.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Verificar que tenga productos
+      if (saleModel.productList == null || saleModel.productList!.isEmpty) {
+        EasyLoading.dismiss();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Esta factura fue eliminada antes de que se guardaran los datos del PDF. Las facturas eliminadas a partir de ahora sí podrán generar PDF.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Obtener información del perfil y configuración
+      final ref = ProviderScope.containerOf(context);
+      final profileInfo = await ref.read(profileDetailsProvider.future);
+      final setting = await ref.read(generalSettingProvider.future);
+
+      debugPrint('✅ Modelo de venta reconstruido: ${saleModel.invoiceNumber}');
+      debugPrint('✅ Productos: ${saleModel.productList?.length ?? 0}');
+
+      // Verificar que el context sigue montado antes de usar
+      if (!context.mounted) {
+        EasyLoading.dismiss();
+        return;
+      }
+
+      // Generar el PDF
+      await GeneratePdfAndPrint().printSaleInvoice(
+        setting: setting,
+        personalInformationModel: profileInfo,
+        saleTransactionModel: saleModel,
+        context: context,
+        printType: 'normal',
+        fromSaleReports: true,
+      );
+
+      EasyLoading.dismiss();
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error generando PDF de factura eliminada: $e');
+      debugPrint('❌ StackTrace: $stackTrace');
+      EasyLoading.dismiss();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al generar PDF: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   /// Mostrar diálogo con las facturas eliminadas
   void _showDeletedInvoicesDialog(BuildContext context) {
     showDialog(
@@ -3829,6 +4178,25 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                         ),
                                       ),
                                     ],
+                                    // Botón para ver PDF de factura eliminada
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        ElevatedButton.icon(
+                                          onPressed: () async {
+                                            await _generateDeletedInvoicePdf(context, deleted);
+                                          },
+                                          icon: const Icon(Icons.picture_as_pdf, size: 18),
+                                          label: const Text('Ver PDF'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),

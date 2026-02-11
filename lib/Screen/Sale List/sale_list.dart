@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
@@ -51,10 +52,35 @@ class _SaleListState extends State<SaleList> {
   late int itemsPerPage = 10;
   String searchItem = '';
 
+  // Controller para mantener el texto de búsqueda cuando se reconstruye la UI
+  final TextEditingController _searchController = TextEditingController();
+
+  // Timer para debounce de búsqueda
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
     checkCurrentUserAndRestartApp();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  // Función de búsqueda con debounce (espera 800ms después de dejar de escribir)
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() {
+          searchItem = value;
+        });
+      }
+    });
   }
 
   final _horizontalScroll = ScrollController();
@@ -69,24 +95,21 @@ class _SaleListState extends State<SaleList> {
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Consumer(builder: (_, consuearRef, watch) {
-            AsyncValue<List<SaleTransactionModel>> transactionReport = consuearRef.watch(transitionProvider);
+            // Si hay búsqueda, usar el provider de búsqueda directa del API (sin límite de 100)
+            // Si no hay búsqueda, usar el provider normal con límite de 100
+            final bool isSearching = searchItem.trim().isNotEmpty;
+
+            AsyncValue<List<SaleTransactionModel>> transactionReport = isSearching
+                ? consuearRef.watch(searchSalesProvider(searchItem.trim()))
+                : consuearRef.watch(transitionProvider);
             final profile = consuearRef.watch(profileDetailsProvider);
             final settingProvider = consuearRef.watch(generalSettingProvider);
-            
+
             return transactionReport.when(
               data: (mainTransaction) {
-                // Las ventas ya vienen ordenadas del repositorio (más reciente primero)
-                List<SaleTransactionModel> showAbleSaleTransactions = [];
-
-                for (var element in mainTransaction) {
-                  if (searchItem != '' &&
-                      (element.customerName.removeAllWhiteSpace().toLowerCase().contains(searchItem.toLowerCase()) ||
-                      element.invoiceNumber.toLowerCase().contains(searchItem.toLowerCase()))) {
-                    showAbleSaleTransactions.add(element);
-                  } else if (searchItem == '') {
-                    showAbleSaleTransactions.add(element);
-                  }
-                }
+                // Las ventas ya vienen filtradas del API cuando hay búsqueda
+                // o todas las ventas (hasta 100) cuando no hay búsqueda
+                List<SaleTransactionModel> showAbleSaleTransactions = mainTransaction;
 
 
                 final totalPages = itemsPerPage == -1 ? 1 : (showAbleSaleTransactions.length / itemsPerPage).ceil();
@@ -187,13 +210,10 @@ class _SaleListState extends State<SaleList> {
                             child: Padding(
                               padding: const EdgeInsets.all(10),
                               child: AppTextField(
+                                controller: _searchController,
                                 showCursor: true,
                                 cursorColor: kTitleColor,
-                                onChanged: (value) {
-                                  setState(() {
-                                    searchItem = value;
-                                  });
-                                },
+                                onChanged: _onSearchChanged,  // Usa debounce para evitar búsquedas en cada tecla
                                 textFieldType: TextFieldType.NAME,
                                 decoration: InputDecoration(
                                   hintText: lang.S.of(context).searchByInvoiceOrName,
@@ -1126,6 +1146,8 @@ class _SaleListState extends State<SaleList> {
             'originalSaleType': transaction.saleType ?? '',
             'customerPhone': transaction.customerPhone ?? '',
             'productCount': transaction.productList?.length ?? 0,
+            // IMPORTANTE: Guardar el modelo completo de la venta para poder generar PDF después
+            'saleTransactionModel': transaction.toJson(),
           },
         });
 

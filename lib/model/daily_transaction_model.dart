@@ -66,7 +66,18 @@ class DailyTransactionModel {
     dueAmountAfterPay = double.tryParse(json['dueAmountAfterPay']?.toString() ?? json['due_amount_after_pay']?.toString() ?? '0');
 
     // Modelos anidados (para compatibilidad con datos completos - soporta camelCase y snake_case)
-    final saleData = json['saleTransactionModel'] ?? json['sale_transaction_model'];
+    // Primero buscar en el nivel superior del JSON
+    var saleData = json['saleTransactionModel'] ?? json['sale_transaction_model'];
+
+    // Si no se encuentra y el tipo es 'Deleted', buscar dentro del campo 'data'
+    // porque las facturas eliminadas guardan el saleTransactionModel dentro de data
+    if (saleData == null && type == 'Deleted') {
+      final dataField = json['data'];
+      if (dataField != null && dataField is Map) {
+        saleData = dataField['saleTransactionModel'] ?? dataField['sale_transaction_model'];
+      }
+    }
+
     if (saleData != null) {
       saleTransactionModel = SaleTransactionModel.fromJson(Map<String, dynamic>.from(saleData));
     }
