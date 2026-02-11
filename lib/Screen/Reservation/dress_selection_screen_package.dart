@@ -209,10 +209,21 @@ class _DressSelectionPackageScreenState
           // Filtrar por categoría de vestido con comparación robusta (trim para espacios)
           // CategoryComposite viene de packagesAsync.components[index] que es la categoría del vestido
           final searchCategory = widget.CategoryComposite.trim().toLowerCase();
+
+          // DEBUG: Ver todas las categorías únicas de vestidos en la BD
+          final allCategories = dresses.map((d) => d.category).toSet().toList()..sort();
+          debugPrint('🔍 [DEBUG] CategoryComposite recibido: "${widget.CategoryComposite}"');
+          debugPrint('🔍 [DEBUG] searchCategory normalizado: "$searchCategory"');
+          debugPrint('🔍 [DEBUG] Total vestidos cargados: ${dresses.length}');
+          debugPrint('🔍 [DEBUG] Categorías únicas en BD: $allCategories');
+
           final categoryFiltered = dresses.where((dress) {
             final dressCategory = dress.category.trim().toLowerCase();
             return dressCategory == searchCategory;
           }).toList();
+
+          debugPrint('✅ [DEBUG] Vestidos filtrados para "$searchCategory": ${categoryFiltered.length}');
+          debugPrint('📊 [DEBUG] Disponibles: ${categoryFiltered.where((d) => d.available).length}, No disponibles: ${categoryFiltered.where((d) => !d.available).length}');
 
           if (_allDresses.length != categoryFiltered.length) {
             _allDresses = categoryFiltered;

@@ -18,6 +18,49 @@ import 'customer_provider.dart';
 
 final _apiService = ApiService();
 
+/// Parsea la fecha y hora de una reservación de forma robusta
+/// Maneja tanto formato ISO 8601 (2026-02-21T00:00:00.000Z) como formato simple (2026-02-21)
+DateTime _parseReservationDateTime(String? dateStr, String? timeStr) {
+  if (dateStr == null || dateStr.isEmpty) {
+    return DateTime.now();
+  }
+
+  try {
+    // Si la fecha ya es ISO 8601 completa (contiene 'T'), extraer solo la parte de fecha
+    String cleanDate = dateStr;
+    if (dateStr.contains('T')) {
+      cleanDate = dateStr.split('T')[0]; // "2026-02-21T00:00:00.000Z" -> "2026-02-21"
+    }
+
+    // Parsear la fecha
+    final dateParts = cleanDate.split('-');
+    if (dateParts.length != 3) {
+      return DateTime.now();
+    }
+
+    final year = int.parse(dateParts[0]);
+    final month = int.parse(dateParts[1]);
+    final day = int.parse(dateParts[2]);
+
+    // Parsear la hora si existe
+    int hour = 0;
+    int minute = 0;
+
+    if (timeStr != null && timeStr.isNotEmpty) {
+      final timeParts = timeStr.split(':');
+      if (timeParts.length >= 2) {
+        hour = int.tryParse(timeParts[0]) ?? 0;
+        minute = int.tryParse(timeParts[1]) ?? 0;
+      }
+    }
+
+    return DateTime(year, month, day, hour, minute);
+  } catch (e) {
+    debugPrint('⚠️ [_parseReservationDateTime] Error parsing date: $dateStr, time: $timeStr - $e');
+    return DateTime.now();
+  }
+}
+
 /// Normaliza un número de teléfono eliminando caracteres no numéricos
 /// para permitir comparaciones más flexibles
 String _normalizePhone(String phone) {
@@ -609,11 +652,14 @@ final isClothesAvailableForRangeProvider =
   final String startDate = params['startDate'];
   final bool isAdditional = params['isAdditional'];
 
+  debugPrint('🔍 [isClothesAvailableForRange] Verificando vestido: $dressId para fecha: $startDate (isAdditional: $isAdditional)');
+
   try {
     final response = await _apiService.get('reservations', queryParams: {
       'dress_id': dressId,
       'limit': '1000',
     });
+    debugPrint('🔍 [isClothesAvailableForRange] Reservaciones con dress_id=$dressId: ${response.data?['reservations']?.length ?? 0}');
 
     final allResponse = await _apiService.get('reservations', queryParams: {'limit': '5000'});
     final allReservationsData = allResponse.data?['reservations'] as List<dynamic>? ?? [];
@@ -667,10 +713,12 @@ final isClothesAvailableForRangeProvider =
             DateTime reservationUseStart;
             DateTime reservationUseEnd;
 
-            if (packageRentaId == data['service_id']) {
-              final DateTime reservationDateTime = DateTime.parse(
-                  data['reservation_date'] + ' ' + data['reservation_time']);
+            // Usar función helper para parsear fecha/hora correctamente
+            final DateTime reservationDateTime = _parseReservationDateTime(
+                data['reservation_date']?.toString(),
+                data['reservation_time']?.toString());
 
+            if (packageRentaId == data['service_id']) {
               reservationUseStart = DateTime(
                   reservationDateTime.year,
                   reservationDateTime.month,
@@ -683,9 +731,6 @@ final isClothesAvailableForRangeProvider =
                   reservationDateTime.day + 1,
                   23, 59, 59);
             } else {
-              final DateTime reservationDateTime = DateTime.parse(
-                  data['reservation_date'] + ' ' + data['reservation_time']);
-
               reservationUseStart = DateTime(reservationDateTime.year,
                   reservationDateTime.month, reservationDateTime.day, 00, 00, 00);
 
@@ -695,6 +740,11 @@ final isClothesAvailableForRangeProvider =
 
             if (!(reservationUseStart.isBefore(cloth_reservation_startDate) ||
                 reservationUseStart.isAfter(cloth_reservation_endDate))) {
+              debugPrint('❌ [isClothesAvailableForRange] CONFLICTO encontrado para vestido $dressId');
+              debugPrint('   - Reservación existente: ${data['reservation_date']} ${data['reservation_time']}');
+              debugPrint('   - Fecha solicitada: $startDate');
+              debugPrint('   - Rango solicitado: $cloth_reservation_startDate - $cloth_reservation_endDate');
+              debugPrint('   - Rango reservación: $reservationUseStart - $reservationUseEnd');
               return false;
             }
           }
@@ -722,18 +772,25 @@ final isClothesAvailableForRangeProvider =
           23, 59, 59,
         );
 
-        final DateTime reservationDateTime = DateTime.parse(
-            reservation['reservation_date'] + ' ' + reservation['reservation_time']);
+        // Usar función helper para parsear fecha/hora correctamente
+        final DateTime reservationDateTime = _parseReservationDateTime(
+            reservation['reservation_date']?.toString(),
+            reservation['reservation_time']?.toString());
 
         if (!(reservationDateTime.isBefore(cloth_reservation_startDate) ||
             reservationDateTime.isAfter(cloth_reservation_endDate))) {
+          debugPrint('❌ [isClothesAvailableForRange] CONFLICTO simple para vestido $dressId');
+          debugPrint('   - Reservación existente: ${reservation['reservation_date']} ${reservation['reservation_time']}');
+          debugPrint('   - Fecha solicitada: $startDate');
           return false;
         }
       }
     }
 
+    debugPrint('✅ [isClothesAvailableForRange] Vestido $dressId DISPONIBLE para $startDate');
     return true;
   } catch (e) {
+    debugPrint('❌ [isClothesAvailableForRange] ERROR: $e');
     return false;
   }
 });
