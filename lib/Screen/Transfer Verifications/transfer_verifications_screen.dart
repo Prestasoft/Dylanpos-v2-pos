@@ -18,6 +18,7 @@ class TransferVerificationsScreen extends StatefulWidget {
 
 class _TransferVerificationsScreenState extends State<TransferVerificationsScreen> {
   String _selectedFilter = 'pending';
+  String _selectedDateFilter = 'today'; // Filtro de período: today, yesterday, week, month, all
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
@@ -65,6 +66,60 @@ class _TransferVerificationsScreenState extends State<TransferVerificationsScree
 
   String _formatAmount(double amount) {
     return NumberFormat('#,##0.00', 'es_DO').format(amount);
+  }
+
+  /// Verifica si una fecha coincide con el período seleccionado
+  bool _matchesDateFilter(String? dateStr) {
+    if (_selectedDateFilter == 'all') return true;
+    if (dateStr == null || dateStr.isEmpty) return false;
+
+    try {
+      final date = DateTime.parse(dateStr).toLocal();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+
+      switch (_selectedDateFilter) {
+        case 'today':
+          return date.year == today.year && date.month == today.month && date.day == today.day;
+        case 'yesterday':
+          return date.year == yesterday.year && date.month == yesterday.month && date.day == yesterday.day;
+        case 'week':
+          // Inicio de la semana (lunes)
+          final weekStart = today.subtract(Duration(days: today.weekday - 1));
+          return date.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+                 date.isBefore(today.add(const Duration(days: 1)));
+        case 'month':
+          return date.year == today.year && date.month == today.month;
+        default:
+          return true;
+      }
+    } catch (e) {
+      return true;
+    }
+  }
+
+  Widget _buildDateFilterButton(String filter, String label) {
+    final isSelected = _selectedDateFilter == filter;
+    return InkWell(
+      onTap: () => setState(() => _selectedDateFilter = filter),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? kBlueTextColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isSelected ? kBlueTextColor : Colors.grey.shade400),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
   }
 
   void _showVerificationDialog(BuildContext context, TransferVerificationModel transfer, WidgetRef ref) {
@@ -563,12 +618,12 @@ class _TransferVerificationsScreenState extends State<TransferVerificationsScree
                   ),
                   const Divider(height: 1),
 
-                  // Filtros
+                  // Filtros de estado
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     child: Row(
                       children: [
-                        // Botones de filtro
+                        // Botones de filtro de estado
                         _buildFilterButton('pending', 'Pendientes', Colors.orange),
                         const SizedBox(width: 8),
                         _buildFilterButton('approved', 'Aprobadas', Colors.green),
@@ -604,12 +659,38 @@ class _TransferVerificationsScreenState extends State<TransferVerificationsScree
                     ),
                   ),
 
+                  // Filtros de período de fecha
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        Text('Período:', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+                        const SizedBox(width: 12),
+                        _buildDateFilterButton('today', 'Hoy'),
+                        const SizedBox(width: 6),
+                        _buildDateFilterButton('yesterday', 'Ayer'),
+                        const SizedBox(width: 6),
+                        _buildDateFilterButton('week', 'Esta semana'),
+                        const SizedBox(width: 6),
+                        _buildDateFilterButton('month', 'Este mes'),
+                        const SizedBox(width: 6),
+                        _buildDateFilterButton('all', 'Todas'),
+                      ],
+                    ),
+                  ),
+
                   // Lista
                   Expanded(
                     child: transfersAsync.when(
                       data: (transfers) {
-                        // Filtrar por búsqueda
+                        // Filtrar por búsqueda y período de fecha
                         final filtered = transfers.where((t) {
+                          // Filtro de fecha
+                          if (!_matchesDateFilter(t.createdAt)) return false;
+
+                          // Filtro de búsqueda
                           if (_searchQuery.isEmpty) return true;
                           return t.customerName.toLowerCase().contains(_searchQuery) ||
                               t.invoiceNumber.toLowerCase().contains(_searchQuery) ||
@@ -618,6 +699,23 @@ class _TransferVerificationsScreenState extends State<TransferVerificationsScree
                         }).toList();
 
                         if (filtered.isEmpty) {
+                          // Construir mensaje según filtros activos
+                          String statusText = _selectedFilter == 'all' ? '' : _selectedFilter == 'pending' ? 'pendientes' : _selectedFilter == 'approved' ? 'aprobadas' : 'rechazadas';
+                          String dateText = '';
+                          switch (_selectedDateFilter) {
+                            case 'today':
+                              dateText = ' para hoy';
+                              break;
+                            case 'yesterday':
+                              dateText = ' de ayer';
+                              break;
+                            case 'week':
+                              dateText = ' de esta semana';
+                              break;
+                            case 'month':
+                              dateText = ' de este mes';
+                              break;
+                          }
                           return Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -625,7 +723,7 @@ class _TransferVerificationsScreenState extends State<TransferVerificationsScree
                                 Icon(Icons.inbox, size: 80, color: Colors.grey.shade300),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No hay transferencias ${_selectedFilter == 'all' ? '' : _selectedFilter == 'pending' ? 'pendientes' : _selectedFilter == 'approved' ? 'aprobadas' : 'rechazadas'}',
+                                  'No hay transferencias $statusText$dateText',
                                   style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                                 ),
                               ],
