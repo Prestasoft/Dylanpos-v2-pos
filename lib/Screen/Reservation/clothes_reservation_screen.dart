@@ -46,7 +46,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(Duration(days: 365)),
+      lastDate: DateTime(2100), // Sin límite práctico
     );
 
     if (picked != null && picked != selectedDate) {

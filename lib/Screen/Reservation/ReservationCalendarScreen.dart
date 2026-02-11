@@ -811,8 +811,8 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
           // Mostrar TableCalendar en modo semana o mes
           children.add(
             TableCalendar(
-              firstDay: DateTime.now().subtract(const Duration(days: 365)),
-              lastDay: DateTime.now().add(const Duration(days: 365)),
+              firstDay: DateTime(2020), // Sin límite práctico hacia atrás
+              lastDay: DateTime(2100), // Sin límite práctico hacia adelante
               focusedDay: _focusedDay,
               selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
               calendarFormat: _calendarView == 'semana' ? CalendarFormat.week : CalendarFormat.month,
