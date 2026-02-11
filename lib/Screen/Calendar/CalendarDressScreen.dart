@@ -1195,17 +1195,23 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
       debugPrint('⚠️ Paquete "Renta de Vestimenta" no encontrado');
     }
 
-    // Mostrar diálogo inmediatamente (los datos se cargan dentro con ref.watch)
+    // Invalidar el provider para forzar una nueva carga de datos
+    ref.invalidate(fullReservationsByDressProvider2(dress.id));
+
+    // Mostrar diálogo inmediatamente (los datos se cargan dentro con Consumer)
     showDialog(
       barrierDismissible: true,
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState1) {
+        // Usar Consumer para escuchar correctamente los cambios del StreamProvider
+        return Consumer(
+          builder: (context, ref, child) {
             final reservationsAsyncValue =
                 ref.watch(fullReservationsByDressProvider2(dress.id));
 
-            return Dialog(
+            return StatefulBuilder(
+              builder: (context, setState1) {
+                return Dialog(
               surfaceTintColor: kWhite,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0)),
@@ -1757,11 +1763,13 @@ class _CalendarDressScreen extends State<CalendarDressScreen> {
                   ],
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
+            ); // Cierre de Dialog
+              }, // Cierre de StatefulBuilder builder
+            ); // Cierre de StatefulBuilder
+          }, // Cierre de Consumer builder
+        ); // Cierre de Consumer
+      }, // Cierre de showDialog builder
+    ); // Cierre de showDialog
   }
 
 // Método auxiliar para construir filas de detalles (si no existe)
