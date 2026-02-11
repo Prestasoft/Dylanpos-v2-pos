@@ -134,8 +134,17 @@ class ReservationCard extends ConsumerWidget {
       }
     }
     final lowerName = serviceName?.toLowerCase() ?? '';
-    final isFiesta = lowerName.contains('fiesta');
-    final isEstudio = lowerName.contains('estudio');
+
+    // Para planes "Pre-Quince y Fiesta", diferenciar por isFiestaDate:
+    // - isFiestaDate=true → Es la fecha de la FIESTA
+    // - isFiestaDate=false → Es la fecha del PRE-QUINCE (estudio)
+    final isPreQuinceFiesta = lowerName.contains('pre-quince') && lowerName.contains('fiesta');
+    final isFiesta = isPreQuinceFiesta
+        ? reservation.isFiestaDate  // Solo es "fiesta" si es la fecha de fiesta
+        : lowerName.contains('fiesta');
+    final isEstudio = isPreQuinceFiesta
+        ? !reservation.isFiestaDate  // Es "estudio" si NO es la fecha de fiesta (es pre-quince)
+        : lowerName.contains('estudio');
     final isExterior = lowerName.contains('exterior');
     final isRenta = lowerName.contains('renta') || lowerName.contains('vestimenta') || lowerName.contains('vestido');
 
@@ -1388,12 +1397,16 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             if (fiestaDate != null) {
               final fiestaDateKey = DateTime(fiestaDate.year, fiestaDate.month, fiestaDate.day);
               
-              // Verificar que no esté ya agregada
+              // Verificar que no esté ya agregada (con isFiestaDate=true)
               final existingReservations = _reservationsByDay[fiestaDateKey] ?? [];
-              if (!existingReservations.any((r) => r.id == reservation.id)) {
+              if (!existingReservations.any((r) => r.id == reservation.id && r.isFiestaDate)) {
                 _reservationsByDay
                     .putIfAbsent(fiestaDateKey, () => [])
-                    .add(reservation);
+                    .add(reservation.copyWith(
+                      isFiestaDate: true,
+                      reservationDate: fiestaDateStr,
+                      reservationTime: fullReservation.reservation['fiesta_time']?.toString() ?? reservation.reservationTime,
+                    ));
                 needsRefresh = true;
               }
             }
