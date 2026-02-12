@@ -43,6 +43,21 @@ bool isProtectedUser(String? userId, String? email) {
   }
   return false;
 }
+
+/// ROL ESPECIAL: Operador de Vestimentas
+/// Este rol SOLO tiene acceso a:
+/// - Estado de Vestimentas
+/// - Disponibilidad de Vestimentas
+/// No tiene acceso al menú lateral ni a otras funciones del sistema
+const String dressOperatorRole = 'dress_operator';
+
+/// Verifica si el usuario actual es un Operador de Vestimentas
+bool isDressOperator() {
+  return finalUserRoleModel.userRoleName?.toLowerCase() == dressOperatorRole;
+}
+
+/// Ruta de inicio para Operador de Vestimentas
+const String dressOperatorHomePath = '/dress-operator-home';
 bool isDemo = false;
 String invoiceFileName = "VICTOR GUZMAN FOTOGRAFIA";
 String demoText = 'You Can\'t change anything in demo mode';

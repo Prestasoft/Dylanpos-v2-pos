@@ -12,6 +12,7 @@ import 'package:salespro_admin/Screen/Customer%20List/add_customer.dart';
 import 'package:salespro_admin/Screen/Customer%20List/customer_list.dart';
 import 'package:salespro_admin/Screen/Customer%20List/edit_customer.dart';
 import 'package:salespro_admin/Screen/Dress/DressScreen.dart';
+import 'package:salespro_admin/Screen/Dress/dress_operator_home_screen.dart';
 import 'package:salespro_admin/Screen/Due%20List/due_list_screen.dart';
 import 'package:salespro_admin/Screen/Expenses/expense_category.dart';
 import 'package:salespro_admin/Screen/Expenses/new_expense.dart';
@@ -146,6 +147,13 @@ abstract class AcnooAppRoutes {
             path: '/blank-home',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: BlankHome(),
+            ),
+          ),
+          // Pantalla de inicio para Operador de Vestimentas (rol dress_operator)
+          GoRoute(
+            path: '/dress-operator-home',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: DressOperatorHomeScreen(),
             ),
           ),
           // Limpieza de base de datos (TEMPORAL)

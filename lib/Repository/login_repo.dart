@@ -24,6 +24,16 @@ class LogInRepo extends ChangeNotifier {
 
   final ApiService _apiService = ApiService();
 
+  /// Determina la ruta de inicio según el rol del usuario
+  /// Operadores de vestimentas van a /dress-operator-home
+  /// Otros usuarios van a /blank-home
+  String _getHomeRouteForUser() {
+    if (isDressOperator()) {
+      return dressOperatorHomePath;
+    }
+    return '/blank-home';
+  }
+
   Future<void> signIn(BuildContext context) async {
     EasyLoading.show(status: 'Login...');
     try {
@@ -122,8 +132,8 @@ class LogInRepo extends ChangeNotifier {
         // Registrar login en auditoría
         await AuditService().logLogin(userId, userName, userEmail);
 
-        // Navegar al home
-        context.go('/blank-home');
+        // Navegar al home según el rol del usuario
+        context.go(_getHomeRouteForUser());
 
       } else {
         EasyLoading.showError(result.error ?? 'Error de autenticación');
@@ -453,10 +463,10 @@ class LogInRepo extends ChangeNotifier {
                                           // Registrar login en auditoría
                                           await AuditService().logLogin(userId, userName, userEmail);
 
-                                          // Cerrar modal y navegar
+                                          // Cerrar modal y navegar según el rol del usuario
                                           if (context.mounted) {
                                             Navigator.of(context).pop();
-                                            context.go('/blank-home');
+                                            context.go(_getHomeRouteForUser());
                                           }
                                         },
                                         style: ElevatedButton.styleFrom(

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../../Provider/user_role_provider.dart';
@@ -39,7 +38,7 @@ class _AddUserRoleState extends State<AddUserRole> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController titleController = TextEditingController();
-  TextEditingController userRoleName = TextEditingController();
+  TextEditingController userRoleName = TextEditingController(text: 'user');
   List<Permission> defaultPermissions = [
     // ===== NAVEGACIÓN PRINCIPAL =====
     Permission(type: 'dashboard'),
@@ -395,6 +394,21 @@ class _AddUserRoleState extends State<AddUserRole> {
     permission.view = view;
     permission.edit = edit;
     permission.delete = delete;
+  }
+
+  /// Valida que el valor del rol sea una opción válida del dropdown
+  /// Si no es válido, retorna 'user' como valor por defecto
+  String _getValidRoleValue(String? roleValue) {
+    const validRoles = ['admin', 'user', 'manager', 'cashier', 'dress_operator'];
+    if (roleValue == null || roleValue.isEmpty) {
+      return 'user';
+    }
+    // Si el rol actual está en las opciones válidas, lo retornamos
+    if (validRoles.contains(roleValue.toLowerCase())) {
+      return roleValue.toLowerCase();
+    }
+    // Si no está en las opciones válidas, retornamos 'user' como default
+    return 'user';
   }
 
   // Método para enviar email de restablecimiento de contraseña
@@ -1457,18 +1471,65 @@ class _AddUserRoleState extends State<AddUserRole> {
                     keyboardType: TextInputType.name,
                   ),
                   const SizedBox(height: 20.0),
-                  AppTextField(
-                    showCursor: true,
-                    validator: (value) {
-                      return null;
-                    },
-                    controller: userRoleName,
-                    decoration: InputDecoration(
-                      labelText: lang.S.of(context).userRoleName,
-                      hintText: lang.S.of(context).enterUserRoleName,
-                      contentPadding: const EdgeInsets.all(10.0),
+                  // Selector de Rol de Usuario (Dropdown)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    textFieldType: TextFieldType.EMAIL,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _getValidRoleValue(userRoleName.text),
+                        hint: Text(lang.S.of(context).enterUserRoleName),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'admin',
+                            child: Text('Administrador'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'user',
+                            child: Text('Usuario'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'manager',
+                            child: Text('Gerente'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'cashier',
+                            child: Text('Cajero'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'dress_operator',
+                            child: Row(
+                              children: [
+                                Icon(Icons.checkroom, size: 18, color: Colors.purple),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('Operador de Vestimentas'),
+                                      Text(
+                                        'Solo Estado y Disponibilidad',
+                                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            userRoleName.text = newValue ?? 'user';
+                          });
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 20.0),
 
