@@ -281,6 +281,22 @@ class _AddUserRoleState extends State<AddUserRole> {
     });
   }
 
+  /// Permisos específicos para Operador de Vestimentas
+  /// Solo acceso a Estado de Vestimentas y Disponibilidad de Vestimentas
+  void _setDressOperatorPermissions() {
+    // Limpiar todos los permisos primero
+    _clearAllPermissionsInternal();
+
+    // Solo permisos para las dos funciones permitidas:
+    // 1. Estado de Vestimentas (services, register_clothing)
+    _setPermission('services', view: true, edit: true);
+    _setPermission('register_clothing', view: true, edit: true);
+
+    // 2. Disponibilidad de Vestimentas (reservation_calendar)
+    _setPermission('reservation_calendar', view: true);
+    _setPermission('reservations', view: true);
+  }
+
   void _setNoHeaderActionsRole() {
     setState(() {
       // Limpiar todos los permisos primero
@@ -1526,6 +1542,10 @@ class _AddUserRoleState extends State<AddUserRole> {
                         onChanged: (String? newValue) {
                           setState(() {
                             userRoleName.text = newValue ?? 'user';
+                            // Asignar permisos automáticos según el rol
+                            if (newValue == 'dress_operator') {
+                              _setDressOperatorPermissions();
+                            }
                           });
                         },
                       ),
