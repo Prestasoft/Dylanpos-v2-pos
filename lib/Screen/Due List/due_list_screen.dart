@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -80,7 +81,25 @@ class _DueListState extends State<DueList> {
   String selectedParties = 'Clientes';
   ScrollController mainScroll = ScrollController();
   String searchItem = '';
-  
+
+  // Controller para mantener el texto de búsqueda cuando se reconstruye la UI
+  final TextEditingController _searchController = TextEditingController();
+
+  // Timer para debounce de búsqueda
+  Timer? _debounceTimer;
+
+  // Función de búsqueda con debounce (espera 500ms después de dejar de escribir)
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          searchItem = value;
+        });
+      }
+    });
+  }
+
   // Nuevas variables para el filtro de fecha
   String dateFilter = 'Todos'; // 'Hoy' o 'Todos'
   DateTimeRange? dateRange; // Para el selector de rango de fechas
@@ -89,6 +108,15 @@ class _DueListState extends State<DueList> {
   void initState() {
     super.initState();
     checkCurrentUserAndRestartApp();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounceTimer?.cancel();
+    mainScroll.dispose();
+    _horizontalScroll.dispose();
+    super.dispose();
   }
 
   final _horizontalScroll = ScrollController();
@@ -697,9 +725,14 @@ class _DueListState extends State<DueList> {
       child: Scaffold(
           backgroundColor: kDarkWhite,
           body: Consumer(builder: (_, ref, watch) {
-            // Usamos transitionProvider para obtener todas las ventas
-            AsyncValue<List<SaleTransactionModel>> salesAsync =
-                ref.watch(transitionProvider);
+            // Si hay búsqueda, usar el provider de búsqueda directa del API (sin límite de 100)
+            // Si no hay búsqueda, usar el provider normal con límite de 100
+            final bool isSearching = searchItem.trim().isNotEmpty;
+
+            // Usamos salesWithDueProvider o searchSalesWithDueProvider según si hay búsqueda
+            AsyncValue<List<SaleTransactionModel>> salesAsync = isSearching
+                ? ref.watch(searchSalesWithDueProvider(searchItem.trim()))
+                : ref.watch(salesWithDueProvider);
             return salesAsync.when(data: (allSales) {
               // Agrupar ventas con dueAmount > 0 por cliente
               Map<String, CustomerDueInfo> customerDuesMap = {};
@@ -750,14 +783,22 @@ class _DueListState extends State<DueList> {
               }
 
               // Convertir a listas de CustomerModel para compatibilidad
-              List<CustomerModel> customerList = customerDuesMap.values
+              // También mantener la lista de CustomerDueInfo para acceder a pendingSales
+              List<CustomerDueInfo> customerDueInfoList = customerDuesMap.values.toList();
+              List<CustomerDueInfo> supplierDueInfoList = supplierDuesMap.values.toList();
+
+              List<CustomerModel> customerList = customerDueInfoList
                   .map((info) => info.toCustomerModel())
                   .toList();
-              List<CustomerModel> supplierList = supplierDuesMap.values
+              List<CustomerModel> supplierList = supplierDueInfoList
                   .map((info) => info.toCustomerModel())
                   .toList();
 
-              // Ordenar por deuda total (mayor a menor)
+              // Ordenar ambas listas por deuda total (mayor a menor)
+              // Ordenar CustomerDueInfo
+              customerDueInfoList.sort((a, b) => b.totalDue.compareTo(a.totalDue));
+              supplierDueInfoList.sort((a, b) => b.totalDue.compareTo(a.totalDue));
+              // Ordenar CustomerModel
               customerList.sort((a, b) =>
                   double.parse(b.dueAmount).compareTo(double.parse(a.dueAmount)));
               supplierList.sort((a, b) =>
@@ -765,9 +806,14 @@ class _DueListState extends State<DueList> {
 
               List<CustomerModel> showAbleCustomer = [];
               List<CustomerModel> showAbleSupplier = [];
+              // Listas paralelas de CustomerDueInfo para acceder a pendingSales
+              List<CustomerDueInfo> showAbleCustomerDueInfo = [];
+              List<CustomerDueInfo> showAbleSupplierDueInfo = [];
 
               ///___________customer_filter______________________________________________________
-              for (var element in customerList) {
+              for (int i = 0; i < customerList.length; i++) {
+                final element = customerList[i];
+                final dueInfo = customerDueInfoList[i];
                 final name = element.customerName.replaceAll(' ', '').toLowerCase();
                 final phone = element.phoneNumber;
 
@@ -776,14 +822,18 @@ class _DueListState extends State<DueList> {
                 if ((name.contains(search) || phone.contains(search))) {
                   if (_filterByDate(element)) {
                     showAbleCustomer.add(element);
+                    showAbleCustomerDueInfo.add(dueInfo);
                   }
                 } else if (searchItem == '' && _filterByDate(element)) {
                   showAbleCustomer.add(element);
+                  showAbleCustomerDueInfo.add(dueInfo);
                 }
               }
 
               ///___________Suppiler_filter______________________________________________________
-              for (var element in supplierList) {
+              for (int i = 0; i < supplierList.length; i++) {
+                final element = supplierList[i];
+                final dueInfo = supplierDueInfoList[i];
                 if ((element.customerName
                         .removeAllWhiteSpace()
                         .toLowerCase()
@@ -791,20 +841,26 @@ class _DueListState extends State<DueList> {
                     element.phoneNumber.contains(searchItem))) {
                   if (_filterByDate(element)) {
                     showAbleSupplier.add(element);
+                    showAbleSupplierDueInfo.add(dueInfo);
                   }
                 } else if (searchItem == '' && _filterByDate(element)) {
                   showAbleSupplier.add(element);
+                  showAbleSupplierDueInfo.add(dueInfo);
                 }
               }
 
               // Pagination logic - Updated to handle "All" case
               final List<CustomerModel> paginatedCustomerList;
               final List<CustomerModel> paginatedSupplierList;
+              final List<CustomerDueInfo> paginatedCustomerDueInfoList;
+              final List<CustomerDueInfo> paginatedSupplierDueInfoList;
 
               if (_categoryPerPage == -1) {
                 // Show all items
                 paginatedCustomerList = showAbleCustomer;
                 paginatedSupplierList = showAbleSupplier;
+                paginatedCustomerDueInfoList = showAbleCustomerDueInfo;
+                paginatedSupplierDueInfoList = showAbleSupplierDueInfo;
                 _currentPage = 1; // Reset to first page when showing all
               } else {
                 // Apply pagination
@@ -817,6 +873,14 @@ class _DueListState extends State<DueList> {
                 paginatedSupplierList = showAbleSupplier.sublist(
                   startIndex.clamp(0, showAbleSupplier.length),
                   endIndex.clamp(0, showAbleSupplier.length),
+                );
+                paginatedCustomerDueInfoList = showAbleCustomerDueInfo.sublist(
+                  startIndex.clamp(0, showAbleCustomerDueInfo.length),
+                  endIndex.clamp(0, showAbleCustomerDueInfo.length),
+                );
+                paginatedSupplierDueInfoList = showAbleSupplierDueInfo.sublist(
+                  startIndex.clamp(0, showAbleSupplierDueInfo.length),
+                  endIndex.clamp(0, showAbleSupplierDueInfo.length),
                 );
               }
 
@@ -1135,13 +1199,19 @@ class _DueListState extends State<DueList> {
                                       md: 60,
                                       lg: 35,
                                       child: TextFormField(
+                                        controller: _searchController,
                                         showCursor: true,
                                         cursorColor: kTitleColor,
                                         onChanged: (value) {
-                                          setState(() {
-                                            searchItem = value;
-                                            _currentPage =
-                                                1; // Reset to first page when searching
+                                          // Usar debounce para evitar búsquedas en cada tecla
+                                          _debounceTimer?.cancel();
+                                          _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+                                            if (mounted) {
+                                              setState(() {
+                                                searchItem = value;
+                                                _currentPage = 1; // Reset to first page when searching
+                                              });
+                                            }
                                           });
                                         },
                                         keyboardType: TextInputType.name,
@@ -1379,6 +1449,9 @@ class _DueListState extends State<DueList> {
                                                                             child:
                                                                                 ShowDuePaymentPopUp(
                                                                               customerModel: selectedParties == 'Proveedores' ? paginatedSupplierList[index] : paginatedCustomerList[index],
+                                                                              pendingSales: selectedParties == 'Proveedores'
+                                                                                  ? paginatedSupplierDueInfoList[index].pendingSales
+                                                                                  : paginatedCustomerDueInfoList[index].pendingSales,
                                                                             ),
                                                                           );
                                                                         },

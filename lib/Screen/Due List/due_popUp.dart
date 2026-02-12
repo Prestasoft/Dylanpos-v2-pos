@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import 'dart:typed_data';
 import '../../services/api_service.dart';
+import '../../model/sale_transaction_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
@@ -38,8 +39,13 @@ import '../../Provider/reservation_provider.dart';
 import 'dart:html' as html;
 
 class ShowDuePaymentPopUp extends StatefulWidget {
-  const ShowDuePaymentPopUp({super.key, required this.customerModel});
+  const ShowDuePaymentPopUp({
+    super.key,
+    required this.customerModel,
+    this.pendingSales,  // Lista de facturas pendientes del cliente
+  });
   final CustomerModel customerModel;
+  final List<SaleTransactionModel>? pendingSales;
 
   @override
   State<ShowDuePaymentPopUp> createState() => _ShowDuePaymentPopUpState();
@@ -199,11 +205,26 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
   TextEditingController changeAmountController = TextEditingController();
   TextEditingController dueAmountController = TextEditingController();
 
+  // Mapa para guardar la relación factura -> monto pendiente
+  Map<String, double> invoiceDueAmounts = {};
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     dueAmount = widget.customerModel.remainedBalance.toDouble();
+
+    // Cargar facturas pendientes si se proporcionaron
+    if (widget.pendingSales != null && widget.pendingSales!.isNotEmpty) {
+      for (var sale in widget.pendingSales!) {
+        if (sale.dueAmount != null && sale.dueAmount! > 0) {
+          final invoiceNum = sale.invoiceNumber;
+          if (!items.contains(invoiceNum)) {
+            items.add(invoiceNum);
+            invoiceDueAmounts[invoiceNum] = sale.dueAmount!;
+          }
+        }
+      }
+    }
   }
 
   Future<void> _sendPdfViaWhatsApp({
@@ -339,18 +360,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                               xs: 12,
                               md: 9,
                               lg: 9,
-                              child: customerProviderRef.when(data: (customer) {
-                                for (var element in customer) {
-                                  if (element.customerPhone == widget.customerModel.phoneNumber && element.dueAmount != 0 && count < 2) {
-                                    items.add(element.invoiceNumber);
-                                  }
-                                  if (selectedInvoice == element.invoiceNumber) {
-                                    dueAmount = element.dueAmount!.toDouble();
-                                  } else if (selectedInvoice == 'Seleccionar Factura') {
-                                    dueAmount = widget.customerModel.remainedBalance.toDouble();
-                                  }
-                                }
-                                return Padding(
+                              child: Padding(
                                   padding: const EdgeInsets.all(12.0),
                                   child: Container(
                                     height: 48,
@@ -367,10 +377,14 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                           child: DropdownButton(
                                             value: dropdownValue,
                                             icon: const Icon(Icons.keyboard_arrow_down),
-                                            items: items.map((String items) {
+                                            items: items.map((String item) {
+                                              // Mostrar número de factura y monto pendiente
+                                              final displayText = item == 'Seleccionar Factura'
+                                                  ? item
+                                                  : 'Fact. $item - RD\$${invoiceDueAmounts[item]?.toStringAsFixed(2) ?? '0.00'}';
                                               return DropdownMenuItem(
-                                                value: items,
-                                                child: Text(items,
+                                                value: item,
+                                                child: Text(displayText,
                                                     style: theme.textTheme.titleMedium?.copyWith(
                                                       fontWeight: FontWeight.w600,
                                                       color: kNeutral500,
@@ -383,6 +397,12 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 payingAmountController.clear();
                                                 dropdownValue = newValue.toString();
                                                 selectedInvoice = newValue.toString();
+                                                // Actualizar el monto pendiente según la factura seleccionada
+                                                if (newValue == 'Seleccionar Factura') {
+                                                  dueAmount = widget.customerModel.remainedBalance.toDouble();
+                                                } else {
+                                                  dueAmount = invoiceDueAmounts[newValue] ?? widget.customerModel.remainedBalance.toDouble();
+                                                }
                                               });
                                             },
                                           ),
@@ -390,12 +410,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                       ),
                                     ),
                                   ),
-                                );
-                              }, error: (e, stack) {
-                                return Text(e.toString());
-                              }, loading: () {
-                                return const Center(child: CircularProgressIndicator());
-                              }),
+                                ),
                             ),
                             ResponsiveGridCol(xs: 0, md: 3, lg: 3, child: const SizedBox.shrink())
                           ])),

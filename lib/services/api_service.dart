@@ -166,6 +166,8 @@ class ApiService {
         _branchId = (selectedTenantId?.isNotEmpty == true) ? selectedTenantId : userBranchId;
 
         print('[ApiService.login] selected_tenant_id: $selectedTenantId, user.branch_id: $userBranchId, usando: $_branchId');
+        print('🔐 [ApiService.login] user.role: ${_currentUser?['role']}');
+        print('🔐 [ApiService.login] user completo: $_currentUser');
 
         // Guardar en SharedPreferences
         await prefs.setString('api_token', _token!);

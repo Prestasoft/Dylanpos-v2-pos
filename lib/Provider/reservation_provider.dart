@@ -1325,11 +1325,35 @@ final crearReservaProvider = FutureProvider.family<reservationCreation, Map<Stri
     }
     // Si es una reserva normal, creamos una nueva
     else {
+      // DEBUG: Log de diagnóstico para rastrear inconsistencias de branch_id
+      debugPrint('═══════════════════════════════════════════════════════════════');
+      debugPrint('🔍 [crearReservaProvider] DIAGNÓSTICO DE BRANCH_ID');
+      debugPrint('  📦 params[branchId]: "${params['branchId']}"');
+      debugPrint('  📦 params[dressId]: "${params['dressId']}"');
+      debugPrint('  📦 params[multiple_dress]: ${params['multiple_dress']}');
+      debugPrint('  📦 params[seller_name]: "${params['seller_name']}"');
+      debugPrint('═══════════════════════════════════════════════════════════════');
+
+      // CRÍTICO: Si branchId viene vacío, intentar obtenerlo de multiple_dress
+      String effectiveBranchId = params['branchId']?.toString() ?? '';
+      if (effectiveBranchId.isEmpty) {
+        final multipleDress = params['multiple_dress'] as List?;
+        if (multipleDress != null && multipleDress.isNotEmpty) {
+          effectiveBranchId = multipleDress.first['branch_id']?.toString() ?? '';
+          debugPrint('⚠️ [crearReservaProvider] branchId vacío - usando primer vestido: $effectiveBranchId');
+        }
+      }
+
+      // Si aún está vacío, esto es un problema que debería investigarse
+      if (effectiveBranchId.isEmpty) {
+        debugPrint('❌ [crearReservaProvider] ADVERTENCIA: branchId vacío después de todas las verificaciones!');
+      }
+
       final reservationData = {
         'service_id': params['serviceId'],
         'client_id': params['clientId'],
         'dress_id': params['dressId'],
-        'branch_id': params['branchId'],
+        'branch_id': effectiveBranchId,
         'reservation_date': params['date'],
         'reservation_time': params['time'],
         'created_at': DateTime.now().toIso8601String(),
@@ -1348,6 +1372,8 @@ final crearReservaProvider = FutureProvider.family<reservationCreation, Map<Stri
         'fiesta_time': params['fiesta_time'] ?? '',
         'aditionals': [],
       };
+
+      debugPrint('📤 [crearReservaProvider] Enviando reserva con branch_id: ${reservationData['branch_id']}');
 
       final response = await _apiService.post('reservations', reservationData);
 

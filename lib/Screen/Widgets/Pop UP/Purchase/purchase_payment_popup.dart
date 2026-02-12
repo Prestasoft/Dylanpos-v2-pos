@@ -399,7 +399,7 @@ class _PurchaseShowPaymentPopUpState extends State<PurchaseShowPaymentPopUp> {
                                                       total: widget.transitionModel.totalAmount!.toDouble(),
                                                       paymentIn: 0,
                                                       paymentOut: widget.transitionModel.totalAmount!.toDouble() - widget.transitionModel.dueAmount!.toDouble(),
-                                                      remainingBalance: widget.transitionModel.totalAmount!.toDouble() - widget.transitionModel.dueAmount!.toDouble(),
+                                                      remainingBalance: widget.transitionModel.dueAmount!.toDouble(),
                                                       id: widget.transitionModel.invoiceNumber,
                                                       purchaseTransactionModel: widget.transitionModel,
                                                     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Screen/Reservation/date_time_selection_screen.dart';
 import 'package:salespro_admin/Screen/Reservation/dress_selection_screen_package.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
+import 'package:salespro_admin/Provider/branch_provider.dart';
 import '../../Provider/reservation_provider.dart';
 
 class PackageReservationScreen extends ConsumerStatefulWidget {
@@ -256,6 +257,10 @@ class _PackageReservationScreen extends ConsumerState<PackageReservationScreen> 
                                 onPressed: () {
                                   Navigator.of(dialogContext).pop(); // Cierra el diálogo
 
+                                  // CRÍTICO: Obtener branchId del provider cuando no hay vestidos seleccionados
+                                  final effectiveBranchId = ref.read(branchIdProvider);
+                                  debugPrint('🏢 [PackageReservation-SinVestidos] branchId desde provider: $effectiveBranchId');
+
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -264,7 +269,7 @@ class _PackageReservationScreen extends ConsumerState<PackageReservationScreen> 
                                         packageName: widget.packagesAsync.name,
                                         dressId: '',
                                         dressName: '',
-                                        branchId: '',
+                                        branchId: effectiveBranchId,
                                         dressReservations: [
                                           ...dressReservations,
                                         ],
@@ -279,15 +284,25 @@ class _PackageReservationScreen extends ConsumerState<PackageReservationScreen> 
                         },
                       );
                     } else {
+                      // CRÍTICO: Obtener branchId del primer vestido o del provider
+                      String effectiveBranchId = '';
+                      if (dressReservations.isNotEmpty && dressReservations.first.branchId.isNotEmpty) {
+                        effectiveBranchId = dressReservations.first.branchId;
+                        debugPrint('🏢 [PackageReservation] branchId desde primer vestido: $effectiveBranchId');
+                      } else {
+                        effectiveBranchId = ref.read(branchIdProvider);
+                        debugPrint('🏢 [PackageReservation] branchId desde provider: $effectiveBranchId');
+                      }
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => DateTimeSelectionScreen(
                             packageId: widget.packagesAsync.id,
                             packageName: widget.packagesAsync.name,
-                            dressId: '',
-                            dressName: '',
-                            branchId: '',
+                            dressId: dressReservations.isNotEmpty ? dressReservations.first.id : '',
+                            dressName: dressReservations.isNotEmpty ? dressReservations.first.name : '',
+                            branchId: effectiveBranchId,
                             dressReservations: [
                               ...dressReservations,
                             ],

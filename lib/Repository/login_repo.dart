@@ -73,14 +73,27 @@ class LogInRepo extends ChangeNotifier {
         // Debug log para diagnóstico
         print('🔐 [Login] Usuario: $userName');
         print('🔐 [Login] isAdmin: $isAdmin');
+        print('🔐 [Login] userRoleName: ${finalUserRoleModel.userRoleName}');
+        print('🔐 [Login] isDressOperator(): ${isDressOperator()}');
+        print('🔐 [Login] homeRoute: ${_getHomeRouteForUser()}');
         print('🔐 [Login] allowed_branches desde API: $allowedBranches');
         print('🔐 [Login] branches parseado: $branches');
 
         // Filtrar sucursales según permisos del usuario
         List<TenantModel> availableTenants;
 
-        if (isAdmin || branches == null || branches.isEmpty) {
-          // Administrador o sin restricciones: todas las sucursales
+        // IMPORTANTE: Los usuarios dress_operator NUNCA deben ver todas las sucursales
+        // aunque tengan is_admin=true. Solo ven sus allowed_branches.
+        final isDressOp = finalUserRoleModel.userRoleName?.toLowerCase() == dressOperatorRole;
+
+        if (isDressOp && branches != null && branches.isNotEmpty) {
+          // Dress operator: SOLO sus sucursales permitidas, nunca todas
+          availableTenants = TenantConfig.allTenants
+              .where((tenant) => branches.contains(tenant.id))
+              .toList();
+          print('🔐 [Login] Dress operator - Solo sucursales permitidas: ${availableTenants.map((t) => t.id).toList()}');
+        } else if (isAdmin || branches == null || branches.isEmpty) {
+          // Administrador normal o sin restricciones: todas las sucursales
           availableTenants = TenantConfig.allTenants;
           print('🔐 [Login] Mostrando TODAS las sucursales (admin o sin restricciones)');
         } else {
@@ -465,6 +478,11 @@ class LogInRepo extends ChangeNotifier {
 
                                           // Cerrar modal y navegar según el rol del usuario
                                           if (context.mounted) {
+                                            // Debug para diagnóstico de rol
+                                            print('🔐 [Modal] userRoleName: ${finalUserRoleModel.userRoleName}');
+                                            print('🔐 [Modal] isDressOperator(): ${isDressOperator()}');
+                                            print('🔐 [Modal] homeRoute: ${_getHomeRouteForUser()}');
+
                                             Navigator.of(context).pop();
                                             context.go(_getHomeRouteForUser());
                                           }

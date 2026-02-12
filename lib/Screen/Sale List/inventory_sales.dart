@@ -2433,7 +2433,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                   total: post.totalAmount!.toDouble(),
                                                   paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
                                                   paymentOut: 0,
-                                                  remainingBalance: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
+                                                  remainingBalance: post.dueAmount!.toDouble(),
                                                   id: post.invoiceNumber,
                                                   saleTransactionModel: post,
                                                 );

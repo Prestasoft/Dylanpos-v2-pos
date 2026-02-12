@@ -107,7 +107,7 @@ class _SalesReturnState extends State<SalesReturn> {
         total: salesModel.totalAmount!.toDouble(),
         paymentIn: 0,
         paymentOut: salesModel.totalAmount!.toDouble() - salesModel.dueAmount!.toDouble(),
-        remainingBalance: salesModel.totalAmount!.toDouble() - salesModel.dueAmount!.toDouble(),
+        remainingBalance: salesModel.dueAmount!.toDouble(),
         id: salesModel.invoiceNumber,
         saleTransactionModel: salesModel,
       );

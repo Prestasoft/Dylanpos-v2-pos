@@ -126,6 +126,169 @@ class TransitionRepo {
     }
   }
 
+  /// Buscar ventas por número de factura o nombre de cliente directamente en el API
+  /// Este método NO tiene el límite de 100 y busca en TODA la base de datos
+  Future<List<SaleTransactionModel>> searchSales({
+    String? invoiceNumber,
+    String? customerName,
+    String? customerPhone,
+    bool? hasDue,
+  }) async {
+    try {
+      if (!_apiService.isAuthenticated) {
+        await _apiService.init();
+      }
+
+      print('[TransitionRepo] Buscando ventas - invoice: $invoiceNumber, customer: $customerName, hasDue: $hasDue');
+
+      final queryParams = <String, String>{
+        'limit': '500', // Límite más alto para búsquedas
+      };
+
+      if (invoiceNumber != null && invoiceNumber.isNotEmpty) {
+        queryParams['invoiceNumber'] = invoiceNumber;
+      }
+      if (customerPhone != null && customerPhone.isNotEmpty) {
+        queryParams['customerPhone'] = customerPhone;
+      }
+      if (hasDue == true) {
+        queryParams['hasDue'] = 'true';
+      }
+
+      final response = await _apiService.get('sales', queryParams: queryParams);
+
+      if (response.success && response.data != null) {
+        List<dynamic> salesData;
+        dynamic data = response.data;
+
+        if (data is String) {
+          try {
+            data = jsonDecode(data);
+          } catch (e) {
+            print('[TransitionRepo] Error parseando JSON en searchSales: $e');
+            return [];
+          }
+        }
+
+        if (data is List) {
+          salesData = data;
+        } else if (data is Map) {
+          salesData = data['sales'] as List<dynamic>? ?? [];
+        } else {
+          salesData = [];
+        }
+
+        print('[TransitionRepo] Búsqueda retornó ${salesData.length} ventas');
+
+        final List<SaleTransactionModel> result = [];
+        for (var saleData in salesData) {
+          try {
+            final sale = SaleTransactionModel.fromJson(saleData as Map<String, dynamic>);
+            sale.key = saleData['id']?.toString();
+
+            // Filtro adicional por nombre de cliente (si se especificó)
+            if (customerName != null && customerName.isNotEmpty) {
+              final searchLower = customerName.toLowerCase().replaceAll(' ', '');
+              final nameLower = sale.customerName.toLowerCase().replaceAll(' ', '');
+              if (!nameLower.contains(searchLower)) {
+                continue; // Saltar si no coincide el nombre
+              }
+            }
+
+            result.add(sale);
+          } catch (e) {
+            print('[TransitionRepo] Error parseando venta en búsqueda: $e');
+          }
+        }
+
+        // Ordenar por número de factura descendente
+        result.sort((a, b) {
+          final invA = int.tryParse(a.invoiceNumber.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          final invB = int.tryParse(b.invoiceNumber.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          return invB.compareTo(invA);
+        });
+
+        return result;
+      }
+      return [];
+    } catch (e) {
+      print('[TransitionRepo] Error en searchSales: $e');
+      rethrow;
+    }
+  }
+
+  /// Buscar ventas con saldo pendiente (due_amount > 0)
+  Future<List<SaleTransactionModel>> getSalesWithDue({String? customerName}) async {
+    try {
+      if (!_apiService.isAuthenticated) {
+        await _apiService.init();
+      }
+
+      print('[TransitionRepo] Buscando ventas con saldo pendiente - customer: $customerName');
+
+      final response = await _apiService.get('sales', queryParams: {
+        'limit': '500',
+        'hasDue': 'true',
+      });
+
+      if (response.success && response.data != null) {
+        List<dynamic> salesData;
+        dynamic data = response.data;
+
+        if (data is String) {
+          try {
+            data = jsonDecode(data);
+          } catch (e) {
+            return [];
+          }
+        }
+
+        if (data is List) {
+          salesData = data;
+        } else if (data is Map) {
+          salesData = data['sales'] as List<dynamic>? ?? [];
+        } else {
+          salesData = [];
+        }
+
+        print('[TransitionRepo] Ventas con saldo: ${salesData.length}');
+
+        final List<SaleTransactionModel> result = [];
+        for (var saleData in salesData) {
+          try {
+            final sale = SaleTransactionModel.fromJson(saleData as Map<String, dynamic>);
+            sale.key = saleData['id']?.toString();
+
+            // Verificar que realmente tiene saldo pendiente
+            if ((sale.dueAmount ?? 0) <= 0) continue;
+
+            // Filtro por nombre de cliente si se especificó
+            if (customerName != null && customerName.isNotEmpty) {
+              final searchLower = customerName.toLowerCase().replaceAll(' ', '');
+              final nameLower = sale.customerName.toLowerCase().replaceAll(' ', '');
+              if (!nameLower.contains(searchLower)) {
+                continue;
+              }
+            }
+
+            result.add(sale);
+          } catch (e) {
+            print('[TransitionRepo] Error parseando venta con due: $e');
+          }
+        }
+
+        // Ordenar por saldo pendiente descendente
+        result.sort((a, b) => (b.dueAmount ?? 0).compareTo(a.dueAmount ?? 0));
+
+        return result;
+      }
+      return [];
+    } catch (e) {
+      print('[TransitionRepo] Error en getSalesWithDue: $e');
+      rethrow;
+    }
+  }
+
   /// Crear una nueva venta
   Future<SaleTransactionModel?> createSale(SaleTransactionModel sale) async {
     try {

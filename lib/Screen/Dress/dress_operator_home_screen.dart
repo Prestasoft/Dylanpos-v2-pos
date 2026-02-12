@@ -1,15 +1,18 @@
 // dress_operator_home_screen.dart
 // Pantalla de inicio para usuarios con rol "dress_operator"
 // Solo permite acceso a Estado de Vestimentas y Disponibilidad de Vestimentas
+// Las pantallas se muestran EMBEBIDAS, sin sidebar ni navegación externa
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
 import '../../const.dart';
 import '../../Repository/login_repo.dart';
 import '../../services/version_check_service.dart';
 import 'package:salespro_admin/Provider/branch_provider.dart';
+// Importar las pantallas que vamos a embeber
+import 'package:salespro_admin/Screen/Dress/DressScreen.dart';
+import 'package:salespro_admin/Screen/Calendar/CalendarDressScreen.dart';
 
 class DressOperatorHomeScreen extends ConsumerStatefulWidget {
   const DressOperatorHomeScreen({super.key});
@@ -105,9 +108,19 @@ class _DressOperatorHomeScreenState extends ConsumerState<DressOperatorHomeScree
       ),
       body: Column(
         children: [
-          // Selector de vista
+          // Selector de vista (tabs)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -128,11 +141,11 @@ class _DressOperatorHomeScreenState extends ConsumerState<DressOperatorHomeScree
             ),
           ),
 
-          // Contenido principal
+          // Contenido principal - EMBEBER las pantallas directamente
           Expanded(
             child: _selectedView == 'status'
-                ? _buildStatusView()
-                : _buildAvailabilityView(),
+                ? const DressScreen() // Pantalla de Estado de Vestimentas embebida
+                : const CalendarDressScreen(), // Calendario embebido
           ),
         ],
       ),
@@ -143,8 +156,9 @@ class _DressOperatorHomeScreenState extends ConsumerState<DressOperatorHomeScree
     final isSelected = _selectedView == value;
     return InkWell(
       onTap: () => setState(() => _selectedView = value),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -160,208 +174,20 @@ class _DressOperatorHomeScreenState extends ConsumerState<DressOperatorHomeScree
               : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? Colors.white : color, size: 28),
-            const SizedBox(width: 12),
+            Icon(icon, color: isSelected ? Colors.white : color, size: 24),
+            const SizedBox(width: 10),
             Text(
               label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: isSelected ? Colors.white : color,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusView() {
-    // Navegamos a la pantalla de Estado de Vestimentas embebida
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: kMainColor.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.checkroom, color: kMainColor, size: 32),
-                const SizedBox(width: 12),
-                const Text(
-                  'Estado de Vestimentas',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: kMainColor,
-                  ),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () => context.go('/service-package/dresses'),
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('Abrir en pantalla completa'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kMainColor,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Contenido
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.checkroom, size: 80, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Gestión de Estado de Vestimentas',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Cambia el estado de los vestidos (Disponible, En uso, En lavandería, etc.)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () => context.go('/service-package/dresses'),
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text('Ir a Estado de Vestimentas'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kMainColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvailabilityView() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF15CD75).withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.calendar_today, color: Color(0xFF15CD75), size: 32),
-                const SizedBox(width: 12),
-                const Text(
-                  'Disponibilidad de Vestimentas',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF15CD75),
-                  ),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () => context.go('/calendario-reservas'),
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('Abrir en pantalla completa'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF15CD75),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Contenido
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.calendar_today, size: 80, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Calendario de Disponibilidad',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Consulta la disponibilidad de vestidos por fecha',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () => context.go('/calendario-reservas'),
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text('Ir a Disponibilidad'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF15CD75),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
