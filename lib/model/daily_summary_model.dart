@@ -13,6 +13,9 @@ class DailySummaryModel {
   final double gastoTransferencia;
   final double ingresoTarjeta;
   final double gastoTarjeta;
+  // Nuevos campos para facturas eliminadas
+  final int facturasEliminadasCount;
+  final double totalEliminado;
 
   DailySummaryModel({
     this.totalFacturado = 0.0,
@@ -27,6 +30,8 @@ class DailySummaryModel {
     this.gastoTransferencia = 0.0,
     this.ingresoTarjeta = 0.0,
     this.gastoTarjeta = 0.0,
+    this.facturasEliminadasCount = 0,
+    this.totalEliminado = 0.0,
   });
 
   factory DailySummaryModel.fromDailyTransactions(List<DailyTransactionModel> transactions) {
@@ -42,8 +47,19 @@ class DailySummaryModel {
     double gastoTransferencia = 0.0;
     double ingresoTarjeta = 0.0;
     double gastoTarjeta = 0.0;
+    // Contadores para facturas eliminadas
+    int facturasEliminadasCount = 0;
+    double totalEliminado = 0.0;
 
     for (final transaction in transactions) {
+      // Facturas Eliminadas - RESTAR del total y contar
+      if (transaction.type == "Deleted") {
+        facturasEliminadasCount++;
+        totalEliminado += transaction.total;
+        // Las facturas eliminadas NO suman al total facturado
+        continue; // Saltar al siguiente, no procesar pagos
+      }
+
       // Total Facturado - para todas las ventas (Sale, Adicionales, Producto)
       if (transaction.type == "Sale" || transaction.type == "Adicionales" || transaction.type == "Impresiones") {
         totalFacturado += transaction.total;
@@ -94,11 +110,11 @@ class DailySummaryModel {
       // Categorizar por método de pago (considerando español e inglés)
       if (paymentType != null && paymentAmount > 0) {
         final paymentTypeLower = paymentType.toLowerCase().trim();
-        
+
         // Determinar si es ingreso o gasto
-        bool isExpense = transaction.type == "Expense" || transaction.type == "Purchase" || 
+        bool isExpense = transaction.type == "Expense" || transaction.type == "Purchase" ||
                         transaction.type == "Purchase Return" || transaction.type == "Salary Payment";
-        
+
         switch (paymentTypeLower) {
           case "cash":
           case "efectivo":
@@ -145,6 +161,8 @@ class DailySummaryModel {
       gastoTransferencia: gastoTransferencia,
       ingresoTarjeta: ingresoTarjeta,
       gastoTarjeta: gastoTarjeta,
+      facturasEliminadasCount: facturasEliminadasCount,
+      totalEliminado: totalEliminado,
     );
   }
 
@@ -156,6 +174,8 @@ class DailySummaryModel {
     double pagoEfectivo = 0.0;
     double pagoTransferencia = 0.0;
     double pagoTarjetas = 0.0;
+    int facturasEliminadasCount = 0;
+    double totalEliminado = 0.0;
 
     firebaseData.forEach((key, value) {
       try {
@@ -164,6 +184,13 @@ class DailySummaryModel {
         final amount = (data['amount'] ?? 0).toDouble();
         final paidAmount = (data['paid_amount'] ?? 0).toDouble();
         final paymentType = data['payment_type']?.toString();
+
+        // Facturas Eliminadas
+        if (type == "Deleted") {
+          facturasEliminadasCount++;
+          totalEliminado += amount;
+          return; // Saltar al siguiente
+        }
 
         // Total Facturado - solo ventas
         if (type == "Sale") {
@@ -203,6 +230,8 @@ class DailySummaryModel {
       pagoEfectivo: pagoEfectivo,
       pagoTransferencia: pagoTransferencia,
       pagoTarjetas: pagoTarjetas,
+      facturasEliminadasCount: facturasEliminadasCount,
+      totalEliminado: totalEliminado,
     );
   }
 }

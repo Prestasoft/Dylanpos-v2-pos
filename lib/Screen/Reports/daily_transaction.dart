@@ -46,105 +46,29 @@ class DailyTransaction extends StatefulWidget {
 class _DailyTransactionState extends State<DailyTransaction> {
   List<String> _problematicInvoices = [];
 
-  // Lista de facturas eliminadas obtenidas de auditoría
-  List<Map<String, dynamic>> _deletedInvoices = [];
-  bool _isLoadingDeletedInvoices = false;
+  // Construir lista de facturas eliminadas desde las transacciones filtradas
+  // Esto asegura que respeta los filtros de fecha aplicados
+  List<Map<String, dynamic>> _buildDeletedInvoicesFromTransactions(List<DailyTransactionModel> transactions) {
+    List<Map<String, dynamic>> deletedList = [];
 
-  // Obtener facturas eliminadas del rango de fechas seleccionado
-  Future<void> _loadDeletedInvoices() async {
-    if (_isLoadingDeletedInvoices) return;
+    for (var tx in transactions) {
+      if (tx.type == 'Deleted') {
+        // Extraer datos del saleTransactionModel si existe
+        final saleModel = tx.saleTransactionModel;
 
-    setState(() {
-      _isLoadingDeletedInvoices = true;
-    });
-
-    try {
-      debugPrint('🔍 Buscando eliminaciones - Fecha inicio: ${selectedDate.start}, Fecha fin: ${selectedDate.end}');
-
-      // Buscar TODAS las transacciones y filtrar por tipo "Deleted" en el cliente
-      // (El backend puede no soportar el filtro por type correctamente)
-      final apiService = ApiService();
-      final response = await apiService.get('daily-transactions', queryParams: {
-        'start_date': selectedDate.start.toIso8601String(),
-        'end_date': selectedDate.end.toIso8601String(),
-        'limit': '1000',
-      });
-
-      debugPrint('🔍 Response de daily-transactions: ${response.success}');
-
-      List<Map<String, dynamic>> deletedList = [];
-
-      if (response.success && response.data != null) {
-        // IMPORTANTE: El backend retorna 'daily_transactions', no 'transactions'
-        final transactions = response.data['daily_transactions'] as List<dynamic>? ?? response.data['transactions'] as List<dynamic>? ?? [];
-        debugPrint('📊 Total transacciones encontradas: ${transactions.length}');
-
-        // Filtrar en el cliente por tipo "Deleted"
-        for (var tx in transactions) {
-          if (tx is Map) {
-            final txMap = Map<String, dynamic>.from(tx);
-            final txType = txMap['type']?.toString() ?? '';
-
-            debugPrint('🔍 Transacción tipo: $txType, factura: ${txMap['invoiceNumber'] ?? txMap['invoice_number']}');
-
-            // Solo incluir si el tipo es "Deleted" (case insensitive)
-            if (txType.toLowerCase() == 'deleted') {
-              deletedList.add({
-                'invoiceNumber': txMap['invoiceNumber'] ?? txMap['invoice_number'] ?? 'N/A',
-                'customerName': txMap['name'] ?? 'Cliente desconocido',
-                'deletedBy': txMap['sellerName'] ?? txMap['seller_name'] ?? txMap['data']?['deletedBy'] ?? 'Desconocido',
-                'deletedAt': txMap['date'] ?? txMap['created_at'] ?? '',
-                'totalAmount': txMap['total'] ?? 0,
-                'paymentType': txMap['paymentType'] ?? txMap['payment_type'] ?? 'N/A',
-                'data': txMap['data'],
-              });
-              debugPrint('✅ Factura eliminada encontrada: ${txMap['invoiceNumber'] ?? txMap['invoice_number']}');
-            }
-          }
-        }
+        deletedList.add({
+          'invoiceNumber': tx.invoiceNumber ?? saleModel?.invoiceNumber ?? 'N/A',
+          'customerName': tx.name ?? saleModel?.customerName ?? 'Cliente desconocido',
+          'deletedBy': tx.sellerName ?? 'Desconocido',
+          'deletedAt': tx.date ?? '',
+          'totalAmount': tx.total,
+          'paymentType': tx.paymentType ?? saleModel?.paymentType ?? 'N/A',
+          'data': null,
+        });
       }
-
-      // Si no hay resultados de daily_transactions, intentar con audits como fallback
-      if (deletedList.isEmpty) {
-        debugPrint('🔍 No hay Deleted en daily_transactions, intentando con audits...');
-        final auditService = AuditService();
-        final filteredLogs = await auditService.getAuditLogs(
-          action: 'delete',
-          module: 'sales',
-          startDate: selectedDate.start,
-          endDate: selectedDate.end,
-          limit: 500,
-        );
-
-        debugPrint('📊 Audits de eliminación encontrados: ${filteredLogs.length}');
-
-        for (var log in filteredLogs) {
-          // Extraer número de factura de la descripción
-          final match = RegExp(r'ID:\s*(\d+)').firstMatch(log.description);
-          final invoiceNumber = match?.group(1) ?? log.beforeData?['invoiceNumber'] ?? 'N/A';
-
-          deletedList.add({
-            'invoiceNumber': invoiceNumber,
-            'customerName': log.beforeData?['customerName'] ?? 'Cliente desconocido',
-            'deletedBy': log.userName,
-            'deletedAt': log.createdAt,
-            'totalAmount': log.beforeData?['totalAmount'] ?? 0,
-            'paymentType': log.beforeData?['paymentMethod'] ?? 'N/A',
-            'data': log.beforeData,
-          });
-        }
-      }
-
-      _deletedInvoices = deletedList;
-      debugPrint('📋 Total facturas eliminadas encontradas: ${_deletedInvoices.length}');
-    } catch (e) {
-      debugPrint('❌ Error cargando facturas eliminadas: $e');
-      _deletedInvoices = [];
-    } finally {
-      setState(() {
-        _isLoadingDeletedInvoices = false;
-      });
     }
+
+    return deletedList;
   }
 
   double calculateTotalPaymentIn(List<DailyTransactionModel> dailyTransaction) {
@@ -199,8 +123,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
       setState(() {
         selectedDate = DateTimeRange(start: start, end: end);
       });
-      // Cargar facturas eliminadas para el nuevo rango
-      _loadDeletedInvoices();
     }
   }
 
@@ -340,10 +262,6 @@ class _DailyTransactionState extends State<DailyTransaction> {
   @override
   void initState() {
     super.initState();
-    // Cargar facturas eliminadas al inicio
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadDeletedInvoices();
-    });
   }
 
   // Función para traducir el tipo a español
@@ -1414,8 +1332,12 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           ),
                         ]);
                       }),
-                      // Tercera fila: Facturas Eliminadas
+                      // Tercera fila: Facturas Eliminadas (usa summary calculado de reTransaction)
                       Builder(builder: (context) {
+                        // Calcular el count de eliminadas desde las transacciones filtradas
+                        final deletedList = _buildDeletedInvoicesFromTransactions(reTransaction);
+                        final deletedCount = deletedList.length;
+
                         return ResponsiveGridRow(rowSegments: 100, children: [
                           ResponsiveGridCol(
                             xs: 100,
@@ -1427,7 +1349,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 color: Colors.transparent,
                                 child: InkWell(
                                   onTap: () {
-                                    _showDeletedInvoicesDialog(context);
+                                    _showDeletedInvoicesDialog(context, deletedList);
                                   },
                                   borderRadius: BorderRadius.circular(10.0),
                                   child: Container(
@@ -1444,19 +1366,13 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                       children: [
                                         Icon(Icons.delete_outline, color: const Color(0xFFE53935), size: 24),
                                         const SizedBox(height: 8),
-                                        _isLoadingDeletedInvoices
-                                            ? const SizedBox(
-                                                height: 20,
-                                                width: 20,
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              )
-                                            : Text(
-                                                '${_deletedInvoices.length}',
-                                                style: theme.textTheme.titleLarge?.copyWith(
-                                                    color: const Color(0xFFE53935),
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 18),
-                                              ),
+                                        Text(
+                                          '$deletedCount',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                              color: const Color(0xFFE53935),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18),
+                                        ),
                                         Text(
                                           'Facturas Eliminadas',
                                           style: theme.textTheme.bodyMedium,
@@ -3954,7 +3870,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
   }
 
   /// Mostrar diálogo con las facturas eliminadas
-  void _showDeletedInvoicesDialog(BuildContext context) {
+  /// [deletedInvoices] Lista de facturas eliminadas filtradas por fecha
+  void _showDeletedInvoicesDialog(BuildContext context, List<Map<String, dynamic>> deletedInvoices) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -4016,7 +3933,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                 ),
                 // Content
                 Flexible(
-                  child: _deletedInvoices.isEmpty
+                  child: deletedInvoices.isEmpty
                       ? Center(
                           child: Padding(
                             padding: const EdgeInsets.all(40),
@@ -4050,9 +3967,9 @@ class _DailyTransactionState extends State<DailyTransaction> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          itemCount: _deletedInvoices.length,
+                          itemCount: deletedInvoices.length,
                           itemBuilder: (context, index) {
-                            final deleted = _deletedInvoices[index];
+                            final deleted = deletedInvoices[index];
 
                             // Extraer datos del mapa
                             final invoiceNumber = deleted['invoiceNumber']?.toString() ?? 'N/A';
@@ -4218,21 +4135,15 @@ class _DailyTransactionState extends State<DailyTransaction> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Total: ${_deletedInvoices.length} factura(s) eliminada(s)',
+                        'Total: ${deletedInvoices.length} factura(s) eliminada(s)',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          _loadDeletedInvoices();
-                          Navigator.of(dialogContext).pop();
-                          Future.delayed(const Duration(milliseconds: 300), () {
-                            _showDeletedInvoicesDialog(context);
-                          });
-                        },
-                        icon: const Icon(Icons.refresh, size: 18),
-                        label: const Text('Actualizar'),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Cerrar'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE53935),
                           foregroundColor: Colors.white,
