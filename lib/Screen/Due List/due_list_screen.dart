@@ -16,10 +16,12 @@ import '../../Provider/customer_provider.dart';
 import '../../Provider/transactions_provider.dart';
 import '../../const.dart';
 import '../../services/api_service.dart';
+import '../../services/deletion_password_service.dart';
 import '../../subscription.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
 import '../currency/currency_provider.dart';
+import '../../model/due_transaction_model.dart';
 import 'due_popUp.dart';
 
 /// Modelo para agrupar las deudas por cliente
@@ -703,15 +705,440 @@ class _DueListState extends State<DueList> {
   String _formatearMonto(dynamic monto) {
     try {
       // Convertir a número si es string o mantener si ya es número
-      final montoNumerico = monto is num 
-          ? monto 
+      final montoNumerico = monto is num
+          ? monto
           : double.tryParse(monto?.toString() ?? '0') ?? 0.0;
-      
+
       // Formatear el número
       return NumberFormat("#,##0.00", "es_ES").format(montoNumerico);
     } catch (e) {
       print('Error formateando monto: $e');
       return '0.00';
+    }
+  }
+
+  // ============ HISTORIAL DE PAGOS (ABONOS) ============
+
+  /// Mostrar el historial de pagos/abonos de un cliente
+  void _mostrarHistorialPagos(BuildContext context, String clientePhone, String clienteNombre, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  const Icon(Icons.history, color: kBlueTextColor),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Historial de Pagos - $clienteNombre',
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(dialogContext),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 700,
+                height: 500,
+                child: FutureBuilder<List<DueTransactionModel>>(
+                  future: _obtenerHistorialPagos(clientePhone),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                            const SizedBox(height: 16),
+                            Text('Error: ${snapshot.error}'),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final pagos = snapshot.data ?? [];
+
+                    if (pagos.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.payment, size: 64, color: Colors.grey.shade300),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No hay pagos registrados',
+                              style: TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: pagos.length,
+                      itemBuilder: (context, index) {
+                        final pago = pagos[index];
+                        return Card(
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: kGreenTextColor.withOpacity(0.2),
+                              child: const Icon(Icons.payment, color: kGreenTextColor),
+                            ),
+                            title: Row(
+                              children: [
+                                Text(
+                                  'Factura #${pago.invoiceNumber}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: pago.isPaid == true ? Colors.green.shade100 : Colors.orange.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    pago.isPaid == true ? 'Pagado' : 'Abono',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: pago.isPaid == true ? Colors.green.shade800 : Colors.orange.shade800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
+                                    const SizedBox(width: 4),
+                                    Text(_formatearFecha(pago.purchaseDate ?? '')),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Icon(Icons.attach_money, size: 14, color: Colors.grey.shade600),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Monto pagado: RD\$${_formatearMonto(pago.payDueAmount ?? 0)}',
+                                      style: const TextStyle(fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
+                                ),
+                                if (pago.paymentType != null && pago.paymentType!.isNotEmpty)
+                                  Row(
+                                    children: [
+                                      Icon(Icons.credit_card, size: 14, color: Colors.grey.shade600),
+                                      const SizedBox(width: 4),
+                                      Text('Método: ${pago.paymentType}'),
+                                    ],
+                                  ),
+                                if (pago.sellerName != null && pago.sellerName!.isNotEmpty)
+                                  Row(
+                                    children: [
+                                      Icon(Icons.person, size: 14, color: Colors.grey.shade600),
+                                      const SizedBox(width: 4),
+                                      Text('Procesado por: ${pago.sellerName}'),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              tooltip: 'Eliminar pago',
+                              onPressed: () {
+                                _confirmarEliminarPago(dialogContext, pago, clientePhone, ref, () {
+                                  // Refrescar la lista después de eliminar
+                                  setState(() {});
+                                });
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cerrar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Obtener historial de pagos de un cliente desde PostgreSQL
+  Future<List<DueTransactionModel>> _obtenerHistorialPagos(String clientePhone) async {
+    List<DueTransactionModel> pagos = [];
+    try {
+      final apiService = ApiService();
+      final response = await apiService.get('due-transactions', queryParams: {
+        'customerPhone': clientePhone,
+        'limit': '500',
+      });
+
+      if (response.success && response.data != null) {
+        final transactions = response.data['dueTransactions'] as List<dynamic>? ??
+                            response.data['due_transactions'] as List<dynamic>? ??
+                            response.data as List<dynamic>? ?? [];
+
+        for (var data in transactions) {
+          final map = Map<String, dynamic>.from(data);
+          final pago = DueTransactionModel.fromJson(map);
+          // Guardar el ID para poder eliminar
+          pago.id = map['id']?.toString() ?? '';
+          pagos.add(pago);
+        }
+      }
+    } catch (e) {
+      print('Error al obtener historial de pagos: $e');
+    }
+
+    // Ordenar por fecha (más recientes primero)
+    pagos.sort((a, b) {
+      DateTime fechaA = DateTime.tryParse(a.purchaseDate ?? '') ?? DateTime(1900);
+      DateTime fechaB = DateTime.tryParse(b.purchaseDate ?? '') ?? DateTime(1900);
+      return fechaB.compareTo(fechaA);
+    });
+
+    return pagos;
+  }
+
+  /// Confirmar eliminación de pago con clave de autorización
+  void _confirmarEliminarPago(
+    BuildContext context,
+    DueTransactionModel pago,
+    String clientePhone,
+    WidgetRef ref,
+    VoidCallback onSuccess,
+  ) {
+    final passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+              const SizedBox(width: 8),
+              const Text('Eliminar Pago'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '¿Está seguro de eliminar este pago?',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade800),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Factura: #${pago.invoiceNumber}'),
+                    Text('Monto: RD\$${_formatearMonto(pago.payDueAmount ?? 0)}'),
+                    Text('Fecha: ${_formatearFecha(pago.purchaseDate ?? '')}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Esta acción:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              const Text('• Revertirá el saldo del cliente'),
+              const Text('• Actualizará la factura como pendiente'),
+              const Text('• Esta acción NO se puede deshacer'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Clave de eliminación',
+                  hintText: 'Ingrese la clave de autorización',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final password = passwordController.text.trim();
+                if (password.isEmpty) {
+                  EasyLoading.showError('Ingrese la clave de autorización');
+                  return;
+                }
+
+                // Validar clave
+                final isValid = await DeletionPasswordService.validatePassword(password);
+
+                if (isValid) {
+                  Navigator.of(dialogContext).pop();
+                  _ejecutarEliminarPago(context, pago, clientePhone, ref, onSuccess);
+                } else {
+                  EasyLoading.showError('Clave incorrecta');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Eliminar Pago'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Ejecutar la eliminación del pago
+  void _ejecutarEliminarPago(
+    BuildContext context,
+    DueTransactionModel pago,
+    String clientePhone,
+    WidgetRef ref,
+    VoidCallback onSuccess,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Eliminando pago...');
+
+      final apiService = ApiService();
+      final montoRevertir = pago.payDueAmount ?? 0;
+
+      // 1. Eliminar el registro de due_transactions
+      if (pago.id != null && pago.id!.isNotEmpty) {
+        final deleteResponse = await apiService.delete('due-transactions/${pago.id}');
+        if (!deleteResponse.success) {
+          throw Exception('Error al eliminar el pago: ${deleteResponse.message}');
+        }
+      }
+
+      // 2. Eliminar el registro de daily_transactions asociado (Due Collection)
+      try {
+        // Buscar la transacción diaria con el mismo invoice y tipo Due Collection
+        final dailyResponse = await apiService.get('daily-transactions', queryParams: {
+          'invoiceNumber': pago.invoiceNumber,
+          'type': 'Due Collection',
+        });
+
+        if (dailyResponse.success && dailyResponse.data != null) {
+          final transactions = dailyResponse.data['dailyTransactions'] as List<dynamic>? ?? [];
+          for (var tx in transactions) {
+            final txId = tx['id']?.toString();
+            if (txId != null && txId.isNotEmpty) {
+              await apiService.delete('daily-transactions/$txId');
+            }
+          }
+        }
+      } catch (e) {
+        print('Warning: No se pudo eliminar daily_transaction: $e');
+      }
+
+      // 3. Actualizar el due_amount de la factura original (sumar el monto revertido)
+      try {
+        // Buscar la factura original
+        final salesResponse = await apiService.get('sales', queryParams: {
+          'invoiceNumber': pago.invoiceNumber,
+        });
+
+        if (salesResponse.success && salesResponse.data != null) {
+          final sales = salesResponse.data['sales'] as List<dynamic>? ?? [];
+          if (sales.isNotEmpty) {
+            final sale = sales.first;
+            final saleId = sale['id']?.toString();
+            final currentDueAmount = double.tryParse(sale['due_amount']?.toString() ?? '0') ?? 0;
+            final newDueAmount = currentDueAmount + montoRevertir;
+
+            if (saleId != null && saleId.isNotEmpty) {
+              await apiService.put('sales/$saleId', {
+                'due_amount': newDueAmount,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        print('Warning: No se pudo actualizar due_amount de la factura: $e');
+      }
+
+      // 4. Actualizar el saldo del cliente (sumar el monto al due)
+      try {
+        final customerResponse = await apiService.get('customers', queryParams: {
+          'phone': clientePhone,
+        });
+
+        if (customerResponse.success && customerResponse.data != null) {
+          final customers = customerResponse.data['customers'] as List<dynamic>? ?? [];
+          if (customers.isNotEmpty) {
+            final customer = customers.first;
+            final customerId = customer['id']?.toString();
+            final currentDue = double.tryParse(customer['due']?.toString() ?? '0') ?? 0;
+            final newDue = currentDue + montoRevertir;
+
+            if (customerId != null && customerId.isNotEmpty) {
+              await apiService.put('customers/$customerId', {
+                'due': newDue,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        print('Warning: No se pudo actualizar saldo del cliente: $e');
+      }
+
+      // 5. Refrescar providers
+      ref.invalidate(allCustomerProvider);
+      ref.invalidate(salesWithDueProvider);
+
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('Pago eliminado correctamente');
+
+      // Llamar callback para refrescar la lista
+      onSuccess();
+
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Error: $e');
+      print('Error al eliminar pago: $e');
     }
   }
 
@@ -1345,6 +1772,8 @@ class _DueListState extends State<DueList> {
                                                                 .collectDue)),
                                                         DataColumn(
                                                             label: Text('Facturas')),
+                                                        DataColumn(
+                                                            label: Text('Pagos')),
                                                       ],
                                                       rows: List.generate(
                                                           selectedParties ==
@@ -1497,7 +1926,7 @@ class _DueListState extends State<DueList> {
                                                               child: Container(
                                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                                 decoration: BoxDecoration(
-                                                                  color: kGreenTextColor.withOpacity(0.2),
+                                                                  color: kGreenTextColor.withValues(alpha: 0.2),
                                                                   borderRadius: BorderRadius.circular(4),
                                                                 ),
                                                                 child: const Row(
@@ -1509,6 +1938,41 @@ class _DueListState extends State<DueList> {
                                                                       'Ver facturas',
                                                                       style: TextStyle(
                                                                         color: kGreenTextColor,
+                                                                        fontWeight: FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          // Botón Ver Pagos (Historial de abonos)
+                                                          DataCell(
+                                                            GestureDetector(
+                                                              onTap: () {
+                                                                final customerPhone = selectedParties == 'Proveedores'
+                                                                    ? paginatedSupplierList[index].phoneNumber
+                                                                    : paginatedCustomerList[index].phoneNumber;
+                                                                final customerName = selectedParties == 'Proveedores'
+                                                                    ? paginatedSupplierList[index].customerName
+                                                                    : paginatedCustomerList[index].customerName;
+                                                                _mostrarHistorialPagos(context, customerPhone, customerName, ref);
+                                                              },
+                                                              child: Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                                decoration: BoxDecoration(
+                                                                  color: kBlueTextColor.withValues(alpha: 0.2),
+                                                                  borderRadius: BorderRadius.circular(4),
+                                                                ),
+                                                                child: const Row(
+                                                                  mainAxisSize: MainAxisSize.min,
+                                                                  children: [
+                                                                    Icon(Icons.history, size: 16, color: kBlueTextColor),
+                                                                    SizedBox(width: 4),
+                                                                    Text(
+                                                                      'Ver pagos',
+                                                                      style: TextStyle(
+                                                                        color: kBlueTextColor,
                                                                         fontWeight: FontWeight.bold,
                                                                       ),
                                                                     ),

@@ -1,4 +1,5 @@
 class DueTransactionModel {
+  String? id; // ID de la base de datos para operaciones CRUD
   late String customerName, customerPhone, customerAddress, customerType, invoiceNumber, purchaseDate, customerGst;
   double? totalDue;
   double? dueAmountAfterPay;
@@ -11,6 +12,7 @@ class DueTransactionModel {
   String? bankName;
 
   DueTransactionModel({
+    this.id,
     required this.customerName,
     required this.customerType,
     required this.customerAddress,
@@ -38,22 +40,23 @@ class DueTransactionModel {
       return defaultValue;
     }
 
-    customerName = json['customerName']?.toString() ?? '';
-    customerPhone = json['customerPhone']?.toString() ?? '';
-    invoiceNumber = json['invoiceNumber']?.toString() ?? '';
-    customerAddress = json['customerAddress']?.toString() ?? '';
-    customerGst = json['customerGst']?.toString() ?? '';
-    customerType = json['customerType']?.toString() ?? '';
-    sellerName = json['sellerName']?.toString() ?? '';
-    purchaseDate = json['purchaseDate']?.toString() ?? '';
-    totalDue = parseDouble(json['totalDue']);
-    dueAmountAfterPay = parseDouble(json['dueAmountAfterPay']);
-    payDueAmount = parseDouble(json['payDueAmount']);
-    isPaid = json['isPaid'] == true;
-    paymentType = json['paymentType']?.toString() ?? '';
-    sendWhatsappMessage = json['sendWhatsappMessage'] == true;
-    bankId = json['bankId']?.toString();
-    bankName = json['bankName']?.toString();
+    id = json['id']?.toString();
+    customerName = json['customerName']?.toString() ?? json['customer_name']?.toString() ?? '';
+    customerPhone = json['customerPhone']?.toString() ?? json['customer_phone']?.toString() ?? '';
+    invoiceNumber = json['invoiceNumber']?.toString() ?? json['invoice_number']?.toString() ?? '';
+    customerAddress = json['customerAddress']?.toString() ?? json['customer_address']?.toString() ?? '';
+    customerGst = json['customerGst']?.toString() ?? json['customer_gst']?.toString() ?? '';
+    customerType = json['customerType']?.toString() ?? json['customer_type']?.toString() ?? '';
+    sellerName = json['sellerName']?.toString() ?? json['seller_name']?.toString() ?? '';
+    purchaseDate = json['purchaseDate']?.toString() ?? json['purchase_date']?.toString() ?? json['created_at']?.toString() ?? '';
+    totalDue = parseDouble(json['totalDue'] ?? json['total_due']);
+    dueAmountAfterPay = parseDouble(json['dueAmountAfterPay'] ?? json['due_amount_after_pay']);
+    payDueAmount = parseDouble(json['payDueAmount'] ?? json['pay_due_amount']);
+    isPaid = json['isPaid'] == true || json['is_paid'] == true;
+    paymentType = json['paymentType']?.toString() ?? json['payment_type']?.toString() ?? '';
+    sendWhatsappMessage = json['sendWhatsappMessage'] == true || json['send_whatsapp_message'] == true;
+    bankId = json['bankId']?.toString() ?? json['bank_id']?.toString();
+    bankName = json['bankName']?.toString() ?? json['bank_name']?.toString();
   }
 
   Map<dynamic, dynamic> toJson() => <dynamic, dynamic>{
