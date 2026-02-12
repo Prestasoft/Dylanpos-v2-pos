@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Route/shell_route_warpper.dart';
 import 'package:salespro_admin/services/api_service.dart';
+import 'package:salespro_admin/const.dart' show isDressOperator;
 import 'package:salespro_admin/Screen/Authentication/add_profile.dart';
 import 'package:salespro_admin/Screen/Authentication/forgot_password.dart';
 import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
@@ -130,6 +131,22 @@ abstract class AcnooAppRoutes {
       // Si está autenticado y está en la página de login, redirigir a dashboard
       if (isAuthenticated && state.matchedLocation == '/') {
         return '/dashboard';
+      }
+
+      // PROTECCIÓN: Usuarios dress_operator solo pueden acceder a rutas específicas
+      if (isAuthenticated && isDressOperator()) {
+        final currentPath = state.matchedLocation;
+        // Rutas permitidas para dress_operator
+        final allowedPaths = [
+          '/dress-operator-home',
+          '/service-package/dresses',  // Estado de Vestimentas
+          '/calendario-reservas',       // Disponibilidad de Vestimentas
+        ];
+
+        // Si intenta acceder a cualquier otra ruta, redirigir a su home
+        if (!allowedPaths.any((path) => currentPath.startsWith(path))) {
+          return '/dress-operator-home';
+        }
       }
 
       // Permitir navegación normal
