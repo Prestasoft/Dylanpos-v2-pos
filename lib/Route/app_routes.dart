@@ -119,7 +119,8 @@ abstract class AcnooAppRoutes {
                          state.matchedLocation == '/subscription' ||
                          state.matchedLocation == '/select-branch' ||
                          state.matchedLocation == '/test-supabase' ||
-                         state.matchedLocation == '/blank-home';
+                         state.matchedLocation == '/blank-home' ||
+                         state.matchedLocation == '/dress-operator-home';
 
       // Si NO está autenticado y NO está en una página de login, redirigir a login
       if (!isAuthenticated && !isLoggingIn) {
@@ -147,13 +148,6 @@ abstract class AcnooAppRoutes {
             path: '/blank-home',
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: BlankHome(),
-            ),
-          ),
-          // Pantalla de inicio para Operador de Vestimentas (rol dress_operator)
-          GoRoute(
-            path: '/dress-operator-home',
-            pageBuilder: (context, state) => const NoTransitionPage<void>(
-              child: DressOperatorHomeScreen(),
             ),
           ),
           // Limpieza de base de datos (TEMPORAL)
@@ -945,6 +939,14 @@ abstract class AcnooAppRoutes {
             ],
           ),
         ],
+      ),
+      // Pantalla de inicio para Operador de Vestimentas (rol dress_operator)
+      // FUERA del ShellRoute para que NO muestre sidebar ni header
+      GoRoute(
+        path: '/dress-operator-home',
+        pageBuilder: (context, state) => const NoTransitionPage<void>(
+          child: DressOperatorHomeScreen(),
+        ),
       ),
       /// Ruta para selector de sucursal (multi-tenant)
       GoRoute(
