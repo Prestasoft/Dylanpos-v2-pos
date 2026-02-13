@@ -4070,7 +4070,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                 DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                                   name: post.customerName,
                                                   date: post.purchaseDate,
-                                                  type: post.saleType == 'adicionales' ? 'Adicionales' : 
+                                                  type: post.saleType == 'adicionales' ? 'Adicionales' :
                                                         post.saleType == 'impresiones' ? 'Impresiones' : 'Sale',
                                                   total: post.totalAmount!.toDouble(),
                                                   paymentIn: post.totalAmount!.toDouble() - post.dueAmount!.toDouble(),
@@ -4078,6 +4078,11 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   remainingBalance: post.dueAmount!.toDouble(),
                                                   id: post.invoiceNumber,
                                                   saleTransactionModel: post,
+                                                  // Campos directos para transferencias (para el modal de detalles)
+                                                  paymentType: post.paymentType,
+                                                  bankId: post.bankId,
+                                                  bankName: post.bankName,
+                                                  invoiceNumber: post.invoiceNumber,
                                                 );
                                                 postDailyTransaction(dailyTransactionModel: dailyTransaction);
 

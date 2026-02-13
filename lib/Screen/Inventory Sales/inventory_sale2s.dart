@@ -4408,7 +4408,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                         DailyTransactionModel(
                                                       name: post.customerName,
                                                       date: post.purchaseDate,
-                                                      type: post.saleType == 'adicionales' ? 'Adicionales' : 
+                                                      type: post.saleType == 'adicionales' ? 'Adicionales' :
                                                             post.saleType == 'impresiones' ? 'Impresiones' : 'Sale',
                                                       total: post.totalAmount!
                                                           .toDouble(),
@@ -4422,6 +4422,11 @@ class _InventorySalesState extends State<InventorySales> {
                                                       id: post.invoiceNumber,
                                                       saleTransactionModel:
                                                           post,
+                                                      // Campos directos para transferencias (para el modal de detalles)
+                                                      paymentType: post.paymentType,
+                                                      bankId: post.bankId,
+                                                      bankName: post.bankName,
+                                                      invoiceNumber: post.invoiceNumber,
                                                     );
                                                     postDailyTransaction(
                                                         dailyTransactionModel:

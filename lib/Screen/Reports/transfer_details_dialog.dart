@@ -13,7 +13,6 @@ import '../../Provider/transactions_provider.dart';
 import '../../model/sale_transaction_model.dart';
 import '../../model/due_transaction_model.dart';
 import '../../services/api_service.dart';
-import '../../const.dart';
 
 class TransferDetailsDialog extends ConsumerWidget {
   final Map<String, dynamic> dailyTransactions;
@@ -27,18 +26,31 @@ class TransferDetailsDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     print('DEBUG TransferDetailsDialog: Build iniciado');
     print('DEBUG TransferDetailsDialog: Transacciones recibidas: ${dailyTransactions.length}');
-    
+
     final myFormat = NumberFormat('#,##0.00', 'es_DO');
     final theme = Theme.of(context);
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
     final globalCurrency = currencyProvider.currency ?? '\$';
-    
-    
+
+    // Obtener lista de bancos para hacer lookup del nombre
+    final banksAsync = ref.watch(allBanksProvider);
+    final banksList = banksAsync.valueOrNull ?? [];
+
+    // Crear mapa de bankId -> bankName para lookup rápido
+    final Map<String, String> bankIdToName = {};
+    for (var bank in banksList) {
+      if (bank.bankId != null && bank.bankName != null) {
+        bankIdToName[bank.bankId!] = bank.bankName!;
+        print('DEBUG: Banco cargado: ${bank.bankId} -> ${bank.bankName}');
+      }
+    }
+    print('DEBUG TransferDetailsDialog: ${bankIdToName.length} bancos cargados para lookup');
+
     // Agrupar transferencias por banco
     Map<String?, List<Map<String, dynamic>>> transfersByBank = {};
     Map<String?, double> totalsByBank = {};
     double totalGeneral = 0.0;
-    
+
     dailyTransactions.forEach((key, value) {
       final type = value['type'];
 
@@ -46,48 +58,96 @@ class TransferDetailsDialog extends ConsumerWidget {
 
       // Intentar obtener la transacción según el tipo
       Map<String, dynamic>? transaction;
+      bool isDeleted = type == 'Deleted';
+
       if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones' || type == 'Reserva') {
         transaction = value['saleTransactionModel'];
       } else if (type == 'Due Collection' || type == 'Due Payment' || type == 'Cuenta x Cobrar') {
         transaction = value['dueTransactionModel'];
+      } else if (isDeleted) {
+        // Para facturas eliminadas, buscar el saleTransactionModel dentro de 'data' o directamente
+        transaction = value['saleTransactionModel'] ?? value['data']?['saleTransactionModel'];
       }
 
-      // Obtener paymentType: primero del modelo anidado, luego del campo directo
-      String? paymentType = transaction?['paymentType']?.toString() ?? value['paymentType']?.toString();
+      // Obtener paymentType: primero del modelo anidado, luego del campo directo (soporte snake_case)
+      String? paymentType = transaction?['paymentType']?.toString()
+          ?? transaction?['payment_type']?.toString()
+          ?? value['paymentType']?.toString()
+          ?? value['payment_type']?.toString();
       print('DEBUG: PaymentType extraído: $paymentType (modelo: ${transaction?['paymentType']}, directo: ${value['paymentType']})');
 
       if (_isTransfer(paymentType)) {
-        // Obtener campos: primero del modelo anidado, luego del campo directo
-        final bankId = transaction?['bankId'] ?? value['bankId'];
-        final bankName = transaction?['bankName'] ?? value['bankName'] ?? 'Banco no especificado';
-        final customerName = transaction?['customerName'] ?? value['customerName'] ?? 'Cliente desconocido';
-        final invoiceNumber = transaction?['invoiceNumber'] ?? value['invoiceNumber'] ?? key;
+        // Obtener campos: primero del modelo anidado, luego del campo directo (soporte snake_case para PostgreSQL)
+        final bankId = transaction?['bankId']?.toString()
+            ?? transaction?['bank_id']?.toString()
+            ?? value['bankId']?.toString()
+            ?? value['bank_id']?.toString();
+
+        // CRÍTICO: Hacer lookup del nombre del banco usando bankId
+        // Si el bankName guardado es null/vacío, buscar en la lista de bancos
+        String? savedBankName = transaction?['bankName']?.toString()
+            ?? transaction?['bank_name']?.toString()
+            ?? value['bankName']?.toString()
+            ?? value['bank_name']?.toString();
+
+        // Si no hay nombre guardado o es genérico, intentar lookup por ID
+        String bankName;
+        if (savedBankName == null || savedBankName.isEmpty || savedBankName == 'Banco no especificado') {
+          bankName = bankId != null ? (bankIdToName[bankId] ?? 'Banco no especificado') : 'Banco no especificado';
+          print('DEBUG: Nombre de banco resuelto por lookup: bankId=$bankId -> $bankName');
+        } else {
+          bankName = savedBankName;
+        }
+
+        final customerName = transaction?['customerName']
+            ?? transaction?['customer_name']
+            ?? value['customerName']
+            ?? value['customer_name']
+            ?? 'Cliente desconocido';
+        final invoiceNumber = transaction?['invoiceNumber']
+            ?? transaction?['invoice_number']
+            ?? value['invoiceNumber']
+            ?? value['invoice_number']
+            ?? key;
         final amount = (value['paymentIn'] as num).toDouble();
 
         print('DEBUG: Es transferencia - BankId: $bankId - BankName: $bankName - Amount: $amount');
 
-        // Agrupar por banco
-        if (!transfersByBank.containsKey(bankId)) {
-          transfersByBank[bankId] = [];
-          totalsByBank[bankId] = 0.0;
+        // Agrupar por banco (usar bankId como key para agrupar correctamente)
+        final groupKey = bankId ?? bankName; // Usar bankId si existe, si no el nombre
+        if (!transfersByBank.containsKey(groupKey)) {
+          transfersByBank[groupKey] = [];
+          totalsByBank[groupKey] = 0.0;
         }
 
-        transfersByBank[bankId]!.add({
+        transfersByBank[groupKey]!.add({
           'customerName': customerName,
           'invoiceNumber': invoiceNumber,
           'amount': amount,
           'date': value['time'] ?? DateTime.now().toString(),
           'bankName': bankName,
+          'bankId': bankId,
           'type': type,
+          'isDeleted': isDeleted,
         });
 
-        totalsByBank[bankId] = (totalsByBank[bankId] ?? 0) + amount;
+        // CORREGIDO: Usar groupKey en lugar de bankId para el total
+        totalsByBank[groupKey] = (totalsByBank[groupKey] ?? 0) + amount;
         totalGeneral += amount;
+
+        // DEBUG: Mostrar toda la estructura para diagnosticar
+        print('DEBUG FULL: transaction keys: ${transaction?.keys.toList()}');
+        print('DEBUG FULL: value keys: ${value.keys.toList()}');
+        if (transaction != null) {
+          print('DEBUG FULL: transaction[bankId]=${transaction['bankId']}, transaction[bank_id]=${transaction['bank_id']}');
+          print('DEBUG FULL: transaction[bankName]=${transaction['bankName']}, transaction[bank_name]=${transaction['bank_name']}');
+        }
       }
     });
-    
+
     print('DEBUG: Total de bancos encontrados: ${transfersByBank.keys.length}');
     print('DEBUG: Bancos: ${transfersByBank.keys.toList()}');
+    print('DEBUG: TotalsByBank: $totalsByBank');
     print('DEBUG: Total general de transferencias: $totalGeneral');
     
     // Si no hay transferencias, mostrar mensaje con información de depuración
@@ -312,12 +372,20 @@ class TransferDetailsDialog extends ConsumerWidget {
                                 const SizedBox(height: 5),
                                 // Lista de transferencias
                                 ...transfers.map((transfer) {
+                                  final bool isDeleted = transfer['isDeleted'] == true;
+                                  final Color rowBgColor = isDeleted ? Colors.red.shade50 : Colors.transparent;
+                                  final Color textColor = isDeleted ? Colors.red.shade700 : (theme.textTheme.bodySmall?.color ?? Colors.black);
+                                  final Color invoiceBgColor = isDeleted ? Colors.red.shade100 : Colors.blue.shade50;
+                                  final Color invoiceBorderColor = isDeleted ? Colors.red.shade300 : Colors.blue.shade200;
+                                  final Color invoiceTextColor = isDeleted ? Colors.red.shade800 : Colors.blue.shade700;
+
                                   return Container(
                                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 15),
                                     decoration: BoxDecoration(
+                                      color: rowBgColor,
                                       border: Border(
                                         bottom: BorderSide(
-                                          color: Colors.grey.shade200,
+                                          color: isDeleted ? Colors.red.shade200 : Colors.grey.shade200,
                                         ),
                                       ),
                                     ),
@@ -329,8 +397,8 @@ class TransferDetailsDialog extends ConsumerWidget {
                                             onTap: () async {
                                               print('DEBUG: Click en factura ${transfer['invoiceNumber']} tipo ${transfer['type']}');
                                               await _showInvoiceDetails(
-                                                context, 
-                                                ref, 
+                                                context,
+                                                ref,
                                                 transfer['invoiceNumber'],
                                                 transfer['type'],
                                               );
@@ -340,17 +408,28 @@ class TransferDetailsDialog extends ConsumerWidget {
                                               child: Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.blue.shade50,
+                                                  color: invoiceBgColor,
                                                   borderRadius: BorderRadius.circular(4),
-                                                  border: Border.all(color: Colors.blue.shade200),
+                                                  border: Border.all(color: invoiceBorderColor),
                                                 ),
-                                                child: Text(
-                                                  transfer['invoiceNumber'],
-                                                  style: theme.textTheme.bodySmall?.copyWith(
-                                                    color: Colors.blue.shade700,
-                                                    fontWeight: FontWeight.w600,
-                                                    decoration: TextDecoration.underline,
-                                                  ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    if (isDeleted) ...[
+                                                      Icon(Icons.delete_outline, size: 14, color: invoiceTextColor),
+                                                      const SizedBox(width: 4),
+                                                    ],
+                                                    Flexible(
+                                                      child: Text(
+                                                        transfer['invoiceNumber'],
+                                                        style: theme.textTheme.bodySmall?.copyWith(
+                                                          color: invoiceTextColor,
+                                                          fontWeight: FontWeight.w600,
+                                                          decoration: isDeleted ? TextDecoration.lineThrough : TextDecoration.underline,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                             ),
@@ -358,10 +437,37 @@ class TransferDetailsDialog extends ConsumerWidget {
                                         ),
                                         Expanded(
                                           flex: 2,
-                                          child: Text(
-                                            transfer['customerName'],
-                                            style: theme.textTheme.bodySmall,
-                                            overflow: TextOverflow.ellipsis,
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  transfer['customerName'],
+                                                  style: theme.textTheme.bodySmall?.copyWith(
+                                                    color: textColor,
+                                                    decoration: isDeleted ? TextDecoration.lineThrough : null,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (isDeleted) ...[
+                                                const SizedBox(width: 4),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red.shade600,
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: const Text(
+                                                    'ELIMINADA',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 9,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         ),
                                         Expanded(
@@ -371,6 +477,8 @@ class TransferDetailsDialog extends ConsumerWidget {
                                             textAlign: TextAlign.right,
                                             style: theme.textTheme.bodySmall?.copyWith(
                                               fontWeight: FontWeight.w600,
+                                              color: textColor,
+                                              decoration: isDeleted ? TextDecoration.lineThrough : null,
                                             ),
                                           ),
                                         ),
@@ -441,118 +549,102 @@ class TransferDetailsDialog extends ConsumerWidget {
   Future<void> _showInvoiceDetails(BuildContext context, WidgetRef ref, String invoiceNumber, String type) async {
     try {
       print('DEBUG _showInvoiceDetails: Iniciando para factura $invoiceNumber tipo $type');
-      
+
       EasyLoading.show(status: 'Generando factura...');
-      
-      // Obtener los providers necesarios
-      final profileAsync = ref.watch(profileDetailsProvider);
-      final settingAsync = ref.watch(generalSettingProvider);
-      
-      // Obtener userId primero
-      final userId = await getUserID();
-      print('DEBUG _showInvoiceDetails: userId obtenido: $userId');
-      
-      profileAsync.when(
-        data: (profileInfo) {
-          settingAsync.when(
-            data: (setting) async {
-              try {
-                print('DEBUG _showInvoiceDetails: Providers cargados correctamente');
 
-                final apiService = ApiService();
-                String endpoint;
+      // Obtener los providers necesarios usando read y esperando los futures
+      final profileInfo = await ref.read(profileDetailsProvider.future);
+      final setting = await ref.read(generalSettingProvider.future);
 
-                if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones') {
-                  endpoint = 'sales';
-                  print('DEBUG _showInvoiceDetails: Buscando en Sales');
-                } else if (type == 'Due Collection' || type == 'Due Payment') {
-                  endpoint = 'due-transactions';
-                  print('DEBUG _showInvoiceDetails: Buscando en Due Transactions');
-                } else {
-                  print('DEBUG _showInvoiceDetails: Tipo no soportado: $type');
-                  EasyLoading.showError('Tipo de transacción no soportado');
-                  return;
-                }
+      print('DEBUG _showInvoiceDetails: Providers cargados correctamente');
 
-                // Buscar la transacción por invoiceNumber
-                print('DEBUG _showInvoiceDetails: Obteniendo transacciones');
-                final response = await apiService.get(endpoint, queryParams: {
-                  'invoiceNumber': invoiceNumber,
-                  'limit': '1',
-                });
+      final apiService = ApiService();
+      String endpoint;
 
-                if (!response.success || response.data == null) {
-                  print('DEBUG _showInvoiceDetails: No hay transacciones en la base de datos');
-                  EasyLoading.showError('No se encontraron transacciones');
-                  return;
-                }
+      if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones' || type == 'Reserva') {
+        endpoint = 'sales';
+        print('DEBUG _showInvoiceDetails: Buscando en Sales');
+      } else if (type == 'Due Collection' || type == 'Due Payment' || type == 'Cuenta x Cobrar') {
+        endpoint = 'due-transactions';
+        print('DEBUG _showInvoiceDetails: Buscando en Due Transactions');
+      } else {
+        print('DEBUG _showInvoiceDetails: Tipo no soportado: $type');
+        EasyLoading.showError('Tipo de transacción no soportado');
+        return;
+      }
 
-                // Buscar la factura específica
-                final dataList = response.data[endpoint == 'sales' ? 'sales' : 'due_transactions'] as List<dynamic>? ?? [];
-                Map<String, dynamic>? transactionData;
+      // Buscar la transacción por invoiceNumber (soporte snake_case)
+      print('DEBUG _showInvoiceDetails: Obteniendo transacciones para invoice: $invoiceNumber');
+      final response = await apiService.get(endpoint, queryParams: {
+        'invoiceNumber': invoiceNumber,
+        'invoice_number': invoiceNumber,
+        'limit': '10',
+      });
 
-                for (var element in dataList) {
-                  final data = Map<String, dynamic>.from(element);
-                  if (data['invoiceNumber'] == invoiceNumber) {
-                    print('DEBUG _showInvoiceDetails: Factura encontrada');
-                    transactionData = data;
-                    break;
-                  }
-                }
+      if (!response.success || response.data == null) {
+        print('DEBUG _showInvoiceDetails: No hay transacciones en la base de datos');
+        EasyLoading.showError('No se encontraron transacciones');
+        return;
+      }
 
-                if (transactionData == null) {
-                  print('DEBUG _showInvoiceDetails: Factura $invoiceNumber no encontrada');
-                  EasyLoading.showError('Factura no encontrada');
-                  return;
-                }
+      // Buscar la factura específica
+      final dataList = response.data[endpoint == 'sales' ? 'sales' : 'due_transactions'] as List<dynamic>? ?? [];
+      print('DEBUG _showInvoiceDetails: Transacciones encontradas: ${dataList.length}');
 
-                // Generar el PDF según el tipo
-                if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones') {
-                  final saleTransaction = SaleTransactionModel.fromJson(transactionData);
+      Map<String, dynamic>? transactionData;
 
-                  await GeneratePdfAndPrint().printSaleInvoice(
-                    personalInformationModel: profileInfo,
-                    saleTransactionModel: saleTransaction,
-                    context: context,
-                    setting: setting,
-                    printType: 'normal',
-                    fromSaleReports: true,
-                  );
-                } else if (type == 'Due Collection' || type == 'Due Payment') {
-                  final dueTransaction = DueTransactionModel.fromJson(transactionData);
+      for (var element in dataList) {
+        final data = Map<String, dynamic>.from(element);
+        // Soporte para camelCase y snake_case
+        final dataInvoice = data['invoiceNumber']?.toString() ?? data['invoice_number']?.toString();
+        print('DEBUG _showInvoiceDetails: Comparando "$dataInvoice" con "$invoiceNumber"');
+        if (dataInvoice == invoiceNumber) {
+          print('DEBUG _showInvoiceDetails: Factura encontrada');
+          transactionData = data;
+          break;
+        }
+      }
 
-                  await GeneratePdfAndPrint().printDueInvoice(
-                    personalInformationModel: profileInfo,
-                    dueTransactionModel: dueTransaction,
-                    setting: setting,
-                    context: context,
-                    fromSaleReports: true,
-                  );
-                }
-                
-                EasyLoading.dismiss();
-              } catch (dbError) {
-                print('DEBUG _showInvoiceDetails: Error en base de datos: $dbError');
-                EasyLoading.showError('Error: ${dbError.toString()}');
-              }
-            },
-            loading: () => EasyLoading.show(status: 'Cargando configuración...'),
-            error: (e, s) {
-              EasyLoading.showError('Error al cargar configuración');
-              print('Error configuración: $e');
-            },
-          );
-        },
-        loading: () => EasyLoading.show(status: 'Cargando datos del perfil...'),
-        error: (e, s) {
-          EasyLoading.showError('Error al cargar perfil');
-          print('Error perfil: $e');
-        },
-      );
-      
-    } catch (e) {
-      EasyLoading.showError('Error general: $e');
-      print('Error en _showInvoiceDetails: $e');
+      if (transactionData == null) {
+        print('DEBUG _showInvoiceDetails: Factura $invoiceNumber no encontrada en lista');
+        EasyLoading.showError('Factura no encontrada');
+        return;
+      }
+
+      // Generar el PDF según el tipo
+      if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones' || type == 'Reserva') {
+        final saleTransaction = SaleTransactionModel.fromJson(transactionData);
+        print('DEBUG _showInvoiceDetails: Generando PDF de venta...');
+
+        await GeneratePdfAndPrint().printSaleInvoice(
+          personalInformationModel: profileInfo,
+          saleTransactionModel: saleTransaction,
+          context: context,
+          setting: setting,
+          printType: 'normal',
+          fromSaleReports: true,
+        );
+        print('DEBUG _showInvoiceDetails: PDF de venta generado');
+      } else if (type == 'Due Collection' || type == 'Due Payment' || type == 'Cuenta x Cobrar') {
+        final dueTransaction = DueTransactionModel.fromJson(transactionData);
+        print('DEBUG _showInvoiceDetails: Generando PDF de pago...');
+
+        await GeneratePdfAndPrint().printDueInvoice(
+          personalInformationModel: profileInfo,
+          dueTransactionModel: dueTransaction,
+          setting: setting,
+          context: context,
+          fromSaleReports: true,
+        );
+        print('DEBUG _showInvoiceDetails: PDF de pago generado');
+      }
+
+      EasyLoading.dismiss();
+
+    } catch (e, stackTrace) {
+      print('DEBUG _showInvoiceDetails: Error: $e');
+      print('DEBUG _showInvoiceDetails: StackTrace: $stackTrace');
+      EasyLoading.showError('Error: ${e.toString()}');
     }
   }
   

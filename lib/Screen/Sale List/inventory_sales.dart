@@ -2436,6 +2436,11 @@ class _InventorySalesState extends State<InventorySales> {
                                                   remainingBalance: post.dueAmount!.toDouble(),
                                                   id: post.invoiceNumber,
                                                   saleTransactionModel: post,
+                                                  // Campos directos para transferencias (para el modal de detalles)
+                                                  paymentType: post.paymentType,
+                                                  bankId: post.bankId,
+                                                  bankName: post.bankName,
+                                                  invoiceNumber: post.invoiceNumber,
                                                 );
                                                 postDailyTransaction(dailyTransactionModel: dailyTransaction);
 

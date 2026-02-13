@@ -16,6 +16,8 @@ class DailyTransactionModel {
   String? invoiceNumber;    // Número de factura
   double? dueAmount;        // Monto pendiente total
   double? dueAmountAfterPay; // Monto pendiente después del pago (para Due Collection)
+  String? bankId;           // ID del banco para transferencias
+  String? bankName;         // Nombre del banco para transferencias
 
   // Modelos anidados opcionales (para compatibilidad con datos completos)
   SaleTransactionModel? saleTransactionModel;
@@ -39,6 +41,8 @@ class DailyTransactionModel {
     this.invoiceNumber,
     this.dueAmount,
     this.dueAmountAfterPay,
+    this.bankId,
+    this.bankName,
     this.saleTransactionModel,
     this.purchaseTransactionModel,
     this.dueTransactionModel,
@@ -64,6 +68,8 @@ class DailyTransactionModel {
     invoiceNumber = json['invoiceNumber']?.toString() ?? json['invoice_number']?.toString();
     dueAmount = double.tryParse(json['dueAmount']?.toString() ?? json['due_amount']?.toString() ?? '0');
     dueAmountAfterPay = double.tryParse(json['dueAmountAfterPay']?.toString() ?? json['due_amount_after_pay']?.toString() ?? '0');
+    bankId = json['bankId']?.toString() ?? json['bank_id']?.toString();
+    bankName = json['bankName']?.toString() ?? json['bank_name']?.toString();
 
     // Modelos anidados (para compatibilidad con datos completos - soporta camelCase y snake_case)
     // Primero buscar en el nivel superior del JSON
@@ -118,6 +124,8 @@ class DailyTransactionModel {
         'invoiceNumber': invoiceNumber,
         'dueAmount': dueAmount,
         'dueAmountAfterPay': dueAmountAfterPay,
+        'bankId': bankId,
+        'bankName': bankName,
         // Modelos anidados
         'saleTransactionModel': saleTransactionModel?.toJson(),
         'purchaseTransactionModel': purchaseTransactionModel?.toJson(),

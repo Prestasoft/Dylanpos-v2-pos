@@ -35,6 +35,7 @@ import '../../delete_invoice_functions.dart';
 import '../../model/expense_model.dart';
 import '../../services/audit_service.dart';
 import '../../model/audit_model.dart';
+import '../../Provider/transfer_verification_provider.dart';
 
 class DailyTransaction extends StatefulWidget {
   const DailyTransaction({super.key});
@@ -451,6 +452,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
       final salesTransactionReport = ref.watch(transitionProvider);
       final profile = ref.watch(profileDetailsProvider);
       final settingProvider = ref.watch(generalSettingProvider);
+      // Provider de transferencias verificadas para obtener bankName
+      final transferVerifications = ref.watch(transferVerificationsProvider);
       return dailyTransactionReport.when(
         data: (dailyReport) {
           return salesTransactionReport.when(
@@ -1166,7 +1169,17 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   onTap: () {
                                     print('DEBUG: Click en tarjeta de transferencias');
                                     print('DEBUG: Total transferencias: ${summary.pagoTransferencia}');
-                                    
+
+                                    // Crear mapa de invoiceNumber -> bankName desde transfer_verifications
+                                    final transferVerificationsList = transferVerifications.valueOrNull ?? [];
+                                    final Map<String, String> invoiceToBankName = {};
+                                    for (var tv in transferVerificationsList) {
+                                      if (tv.invoiceNumber.isNotEmpty && tv.bankName.isNotEmpty) {
+                                        invoiceToBankName[tv.invoiceNumber] = tv.bankName;
+                                      }
+                                    }
+                                    print('DEBUG: Mapa de transferencias verificadas: ${invoiceToBankName.length} registros');
+
                                     // Crear un mapa con las transacciones del día
                                     Map<String, dynamic> dailyTransactions = {};
                                     int transferCount = 0;
@@ -1197,10 +1210,44 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                         print('DEBUG: dueTransactionModel.paymentType = $paymentType');
                                       }
 
-                                      // Fallback: usar campo directo del DailyTransactionModel si los modelos están vacíos
+                                      // Fallback: usar campos directos del DailyTransactionModel si los modelos están vacíos
                                       paymentType ??= transaction.paymentType;
                                       invoiceNumber ??= transaction.invoiceNumber;
+                                      // CRÍTICO: Extraer bankId y bankName de campos directos del DailyTransactionModel
+                                      // Estos campos ahora están en el modelo y se extraen del JSON del API
+                                      bankId ??= transaction.bankId;
+                                      bankName ??= transaction.bankName;
+                                      customerName ??= transaction.name;
+
+                                      // FALLBACK EXTRA: Si bankName sigue siendo null y es una transferencia,
+                                      // buscar en múltiples fuentes
+                                      if ((bankName == null || bankName!.isEmpty) && paymentType != null &&
+                                          (paymentType.toLowerCase().contains('transfer') ||
+                                           paymentType.toLowerCase().contains('transferencia'))) {
+                                        // 1. Buscar en transfer_verifications (fuente más confiable)
+                                        if (invoiceNumber != null && invoiceToBankName.containsKey(invoiceNumber)) {
+                                          bankName = invoiceToBankName[invoiceNumber];
+                                          debugPrint('DEBUG: Lookup desde transfer_verifications - invoiceNumber: $invoiceNumber, bankName: $bankName');
+                                        }
+                                        // 2. Si aún no hay bankName, buscar en salesReport
+                                        if ((bankName == null || bankName!.isEmpty) && invoiceNumber != null) {
+                                          final saleFromReport = salesReport.firstWhere(
+                                            (s) => s.invoiceNumber == invoiceNumber,
+                                            orElse: () => SaleTransactionModel(
+                                              customerName: '', customerPhone: '', customerType: '',
+                                              customerAddress: '', customerImage: '', customerGst: '',
+                                              invoiceNumber: '', purchaseDate: '', paymentType: '',
+                                            ),
+                                          );
+                                          if (saleFromReport.invoiceNumber.isNotEmpty) {
+                                            bankId = saleFromReport.bankId;
+                                            bankName = saleFromReport.bankName;
+                                            debugPrint('DEBUG: Lookup desde salesReport - bankId: $bankId, bankName: $bankName');
+                                          }
+                                        }
+                                      }
                                       print('DEBUG: Final paymentType = $paymentType (directo: ${transaction.paymentType})');
+                                      print('DEBUG: Final bankId = $bankId, bankName = $bankName (directo: ${transaction.bankId}, ${transaction.bankName})');
 
                                       if (paymentType != null &&
                                           (paymentType.toLowerCase().contains('transfer') ||

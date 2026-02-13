@@ -1000,6 +1000,8 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 paymentType: dueTransactionModel.paymentType,
                                                 sellerName: dueTransactionModel.sellerName,
                                                 invoiceNumber: selectedInvoice,
+                                                bankId: dueTransactionModel.bankId,
+                                                bankName: dueTransactionModel.bankName,
                                                 dueTransactionModel: dueTransactionModel,
                                               );
                                               postDailyTransaction(dailyTransactionModel: dailyTransaction);
@@ -1017,6 +1019,8 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 paymentType: dueTransactionModel.paymentType,
                                                 sellerName: dueTransactionModel.sellerName,
                                                 invoiceNumber: selectedInvoice,
+                                                bankId: dueTransactionModel.bankId,
+                                                bankName: dueTransactionModel.bankName,
                                                 dueTransactionModel: dueTransactionModel,
                                               );
                                               postDailyTransaction(dailyTransactionModel: dailyTransaction);
