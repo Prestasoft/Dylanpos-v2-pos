@@ -1,11 +1,11 @@
 {
-  "version": "2.1.265",
-  "build": "20260213-1307",
+  "version": "2.1.266",
+  "build": "20260213-1519",
   "releaseDate": "2026-02-13",
   "environment": "production",
-  "description": "Actualización a versión 2.1.265",
+  "description": "Actualización a versión 2.1.266",
   "changelog": [
-    "Actualización a versión 2.1.265"
+    "Actualización a versión 2.1.266"
   ],
   "forceUpdate": true
 }
