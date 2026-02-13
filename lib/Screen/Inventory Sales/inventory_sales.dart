@@ -3846,9 +3846,12 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                   // Crear registro de verificación de transferencia si aplica
                                                   if (selectedPaymentOption == 'Transferencia' && transferReceiptUrl != null) {
                                                     try {
-                                                      // CORREGIDO: Usar post.totalAmount en lugar de payingAmountController.text
-                                                      // porque payingAmountController puede estar vacío o con valor incorrecto
-                                                      final transferAmount = post.totalAmount ?? 0.0;
+                                                      // CORREGIDO: El monto de la transferencia es el monto PAGADO, no el total
+                                                      // Si hay due (pendiente), el monto pagado = total - due
+                                                      // Si no hay due, el monto pagado = total
+                                                      final totalAmount = post.totalAmount ?? 0.0;
+                                                      final dueAmount = post.dueAmount ?? 0.0;
+                                                      final transferAmount = totalAmount - dueAmount;
 
                                                       print('DEBUG: Creando registro de verificación de transferencia...');
                                                       print('DEBUG: branchId: ${ApiService().branchId}');
@@ -3856,7 +3859,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                       print('DEBUG: customerName: ${post.customerName}');
                                                       print('DEBUG: bankName: $selectedBankName');
                                                       print('DEBUG: holderName: ${transferHolderNameController.text.trim()}');
-                                                      print('DEBUG: amount (post.totalAmount): $transferAmount');
+                                                      print('DEBUG: amount (totalAmount - dueAmount): $transferAmount (total: $totalAmount, due: $dueAmount)');
                                                       print('DEBUG: receiptUrl: $transferReceiptUrl');
 
                                                       final transferVerification = TransferVerificationModel(
