@@ -56,6 +56,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
  SidebarItemModel  homeTab = SidebarItemModel(
       name: 'Inicio',
       iconPath: 'images/dashboard_icon/dashboard.svg',
+      materialIcon: Icons.home_rounded,
+      sectionColor: SidebarSectionColors.principal,
       type: "blank_home",
       navigationPath: '/blank-home',
     );
@@ -559,7 +561,6 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
   }
 
   Widget _buildHeader(BuildContext context, {bool iconOnly = false}) {
-    Theme.of(context);
     return Consumer(
       builder: (_, ref, watch) {
         final settingProvider = ref.watch(generalSettingProvider);
@@ -568,6 +569,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
           final tenantId = getStringAsync('selected_tenant_id');
           final tenant = TenantConfig.getTenantById(tenantId) ?? TenantConfig.defaultTenant;
           final branchName = tenant.city.toUpperCase();
+          final initials = branchName.split(' ').map((word) => word.isNotEmpty ? word[0] : '').take(2).join('').toUpperCase();
 
           // Verificar si el usuario es admin (no es subUser) o tiene sucursales permitidas
           final isAdmin = !isSubUser;
@@ -577,107 +579,207 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
           final currentUserModel = apiService.toUserRoleModel();
           final canChangeBranch = isAdmin || (currentUserModel.allowedBranches != null && currentUserModel.allowedBranches!.isNotEmpty);
 
+          // Color principal del header (dorado elegante)
+          const headerColor = SidebarSectionColors.principal;
+
           return Container(
-            padding: const EdgeInsets.all(12),
-            height: ResponsiveValue<double?>(
-              context,
-              conditionalValues: [
-                Condition.largerThan(
-                  name: BreakpointName.SM.name,
-                  value: 70,
-                ),
-              ],
-            ).value,
-            decoration: const BoxDecoration(
+            padding: EdgeInsets.symmetric(
+              horizontal: iconOnly ? 8 : 12,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              // Gradiente sutil para elegancia
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  headerColor.withValues(alpha: 0.15),
+                  headerColor.withValues(alpha: 0.05),
+                ],
+              ),
               border: Border(
                 bottom: BorderSide(
-                  width: 1,
-                  color: kNeutral300,
+                  width: 1.5,
+                  color: headerColor.withValues(alpha: 0.4),
                 ),
               ),
             ),
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment:
-                  iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
-              children: [
-                if (iconOnly)
-                  // Mostrar solo las iniciales en modo icono con opción de cambiar
-                  InkWell(
-                    onTap: canChangeBranch ? () => _showBranchSelectorDialog(context, tenant) : null,
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: kMainColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Center(
-                        child: Text(
-                          branchName.split(' ').map((word) => word.isNotEmpty ? word[0] : '').take(2).join('').toUpperCase(),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+            child: iconOnly
+                // ══════════════════════════════════════════════════════════
+                // MODO ICONO: Solo iniciales con tooltip
+                // ══════════════════════════════════════════════════════════
+                ? Tooltip(
+                    message: branchName,
+                    child: InkWell(
+                      onTap: canChangeBranch ? () => _showBranchSelectorDialog(context, tenant) : null,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              headerColor,
+                              headerColor.withValues(alpha: 0.8),
+                            ],
                           ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: headerColor.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                  ),
-                if (!iconOnly)
-                  // Mostrar el nombre completo en modo expandido
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
+                        child: Center(
                           child: Text(
-                            branchName,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            initials,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              fontSize: 16,
+                              letterSpacing: 1,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // Botón Cambiar solo para usuarios con permiso
-                        if (canChangeBranch) ...[
-                          const SizedBox(width: 6),
-                          InkWell(
-                            onTap: () => _showBranchSelectorDialog(context, tenant),
-                            borderRadius: BorderRadius.circular(4),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: kMainColor.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: kMainColor, width: 1),
-                              ),
-                              child: Text(
-                                'Cambiar',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: kMainColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 9,
-                                ),
+                      ),
+                    ),
+                  )
+                // ══════════════════════════════════════════════════════════
+                // MODO EXPANDIDO: Logo + Nombre + Botón cambiar
+                // ══════════════════════════════════════════════════════════
+                : Row(
+                    children: [
+                      // Logo/Iniciales de la sucursal
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              headerColor,
+                              headerColor.withValues(alpha: 0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: headerColor.withValues(alpha: 0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.store_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Nombre de la sucursal
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'SUCURSAL',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: headerColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9,
+                                letterSpacing: 1.5,
                               ),
                             ),
+                            const SizedBox(height: 2),
+                            Text(
+                              branchName,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Botón de cambiar sucursal
+                      if (canChangeBranch)
+                        InkWell(
+                          onTap: () => _showBranchSelectorDialog(context, tenant),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: headerColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: headerColor.withValues(alpha: 0.5),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.swap_horiz_rounded,
+                              color: headerColor,
+                              size: 18,
+                            ),
                           ),
-                        ],
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
+          );
+        }, error: (e, stack) {
+          return Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red[300], size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Error cargando',
+                    style: TextStyle(color: Colors.red[300], fontSize: 12),
+                  ),
+                ),
               ],
             ),
           );
-        }, error: (e, stack) {
-          return Text(e.toString());
         }, loading: () {
-          return Center(
-            child: CircularProgressIndicator(),
+          return Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              mainAxisAlignment: iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: SidebarSectionColors.principal,
+                  ),
+                ),
+                if (!iconOnly) ...[
+                  const SizedBox(width: 12),
+                  Text(
+                    'Cargando...',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           );
         });
       },
@@ -1026,6 +1128,8 @@ class SidebarMenuItem extends StatelessWidget {
   }) {
     final _theme = Theme.of(context);
 
+    // Usar el color de sección si está definido, si no usar blanco
+    final sectionColor = menuTile.sectionColor ?? Colors.white;
     const _selectedPrimaryColor = Colors.white;
 
     return InkWell(
@@ -1035,30 +1139,39 @@ class SidebarMenuItem extends StatelessWidget {
         constraints: BoxConstraints.tight(const Size.fromHeight(48)),
         alignment: Alignment.center,
         decoration: ShapeDecoration(
-          color: isSelected ? kMainColor : null,
+          color: isSelected
+              ? sectionColor.withValues(alpha: 0.9)
+              : sectionColor.withValues(alpha: 0.08),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: isSelected ? sectionColor : sectionColor.withValues(alpha: 0.3),
+              width: isSelected ? 1.5 : 0.5,
+            ),
           ),
         ),
-        padding: EdgeInsets.only(left: iconOnly ? 8 : 16, right: 8),
+        padding: EdgeInsets.only(left: iconOnly ? 8 : 12, right: 8),
         child: Row(
           mainAxisAlignment:
               iconOnly ? MainAxisAlignment.center : MainAxisAlignment.start,
           children: [
-            // Icon
-            SvgPicture.asset(
-              menuTile.iconPath,
-              height: 23,
-              width: 23,
-              colorFilter: ColorFilter.mode(
-                isSelected ? _selectedPrimaryColor : Colors.white,
-                BlendMode.srcIn,
+            // Usar Material Icon si está disponible, si no usar SVG
+            if (menuTile.materialIcon != null)
+              Icon(
+                menuTile.materialIcon,
+                size: 22,
+                color: isSelected ? _selectedPrimaryColor : sectionColor,
+              )
+            else
+              SvgPicture.asset(
+                menuTile.iconPath,
+                height: 22,
+                width: 22,
+                colorFilter: ColorFilter.mode(
+                  isSelected ? _selectedPrimaryColor : sectionColor,
+                  BlendMode.srcIn,
+                ),
               ),
-            ),
-            // Icon(
-            //   menuTile.icon,
-            //   color: isSelected ? _selectedPrimaryColor : Colors.white,
-            // ),
 
             if (!iconOnly)
               Expanded(
@@ -1068,20 +1181,25 @@ class SidebarMenuItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Menu title
-                      Text(
-                        menuTile.name,
-                        style: _theme.textTheme.titleMedium?.copyWith(
-                          color:
-                              isSelected ? _selectedPrimaryColor : Colors.white,
-                          fontWeight: FontWeight.w500,
+                      Flexible(
+                        child: Text(
+                          menuTile.name,
+                          style: _theme.textTheme.titleMedium?.copyWith(
+                            color: isSelected ? _selectedPrimaryColor : Colors.white,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
 
-                      // Trailing Icon
-                      Icon(
-                        isExpanded ? MdiIcons.chevronDown : Icons.chevron_right,
-                        color: isSelected ? _selectedPrimaryColor : null,
-                      ),
+                      // Trailing Icon (solo para submenús)
+                      if (menuTile.sidebarItemType == SidebarItemType.submenu)
+                        Icon(
+                          isExpanded ? MdiIcons.chevronDown : Icons.chevron_right,
+                          color: isSelected ? _selectedPrimaryColor : sectionColor,
+                          size: 20,
+                        ),
                     ],
                   ),
                 ),
@@ -1100,43 +1218,85 @@ class SidebarMenuItem extends StatelessWidget {
     final _theme = Theme.of(context);
     final _isSelectedSubmenu = selectedSubmenu == submenu;
 
-    final _selectedPrimaryColor = _theme.primaryColor;
+    // Usar el color de sección del menú padre
+    final sectionColor = menuTile.sectionColor ?? kMainColor;
+
     return Material(
       color: Colors.transparent,
-      child: ListTile(
+      child: InkWell(
         onTap: () => onChanged?.call(submenu),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: iconOnly ? 8 : 12,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            color: _isSelectedSubmenu
+                ? sectionColor.withValues(alpha: 0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: _isSelectedSubmenu
+                ? Border.all(color: sectionColor.withValues(alpha: 0.4), width: 1)
+                : null,
+          ),
+          child: Row(
+            children: [
+              // Icono del submenú (Material Icon o indicador de selección)
+              if (submenu.materialIcon != null)
+                Icon(
+                  submenu.materialIcon,
+                  size: 18,
+                  color: _isSelectedSubmenu
+                      ? sectionColor
+                      : iconOnly
+                          ? kGreyTextColor
+                          : Colors.white70,
+                )
+              else
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isSelectedSubmenu
+                        ? sectionColor
+                        : Colors.white30,
+                    border: _isSelectedSubmenu
+                        ? Border.all(color: sectionColor, width: 2)
+                        : null,
+                  ),
+                ),
+              const SizedBox(width: 10),
+              // Nombre del submenú
+              Expanded(
+                child: Text(
+                  submenu.name,
+                  style: _theme.textTheme.bodyMedium?.copyWith(
+                    color: _isSelectedSubmenu
+                        ? sectionColor
+                        : iconOnly
+                            ? kGreyTextColor
+                            : Colors.white,
+                    fontWeight: _isSelectedSubmenu ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: 12.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Flecha de navegación
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: _isSelectedSubmenu
+                    ? sectionColor
+                    : iconOnly
+                        ? kGreyTextColor
+                        : Colors.white54,
+              ),
+            ],
+          ),
         ),
-        tileColor:
-            _isSelectedSubmenu ? kMainColor.withValues(alpha: 0.20) : null,
-        title: Text(submenu.name),
-        leading: Radio<SidebarSubmenuModel?>(
-            value: submenu,
-            groupValue: selectedSubmenu,
-            onChanged: onChanged,
-            fillColor: WidgetStateProperty.resolveWith((states) {
-              return _isSelectedSubmenu
-                  ? kMainColor
-                  : iconOnly
-                      ? kGreyTextColor
-                      : Colors.white;
-            })),
-        titleTextStyle: _theme.textTheme.bodyLarge?.copyWith(
-          color: _isSelectedSubmenu
-              ? kMainColor
-              : iconOnly
-                  ? kGreyTextColor
-                  : Colors.white,
-          fontWeight: FontWeight.w500,
-        ),
-        contentPadding: EdgeInsets.only(left: iconOnly ? 8 : 8, right: 8),
-        trailing: const Icon(Icons.chevron_right),
-        iconColor: _isSelectedSubmenu
-            ? kMainColor
-            : iconOnly
-                ? kGreyTextColor
-                : Colors.white,
       ),
     );
   }

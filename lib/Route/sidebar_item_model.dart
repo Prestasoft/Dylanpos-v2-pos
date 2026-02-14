@@ -1,11 +1,49 @@
+import 'package:flutter/material.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../model/user_role_model.dart';
 import '../const.dart';
 
+// ============================================================================
+// COLORES DE SECCIÓN - Sistema de colores por categoría
+// ============================================================================
+class SidebarSectionColors {
+  // Principal (Dorado elegante)
+  static const Color principal = Color(0xFFD4A853);
+
+  // Vestimentas & Servicios (Púrpura elegante)
+  static const Color vestimentas = Color(0xFF8B5CF6);
+
+  // Ventas & Comercial (Verde éxito)
+  static const Color ventas = Color(0xFF10B981);
+
+  // Finanzas (Azul corporativo)
+  static const Color finanzas = Color(0xFF3B82F6);
+
+  // Inventario (Naranja)
+  static const Color inventario = Color(0xFFF59E0B);
+
+  // Clientes & Proveedores (Cyan)
+  static const Color contactos = Color(0xFF06B6D4);
+
+  // Reportes (Índigo)
+  static const Color reportes = Color(0xFF6366F1);
+
+  // Administración (Gris profesional)
+  static const Color admin = Color(0xFF6B7280);
+
+  // Recursos Humanos (Rosa)
+  static const Color rrhh = Color(0xFFEC4899);
+
+  // Auditoría (Rojo)
+  static const Color auditoria = Color(0xFFEF4444);
+}
+
 class SidebarItemModel {
   final String name;
   final String iconPath;
+  final IconData? materialIcon;  // Nuevo: soporte para Material Icons
+  final Color? sectionColor;     // Nuevo: color de la sección
   final SidebarItemType sidebarItemType;
   final List<SidebarSubmenuModel>? submenus;
   final String? navigationPath;
@@ -15,6 +53,8 @@ class SidebarItemModel {
   SidebarItemModel({
     required this.name,
     required this.iconPath,
+    this.materialIcon,
+    this.sectionColor,
     this.sidebarItemType = SidebarItemType.tile,
     this.submenus,
     this.navigationPath,
@@ -32,12 +72,14 @@ class SidebarSubmenuModel {
   final String? navigationPath;
   final bool isPage;
   final String type;
+  final IconData? materialIcon;  // Nuevo: icono para submenú
 
   SidebarSubmenuModel({
     required this.name,
     this.navigationPath,
     this.isPage = false,
     required this.type,
+    this.materialIcon,
   });
 }
 
@@ -321,17 +363,31 @@ enum SidebarItemType { tile, submenu }
 //   ];
 // }
 
+// ============================================================================
+// MENÚ PRINCIPAL - Organizado por secciones con iconos Material y colores
+// ============================================================================
 List<SidebarItemModel> get topMenus {
   return <SidebarItemModel>[
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: PRINCIPAL (Dorado)
+    // ══════════════════════════════════════════════════════════════════════
     SidebarItemModel(
       name: lang.S.current.dashBoard,
       iconPath: 'images/dashboard_icon/dashboard.svg',
+      materialIcon: Icons.dashboard_rounded,
+      sectionColor: SidebarSectionColors.principal,
       type: "dashboard",
       navigationPath: '/dashboard',
     ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: VESTIMENTAS & SERVICIOS (Púrpura)
+    // ══════════════════════════════════════════════════════════════════════
     SidebarItemModel(
       name: 'Servicios',
       iconPath: 'images/dashboard_icon/dashboard.svg',
+      materialIcon: Icons.design_services_rounded,
+      sectionColor: SidebarSectionColors.vestimentas,
       sidebarItemType: SidebarItemType.submenu,
       type: "services",
       navigationPath: '/service-package',
@@ -340,17 +396,21 @@ List<SidebarItemModel> get topMenus {
           name: 'Registrar Paquete',
           type: "register_package",
           navigationPath: '/service-package/register-package',
+          materialIcon: Icons.add_box_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Registrar Vestimenta',
           type: "register_clothing",
           navigationPath: '/service-package/dresses',
+          materialIcon: Icons.dry_cleaning_rounded,
         ),
       ],
     ),
     SidebarItemModel(
       name: 'Reservas',
       iconPath: 'images/dashboard_icon/dashboard.svg',
+      materialIcon: Icons.event_available_rounded,
+      sectionColor: SidebarSectionColors.vestimentas,
       sidebarItemType: SidebarItemType.submenu,
       type: "reservations",
       navigationPath: '/reservations',
@@ -359,235 +419,289 @@ List<SidebarItemModel> get topMenus {
           name: 'Rentar Vestimentas',
           type: "rent_clothing",
           navigationPath: '/reservations/rent-clothes',
+          materialIcon: Icons.checkroom_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Reservar Paquete',
           type: "reserve_package",
           navigationPath: '/reservations/list',
+          materialIcon: Icons.event_note_rounded,
         ),
         SidebarSubmenuModel(
-          name: 'Calendario de Reservas',
+          name: 'Calendario',
           type: "reservation_calendar",
           navigationPath: '/reservations/calendario',
+          materialIcon: Icons.calendar_month_rounded,
         ),
       ],
     ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: VENTAS & COMERCIAL (Verde)
+    // ══════════════════════════════════════════════════════════════════════
     SidebarItemModel(
       name: lang.S.current.sales,
       iconPath: 'images/dashboard_icon/sales.svg',
+      materialIcon: Icons.point_of_sale_rounded,
+      sectionColor: SidebarSectionColors.ventas,
       sidebarItemType: SidebarItemType.submenu,
       type: "sales",
       navigationPath: '/sales',
       submenus: [
-        // Submenú "Pos" - COMENTADO
-        // SidebarSubmenuModel(
-        //   name: 'Pos',
-        //   type: "pos_sales",
-        //   navigationPath: '/pos-sales',
-        // ),
         SidebarSubmenuModel(
           name: lang.S.current.inventorySales,
           type: "inventory_sales",
           navigationPath: '/sales/inventory-sales',
+          materialIcon: Icons.shopping_cart_rounded,
         ),
         SidebarSubmenuModel(
           name: lang.S.current.salesList,
           type: "sales_list",
           navigationPath: '/sales/sale-list',
+          materialIcon: Icons.receipt_long_rounded,
         ),
         SidebarSubmenuModel(
           name: lang.S.current.saleReturn,
           type: "sales_return",
           navigationPath: '/sales/sales-return-list',
+          materialIcon: Icons.assignment_return_rounded,
         ),
         SidebarSubmenuModel(
-          name: 'Lista de cotizaciones',
+          name: 'Cotizaciones',
           type: "quotation_list",
           navigationPath: '/sales/quotation-list',
+          materialIcon: Icons.request_quote_rounded,
         ),
       ],
     ),
     SidebarItemModel(
       name: "Confirmaciones",
       iconPath: 'images/dashboard_icon/reports.svg',
+      materialIcon: Icons.verified_rounded,
+      sectionColor: SidebarSectionColors.ventas,
       type: "confirmations",
       navigationPath: '/sale-confirmations',
     ),
     SidebarItemModel(
-      name: 'Módulo Impresión',
+      name: 'Impresión',
       iconPath: 'images/dashboard_icon/product.svg',
+      materialIcon: Icons.print_rounded,
+      sectionColor: SidebarSectionColors.ventas,
       sidebarItemType: SidebarItemType.submenu,
-      type: "inventory_sales",  // Usa el mismo permiso que ventas de inventario
+      type: "inventory_sales",
       submenus: [
         SidebarSubmenuModel(
           name: 'Facturar Impresión',
           type: "inventory_sales",
           navigationPath: '/photo-invoice',
+          materialIcon: Icons.receipt_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Lista de Ventas',
           type: "inventory_sales",
           navigationPath: '/sales/photo-sales-list',
+          materialIcon: Icons.list_alt_rounded,
         ),
         SidebarSubmenuModel(
-          name: 'Tipos de Productos/Servicios',
+          name: 'Tipos de Servicios',
           type: "inventory_sales",
           navigationPath: '/sales/photo-product-service-types',
+          materialIcon: Icons.category_rounded,
         ),
         SidebarSubmenuModel(
-          name: 'Gestión de Productos',
+          name: 'Gestión Productos',
           type: "inventory_sales",
           navigationPath: '/sales/photo-products-services',
+          materialIcon: Icons.inventory_2_rounded,
         ),
       ],
     ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: FINANZAS (Azul)
+    // ══════════════════════════════════════════════════════════════════════
     SidebarItemModel(
-      name: lang.S.current.dueList,
+      name: 'Cuentas x Cobrar',
       iconPath: 'images/dashboard_icon/due_list.svg',
+      materialIcon: Icons.account_balance_wallet_rounded,
+      sectionColor: SidebarSectionColors.finanzas,
       type: "dues",
       navigationPath: '/due-list',
     ),
     SidebarItemModel(
       name: 'Transferencias',
       iconPath: 'images/dashboard_icon/income.svg',
+      materialIcon: Icons.swap_horiz_rounded,
+      sectionColor: SidebarSectionColors.finanzas,
       type: "transfers",
       navigationPath: '/transfer-verifications',
     ),
     SidebarItemModel(
-      name: 'DGII',
-      iconPath: 'images/dashboard_icon/reports.svg',
-      type: "reports",  // Permiso de reportes
-      navigationPath: '/dgii',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.reports,
-      iconPath: 'images/dashboard_icon/reports.svg',
-      type: "reports",
-      navigationPath: '/reports',
-    ),
-    SidebarItemModel(
       name: lang.S.current.expense,
       iconPath: 'images/dashboard_icon/expense.svg',
+      materialIcon: Icons.money_off_rounded,
+      sectionColor: SidebarSectionColors.finanzas,
       type: "expense",
       navigationPath: '/expense',
     ),
     SidebarItemModel(
-      name: lang.S.current.purchase,
-      iconPath: 'images/dashboard_icon/purchase.svg',
-      sidebarItemType: SidebarItemType.submenu,
-      type: "purchases",
-      navigationPath: '/purchase',
-      submenus: [
-        SidebarSubmenuModel(
-          name: lang.S.current.purchase,
-          type: "pos_purchase",
-          navigationPath: '/purchase/pos-purchase',
-        ),
-        SidebarSubmenuModel(
-          name: lang.S.current.purchaseList,
-          type: "purchase_list",
-          navigationPath: '/purchase/purchase-list',
-        ),
-        SidebarSubmenuModel(
-          name: lang.S.current.purchaseReturn,
-          type: "purchase_return",
-          navigationPath: '/purchase/purchase-return',
-        ),
-      ],
-    ),
-    SidebarItemModel(
-      name: lang.S.current.categories,
-      iconPath: 'images/dashboard_icon/category.svg',
-      type: "categories",
-      navigationPath: '/category-list',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.product,
-      iconPath: 'images/dashboard_icon/product.svg',
-      type: "products",
-      navigationPath: '/product',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.warehouse,
-      iconPath: 'images/dashboard_icon/warehouse.svg',
-      type: "warehouses",
-      navigationPath: '/warehouse-list',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.supplierList,
-      iconPath: 'images/dashboard_icon/supplier_list.svg',
-      type: "suppliers",
-      navigationPath: '/supplier-list',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.customerList,
-      iconPath: 'images/dashboard_icon/customer.svg',
-      type: "customers",
-      navigationPath: '/customer-list',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.ledger,
-      iconPath: 'images/dashboard_icon/leder.svg',
-      type: "ledger",
-      navigationPath: '/ledger',
-    ),
-    SidebarItemModel(
-      name: lang.S.current.lossProfit,
-      iconPath: 'images/dashboard_icon/loss_profit.svg',
-      type: "loss_profit",
-      navigationPath: '/loss-profit',
-    ),
-    SidebarItemModel(
       name: lang.S.current.income,
       iconPath: 'images/dashboard_icon/income.svg',
+      materialIcon: Icons.attach_money_rounded,
+      sectionColor: SidebarSectionColors.finanzas,
       type: "income",
       navigationPath: '/income',
     ),
     SidebarItemModel(
       name: 'Bancos',
       iconPath: 'images/dashboard_icon/income.svg',
+      materialIcon: Icons.account_balance_rounded,
+      sectionColor: SidebarSectionColors.finanzas,
       type: "banks",
       navigationPath: '/bank/bank-list',
     ),
     SidebarItemModel(
-      name: 'Inventario de Equipos',
-      iconPath: 'images/dashboard_icon/stock_list.svg',
-      type: "inventory_list",
-      navigationPath: '/equipment-stock-list',
+      name: lang.S.current.ledger,
+      iconPath: 'images/dashboard_icon/leder.svg',
+      materialIcon: Icons.menu_book_rounded,
+      sectionColor: SidebarSectionColors.finanzas,
+      type: "ledger",
+      navigationPath: '/ledger',
     ),
-    // SidebarItemModel(
-    //   name: lang.S.current.transaction,
-    //   iconPath: 'images/dashboard_icon/transaction.svg',
-    //   type: "transaction",
-    //   navigationPath: '/transaction',
-    // ),
     SidebarItemModel(
-      name: 'Lista de Inventario',
+      name: lang.S.current.lossProfit,
+      iconPath: 'images/dashboard_icon/loss_profit.svg',
+      materialIcon: Icons.trending_up_rounded,
+      sectionColor: SidebarSectionColors.finanzas,
+      type: "loss_profit",
+      navigationPath: '/loss-profit',
+    ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: COMPRAS (Naranja)
+    // ══════════════════════════════════════════════════════════════════════
+    SidebarItemModel(
+      name: lang.S.current.purchase,
+      iconPath: 'images/dashboard_icon/purchase.svg',
+      materialIcon: Icons.shopping_bag_rounded,
+      sectionColor: SidebarSectionColors.inventario,
+      sidebarItemType: SidebarItemType.submenu,
+      type: "purchases",
+      navigationPath: '/purchase',
+      submenus: [
+        SidebarSubmenuModel(
+          name: 'Nueva Compra',
+          type: "pos_purchase",
+          navigationPath: '/purchase/pos-purchase',
+          materialIcon: Icons.add_shopping_cart_rounded,
+        ),
+        SidebarSubmenuModel(
+          name: lang.S.current.purchaseList,
+          type: "purchase_list",
+          navigationPath: '/purchase/purchase-list',
+          materialIcon: Icons.list_alt_rounded,
+        ),
+        SidebarSubmenuModel(
+          name: lang.S.current.purchaseReturn,
+          type: "purchase_return",
+          navigationPath: '/purchase/purchase-return',
+          materialIcon: Icons.assignment_return_rounded,
+        ),
+      ],
+    ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: INVENTARIO (Naranja)
+    // ══════════════════════════════════════════════════════════════════════
+    SidebarItemModel(
+      name: lang.S.current.categories,
+      iconPath: 'images/dashboard_icon/category.svg',
+      materialIcon: Icons.folder_rounded,
+      sectionColor: SidebarSectionColors.inventario,
+      type: "categories",
+      navigationPath: '/category-list',
+    ),
+    SidebarItemModel(
+      name: lang.S.current.product,
+      iconPath: 'images/dashboard_icon/product.svg',
+      materialIcon: Icons.inventory_rounded,
+      sectionColor: SidebarSectionColors.inventario,
+      type: "products",
+      navigationPath: '/product',
+    ),
+    SidebarItemModel(
+      name: lang.S.current.warehouse,
+      iconPath: 'images/dashboard_icon/warehouse.svg',
+      materialIcon: Icons.warehouse_rounded,
+      sectionColor: SidebarSectionColors.inventario,
+      type: "warehouses",
+      navigationPath: '/warehouse-list',
+    ),
+    SidebarItemModel(
+      name: 'Inventario',
       iconPath: 'images/dashboard_icon/stock_list.svg',
+      materialIcon: Icons.inventory_2_rounded,
+      sectionColor: SidebarSectionColors.inventario,
       type: "inventory_list",
       navigationPath: '/stock-list',
     ),
     SidebarItemModel(
-      name: lang.S.current.userRole,
-      iconPath: 'images/dashboard_icon/user_role.svg',
-      type: "user_roles",
-      navigationPath: '/user-role',
+      name: 'Equipos',
+      iconPath: 'images/dashboard_icon/stock_list.svg',
+      materialIcon: Icons.camera_alt_rounded,
+      sectionColor: SidebarSectionColors.inventario,
+      type: "inventory_list",
+      navigationPath: '/equipment-stock-list',
+    ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: CLIENTES & PROVEEDORES (Cyan)
+    // ══════════════════════════════════════════════════════════════════════
+    SidebarItemModel(
+      name: lang.S.current.customerList,
+      iconPath: 'images/dashboard_icon/customer.svg',
+      materialIcon: Icons.people_rounded,
+      sectionColor: SidebarSectionColors.contactos,
+      type: "customers",
+      navigationPath: '/customer-list',
     ),
     SidebarItemModel(
-      name: 'Configuración Sucursal',
-      iconPath: 'images/dashboard_icon/warehouse.svg',
-      type: "user_roles",  // Solo admin puede ver esto
-      navigationPath: '/branch-settings',
+      name: lang.S.current.supplierList,
+      iconPath: 'images/dashboard_icon/supplier_list.svg',
+      materialIcon: Icons.local_shipping_rounded,
+      sectionColor: SidebarSectionColors.contactos,
+      type: "suppliers",
+      navigationPath: '/supplier-list',
+    ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: REPORTES (Índigo)
+    // ══════════════════════════════════════════════════════════════════════
+    SidebarItemModel(
+      name: lang.S.current.reports,
+      iconPath: 'images/dashboard_icon/reports.svg',
+      materialIcon: Icons.bar_chart_rounded,
+      sectionColor: SidebarSectionColors.reportes,
+      type: "reports",
+      navigationPath: '/reports',
     ),
     SidebarItemModel(
-      name: lang.S.current.taxRate,
-      iconPath: 'images/dashboard_icon/tax_rate.svg',
-      type: "tax_rates",
-      navigationPath: '/tax-rates',
+      name: 'DGII',
+      iconPath: 'images/dashboard_icon/reports.svg',
+      materialIcon: Icons.account_balance_rounded,
+      sectionColor: SidebarSectionColors.reportes,
+      type: "reports",
+      navigationPath: '/dgii',
     ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: RECURSOS HUMANOS (Rosa)
+    // ══════════════════════════════════════════════════════════════════════
     SidebarItemModel(
       name: 'Recursos Humanos',
       iconPath: 'images/dashboard_icon/hrm.svg',
+      materialIcon: Icons.groups_rounded,
+      sectionColor: SidebarSectionColors.rrhh,
       sidebarItemType: SidebarItemType.submenu,
       type: "hrm",
       navigationPath: '/hrm',
@@ -596,84 +710,130 @@ List<SidebarItemModel> get topMenus {
           name: 'Empleados',
           type: "employees",
           navigationPath: '/hrm/employee',
+          materialIcon: Icons.badge_rounded,
         ),
         SidebarSubmenuModel(
-          name: lang.S.current.designationList,
+          name: 'Cargos',
           type: "designations",
           navigationPath: '/hrm/designation-list',
+          materialIcon: Icons.work_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Nómina',
           type: "salary_list",
           navigationPath: '/hrm/salaries-list',
+          materialIcon: Icons.payments_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Asistencia',
           type: "attendance",
           navigationPath: '/hrm/attendance',
+          materialIcon: Icons.fingerprint_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Vacaciones',
           type: "vacations",
           navigationPath: '/hrm/vacations',
+          materialIcon: Icons.beach_access_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Préstamos',
           type: "loans",
           navigationPath: '/hrm/loans',
+          materialIcon: Icons.account_balance_wallet_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Prestaciones',
           type: "prestaciones",
           navigationPath: '/hrm/prestaciones',
+          materialIcon: Icons.savings_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Reportes TSS',
           type: "tss_reports",
           navigationPath: '/hrm/tss-reports',
+          materialIcon: Icons.article_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Cumpleaños',
           type: "birthdays",
           navigationPath: '/hrm/birthdays',
+          materialIcon: Icons.cake_rounded,
         ),
         SidebarSubmenuModel(
           name: 'Rentabilidad',
           type: "rentability",
           navigationPath: '/hrm/rentability',
+          materialIcon: Icons.analytics_rounded,
         ),
       ],
     ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: ADMINISTRACIÓN (Gris)
+    // ══════════════════════════════════════════════════════════════════════
+    SidebarItemModel(
+      name: 'Usuarios',
+      iconPath: 'images/dashboard_icon/user_role.svg',
+      materialIcon: Icons.manage_accounts_rounded,
+      sectionColor: SidebarSectionColors.admin,
+      type: "user_roles",
+      navigationPath: '/user-role',
+    ),
+    SidebarItemModel(
+      name: 'Config. Sucursal',
+      iconPath: 'images/dashboard_icon/warehouse.svg',
+      materialIcon: Icons.store_rounded,
+      sectionColor: SidebarSectionColors.admin,
+      type: "user_roles",
+      navigationPath: '/branch-settings',
+    ),
+    SidebarItemModel(
+      name: lang.S.current.taxRate,
+      iconPath: 'images/dashboard_icon/tax_rate.svg',
+      materialIcon: Icons.percent_rounded,
+      sectionColor: SidebarSectionColors.admin,
+      type: "tax_rates",
+      navigationPath: '/tax-rates',
+    ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: AUDITORÍA (Rojo)
+    // ══════════════════════════════════════════════════════════════════════
     SidebarItemModel(
       name: 'Auditoría',
       iconPath: 'images/dashboard_icon/user_role.svg',
+      materialIcon: Icons.history_rounded,
+      sectionColor: SidebarSectionColors.auditoria,
       type: "audit",
       navigationPath: '/audit',
     ),
     SidebarItemModel(
-      name: 'Elementos Eliminados',
+      name: 'Papelera',
       iconPath: 'images/dashboard_icon/due_list.svg',
-      type: "audit",  // Usa el mismo permiso que auditoría
+      materialIcon: Icons.delete_rounded,
+      sectionColor: SidebarSectionColors.auditoria,
+      type: "audit",
       navigationPath: '/deleted-items',
     ),
-    // Opción comentada - Ya no se utiliza
-    // SidebarItemModel(
-    //   name: 'Migrar Base de Datos',
-    //   iconPath: 'images/dashboard_icon/transaction.svg',
-    //   type: "user_roles",  // Solo admin puede ver esto
-    //   navigationPath: '/database-migration',
-    // ),
   ];
 }
 
 List<SidebarItemModel> getTopMenusForUser(UserRoleModel user) {
+  // IMPORTANTE: SIEMPRE verificar permisos si el usuario tiene permisos definidos
+  // Sin importar si es admin o no. Solo mostrar todos los menús si:
+  // 1. No es sub-usuario Y
+  // 2. No tiene permisos específicos definidos
+  final hasDefinedPermissions = user.permissions.isNotEmpty &&
+      user.permissions.any((p) => p.view || p.edit || p.delete);
+
   return topMenus.where((menu) {
-    // Si no es sub-usuario (es usuario principal), mostrar todos los menús
-    if (!isSubUser) {
+    // Si no es sub-usuario Y no tiene permisos definidos, mostrar todos
+    if (!isSubUser && !hasDefinedPermissions) {
       return true;
     }
-    
-    // Si es sub-usuario, aplicar filtros de permisos
+
+    // Si tiene permisos definidos (sea admin o no), SIEMPRE filtrar por permisos
     final canView = user.canView(menu.type);
     if (!canView) return false;
 

@@ -601,15 +601,33 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
   }
 
   // Menú adaptativo para dispositivos móviles con botones principales
+  // Colores consistentes con el sidebar
+  static const Color _purpleVestimentas = Color(0xFF8B5CF6);
+  static const Color _greenVentas = Color(0xFF10B981);
+
   Widget _buildMobileActionsMenu(BuildContext context) {
     return PopupMenuButton<String>(
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: kMainColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFD4A853),  // Dorado principal
+              Color(0xFFC9973D),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD4A853).withValues(alpha: 0.3),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: const Icon(Icons.add_circle_outline, color: kMainColor),
+        child: const Icon(Icons.apps_rounded, color: Colors.white, size: 22),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       tooltip: 'Acciones rápidas',
@@ -620,13 +638,20 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
             value: 'rent',
             child: Row(
               children: [
-                const Icon(Icons.add_rounded, color: kMainColor, size: 20),
-                const SizedBox(width: 8),
-                Text(
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _purpleVestimentas.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.checkroom_rounded, color: _purpleVestimentas, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text(
                   'Rentar',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: kMainColor,
+                    color: _purpleVestimentas,
                   ),
                 ),
               ],
@@ -637,13 +662,20 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
             value: 'sales',
             child: Row(
               children: [
-                const Icon(Icons.receipt, color: kMainColor, size: 20),
-                const SizedBox(width: 8),
-                Text(
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _greenVentas.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.receipt_long_rounded, color: _greenVentas, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text(
                   'Facturar',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: kMainColor,
+                    color: _greenVentas,
                   ),
                 ),
               ],
@@ -654,13 +686,20 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
             value: 'clothing_status',
             child: Row(
               children: [
-                const Icon(Icons.checkroom, color: kMainColor, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Estado de Vestimentas',
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _purpleVestimentas.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.inventory_2_rounded, color: _purpleVestimentas, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Estado Vestimentas',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: kMainColor,
+                    color: _purpleVestimentas,
                   ),
                 ),
               ],
@@ -671,13 +710,20 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
             value: 'calendar',
             child: Row(
               children: [
-                const Icon(Icons.calendar_today, color: Color(0xFF15CD75), size: 20),
-                const SizedBox(width: 8),
-                Text(
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _purpleVestimentas.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.calendar_month_rounded, color: _purpleVestimentas, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text(
                   'Disponibilidad',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF15CD75),
+                    color: _purpleVestimentas,
                   ),
                 ),
               ],
@@ -753,27 +799,49 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                   children: [
               // Usamos un enfoque más adaptativo para mostrar botones en móvil
               // Cuando la pantalla es muy pequeña, mostramos un menú desplegable en lugar de botones individuales
+              // Colores consistentes con el sidebar
+              // Púrpura (Vestimentas): 0xFF8B5CF6
+              // Verde (Ventas): 0xFF10B981
               screenWidth < 480
                   ? _buildMobileActionsMenu(context)
                   : screenWidth < 670
                       ? const SizedBox.shrink()
                       : _canAccessRentClothing()
-                          ? SizedBox(
+                          ? Container(
                               height: 40,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF8B5CF6),  // Púrpura vestimentas
+                                    Color(0xFF7C3AED),  // Púrpura más oscuro
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                                  backgroundColor: kMainColor,
+                                  padding: const EdgeInsets.fromLTRB(16, 8, 18, 8),
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(30.0)),
-                                  textStyle: kTextStyle.copyWith(color: kWhite),
                                 ),
                                 onPressed: () {
                                   context.go('/reservations/rent-clothes');
                                 },
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.add_rounded, color: kWhite),
+                                    const Icon(Icons.checkroom_rounded, color: kWhite, size: 20),
+                                    const SizedBox(width: 6),
                                     Text(
                                       'Rentar',
                                       style: Theme.of(context)
@@ -782,6 +850,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                                           ?.copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: Colors.white,
+                                            fontSize: 14,
                                           ),
                                     ),
                                   ],
@@ -797,29 +866,32 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                   : screenWidth < 590
                       ? const SizedBox.shrink()
                       : _canAccessSales()
-                          ? SizedBox(
+                          ? Container(
                               height: 40,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(
+                                  color: const Color(0xFF10B981),
+                                  width: 1.5,
+                                ),
+                              ),
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(30.0)),
-                                  padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                                  backgroundColor:
-                                      kMainColor.withValues(alpha: 0.1),
-                                  side:
-                                      const BorderSide(color: kMainColor, width: 1),
-                                  textStyle: kTextStyle.copyWith(color: kWhite),
-                                  surfaceTintColor: lightGreyColor,
-                                  shadowColor:
-                                      lightGreyColor.withValues(alpha: 0.1),
+                                  padding: const EdgeInsets.fromLTRB(16, 8, 18, 8),
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
                                 ),
                                 onPressed: () {
                                   context.go('/sales/inventory-sales');
                                 },
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.add_rounded,
-                                        color: kMainColor),
+                                    const Icon(Icons.receipt_long_rounded,
+                                        color: Color(0xFF10B981), size: 20),
+                                    const SizedBox(width: 6),
                                     Text(
                                       'Facturar',
                                       style: Theme.of(context)
@@ -827,7 +899,8 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                                           .titleMedium
                                           ?.copyWith(
                                             fontWeight: FontWeight.w600,
-                                            color: kMainColor,
+                                            color: const Color(0xFF10B981),
+                                            fontSize: 14,
                                           ),
                                     ),
                                   ],
@@ -947,131 +1020,156 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                         child: Icon(Icons.error, color: Colors.red),
                       ),
                     ),
-                  // Botón de cuadre de caja
-                  if (_canAccessCashRegisterSquare())
-                    Container(
-                      margin: EdgeInsets.only(right: screenWidth < 400 ? 2 : 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF15CD75).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFF15CD75),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.point_of_sale,
-                            color: Color(0xFF15CD75), size: screenWidth < 400 ? 22 : 28),
-                        tooltip: 'Cuadrar Caja',
-                        style: IconButton.styleFrom(
-                          foregroundColor: const Color(0xFF15CD75),
-                          backgroundColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: EdgeInsets.all(screenWidth < 400 ? 6 : 8),
-                        ),
-                        onPressed: () => _showCuadreModal(context),
-                      ),
-                    ),
+                  // Botón de cuadre de caja - OCULTO (no se usa)
+                  // if (_canAccessCashRegisterSquare())
+                  //   Container(
+                  //     margin: EdgeInsets.only(right: screenWidth < 400 ? 2 : 4),
+                  //     decoration: BoxDecoration(
+                  //       color: const Color(0xFF15CD75).withValues(alpha: 0.15),
+                  //       borderRadius: BorderRadius.circular(8),
+                  //       border: Border.all(
+                  //         color: const Color(0xFF15CD75),
+                  //         width: 0.5,
+                  //       ),
+                  //     ),
+                  //     child: IconButton(
+                  //       icon: Icon(Icons.point_of_sale,
+                  //           color: Color(0xFF15CD75), size: screenWidth < 400 ? 22 : 28),
+                  //       tooltip: 'Cuadrar Caja',
+                  //       style: IconButton.styleFrom(
+                  //         foregroundColor: const Color(0xFF15CD75),
+                  //         backgroundColor: Colors.transparent,
+                  //         shape: RoundedRectangleBorder(
+                  //           borderRadius: BorderRadius.circular(8),
+                  //         ),
+                  //         padding: EdgeInsets.all(screenWidth < 400 ? 6 : 8),
+                  //       ),
+                  //       onPressed: () => _showCuadreModal(context),
+                  //     ),
+                  //   ),
                 ],
               ),
-              const SizedBox(width: 10),
-              screenWidth < 480
-                  ? const SizedBox.shrink() // Ya está en el menú desplegable
-                  : screenWidth < 590
-                      ? const SizedBox.shrink()
-                      : _canAccessClothingStatus()
-                          ? SizedBox(
-                              height: 40,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30.0)),
-                                  padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                                  backgroundColor:
-                                      kMainColor.withValues(alpha: 0.05),
-                                  side:
-                                      const BorderSide(color: kMainColor, width: 1),
-                                  textStyle: kTextStyle.copyWith(
-                                      color: const Color(0xFFFF2525)),
-                                  surfaceTintColor: kWhite,
-                                  shadowColor: kMainColor.withValues(alpha: 0.1),
-                                  foregroundColor:
-                                      kMainColor.withValues(alpha: 0.1),
-                                ),
-                                onPressed: () {
-                                  context.go('/service-package/dresses');
-                                },
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.add_rounded,
-                                        color: kMainColor),
-                                    Text(
-                                      'Estado de Vestimentas',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                              color: kMainColor,
-                                              fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
+              // Dropdown de Vestimentas - Solo visible en pantallas >= 590px
+              // Usa el color púrpura consistente con la sección de vestimentas del sidebar
+              if (screenWidth >= 590 && (_canAccessClothingStatus() || _canAccessAvailabilityCalendar()))
+                const SizedBox(width: 10),
+              if (screenWidth >= 590 && (_canAccessClothingStatus() || _canAccessAvailabilityCalendar()))
+                PopupMenuButton<String>(
+                  tooltip: 'Vestimentas',
+                  position: PopupMenuPosition.under,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  offset: const Offset(0, 8),
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.dry_cleaning_rounded, color: Color(0xFF8B5CF6), size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Vestimentas',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: const Color(0xFF8B5CF6),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF8B5CF6), size: 20),
+                      ],
+                    ),
+                  ),
+                  itemBuilder: (context) => [
+                    if (_canAccessClothingStatus())
+                      PopupMenuItem<String>(
+                        value: 'status',
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            )
-                          : const SizedBox.shrink(),
-              screenWidth < 480
-                  ? const SizedBox.shrink() // Ya está en el menú desplegable
-                  : screenWidth < 800
-                      ? const SizedBox.shrink()
-                      : const SizedBox(width: 10.0),
-              screenWidth < 480
-                  ? const SizedBox.shrink() // Ya está en el menú desplegable
-                  : screenWidth < 800
-                      ? const SizedBox.shrink()
-                      : _canAccessAvailabilityCalendar()
-                          ? SizedBox(
-                              height: 40,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30.0)),
-                                  padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
-                                  backgroundColor: const Color(0xFF15CD75)
-                                      .withValues(alpha: 0.05),
-                                  side: const BorderSide(
-                                      color: Color(0xFF15CD75), width: 1),
-                                  textStyle: kTextStyle.copyWith(
-                                      color: const Color(0xFF15CD75)),
-                                  surfaceTintColor: kWhite,
-                                  shadowColor: const Color(0xFF15CD75)
-                                      .withValues(alpha: 0.1),
-                                  foregroundColor: const Color(0xFF15CD75)
-                                      .withValues(alpha: 0.1),
+                              child: const Icon(Icons.inventory_2_rounded, color: Color(0xFF8B5CF6), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Estado de Vestimentas',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
+                                  ),
                                 ),
-                                onPressed: () {
-                                  context.go('/calendario-reservas');
-                                },
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.add_rounded,
-                                        color: Color(0xFF15CD75)),
-                                    Text(
-                                      'Disponibilidad de Vestimentas',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: const Color(0xFF15CD75),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                  ],
+                                Text(
+                                  'Ver y gestionar inventario',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
                                 ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_canAccessAvailabilityCalendar())
+                      PopupMenuItem<String>(
+                        value: 'availability',
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            )
-                          : const SizedBox.shrink(),
+                              child: const Icon(Icons.calendar_month_rounded, color: Color(0xFF8B5CF6), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Disponibilidad',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                                Text(
+                                  'Calendario de reservas',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'status':
+                        context.go('/service-package/dresses');
+                        break;
+                      case 'availability':
+                        context.go('/calendario-reservas');
+                        break;
+                    }
+                  },
+                ),
               screenWidth < 1260
                   ? const SizedBox.shrink()
                   : const SizedBox(width: 10.0),
@@ -1118,7 +1216,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'v2.1.266',
+                  'v2.1.283',
                   style: TextStyle(fontFamily: 'Poppins',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
