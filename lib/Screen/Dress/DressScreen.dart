@@ -148,6 +148,8 @@ class _DressScreenState extends State<DressScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          // Botón Agregar - Solo visible si tiene permiso de edición
+                          if (checkUserRoleEditPermissionV2(type: 'register_clothing'))
                           ElevatedButton.icon(
                             onPressed: () async {
                               _showAddDressDialog(context, ref);
@@ -647,6 +649,8 @@ class _DressScreenState extends State<DressScreen> {
                                                                           bc) =>
                                                                       [
                                                                 // Edit
+                                                                // Edit - Solo visible si tiene permiso
+                                                                if (checkUserRoleEditPermissionV2(type: 'register_clothing'))
                                                                 PopupMenuItem(
                                                                     onTap: () {
                                                                       _showEditDressDialog(
@@ -713,7 +717,8 @@ class _DressScreenState extends State<DressScreen> {
                                                                       ],
                                                                     )),
 
-                                                                // Delete
+                                                                // Delete - Solo visible si tiene permiso
+                                                                if (checkUserRoleDeletePermissionV2(type: 'register_clothing'))
                                                                 PopupMenuItem(
                                                                   onTap: () {
                                                                     _showDeleteConfirmation(
