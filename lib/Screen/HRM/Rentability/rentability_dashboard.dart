@@ -35,7 +35,7 @@ class _RentabilityDashboardScreenState extends ConsumerState<RentabilityDashboar
     final performancesAsync = ref.watch(employeesPerformanceProvider2);
 
     return Scaffold(
-      backgroundColor: kAppSurfaceBg,
+      backgroundColor: Colors.white,
       body: performancesAsync.when(
         data: (performances) => _buildDashboardContent(context, performances, isDesktop),
         loading: () => const Center(child: CircularProgressIndicator()),
