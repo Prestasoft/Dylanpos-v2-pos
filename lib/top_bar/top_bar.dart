@@ -749,9 +749,15 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
     );
   }
 
+  // Colores del sistema de diseño
+  static const Color _doradoPrincipal = Color(0xFFD4A853);
+  static const Color _doradoOscuro = Color(0xFFC9973D);
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Consumer(builder: (context, ref, __) {
       AsyncValue<PersonalInformationModel> userProfileDetails =
           ref.watch(profileDetailsProvider);
@@ -762,7 +768,9 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
 
       return AppBar(
         backgroundColor: Colors.white,
-        leadingWidth: 40,
+        elevation: isMobile ? 2 : 0,
+        shadowColor: isMobile ? Colors.black12 : Colors.transparent,
+        leadingWidth: isMobile ? 56 : 40,
         leading: rf.ResponsiveValue<Widget?>(
           context,
           conditionalValues: [
@@ -771,12 +779,21 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
               value: null,
             ),
           ],
-          defaultValue: IconButton(
-            onPressed: widget.onMenuTap,
-            icon: const Tooltip(
-              message: 'Open Navigation menu',
-              waitDuration: Duration(milliseconds: 350),
-              child: Icon(Icons.menu),
+          defaultValue: Container(
+            margin: const EdgeInsets.only(left: 8),
+            child: IconButton(
+              onPressed: widget.onMenuTap,
+              style: IconButton.styleFrom(
+                backgroundColor: _doradoPrincipal.withValues(alpha: 0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: Icon(
+                Icons.menu_rounded,
+                color: _doradoPrincipal,
+                size: 24,
+              ),
             ),
           ),
         ).value,
@@ -797,263 +814,240 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
               Expanded(
                 child: Row(
                   children: [
-              // Usamos un enfoque más adaptativo para mostrar botones en móvil
-              // Cuando la pantalla es muy pequeña, mostramos un menú desplegable en lugar de botones individuales
-              // Colores consistentes con el sidebar
-              // Púrpura (Vestimentas): 0xFF8B5CF6
-              // Verde (Ventas): 0xFF10B981
-              screenWidth < 480
-                  ? _buildMobileActionsMenu(context)
-                  : screenWidth < 670
-                      ? const SizedBox.shrink()
-                      : _canAccessRentClothing()
-                          ? Container(
-                              height: 40,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF8B5CF6),  // Púrpura vestimentas
-                                    Color(0xFF7C3AED),  // Púrpura más oscuro
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.fromLTRB(16, 8, 18, 8),
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30.0)),
-                                ),
-                                onPressed: () {
-                                  context.go('/reservations/rent-clothes');
-                                },
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.checkroom_rounded, color: kWhite, size: 20),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Rentar',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-              screenWidth < 670
-                  ? const SizedBox.shrink()
-                  : const SizedBox(width: 10.0),
-              screenWidth < 480
-                  ? const SizedBox.shrink() // Ya está en el menú desplegable
-                  : screenWidth < 590
-                      ? const SizedBox.shrink()
-                      : _canAccessSales()
-                          ? Container(
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(
-                                  color: const Color(0xFF10B981),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30.0)),
-                                  padding: const EdgeInsets.fromLTRB(16, 8, 18, 8),
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                ),
-                                onPressed: () {
-                                  context.go('/sales/inventory-sales');
-                                },
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.receipt_long_rounded,
-                                        color: Color(0xFF10B981), size: 20),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Facturar',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF10B981),
-                                            fontSize: 14,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-              screenWidth < 590
-                  ? const SizedBox.shrink()
-                  : const SizedBox(width: 10.0),
-              userProfileDetails.when(data: (details) {
-                return SizedBox(
-                  width: screenWidth < 380 ? 120 : screenWidth < 335 ? 150 : 180,
-                  child: Text(
-                    isSubUser
-                        ? '${details.companyName} [$constSubUserTitle]'
-                        : details.companyName,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: TextStyle(fontFamily: 'Poppins',
-                      fontSize: screenWidth < 400 ? 14 : 
-                              context.width() < 900 ? 18 : context.width() * 0.005,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    textAlign: TextAlign.start,
+              // ══════════════════════════════════════════════════════════════════
+              // DISEÑO MÓVIL OPTIMIZADO (< 600px)
+              // ══════════════════════════════════════════════════════════════════
+              if (isMobile) ...[
+                // Menú de acciones rápidas dorado
+                _buildMobileActionsMenu(context),
+                const SizedBox(width: 8),
+                // Nombre de empresa compacto
+                Expanded(
+                  child: userProfileDetails.when(
+                    data: (details) {
+                      return Text(
+                        isSubUser ? constSubUserTitle : details.companyName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      );
+                    },
+                    error: (e, stack) => const SizedBox.shrink(),
+                    loading: () => const SizedBox.shrink(),
                   ),
-                );
-              }, error: (e, stack) {
-                return Text(e.toString());
-              }, loading: () {
-                return const Text('');
-              }),
-              const Spacer(),
-              // Botón de notificaciones mejorado y botón de cuadre
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_canAccessNotifications())
-                    unnotifiedConfirmations.when(
-                      data: (notifications) {
-                        final hasNotifications = notifications.isNotEmpty;
-                        return Container(
-                          margin: EdgeInsets.only(right: screenWidth < 400 ? 4 : 8),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(25),
-                              onTap: () {
-                                if (hasNotifications) {
-                                  _showNotificationsDialog(
-                                      context, notifications, ref);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('No hay notificaciones nuevas'),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.all(screenWidth < 400 ? 4.0 : 6.0),
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    Icon(
-                                      Icons.notifications_none,
-                                      color: kMainColor,
-                                      size: screenWidth < 400 ? 24 : 30,
-                                    ),
-                                    if (hasNotifications)
-                                      Positioned(
-                                        right: -2,
-                                        top: -2,
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: screenWidth < 400 ? 4 : 5, 
-                                              vertical: screenWidth < 400 ? 1 : 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          constraints: BoxConstraints(
-                                            minWidth: screenWidth < 400 ? 16 : 18,
-                                            minHeight: screenWidth < 400 ? 16 : 18,
-                                          ),
-                                          child: Text(
-                                            notifications.length.toString(),
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: screenWidth < 400 ? 10 : 11,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
+                ),
+              ]
+              // ══════════════════════════════════════════════════════════════════
+              // DISEÑO DESKTOP (>= 600px)
+              // ══════════════════════════════════════════════════════════════════
+              else ...[
+                // Botón Rentar (púrpura) - visible >= 670px
+                if (screenWidth >= 670 && _canAccessRentClothing())
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF8B5CF6),
+                          Color(0xFF7C3AED),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 18, 8),
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0)),
+                      ),
+                      onPressed: () => context.go('/reservations/rent-clothes'),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.checkroom_rounded, color: kWhite, size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Rentar',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontSize: 14,
                             ),
                           ),
-                        );
-                      },
-                      loading: () => const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                      error: (error, stack) => const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(Icons.error, color: Colors.red),
+                        ],
                       ),
                     ),
-                  // Botón de cuadre de caja - OCULTO (no se usa)
-                  // if (_canAccessCashRegisterSquare())
-                  //   Container(
-                  //     margin: EdgeInsets.only(right: screenWidth < 400 ? 2 : 4),
-                  //     decoration: BoxDecoration(
-                  //       color: const Color(0xFF15CD75).withValues(alpha: 0.15),
-                  //       borderRadius: BorderRadius.circular(8),
-                  //       border: Border.all(
-                  //         color: const Color(0xFF15CD75),
-                  //         width: 0.5,
-                  //       ),
-                  //     ),
-                  //     child: IconButton(
-                  //       icon: Icon(Icons.point_of_sale,
-                  //           color: Color(0xFF15CD75), size: screenWidth < 400 ? 22 : 28),
-                  //       tooltip: 'Cuadrar Caja',
-                  //       style: IconButton.styleFrom(
-                  //         foregroundColor: const Color(0xFF15CD75),
-                  //         backgroundColor: Colors.transparent,
-                  //         shape: RoundedRectangleBorder(
-                  //           borderRadius: BorderRadius.circular(8),
-                  //         ),
-                  //         padding: EdgeInsets.all(screenWidth < 400 ? 6 : 8),
-                  //       ),
-                  //       onPressed: () => _showCuadreModal(context),
-                  //     ),
-                  //   ),
-                ],
-              ),
-              // Dropdown de Vestimentas - Solo visible en pantallas >= 590px
-              // Usa el color púrpura consistente con la sección de vestimentas del sidebar
-              if (screenWidth >= 590 && (_canAccessClothingStatus() || _canAccessAvailabilityCalendar()))
+                  ),
+                if (screenWidth >= 670) const SizedBox(width: 10),
+                // Botón Facturar (verde) - visible >= 670px
+                if (screenWidth >= 670 && _canAccessSales())
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0)),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 18, 8),
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                      ),
+                      onPressed: () => context.go('/sales/inventory-sales'),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.receipt_long_rounded,
+                              color: Color(0xFF10B981), size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Facturar',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF10B981),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (screenWidth >= 670) const SizedBox(width: 10),
+                // Nombre de empresa
+                userProfileDetails.when(
+                  data: (details) {
+                    return SizedBox(
+                      width: screenWidth < 800 ? 150 : 200,
+                      child: Text(
+                        isSubUser
+                            ? '${details.companyName} [$constSubUserTitle]'
+                            : details.companyName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: context.width() < 900 ? 16 : 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                    );
+                  },
+                  error: (e, stack) => const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                ),
+              ],
+              const Spacer(),
+              // ══════════════════════════════════════════════════════════════════
+              // NOTIFICACIONES - Diseño optimizado para móvil y desktop
+              // ══════════════════════════════════════════════════════════════════
+              if (_canAccessNotifications())
+                unnotifiedConfirmations.when(
+                  data: (notifications) {
+                    final hasNotifications = notifications.isNotEmpty;
+                    return Container(
+                      margin: EdgeInsets.only(right: isMobile ? 4 : 8),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(isMobile ? 10 : 25),
+                          onTap: () {
+                            if (hasNotifications) {
+                              _showNotificationsDialog(context, notifications, ref);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('No hay notificaciones nuevas')),
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(isMobile ? 8 : 6),
+                            decoration: isMobile
+                                ? BoxDecoration(
+                                    color: _doradoPrincipal.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  )
+                                : null,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Icon(
+                                  isMobile ? Icons.notifications_rounded : Icons.notifications_none,
+                                  color: isMobile ? _doradoPrincipal : kMainColor,
+                                  size: isMobile ? 22 : 28,
+                                ),
+                                if (hasNotifications)
+                                  Positioned(
+                                    right: -4,
+                                    top: -4,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isMobile ? 4 : 5,
+                                        vertical: isMobile ? 2 : 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: Colors.white, width: 1.5),
+                                      ),
+                                      constraints: BoxConstraints(
+                                        minWidth: isMobile ? 18 : 20,
+                                        minHeight: isMobile ? 18 : 20,
+                                      ),
+                                      child: Text(
+                                        notifications.length > 9 ? '9+' : notifications.length.toString(),
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: isMobile ? 10 : 11,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () => Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: isMobile ? 20 : 24,
+                      height: isMobile ? 20 : 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isMobile ? _doradoPrincipal : kMainColor,
+                      ),
+                    ),
+                  ),
+                  error: (error, stack) => const SizedBox.shrink(),
+                ),
+              // ══════════════════════════════════════════════════════════════════
+              // DROPDOWN VESTIMENTAS - Solo visible en desktop (>= 700px)
+              // ══════════════════════════════════════════════════════════════════
+              if (screenWidth >= 700 && (_canAccessClothingStatus() || _canAccessAvailabilityCalendar()))
                 const SizedBox(width: 10),
-              if (screenWidth >= 590 && (_canAccessClothingStatus() || _canAccessAvailabilityCalendar()))
+              if (screenWidth >= 700 && (_canAccessClothingStatus() || _canAccessAvailabilityCalendar()))
                 PopupMenuButton<String>(
                   tooltip: 'Vestimentas',
                   position: PopupMenuPosition.under,
@@ -1189,62 +1183,82 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
           );
         }),
         actions: [
-          // Badge de versión profesional
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  kMainColor.withValues(alpha: 0.1),
-                  kMainColor.withValues(alpha: 0.05),
+          // ══════════════════════════════════════════════════════════════════
+          // BADGE DE VERSIÓN - Oculto en móvil para ahorrar espacio
+          // ══════════════════════════════════════════════════════════════════
+          if (!isMobile)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    kMainColor.withValues(alpha: 0.1),
+                    kMainColor.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: kMainColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.verified, size: 14, color: kMainColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    'v2.1.284',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: kMainColor,
+                    ),
+                  ),
                 ],
               ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: kMainColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.verified,
-                  size: 14,
-                  color: kMainColor,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'v2.1.283',
-                  style: TextStyle(fontFamily: 'Poppins',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: kMainColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // ══════════════════════════════════════════════════════════════════
+          // MENÚ DE PERFIL/CONFIGURACIÓN - Adaptativo
+          // ══════════════════════════════════════════════════════════════════
           userProfileDetails.when(data: (details) {
             return Theme(
               data: ThemeData(
-                  highlightColor: dropdownItemColor,
-                  focusColor: dropdownItemColor,
-                  hoverColor: dropdownItemColor),
+                highlightColor: dropdownItemColor,
+                focusColor: dropdownItemColor,
+                hoverColor: dropdownItemColor,
+              ),
               child: PopupMenuButton(
                 surfaceTintColor: Colors.white,
                 padding: EdgeInsets.zero,
                 position: PopupMenuPosition.under,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 icon: Container(
-                  height: 70,
-                  width: 70,
+                  height: isMobile ? 40 : 50,
+                  width: isMobile ? 40 : 50,
+                  margin: EdgeInsets.only(right: isMobile ? 4 : 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2DB0F6).withValues(alpha: 0.1),
-                    shape: BoxShape.rectangle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        _doradoPrincipal.withValues(alpha: 0.15),
+                        _doradoOscuro.withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
+                    border: Border.all(
+                      color: _doradoPrincipal.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
                   ),
-                  child: const Icon(Icons.settings,
-                      color: Color(0xFF2DB0F6), size: 30.0),
+                  child: Icon(
+                    Icons.settings_rounded,
+                    color: _doradoPrincipal,
+                    size: isMobile ? 22 : 26,
+                  ),
                 ),
                 itemBuilder: (BuildContext bc) => [
                   PopupMenuItem(
