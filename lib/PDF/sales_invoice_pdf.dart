@@ -59,8 +59,9 @@ FutureOr<Uint8List> generateSaleDocument({
         await ref.read(ActualizarEstadoReservaProvider({
           'id': idReservaciones,
           'estado': 'confirmado',
-          // estado_factura debe ser true SOLO si la venta está completamente pagada
-          'estado_factura': transactions.isPaid == true,
+          // estado_factura = true indica que la reserva YA tiene factura creada
+          // El estado de pago se maneja por separado en la tabla de ventas (isPaid, dueAmount)
+          'estado_factura': true,
         }).future);
       } catch (error) {
         print('Error actualizando estado de reserva: $error');
@@ -1145,8 +1146,9 @@ Future<Uint8List> generateThermalDocument({
   await ref.read(ActualizarEstadoReservaProvider({
     'id': idReservaciones,
     'estado': 'confirmado',
-    // estado_factura debe ser true SOLO si la venta está completamente pagada
-    'estado_factura': transactions.isPaid == true,
+    // estado_factura = true indica que la reserva YA tiene factura creada
+    // El estado de pago se maneja por separado en la tabla de ventas (isPaid, dueAmount)
+    'estado_factura': true,
   }));
   // Obtener la lista de IDs de reservaciones
   // Obtener todas las reservaciones primero
