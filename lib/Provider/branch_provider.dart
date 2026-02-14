@@ -25,13 +25,55 @@ import 'dart:html' as html;
 const String _kStorageKey = 'selected_tenant_id';
 const String _kDefaultBranch = 'stg';
 
+/// Lee el branch SINCRÓNICAMENTE de localStorage al inicio
+/// CRÍTICO: Esto evita race conditions donde los providers cargan datos
+/// antes de que el branch se inicialice correctamente
+String _getInitialBranchSync() {
+  try {
+    final storedBranch = html.window.localStorage[_kStorageKey];
+    print('🏢 [BranchProvider] _getInitialBranchSync() - localStorage[$_kStorageKey]: $storedBranch');
+    if (storedBranch != null && storedBranch.isNotEmpty) {
+      print('🏢 [BranchProvider] Usando branch de localStorage: $storedBranch');
+      return storedBranch;
+    }
+  } catch (e) {
+    print('❌ [BranchProvider] Error leyendo localStorage: $e');
+  }
+  print('⚠️ [BranchProvider] Usando branch DEFAULT: $_kDefaultBranch');
+  return _kDefaultBranch;
+}
+
 /// StateNotifier para manejar el branchId con persistencia
 class BranchNotifier extends StateNotifier<String> {
-  BranchNotifier() : super(_kDefaultBranch) {
-    _loadInitialBranch();
+  // CRÍTICO: Inicializar con el valor REAL de localStorage, NO con un default
+  // Esto evita que los providers carguen datos del branch incorrecto
+  BranchNotifier() : super(_getInitialBranchSync()) {
+    // ignore: avoid_print
+    print('🏢 [BranchNotifier] Constructor - state inicial: $state');
+    // Opcional: cargar de SharedPreferences como backup (si localStorage falló)
+    _loadFromSharedPreferencesIfNeeded();
   }
 
-  /// Carga el branch inicial desde localStorage
+  /// Carga de SharedPreferences solo si el estado actual es el default
+  /// (significa que localStorage no tenía valor)
+  Future<void> _loadFromSharedPreferencesIfNeeded() async {
+    // Si ya tenemos un branch válido de localStorage, no hacer nada
+    if (state != _kDefaultBranch) {
+      return;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefsBranch = prefs.getString(_kStorageKey);
+      if (prefsBranch != null && prefsBranch.isNotEmpty && prefsBranch != state) {
+        state = prefsBranch;
+      }
+    } catch (e) {
+      // Si hay error, mantener el estado actual
+    }
+  }
+
+  /// Carga el branch inicial desde localStorage (para refresh manual)
   Future<void> _loadInitialBranch() async {
     try {
       // Primero intentar desde localStorage (web)

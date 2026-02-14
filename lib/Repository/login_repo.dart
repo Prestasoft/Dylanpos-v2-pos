@@ -82,26 +82,24 @@ class LogInRepo extends ChangeNotifier {
         // Filtrar sucursales según permisos del usuario
         List<TenantModel> availableTenants;
 
-        // IMPORTANTE: Los usuarios dress_operator NUNCA deben ver todas las sucursales
-        // aunque tengan is_admin=true. Solo ven sus allowed_branches.
-        final isDressOp = finalUserRoleModel.userRoleName?.toLowerCase() == dressOperatorRole;
+        // REGLA PRINCIPAL: Si el usuario tiene allowed_branches definido y NO vacío,
+        // SIEMPRE usar esas sucursales, sin importar si es admin o no.
+        // Solo mostrar TODAS las sucursales si allowed_branches es null/vacío Y es admin.
 
-        if (isDressOp && branches != null && branches.isNotEmpty) {
-          // Dress operator: SOLO sus sucursales permitidas, nunca todas
+        if (branches != null && branches.isNotEmpty) {
+          // Usuario con sucursales específicas asignadas: SIEMPRE respetar esta configuración
           availableTenants = TenantConfig.allTenants
               .where((tenant) => branches.contains(tenant.id))
               .toList();
-          print('🔐 [Login] Dress operator - Solo sucursales permitidas: ${availableTenants.map((t) => t.id).toList()}');
-        } else if (isAdmin || branches == null || branches.isEmpty) {
-          // Administrador normal o sin restricciones: todas las sucursales
+          print('🔐 [Login] Sucursales según allowed_branches: ${availableTenants.map((t) => t.id).toList()}');
+        } else if (isAdmin) {
+          // Admin SIN restricciones específicas: todas las sucursales
           availableTenants = TenantConfig.allTenants;
-          print('🔐 [Login] Mostrando TODAS las sucursales (admin o sin restricciones)');
+          print('🔐 [Login] Admin sin restricciones - TODAS las sucursales');
         } else {
-          // Usuario con restricciones: solo sus sucursales asignadas
-          availableTenants = TenantConfig.allTenants
-              .where((tenant) => branches.contains(tenant.id))
-              .toList();
-          print('🔐 [Login] Sucursales filtradas: ${availableTenants.map((t) => t.id).toList()}');
+          // Usuario sin allowed_branches y no admin: error de configuración
+          availableTenants = [];
+          print('🔐 [Login] Usuario sin sucursales asignadas y no es admin');
         }
 
         // Decidir flujo según cantidad de sucursales disponibles
@@ -114,7 +112,10 @@ class LogInRepo extends ChangeNotifier {
           final tenant = availableTenants.first;
           await _apiService.setBranchId(tenant.id);
           await prefs.setString('selected_tenant_id', tenant.id);
+          // CRÍTICO: También actualizar localStorage para que ApiService y providers usen el branch correcto
+          html.window.localStorage['selected_tenant_id'] = tenant.id;
           print('[LogInRepo.signIn] Login automático a única sucursal: ${tenant.displayName}');
+          print('[LogInRepo.signIn] localStorage[selected_tenant_id] actualizado a: ${tenant.id}');
         } else {
           // Múltiples sucursales: mostrar modal de selección
           // Pasamos los datos del usuario para que el modal pueda completar el flujo
