@@ -26,7 +26,7 @@ class _PendingInvoicesScreenState extends ConsumerState<PendingInvoicesScreen> {
     final pendingAsync = ref.watch(pendingInvoicesProvider);
 
     return Scaffold(
-      backgroundColor: kAppSurfaceBg,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: kMainColor,
         foregroundColor: Colors.white,

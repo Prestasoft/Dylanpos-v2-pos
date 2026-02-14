@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Route/shell_route_warpper.dart';
 import 'package:salespro_admin/services/api_service.dart';
-import 'package:salespro_admin/const.dart' show isDressOperator;
+import 'package:salespro_admin/const.dart' show isDressOperator, finalUserRoleModel, isSubUser;
 import 'package:salespro_admin/Screen/Authentication/add_profile.dart';
 import 'package:salespro_admin/Screen/Authentication/forgot_password.dart';
 import 'package:salespro_admin/Screen/Authentication/sign_up.dart';
@@ -56,6 +56,7 @@ import '../Screen/HRM/prestaciones/prestaciones_screen.dart';
 import '../Screen/HRM/tss_reports/tss_reports_screen.dart';
 import '../Screen/HRM/birthdays/employee_birthdays_screen.dart';
 import '../Screen/HRM/Rentability/rentability_dashboard.dart';
+import '../Screen/HRM/Rentability/pending_invoices_screen.dart';
 import '../Screen/HRM/hrm_dashboard.dart';
 import '../Screen/Home/home_screen.dart';
 import '../Screen/Income/income_Edit.dart';
@@ -107,6 +108,87 @@ abstract class AcnooAppRoutes {
   // Instancia global de ApiService para verificar autenticación
   static final ApiService _apiService = ApiService();
 
+  /// Obtiene el permiso requerido para una ruta específica
+  /// Retorna null si la ruta no requiere permiso especial (rutas públicas/generales)
+  static String? _getRequiredPermissionForRoute(String path) {
+    // Mapeo de rutas a permisos requeridos
+    // Ventas
+    if (path.startsWith('/sales/inventory-sales') || path == '/inventory-sales') return 'inventory_sales';
+    if (path.startsWith('/sales/sale-list')) return 'sales_list';
+    if (path.startsWith('/sales/sales-return')) return 'sales_return';
+    if (path.startsWith('/sales/quotation')) return 'quotation_list';
+    if (path.startsWith('/sales/pos-sales') || path == '/pos-sales') return 'pos_sales';
+    if (path.startsWith('/sales')) return 'sales';
+
+    // Compras
+    if (path.startsWith('/purchase/pos-purchase')) return 'pos_purchase';
+    if (path.startsWith('/purchase/purchase-list')) return 'purchase_list';
+    if (path.startsWith('/purchase/purchase-return')) return 'purchase_return';
+    if (path.startsWith('/purchase')) return 'purchases';
+
+    // Servicios y Paquetes
+    if (path.startsWith('/service-package/register-package')) return 'register_package';
+    if (path.startsWith('/service-package/dresses')) return 'register_clothing';
+    if (path.startsWith('/service-package')) return 'services';
+
+    // Reservas
+    if (path.startsWith('/reservations/rent-clothes')) return 'rent_clothing';
+    if (path.startsWith('/reservations/list')) return 'reserve_package';
+    if (path.startsWith('/reservations/calendario') || path == '/calendario-reservas') return 'reservation_calendar';
+    if (path.startsWith('/reservations')) return 'reservations';
+
+    // Finanzas
+    if (path.startsWith('/expense')) return 'expense';
+    if (path.startsWith('/income')) return 'income';
+    if (path.startsWith('/due-list')) return 'dues';
+    if (path.startsWith('/ledger')) return 'ledger';
+    if (path.startsWith('/loss-profit')) return 'loss_profit';
+    if (path.startsWith('/bank')) return 'banks';
+    if (path.startsWith('/transfer')) return 'transfers';
+
+    // Inventario
+    if (path.startsWith('/product')) return 'products';
+    if (path.startsWith('/category')) return 'categories';
+    if (path.startsWith('/warehouse')) return 'warehouses';
+    if (path.startsWith('/stock-list') || path.startsWith('/equipment-stock')) return 'inventory_list';
+
+    // Contactos
+    if (path.startsWith('/customer')) return 'customers';
+    if (path.startsWith('/supplier')) return 'suppliers';
+
+    // Reportes y Auditoría
+    if (path.startsWith('/reports')) return 'reports';
+    if (path.startsWith('/dgii')) return 'reports';
+    if (path.startsWith('/audit')) return 'audit';
+    if (path.startsWith('/deleted-items')) return 'audit';
+
+    // HRM
+    if (path.startsWith('/hrm/employee')) return 'employees';
+    if (path.startsWith('/hrm/designation')) return 'designations';
+    if (path.startsWith('/hrm/salaries')) return 'salary_list';
+    if (path.startsWith('/hrm/attendance')) return 'attendance';
+    if (path.startsWith('/hrm/vacations')) return 'vacations';
+    if (path.startsWith('/hrm/loans')) return 'loans';
+    if (path.startsWith('/hrm/prestaciones')) return 'prestaciones';
+    if (path.startsWith('/hrm/tss')) return 'tss_reports';
+    if (path.startsWith('/hrm/birthdays')) return 'birthdays';
+    if (path.startsWith('/hrm/rentability')) return 'rentability';
+    if (path.startsWith('/hrm')) return 'hrm';
+
+    // Configuración
+    if (path.startsWith('/user-role')) return 'user_roles';
+    if (path.startsWith('/tax-rate')) return 'tax_rates';
+
+    // Confirmaciones
+    if (path.startsWith('/sale-confirmations')) return 'confirmations';
+
+    // Photo Invoice (usa permiso de inventory_sales)
+    if (path.startsWith('/photo-invoice') || path.startsWith('/sales/photo')) return 'inventory_sales';
+
+    // Rutas que no requieren permiso especial (dashboard, home, etc.)
+    return null;
+  }
+
   static final routerConfig = GoRouter(
     initialLocation: '/',
     redirect: (BuildContext context, GoRouterState state) {
@@ -146,6 +228,27 @@ abstract class AcnooAppRoutes {
         // Si intenta acceder a cualquier otra ruta, redirigir a su home
         if (!allowedPaths.any((path) => currentPath.startsWith(path))) {
           return '/dress-operator-home';
+        }
+      }
+
+      // PROTECCIÓN POR PERMISOS: Verificar si el usuario tiene permisos definidos
+      // y si tiene acceso a la ruta solicitada
+      if (isAuthenticated && !isDressOperator()) {
+        final hasDefinedPermissions = finalUserRoleModel.permissions.isNotEmpty &&
+            finalUserRoleModel.permissions.any((p) => p.view || p.edit || p.delete);
+
+        // Solo aplicar restricciones si el usuario tiene permisos definidos
+        if (hasDefinedPermissions || isSubUser) {
+          final currentPath = state.matchedLocation;
+          final requiredPermission = _getRequiredPermissionForRoute(currentPath);
+
+          if (requiredPermission != null) {
+            final canAccess = finalUserRoleModel.canView(requiredPermission);
+            if (!canAccess) {
+              // Redirigir a blank-home si no tiene permiso
+              return '/blank-home';
+            }
+          }
         }
       }
 
@@ -944,6 +1047,14 @@ abstract class AcnooAppRoutes {
                 pageBuilder: (context, state) => const NoTransitionPage<void>(
                   child: RentabilityDashboardScreen(),
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'pending-invoices',
+                    pageBuilder: (context, state) => const NoTransitionPage<void>(
+                      child: PendingInvoicesScreen(),
+                    ),
+                  ),
+                ],
               ),
 
               ///---------------------HRM Dashboard Route------------------

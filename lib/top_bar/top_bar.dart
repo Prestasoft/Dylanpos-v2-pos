@@ -1184,44 +1184,8 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
         }),
         actions: [
           // ══════════════════════════════════════════════════════════════════
-          // BADGE DE VERSIÓN - Oculto en móvil para ahorrar espacio
-          // ══════════════════════════════════════════════════════════════════
-          if (!isMobile)
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    kMainColor.withValues(alpha: 0.1),
-                    kMainColor.withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: kMainColor.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.verified, size: 14, color: kMainColor),
-                  const SizedBox(width: 4),
-                  Text(
-                    'v2.1.284',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: kMainColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          // ══════════════════════════════════════════════════════════════════
           // MENÚ DE PERFIL/CONFIGURACIÓN - Adaptativo
+          // La versión ahora se muestra en el footer
           // ══════════════════════════════════════════════════════════════════
           userProfileDetails.when(data: (details) {
             return Theme(
