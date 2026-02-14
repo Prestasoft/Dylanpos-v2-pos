@@ -25,9 +25,11 @@ import '../services/audit_service.dart';
 import '../services/api_service.dart';
 import '../Repository/profile_details_repo.dart';
 import '../services/tenant/tenant_model.dart';
+import '../Provider/menu_order_provider.dart';
+import '../Screen/Widgets/menu_order_editor_modal.dart';
 import 'package:nb_utils/nb_utils.dart';
 
-class GlobalSideBar extends StatefulWidget {
+class GlobalSideBar extends ConsumerStatefulWidget {
   const GlobalSideBar({
     super.key,
     required this.rootScaffoldKey,
@@ -38,10 +40,10 @@ class GlobalSideBar extends StatefulWidget {
   final bool iconOnly;
 
   @override
-  State<GlobalSideBar> createState() => _GlobalSideBarState();
+  ConsumerState<GlobalSideBar> createState() => _GlobalSideBarState();
 }
 
-class _GlobalSideBarState extends State<GlobalSideBar> {
+class _GlobalSideBarState extends ConsumerState<GlobalSideBar> {
   SubscriptionModel subscriptionModel = SubscriptionModel(
     subscriptionName: '',
     subscriptionDate: DateTime.now().toString(),
@@ -123,9 +125,24 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final filteredMenus = getTopMenusForUser(finalUserRoleModel);
-    final _selectedInfoHome = _isSelected(context,  homeTab 
-);
+
+    // Obtener menús filtrados por permisos
+    final baseMenus = getTopMenusForUser(finalUserRoleModel);
+
+    // Aplicar orden personalizado si existe
+    final menuOrderState = ref.watch(menuOrderProvider);
+    final filteredMenus = menuOrderState.when(
+      data: (menuOrder) {
+        if (menuOrder.menuOrder.isEmpty) {
+          return baseMenus;
+        }
+        return ref.read(menuOrderProvider.notifier).applyOrder(baseMenus);
+      },
+      loading: () => baseMenus,
+      error: (_, __) => baseMenus,
+    );
+
+    final selectedInfoHome = _isSelected(context, homeTab);
     return Drawer(
       backgroundColor: Colors.black,
       clipBehavior: Clip.none,
@@ -183,8 +200,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                             iconOnly: widget.iconOnly,
                             menuTile: homeTab,
                             groupName: homeTab.name,
-                            isSelected: _selectedInfoHome.isSelectedMenu,
-                            selectedSubmenu: _selectedInfoHome.selectedSubmenu,
+                            isSelected: selectedInfoHome.isSelectedMenu,
+                            selectedSubmenu: selectedInfoHome.selectedSubmenu,
                             onTap: () => _handleNavigation(context, homeTab),
                             onSubmenuTap: (value) => _handleNavigation(
                               context,
@@ -208,7 +225,7 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
 
                     //...topMenus.map((menu) {
                     ...filteredMenus.map((menu) {
-                      final _selectedInfo = _isSelected(context, menu);
+                      final selectedInfo = _isSelected(context, menu);
                       return ResponsiveRowColumnItem(
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -216,8 +233,8 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                             iconOnly: widget.iconOnly,
                             menuTile: menu,
                             groupName: menu.name,
-                            isSelected: _selectedInfo.isSelectedMenu,
-                            selectedSubmenu: _selectedInfo.selectedSubmenu,
+                            isSelected: selectedInfo.isSelectedMenu,
+                            selectedSubmenu: selectedInfo.selectedSubmenu,
                             onTap: () => _handleNavigation(context, menu),
                             onSubmenuTap: (value) => _handleNavigation(
                               context,
@@ -228,6 +245,15 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
                         ),
                       );
                     }),
+
+                    // Botón de configuración del orden del menú (solo admin)
+                    if (!isSubUser)
+                      ResponsiveRowColumnItem(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8, bottom: 16),
+                          child: _buildMenuOrderButton(context),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -776,6 +802,98 @@ class _GlobalSideBarState extends State<GlobalSideBar> {
     }
 
     ctx.go(_route);
+  }
+
+  /// Botón para abrir el editor de orden del menú (solo admin)
+  Widget _buildMenuOrderButton(BuildContext context) {
+    const doradoPrincipal = Color(0xFFD4A853);
+
+    if (widget.iconOnly) {
+      // Versión compacta para modo iconOnly
+      return Tooltip(
+        message: 'Ordenar menú',
+        child: InkWell(
+          onTap: () => MenuOrderEditorModal.show(context),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: doradoPrincipal.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: doradoPrincipal.withValues(alpha: 0.3),
+              ),
+            ),
+            child: const Icon(
+              Icons.reorder_rounded,
+              color: doradoPrincipal,
+              size: 20,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Versión expandida
+    return InkWell(
+      onTap: () => MenuOrderEditorModal.show(context),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: doradoPrincipal.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: doradoPrincipal.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: doradoPrincipal.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.reorder_rounded,
+                color: doradoPrincipal,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ordenar Menú',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    'Personalizar orden',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: Colors.white38,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
