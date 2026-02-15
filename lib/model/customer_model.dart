@@ -7,6 +7,7 @@ class CustomerModel {
   bool? receiveWhatsappUpdates;
   String? createdAt;
   String? updatedAt;
+  DateTime? birthDate;  // Fecha de nacimiento del cliente
 
   CustomerModel({
     this.id,
@@ -23,6 +24,7 @@ class CustomerModel {
     this.receiveWhatsappUpdates,
     this.createdAt,
     this.updatedAt,
+    this.birthDate,
   });
 
   factory CustomerModel.empty() {
@@ -56,6 +58,20 @@ class CustomerModel {
       return value.toString();
     }
 
+    // Helper para parsear fecha de nacimiento
+    DateTime? parseBirthDate(dynamic value) {
+      if (value == null) return null;
+      if (value is DateTime) return value;
+      if (value is String && value.isNotEmpty) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
     return CustomerModel(
       id: json['id']?.toString(),  // UUID del cliente en PostgreSQL
       customerName: json['customerName']?.toString() ?? json['name']?.toString() ?? '',
@@ -71,6 +87,7 @@ class CustomerModel {
       receiveWhatsappUpdates: json['receiveWhatsappUpdates'] ?? json['receive_whatsapp_updates'] ?? false,
       createdAt: parseDateTime(json['created_at'] ?? json['createdAt']),
       updatedAt: parseDateTime(json['updated_at'] ?? json['updatedAt']),
+      birthDate: parseBirthDate(json['birthDate'] ?? json['birth_date']),
     );
   }
 
@@ -91,6 +108,7 @@ class CustomerModel {
       'receiveWhatsappUpdates': receiveWhatsappUpdates ?? false,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (birthDate != null) 'birthDate': birthDate!.toIso8601String(),
     };
   }
 }

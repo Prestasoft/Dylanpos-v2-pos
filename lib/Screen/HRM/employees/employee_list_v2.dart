@@ -10,6 +10,7 @@ import 'package:salespro_admin/Screen/HRM/employees/employee_profile_screen.dart
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_quick_stats_popup.dart';
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_photo_widget.dart';
 import 'package:salespro_admin/Screen/HRM/employees/widgets/batch_photo_update_dialog.dart';
+import 'package:salespro_admin/Screen/HRM/employees/widgets/batch_birthdate_update_dialog.dart';
 import 'package:salespro_admin/services/padron_electoral_service.dart';
 import 'package:salespro_admin/commas.dart';
 
@@ -199,6 +200,17 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                                         ref.invalidate(employeeProviderV2);
                                       }
                                     }
+                                  } else if (value == 'update_birthdates') {
+                                    // Actualizar fechas de nacimiento desde Padrón Electoral
+                                    // forceUpdate: true para actualizar TODOS, incluso los que ya tienen fecha
+                                    final result = await showBatchBirthDateUpdateDialog(
+                                      context,
+                                      ref,
+                                      forceUpdate: true,
+                                    );
+                                    if (result == true) {
+                                      ref.invalidate(employeeProviderV2);
+                                    }
                                   }
                                 },
                                 itemBuilder: (context) => [
@@ -217,6 +229,16 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                                       leading: Icon(Icons.sync, color: Colors.orange),
                                       title: Text('Actualizar todas las fotos'),
                                       subtitle: Text('Reemplaza fotos existentes'),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                  ),
+                                  const PopupMenuDivider(),
+                                  const PopupMenuItem(
+                                    value: 'update_birthdates',
+                                    child: ListTile(
+                                      leading: Icon(Icons.cake, color: Colors.purple),
+                                      title: Text('Actualizar fechas nacimiento'),
+                                      subtitle: Text('Desde Padrón Electoral'),
                                       contentPadding: EdgeInsets.zero,
                                     ),
                                   ),

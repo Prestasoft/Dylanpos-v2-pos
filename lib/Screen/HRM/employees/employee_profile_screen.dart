@@ -48,7 +48,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
     final isDesktop = screenWidth > 1240;
 
     return Scaffold(
-      backgroundColor: kAppSurfaceBg,
+      backgroundColor: const Color(0xFFF5F5F5), // Fondo gris claro
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -56,7 +56,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
         shadowColor: Colors.grey.withValues(alpha: 0.3),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Usar Navigator.pop si la navegación fue con Navigator.push (ej: desde popup cumpleaños)
+            // Si no, usar GoRouter.pop
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.pop();
+            }
+          },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

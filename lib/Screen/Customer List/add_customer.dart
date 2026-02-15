@@ -135,6 +135,7 @@ class _AddCustomerState extends State<AddCustomer> {
   bool isSearching = false;
   bool isSearchingRnc = false;
   RncData? foundRncData;
+  DateTime? customerBirthDate;  // Fecha de nacimiento del cliente (desde Padrón Electoral)
 
   Future<void> searchByCedula() async {
     String cedula = searchCedulaController.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
@@ -190,6 +191,16 @@ class _AddCustomerState extends State<AddCustomer> {
               });
             } catch (e) {
               print('Error decodificando imagen: $e');
+            }
+          }
+
+          // Actualizar fecha de nacimiento si existe
+          if (padronData["fechaNacimiento"] != null && padronData["fechaNacimiento"].toString().isNotEmpty) {
+            try {
+              customerBirthDate = DateTime.parse(padronData["fechaNacimiento"]);
+              print('[AddCustomer] Fecha de nacimiento: $customerBirthDate');
+            } catch (e) {
+              print('Error parseando fecha de nacimiento: $e');
             }
           }
 
@@ -724,6 +735,7 @@ class _AddCustomerState extends State<AddCustomer> {
                                                             remainedBalance: openingBalance.isEmpty ? '0' : openingBalance,
                                                             gst: searchCedulaController.text,
                                                             receiveWhatsappUpdates: receiveWhatsappUpdates,
+                                                            birthDate: customerBirthDate,  // Fecha de nacimiento desde Padrón Electoral
                                                           );
 
                                                           // Guardar cliente usando PostgreSQL API

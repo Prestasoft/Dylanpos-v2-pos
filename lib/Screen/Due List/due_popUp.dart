@@ -987,6 +987,9 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
 
                                             // Actualización de transacción diaria
                                             if (dueTransactionModel.customerType == 'Supplier') {
+                                              // Due Payment (pago a proveedor)
+                                              // paymentOut = monto que pagamos al proveedor (totalDue - dueAmountAfterPay)
+                                              // remainingBalance = monto que QUEDA PENDIENTE (dueAmountAfterPay)
                                               DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                                 name: dueTransactionModel.customerName,
                                                 date: dueTransactionModel.purchaseDate,
@@ -994,7 +997,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 total: dueTransactionModel.totalDue!.toDouble(),
                                                 paymentIn: 0,
                                                 paymentOut: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
-                                                remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
+                                                remainingBalance: dueTransactionModel.dueAmountAfterPay!.toDouble(), // CORRECTO: pendiente después del pago
                                                 id: selectedInvoice,
                                                 // Campos directos para mostrar en el reporte
                                                 paymentType: dueTransactionModel.paymentType,
@@ -1006,6 +1009,10 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                               );
                                               postDailyTransaction(dailyTransactionModel: dailyTransaction);
                                             } else {
+                                              // Due Collection (pago de cliente)
+                                              // paymentIn = monto que pagó el cliente (totalDue - dueAmountAfterPay)
+                                              // remainingBalance = monto que QUEDA PENDIENTE (dueAmountAfterPay)
+                                              // IMPORTANTE: remainingBalance debe ser el pendiente, NO el pago
                                               DailyTransactionModel dailyTransaction = DailyTransactionModel(
                                                 name: dueTransactionModel.customerName,
                                                 date: dueTransactionModel.purchaseDate,
@@ -1013,7 +1020,7 @@ class _ShowDuePaymentPopUpState extends State<ShowDuePaymentPopUp> {
                                                 total: dueTransactionModel.totalDue!.toDouble(),
                                                 paymentIn: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
                                                 paymentOut: 0,
-                                                remainingBalance: dueTransactionModel.totalDue!.toDouble() - dueTransactionModel.dueAmountAfterPay!.toDouble(),
+                                                remainingBalance: dueTransactionModel.dueAmountAfterPay!.toDouble(), // CORRECTO: pendiente después del pago
                                                 id: selectedInvoice,
                                                 // Campos directos para mostrar en el reporte
                                                 paymentType: dueTransactionModel.paymentType,

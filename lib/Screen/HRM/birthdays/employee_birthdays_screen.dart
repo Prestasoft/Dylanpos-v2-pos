@@ -28,7 +28,7 @@ class _EmployeeBirthdaysScreenState extends ConsumerState<EmployeeBirthdaysScree
     final employeesAsync = ref.watch(employeesProvider);
 
     return Scaffold(
-      backgroundColor: kAppSurfaceBg,
+      backgroundColor: const Color(0xFFF5F5F5), // Fondo gris claro en lugar de negro
       body: employeesAsync.when(
         data: (employees) => _buildContent(context, employees),
         loading: () => const Center(child: CircularProgressIndicator()),

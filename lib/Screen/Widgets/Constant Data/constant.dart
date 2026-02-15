@@ -199,28 +199,35 @@ Future<void> postDailyTransaction(
     {required DailyTransactionModel dailyTransactionModel}) async {
   try {
     final apiService = ApiService();
-    double remainingBalance = 0;
 
-    // Obtener información personal para el balance
+    // IMPORTANTE: shopBalance es el balance de CAJA de la tienda (dinero en efectivo)
+    // remainingBalance de la transacción es el MONTO PENDIENTE por pagar de la factura
+    // ¡SON CONCEPTOS DIFERENTES! No mezclarlos.
+    double shopBalance = 0;
+
+    // Obtener información personal para el balance de CAJA
     final responsePersonal = await apiService.get('personal-information');
     if (responsePersonal.success && responsePersonal.data != null) {
       final data = Map<String, dynamic>.from(responsePersonal.data);
-      remainingBalance = (data['remainingShopBalance'] ?? 0).toDouble();
+      shopBalance = (data['remainingShopBalance'] ?? 0).toDouble();
     }
 
+    // Actualizar balance de CAJA según el tipo de transacción
     if (dailyTransactionModel.type == 'Sale' ||
         dailyTransactionModel.type == 'Due Collection' ||
         dailyTransactionModel.type == 'Income' ||
         dailyTransactionModel.type == 'Purchase Return') {
-      remainingBalance += dailyTransactionModel.paymentIn;
+      shopBalance += dailyTransactionModel.paymentIn;
     } else {
-      remainingBalance -= dailyTransactionModel.paymentOut;
+      shopBalance -= dailyTransactionModel.paymentOut;
     }
 
-    dailyTransactionModel.remainingBalance = remainingBalance;
+    // NO sobrescribir dailyTransactionModel.remainingBalance!
+    // Ese valor ya viene correctamente calculado como el monto PENDIENTE de la factura
+    // (total - paymentIn = dueAmount)
 
     ///________post_remaining Balance_on_personal_information___________________________________________________
-    await apiService.put('personal-information', {'remainingShopBalance': remainingBalance});
+    await apiService.put('personal-information', {'remainingShopBalance': shopBalance});
 
     ///_________dailyTransaction_Posting________________________________________________________________________
     // Crear objeto con los campos principales y empaquetar los extras en 'data'

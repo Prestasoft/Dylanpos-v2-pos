@@ -401,21 +401,23 @@ class _DailyTransactionState extends State<DailyTransaction> {
     }
 
     // Para ventas (Sale, Adicionales, Impresiones, Reserva, Producto):
-    // PRIORIDAD: remainingBalance (viene de BD) > dueAmount > saleTransactionModel.dueAmount
+    // CÁLCULO CORRECTO: total - paymentIn (no confiar en remaining_balance de BD que puede estar mal)
     if (transaction.type == 'Sale' ||
         transaction.type == 'Adicionales' ||
         transaction.type == 'Impresiones' ||
         transaction.type == 'Reserva' ||
         transaction.type == 'Producto') {
-      // 1. Usar remainingBalance si tiene valor (viene de la columna de la BD)
-      if (transaction.remainingBalance > 0) {
-        return transaction.remainingBalance;
+      // Calcular pendiente como total - pago entrante
+      // Esto es más confiable que remaining_balance que puede tener datos incorrectos
+      final calculatedPending = transaction.total - transaction.paymentIn;
+      if (calculatedPending > 0) {
+        return calculatedPending;
       }
-      // 2. Usar dueAmount directo si está disponible
+      // Si el cálculo da 0 o negativo, verificar con dueAmount
       if (transaction.dueAmount != null && transaction.dueAmount! > 0) {
         return transaction.dueAmount!;
       }
-      // 3. Fallback a modelo anidado
+      // Fallback a modelo anidado
       return transaction.saleTransactionModel?.dueAmount ?? 0.0;
     }
 
