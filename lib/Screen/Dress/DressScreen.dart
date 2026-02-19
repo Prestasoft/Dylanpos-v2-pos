@@ -1652,8 +1652,7 @@ class _DressScreenState extends State<DressScreen> {
                                 EasyLoading.show(
                                     status: lang.S.of(context).updating);
 
-                                final result =
-                                    await ref.read(updateDressProvider({
+                                await ref.read(updateDressProvider({
                                   'dress': updatedDress,
                                   'imageFiles': _selectedImages,
                                 }).future);
@@ -1663,25 +1662,8 @@ class _DressScreenState extends State<DressScreen> {
                                 // Refrescar providers para que la UI se actualice
                                 ref.invalidate(dressesProvider);
                                 ref.invalidate(dressesByStatusProvider('Todos'));
-
-                                if (!context.mounted) return;
-
-                                if (result) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            lang.S.of(context).dressUpdated)),
-                                  );
-                                  _clearForm();
-                                  Navigator.of(context).pop(); // Cerrar el diálogo
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(lang.S
-                                            .of(context)
-                                            .errorUpdatingDress)),
-                                  );
-                                }
+                                _clearForm();
+                                // Nota: El diálogo ya se cerró antes del await
                               }
                             },
                             child: Text(lang.S.of(context).update),
