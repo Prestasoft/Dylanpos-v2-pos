@@ -821,8 +821,12 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
       }
     } catch (_) {}
 
-    // Hora - formatear a 12 horas
-    final rawTime = _getField(reservation, ['reservation_time', 'startTime']);
+    // Hora - buscar en múltiples fuentes y formatear a 12 horas
+    var rawTime = _getField(reservation, ['reservation_time', 'startTime']);
+    // Si no hay hora en reservation, buscar en fullReservation
+    if (rawTime.isEmpty && fullReservation != null) {
+      rawTime = fullReservation.reservation['reservation_time']?.toString() ?? '';
+    }
     String startTime = rawTime;
     if (rawTime.isNotEmpty) {
       try {
@@ -997,8 +1001,11 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
     }
     final hasDueAmount = dueAmount > 0;
 
-    // Vendedor
-    final sellerName = _getField(reservation, ['seller_name', 'sellerName']);
+    // Vendedor - buscar en reservation o en fullReservation
+    var sellerName = _getField(reservation, ['seller_name', 'sellerName']);
+    if (sellerName.isEmpty && fullReservation != null) {
+      sellerName = fullReservation.reservation['seller_name']?.toString() ?? '';
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1183,9 +1190,9 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
                     ],
                     const Spacer(),
                     if (sellerName.isNotEmpty) ...[
-                      Icon(Icons.person_outline, size: 14, color: Colors.grey[500]),
+                      Icon(Icons.person_outline, size: 14, color: Colors.grey[800]),
                       const SizedBox(width: 4),
-                      Text(sellerName, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                      Text(sellerName, style: TextStyle(fontSize: 12, color: Colors.grey[800], fontWeight: FontWeight.w500)),
                     ],
                   ],
                 ),
