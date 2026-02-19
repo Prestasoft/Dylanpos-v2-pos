@@ -300,13 +300,27 @@ final dressesProvider = FutureProvider<List<DressModel>>((ref) async {
 
       List<DressModel> dresses = [];
 
-      for (var item in dressesData) {
+      for (var i = 0; i < dressesData.length; i++) {
+        final item = dressesData[i];
         if (item is Map) {
           final data = Map<String, dynamic>.from(item);
 
           // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
           String? thumbnailUrl = data['t']?.toString();
           String? originalUrl = thumbnailUrl?.replaceAll('/thumbnails/', '/');
+
+          // Normalizar precio: puede venir como int, double o String
+          final rawPrice = data['price'] ?? data['p'] ?? 0;
+          double normalizedPrice;
+          if (rawPrice is int) {
+            normalizedPrice = rawPrice.toDouble();
+          } else if (rawPrice is double) {
+            normalizedPrice = rawPrice;
+          } else if (rawPrice is String) {
+            normalizedPrice = double.tryParse(rawPrice) ?? 0.0;
+          } else {
+            normalizedPrice = 0.0;
+          }
 
           final Map<String, dynamic> normalizedData = {
             'id': data['id'] ?? data['i'] ?? '',
@@ -317,8 +331,8 @@ final dressesProvider = FutureProvider<List<DressModel>>((ref) async {
             'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
             'state': data['state'] ?? data['s'] ?? 'available',
             'images': data['images'] ?? (originalUrl != null ? [originalUrl] : []),
-            'price': (data['price'] ?? data['p'] ?? 0).toDouble(),  // Asegurar double
-            'rental_price': (data['rental_price'] ?? data['p'] ?? 0).toDouble(),
+            'price': normalizedPrice,
+            'rental_price': normalizedPrice,
           };
 
           if (normalizedData['name'] != null && normalizedData['name'].toString().isNotEmpty) {

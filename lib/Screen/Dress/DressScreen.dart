@@ -1368,19 +1368,34 @@ class _DressScreenState extends State<DressScreen> {
 
 // Show dialog to edit an existing dress
   void _showEditDressDialog(
-      BuildContext context, WidgetRef ref, DressModel dress) {
-    // Set form values with existing dress data
-    _nameController.text = dress.name;
-    _selectedCategory = dress.category;
+      BuildContext context, WidgetRef ref, DressModel dress) async {
+    // Obtener datos frescos del vestido individual para asegurar que tenemos el precio actualizado
+    EasyLoading.show(status: 'Cargando...');
+
+    DressModel freshDress = dress;
+    try {
+      final singleDress = await ref.read(singleDressProvider(dress.id).future);
+      if (singleDress != null) {
+        freshDress = singleDress;
+      }
+    } catch (e) {
+      debugPrint('Error obteniendo datos frescos del vestido: $e');
+    }
+
+    EasyLoading.dismiss();
+
+    // Set form values with fresh dress data
+    _nameController.text = freshDress.name;
+    _selectedCategory = freshDress.category;
     // Compatibilidad: convertir nombre de sucursal a ID si es necesario
-    // Los vestidos antiguos pueden tener branch_id con el nombre (ej: "Victor Guzmán Santiago")
-    // pero ahora necesitamos el ID técnico (ej: "stg")
-    _selectedBranch = _convertBranchNameToId(dress.branchId);
-    _subcategoryController.text = dress.subcategory;
-    _isAvailable = dress.available;
-    _priceController.text = dress.price.toStringAsFixed(2);
-    _existingImageUrls.addAll(dress.images);
+    _selectedBranch = _convertBranchNameToId(freshDress.branchId);
+    _subcategoryController.text = freshDress.subcategory;
+    _isAvailable = freshDress.available;
+    _priceController.text = freshDress.price.toStringAsFixed(2);
+    _existingImageUrls.addAll(freshDress.images);
     _selectedImages.clear();
+
+    if (!context.mounted) return;
 
     showDialog(
       barrierDismissible: false,
@@ -1626,10 +1641,7 @@ class _DressScreenState extends State<DressScreen> {
                           ElevatedButton(
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
-                                // Debug: Log precio antes de crear el modelo
-                                debugPrint('🔍 [EditDress] Precio en TextField: "${_priceController.text}"');
                                 final parsedPrice = double.tryParse(_priceController.text) ?? 0.0;
-                                debugPrint('🔍 [EditDress] Precio parseado: $parsedPrice');
 
                                 // Update the dress
                                 final updatedDress = DressModel(
@@ -1646,8 +1658,6 @@ class _DressScreenState extends State<DressScreen> {
                                   price: parsedPrice,
                                 );
 
-                                debugPrint('🔍 [EditDress] DressModel creado - price: ${updatedDress.price}');
-
                                 EasyLoading.show(
                                     status: lang.S.of(context).updating);
 
@@ -1659,7 +1669,7 @@ class _DressScreenState extends State<DressScreen> {
                                 EasyLoading.dismiss();
 
                                 if (result) {
-                                  // Invalidar el provider y ESPERAR a que recargue datos frescos
+                                  // Invalidar el provider y esperar a que recargue datos frescos
                                   ref.invalidate(dressesProvider);
                                   await ref.read(dressesProvider.future);
 
