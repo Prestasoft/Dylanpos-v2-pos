@@ -821,8 +821,25 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
       }
     } catch (_) {}
 
-    // Hora
-    final startTime = _getField(reservation, ['reservation_time', 'startTime']);
+    // Hora - formatear a 12 horas
+    final rawTime = _getField(reservation, ['reservation_time', 'startTime']);
+    String startTime = rawTime;
+    if (rawTime.isNotEmpty) {
+      try {
+        // Intentar parsear formato 24h (ej: "14:00" o "14:00:00")
+        final parts = rawTime.split(':');
+        if (parts.length >= 2) {
+          int hour = int.parse(parts[0]);
+          final minute = parts[1];
+          final period = hour >= 12 ? 'PM' : 'AM';
+          if (hour > 12) hour -= 12;
+          if (hour == 0) hour = 12;
+          startTime = '$hour:$minute $period';
+        }
+      } catch (_) {
+        // Si falla el parseo, usar el valor original
+      }
+    }
 
     // Servicio/Paquete
     final serviceName = _getField(reservation, ['service_name', 'serviceName', 'packageType', 'tipoSesion'], 'Sesión');
