@@ -80,7 +80,7 @@ class CustomerModel {
       profilePicture: json['profilePicture']?.toString() ?? json['profile_picture']?.toString() ?? '',
       emailAddress: json['emailAddress']?.toString() ?? json['email']?.toString() ?? '',
       customerAddress: json['customerAddress']?.toString() ?? json['address']?.toString() ?? '',
-      dueAmount: json['due']?.toString() ?? json['dueAmount']?.toString() ?? '0',
+      dueAmount: json['due']?.toString() ?? json['dueAmount']?.toString() ?? json['due_amount']?.toString() ?? '0',
       openingBalance: json['openingBalance']?.toString() ?? json['opening_balance']?.toString() ?? '0',
       remainedBalance: json['remainedBalance']?.toString() ?? json['remained_balance']?.toString() ?? '0',
       gst: json['gst']?.toString() ?? '',
