@@ -1211,6 +1211,7 @@ class _DressScreenState extends State<DressScreen> {
       _selectedCategory = null;
       _selectedBranch = null;
       _subcategoryController.text = '';
+      _priceController.text = '';  // IMPORTANTE: Limpiar el precio también
       _isAvailable = true;
       _selectedImages.clear();
       _existingImageUrls.clear();
@@ -1610,6 +1611,11 @@ class _DressScreenState extends State<DressScreen> {
                           ElevatedButton(
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
+                                // Debug: Log precio antes de crear el modelo
+                                debugPrint('🔍 [EditDress] Precio en TextField: "${_priceController.text}"');
+                                final parsedPrice = double.tryParse(_priceController.text) ?? 0.0;
+                                debugPrint('🔍 [EditDress] Precio parseado: $parsedPrice');
+
                                 // Update the dress
                                 final updatedDress = DressModel(
                                   id: dress.id,
@@ -1622,10 +1628,10 @@ class _DressScreenState extends State<DressScreen> {
                                   updatedAt: DateTime.now(),
                                   state: 'Disponible',
                                   images: _existingImageUrls,
-                                  price: double.tryParse(
-                                          _priceController.text) ??
-                                      0.0, // Use parsed price or default to 0.0
+                                  price: parsedPrice,
                                 );
+
+                                debugPrint('🔍 [EditDress] DressModel creado - price: ${updatedDress.price}');
 
                                 Navigator.pop(context);
                                 EasyLoading.show(
@@ -1639,6 +1645,12 @@ class _DressScreenState extends State<DressScreen> {
 
                                 EasyLoading.dismiss();
 
+                                // Refrescar providers para que la UI se actualice
+                                ref.invalidate(dressesProvider);
+                                ref.invalidate(dressesByStatusProvider('Todos'));
+
+                                if (!context.mounted) return;
+
                                 if (result) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -1646,6 +1658,7 @@ class _DressScreenState extends State<DressScreen> {
                                             lang.S.of(context).dressUpdated)),
                                   );
                                   _clearForm();
+                                  Navigator.of(context).pop(); // Cerrar el diálogo
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
