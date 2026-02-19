@@ -358,6 +358,8 @@ class _DressScreenState extends State<DressScreen> {
                                                 DataColumn(
                                                     label: Text(_lang.branch)),
                                                 DataColumn(
+                                                    label: Text("Precio")),
+                                                DataColumn(
                                                     label: Text("Estado")),
                                                 // DataColumn(
                                                 //     label:
@@ -462,7 +464,20 @@ class _DressScreenState extends State<DressScreen> {
                                                   DataCell(
                                                       Text(dress.branchId)),
 
-                                                  // Branch
+                                                  // Precio
+                                                  DataCell(
+                                                    Text(
+                                                      dress.price > 0
+                                                        ? 'RD\$${dress.price.toStringAsFixed(0)}'
+                                                        : '-',
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.w500,
+                                                        color: dress.price > 0 ? Colors.green[700] : Colors.grey,
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  // Estado
                                                   DataCell(
                                                     Container(
                                                       padding: const EdgeInsets
