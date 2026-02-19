@@ -534,6 +534,46 @@ class _CustomerListState extends State<CustomerList> {
                                                               (BuildContext
                                                                       bc) =>
                                                                   [
+                                                            ///____________Ver Perfil____________________________________________________
+                                                            PopupMenuItem(
+                                                                onTap: () {
+                                                                  final customerModel =
+                                                                      paginatedList[
+                                                                          index];
+                                                                  // Navegar al perfil del cliente
+                                                                  context.push(
+                                                                    '/customer-profile/${customerModel.id}',
+                                                                    extra: {
+                                                                      'customerName':
+                                                                          customerModel.customerName,
+                                                                    },
+                                                                  );
+                                                                },
+                                                                child: Row(
+                                                                  children: [
+                                                                    const Icon(
+                                                                        IconlyLight
+                                                                            .profile,
+                                                                        size:
+                                                                            20.0,
+                                                                        color:
+                                                                            Colors.blue),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            4.0),
+                                                                    Text(
+                                                                      'Ver Perfil',
+                                                                      style: theme
+                                                                          .textTheme
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                        color:
+                                                                            Colors.blue,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                )),
+
                                                             ///____________Edit____________________________________________________
                                                             PopupMenuItem(
                                                                 onTap: () {

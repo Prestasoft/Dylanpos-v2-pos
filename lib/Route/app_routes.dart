@@ -11,6 +11,7 @@ import 'package:salespro_admin/Screen/Calendar/CalendarDressScreen.dart';
 import 'package:salespro_admin/Screen/Category%20List/category_list.dart';
 import 'package:salespro_admin/Screen/Customer%20List/add_customer.dart';
 import 'package:salespro_admin/Screen/Customer%20List/customer_list.dart';
+import 'package:salespro_admin/Screen/Customer%20List/customer_profile_screen.dart';
 import 'package:salespro_admin/Screen/Customer%20List/edit_customer.dart';
 import 'package:salespro_admin/Screen/Dress/DressScreen.dart';
 import 'package:salespro_admin/Screen/Dress/dress_operator_home_screen.dart';
@@ -657,6 +658,20 @@ abstract class AcnooAppRoutes {
             pageBuilder: (context, state) => const NoTransitionPage<void>(
               child: CustomerList(),
             ),
+          ),
+
+          ///--------------------------Customer Profile------------------------
+          GoRoute(
+            path: '/customer-profile/:id',
+            builder: (context, state) {
+              final customerId = state.pathParameters['id'] ?? '';
+              final extra = state.extra as Map<String, dynamic>?;
+              final customerName = extra?['customerName'] as String?;
+              return CustomerProfileScreen(
+                customerId: customerId,
+                customerName: customerName,
+              );
+            },
           ),
 
           ///--------------------------Add Customer------------------------
