@@ -1659,9 +1659,9 @@ class _DressScreenState extends State<DressScreen> {
                                 EasyLoading.dismiss();
 
                                 if (result) {
-                                  // Refrescar providers para que la UI se actualice
-                                  ref.invalidate(dressesProvider);
-                                  ref.invalidate(dressesByStatusProvider('Todos'));
+                                  // Forzar recarga del provider incrementando el refresh counter
+                                  ref.read(dressesRefreshProvider.notifier).state++;
+
                                   _clearForm();
 
                                   if (context.mounted) {

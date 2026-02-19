@@ -159,6 +159,14 @@ final updateDressProvider =
     DressModel dress = data['dress'] as DressModel;
     List<dynamic> newImageFiles = data['imageFiles'] as List<dynamic>;
 
+    debugPrint('🔄 [updateDressProvider] Iniciando actualización de vestido: ${dress.id}');
+    debugPrint('   📝 Nombre: ${dress.name}');
+    debugPrint('   💰 Precio: ${dress.price}');
+    debugPrint('   📁 Categoría: ${dress.category}');
+    debugPrint('   🏪 Sucursal: ${dress.branchId}');
+    debugPrint('   🖼️ Imágenes existentes: ${dress.images.length}');
+    debugPrint('   🖼️ Nuevas imágenes: ${newImageFiles.length}');
+
     // Convert XFiles to Uint8List if on web
     if (kIsWeb) {
       List<Uint8List> webImages = [];
@@ -175,7 +183,9 @@ final updateDressProvider =
     // Subir imágenes al servidor propio
     List<String> newImageUrls = [];
     if (newImageFiles.isNotEmpty) {
+      debugPrint('   📤 Subiendo ${newImageFiles.length} imágenes...');
       newImageUrls = await uploadMultipleImages(newImageFiles);
+      debugPrint('   ✅ Imágenes subidas: $newImageUrls');
     }
 
     // Combine all images
@@ -192,11 +202,24 @@ final updateDressProvider =
       'price': dress.price,
     };
 
+    debugPrint('   📤 Enviando PUT a dresses/${dress.id}');
+    debugPrint('   📦 Datos: $updateData');
+
     // Actualizar en PostgreSQL
     final response = await _apiService.put('dresses/${dress.id}', updateData);
 
+    debugPrint('   📥 Respuesta: success=${response.success}, data=${response.data}');
+
+    if (response.success) {
+      debugPrint('✅ [updateDressProvider] Vestido actualizado exitosamente');
+    } else {
+      debugPrint('❌ [updateDressProvider] Error al actualizar: ${response.message}');
+    }
+
     return response.success;
-  } catch (e) {
+  } catch (e, stackTrace) {
+    debugPrint('❌ [updateDressProvider] Excepción: $e');
+    debugPrint('   Stack trace: $stackTrace');
     return false;
   }
 });
@@ -249,6 +272,10 @@ final changeStateProvider =
 });
 
 /// ============================================================================
+/// Provider para forzar refresh de vestidos
+/// Incrementar este valor para forzar recarga del dressesProvider
+final dressesRefreshProvider = StateProvider<int>((ref) => 0);
+
 /// PROVIDER PRINCIPAL DE VESTIDOS - AHORA REACTIVO AL BRANCH
 /// ============================================================================
 ///
@@ -261,6 +288,9 @@ final changeStateProvider =
 final dressesProvider = StreamProvider<List<DressModel>>((ref) {
   // ⚠️ CLAVE: Observamos el branchId - esto crea la dependencia reactiva
   final branchId = ref.watch(branchIdProvider);
+
+  // Observar el refresh provider para forzar recarga cuando cambie
+  ref.watch(dressesRefreshProvider);
 
   final controller = StreamController<List<DressModel>>();
 
