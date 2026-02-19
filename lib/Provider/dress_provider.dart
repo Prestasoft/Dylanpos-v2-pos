@@ -272,104 +272,73 @@ final changeStateProvider =
 });
 
 /// ============================================================================
-/// Provider para forzar refresh de vestidos
-/// Incrementar este valor para forzar recarga del dressesProvider
-final dressesRefreshProvider = StateProvider<int>((ref) => 0);
-
-/// PROVIDER PRINCIPAL DE VESTIDOS - AHORA REACTIVO AL BRANCH
+/// PROVIDER PRINCIPAL DE VESTIDOS - FutureProvider para mejor invalidación
 /// ============================================================================
 ///
-/// Este provider:
-/// 1. Observa branchIdProvider con ref.watch()
-/// 2. Cuando branchId cambia, Riverpod INVALIDA este provider automáticamente
-/// 3. Se ejecuta fetchDresses() con el nuevo branch
-/// 4. Los datos se actualizan en la UI
+/// Cambiado de StreamProvider a FutureProvider porque:
+/// 1. FutureProvider se invalida correctamente con ref.invalidate()
+/// 2. No hay race conditions con streams
+/// 3. La UI se reconstruye inmediatamente al invalidar
 /// ============================================================================
-final dressesProvider = StreamProvider<List<DressModel>>((ref) {
+final dressesProvider = FutureProvider<List<DressModel>>((ref) async {
   // ⚠️ CLAVE: Observamos el branchId - esto crea la dependencia reactiva
   final branchId = ref.watch(branchIdProvider);
 
-  // Observar el refresh provider para forzar recarga cuando cambie
-  ref.watch(dressesRefreshProvider);
+  try {
+    debugPrint('🔄 [dressesProvider] Cargando vestidos para branch: $branchId');
 
-  final controller = StreamController<List<DressModel>>();
+    final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
 
-  Future<void> fetchDresses() async {
-    try {
-      debugPrint('🔄 [dressesProvider] Cargando vestidos para branch: $branchId');
-      debugPrint('🔄 [dressesProvider] ApiService.isAuthenticated: ${_apiService.isAuthenticated}');
-      debugPrint('🔄 [dressesProvider] ApiService.branchId: ${_apiService.branchId}');
+    debugPrint('🔄 [dressesProvider] Response success: ${response.success}');
 
-      final response = await _apiService.get('dresses', queryParams: {'limit': '5000'});
+    if (response.success && response.data != null) {
+      // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+      final dressesData = response.data['dresses'] as List<dynamic>? ??
+                          response.data['d'] as List<dynamic>? ?? [];
 
-      debugPrint('🔄 [dressesProvider] Response success: ${response.success}');
-      debugPrint('🔄 [dressesProvider] Response error: ${response.error}');
-      debugPrint('🔄 [dressesProvider] Response statusCode: ${response.statusCode}');
+      debugPrint('🔄 [dressesProvider] Datos recibidos: ${dressesData.length} items');
 
-      if (response.success && response.data != null) {
-        // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
-        final dressesData = response.data['dresses'] as List<dynamic>? ??
-                            response.data['d'] as List<dynamic>? ?? [];
+      List<DressModel> dresses = [];
 
-        debugPrint('🔄 [dressesProvider] Datos recibidos: ${dressesData.length} items');
+      for (var item in dressesData) {
+        if (item is Map) {
+          final data = Map<String, dynamic>.from(item);
 
-        List<DressModel> dresses = [];
+          // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+          String? thumbnailUrl = data['t']?.toString();
+          String? originalUrl = thumbnailUrl?.replaceAll('/thumbnails/', '/');
 
-        for (var item in dressesData) {
-          if (item is Map) {
-            final data = Map<String, dynamic>.from(item);
+          final Map<String, dynamic> normalizedData = {
+            'id': data['id'] ?? data['i'] ?? '',
+            'name': data['name'] ?? data['n'] ?? '',
+            'category': data['category'] ?? data['c'] ?? '',
+            'subcategory': data['subcategory'] ?? '',
+            'branch_id': data['branch_id'] ?? data['b'] ?? '',
+            'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+            'state': data['state'] ?? data['s'] ?? 'available',
+            'images': data['images'] ?? (originalUrl != null ? [originalUrl] : []),
+            'price': (data['price'] ?? data['p'] ?? 0).toDouble(),  // Asegurar double
+            'rental_price': (data['rental_price'] ?? data['p'] ?? 0).toDouble(),
+          };
 
-            // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
-            // Convertir thumbnail URL a imagen original (thumbnails no preservan orientación EXIF)
-            String? thumbnailUrl = data['t']?.toString();
-            String? originalUrl = thumbnailUrl?.replaceAll('/thumbnails/', '/');
-
-            final Map<String, dynamic> normalizedData = {
-              'id': data['id'] ?? data['i'] ?? '',
-              'name': data['name'] ?? data['n'] ?? '',
-              'category': data['category'] ?? data['c'] ?? '',
-              'subcategory': data['subcategory'] ?? '',
-              'branch_id': data['branch_id'] ?? data['b'] ?? '',  // Sucursal (formato compacto: b)
-              'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
-              'state': data['state'] ?? data['s'] ?? 'available',
-              'images': data['images'] ?? (originalUrl != null ? [originalUrl] : []),
-              'price': data['price'] ?? data['p'] ?? 0,
-              'rental_price': data['rental_price'] ?? data['p'] ?? 0,
-            };
-
-            // Verificar campos mínimos
-            if (normalizedData['name'] != null && normalizedData['name'].toString().isNotEmpty) {
-              final id = normalizedData['id']?.toString() ?? '';
-              dresses.add(DressModel.fromMap(normalizedData, id));
-            }
+          if (normalizedData['name'] != null && normalizedData['name'].toString().isNotEmpty) {
+            final id = normalizedData['id']?.toString() ?? '';
+            dresses.add(DressModel.fromMap(normalizedData, id));
           }
         }
-
-        debugPrint('✅ [dressesProvider] Cargados ${dresses.length} vestidos para branch: $branchId');
-        controller.add(dresses);
-      } else {
-        debugPrint('⚠️ [dressesProvider] No hay datos o error: ${response.error}');
-        controller.add([]);
       }
-    } catch (e, stackTrace) {
-      debugPrint('❌ [dressesProvider] Error: $e');
-      debugPrint('❌ [dressesProvider] StackTrace: $stackTrace');
-      controller.add([]);
+
+      debugPrint('✅ [dressesProvider] Cargados ${dresses.length} vestidos para branch: $branchId');
+      return dresses;
+    } else {
+      debugPrint('⚠️ [dressesProvider] No hay datos o error: ${response.error}');
+      return [];
     }
+  } catch (e, stackTrace) {
+    debugPrint('❌ [dressesProvider] Error: $e');
+    debugPrint('❌ [dressesProvider] StackTrace: $stackTrace');
+    return [];
   }
-
-  // Fetch inicial
-  fetchDresses();
-
-  // Refresh periódico cada 30 segundos
-  final timer = Timer.periodic(const Duration(seconds: 30), (_) => fetchDresses());
-
-  ref.onDispose(() {
-    timer.cancel();
-    controller.close();
-  });
-
-  return controller.stream;
 });
 
 /// Proveedor de vestidos disponibles por componente/categoría - Usa PostgreSQL API
