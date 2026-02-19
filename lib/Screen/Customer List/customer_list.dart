@@ -32,45 +32,114 @@ class CustomerList extends StatefulWidget {
 }
 
 class _CustomerListState extends State<CustomerList> {
-  void deleteCustomer({
-    required String phoneNumber,
-    required WidgetRef updateRef,
+  /// Verifica las dependencias del cliente y muestra modal de confirmación
+  Future<void> _showDeleteConfirmation({
+    required CustomerModel customer,
+    required WidgetRef ref,
     required BuildContext context,
   }) async {
-    EasyLoading.show(status: 'Eliminando..');
+    if (!checkUserRoleDeletePermissionV2(type: 'customers')) {
+      EasyLoading.showError(userPermissionErrorText);
+      return;
+    }
+
+    EasyLoading.show(status: 'Verificando...');
 
     try {
       final apiService = ApiService();
-      final searchResponse = await apiService.get('customers', queryParams: {
-        'phoneNumber': phoneNumber,
-        'limit': '1',
-      });
+      final response = await apiService.get('customers/${customer.id}/dependencies');
 
-      if (searchResponse.success && searchResponse.data != null) {
-        final customers =
-            searchResponse.data['customers'] as List<dynamic>? ?? [];
-        if (customers.isNotEmpty) {
-          final customerData = Map<String, dynamic>.from(customers.first);
-          final customerId = customerData['id']?.toString();
+      EasyLoading.dismiss();
 
-          if (customerId != null) {
-            await apiService.delete('customers/$customerId');
-          }
-        }
+      if (!response.success || response.data == null) {
+        EasyLoading.showError('Error al verificar dependencias');
+        return;
       }
 
-      // ignore: unused_result
-      updateRef.refresh(allCustomerProvider);
-      EasyLoading.showSuccess('Realizado');
+      final dependencies = response.data;
+      final hasDependencies = dependencies['hasDependencies'] ?? false;
+      final sales = dependencies['sales'] ?? {};
+      final dueTransactions = dependencies['dueTransactions'] ?? {};
+      final reservations = dependencies['reservations'] ?? {};
+
+      if (!context.mounted) return;
+
+      showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return _DeleteConfirmationDialog(
+            customer: customer,
+            hasDependencies: hasDependencies,
+            salesCount: sales['count'] ?? 0,
+            salesTotal: (sales['total'] ?? 0).toDouble(),
+            salesPending: (sales['pending'] ?? 0).toDouble(),
+            dueTransactionsCount: dueTransactions['count'] ?? 0,
+            dueTransactionsTotal: (dueTransactions['total'] ?? 0).toDouble(),
+            reservationsCount: reservations['count'] ?? 0,
+            onConfirm: (bool cascade) async {
+              Navigator.of(dialogContext).pop();
+              await _executeDelete(
+                customerId: customer.id ?? '',
+                cascade: cascade,
+                ref: ref,
+              );
+            },
+            onCancel: () {
+              Navigator.of(dialogContext).pop();
+            },
+          );
+        },
+      );
     } catch (e) {
-      EasyLoading.showError('Error al eliminar');
+      EasyLoading.dismiss();
+      EasyLoading.showError('Error: $e');
+    }
+  }
+
+  /// Ejecuta la eliminación del cliente
+  Future<void> _executeDelete({
+    required String customerId,
+    required bool cascade,
+    required WidgetRef ref,
+  }) async {
+    EasyLoading.show(status: 'Eliminando...');
+
+    try {
+      final apiService = ApiService();
+      // Construir URL con query param si es cascada
+      final endpoint = cascade
+          ? 'customers/$customerId?cascade=true'
+          : 'customers/$customerId';
+      final response = await apiService.delete(endpoint);
+
+      if (response.success) {
+        // ignore: unused_result
+        ref.refresh(allCustomerProvider);
+
+        final deletedRecords = response.data?['deletedRecords'];
+        if (cascade && deletedRecords != null) {
+          final salesDeleted = deletedRecords['sales'] ?? 0;
+          final dueDeleted = deletedRecords['dueTransactions'] ?? 0;
+          final reservationsDeleted = deletedRecords['reservations'] ?? 0;
+
+          EasyLoading.showSuccess(
+            'Eliminado: $salesDeleted facturas, $dueDeleted pagos, $reservationsDeleted reservas',
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          EasyLoading.showSuccess('Cliente eliminado');
+        }
+      } else {
+        EasyLoading.showError('Error al eliminar');
+      }
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
     }
   }
 
   ScrollController mainScroll = ScrollController();
 
-  // ✅ SOLUCIÓN PROFESIONAL: TextField completamente independiente
-  // El controller y ValueNotifier están separados del árbol de widgets de la tabla
   final TextEditingController _searchController = TextEditingController();
   final ValueNotifier<String> _searchQueryNotifier = ValueNotifier<String>('');
   Timer? _debounceTimer;
@@ -91,8 +160,6 @@ class _CustomerListState extends State<CustomerList> {
     super.dispose();
   }
 
-  /// ✅ Método para manejar el debounce de búsqueda
-  /// IMPORTANTE: NO llama setState - solo actualiza el ValueNotifier
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
@@ -126,9 +193,6 @@ class _CustomerListState extends State<CustomerList> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ═══════════════════════════════════════════════════════════
-              // SECCIÓN FIJA: Header (NUNCA se reconstruye)
-              // ═══════════════════════════════════════════════════════════
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -144,7 +208,6 @@ class _CustomerListState extends State<CustomerList> {
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
-                    // Consumer mínimo solo para obtener la lista de teléfonos
                     Consumer(
                       builder: (_, ref, __) {
                         final customersAsync = ref.watch(allCustomerProvider);
@@ -197,11 +260,6 @@ class _CustomerListState extends State<CustomerList> {
                 thickness: 1.0,
                 color: kDividerColor,
               ),
-
-              // ═══════════════════════════════════════════════════════════
-              // CAMPO DE BÚSQUEDA - COMPLETAMENTE INDEPENDIENTE
-              // Este TextField NUNCA se reconstruye cuando cambian los resultados
-              // ═══════════════════════════════════════════════════════════
               const SizedBox(height: 16),
               ResponsiveGridRow(
                 rowSegments: 100,
@@ -279,7 +337,6 @@ class _CustomerListState extends State<CustomerList> {
                     lg: 35,
                     child: Padding(
                       padding: const EdgeInsets.all(10),
-                      // ✅ TextField FUERA del ValueListenableBuilder
                       child: TextFormField(
                         controller: _searchController,
                         showCursor: true,
@@ -299,13 +356,7 @@ class _CustomerListState extends State<CustomerList> {
                   ),
                 ],
               ),
-
-              // ═══════════════════════════════════════════════════════════
-              // TABLA DE CLIENTES - Solo esta parte se reconstruye
-              // ═══════════════════════════════════════════════════════════
               const SizedBox(height: 20.0),
-
-              // ValueListenableBuilder SOLO envuelve la tabla
               ValueListenableBuilder<String>(
                 valueListenable: _searchQueryNotifier,
                 builder: (context, searchQuery, _) {
@@ -381,7 +432,6 @@ class _CustomerListState extends State<CustomerList> {
     );
   }
 
-  /// Widget separado para la tabla de clientes
   Widget _buildCustomerTable({
     required BuildContext context,
     required ThemeData theme,
@@ -447,11 +497,9 @@ class _CustomerListState extends State<CustomerList> {
                         final customer = showAbleCustomer[dataIndex];
                         return DataRow(
                           cells: [
-                            // N°
                             DataCell(
                               Text('${startIndex + index + 1}'),
                             ),
-                            // Imagen
                             DataCell(
                               Container(
                                 width: 40,
@@ -476,19 +524,15 @@ class _CustomerListState extends State<CustomerList> {
                                 ),
                               ),
                             ),
-                            // Nombre
                             DataCell(
                               Text(paginatedList[index].customerName),
                             ),
-                            // Tipo
                             DataCell(
                               Text(paginatedList[index].type),
                             ),
-                            // Teléfono
                             DataCell(
                               Text(paginatedList[index].phoneNumber),
                             ),
-                            // Due/Pendiente
                             DataCell(
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -519,7 +563,6 @@ class _CustomerListState extends State<CustomerList> {
                                 ),
                               ),
                             ),
-                            // Acciones
                             DataCell(
                               SizedBox(
                                 width: 30,
@@ -533,7 +576,6 @@ class _CustomerListState extends State<CustomerList> {
                                     surfaceTintColor: Colors.white,
                                     padding: EdgeInsets.zero,
                                     itemBuilder: (BuildContext bc) => [
-                                      // Ver Perfil
                                       PopupMenuItem(
                                         onTap: () {
                                           final customerModel =
@@ -564,7 +606,6 @@ class _CustomerListState extends State<CustomerList> {
                                           ],
                                         ),
                                       ),
-                                      // Editar
                                       PopupMenuItem(
                                         onTap: () {
                                           final customerModel =
@@ -602,166 +643,35 @@ class _CustomerListState extends State<CustomerList> {
                                           ],
                                         ),
                                       ),
-                                      // Eliminar
-                                      PopupMenuItem(
-                                        onTap: () {
-                                          if (double.parse(paginatedList[index]
-                                                  .dueAmount
-                                                  .toString()) ==
-                                              0) {
-                                            showDialog(
-                                              barrierDismissible: false,
+                                      // Solo mostrar opción de eliminar para administradores
+                                      if (!isSubUser)
+                                        PopupMenuItem(
+                                          onTap: () {
+                                            // Usar el nuevo método de confirmación
+                                            _showDeleteConfirmation(
+                                              customer: paginatedList[index],
+                                              ref: ref,
                                               context: context,
-                                              builder:
-                                                  (BuildContext dialogContext) {
-                                                return Center(
-                                                  child: Container(
-                                                    width: 500,
-                                                    decoration:
-                                                        const BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.all(
-                                                        Radius.circular(15),
-                                                      ),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              20.0),
-                                                      child: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .center,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Text(
-                                                            lang.S
-                                                                .of(context)
-                                                                .areYouWantToDeleteThisCustomer,
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            style: theme
-                                                                .textTheme
-                                                                .titleLarge
-                                                                ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                            ),
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 20),
-                                                          ResponsiveGridRow(
-                                                            children: [
-                                                              ResponsiveGridCol(
-                                                                xs: 12,
-                                                                md: 6,
-                                                                lg: 6,
-                                                                child: Padding(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                          .all(
-                                                                          10.0),
-                                                                  child:
-                                                                      OutlinedButton(
-                                                                    onPressed:
-                                                                        () {
-                                                                      context
-                                                                          .pop();
-                                                                    },
-                                                                    child: Text(
-                                                                      lang.S
-                                                                          .of(context)
-                                                                          .cancel,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              ResponsiveGridCol(
-                                                                xs: 12,
-                                                                md: 6,
-                                                                lg: 6,
-                                                                child: Padding(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                          .all(
-                                                                          10.0),
-                                                                  child:
-                                                                      ElevatedButton(
-                                                                    onPressed:
-                                                                        () {
-                                                                      if (!checkUserRoleDeletePermissionV2(
-                                                                          type:
-                                                                              'customers')) {
-                                                                        EasyLoading
-                                                                            .showError(userPermissionErrorText);
-                                                                        return;
-                                                                      }
-                                                                      if (!isDemo) {
-                                                                        deleteCustomer(
-                                                                          phoneNumber:
-                                                                              paginatedList[index].phoneNumber,
-                                                                          updateRef:
-                                                                              ref,
-                                                                          context:
-                                                                              bc,
-                                                                        );
-                                                                        context
-                                                                            .pop();
-                                                                      } else {
-                                                                        EasyLoading
-                                                                            .showInfo(demoText);
-                                                                      }
-                                                                    },
-                                                                    child: Text(
-                                                                      lang.S
-                                                                          .of(context)
-                                                                          .delete,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              },
                                             );
-                                          } else {
-                                            EasyLoading.showError(
-                                              lang.S
-                                                  .of(context)
-                                                  .thisCustomerHavepreviousDue,
-                                            );
-                                            context.pop();
-                                          }
-                                        },
-                                        child: Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.delete_outline,
-                                              color: kNeutral500,
-                                              size: 20.0,
-                                            ),
-                                            const SizedBox(width: 4.0),
-                                            Text(
-                                              lang.S.of(context).delete,
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                color: kNeutral500,
+                                          },
+                                          child: Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.red,
+                                                size: 20.0,
                                               ),
-                                            ),
-                                          ],
+                                              const SizedBox(width: 4.0),
+                                              Text(
+                                                lang.S.of(context).delete,
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
                                     ],
                                     onSelected: (value) {
                                       context.go('$value');
@@ -791,7 +701,6 @@ class _CustomerListState extends State<CustomerList> {
             );
           },
         ),
-        // Paginación
         Padding(
           padding: const EdgeInsets.all(10.0),
           child: Row(
@@ -880,6 +789,234 @@ class _CustomerListState extends State<CustomerList> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Modal de confirmación para eliminar cliente
+class _DeleteConfirmationDialog extends StatelessWidget {
+  final CustomerModel customer;
+  final bool hasDependencies;
+  final int salesCount;
+  final double salesTotal;
+  final double salesPending;
+  final int dueTransactionsCount;
+  final double dueTransactionsTotal;
+  final int reservationsCount;
+  final Function(bool cascade) onConfirm;
+  final VoidCallback onCancel;
+
+  const _DeleteConfirmationDialog({
+    required this.customer,
+    required this.hasDependencies,
+    required this.salesCount,
+    required this.salesTotal,
+    required this.salesPending,
+    required this.dueTransactionsCount,
+    required this.dueTransactionsTotal,
+    required this.reservationsCount,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 500,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icono de advertencia
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: hasDependencies
+                    ? Colors.orange.withValues(alpha: 0.1)
+                    : Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                hasDependencies ? Icons.warning_amber_rounded : Icons.delete_outline,
+                color: hasDependencies ? Colors.orange : Colors.red,
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Título
+            Text(
+              hasDependencies
+                  ? 'Cliente con registros asociados'
+                  : 'Eliminar cliente',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+
+            // Nombre del cliente
+            Text(
+              customer.customerName,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: kMainColor,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+
+            // Información de dependencias
+            if (hasDependencies) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Este cliente tiene los siguientes registros:',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (salesCount > 0)
+                      _buildDependencyRow(
+                        icon: Icons.receipt_long,
+                        label: 'Facturas',
+                        count: salesCount,
+                        amount: salesTotal,
+                        pending: salesPending,
+                      ),
+                    if (dueTransactionsCount > 0)
+                      _buildDependencyRow(
+                        icon: Icons.payments,
+                        label: 'Pagos registrados',
+                        count: dueTransactionsCount,
+                        amount: dueTransactionsTotal,
+                      ),
+                    if (reservationsCount > 0)
+                      _buildDependencyRow(
+                        icon: Icons.calendar_month,
+                        label: 'Reservaciones',
+                        count: reservationsCount,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '¿Desea eliminar el cliente y TODOS sus registros asociados?',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ] else ...[
+              Text(
+                '¿Está seguro que desea eliminar este cliente?',
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 24),
+
+            // Botones
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onCancel,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => onConfirm(hasDependencies),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text(
+                      hasDependencies ? 'Eliminar Todo' : 'Eliminar',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDependencyRow({
+    required IconData icon,
+    required String label,
+    required int count,
+    double? amount,
+    double? pending,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: kNeutral500),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Text(
+            '$count',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          if (amount != null && amount > 0) ...[
+            const SizedBox(width: 8),
+            Text(
+              '(RD\$${myFormat.format(amount)})',
+              style: TextStyle(
+                color: kNeutral500,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          if (pending != null && pending > 0) ...[
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Pendiente: RD\$${myFormat.format(pending)}',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
