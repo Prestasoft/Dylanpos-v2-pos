@@ -1382,7 +1382,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                         ]);
                       }),
                       // Tercera fila: Facturas Eliminadas (usa summary calculado de reTransaction)
-                      Builder(builder: (context) {
+                      Consumer(builder: (context, consumerRef, _) {
                         // Calcular el count de eliminadas desde las transacciones filtradas
                         final deletedList = _buildDeletedInvoicesFromTransactions(reTransaction);
                         final deletedCount = deletedList.length;
@@ -1398,7 +1398,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                 color: Colors.transparent,
                                 child: InkWell(
                                   onTap: () {
-                                    _showDeletedInvoicesDialog(context, deletedList);
+                                    _showDeletedInvoicesDialog(context, deletedList, ref: consumerRef);
                                   },
                                   borderRadius: BorderRadius.circular(10.0),
                                   child: Container(
@@ -3920,7 +3920,8 @@ class _DailyTransactionState extends State<DailyTransaction> {
 
   /// Mostrar diálogo con las facturas eliminadas
   /// [deletedInvoices] Lista de facturas eliminadas filtradas por fecha
-  void _showDeletedInvoicesDialog(BuildContext context, List<Map<String, dynamic>> deletedInvoices) {
+  /// [ref] WidgetRef para refrescar providers después de limpieza
+  void _showDeletedInvoicesDialog(BuildContext context, List<Map<String, dynamic>> deletedInvoices, {WidgetRef? ref}) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -3973,6 +3974,77 @@ class _DailyTransactionState extends State<DailyTransaction> {
                           ],
                         ),
                       ),
+                      // Botón para limpiar transacciones huérfanas
+                      TextButton.icon(
+                        onPressed: () async {
+                          // Confirmar acción
+                          final confirm = await showDialog<bool>(
+                            context: dialogContext,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('¿Limpiar transacciones huérfanas?'),
+                              content: const Text(
+                                'Esta acción eliminará las transacciones de venta que corresponden a facturas ya eliminadas.\n\n'
+                                'Esto corregirá los totales del informe.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancelar'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFE53935),
+                                  ),
+                                  child: const Text('Limpiar', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true) {
+                            Navigator.of(dialogContext).pop(); // Cerrar diálogo actual
+                            EasyLoading.show(status: 'Limpiando transacciones...');
+                            try {
+                              final delete = DeleteInvoice();
+                              final result = await delete.cleanOrphanDailyTransactions();
+                              EasyLoading.dismiss();
+
+                              final totalCleaned = (result['sales'] ?? 0) +
+                                                   (result['dueCollections'] ?? 0) +
+                                                   (result['dueTransactions'] ?? 0);
+
+                              if (totalCleaned > 0) {
+                                EasyLoading.showSuccess(
+                                  'Limpieza completada!\n'
+                                  'Ventas: ${result['sales']}\n'
+                                  'Due Collections: ${result['dueCollections']}',
+                                );
+                                // Refrescar providers si ref está disponible
+                                if (ref != null) {
+                                  ref.refresh(dailyTransactionProvider);
+                                  ref.refresh(transitionProvider);
+                                }
+                              } else {
+                                EasyLoading.showInfo('No se encontraron transacciones huérfanas');
+                              }
+                            } catch (e) {
+                              EasyLoading.dismiss();
+                              EasyLoading.showError('Error: $e');
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.cleaning_services, color: Colors.white, size: 18),
+                        label: const Text(
+                          'Limpiar',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Navigator.of(dialogContext).pop(),

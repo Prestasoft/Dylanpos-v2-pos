@@ -180,31 +180,81 @@ class DeleteInvoice {
   /// Eliminar transacción diaria - Usa PostgreSQL API
   Future<void> deleteDailyTransaction({required String invoice, required String status, required String field}) async {
     try {
-      // Buscar transacción por invoice y tipo
-      final response = await _apiService.get('daily-transactions', queryParams: {
+      print('🔍 [deleteDailyTransaction] Buscando transacciones tipo: $status, invoice: $invoice');
+
+      // ESTRATEGIA: Buscar primero con invoiceNumber en query, si no encuentra, buscar por tipo y filtrar
+      var response = await _apiService.get('daily-transactions', queryParams: {
         'type': status,
         'invoiceNumber': invoice,
         'limit': '100',
       });
 
-      if (!response.success || response.data == null) {
-        log('No transaction found for invoice: $invoice with status: $status');
-        return;
+      var transactions = <dynamic>[];
+
+      if (response.success && response.data != null) {
+        transactions = response.data['daily_transactions'] as List<dynamic>? ??
+                       response.data['transactions'] as List<dynamic>? ?? [];
       }
 
-      final transactions = response.data['daily_transactions'] as List<dynamic>? ??
-                          response.data['transactions'] as List<dynamic>? ?? [];
+      print('🔍 [deleteDailyTransaction] Búsqueda con invoiceNumber encontró: ${transactions.length}');
 
+      // Si no encontró nada, buscar solo por tipo y filtrar manualmente
+      if (transactions.isEmpty) {
+        print('🔍 [deleteDailyTransaction] Buscando solo por tipo: $status');
+        response = await _apiService.get('daily-transactions', queryParams: {
+          'type': status,
+          'limit': '500',  // Traer más para encontrar la transacción
+        });
+
+        if (response.success && response.data != null) {
+          transactions = response.data['daily_transactions'] as List<dynamic>? ??
+                         response.data['transactions'] as List<dynamic>? ?? [];
+        }
+        print('🔍 [deleteDailyTransaction] Búsqueda por tipo encontró: ${transactions.length} transacciones totales');
+      }
+
+      int deletedCount = 0;
       for (var transaction in transactions) {
         try {
           final transactionData = Map<String, dynamic>.from(transaction);
           final transactionId = transactionData['id']?.toString();
 
           if (transactionId != null) {
-            // Verificar que el campo coincide
+            // Verificar que el invoice coincide - buscar en MÚLTIPLES ubicaciones
+            final rootInvoice = transactionData['invoiceNumber']?.toString() ??
+                               transactionData['invoice_number']?.toString();
+
+            // Buscar en el campo específico (ej: saleTransactionModel)
             final fieldData = transactionData[field];
-            if (fieldData is Map && fieldData['invoiceNumber'] == invoice) {
+            final fieldInvoice = fieldData is Map
+                ? (fieldData['invoiceNumber']?.toString() ?? fieldData['invoice_number']?.toString())
+                : null;
+
+            // Buscar en el campo 'data' (donde se almacenan los datos extra)
+            final dataField = transactionData['data'];
+            String? dataInvoice;
+            String? dataNestedInvoice;
+            if (dataField is Map) {
+              dataInvoice = dataField['invoiceNumber']?.toString() ?? dataField['invoice_number']?.toString();
+              // También buscar dentro de saleTransactionModel en data
+              final nestedModel = dataField['saleTransactionModel'] ?? dataField['sale_transaction_model'];
+              if (nestedModel is Map) {
+                dataNestedInvoice = nestedModel['invoiceNumber']?.toString() ?? nestedModel['invoice_number']?.toString();
+              }
+            }
+
+            // También buscar en firebase_id (que a veces contiene el invoice number)
+            final firebaseId = transactionData['firebase_id']?.toString();
+
+            // Eliminar si coincide el invoice en CUALQUIER ubicación
+            if (rootInvoice == invoice ||
+                fieldInvoice == invoice ||
+                dataInvoice == invoice ||
+                dataNestedInvoice == invoice ||
+                firebaseId == invoice) {
+              print('🗑️ Eliminando daily_transaction $transactionId con invoice: $invoice');
               await _apiService.delete('daily-transactions/$transactionId');
+              deletedCount++;
             }
           }
         } catch (e) {
@@ -212,6 +262,8 @@ class DeleteInvoice {
           continue;
         }
       }
+
+      print('✅ [deleteDailyTransaction] Eliminadas $deletedCount transacciones para invoice: $invoice');
     } catch (e) {
       print('Error eliminando transacción diaria: $e');
     }
@@ -403,6 +455,163 @@ class DeleteInvoice {
       print('✅ Cliente $phone corregido: $previousDue → $correctAmount');
     } catch (e) {
       print('Error en fixSpecificCustomer: $e');
+    }
+  }
+
+  /// LIMPIEZA: Eliminar transacciones huérfanas de facturas ya eliminadas
+  /// Esta función busca todos los registros "Deleted" y elimina las transacciones
+  /// de tipo Sale/Adicionales/Impresiones que tengan el mismo invoiceNumber
+  Future<Map<String, int>> cleanOrphanDailyTransactions() async {
+    print('🧹 === INICIANDO LIMPIEZA DE TRANSACCIONES HUÉRFANAS ===');
+
+    int deletedSales = 0;
+    int deletedDueCollections = 0;
+    int deletedDueTransactions = 0;
+    List<String> cleanedInvoices = [];
+
+    try {
+      // Paso 1: Obtener todos los registros de tipo "Deleted"
+      final deletedResponse = await _apiService.get('daily-transactions', queryParams: {
+        'type': 'Deleted',
+        'limit': '1000',
+      });
+
+      if (!deletedResponse.success || deletedResponse.data == null) {
+        print('⚠️ No se encontraron registros de facturas eliminadas');
+        return {'sales': 0, 'dueCollections': 0, 'dueTransactions': 0};
+      }
+
+      final deletedTransactions = deletedResponse.data['daily_transactions'] as List<dynamic>? ?? [];
+      print('📋 Encontradas ${deletedTransactions.length} facturas marcadas como eliminadas');
+
+      // Paso 2: Extraer todos los invoiceNumbers de las facturas eliminadas
+      Set<String> deletedInvoiceNumbers = {};
+      for (var deleted in deletedTransactions) {
+        final data = Map<String, dynamic>.from(deleted);
+
+        // Buscar invoiceNumber en múltiples ubicaciones
+        String? invoiceNum = data['invoiceNumber']?.toString() ??
+                            data['invoice_number']?.toString();
+
+        // Buscar en firebase_id
+        if (invoiceNum == null || invoiceNum.isEmpty) {
+          invoiceNum = data['firebase_id']?.toString();
+        }
+
+        // Buscar en campo data
+        if ((invoiceNum == null || invoiceNum.isEmpty) && data['data'] is Map) {
+          final dataField = data['data'] as Map;
+          invoiceNum = dataField['invoiceNumber']?.toString() ??
+                      dataField['invoice_number']?.toString();
+
+          // Buscar en saleTransactionModel dentro de data
+          if ((invoiceNum == null || invoiceNum.isEmpty) && dataField['saleTransactionModel'] is Map) {
+            final saleModel = dataField['saleTransactionModel'] as Map;
+            invoiceNum = saleModel['invoiceNumber']?.toString() ??
+                        saleModel['invoice_number']?.toString();
+          }
+        }
+
+        if (invoiceNum != null && invoiceNum.isNotEmpty) {
+          deletedInvoiceNumbers.add(invoiceNum);
+        }
+      }
+
+      print('🔍 Invoice numbers de facturas eliminadas: $deletedInvoiceNumbers');
+
+      // Paso 3: Para cada tipo de transacción (Sale, Adicionales, Impresiones, Reserva),
+      // buscar y eliminar las que tengan invoiceNumber en la lista de eliminadas
+      for (String type in ['Sale', 'Adicionales', 'Impresiones', 'Reserva']) {
+        print('🔍 Buscando transacciones huérfanas tipo: $type');
+
+        final typeResponse = await _apiService.get('daily-transactions', queryParams: {
+          'type': type,
+          'limit': '1000',
+        });
+
+        if (!typeResponse.success || typeResponse.data == null) continue;
+
+        final transactions = typeResponse.data['daily_transactions'] as List<dynamic>? ?? [];
+        print('📋 Encontradas ${transactions.length} transacciones tipo $type');
+
+        for (var transaction in transactions) {
+          final transData = Map<String, dynamic>.from(transaction);
+          final transactionId = transData['id']?.toString();
+
+          // Extraer invoiceNumber de la transacción
+          String? transInvoice = transData['invoiceNumber']?.toString() ??
+                                transData['invoice_number']?.toString() ??
+                                transData['firebase_id']?.toString();
+
+          // Buscar en campo data
+          if ((transInvoice == null || transInvoice.isEmpty) && transData['data'] is Map) {
+            final dataField = transData['data'] as Map;
+            transInvoice = dataField['invoiceNumber']?.toString() ??
+                          dataField['invoice_number']?.toString();
+
+            if ((transInvoice == null || transInvoice.isEmpty) && dataField['saleTransactionModel'] is Map) {
+              final saleModel = dataField['saleTransactionModel'] as Map;
+              transInvoice = saleModel['invoiceNumber']?.toString() ??
+                            saleModel['invoice_number']?.toString();
+            }
+          }
+
+          // Si el invoiceNumber está en la lista de eliminadas, eliminar esta transacción
+          if (transInvoice != null && deletedInvoiceNumbers.contains(transInvoice) && transactionId != null) {
+            print('🗑️ Eliminando transacción huérfana tipo $type, invoice: $transInvoice, id: $transactionId');
+            await _apiService.delete('daily-transactions/$transactionId');
+            deletedSales++;
+            cleanedInvoices.add(transInvoice);
+          }
+        }
+      }
+
+      // Paso 4: También limpiar Due Collections y Due Transactions huérfanas
+      for (String invoiceNum in deletedInvoiceNumbers) {
+        // Limpiar Due Collections
+        final dueCollResponse = await _apiService.get('daily-transactions', queryParams: {
+          'type': 'Due Collection',
+          'limit': '100',
+        });
+
+        if (dueCollResponse.success && dueCollResponse.data != null) {
+          final dueColl = dueCollResponse.data['daily_transactions'] as List<dynamic>? ?? [];
+          for (var dc in dueColl) {
+            final dcData = Map<String, dynamic>.from(dc);
+            final dcId = dcData['id']?.toString();
+
+            // Verificar si corresponde a la factura eliminada
+            String? dcInvoice;
+            if (dcData['data'] is Map) {
+              final dataField = dcData['data'] as Map;
+              if (dataField['dueTransactionModel'] is Map) {
+                dcInvoice = (dataField['dueTransactionModel'] as Map)['invoiceNumber']?.toString();
+              }
+            }
+
+            if (dcInvoice == invoiceNum && dcId != null) {
+              print('🗑️ Eliminando Due Collection huérfana, invoice: $invoiceNum');
+              await _apiService.delete('daily-transactions/$dcId');
+              deletedDueCollections++;
+            }
+          }
+        }
+      }
+
+      print('🧹 === LIMPIEZA COMPLETADA ===');
+      print('✅ Transacciones de venta eliminadas: $deletedSales');
+      print('✅ Due Collections eliminadas: $deletedDueCollections');
+      print('✅ Due Transactions eliminadas: $deletedDueTransactions');
+      print('📋 Facturas limpiadas: ${cleanedInvoices.toSet().toList()}');
+
+      return {
+        'sales': deletedSales,
+        'dueCollections': deletedDueCollections,
+        'dueTransactions': deletedDueTransactions,
+      };
+    } catch (e) {
+      print('❌ Error en cleanOrphanDailyTransactions: $e');
+      return {'sales': deletedSales, 'dueCollections': deletedDueCollections, 'dueTransactions': deletedDueTransactions};
     }
   }
 }

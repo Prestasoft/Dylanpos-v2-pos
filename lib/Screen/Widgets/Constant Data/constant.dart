@@ -248,6 +248,7 @@ Future<void> postDailyTransaction(
     };
 
     // Crear el payload final con 'data' como campo separado
+    // IMPORTANTE: invoiceNumber también se incluye a nivel raíz para facilitar búsquedas
     final requestBody = <String, dynamic>{
       'name': modelJson['name'],
       'date': modelJson['date'],
@@ -257,6 +258,7 @@ Future<void> postDailyTransaction(
       'paymentOut': modelJson['paymentOut'],
       'remainingBalance': modelJson['remainingBalance'],
       'firebase_id': modelJson['id'],
+      'invoiceNumber': modelJson['invoiceNumber'],  // A nivel raíz para búsquedas
       'data': dataPayload,
     };
 
