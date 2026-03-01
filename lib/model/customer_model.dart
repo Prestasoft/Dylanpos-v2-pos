@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 class CustomerModel {
@@ -92,6 +93,13 @@ class CustomerModel {
   }
 
   Map<String, dynamic> toJson() {
+    // DEBUG: Log para rastrear problema de clientes vacíos
+    debugPrint('📤 [CustomerModel.toJson] customerName: "$customerName", phoneNumber: "$phoneNumber", type: "$type"');
+
+    if (customerName.isEmpty) {
+      debugPrint('⚠️ [CustomerModel.toJson] ALERTA: customerName está vacío!');
+    }
+
     return <String, dynamic>{
       if (id != null && id!.isNotEmpty) 'id': id,
       'customerName': customerName,

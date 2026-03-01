@@ -723,6 +723,9 @@ class _AddCustomerState extends State<AddCustomer> {
                                                           // Nota: Firebase Storage deshabilitado - usamos imagen por defecto
                                                           // TODO: Implementar subida de imágenes al servidor propio
 
+                                                          // DEBUG: Log antes de crear el modelo
+                                                          debugPrint('📝 [AddCustomer] Creando cliente - Name: "${customerNameController.text}", Phone: "${customerPhoneController.text}"');
+
                                                           CustomerModel customerModel = CustomerModel(
                                                             customerName: customerNameController.text,
                                                             phoneNumber: customerPhoneController.text,
@@ -741,6 +744,7 @@ class _AddCustomerState extends State<AddCustomer> {
                                                           // Guardar cliente usando PostgreSQL API
                                                           final apiService = ApiService();
                                                           final jsonData = customerModel.toJson();
+                                                          debugPrint('📤 [AddCustomer] JSON a enviar: $jsonData');
                                                           final response = await apiService.post('customers', jsonData);
 
                                                           final dynamic responseData = response.data;
