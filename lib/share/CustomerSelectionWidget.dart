@@ -41,11 +41,15 @@ class CustomerSelectionWidget extends ConsumerWidget {
     return customerList.when(
       data: (allCustomers) {
         List<String> listOfPhoneNumber = [];
+        List<String> listOfCedulas = [];
         List<CustomerModel> customersList = [];
 
         for (var value1 in allCustomers) {
           listOfPhoneNumber
               .add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
+          if (value1.gst.isNotEmpty) {
+            listOfCedulas.add(value1.gst.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase());
+          }
           if (value1.type != 'Supplier') {
             customersList.add(value1);
           }
@@ -83,6 +87,7 @@ class CustomerSelectionWidget extends ConsumerWidget {
                         extra: {
                           'typeOfCustomerAdd': 'Buyer',
                           'listOfPhoneNumber': listOfPhoneNumber,
+                          'listOfCedulas': listOfCedulas,
                         },
                       );
                     },

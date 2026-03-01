@@ -196,6 +196,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "categoryNameIsRequired": MessageLookupByLibrary.simpleMessage(
           "Category name is required",
         ),
+        "cedulaAlreadyExists": MessageLookupByLibrary.simpleMessage(
+          "ID number already registered",
+        ),
         "changeAmount": MessageLookupByLibrary.simpleMessage("Change Amount"),
         "changeReturn": MessageLookupByLibrary.simpleMessage("Change Return"),
         "changeableAmount": MessageLookupByLibrary.simpleMessage(

@@ -4687,6 +4687,16 @@ class S {
     );
   }
 
+  /// `ID number already registered`
+  String get cedulaAlreadyExists {
+    return Intl.message(
+      'ID number already registered',
+      name: 'cedulaAlreadyExists',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Please Enter valid phone number`
   String get pleaseEnterValidPhoneNumber {
     return Intl.message(

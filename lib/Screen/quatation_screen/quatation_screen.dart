@@ -1035,12 +1035,16 @@ class _QuotationScreenState extends State<QuotationScreen> {
                             lg: 30,
                             child: customerList.when(data: (allCustomers) {
                               List<String> listOfPhoneNumber = [];
+                              List<String> listOfCedulas = [];
                               List<CustomerModel> customersList = [];
                               for (var value1 in allCustomers) {
                                 // listOfPhoneNumber.add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
                                 listOfPhoneNumber.add(value1.phoneNumber
                                     .replaceAll(RegExp(r'\s+'), '')
                                     .toLowerCase());
+                                if (value1.gst.isNotEmpty) {
+                                  listOfCedulas.add(value1.gst.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase());
+                                }
                                 if (value1.type != 'Supplier') {
                                   customersList.add(value1);
                                 }
@@ -1076,6 +1080,7 @@ class _QuotationScreenState extends State<QuotationScreen> {
                                                   'typeOfCustomerAdd': 'Buyer',
                                                   'listOfPhoneNumber':
                                                       listOfPhoneNumber,
+                                                  'listOfCedulas': listOfCedulas,
                                                 },
                                               );
                                             },

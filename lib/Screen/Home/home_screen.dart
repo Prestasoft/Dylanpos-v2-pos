@@ -404,6 +404,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
         extra: {
           'typeOfCustomerAdd': 'Buyer',
           'listOfPhoneNumber': [],
+          'listOfCedulas': [],
         },
       );
       // showDialog(
@@ -429,6 +430,7 @@ class _MtHomeScreenState extends State<MtHomeScreen> {
         extra: {
           'typeOfCustomerAdd': 'Supplier',
           'listOfPhoneNumber': [],
+          'listOfCedulas': [],
         },
       );
       // showDialog(

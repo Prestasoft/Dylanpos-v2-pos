@@ -515,6 +515,7 @@
   "customerNameIsRequired": "El nombre del cliente es obligatorio",
   "phoneNumberIsRequired": "El número de teléfono es obligatorio",
   "phoneNumberAlreadyExists": "El número de teléfono ya existe",
+  "cedulaAlreadyExists": "La cédula ya está registrada",
   "pleaseEnterValidPhoneNumber": "Por favor ingrese un número de teléfono válido",
   "pleaseEnterValidBalance": "Por favor ingrese un saldo válido",
   "customerGST": "GST del Cliente",

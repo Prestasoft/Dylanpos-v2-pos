@@ -682,6 +682,7 @@ abstract class AcnooAppRoutes {
               return AddCustomer(
                 typeOfCustomerAdd: extra['typeOfCustomerAdd'] as String,
                 listOfPhoneNumber: extra['listOfPhoneNumber'] as List<String>,
+                listOfCedulas: extra['listOfCedulas'] as List<String>? ?? [],
               );
             },
           ),

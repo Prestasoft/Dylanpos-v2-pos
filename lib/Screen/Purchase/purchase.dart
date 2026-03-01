@@ -1103,12 +1103,16 @@ class _PurchaseState extends State<Purchase> {
                               padding: const EdgeInsets.all(12.0),
                               child: customers.when(data: (allCustomers) {
                                 List<String> listOfPhoneNumber = [];
+                                List<String> listOfCedulas = [];
                                 List<CustomerModel> suppliersList = [];
 
                                 for (var value1 in allCustomers) {
                                   listOfPhoneNumber.add(value1.phoneNumber
                                       .removeAllWhiteSpace()
                                       .toLowerCase());
+                                  if (value1.gst.isNotEmpty) {
+                                    listOfCedulas.add(value1.gst.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase());
+                                  }
                                   if (value1.type == 'Supplier') {
                                     suppliersList.add(value1);
                                   }
@@ -1152,6 +1156,7 @@ class _PurchaseState extends State<Purchase> {
                                             'typeOfCustomerAdd': 'Supplier',
                                             'listOfPhoneNumber':
                                                 listOfPhoneNumber,
+                                            'listOfCedulas': listOfCedulas,
                                           },
                                         );
                                       },

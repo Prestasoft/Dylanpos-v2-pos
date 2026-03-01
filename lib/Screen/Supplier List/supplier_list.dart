@@ -122,12 +122,16 @@ class _SupplierListState extends State<SupplierList> {
             data: (allList) {
             List<CustomerModel> allCustomers = allList.reversed.toList();
             List<String> listOfPhoneNumber = [];
+            List<String> listOfCedulas = [];
             List<CustomerModel> showAbleSuppliers = [];
             List<CustomerModel> allSupplier = [];
 
             for (var value1 in allCustomers) {
               listOfPhoneNumber
                   .add(value1.phoneNumber.removeAllWhiteSpace().toLowerCase());
+              if (value1.gst.isNotEmpty) {
+                listOfCedulas.add(value1.gst.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase());
+              }
               if (value1.type == 'Supplier') {
                 allSupplier.add(value1);
               }
@@ -176,6 +180,7 @@ class _SupplierListState extends State<SupplierList> {
                                   extra: {
                                     'typeOfCustomerAdd': 'Supplier',
                                     'listOfPhoneNumber': listOfPhoneNumber,
+                                    'listOfCedulas': listOfCedulas,
                                   },
                                 );
                                 // showDialog(

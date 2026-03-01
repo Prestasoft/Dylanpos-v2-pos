@@ -518,6 +518,7 @@
  "customerNameIsRequired" : "Customer Name Is Required",
  "phoneNumberIsRequired" : "Phone Number is required",
  "phoneNumberAlreadyExists" : "Phone Number already exists",
+ "cedulaAlreadyExists" : "ID number already registered",
  "pleaseEnterValidPhoneNumber" : "Please Enter valid phone number",
  "pleaseEnterValidBalance" : "Please Enter valid balance",
  "customerGST" : "Customer GST",

@@ -62,6 +62,8 @@ import '../../model/transfer_verification_model.dart';
 import '../../Provider/transfer_verification_provider.dart';
 import '../../model/ncf_model.dart';
 import '../../Repository/dgii_repo.dart';
+import '../../Provider/exchange_rate_provider.dart';
+import '../Widgets/currency_selector_widget.dart';
 
 class InventorySales extends StatefulWidget {
   const InventorySales({super.key, this.quotation, this.reservationId});
@@ -132,6 +134,11 @@ class _InventorySalesState extends State<InventorySales> {
   WareHouseModel? selectedWareHouse;
   String? _lastKnownBranchId; // Para detectar cambios de sucursal
   int i = 0;
+
+  // Campos para facturación en USD
+  String selectedCurrency = 'DOP'; // Moneda seleccionada (DOP o USD)
+  double? currentExchangeRate; // Tasa de cambio actual
+  DateTime? exchangeRateDate; // Fecha de la tasa
 
   List<String> get paymentItem => ['Efectivo', 'Transferencia', 'Tarjeta'];
   List<String> get customerType => ['Regular', 'Frecuente', 'Corporativo'];
@@ -1604,14 +1611,41 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
         final screenSize = MediaQuery.of(context).size;
         return StatefulBuilder(
           builder: (context, setState) {
-            // Función para filtrar por reservas pendientes
+            // Función para filtrar por reservas pendientes (sin facturar)
+            // Las reservaciones ya vienen filtradas por:
+            // 1. estado_factura == false (sin facturar)
+            // 2. estado != 'cancelado'
+            // 3. Sucursal actual (via X-Branch-Id header)
             List<CustomerModel> filterByReservations(List<CustomerModel> customers) {
               if (!switchValue) return customers;
-              return customers.where((customer) {
-                return reservations.any(
-                  (res) => res.clientId == customer.id || res.clientId == customer.phoneNumber,
-                );
+
+              debugPrint('🔍 [filterByReservations] Filtrando clientes con reservas pendientes');
+              debugPrint('   Total reservaciones sin facturar: ${reservations.length}');
+              debugPrint('   Total clientes: ${customers.length}');
+
+              // Crear set de clientIds de reservaciones para búsqueda O(1)
+              final clientIdsWithReservations = <String>{};
+              for (final res in reservations) {
+                if (res.clientId.isNotEmpty) {
+                  clientIdsWithReservations.add(res.clientId);
+                }
+              }
+
+              debugPrint('   ClientIds únicos con reservas: ${clientIdsWithReservations.length}');
+              if (clientIdsWithReservations.isNotEmpty) {
+                debugPrint('   Primeros 5 clientIds: ${clientIdsWithReservations.take(5).toList()}');
+              }
+
+              final filtered = customers.where((customer) {
+                // Comparar con id del cliente Y con phoneNumber (por compatibilidad)
+                final matchById = clientIdsWithReservations.contains(customer.id);
+                final matchByPhone = clientIdsWithReservations.contains(customer.phoneNumber);
+                return matchById || matchByPhone;
               }).toList();
+
+              debugPrint('   Clientes filtrados: ${filtered.length}');
+
+              return filtered;
             }
 
             // Función para buscar clientes via API
@@ -2103,9 +2137,13 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                             child: customerList.when(
                               data: (allCustomers) {
                                 List<String> listOfPhoneNumber = [];
+                                List<String> listOfCedulas = [];
                                 List<CustomerModel> customersList = [];
                                 for (var value1 in allCustomers) {
                                   listOfPhoneNumber.add(value1.phoneNumber.replaceAll(RegExp(r'\s+'), '').toLowerCase());
+                                  if (value1.gst.isNotEmpty) {
+                                    listOfCedulas.add(value1.gst.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase());
+                                  }
                                   if (value1.type != 'Supplier') {
                                     customersList.add(value1);
                                   }
@@ -3033,6 +3071,38 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 19),
                                     child: Column(
                                       children: [
+                                        // Selector de moneda (DOP/USD)
+                                        Consumer(
+                                          builder: (context, ref, _) {
+                                            final exchangeRateAsync = ref.watch(exchangeRateProvider);
+                                            return Padding(
+                                              padding: const EdgeInsets.only(bottom: 12),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: CurrencySelectorWidget(
+                                                      selectedCurrency: selectedCurrency,
+                                                      onCurrencyChanged: (currency) {
+                                                        setState(() {
+                                                          selectedCurrency = currency;
+                                                        });
+                                                        // Guardar la tasa actual si está disponible
+                                                        exchangeRateAsync.whenData((rate) {
+                                                          if (rate != null) {
+                                                            currentExchangeRate = rate.sellRate;
+                                                            exchangeRateDate = rate.sourceDate;
+                                                          }
+                                                        });
+                                                      },
+                                                      showRate: true,
+                                                      compact: false,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
                                         ResponsiveGridRow(children: [
                                           ResponsiveGridCol(
                                             xs: 12,
@@ -3050,16 +3120,89 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                             xs: 12,
                                             md: 6,
                                             lg: 6,
-                                            child: Container(
-                                              height: 40,
-                                              alignment: Alignment.center,
-                                              decoration: const BoxDecoration(color: Color(0xff00AE1C), borderRadius: BorderRadius.all(Radius.circular(8))),
-                                              child: Center(
-                                                child: Text(
-                                                  '$globalCurrency ${myFormat.format(double.tryParse((double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst).toStringAsFixed(2)) ?? 0)}',
-                                                  style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
-                                                ),
-                                              ),
+                                            child: Consumer(
+                                              builder: (context, ref, _) {
+                                                final totalDOP = double.parse(getTotalAmount()) + serviceCharge - discountAmount + vatGst;
+                                                final exchangeRateAsync = ref.watch(exchangeRateProvider);
+
+                                                return Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                  children: [
+                                                    Container(
+                                                      height: 40,
+                                                      alignment: Alignment.center,
+                                                      decoration: const BoxDecoration(
+                                                        color: Color(0xff00AE1C),
+                                                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                                                      ),
+                                                      child: Center(
+                                                        child: selectedCurrency == 'USD'
+                                                          ? exchangeRateAsync.when(
+                                                              data: (rate) {
+                                                                if (rate == null) {
+                                                                  return Text(
+                                                                    'RD\$ ${myFormat.format(totalDOP)}',
+                                                                    style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
+                                                                  );
+                                                                }
+                                                                final totalUSD = totalDOP / rate.sellRate;
+                                                                return Text(
+                                                                  '\$ ${totalUSD.toStringAsFixed(2)} USD',
+                                                                  style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
+                                                                );
+                                                              },
+                                                              loading: () => Text(
+                                                                'RD\$ ${myFormat.format(totalDOP)}',
+                                                                style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
+                                                              ),
+                                                              error: (_, __) => Text(
+                                                                'RD\$ ${myFormat.format(totalDOP)}',
+                                                                style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
+                                                              ),
+                                                            )
+                                                          : Text(
+                                                              '$globalCurrency ${myFormat.format(double.tryParse(totalDOP.toStringAsFixed(2)) ?? 0)}',
+                                                              style: kTextStyle.copyWith(color: kWhite, fontSize: 18.0, fontWeight: FontWeight.bold),
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    // Mostrar conversión secundaria
+                                                    if (selectedCurrency == 'USD')
+                                                      exchangeRateAsync.when(
+                                                        data: (rate) {
+                                                          if (rate == null) return const SizedBox.shrink();
+                                                          return Padding(
+                                                            padding: const EdgeInsets.only(top: 4),
+                                                            child: Text(
+                                                              'RD\$ ${myFormat.format(totalDOP)} @ ${rate.sellRate.toStringAsFixed(2)}',
+                                                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                                              textAlign: TextAlign.center,
+                                                            ),
+                                                          );
+                                                        },
+                                                        loading: () => const SizedBox.shrink(),
+                                                        error: (_, __) => const SizedBox.shrink(),
+                                                      ),
+                                                    if (selectedCurrency == 'DOP')
+                                                      exchangeRateAsync.when(
+                                                        data: (rate) {
+                                                          if (rate == null) return const SizedBox.shrink();
+                                                          final totalUSD = totalDOP / rate.sellRate;
+                                                          return Padding(
+                                                            padding: const EdgeInsets.only(top: 4),
+                                                            child: Text(
+                                                              '\$ ${totalUSD.toStringAsFixed(2)} USD @ ${rate.sellRate.toStringAsFixed(2)}',
+                                                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                                              textAlign: TextAlign.center,
+                                                            ),
+                                                          );
+                                                        },
+                                                        loading: () => const SizedBox.shrink(),
+                                                        error: (_, __) => const SizedBox.shrink(),
+                                                      ),
+                                                  ],
+                                                );
+                                              },
                                             ),
                                           ),
                                         ]),

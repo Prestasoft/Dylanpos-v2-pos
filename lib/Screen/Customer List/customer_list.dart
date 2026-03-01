@@ -219,6 +219,15 @@ class _CustomerListState extends State<CustomerList> {
                                   .toList(),
                             ) ??
                             [];
+                        final listOfCedulas = customersAsync.whenOrNull(
+                              data: (list) => list
+                                  .where((c) => c.gst.isNotEmpty)
+                                  .map((c) => c.gst
+                                      .replaceAll(RegExp(r'[\s\-]'), '')
+                                      .toLowerCase())
+                                  .toList(),
+                            ) ??
+                            [];
 
                         return ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(),
@@ -235,6 +244,7 @@ class _CustomerListState extends State<CustomerList> {
                                 extra: {
                                   'typeOfCustomerAdd': 'Buyer',
                                   'listOfPhoneNumber': listOfPhoneNumber,
+                                  'listOfCedulas': listOfCedulas,
                                 },
                               );
                             }

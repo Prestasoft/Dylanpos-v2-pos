@@ -29,10 +29,12 @@ class AddCustomer extends StatefulWidget {
     super.key,
     required this.typeOfCustomerAdd,
     required this.listOfPhoneNumber,
+    required this.listOfCedulas,
   });
 
   final String typeOfCustomerAdd;
   final List<String> listOfPhoneNumber;
+  final List<String> listOfCedulas;
 
   @override
   State<AddCustomer> createState() => _AddCustomerState();
@@ -615,6 +617,16 @@ class _AddCustomerState extends State<AddCustomer> {
                                     padding: const EdgeInsets.all(10.0),
                                     child: TextFormField(
                                       controller: searchCedulaController,
+                                      validator: (value) {
+                                        if (value != null && value.isNotEmpty) {
+                                          // Normalizar: quitar espacios y guiones
+                                          final normalizedValue = value.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
+                                          if (widget.listOfCedulas.contains(normalizedValue)) {
+                                            return lang.S.of(context).cedulaAlreadyExists;
+                                          }
+                                        }
+                                        return null;
+                                      },
                                       decoration: InputDecoration(
                                         labelText: 'Cédula (Personas)',
                                         hintText: 'Ingrese cédula para buscar persona',

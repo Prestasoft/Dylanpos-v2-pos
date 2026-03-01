@@ -139,11 +139,15 @@ class _CustomerSelectorState extends ConsumerState<CustomerSelector> {
     return customerList.when(
       data: (allCustomers) {
         List<String> listOfPhoneNumber = [];
+        List<String> listOfCedulas = [];
         List<CustomerModel> customersList = [];
 
         for (var value in allCustomers) {
           listOfPhoneNumber
               .add(value.phoneNumber.removeAllWhiteSpace().toLowerCase());
+          if (value.gst.isNotEmpty) {
+            listOfCedulas.add(value.gst.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase());
+          }
           if (value.type != 'Supplier') {
             customersList.add(value);
           }
@@ -192,6 +196,7 @@ class _CustomerSelectorState extends ConsumerState<CustomerSelector> {
                   extra: {
                     'typeOfCustomerAdd': 'Buyer',
                     'listOfPhoneNumber': listOfPhoneNumber,
+                    'listOfCedulas': listOfCedulas,
                   },
                 );
 

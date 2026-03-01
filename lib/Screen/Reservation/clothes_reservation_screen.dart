@@ -36,6 +36,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
   CustomerModel? selectedCustomer;
   int _retry = 0;
   List<String> phoneNumbers = [];
+  List<String> cedulas = [];
 
   String _formatDate(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
@@ -262,6 +263,18 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
       },
     );
 
+    // Cargar la lista de cédulas de clientes
+    cedulas = customerList.when(
+      data: (customers) {
+        return customers
+            .where((c) => c.gst.isNotEmpty)
+            .map((c) => c.gst.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase())
+            .toList();
+      },
+      loading: () => [],
+      error: (error, stackTrace) => [],
+    );
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -344,6 +357,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
                       extra: {
                         'typeOfCustomerAdd': 'Buyer',
                         'listOfPhoneNumber': phoneNumbers,
+                        'listOfCedulas': cedulas,
                       },
                     );
 
