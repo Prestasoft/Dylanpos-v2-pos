@@ -20,6 +20,7 @@ import '../../const.dart';
 import '../../subscription.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
+import '../Widgets/customer_avatar.dart';
 import '../currency/currency_provider.dart';
 
 class CustomerList extends StatefulWidget {
@@ -511,27 +512,10 @@ class _CustomerListState extends State<CustomerList> {
                               Text('${startIndex + index + 1}'),
                             ),
                             DataCell(
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: kNeutral100,
-                                ),
-                                child: ClipOval(
-                                  child: customer.profilePicture.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          imageUrl: customer.profilePicture,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) =>
-                                              const CircularProgressIndicator(
-                                                  strokeWidth: 2),
-                                          errorWidget: (context, url, error) =>
-                                              const Icon(Icons.person,
-                                                  size: 20),
-                                        )
-                                      : const Icon(Icons.person, size: 20),
-                                ),
+                              CustomerAvatar(
+                                imageUrl: customer.profilePicture,
+                                size: 40,
+                                backgroundColor: kNeutral100,
                               ),
                             ),
                             DataCell(

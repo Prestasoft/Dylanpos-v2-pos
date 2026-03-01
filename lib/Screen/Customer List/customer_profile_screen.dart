@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nb_utils/nb_utils.dart';
 import '../../services/api_service.dart';
+import '../Widgets/customer_avatar.dart';
 import '../../commas.dart';
 import '../../const.dart';
 import '../../PDF/print_pdf.dart';
@@ -269,16 +270,13 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.blue.shade100, width: 2),
             ),
-            child: customer['profilePicture'] != null && customer['profilePicture'].toString().isNotEmpty
-                ? ClipRRect(
+            child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Image.network(
-                      customer['profilePicture'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(),
+                    child: CustomerAvatar(
+                      imageUrl: customer['profilePicture']?.toString(),
+                      size: 100,
                     ),
-                  )
-                : _buildAvatarPlaceholder(),
+                  ),
           ),
           const SizedBox(width: 20),
 

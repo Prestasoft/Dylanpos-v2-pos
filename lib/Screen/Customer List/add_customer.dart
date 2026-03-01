@@ -184,13 +184,17 @@ class _AddCustomerState extends State<AddCustomer> {
             try {
               String base64Image = padronData["foto"];
               // Limpiar el formato de la imagen (remover encabezado si existe)
+              String cleanBase64 = base64Image;
               if (base64Image.contains(',')) {
-                base64Image = base64Image.split(',').last;
+                cleanBase64 = base64Image.split(',').last;
               }
-              Uint8List decodedImage = base64.decode(base64Image);
+              Uint8List decodedImage = base64.decode(cleanBase64);
               setState(() {
                 image = decodedImage;
+                // Guardar la foto como data URL para persistir en la BD
+                profilePicture = 'data:image/jpeg;base64,$cleanBase64';
               });
+              print('[AddCustomer] ✅ Foto del Padrón cargada (${cleanBase64.length} chars)');
             } catch (e) {
               print('Error decodificando imagen: $e');
             }
