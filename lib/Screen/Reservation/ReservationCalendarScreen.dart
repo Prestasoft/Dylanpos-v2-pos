@@ -1021,10 +1021,50 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                 setState(() {
                   _searchQuery = value;
                 });
+                
+                // Auto-jump mientras escribe
+                if (value.trim().isNotEmpty && reservationsValue is AsyncData) {
+                  final filtered = _filterReservations(reservationsValue.value!);
+                  if (filtered.isNotEmpty) {
+                    final Set<DateTime> uniqueDates = {};
+                    for (var res in filtered) {
+                      final date = _parseDate(res.reservationDate);
+                      if (date != null) uniqueDates.add(DateTime(date.year, date.month, date.day));
+                      if (res.fiestaDate != null && res.fiestaDate!.isNotEmpty) {
+                        final fDate = _parseDate(res.fiestaDate!);
+                        if (fDate != null) uniqueDates.add(DateTime(fDate.year, fDate.month, fDate.day));
+                      }
+                    }
+                    
+                    if (uniqueDates.isNotEmpty) {
+                      // Saltar automáticamente a la fecha de la primera coincidencia (ordenadas cronológicamente)
+                      final datesList = uniqueDates.toList()..sort();
+                      final targetDate = datesList.first;
+                      
+                      // Solo actualizar si no estamos ya en esa fecha para evitar rebuilds excesivos
+                      if (!isSameDay(_selectedDay, targetDate)) {
+                        setState(() {
+                          _focusedDay = targetDate;
+                          _selectedDay = targetDate;
+                        });
+                      }
+                    }
+                  }
+                }
+              },
+              onSubmitted: (value) {
+                _handleSearchSubmit(value, reservationsValue);
               },
             ),
           ),
-          if (_searchQuery.isNotEmpty)
+          if (_searchQuery.isNotEmpty) ...[
+            IconButton(
+              icon: const Icon(Icons.arrow_forward, color: Color(0xFFD59345)),
+              tooltip: 'Ir a la reservación',
+              onPressed: () {
+                 _handleSearchSubmit(_searchQuery, reservationsValue);
+              },
+            ),
             IconButton(
               icon: Icon(Icons.clear, color: Colors.grey.shade600),
               onPressed: () {
@@ -1034,6 +1074,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                 });
               },
             ),
+          ]
         ],
       ),
     );
@@ -1042,6 +1083,103 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
   // Estado para almacenar la información de clientes
   final Map<String, CustomerModel?> _clientsCache = {};
   
+  // Extraer la acción de buscar a una función
+  void _handleSearchSubmit(String query, AsyncValue<List<ReservationModel>> reservationsValue) {
+    if (query.trim().isEmpty) return;
+    
+    if (reservationsValue is AsyncData) {
+      final allReservations = reservationsValue.value!;
+      final filtered = _filterReservations(allReservations);
+      
+      if (filtered.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se encontraron reservaciones.'), duration: Duration(seconds: 2)),
+        );
+        return;
+      }
+      
+      // Recopilar fechas únicas
+      final Set<DateTime> uniqueDates = {};
+      final Map<DateTime, List<ReservationModel>> resByDate = {};
+      
+      for (var res in filtered) {
+        final date = _parseDate(res.reservationDate);
+        if (date != null) {
+          final key = DateTime(date.year, date.month, date.day);
+          uniqueDates.add(key);
+          resByDate.putIfAbsent(key, () => []).add(res);
+        }
+        
+        // Considerar también fiestaDate
+        if (res.fiestaDate != null && res.fiestaDate!.isNotEmpty) {
+          final fDate = _parseDate(res.fiestaDate!);
+          if (fDate != null) {
+            final key = DateTime(fDate.year, fDate.month, fDate.day);
+            uniqueDates.add(key);
+            resByDate.putIfAbsent(key, () => []).add(res);
+          }
+        }
+      }
+      
+      if (uniqueDates.isEmpty) return;
+      
+      if (uniqueDates.length == 1) {
+        // Solo una fecha encontrada: saltar directo a ella
+        final targetDate = uniqueDates.first;
+        setState(() {
+          _focusedDay = targetDate;
+          _selectedDay = targetDate;
+        });
+      } else {
+        // Múltiples fechas: mostrar modal para elegir
+        final datesList = uniqueDates.toList()..sort();
+        
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Múltiples fechas encontradas', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: datesList.length,
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final date = datesList[index];
+                    final formattedDate = DateFormat.yMMMMd('es').format(date);
+                    final reservationsForDate = resByDate[date] ?? [];
+                    
+                    return ListTile(
+                      leading: const Icon(Icons.calendar_today, color: Color(0xFFD59345)),
+                      title: Text(formattedDate, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text('${reservationsForDate.length} reservación(es)\n' + 
+                                // Extraer un resumen (nombres de servicios)
+                                reservationsForDate.map((r) => r.serviceName?.isNotEmpty == true ? r.serviceName! : 'Servicio').join(', ')),
+                      onTap: () {
+                        Navigator.pop(context); // Cerrar dialog
+                        setState(() {
+                          _focusedDay = date;
+                          _selectedDay = date;
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
+  }
+
   // Cargar los datos de clientes cuando se cargan las reservaciones
   Future<void> _loadClientsData(List<ReservationModel> reservations) async {
     // Solo cargar clientes que no están en caché
