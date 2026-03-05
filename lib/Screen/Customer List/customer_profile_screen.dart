@@ -14,6 +14,7 @@ import '../../Provider/profile_provider.dart';
 import '../../Provider/general_setting_provider.dart';
 import '../../Provider/dress_with_reservations.dart';
 import '../../Provider/reservation_provider.dart';
+import '../../services/deletion_password_service.dart';
 import '../../model/sale_transaction_model.dart';
 import '../../model/FullReservation.dart';
 import '../../model/dress_model.dart';
@@ -685,6 +686,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
             ),
             child: Icon(Icons.payment, color: Colors.green.shade700, size: 20),
           ),
+          trailing: IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            tooltip: 'Eliminar pago',
+            onPressed: () {
+              _confirmarEliminarPago(context, payment, () {
+                _loadProfile(); // Recargar el perfil después de eliminar
+              });
+            },
+          ),
           title: Row(
             children: [
               Text(
@@ -1279,6 +1289,236 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
         ],
       ),
     );
+  }
+
+  /// Confirmar eliminación de pago con clave de autorización
+  void _confirmarEliminarPago(
+    BuildContext context,
+    Map<String, dynamic> pago,
+    VoidCallback onSuccess,
+  ) {
+    final passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+              const SizedBox(width: 8),
+              const Text('Eliminar Pago'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '¿Está seguro de eliminar este pago?',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade800),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Factura: #${pago['invoiceNumber']}'),
+                    Text('Monto: RD\$${myFormat.format(pago['paidAmount'] ?? 0)}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Esta acción:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              const Text('• Revertirá el saldo del cliente'),
+              const Text('• Actualizará la factura como pendiente'),
+              const Text('• Esta acción NO se puede deshacer'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Clave de eliminación',
+                  hintText: 'Ingrese la clave de autorización',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final password = passwordController.text.trim();
+                if (password.isEmpty) {
+                  EasyLoading.showError('Ingrese la clave de autorización');
+                  return;
+                }
+
+                // Validar clave
+                final isValid = await DeletionPasswordService.validatePassword(password);
+
+                if (isValid) {
+                  Navigator.of(dialogContext).pop();
+                  _ejecutarEliminarPago(context, pago, onSuccess);
+                } else {
+                  EasyLoading.showError('Clave incorrecta');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Eliminar Pago'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Ejecutar la eliminación del pago
+  void _ejecutarEliminarPago(
+    BuildContext context,
+    Map<String, dynamic> pago,
+    VoidCallback onSuccess,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Eliminando pago...');
+
+      final apiService = ApiService();
+      final montoRevertir = double.tryParse(pago['paidAmount']?.toString() ?? '0') ?? 0;
+      final pagoId = pago['id']?.toString() ?? '';
+      final invoiceNumber = pago['invoiceNumber']?.toString() ?? '';
+      final clientePhone = _customer?['phone']?.toString() ?? '';
+
+      // 1. Eliminar el registro de due_transactions
+      if (pagoId.isNotEmpty) {
+        final deleteResponse = await apiService.delete('due-transactions/$pagoId');
+        if (!deleteResponse.success) {
+          throw Exception('Error al eliminar el pago: ${deleteResponse.message}');
+        }
+      }
+
+      // 2. Eliminar el registro de daily_transactions asociado
+      try {
+        final dailyResponse = await apiService.get('daily-transactions', queryParams: {
+          'invoiceNumber': invoiceNumber,
+        });
+
+        if (dailyResponse.success && dailyResponse.data != null) {
+          final transactions = dailyResponse.data['dailyTransactions'] as List<dynamic>? ?? 
+                               dailyResponse.data['daily_transactions'] as List<dynamic>? ?? [];
+                               
+          for (var tx in transactions) {
+            final txId = tx['id']?.toString();
+            final type = tx['type']?.toString();
+            final paymentIn = double.tryParse(tx['paymentIn']?.toString() ?? tx['payment_in']?.toString() ?? '0') ?? 0;
+            final paymentOut = double.tryParse(tx['paymentOut']?.toString() ?? tx['payment_out']?.toString() ?? '0') ?? 0;
+            
+            bool isMatch = false;
+            // Para clientes, buscar en paymentIn
+            if (type == 'Due Collection' && paymentIn == montoRevertir) {
+              isMatch = true;
+            } 
+            // Para proveedores, buscar en paymentOut
+            else if (type == 'Due Payment' && paymentOut == montoRevertir) {
+              isMatch = true;
+            }
+
+            if (txId != null && txId.isNotEmpty && isMatch) {
+              await apiService.delete('daily-transactions/$txId');
+              break; // IMPORTANTE: Solo borrar un registro
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Warning: No se pudo eliminar daily_transaction: $e');
+      }
+
+      // 3. Actualizar el due_amount de la factura original
+      try {
+        final salesResponse = await apiService.get('sales', queryParams: {
+          'invoiceNumber': invoiceNumber,
+        });
+
+        if (salesResponse.success && salesResponse.data != null) {
+          final sales = salesResponse.data['sales'] as List<dynamic>? ?? [];
+          if (sales.isNotEmpty) {
+            final sale = sales.first;
+            final saleId = sale['id']?.toString();
+            final currentDueAmount = double.tryParse(sale['due_amount']?.toString() ?? '0') ?? 0;
+            final currentPaidAmount = double.tryParse(sale['paid_amount']?.toString() ?? '0') ?? 0;
+            final newDueAmount = currentDueAmount + montoRevertir;
+            final newPaidAmount = currentPaidAmount - montoRevertir;
+
+            if (saleId != null && saleId.isNotEmpty) {
+              await apiService.put('sales/$saleId', {
+                'due_amount': newDueAmount,
+                'paid_amount': newPaidAmount,
+                'is_paid': newDueAmount <= 0,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Warning: No se pudo actualizar due_amount de la factura: $e');
+      }
+
+      // 4. Actualizar el saldo del cliente
+      try {
+        if (clientePhone.isNotEmpty) {
+          final customerResponse = await apiService.get('customers', queryParams: {
+            'phone': clientePhone,
+          });
+
+          if (customerResponse.success && customerResponse.data != null) {
+            final customers = customerResponse.data['customers'] as List<dynamic>? ?? [];
+            if (customers.isNotEmpty) {
+              final customer = customers.first;
+              final customerId = customer['id']?.toString();
+              final currentDue = double.tryParse(customer['due']?.toString() ?? '0') ?? 0;
+              final newDue = currentDue + montoRevertir;
+
+              if (customerId != null && customerId.isNotEmpty) {
+                await apiService.put('customers/$customerId', {
+                  'due': newDue,
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Warning: No se pudo actualizar saldo del cliente: $e');
+      }
+
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('Pago eliminado correctamente');
+
+      // Llamar callback para refrescar la lista
+      onSuccess();
+
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Error: $e');
+      debugPrint('Error al eliminar pago: $e');
+    }
   }
 }
 

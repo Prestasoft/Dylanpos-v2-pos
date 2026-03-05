@@ -31,6 +31,14 @@ class SaleTransactionModel {
   double? itbisAmount; // Monto del ITBIS (18%)
   double? subtotalBeforeTax; // Subtotal antes de impuestos
 
+  // Campos para facturación en USD
+  String? currency; // Moneda de la factura (DOP o USD)
+  double? exchangeRate; // Tasa de cambio usada (ej: 61.21)
+  String? exchangeRateSource; // Fuente de la tasa (BCRD, Manual)
+  String? exchangeRateDate; // Fecha de la tasa
+  double? totalAmountUSD; // Total en USD (si aplica)
+  double? totalAmountDOP; // Total en DOP (siempre presente)
+
   SaleTransactionModel({
     required this.customerName,
     required this.customerType,
@@ -65,6 +73,12 @@ class SaleTransactionModel {
     this.customerRnc,
     this.itbisAmount,
     this.subtotalBeforeTax,
+    this.currency,
+    this.exchangeRate,
+    this.exchangeRateSource,
+    this.exchangeRateDate,
+    this.totalAmountUSD,
+    this.totalAmountDOP,
   }) : reservationIds = reservationIds ?? []; // Asignación segura
 
   factory SaleTransactionModel.fromJson(Map<dynamic, dynamic> json) {
@@ -145,6 +159,13 @@ class SaleTransactionModel {
       customerRnc: json['customerRnc']?.toString() ?? json['customer_rnc']?.toString(),
       itbisAmount: double.tryParse(json['itbisAmount']?.toString() ?? json['itbis_amount']?.toString() ?? '0'),
       subtotalBeforeTax: double.tryParse(json['subtotalBeforeTax']?.toString() ?? json['subtotal_before_tax']?.toString() ?? '0'),
+      // Campos de moneda USD
+      currency: json['currency']?.toString() ?? 'DOP',
+      exchangeRate: double.tryParse(json['exchangeRate']?.toString() ?? json['exchange_rate']?.toString() ?? '0'),
+      exchangeRateSource: json['exchangeRateSource']?.toString() ?? json['exchange_rate_source']?.toString(),
+      exchangeRateDate: json['exchangeRateDate']?.toString() ?? json['exchange_rate_date']?.toString(),
+      totalAmountUSD: double.tryParse(json['totalAmountUSD']?.toString() ?? json['total_amount_usd']?.toString() ?? '0'),
+      totalAmountDOP: double.tryParse(json['totalAmountDOP']?.toString() ?? json['total_amount_dop']?.toString() ?? '0'),
     );
   }
 
@@ -183,6 +204,13 @@ class SaleTransactionModel {
       'customerRnc': customerRnc,
       'itbisAmount': itbisAmount ?? 0.0,
       'subtotalBeforeTax': subtotalBeforeTax,
+      // Campos de moneda USD
+      'currency': currency ?? 'DOP',
+      'exchangeRate': exchangeRate,
+      'exchangeRateSource': exchangeRateSource,
+      'exchangeRateDate': exchangeRateDate,
+      'totalAmountUSD': totalAmountUSD,
+      'totalAmountDOP': totalAmountDOP,
     };
   }
 }

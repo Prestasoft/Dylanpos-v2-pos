@@ -82,22 +82,23 @@ class _DueListState extends State<DueList> {
   int itemCount = 10;
   String selectedParties = 'Clientes';
   ScrollController mainScroll = ScrollController();
-  String searchItem = '';
 
   // Controller para mantener el texto de búsqueda cuando se reconstruye la UI
   final TextEditingController _searchController = TextEditingController();
 
+  // ValueNotifier para búsqueda (igual que Customer List - NO usa setState)
+  final ValueNotifier<String> _searchQueryNotifier = ValueNotifier<String>('');
+
   // Timer para debounce de búsqueda
   Timer? _debounceTimer;
 
-  // Función de búsqueda con debounce (espera 500ms después de dejar de escribir)
+  // Función de búsqueda con debounce (500ms como Customer List)
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          searchItem = value;
-        });
+      if (_searchQueryNotifier.value != value) {
+        _searchQueryNotifier.value = value;
+        _currentPage = 1; // Reset a página 1
       }
     });
   }
@@ -115,6 +116,7 @@ class _DueListState extends State<DueList> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchQueryNotifier.dispose();
     _debounceTimer?.cancel();
     mainScroll.dispose();
     _horizontalScroll.dispose();
@@ -1053,20 +1055,36 @@ class _DueListState extends State<DueList> {
         }
       }
 
-      // 2. Eliminar el registro de daily_transactions asociado (Due Collection)
+      // 2. Eliminar el registro de daily_transactions asociado
       try {
-        // Buscar la transacción diaria con el mismo invoice y tipo Due Collection
+        // Buscar la transacción diaria con el mismo invoice
         final dailyResponse = await apiService.get('daily-transactions', queryParams: {
           'invoiceNumber': pago.invoiceNumber,
-          'type': 'Due Collection',
         });
 
         if (dailyResponse.success && dailyResponse.data != null) {
-          final transactions = dailyResponse.data['dailyTransactions'] as List<dynamic>? ?? [];
+          final transactions = dailyResponse.data['dailyTransactions'] as List<dynamic>? ?? 
+                               dailyResponse.data['daily_transactions'] as List<dynamic>? ?? [];
+                               
           for (var tx in transactions) {
             final txId = tx['id']?.toString();
-            if (txId != null && txId.isNotEmpty) {
+            final type = tx['type']?.toString();
+            final paymentIn = double.tryParse(tx['paymentIn']?.toString() ?? tx['payment_in']?.toString() ?? '0') ?? 0;
+            final paymentOut = double.tryParse(tx['paymentOut']?.toString() ?? tx['payment_out']?.toString() ?? '0') ?? 0;
+            
+            bool isMatch = false;
+            // Para clientes, buscar en paymentIn
+            if (type == 'Due Collection' && paymentIn == montoRevertir) {
+              isMatch = true;
+            } 
+            // Para proveedores, buscar en paymentOut
+            else if (type == 'Due Payment' && paymentOut == montoRevertir) {
+              isMatch = true;
+            }
+
+            if (txId != null && txId.isNotEmpty && isMatch) {
               await apiService.delete('daily-transactions/$txId');
+              break; // IMPORTANTE: Solo borrar un registro para no eliminar otros pagos de la misma factura
             }
           }
         }
@@ -1087,11 +1105,15 @@ class _DueListState extends State<DueList> {
             final sale = sales.first;
             final saleId = sale['id']?.toString();
             final currentDueAmount = double.tryParse(sale['due_amount']?.toString() ?? '0') ?? 0;
+            final currentPaidAmount = double.tryParse(sale['paid_amount']?.toString() ?? '0') ?? 0;
             final newDueAmount = currentDueAmount + montoRevertir;
+            final newPaidAmount = currentPaidAmount - montoRevertir;
 
             if (saleId != null && saleId.isNotEmpty) {
               await apiService.put('sales/$saleId', {
                 'due_amount': newDueAmount,
+                'paid_amount': newPaidAmount,
+                'is_paid': newDueAmount <= 0,
               });
             }
           }
@@ -1143,6 +1165,38 @@ class _DueListState extends State<DueList> {
   }
 
   @override
+  // Widget del campo de búsqueda que NO se reconstruye
+  Widget _buildSearchField(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.all(12.0),
+          hintText: lang.S.of(context).searchByNameOrPhone,
+          hintStyle: const TextStyle(color: kNeutral400),
+          prefixIcon: const Icon(FeatherIcons.search, color: kNeutral400),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: kBorderColorTextField),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: kBorderColorTextField),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: kMainColor, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final currencyProvider = pro.Provider.of<CurrencyProvider>(context);
     final globalCurrency = currencyProvider.currency ?? '\$';
@@ -1151,16 +1205,25 @@ class _DueListState extends State<DueList> {
     return SafeArea(
       child: Scaffold(
           backgroundColor: kDarkWhite,
-          body: Consumer(builder: (_, ref, watch) {
-            // Si hay búsqueda, usar el provider de búsqueda directa del API (sin límite de 100)
-            // Si no hay búsqueda, usar el provider normal con límite de 100
-            final bool isSearching = searchItem.trim().isNotEmpty;
+          body: Column(
+            children: [
+              // BÚSQUEDA FIJA - No se reconstruye
+              _buildSearchField(context),
+              // DATOS - Se reconstruyen cuando cambia la búsqueda
+              Expanded(
+                child: ValueListenableBuilder<String>(
+                  valueListenable: _searchQueryNotifier,
+                  builder: (context, searchQuery, child) {
+                    return Consumer(builder: (_, ref, watch) {
+                      // Si hay búsqueda, usar el provider de búsqueda directa del API
+                      // Si no hay búsqueda, usar el provider normal
+                      final bool isSearching = searchQuery.trim().isNotEmpty;
 
-            // Usamos salesWithDueProvider o searchSalesWithDueProvider según si hay búsqueda
-            AsyncValue<List<SaleTransactionModel>> salesAsync = isSearching
-                ? ref.watch(searchSalesWithDueProvider(searchItem.trim()))
-                : ref.watch(salesWithDueProvider);
-            return salesAsync.when(data: (allSales) {
+                // Usamos salesWithDueProvider o searchSalesWithDueProvider según si hay búsqueda
+                AsyncValue<List<SaleTransactionModel>> salesAsync = isSearching
+                    ? ref.watch(searchSalesWithDueProvider(searchQuery.trim()))
+                    : ref.watch(salesWithDueProvider);
+                return salesAsync.when(data: (allSales) {
               // Agrupar ventas con dueAmount > 0 por cliente
               Map<String, CustomerDueInfo> customerDuesMap = {};
               Map<String, CustomerDueInfo> supplierDuesMap = {};
@@ -1244,14 +1307,14 @@ class _DueListState extends State<DueList> {
                 final name = element.customerName.replaceAll(' ', '').toLowerCase();
                 final phone = element.phoneNumber;
 
-                final search = searchItem.toLowerCase();
+                final search = searchQuery.toLowerCase();
 
                 if ((name.contains(search) || phone.contains(search))) {
                   if (_filterByDate(element)) {
                     showAbleCustomer.add(element);
                     showAbleCustomerDueInfo.add(dueInfo);
                   }
-                } else if (searchItem == '' && _filterByDate(element)) {
+                } else if (searchQuery == '' && _filterByDate(element)) {
                   showAbleCustomer.add(element);
                   showAbleCustomerDueInfo.add(dueInfo);
                 }
@@ -1264,13 +1327,13 @@ class _DueListState extends State<DueList> {
                 if ((element.customerName
                         .removeAllWhiteSpace()
                         .toLowerCase()
-                        .contains(searchItem.toLowerCase()) ||
-                    element.phoneNumber.contains(searchItem))) {
+                        .contains(searchQuery.toLowerCase()) ||
+                    element.phoneNumber.contains(searchQuery))) {
                   if (_filterByDate(element)) {
                     showAbleSupplier.add(element);
                     showAbleSupplierDueInfo.add(dueInfo);
                   }
-                } else if (searchItem == '' && _filterByDate(element)) {
+                } else if (searchQuery == '' && _filterByDate(element)) {
                   showAbleSupplier.add(element);
                   showAbleSupplierDueInfo.add(dueInfo);
                 }
@@ -1620,39 +1683,6 @@ class _DueListState extends State<DueList> {
                                         ),
                                       ),
                                     ),
-                                  // Campo de búsqueda
-                                  ResponsiveGridCol(
-                                      xs: 100,
-                                      md: 60,
-                                      lg: 35,
-                                      child: TextFormField(
-                                        controller: _searchController,
-                                        showCursor: true,
-                                        cursorColor: kTitleColor,
-                                        onChanged: (value) {
-                                          // Usar debounce para evitar búsquedas en cada tecla
-                                          _debounceTimer?.cancel();
-                                          _debounceTimer = Timer(const Duration(milliseconds: 800), () {
-                                            if (mounted) {
-                                              setState(() {
-                                                searchItem = value;
-                                                _currentPage = 1; // Reset to first page when searching
-                                              });
-                                            }
-                                          });
-                                        },
-                                        keyboardType: TextInputType.name,
-                                        decoration: kInputDecoration.copyWith(
-                                          contentPadding:
-                                              const EdgeInsets.all(10.0),
-                                          hintText:
-                                              (lang.S.of(context).searchByName),
-                                          suffixIcon: const Icon(
-                                            FeatherIcons.search,
-                                            color: kNeutral400,
-                                          ),
-                                        ),
-                                      )),
                                 ]),
                                 const SizedBox(height: 12),
                                 Container(
@@ -2138,7 +2168,70 @@ class _DueListState extends State<DueList> {
                 child: CircularProgressIndicator(),
               );
             });
-          })),
+                    });
+                  },
+                ),
+              ),
+            ],
+          )),
+    );
+  }
+}
+
+/// Widget separado para el campo de búsqueda que mantiene su propio estado
+/// Usa AutomaticKeepAliveClientMixin para evitar que se destruya cuando el padre se reconstruye
+class _SearchTextField extends StatefulWidget {
+  final TextEditingController controller;
+  final Function(String) onChanged;
+  final String hintText;
+
+  const _SearchTextField({
+    super.key,
+    required this.controller,
+    required this.onChanged,
+    required this.hintText,
+  });
+
+  @override
+  State<_SearchTextField> createState() => _SearchTextFieldState();
+}
+
+class _SearchTextFieldState extends State<_SearchTextField> with AutomaticKeepAliveClientMixin {
+  late FocusNode _focusNode;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    return TextFormField(
+      controller: widget.controller,
+      focusNode: _focusNode,
+      showCursor: true,
+      cursorColor: kTitleColor,
+      onChanged: widget.onChanged,
+      keyboardType: TextInputType.name,
+      decoration: kInputDecoration.copyWith(
+        contentPadding: const EdgeInsets.all(10.0),
+        hintText: widget.hintText,
+        suffixIcon: const Icon(
+          FeatherIcons.search,
+          color: kNeutral400,
+        ),
+      ),
     );
   }
 }

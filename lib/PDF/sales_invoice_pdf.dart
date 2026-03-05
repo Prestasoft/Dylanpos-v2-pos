@@ -197,7 +197,17 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
         (r) => r?.reservation['id'] == item.productId,
         orElse: () => null,
       );
-      final serviceDescription = fullReservation?.service?['description'] ?? item.descricpion ?? '';
+      String serviceDescription = fullReservation?.service?['description'] ?? item.descricpion ?? '';
+      
+      // Truncar descripciones largas para evitar que el PDF se quede colgado
+      // Limitar a máximo 5 líneas y 200 caracteres
+      if (serviceDescription.isNotEmpty) {
+        final lines = serviceDescription.split('\n').where((l) => l.trim().isNotEmpty).take(5).toList();
+        serviceDescription = lines.join('\n');
+        if (serviceDescription.length > 200) {
+          serviceDescription = '${serviceDescription.substring(0, 200)}...';
+        }
+      }
 
       rows.add(<String>[
         '${i + 1}',

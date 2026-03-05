@@ -50,10 +50,12 @@ class SaleList extends StatefulWidget {
 class _SaleListState extends State<SaleList> {
   int currentPage = 1;
   late int itemsPerPage = 10;
-  String searchItem = '';
 
   // Controller para mantener el texto de búsqueda cuando se reconstruye la UI
   final TextEditingController _searchController = TextEditingController();
+
+  // ValueNotifier para búsqueda (NO usa setState - evita reconstruir el TextField)
+  final ValueNotifier<String> _searchQueryNotifier = ValueNotifier<String>('');
 
   // Timer para debounce de búsqueda
   Timer? _debounceTimer;
@@ -67,20 +69,51 @@ class _SaleListState extends State<SaleList> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchQueryNotifier.dispose();
     _debounceTimer?.cancel();
     super.dispose();
   }
 
-  // Función de búsqueda con debounce (espera 800ms después de dejar de escribir)
+  // Función de búsqueda con debounce (500ms como en Due List)
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        setState(() {
-          searchItem = value;
-        });
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (_searchQueryNotifier.value != value) {
+        _searchQueryNotifier.value = value;
+        currentPage = 1; // Reset a página 1
       }
     });
+  }
+
+  // Widget del campo de búsqueda que NO se reconstruye
+  Widget _buildSearchField(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.all(12.0),
+          hintText: lang.S.of(context).searchByInvoiceOrName,
+          hintStyle: const TextStyle(color: kNeutral400),
+          prefixIcon: const Icon(FeatherIcons.search, color: kNeutral400),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: kBorderColorTextField),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: kBorderColorTextField),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(color: kMainColor, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+    );
   }
 
   final _horizontalScroll = ScrollController();
@@ -92,16 +125,25 @@ class _SaleListState extends State<SaleList> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: kDarkWhite,
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Consumer(builder: (_, consuearRef, watch) {
-            // Si hay búsqueda, usar el provider de búsqueda directa del API (sin límite de 100)
-            // Si no hay búsqueda, usar el provider normal con límite de 100
-            final bool isSearching = searchItem.trim().isNotEmpty;
+        body: Column(
+          children: [
+            // BÚSQUEDA FIJA - No se reconstruye
+            _buildSearchField(context),
+            // DATOS - Se reconstruyen cuando cambia la búsqueda
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: ValueListenableBuilder<String>(
+                  valueListenable: _searchQueryNotifier,
+                  builder: (context, searchQuery, child) {
+                    return Consumer(builder: (_, consuearRef, watch) {
+                      // Si hay búsqueda, usar el provider de búsqueda directa del API (sin límite de 100)
+                      // Si no hay búsqueda, usar el provider normal con límite de 100
+                      final bool isSearching = searchQuery.trim().isNotEmpty;
 
-            AsyncValue<List<SaleTransactionModel>> transactionReport = isSearching
-                ? consuearRef.watch(searchSalesProvider(searchItem.trim()))
-                : consuearRef.watch(transitionProvider);
+                      AsyncValue<List<SaleTransactionModel>> transactionReport = isSearching
+                          ? consuearRef.watch(searchSalesProvider(searchQuery.trim()))
+                          : consuearRef.watch(transitionProvider);
             final profile = consuearRef.watch(profileDetailsProvider);
             final settingProvider = consuearRef.watch(generalSettingProvider);
 
@@ -203,28 +245,6 @@ class _SaleListState extends State<SaleList> {
                               ),
                             ),
                           ),
-                          ResponsiveGridCol(
-                            xs: 100,
-                            md: 60,
-                            lg: 35,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: AppTextField(
-                                controller: _searchController,
-                                showCursor: true,
-                                cursorColor: kTitleColor,
-                                onChanged: _onSearchChanged,  // Usa debounce para evitar búsquedas en cada tecla
-                                textFieldType: TextFieldType.NAME,
-                                decoration: InputDecoration(
-                                  hintText: lang.S.of(context).searchByInvoiceOrName,
-                                  suffixIcon: const Icon(
-                                    FeatherIcons.search,
-                                    color: kNeutral700,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
                         ],
                       ),
                       const SizedBox(height: 20.0),
@@ -732,7 +752,12 @@ class _SaleListState extends State<SaleList> {
                 );
               }
             );
-          }),
+                    });
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -50,8 +50,8 @@ class DueTransactionModel {
     sellerName = json['sellerName']?.toString() ?? json['seller_name']?.toString() ?? '';
     purchaseDate = json['purchaseDate']?.toString() ?? json['purchase_date']?.toString() ?? json['created_at']?.toString() ?? '';
     totalDue = parseDouble(json['totalDue'] ?? json['total_due']);
-    dueAmountAfterPay = parseDouble(json['dueAmountAfterPay'] ?? json['due_amount_after_pay']);
-    payDueAmount = parseDouble(json['payDueAmount'] ?? json['pay_due_amount']);
+    dueAmountAfterPay = parseDouble(json['dueAmountAfterPay'] ?? json['due_amount_after_pay'] ?? json['remaining_due']);
+    payDueAmount = parseDouble(json['payDueAmount'] ?? json['pay_due_amount'] ?? json['paid_amount']);
     isPaid = json['isPaid'] == true || json['is_paid'] == true;
     paymentType = json['paymentType']?.toString() ?? json['payment_type']?.toString() ?? '';
     sendWhatsappMessage = json['sendWhatsappMessage'] == true || json['send_whatsapp_message'] == true;
