@@ -2923,6 +2923,91 @@ class ReservationDetailView extends ConsumerWidget {
                           },
                         ),
                       ),
+                    if (isSelected)
+                      const SizedBox(width: 4),
+                    if (isSelected)
+                      SizedBox(
+                        height: 30,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.close, size: 14),
+                          label: const Text('Quitar', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFD32F2F),
+                            side: const BorderSide(color: Color(0xFFD32F2F), width: 1),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.warning_amber, color: Color(0xFFD32F2F)),
+                                    SizedBox(width: 8),
+                                    Expanded(child: Text('Quitar Vestimenta', style: TextStyle(fontSize: 18))),
+                                  ],
+                                ),
+                                content: Text(
+                                  '¿Está seguro de quitar "${resolvedDressName.isNotEmpty ? resolvedDressName : componentName}" de esta reserva?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFD32F2F),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Sí, quitar'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            
+                            if (confirm == true) {
+                              final updatedDresses = List<Map<String, dynamic>>.from(
+                                selectedDresses.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}),
+                              );
+                              updatedDresses.removeAt(index);
+
+                              EasyLoading.show(status: 'Quitando vestimenta...');
+                              try {
+                                final success = await ref.read(
+                                  updateReservationProvider({
+                                    'reservationId': reservationId,
+                                    'updateData': {
+                                      'dress_ids': updatedDresses.map((d) => <String, dynamic>{
+                                        'dress_id': d['dress_id']?.toString() ?? '',
+                                        'branch_id': d['branch_id']?.toString() ?? '',
+                                        'dress_name': d['dress_name']?.toString() ?? '',
+                                      }).toList(),
+                                      'dresses_data': updatedDresses,
+                                    },
+                                  }).future,
+                                );
+
+                                EasyLoading.dismiss();
+                                if (success) {
+                                  EasyLoading.showSuccess('Vestimenta quitada');
+                                  ref.invalidate(fullReservationByIdProviderVQ(reservationId));
+                                  ref.invalidate(fullReservationsProvider);
+                                } else {
+                                  EasyLoading.showError('Error al quitar');
+                                }
+                              } catch (e) {
+                                EasyLoading.dismiss();
+                                EasyLoading.showError('Error: $e');
+                              }
+                            }
+                          },
+                        ),
+                      ),
                   ],
                 ),
               );
