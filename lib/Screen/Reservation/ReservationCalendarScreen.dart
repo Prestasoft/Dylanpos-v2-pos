@@ -3063,8 +3063,39 @@ class ReservationDetailView extends ConsumerWidget {
                     EasyLoading.show(status: 'Verificando disponibilidad...');
                     
                     try {
-                      // Verificar conflictos de vestimenta
-                      final dresses = (dressComposite is List) ? dressComposite : [];
+                      // Obtener los vestidos DIRECTAMENTE de la reserva (no del parámetro dressComposite que puede estar vacío)
+                      List<dynamic> dressesFromReservation = [];
+                      try {
+                        final fullRes = await ref.read(
+                          fullReservationByIdProviderVQ(reservationId).future,
+                        );
+                        if (fullRes != null) {
+                          final resData = fullRes.reservation;
+                          // Buscar en todas las fuentes posibles
+                          var md = resData['multiple_dress'];
+                          if (md is List && md.isNotEmpty) {
+                            dressesFromReservation = md;
+                          }
+                          if (dressesFromReservation.isEmpty) {
+                            var dd = resData['dresses_data'];
+                            if (dd is List && dd.isNotEmpty) {
+                              dressesFromReservation = dd;
+                            }
+                          }
+                          if (dressesFromReservation.isEmpty) {
+                            var di = resData['dress_ids'];
+                            if (di is List && di.isNotEmpty) {
+                              dressesFromReservation = di;
+                            }
+                          }
+                          debugPrint('🔍 [VALIDACIÓN] Vestidos de la reserva: ${dressesFromReservation.length}');
+                          debugPrint('🔍 [VALIDACIÓN] Datos: $dressesFromReservation');
+                        }
+                      } catch (e) {
+                        debugPrint('🔍 [VALIDACIÓN] Error obteniendo reserva: $e');
+                      }
+                      
+                      final dresses = dressesFromReservation;
                       bool hasConflict = false;
                       List<String> conflictingDresses = [];
 
@@ -3077,10 +3108,18 @@ class ReservationDetailView extends ConsumerWidget {
                         );
 
                         // Filtrar reservas de la nueva fecha (excluyendo la actual)
+                        // Manejar formato ISO y simple
                         final reservationsOnDate = allReservations.where((r) {
                           final resDate = r.reservation['reservation_date']?.toString() ?? '';
-                          return resDate == newDate && r.id != reservationId;
+                          // Comparar solo los primeros 10 chars (YYYY-MM-DD) para manejar ISO 8601
+                          final normalizedResDate = resDate.length >= 10 ? resDate.substring(0, 10) : resDate;
+                          final normalizedNewDate = newDate.length >= 10 ? newDate.substring(0, 10) : newDate;
+                          return normalizedResDate == normalizedNewDate && r.id != reservationId;
                         }).toList();
+
+                        debugPrint('🔍 [VALIDACIÓN] Fecha nueva: $newDate');
+                        debugPrint('🔍 [VALIDACIÓN] Reservas en esa fecha: ${reservationsOnDate.length}');
+                        debugPrint('🔍 [VALIDACIÓN] Vestidos a verificar: ${dresses.length}');
 
                         // Obtener lista de vestidos para resolver nombres
                         final dressesListAsync = ref.read(dressesByStatusProvider('Todos'));
@@ -3103,56 +3142,67 @@ class ReservationDetailView extends ConsumerWidget {
                             
                             if (dressId.isEmpty) continue;
                             
+                            debugPrint('🔍 [VALIDACIÓN] Verificando vestido: $dressName (ID: $dressId)');
+                            
                             // Verificar si este vestido está en otra reserva del mismo día
                             for (final existingRes in reservationsOnDate) {
-                              // Extraer dress_ids de la reserva existente (datos crudos)
+                              // Extraer TODOS los dress IDs de la reserva existente
+                              final Set<String> existingDressIds = {};
+                              
+                              // 1. Buscar en multiple_dress
+                              final multipleDress = existingRes.reservation['multiple_dress'];
+                              if (multipleDress is List) {
+                                for (final d in multipleDress) {
+                                  if (d is Map) {
+                                    final id = d['dress_id']?.toString() ?? '';
+                                    if (id.isNotEmpty) existingDressIds.add(id);
+                                  }
+                                }
+                              }
+                              
+                              // 2. Buscar en dress_ids
                               final rawDressIds = existingRes.reservation['dress_ids'];
-                              final rawDressesData = existingRes.reservation['dresses_data'];
-                              
-                              bool foundDress = false;
-                              
-                              // Buscar en dress_ids
                               if (rawDressIds is List) {
-                                foundDress = rawDressIds.any((d) {
-                                  if (d is Map) return d['dress_id']?.toString() == dressId;
-                                  if (d is String) return d == dressId;
-                                  return false;
-                                });
+                                for (final d in rawDressIds) {
+                                  if (d is Map) {
+                                    final id = d['dress_id']?.toString() ?? '';
+                                    if (id.isNotEmpty) existingDressIds.add(id);
+                                  } else if (d is String && d.isNotEmpty) {
+                                    existingDressIds.add(d);
+                                  }
+                                }
                               }
                               
-                              // Buscar también en dresses_data
-                              if (!foundDress && rawDressesData is List) {
-                                foundDress = rawDressesData.any((d) {
-                                  if (d is Map) return d['dress_id']?.toString() == dressId;
-                                  return false;
-                                });
+                              // 3. Buscar en dresses_data
+                              final rawDressesData = existingRes.reservation['dresses_data'];
+                              if (rawDressesData is List) {
+                                for (final d in rawDressesData) {
+                                  if (d is Map) {
+                                    final id = d['dress_id']?.toString() ?? '';
+                                    if (id.isNotEmpty) existingDressIds.add(id);
+                                  }
+                                }
                               }
                               
-                              // Fallback: buscar en multipleDress del modelo
-                              if (!foundDress) {
-                                foundDress = existingRes.reservation['dress_ids'] != null
-                                    ? false  // Ya chequeamos arriba
-                                    : false;
-                                // También verificar el modelo parseado por si acaso
-                                final resModel = ReservationModel.fromMap(
-                                  existingRes.reservation,
-                                  existingRes.id,
-                                );
-                                foundDress = resModel.multipleDress.any(
-                                  (d) => d['dress_id'] == dressId,
-                                );
-                              }
+                              // 4. Buscar dress_id singular (reserva con 1 solo vestido)
+                              final singleDressId = existingRes.reservation['dress_id']?.toString() ?? '';
+                              if (singleDressId.isNotEmpty) existingDressIds.add(singleDressId);
                               
-                              if (foundDress) {
+                              debugPrint('🔍 [VALIDACIÓN] Reserva ${existingRes.id} tiene IDs: $existingDressIds');
+                              
+                              if (existingDressIds.contains(dressId)) {
                                 hasConflict = true;
                                 if (!conflictingDresses.contains(dressName)) {
                                   conflictingDresses.add(dressName);
                                 }
+                                debugPrint('⚠️ [VALIDACIÓN] ¡CONFLICTO! $dressName ya reservado');
                               }
                             }
                           }
                         }
                       }
+
+                      debugPrint('🔍 [VALIDACIÓN] Resultado: hasConflict=$hasConflict, conflictos=${conflictingDresses.length}');
 
                       EasyLoading.dismiss();
 
