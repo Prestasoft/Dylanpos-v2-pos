@@ -546,18 +546,18 @@ class ReservationCard extends ConsumerWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.15),
+                                color: const Color(0xFFD32F2F).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                                border: Border.all(color: const Color(0xFFD32F2F).withValues(alpha: 0.4)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
+                                  const Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFD32F2F)),
                                   const SizedBox(width: 4),
                                   Text(
                                     '$pending vestimenta${pending > 1 ? 's' : ''} pendiente${pending > 1 ? 's' : ''}',
-                                    style: const TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600),
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFFD32F2F), fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -2609,7 +2609,7 @@ class ReservationDetailView extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: selectedDresses.length >= components.length
                         ? Colors.green.withValues(alpha: 0.15)
-                        : Colors.orange.withValues(alpha: 0.15),
+                        : const Color(0xFFD32F2F).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -2617,7 +2617,7 @@ class ReservationDetailView extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: selectedDresses.length >= components.length ? Colors.green : Colors.orange,
+                      color: selectedDresses.length >= components.length ? Colors.green : const Color(0xFFD32F2F),
                     ),
                   ),
                 ),
@@ -2743,15 +2743,79 @@ class ReservationDetailView extends ConsumerWidget {
                         ),
                       ),
                     if (isSelected)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '✓',
-                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                      SizedBox(
+                        height: 30,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.swap_horiz, size: 14),
+                          label: const Text('Cambiar', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.deepPurple,
+                            side: const BorderSide(color: Colors.deepPurple, width: 1),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          onPressed: packageModel == null ? null : () async {
+                            final selected = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DressSelectionPackageScreen(
+                                  packagesAsync: packageModel!,
+                                  dressIds: selectedDresses
+                                      .where((d) => d is Map && selectedDresses.indexOf(d) != index)
+                                      .map((d) => (d is Map) ? d['dress_id']?.toString() ?? '' : '')
+                                      .toList()
+                                      .cast<String>(),
+                                  packageId: packageModel.id,
+                                  packageName: packageModel.name,
+                                  CategoryComposite: componentName,
+                                ),
+                              ),
+                            );
+
+                            if (selected != null && selected is Map) {
+                              final newDressEntry = {
+                                'dress_id': selected['vestidoId'] ?? '',
+                                'branch_id': selected['branchId'] ?? '',
+                                'dress_name': selected['vestidoName'] ?? '',
+                              };
+
+                              final updatedDresses = List<Map<String, dynamic>>.from(
+                                selectedDresses.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}),
+                              );
+                              // Reemplazar en el índice correspondiente
+                              updatedDresses[index] = newDressEntry;
+
+                              EasyLoading.show(status: 'Cambiando vestimenta...');
+                              try {
+                                final success = await ref.read(
+                                  updateReservationProvider({
+                                    'reservationId': reservationId,
+                                    'updateData': {
+                                      'dress_ids': updatedDresses.map((d) => {
+                                        'dress_id': d['dress_id'],
+                                        'branch_id': d['branch_id'],
+                                      }).toList(),
+                                      'dresses_data': updatedDresses,
+                                    },
+                                  }).future,
+                                );
+
+                                EasyLoading.dismiss();
+                                if (success) {
+                                  EasyLoading.showSuccess('Vestimenta cambiada');
+                                  ref.invalidate(fullReservationByIdProviderVQ(reservationId));
+                                  ref.invalidate(fullReservationsProvider);
+                                } else {
+                                  EasyLoading.showError('Error al cambiar');
+                                }
+                              } catch (e) {
+                                EasyLoading.dismiss();
+                                EasyLoading.showError('Error: $e');
+                              }
+                            }
+                          },
                         ),
                       ),
                   ],
