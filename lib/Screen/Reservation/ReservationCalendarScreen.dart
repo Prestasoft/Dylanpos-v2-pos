@@ -2282,20 +2282,39 @@ class ReservationDetailView extends ConsumerWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: compositeList.map<Widget>((item) {
-                final dressName = (item['dress_name'] ?? 'Sin nombre').toString();
-                final branchId = (item['branch_id'] ?? 'Sin sucursal').toString();
-                // Buscar el modelo DressModel por nombre (ignora mayúsculas/minúsculas y espacios)
+                String dressName = (item['dress_name'] ?? '').toString();
+                final branchId = (item['branch_id'] ?? '').toString();
+                final dressId = (item['dress_id'] ?? '').toString();
+                
+                // Buscar el modelo DressModel por dress_id primero, luego por nombre
                 DressModel? match;
-                try {
-                  match = dressesList.firstWhere(
-                    (d) =>
-                        d.name.toString().removeAllWhiteSpace().toLowerCase() ==
-                        dressName.removeAllWhiteSpace().toLowerCase() &&
-                        d.branchId.toString() == branchId,
-                  );
-                } catch (_) {
-                  match = null;
+                
+                // 1. Buscar por dress_id (más confiable)
+                if (dressId.isNotEmpty) {
+                  try {
+                    match = dressesList.firstWhere((d) => d.id == dressId);
+                  } catch (_) {}
                 }
+                
+                // 2. Fallback: buscar por nombre + branch
+                if (match == null && dressName.isNotEmpty) {
+                  try {
+                    match = dressesList.firstWhere(
+                      (d) =>
+                          d.name.toString().removeAllWhiteSpace().toLowerCase() ==
+                          dressName.removeAllWhiteSpace().toLowerCase() &&
+                          d.branchId.toString() == branchId,
+                    );
+                  } catch (_) {
+                    match = null;
+                  }
+                }
+                
+                // Resolver nombre del vestido desde el modelo
+                if (match != null && (dressName.isEmpty || dressName == 'Sin nombre')) {
+                  dressName = match.name;
+                }
+                if (dressName.isEmpty) dressName = 'Sin nombre';
                 String imageUrl = '';
                 String? dressState;
                 if (match != null && match.images.isNotEmpty) {
