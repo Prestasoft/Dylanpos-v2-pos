@@ -2639,30 +2639,48 @@ class ReservationDetailView extends ConsumerWidget {
               final dressName = matchedDress?['dress_name']?.toString() ?? 
                                matchedDress?['name']?.toString() ?? '';
               final branchId = matchedDress?['branch_id']?.toString() ?? '';
+              final dressId = matchedDress?['dress_id']?.toString() ?? '';
 
-              // Buscar imagen del vestido
+              // Buscar imagen del vestido y nombre real
               String imageUrl = '';
+              String resolvedDressName = dressName;
               if (isSelected) {
                 final dressesAsync = ref.watch(dressesByStatusProvider('Todos'));
                 if (dressesAsync is AsyncData<List<DressModel>>) {
-                  try {
-                    final match = dressesAsync.value!.firstWhere(
-                      (d) => d.name.toString().trim().toLowerCase() == dressName.trim().toLowerCase() &&
-                             (branchId.isEmpty || d.branchId.toString() == branchId),
-                    );
-                    if (match.images.isNotEmpty) {
-                      imageUrl = match.images.first.toString();
-                    }
-                  } catch (_) {
-                    // Intentar match solo por nombre si no coincide branchId
+                  DressModel? matchModel;
+                  
+                  // 1. Buscar por dress_id (más confiable)
+                  if (dressId.isNotEmpty) {
                     try {
-                      final match = dressesAsync.value!.firstWhere(
-                        (d) => d.name.toString().trim().toLowerCase() == dressName.trim().toLowerCase(),
+                      matchModel = dressesAsync.value!.firstWhere(
+                        (d) => d.id == dressId,
                       );
-                      if (match.images.isNotEmpty) {
-                        imageUrl = match.images.first.toString();
-                      }
                     } catch (_) {}
+                  }
+                  
+                  // 2. Fallback: buscar por nombre + branch
+                  if (matchModel == null && dressName.isNotEmpty) {
+                    try {
+                      matchModel = dressesAsync.value!.firstWhere(
+                        (d) => d.name.toString().trim().toLowerCase() == dressName.trim().toLowerCase() &&
+                               (branchId.isEmpty || d.branchId.toString() == branchId),
+                      );
+                    } catch (_) {
+                      try {
+                        matchModel = dressesAsync.value!.firstWhere(
+                          (d) => d.name.toString().trim().toLowerCase() == dressName.trim().toLowerCase(),
+                        );
+                      } catch (_) {}
+                    }
+                  }
+                  
+                  if (matchModel != null) {
+                    if (matchModel.images.isNotEmpty) {
+                      imageUrl = matchModel.images.first.toString();
+                    }
+                    if (resolvedDressName.isEmpty) {
+                      resolvedDressName = matchModel.name;
+                    }
                   }
                 }
               }
@@ -2727,9 +2745,9 @@ class ReservationDetailView extends ConsumerWidget {
                               color: isSelected ? Colors.black87 : Colors.grey[600],
                             ),
                           ),
-                          if (isSelected && dressName.isNotEmpty)
+                          if (isSelected && resolvedDressName.isNotEmpty)
                             Text(
-                              dressName,
+                              resolvedDressName,
                               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                             ),
                         ],
