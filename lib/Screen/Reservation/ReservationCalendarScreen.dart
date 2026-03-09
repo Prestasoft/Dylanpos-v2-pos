@@ -3067,10 +3067,16 @@ class ReservationDetailView extends ConsumerWidget {
                       List<String> conflictingDresses = [];
 
                       if (dresses.isNotEmpty) {
-                        // Obtener todas las reservas en la nueva fecha
-                        final reservationsOnDate = await ref.read(
-                          reservationsByDateProvider(newDate).future,
+                        // Obtener TODAS las reservas con datos completos
+                        final allReservations = await ref.read(
+                          fullReservationsProvider.future,
                         );
+
+                        // Filtrar reservas de la nueva fecha (excluyendo la actual)
+                        final reservationsOnDate = allReservations.where((r) {
+                          final resDate = r.reservation['reservation_date']?.toString() ?? '';
+                          return resDate == newDate && r.id != reservationId;
+                        }).toList();
 
                         // Obtener lista de vestidos para resolver nombres
                         final dressesListAsync = ref.read(dressesByStatusProvider('Todos'));
@@ -3095,14 +3101,45 @@ class ReservationDetailView extends ConsumerWidget {
                             
                             // Verificar si este vestido está en otra reserva del mismo día
                             for (final existingRes in reservationsOnDate) {
-                              if (existingRes.id == reservationId) continue; // Saltar la misma reserva
+                              // Extraer dress_ids de la reserva existente (datos crudos)
+                              final rawDressIds = existingRes.reservation['dress_ids'];
+                              final rawDressesData = existingRes.reservation['dresses_data'];
                               
-                              final existingDresses = existingRes.multipleDress;
-                              final hasDress = existingDresses.any(
-                                (d) => d['dress_id'] == dressId,
-                              );
+                              bool foundDress = false;
                               
-                              if (hasDress) {
+                              // Buscar en dress_ids
+                              if (rawDressIds is List) {
+                                foundDress = rawDressIds.any((d) {
+                                  if (d is Map) return d['dress_id']?.toString() == dressId;
+                                  if (d is String) return d == dressId;
+                                  return false;
+                                });
+                              }
+                              
+                              // Buscar también en dresses_data
+                              if (!foundDress && rawDressesData is List) {
+                                foundDress = rawDressesData.any((d) {
+                                  if (d is Map) return d['dress_id']?.toString() == dressId;
+                                  return false;
+                                });
+                              }
+                              
+                              // Fallback: buscar en multipleDress del modelo
+                              if (!foundDress) {
+                                foundDress = existingRes.reservation['dress_ids'] != null
+                                    ? false  // Ya chequeamos arriba
+                                    : false;
+                                // También verificar el modelo parseado por si acaso
+                                final resModel = ReservationModel.fromMap(
+                                  existingRes.reservation,
+                                  existingRes.id,
+                                );
+                                foundDress = resModel.multipleDress.any(
+                                  (d) => d['dress_id'] == dressId,
+                                );
+                              }
+                              
+                              if (foundDress) {
                                 hasConflict = true;
                                 if (!conflictingDresses.contains(dressName)) {
                                   conflictingDresses.add(dressName);
