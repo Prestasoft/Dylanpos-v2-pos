@@ -2798,6 +2798,90 @@ class ReservationDetailView extends ConsumerWidget {
                                 'dress_name': selected['vestidoName'] ?? '',
                               };
 
+                              final newDressId = newDressEntry['dress_id']?.toString() ?? '';
+                              final newDressName = newDressEntry['dress_name']?.toString() ?? 'Vestido';
+
+                              // ─── Validar si el vestido ya está reservado en esta fecha ───
+                              if (newDressId.isNotEmpty) {
+                                EasyLoading.show(status: 'Verificando disponibilidad...');
+                                ref.invalidate(fullReservationsProvider);
+                                final allReservations = await ref.read(fullReservationsProvider.future);
+                                final normalizedDate = reservationDate.length >= 10 ? reservationDate.substring(0, 10) : reservationDate;
+                                final reservationsOnDate = allReservations.where((r) {
+                                  final resDate = r.reservation['reservation_date']?.toString() ?? '';
+                                  final nd = resDate.length >= 10 ? resDate.substring(0, 10) : resDate;
+                                  return nd == normalizedDate && r.id != reservationId;
+                                }).toList();
+
+                                bool dressConflict = false;
+                                for (final existingRes in reservationsOnDate) {
+                                  final Set<String> existingIds = {};
+                                  for (final key in ['multiple_dress', 'dress_ids', 'dresses_data']) {
+                                    final data = existingRes.reservation[key];
+                                    if (data is List) {
+                                      for (final d in data) {
+                                        if (d is Map) {
+                                          final id = d['dress_id']?.toString() ?? '';
+                                          if (id.isNotEmpty) existingIds.add(id);
+                                        }
+                                      }
+                                    }
+                                  }
+                                  final singleId = existingRes.reservation['dress_id']?.toString() ?? '';
+                                  if (singleId.isNotEmpty) existingIds.add(singleId);
+                                  if (existingIds.contains(newDressId)) {
+                                    dressConflict = true;
+                                    break;
+                                  }
+                                }
+                                EasyLoading.dismiss();
+
+                                if (dressConflict && context.mounted) {
+                                  final proceed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Row(
+                                        children: [
+                                          Icon(Icons.warning_amber, color: Color(0xFFD32F2F)),
+                                          SizedBox(width: 8),
+                                          Expanded(child: Text('Vestimenta Reservada', style: TextStyle(fontSize: 18))),
+                                        ],
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('La vestimenta "$newDressName" ya está reservada para esta fecha.'),
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFD32F2F).withValues(alpha: 0.08),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.info_outline, size: 16, color: Color(0xFFD32F2F)),
+                                                SizedBox(width: 8),
+                                                Expanded(child: Text('¿Desea continuar de todas formas?', style: TextStyle(fontSize: 13, color: Color(0xFFD32F2F)))),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F), foregroundColor: Colors.white),
+                                          onPressed: () => Navigator.pop(ctx, true),
+                                          child: const Text('Sí, continuar'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (proceed != true) return;
+                                }
+                              }
+
                               final updatedDresses = List<Map<String, dynamic>>.from(
                                 selectedDresses.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}),
                               );
@@ -2884,6 +2968,90 @@ class ReservationDetailView extends ConsumerWidget {
                                 'branch_id': selected['branchId'] ?? '',
                                 'dress_name': selected['vestidoName'] ?? '',
                               };
+
+                              final newDressId = newDressEntry['dress_id']?.toString() ?? '';
+                              final newDressName = newDressEntry['dress_name']?.toString() ?? 'Vestido';
+
+                              // ─── Validar si el vestido ya está reservado en esta fecha ───
+                              if (newDressId.isNotEmpty) {
+                                EasyLoading.show(status: 'Verificando disponibilidad...');
+                                ref.invalidate(fullReservationsProvider);
+                                final allReservations = await ref.read(fullReservationsProvider.future);
+                                final normalizedDate = reservationDate.length >= 10 ? reservationDate.substring(0, 10) : reservationDate;
+                                final reservationsOnDate = allReservations.where((r) {
+                                  final resDate = r.reservation['reservation_date']?.toString() ?? '';
+                                  final nd = resDate.length >= 10 ? resDate.substring(0, 10) : resDate;
+                                  return nd == normalizedDate && r.id != reservationId;
+                                }).toList();
+
+                                bool dressConflict = false;
+                                for (final existingRes in reservationsOnDate) {
+                                  final Set<String> existingIds = {};
+                                  for (final key in ['multiple_dress', 'dress_ids', 'dresses_data']) {
+                                    final data = existingRes.reservation[key];
+                                    if (data is List) {
+                                      for (final d in data) {
+                                        if (d is Map) {
+                                          final id = d['dress_id']?.toString() ?? '';
+                                          if (id.isNotEmpty) existingIds.add(id);
+                                        }
+                                      }
+                                    }
+                                  }
+                                  final singleId = existingRes.reservation['dress_id']?.toString() ?? '';
+                                  if (singleId.isNotEmpty) existingIds.add(singleId);
+                                  if (existingIds.contains(newDressId)) {
+                                    dressConflict = true;
+                                    break;
+                                  }
+                                }
+                                EasyLoading.dismiss();
+
+                                if (dressConflict && context.mounted) {
+                                  final proceed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Row(
+                                        children: [
+                                          Icon(Icons.warning_amber, color: Color(0xFFD32F2F)),
+                                          SizedBox(width: 8),
+                                          Expanded(child: Text('Vestimenta Reservada', style: TextStyle(fontSize: 18))),
+                                        ],
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('La vestimenta "$newDressName" ya está reservada para esta fecha.'),
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFD32F2F).withValues(alpha: 0.08),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.info_outline, size: 16, color: Color(0xFFD32F2F)),
+                                                SizedBox(width: 8),
+                                                Expanded(child: Text('¿Desea continuar de todas formas?', style: TextStyle(fontSize: 13, color: Color(0xFFD32F2F)))),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F), foregroundColor: Colors.white),
+                                          onPressed: () => Navigator.pop(ctx, true),
+                                          child: const Text('Sí, continuar'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (proceed != true) return;
+                                }
+                              }
 
                               final updatedDresses = List<Map<String, dynamic>>.from(
                                 selectedDresses.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}),
