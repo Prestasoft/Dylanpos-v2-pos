@@ -2137,14 +2137,18 @@ class ReservationDetailView extends ConsumerWidget {
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                       ),
-                                      onPressed: () => _showRescheduleDialog(
-                                        context,
-                                        ref,
-                                        reservationId: fullReservation.id,
-                                        currentDate: reservationData['reservation_date'] ?? '',
-                                        currentTime: reservationData['reservation_time'] ?? '',
-                                        dressComposite: dressComposite,
-                                      ),
+                                      onPressed: () async {
+                                        final authorized = await _showPasswordDialog(context, 'Cambiar Fecha');
+                                        if (!authorized || !context.mounted) return;
+                                        _showRescheduleDialog(
+                                          context,
+                                          ref,
+                                          reservationId: fullReservation.id,
+                                          currentDate: reservationData['reservation_date'] ?? '',
+                                          currentTime: reservationData['reservation_time'] ?? '',
+                                          dressComposite: dressComposite,
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
@@ -2945,6 +2949,8 @@ class ReservationDetailView extends ConsumerWidget {
                             ),
                           ),
                           onPressed: packageModel == null ? null : () async {
+                            final authorized = await _showPasswordDialog(context, 'Cambiar Vestimenta');
+                            if (!authorized || !context.mounted) return;
                             final selected = await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -3108,6 +3114,8 @@ class ReservationDetailView extends ConsumerWidget {
                             ),
                           ),
                           onPressed: () async {
+                            final authorized = await _showPasswordDialog(context, 'Quitar Vestimenta');
+                            if (!authorized || !context.mounted) return;
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
@@ -3184,6 +3192,75 @@ class ReservationDetailView extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  // ─── MÉTODO: Diálogo de Contraseña de Autorización ───
+  Future<bool> _showPasswordDialog(BuildContext context, String actionName) async {
+    final passwordController = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.lock_outline, color: Colors.deepPurple),
+            const SizedBox(width: 8),
+            Expanded(child: Text(actionName, style: const TextStyle(fontSize: 18))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Ingrese la clave de autorización:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Clave',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.key),
+              ),
+              onSubmitted: (_) async {
+                final password = passwordController.text.trim();
+                if (password.isEmpty) {
+                  EasyLoading.showError('Ingrese la clave');
+                  return;
+                }
+                final isValid = await DeletionPasswordService.validatePassword(password);
+                if (isValid) {
+                  Navigator.pop(ctx, true);
+                } else {
+                  EasyLoading.showError('Clave incorrecta');
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+            onPressed: () async {
+              final password = passwordController.text.trim();
+              if (password.isEmpty) {
+                EasyLoading.showError('Ingrese la clave');
+                return;
+              }
+              final isValid = await DeletionPasswordService.validatePassword(password);
+              if (isValid) {
+                Navigator.pop(ctx, true);
+              } else {
+                EasyLoading.showError('Clave incorrecta');
+              }
+            },
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    passwordController.dispose();
+    return result == true;
   }
 
   // ─── MÉTODO: Diálogo de Reprogramación ───
