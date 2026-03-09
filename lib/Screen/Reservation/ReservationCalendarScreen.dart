@@ -2810,9 +2810,10 @@ class ReservationDetailView extends ConsumerWidget {
                                   updateReservationProvider({
                                     'reservationId': reservationId,
                                     'updateData': {
-                                      'dress_ids': updatedDresses.map((d) => {
-                                        'dress_id': d['dress_id'],
-                                        'branch_id': d['branch_id'],
+                                      'dress_ids': updatedDresses.map((d) => <String, dynamic>{
+                                        'dress_id': d['dress_id']?.toString() ?? '',
+                                        'branch_id': d['branch_id']?.toString() ?? '',
+                                        'dress_name': d['dress_name']?.toString() ?? '',
                                       }).toList(),
                                       'dresses_data': updatedDresses,
                                     },
@@ -2896,9 +2897,10 @@ class ReservationDetailView extends ConsumerWidget {
                                   updateReservationProvider({
                                     'reservationId': reservationId,
                                     'updateData': {
-                                      'dress_ids': updatedDresses.map((d) => {
-                                        'dress_id': d['dress_id'],
-                                        'branch_id': d['branch_id'],
+                                      'dress_ids': updatedDresses.map((d) => <String, dynamic>{
+                                        'dress_id': d['dress_id']?.toString() ?? '',
+                                        'branch_id': d['branch_id']?.toString() ?? '',
+                                        'dress_name': d['dress_name']?.toString() ?? '',
                                       }).toList(),
                                       'dresses_data': updatedDresses,
                                     },
@@ -3067,6 +3069,8 @@ class ReservationDetailView extends ConsumerWidget {
                       List<String> conflictingDresses = [];
 
                       if (dresses.isNotEmpty) {
+                        // Invalidar cache para obtener datos frescos
+                        ref.invalidate(fullReservationsProvider);
                         // Obtener TODAS las reservas con datos completos
                         final allReservations = await ref.read(
                           fullReservationsProvider.future,
