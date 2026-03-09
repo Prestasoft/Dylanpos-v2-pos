@@ -16,6 +16,7 @@ import '../model/general_setting_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/sale_transaction_model.dart';
 import '../model/branch_settings_model.dart';
+import 'package:salespro_admin/services/api/victorpos_api_service.dart';
 
 ///___________Sales_PDF_Formats____________________________________________________________________________________________________________________________
 FutureOr<Uint8List> generateSaleDocument({
@@ -39,6 +40,44 @@ FutureOr<Uint8List> generateSaleDocument({
   final pw.Document doc = pw.Document();
   final ref = ProviderScope.containerOf(context);
   final List<String> idReservaciones = post?.reservationIds ?? [];
+
+  // Obtener historial de pagos (Estado de Cuenta)
+  List<Map<String, dynamic>> finalDueTransactions = [];
+  try {
+    final allDueTransactions = await VictorPosApiService().getDueTransactions();
+    finalDueTransactions = allDueTransactions
+        .where((element) => element['invoice_number'] == transactions.invoiceNumber)
+        .toList();
+    // Ordenar por fecha
+    finalDueTransactions.sort((a, b) => (a['transaction_date'] ?? '').compareTo(b['transaction_date'] ?? ''));
+  } catch (e) {
+    debugPrint('Error obteniendo historial de pagos: $e');
+  }
+
+  // Inyectar el Pago Inicial como el primer registro del historial si hubo un pago
+  final double totalAmt = transactions.totalAmount ?? 0.0;
+  final double dueAmt = transactions.dueAmount ?? 0.0;
+  final double initialPaymentAmount = totalAmt - dueAmt;
+
+  debugPrint('🟡 [EstadoDeCuenta] invoiceNumber: ${transactions.invoiceNumber}');
+  debugPrint('🟡 [EstadoDeCuenta] totalAmount raw: ${transactions.totalAmount} -> totalAmt: $totalAmt');
+  debugPrint('🟡 [EstadoDeCuenta] dueAmount raw: ${transactions.dueAmount} -> dueAmt: $dueAmt');
+  debugPrint('🟡 [EstadoDeCuenta] initialPaymentAmount: $initialPaymentAmount');
+  debugPrint('🟡 [EstadoDeCuenta] finalDueTransactions (API) count: ${finalDueTransactions.length}');
+
+  if (initialPaymentAmount > 0) {
+    finalDueTransactions.insert(0, {
+      'id': 'INI', // Pseudo-ID para el pago inicial
+      'transaction_date': transactions.purchaseDate,
+      'payment_type': transactions.paymentType ?? 'Sin especificar',
+      'paid_amount': initialPaymentAmount,
+    });
+    debugPrint('🟢 [EstadoDeCuenta] Pago inicial inyectado: $initialPaymentAmount');
+  } else {
+    debugPrint('🔴 [EstadoDeCuenta] NO se inyectó pago inicial (initialPaymentAmount <= 0)');
+  }
+
+  debugPrint('🟡 [EstadoDeCuenta] finalDueTransactions FINAL count: ${finalDueTransactions.length}');
 
   // Obtener configuración de sucursal para el encabezado
   BranchSettingsModel? branchSettings;
@@ -199,13 +238,17 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
       );
       String serviceDescription = fullReservation?.service?['description'] ?? item.descricpion ?? '';
       
-      // Truncar descripciones largas para evitar que el PDF se quede colgado
-      // Limitar a máximo 5 líneas y 200 caracteres
+      // Ajuste de descripción: eliminar múltiples saltos de línea consecutivos para ahorrar espacio vertical
+      // y mantener el diseño compacto.
       if (serviceDescription.isNotEmpty) {
-        final lines = serviceDescription.split('\n').where((l) => l.trim().isNotEmpty).take(5).toList();
-        serviceDescription = lines.join('\n');
-        if (serviceDescription.length > 200) {
-          serviceDescription = '${serviceDescription.substring(0, 200)}...';
+        // Reemplazar 2 o más saltos de línea por uno solo
+        serviceDescription = serviceDescription.replaceAll(RegExp(r'\n\s*\n'), '\n').trim();
+        
+        // Límite de seguridad muy alto (40 líneas) para evitar que el motor PDF se cuelgue 
+        // si la fila es más alta que la página entera.
+        final lines = serviceDescription.split('\n');
+        if (lines.length > 40) {
+          serviceDescription = '${lines.take(40).join('\n')}\n... (texto omitido por longitud)';
         }
       }
 
@@ -643,12 +686,12 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
         );
       },
       build: (pw.Context context) => <pw.Widget>[
+        // ══════════════════════════════════════════════════════════════
+        // WIDGET 1: Tabla de Productos (se paginará automáticamente)
+        // ══════════════════════════════════════════════════════════════
         pw.Padding(
-          padding: const pw.EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0),
-          child: pw.Column(
-            children: [
-              ///___________Table (Estilo Profesional)__________________________________________________________
-              pw.Table.fromTextArray(
+          padding: const pw.EdgeInsets.only(left: 20.0, right: 20.0),
+          child: pw.Table.fromTextArray(
                 context: context,
                 border: const pw.TableBorder(
                   left: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
@@ -658,7 +701,6 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                   verticalInside: pw.BorderSide(color: PdfColors.grey400, width: 0.3),
                   horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.3),
                 ),
-                // Encabezado con fondo gris claro para ahorrar tinta
                 headerDecoration: const pw.BoxDecoration(
                   color: PdfColors.grey200,
                 ),
@@ -670,10 +712,9 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                   4: const pw.FlexColumnWidth(1.5),
                   5: const pw.FlexColumnWidth(1.5),
                 },
-                // Texto negro en encabezado
                 headerStyle: pw.TextStyle(color: PdfColors.black, fontSize: 10, fontWeight: pw.FontWeight.bold),
+                cellStyle: pw.TextStyle(color: PdfColors.black, fontSize: 9),
                 rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
-                // Filas alternas para mejor legibilidad
                 oddRowDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFf5f5f5)),
                 headerAlignments: <int, pw.Alignment>{
                   0: pw.Alignment.center,
@@ -696,9 +737,14 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                   ...rows
                 ],
               ),
-              // pw.SizedBox(width: 5),
-              pw.Paragraph(text: ""),
-              pw.Row(
+        ),
+
+        // ══════════════════════════════════════════════════════════════
+        // WIDGET 2: Resumen Financiero (Método de Pago + Totales)
+        // ══════════════════════════════════════════════════════════════
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0),
+          child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
@@ -973,7 +1019,7 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                           pw.Divider(thickness: .5, height: 0.5, color: PdfColors.black),
                           pw.SizedBox(height: 2),
 
-                          ///________Received_Amount_______________________________________________
+                          ///________Pending_Amount_______________________________________________
                           pw.Row(children: [
                             pw.SizedBox(
                               width: 100.0,
@@ -985,13 +1031,6 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                                     ),
                               ),
                             ),
-                            // pw.SizedBox(
-                            //   width: 10.0,
-                            //   child: pw.Text(
-                            //     ':',
-                            //     style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.black),
-                            //   ),
-                            // ),
                             pw.Container(
                               alignment: pw.Alignment.centerRight,
                               width: 150.0,
@@ -1011,15 +1050,126 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
                   ),
                 ],
               ),
-              pw.Padding(padding: const pw.EdgeInsets.all(10)),
-            ],
-          ),
         ),
-      ],
-    ),
-  );
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // ESTADO DE CUENTA (solo si totalAmount > 0)
+        // ═══════════════════════════════════════════════════════════════════════
+        if (totalAmt > 0)
+        pw.Padding(
+              padding: const pw.EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0),
+              child: pw.Container(
+                padding: const pw.EdgeInsets.only(top: 20),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Header "ESTADO DE CUENTA"
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                      decoration: pw.BoxDecoration(color: PdfColor.fromHex('#1a365d')),
+                      child: pw.Text(
+                        'ESTADO DE CUENTA',
+                        style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                      ),
+                    ),
+                    pw.SizedBox(height: 10),
+                    // Resumen de Saldos
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Total Factura:', style: pw.TextStyle(color: PdfColors.grey700, fontSize: 10)),
+                        pw.Text('RD\$ ${myFormat.format(transactions.totalAmount ?? 0)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                      ],
+                    ),
+                    pw.SizedBox(height: 5),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Total Pagado:', style: pw.TextStyle(color: PdfColors.grey700, fontSize: 10)),
+                        pw.Text('RD\$ ${myFormat.format((transactions.totalAmount ?? 0) - (transactions.dueAmount ?? 0))}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                      ],
+                    ),
+                    pw.SizedBox(height: 5),
+                    pw.Container(
+                      width: double.infinity,
+                      height: 3,
+                      color: (transactions.dueAmount ?? 0) <= 0 ? PdfColors.green : PdfColors.red,
+                    ),
+                    pw.SizedBox(height: 5),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Saldo Pendiente:', style: pw.TextStyle(color: PdfColors.grey700, fontSize: 10)),
+                        pw.Text(
+                          (transactions.dueAmount ?? 0) <= 0 ? 'PAGADA' : 'RD\$ ${myFormat.format(transactions.dueAmount ?? 0)}',
+                          style: pw.TextStyle(
+                            color: (transactions.dueAmount ?? 0) <= 0 ? PdfColors.green : PdfColors.red,
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 10),
+                    // Tabla de Historial
+                    pw.Table.fromTextArray(
+                      context: context,
+                      border: const pw.TableBorder(
+                        left: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                        right: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                        bottom: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                        top: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                        verticalInside: pw.BorderSide(color: PdfColors.grey400, width: 0.3),
+                        horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.3),
+                      ),
+                      headerDecoration: const pw.BoxDecoration(color: PdfColors.white),
+                      headerStyle: pw.TextStyle(color: PdfColors.black, fontSize: 9, fontWeight: pw.FontWeight.bold),
+                      cellStyle: const pw.TextStyle(color: PdfColors.black, fontSize: 8),
+                      rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+                      headerAlignments: {
+                        0: pw.Alignment.centerLeft,
+                        1: pw.Alignment.centerLeft,
+                        2: pw.Alignment.centerLeft,
+                        3: pw.Alignment.centerRight,
+                      },
+                      cellAlignments: {
+                        0: pw.Alignment.centerLeft,
+                        1: pw.Alignment.centerLeft,
+                        2: pw.Alignment.centerLeft,
+                        3: pw.Alignment.centerRight,
+                      },
+                      data: [
+                        ['RECIBO', 'FECHA', 'METODO', 'MONTO'],
+                        if (finalDueTransactions.isEmpty)
+                          ['-', '-', 'Sin pagos registrados', '-'],
+                        ...finalDueTransactions.map((tx) {
+                          String fecha = '';
+                          try {
+                            fecha = DateFormat('dd/MM/yyyy').format(DateTime.parse(tx['transaction_date'] ?? ''));
+                          } catch (_) {
+                            fecha = tx['transaction_date']?.toString().split(' ')[0] ?? '';
+                          }
+                          // Extrae una porción del UUID como un ID corto de recibo
+                          String reciboId = (tx['id']?.toString() ?? 'N/A').split('-').first.toUpperCase();
+                          return [
+                            'REC-$reciboId',
+                            fecha,
+                            tx['payment_type']?.toString() ?? '',
+                            'RD\$ ${myFormat.format(double.tryParse(tx['paid_amount']?.toString() ?? '0') ?? 0)}',
+                          ];
+                        }),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
 
-  // Agregar página de Términos y Condiciones
+    // Agregar página de Términos y Condiciones
   doc.addPage(
     pw.Page(
       margin: pw.EdgeInsets.all(20),

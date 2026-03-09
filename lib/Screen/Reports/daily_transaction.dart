@@ -674,7 +674,15 @@ class _DailyTransactionState extends State<DailyTransaction> {
           if (searchItem.isNotEmpty) {
             final searchLower = searchItem.toLowerCase();
             reTransaction = reTransaction.where((element) {
+              // Búsqueda por teléfono a través de modelos anidados
+              final customerPhone = element.saleTransactionModel?.customerPhone ??
+                                   element.dueTransactionModel?.customerPhone ??
+                                   '';
+              final invoiceNum = element.invoiceNumber ?? '';
+
               return element.name.toLowerCase().contains(searchLower) ||
+                  customerPhone.toLowerCase().contains(searchLower) ||
+                  invoiceNum.toLowerCase().contains(searchLower) ||
                   element.date.toLowerCase().contains(searchLower) ||
                   translateType(element.type).toLowerCase().contains(searchLower) ||
                   _getPaymentType(element).toLowerCase().contains(searchLower) ||
@@ -1582,8 +1590,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                               keyboardType: TextInputType.name,
                               decoration: kInputDecoration.copyWith(
                                 contentPadding: const EdgeInsets.all(10.0),
-                                hintText:
-                                    (lang.S.of(context).searchByInvoiceOrName),
+                                hintText: 'Buscar por nombre, teléfono o # factura...',
                                 border: InputBorder.none,
                                 suffixIcon: const Icon(
                                   FeatherIcons.search,

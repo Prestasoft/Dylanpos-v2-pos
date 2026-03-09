@@ -1337,7 +1337,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
     warehouseName: additionalData['note']?.toString() ?? '(Item adicional de reserva)',
     warehouseId: 'reserva-warehouse',
     unitPrice: double.tryParse(additionalData['package_price']?.toString() ?? '0.0') ?? 0.0,
-    productImage: 'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
+    productImage: 'https://sistema.victorguzmanfotografia.com/assets/images/no-image-found.png',
     taxType: 'none',
     margin: 0,
     excTax: 0,
@@ -1508,14 +1508,39 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
     return isUnique;
   }
 
+  /// Mapea el tipo de cliente del DB a valores válidos del dropdown ['Regular', 'Frecuente', 'Corporativo']
+  String _mapCustomerType(String dbType) {
+    const validTypes = ['Regular', 'Frecuente', 'Corporativo'];
+    if (validTypes.contains(dbType)) return dbType;
+    // Mapear tipos legacy o desconocidos
+    switch (dbType) {
+      case 'Guest':
+      case 'Customer':
+      case 'Cliente Final':
+      case 'Seleccionar Cliente':
+      case 'Retailer':
+      case '':
+        return 'Regular';
+      case 'Wholesaler':
+        return 'Frecuente';
+      case 'Dealer':
+        return 'Corporativo';
+      default:
+        return 'Regular';
+    }
+  }
+
   dynamic productPriceChecker({required ProductModel product, required String customerType}) {
-    if (customerType == "Regular") {
+    if (customerType == 'Regular' || customerType == 'Guest' || customerType == 'Cliente Final' || customerType == 'Seleccionar Cliente') {
       return product.productSalePrice;
-    } else if (customerType == "Frecuente") {
-      return product.productWholeSalePrice == '' ? '0' : product.productWholeSalePrice;
-    } else if (customerType == "Corporativo") {
-      return product.productDealerPrice == '' ? '0' : product.productDealerPrice;
-    } else if (customerType == "Guest") {
+    } else if (customerType == 'Frecuente' || customerType == 'Wholesaler') {
+      final price = product.productWholeSalePrice;
+      return (price == '' || price == '0' || price == null) ? product.productSalePrice : price;
+    } else if (customerType == 'Corporativo' || customerType == 'Dealer') {
+      final price = product.productDealerPrice;
+      return (price == '' || price == '0' || price == null) ? product.productSalePrice : price;
+    } else {
+      // Fallback para cualquier tipo desconocido
       return product.productSalePrice;
     }
   }
@@ -1930,7 +1955,13 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
             if (element.phoneNumber == selectedUserId) {
               selectedUserName = element;
               previousDue = element.dueAmount;
-              selectedCustomerType == element.type ? null : {selectedCustomerType = element.type, cartList.clear(), productFocusNode.clear()};
+              // Mapear tipo de cliente del DB a valores válidos del dropdown
+              final mappedType = _mapCustomerType(element.type);
+              if (selectedCustomerType != mappedType) {
+                selectedCustomerType = mappedType;
+                cartList.clear();
+                productFocusNode.clear();
+              }
             } else if (selectedUserId == 'Guest') {
               previousDue = '0';
               selectedCustomerType = 'Regular';
@@ -2178,8 +2209,9 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                 previousDue = selectedCustomer.dueAmount;
 
                                                 // Verificar si cambió el tipo de cliente y limpiar el carrito si es necesario
-                                                if (selectedCustomerType != selectedCustomer.type) {
-                                                  selectedCustomerType = selectedCustomer.type;
+                                                final mappedType = _mapCustomerType(selectedCustomer.type);
+                                                if (selectedCustomerType != mappedType) {
+                                                  selectedCustomerType = mappedType;
                                                   cartList.clear();
                                                   productFocusNode.clear();
                                                 }

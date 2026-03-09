@@ -781,7 +781,7 @@ class _AddProductState extends State<AddProduct> {
   }
 
   String productPicture =
-      'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672';
+      'https://sistema.victorguzmanfotografia.com/assets/images/no-image-found.png';
 
   Uint8List? image;
 

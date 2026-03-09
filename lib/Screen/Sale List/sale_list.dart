@@ -94,7 +94,7 @@ class _SaleListState extends State<SaleList> {
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.all(12.0),
-          hintText: lang.S.of(context).searchByInvoiceOrName,
+          hintText: 'Buscar por nombre, teléfono o # factura...',
           hintStyle: const TextStyle(color: kNeutral400),
           prefixIcon: const Icon(FeatherIcons.search, color: kNeutral400),
           border: OutlineInputBorder(

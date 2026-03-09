@@ -41,7 +41,7 @@ class ProfileAdd extends StatefulWidget {
 
 class _ProfileAddState extends State<ProfileAdd> {
   String profilePicture =
-      'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Profile%20Picture%2Fblank-profile-picture-973460_1280.webp?alt=media&token=3578c1e0-7278-4c03-8b56-dd007a9befd3';
+      'https://sistema.victorguzmanfotografia.com/assets/images/blank-profile.png';
 
   Uint8List? image;
 

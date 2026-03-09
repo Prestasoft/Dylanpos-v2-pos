@@ -13,6 +13,7 @@ import '../model/due_transaction_model.dart';
 import '../model/general_setting_model.dart';
 import '../model/personal_information_model.dart';
 import '../model/branch_settings_model.dart';
+import '../services/api_service.dart';
 
 /// Genera documento PDF para recibo de pago de factura
 /// Formato profesional estilo DGII
@@ -94,6 +95,41 @@ FutureOr<Uint8List> generateDueDocument({
   }
 
   debugPrint('📄 [generateDueDocument] Datos extraídos: invoice=$invoiceNumber, total=$totalDue');
+
+  // ─── OBTENER HISTORIAL DE PAGOS PARA ESTA FACTURA ───
+  List<Map<String, dynamic>> paymentHistory = [];
+  try {
+    final apiService = ApiService();
+    final response = await apiService.get('due-transactions', queryParams: {
+      'customerPhone': customerPhone,
+      'limit': '500',
+    });
+
+    if (response.success && response.data != null) {
+      final transactions = response.data['dueTransactions'] as List<dynamic>? ??
+                          response.data['due_transactions'] as List<dynamic>? ?? [];
+
+      for (var data in transactions) {
+        final map = Map<String, dynamic>.from(data);
+        final txInvoice = map['invoiceNumber']?.toString() ?? map['invoice_number']?.toString() ?? '';
+        if (txInvoice == invoiceNumber) {
+          paymentHistory.add(map);
+        }
+      }
+
+      // Ordenar por fecha (más antiguo primero para estado de cuenta cronológico)
+      paymentHistory.sort((a, b) {
+        final dateA = DateTime.tryParse(
+          a['transactionDate']?.toString() ?? a['transaction_date']?.toString() ?? a['created_at']?.toString() ?? '') ?? DateTime(1900);
+        final dateB = DateTime.tryParse(
+          b['transactionDate']?.toString() ?? b['transaction_date']?.toString() ?? b['created_at']?.toString() ?? '') ?? DateTime(1900);
+        return dateA.compareTo(dateB);
+      });
+    }
+    debugPrint('📄 [generateDueDocument] Historial de pagos encontrados: ${paymentHistory.length}');
+  } catch (e) {
+    debugPrint('📄 [generateDueDocument] Error obteniendo historial de pagos: $e');
+  }
 
   doc.addPage(
     pw.Page(
@@ -461,7 +497,95 @@ FutureOr<Uint8List> generateDueDocument({
                       ],
                     ),
                   ),
-                  pw.SizedBox(height: 30),
+                  pw.SizedBox(height: 20),
+
+                  // ─── ESTADO DE CUENTA (HISTORIAL DE PAGOS) ───
+                  if (paymentHistory.isNotEmpty) ...[
+                    pw.Container(
+                      width: double.infinity,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey400, width: 1),
+                      ),
+                      child: pw.Column(
+                        children: [
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.grey200,
+                              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1)),
+                            ),
+                            child: pw.Text(
+                              'ESTADO DE CUENTA - HISTORIAL DE PAGOS',
+                              textAlign: pw.TextAlign.center,
+                              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, letterSpacing: 1),
+                            ),
+                          ),
+                          pw.Table.fromTextArray(
+                            context: context,
+                            border: const pw.TableBorder(
+                              verticalInside: pw.BorderSide(color: PdfColors.grey400, width: 0.3),
+                              horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.3),
+                            ),
+                            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFe8e8e8)),
+                            headerStyle: pw.TextStyle(color: PdfColors.black, fontSize: 8, fontWeight: pw.FontWeight.bold),
+                            cellStyle: const pw.TextStyle(fontSize: 8),
+                            rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+                            oddRowDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFf9f9f9)),
+                            columnWidths: {
+                              0: const pw.FlexColumnWidth(1),
+                              1: const pw.FlexColumnWidth(2),
+                              2: const pw.FlexColumnWidth(2),
+                              3: const pw.FlexColumnWidth(1.5),
+                              4: const pw.FlexColumnWidth(2),
+                            },
+                            headerAlignments: {
+                              0: pw.Alignment.center,
+                              1: pw.Alignment.center,
+                              2: pw.Alignment.centerRight,
+                              3: pw.Alignment.center,
+                              4: pw.Alignment.centerRight,
+                            },
+                            cellAlignments: {
+                              0: pw.Alignment.center,
+                              1: pw.Alignment.center,
+                              2: pw.Alignment.centerRight,
+                              3: pw.Alignment.center,
+                              4: pw.Alignment.centerRight,
+                            },
+                            data: [
+                              ['#', 'Fecha', 'Monto Pagado', 'Método', 'Balance'],
+                              ...paymentHistory.asMap().entries.map((entry) {
+                                final idx = entry.key;
+                                final payment = entry.value;
+                                final paidAmt = (payment['paidAmount'] ?? payment['paid_amount'] ?? 0);
+                                final remaining = (payment['remainingDue'] ?? payment['remaining_due'] ?? 0);
+                                final method = payment['paymentType']?.toString() ?? payment['payment_type']?.toString() ?? 'N/A';
+                                final dateStr = payment['transactionDate']?.toString() ?? payment['transaction_date']?.toString() ?? payment['created_at']?.toString() ?? '';
+                                String fmtDate = dateStr;
+                                try {
+                                  final dt = DateTime.parse(dateStr);
+                                  fmtDate = DateFormat('dd/MM/yyyy HH:mm').format(dt);
+                                } catch (_) {}
+
+                                final paidNum = paidAmt is num ? paidAmt.toDouble() : double.tryParse(paidAmt.toString()) ?? 0.0;
+                                final remainNum = remaining is num ? remaining.toDouble() : double.tryParse(remaining.toString()) ?? 0.0;
+
+                                return [
+                                  '${idx + 1}',
+                                  fmtDate,
+                                  myFormat.format(paidNum),
+                                  method,
+                                  myFormat.format(remainNum),
+                                ];
+                              }),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(height: 10),
+                  ],
 
                   // ─── SECCIÓN DE FIRMAS ───
                   pw.Row(

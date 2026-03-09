@@ -123,7 +123,7 @@ class AddToCartModel {
       itemCartIndex: parseInt(json["item_cart_index"], -1),
       stock: parseNum(json["stock"]),
       productImage: json["productImage"]?.toString() ??
-          'https://firebasestorage.googleapis.com/v0/b/maanpos.appspot.com/o/Product%20No%20Image%2Fno-image-found-360x250.png?alt=media&token=9299964e-22b3-4d88-924e-5eeb285ae672',
+          'https://sistema.victorguzmanfotografia.com/assets/images/no-image-found.png',
       productPurchasePrice: parseNum(json["productPurchasePrice"]),
       serialNumber: json["serialNumber"],
       productWarranty: json['productWarranty']?.toString(),

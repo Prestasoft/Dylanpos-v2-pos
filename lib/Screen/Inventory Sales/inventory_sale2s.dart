@@ -320,17 +320,18 @@ class _InventorySalesState extends State<InventorySales> {
 
   dynamic productPriceChecker(
       {required ProductModel product, required String customerType}) {
-    if (customerType == "Cliente Final") {
+    if (customerType == "Regular" || customerType == "Cliente Final" || customerType == "Seleccionar Cliente") {
       return product.productSalePrice;
-    } else if (customerType == "Wholesaler") {
+    } else if (customerType == "Frecuente" || customerType == "Wholesaler") {
       return product.productWholeSalePrice == ''
-          ? '0'
+          ? product.productSalePrice
           : product.productWholeSalePrice;
-    } else if (customerType == "Dealer") {
+    } else if (customerType == "Corporativo" || customerType == "Dealer") {
       return product.productDealerPrice == ''
-          ? '0'
+          ? product.productSalePrice
           : product.productDealerPrice;
-    } else if (customerType == "Seleccionar Cliente") {
+    } else {
+      // Fallback: siempre retornar precio de venta para evitar null/0
       return product.productSalePrice;
     }
   }
@@ -1488,9 +1489,28 @@ class _InventorySalesState extends State<InventorySales> {
                                     );
                                   },
                                   onSelected: (suggestion) {
+                                    // 🔍 DEBUG: Log raw suggestion data
+                                    debugPrint('🛒 ═══════════════════════════════════════════');
+                                    debugPrint('🛒 ADD TO CART DEBUG');
+                                    debugPrint('🛒 Raw suggestion type: ${suggestion.runtimeType}');
+                                    debugPrint('🛒 Raw suggestion keys: ${(suggestion as Map).keys.toList()}');
+                                    debugPrint('🛒 Raw productSalePrice: ${suggestion['productSalePrice']}');
+                                    debugPrint('🛒 Raw product_sale_price: ${suggestion['product_sale_price']}');
+                                    
                                     ProductModel product =
                                         ProductModel.fromJson(
                                             jsonDecode(jsonEncode(suggestion)));
+                                    
+                                    debugPrint('🛒 Parsed product.productSalePrice: "${product.productSalePrice}"');
+                                    debugPrint('🛒 selectedCustomerType: "$selectedCustomerType"');
+                                    
+                                    final priceResult = productPriceChecker(
+                                      product: product,
+                                      customerType: selectedCustomerType,
+                                    );
+                                    debugPrint('🛒 productPriceChecker result: "$priceResult" (type: ${priceResult.runtimeType})');
+                                    debugPrint('🛒 ═══════════════════════════════════════════');
+                                    
                                     AddToCartModel addToCartModel =
                                         AddToCartModel(
                                             productName: product.productName,
@@ -1501,8 +1521,6 @@ class _InventorySalesState extends State<InventorySales> {
                                             quantity: 1,
                                             productImage:
                                                 product.productPicture,
-                                            // stock: product.productStock.toInt(),
-                                            // productPurchasePrice: product.productPurchasePrice.toDouble(),
                                             stock: int.tryParse(
                                                     product.productStock) ??
                                                 0,
@@ -1510,11 +1528,7 @@ class _InventorySalesState extends State<InventorySales> {
                                                 double.tryParse(product
                                                         .productPurchasePrice) ??
                                                     0.0,
-                                            subTotal: productPriceChecker(
-                                              product: product,
-                                              customerType:
-                                                  selectedCustomerType,
-                                            ),
+                                            subTotal: priceResult,
                                             taxType: product.taxType,
                                             margin: product.margin,
                                             incTax: product.incTax,

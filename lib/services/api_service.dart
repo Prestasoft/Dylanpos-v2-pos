@@ -4,6 +4,7 @@ import 'package:nb_utils/nb_utils.dart';
 // ignore: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:html' as html;
 import '../model/user_role_model.dart';
+import 'api/victorpos_api_service.dart';
 
 /// Servicio API para comunicarse con el servidor PostgreSQL
 /// Reemplaza Firebase Realtime Database
@@ -113,6 +114,11 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('api_token');
 
+    // Sincronizar token con VictorPosApiService
+    if (_token != null && _token!.isNotEmpty) {
+      VictorPosApiService().setToken(_token!);
+    }
+
     // IMPORTANTE: Usar selected_tenant_id como fuente de verdad para branch_id
     // Esto asegura que la API use el tenant seleccionado en la UI, no el branch_id del usuario
     final selectedTenantId = prefs.getString('selected_tenant_id');
@@ -152,6 +158,8 @@ class ApiService {
         final data = jsonDecode(response.body);
 
         _token = data['token'];
+        // Sincronizar token con VictorPosApiService
+        VictorPosApiService().setToken(_token!);
         _currentUser = data['user'];
         _permissions = data['permissions'];
 

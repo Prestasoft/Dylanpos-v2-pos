@@ -134,6 +134,10 @@ final reservationsProvider = StreamProvider<List<ReservationModel>>((ref) {
             .where((reservation) => reservation.estado != 'cancelado')
             .toList();
 
+        // Deduplicar por ID (el API puede devolver duplicados por JOINs en dress_ids)
+        final seenIds = <String>{};
+        reservations.retainWhere((r) => seenIds.add(r.id));
+
         controller.add(reservations);
       } else {
         controller.add([]);
@@ -170,7 +174,7 @@ final reservationsFutureProvider =
     if (response.success && response.data != null) {
       final reservationsData = response.data['reservations'] as List<dynamic>? ?? [];
 
-      return reservationsData.where((item) {
+      final results = reservationsData.where((item) {
         if (item is! Map) return false;
         return item['estado_factura'] == false && item['estado'] != 'cancelado';
       }).map((item) {
@@ -178,6 +182,11 @@ final reservationsFutureProvider =
         final id = data['id']?.toString() ?? data['reservation_id']?.toString() ?? '';
         return ReservationModel.fromMap(data, id);
       }).toList();
+
+      // Deduplicar por ID (el API puede devolver duplicados por JOINs en dress_ids)
+      final seenIds = <String>{};
+      results.retainWhere((r) => seenIds.add(r.id));
+      return results;
     }
   } catch (e) {
     log('Error in reservationsFutureProvider: $e');

@@ -16,6 +16,8 @@ import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/model/customer_model.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:salespro_admin/services/deletion_password_service.dart';
+import 'package:salespro_admin/Screen/Reservation/dress_selection_screen_package.dart';
+import 'package:salespro_admin/model/ServicePackageModel.dart';
 
 //------------------- ENUM Y CARD -------------------
 enum ReservationStatus {
@@ -530,6 +532,64 @@ class ReservationCard extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  // Badge de vestimentas pendientes
+                  if (fullReservation?.service != null) Builder(
+                    builder: (context) {
+                      final serviceComponents = fullReservation!.service!['components'];
+                      if (serviceComponents is List && serviceComponents.isNotEmpty) {
+                        final totalRequired = serviceComponents.length;
+                        final totalSelected = (dressComposite is List) ? dressComposite.length : 0;
+                        final pending = totalRequired - totalSelected;
+                        if (pending > 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$pending vestimenta${pending > 1 ? 's' : ''} pendiente${pending > 1 ? 's' : ''}',
+                                    style: const TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle, size: 14, color: Colors.green),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Vestimentas completas',
+                                    style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                 ],
               );
             },
@@ -1012,7 +1072,7 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar por cliente, notas, lugar o vendedor...',
+                hintText: 'Buscar por nombre, teléfono, notas o vendedor...',
                 hintStyle: TextStyle(color: Colors.grey.shade600),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
@@ -2046,7 +2106,50 @@ class ReservationDetailView extends ConsumerWidget {
                                             service['description']),
                                     ],
                                   ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 16),
+
+                                // ─── SECCIÓN: Estado de Vestimentas ───
+                                if (service != null && service['components'] is List && (service['components'] as List).isNotEmpty)
+                                  _buildGarmentStatusSection(
+                                    context,
+                                    ref,
+                                    service: service,
+                                    dressComposite: dressComposite,
+                                    reservationId: fullReservation!.id,
+                                    reservationDate: reservationData['reservation_date'] ?? '',
+                                  ),
+
+                                const SizedBox(height: 8),
+
+                                // ─── BOTÓN: Cambiar Fecha ───
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.calendar_month, size: 20),
+                                      label: const Text('Cambiar Fecha'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.deepPurple,
+                                        side: const BorderSide(color: Colors.deepPurple),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () => _showRescheduleDialog(
+                                        context,
+                                        ref,
+                                        reservationId: fullReservation.id,
+                                        currentDate: reservationData['reservation_date'] ?? '',
+                                        currentTime: reservationData['reservation_time'] ?? '',
+                                        dressComposite: dressComposite,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 16),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 24),
@@ -2453,5 +2556,465 @@ class ReservationDetailView extends ConsumerWidget {
     } catch (e) {
       return 'Error en formato';
     }
+  }
+
+  // ─── MÉTODO: Estado de Vestimentas ───
+  Widget _buildGarmentStatusSection(
+    BuildContext context,
+    WidgetRef ref, {
+    required Map<String, dynamic> service,
+    required dynamic dressComposite,
+    required String reservationId,
+    required String reservationDate,
+  }) {
+    final components = service['components'] as List;
+    final selectedDresses = (dressComposite is List) ? dressComposite : [];
+    
+    // Obtener el ServicePackageModel para el selector de vestidos
+    final serviceId = service['id']?.toString() ?? service['firebase_id']?.toString() ?? '';
+    final packagesAsync = ref.watch(servicePackagesProvider);
+    
+    ServicePackageModel? packageModel;
+    if (packagesAsync is AsyncData<List<ServicePackageModel>>) {
+      try {
+        packageModel = packagesAsync.value?.firstWhere(
+          (p) => p.id == serviceId || p.name == (service['name'] ?? ''),
+        );
+      } catch (_) {
+        packageModel = null;
+      }
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.checkroom, size: 20, color: Colors.deepPurple),
+                const SizedBox(width: 8),
+                Text(
+                  'Estado de Vestimentas',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: selectedDresses.length >= components.length
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : Colors.orange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${selectedDresses.length}/${components.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: selectedDresses.length >= components.length ? Colors.green : Colors.orange,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            ...List.generate(components.length, (index) {
+              final componentName = components[index]?.toString() ?? 'Componente';
+              
+              // Buscar si este componente ya tiene un vestido asignado
+              Map<String, dynamic>? matchedDress;
+              if (index < selectedDresses.length) {
+                matchedDress = (selectedDresses[index] is Map) 
+                    ? Map<String, dynamic>.from(selectedDresses[index]) 
+                    : null;
+              }
+              
+              final isSelected = matchedDress != null;
+              final dressName = matchedDress?['dress_name']?.toString() ?? 
+                               matchedDress?['name']?.toString() ?? '';
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                      size: 20,
+                      color: isSelected ? Colors.green : Colors.grey[400],
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            componentName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected ? Colors.black87 : Colors.grey[600],
+                            ),
+                          ),
+                          if (isSelected && dressName.isNotEmpty)
+                            Text(
+                              dressName,
+                              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (!isSelected && packageModel != null)
+                      SizedBox(
+                        height: 30,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final selected = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DressSelectionPackageScreen(
+                                  packagesAsync: packageModel!,
+                                  dressIds: selectedDresses.map((d) => (d is Map) ? d['dress_id']?.toString() ?? '' : '').toList().cast<String>(),
+                                  packageId: packageModel.id,
+                                  packageName: packageModel.name,
+                                  CategoryComposite: componentName,
+                                ),
+                              ),
+                            );
+
+                            if (selected != null && selected is Map) {
+                              // Agregar el nuevo vestido al array existente
+                              final newDressEntry = {
+                                'dress_id': selected['vestidoId'] ?? '',
+                                'branch_id': selected['branchId'] ?? '',
+                                'dress_name': selected['vestidoName'] ?? '',
+                              };
+
+                              final updatedDresses = List<Map<String, dynamic>>.from(
+                                selectedDresses.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}),
+                              );
+                              updatedDresses.add(newDressEntry);
+
+                              // Actualizar en la base de datos
+                              EasyLoading.show(status: 'Guardando...');
+                              try {
+                                final success = await ref.read(
+                                  updateReservationProvider({
+                                    'reservationId': reservationId,
+                                    'updateData': {
+                                      'dress_ids': updatedDresses.map((d) => {
+                                        'dress_id': d['dress_id'],
+                                        'branch_id': d['branch_id'],
+                                      }).toList(),
+                                      'dresses_data': updatedDresses,
+                                    },
+                                  }).future,
+                                );
+
+                                EasyLoading.dismiss();
+                                if (success) {
+                                  EasyLoading.showSuccess('Vestimenta agregada');
+                                  // Invalidar providers para refrescar
+                                  ref.invalidate(fullReservationByIdProviderVQ(reservationId));
+                                  ref.invalidate(fullReservationsProvider);
+                                } else {
+                                  EasyLoading.showError('Error al guardar');
+                                }
+                              } catch (e) {
+                                EasyLoading.dismiss();
+                                EasyLoading.showError('Error: $e');
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          child: const Text('Elegir', style: TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                    if (isSelected)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '✓',
+                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── MÉTODO: Diálogo de Reprogramación ───
+  void _showRescheduleDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    required String reservationId,
+    required String currentDate,
+    required String currentTime,
+    required dynamic dressComposite,
+  }) {
+    DateTime selectedDate;
+    try {
+      selectedDate = DateTime.parse(currentDate);
+    } catch (_) {
+      selectedDate = DateTime.now();
+    }
+    
+    TimeOfDay selectedTime;
+    try {
+      final parts = currentTime.split(':');
+      selectedTime = TimeOfDay(
+        hour: int.parse(parts[0]),
+        minute: int.parse(parts.length > 1 ? parts[1] : '0'),
+      );
+    } catch (_) {
+      selectedTime = TimeOfDay.now();
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  const Icon(Icons.calendar_month, color: Colors.deepPurple),
+                  const SizedBox(width: 8),
+                  const Text('Cambiar Fecha'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fecha actual: ${formatReservationDate(currentDate)} - ${formatReservationTime(currentTime)}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Selector de fecha
+                  ListTile(
+                    leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                    title: Text(
+                      'Nueva fecha: ${DateFormat('yyyy-MM-dd').format(selectedDate)}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    trailing: const Icon(Icons.edit, size: 18),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => selectedDate = picked);
+                      }
+                    },
+                  ),
+                  
+                  // Selector de hora
+                  ListTile(
+                    leading: const Icon(Icons.access_time, color: Colors.deepPurple),
+                    title: Text(
+                      'Nueva hora: ${selectedTime.format(context)}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    trailing: const Icon(Icons.edit, size: 18),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: selectedTime,
+                      );
+                      if (picked != null) {
+                        setDialogState(() => selectedTime = picked);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Se verificará la disponibilidad de las vestimentas en la nueva fecha.',
+                            style: TextStyle(fontSize: 12, color: Colors.blue),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(dialogContext);
+                    
+                    final newDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+                    final newTime = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+
+                    // Verificar disponibilidad de vestidos en la nueva fecha
+                    EasyLoading.show(status: 'Verificando disponibilidad...');
+                    
+                    try {
+                      // Verificar conflictos de vestimenta
+                      final dresses = (dressComposite is List) ? dressComposite : [];
+                      bool hasConflict = false;
+                      List<String> conflictingDresses = [];
+
+                      if (dresses.isNotEmpty) {
+                        // Obtener todas las reservas en la nueva fecha
+                        final reservationsOnDate = await ref.read(
+                          reservationsByDateProvider(newDate).future,
+                        );
+
+                        for (final dress in dresses) {
+                          if (dress is Map) {
+                            final dressId = dress['dress_id']?.toString() ?? '';
+                            final dressName = dress['dress_name']?.toString() ?? dress['name']?.toString() ?? dressId;
+                            
+                            if (dressId.isEmpty) continue;
+                            
+                            // Verificar si este vestido está en otra reserva del mismo día
+                            for (final existingRes in reservationsOnDate) {
+                              if (existingRes.id == reservationId) continue; // Saltar la misma reserva
+                              
+                              final existingDresses = existingRes.multipleDress;
+                              final hasDress = existingDresses.any(
+                                (d) => d['dress_id'] == dressId,
+                              );
+                              
+                              if (hasDress) {
+                                hasConflict = true;
+                                conflictingDresses.add(dressName);
+                              }
+                            }
+                          }
+                        }
+                      }
+
+                      if (hasConflict && context.mounted) {
+                        EasyLoading.dismiss();
+                        final proceed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Row(
+                              children: [
+                                Icon(Icons.warning_amber, color: Colors.orange),
+                                SizedBox(width: 8),
+                                Text('Conflicto de Vestimentas'),
+                              ],
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Las siguientes vestimentas ya están reservadas en la nueva fecha:'),
+                                const SizedBox(height: 8),
+                                ...conflictingDresses.map((name) => Padding(
+                                  padding: const EdgeInsets.only(left: 8, bottom: 4),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.circle, size: 6, color: Colors.red),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: Text(name)),
+                                    ],
+                                  ),
+                                )),
+                                const SizedBox(height: 8),
+                                const Text('¿Desea continuar de todas formas?'),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('No'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Sí, continuar', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (proceed != true) return;
+                        EasyLoading.show(status: 'Actualizando fecha...');
+                      } else {
+                        EasyLoading.show(status: 'Actualizando fecha...');
+                      }
+
+                      // Actualizar la reserva
+                      final success = await ref.read(
+                        updateReservationProvider({
+                          'reservationId': reservationId,
+                          'updateData': {
+                            'reservation_date': newDate,
+                            'reservation_time': newTime,
+                          },
+                        }).future,
+                      );
+
+                      EasyLoading.dismiss();
+                      if (success) {
+                        EasyLoading.showSuccess('Fecha actualizada');
+                        ref.invalidate(fullReservationByIdProviderVQ(reservationId));
+                        ref.invalidate(fullReservationsProvider);
+                      } else {
+                        EasyLoading.showError('Error al actualizar la fecha');
+                      }
+                    } catch (e) {
+                      EasyLoading.dismiss();
+                      EasyLoading.showError('Error: $e');
+                    }
+                  },
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

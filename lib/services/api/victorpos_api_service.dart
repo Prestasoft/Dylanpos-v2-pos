@@ -53,6 +53,12 @@ class VictorPosApiService {
     };
   }
 
+  /// Sincronizar token desde ApiService
+  void setToken(String token) {
+    _token = token;
+    debugPrint('🔑 [VictorPosApiService] Token sincronizado');
+  }
+
   /// Cambiar sucursal activa
   void setBranchId(String branchId) {
     _branchId = branchId;

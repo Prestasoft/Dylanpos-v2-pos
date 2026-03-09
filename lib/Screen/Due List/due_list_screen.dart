@@ -11,6 +11,9 @@ import 'package:salespro_admin/model/customer_model.dart';
 import 'package:salespro_admin/model/sale_transaction_model.dart';
 import 'package:salespro_admin/model/add_to_cart_model.dart'; // Importar modelo de carrito
 import 'package:intl/intl.dart'; // Añadir para manejo de fechas
+import 'package:salespro_admin/PDF/print_pdf.dart';
+import 'package:salespro_admin/Provider/profile_provider.dart';
+import 'package:salespro_admin/Provider/general_setting_provider.dart';
 
 import '../../Provider/customer_provider.dart';
 import '../../Provider/transactions_provider.dart';
@@ -219,31 +222,79 @@ class _DueListState extends State<DueList> {
                       itemCount: facturas.length,
                       itemBuilder: (context, index) {
                         final factura = facturas[index];
-                        return Card(
-                          elevation: 3,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: ListTile(
-                            title: Text('Factura #${factura.invoiceNumber}'),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                Text('Fecha: ${_formatearFecha(factura.purchaseDate)}'),
-                                Text('Monto pendiente: RD\$${_formatearMonto(factura.dueAmount ?? 0)}'),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.visibility, color: kGreenTextColor),
-                                  onPressed: () {
-                                    _verDetalleFactura(context, factura);
-                                  },
-                                  tooltip: 'Ver detalle',
+                        return Consumer(
+                          builder: (context, ref, child) {
+                            return Card(
+                              elevation: 3,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  try {
+                                    final setting = ref.read(generalSettingProvider).value;
+                                    final profileInfo = ref.read(profileDetailsProvider).value;
+                                    
+                                    if (setting != null && profileInfo != null && context.mounted) {
+                                      EasyLoading.show(status: 'Generando factura...');
+                                      await GeneratePdfAndPrint().printSaleInvoice(
+                                        setting: setting,
+                                        personalInformationModel: profileInfo,
+                                        saleTransactionModel: factura,
+                                        context: context,
+                                        printType: 'normal',
+                                        fromSaleReports: true,
+                                        post: factura,
+                                      );
+                                      EasyLoading.dismiss();
+                                    } else {
+                                      EasyLoading.showError('No se pudo cargar la configuración');
+                                    }
+                                  } catch (error) {
+                                    EasyLoading.dismiss();
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Error al generar factura: $error')),
+                                      );
+                                    }
+                                  }
+                                },
+                                child: ListTile(
+                                  title: Text(
+                                    'Factura #${factura.invoiceNumber}',
+                                    style: const TextStyle(
+                                      color: kBlueTextColor,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Fecha: ${_formatearFecha(factura.purchaseDate)}'),
+                                      Text('Monto pendiente: RD\$${_formatearMonto(factura.dueAmount ?? 0)}'),
+                                    ],
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Tooltip(
+                                        message: 'Click para generar factura PDF',
+                                        child: Icon(Icons.picture_as_pdf, color: Colors.red.shade400, size: 24),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: const Icon(Icons.visibility, color: kGreenTextColor),
+                                        onPressed: () {
+                                          _verDetalleFactura(context, factura);
+                                        },
+                                        tooltip: 'Ver detalle',
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
+                              ),
+                            );
+                          },
                         );
                       },
                     );
@@ -1174,7 +1225,7 @@ class _DueListState extends State<DueList> {
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.all(12.0),
-          hintText: lang.S.of(context).searchByNameOrPhone,
+          hintText: 'Buscar por nombre, teléfono o # factura...',
           hintStyle: const TextStyle(color: kNeutral400),
           prefixIcon: const Icon(FeatherIcons.search, color: kNeutral400),
           border: OutlineInputBorder(
@@ -1309,7 +1360,11 @@ class _DueListState extends State<DueList> {
 
                 final search = searchQuery.toLowerCase();
 
-                if ((name.contains(search) || phone.contains(search))) {
+                // Buscar también por # de factura en las pendingSales
+                final matchesInvoice = dueInfo.pendingSales.any((sale) =>
+                  sale.invoiceNumber.toLowerCase().contains(search));
+
+                if ((name.contains(search) || phone.contains(search) || matchesInvoice)) {
                   if (_filterByDate(element)) {
                     showAbleCustomer.add(element);
                     showAbleCustomerDueInfo.add(dueInfo);
@@ -1324,11 +1379,18 @@ class _DueListState extends State<DueList> {
               for (int i = 0; i < supplierList.length; i++) {
                 final element = supplierList[i];
                 final dueInfo = supplierDueInfoList[i];
+                final search = searchQuery.toLowerCase();
+
+                // Buscar por nombre, teléfono o # factura
+                final matchesInvoice = dueInfo.pendingSales.any((sale) =>
+                  sale.invoiceNumber.toLowerCase().contains(search));
+
                 if ((element.customerName
                         .removeAllWhiteSpace()
                         .toLowerCase()
-                        .contains(searchQuery.toLowerCase()) ||
-                    element.phoneNumber.contains(searchQuery))) {
+                        .contains(search) ||
+                    element.phoneNumber.contains(searchQuery) ||
+                    matchesInvoice)) {
                   if (_filterByDate(element)) {
                     showAbleSupplier.add(element);
                     showAbleSupplierDueInfo.add(dueInfo);

@@ -6,7 +6,7 @@ final ApiService _apiService = ApiService();
 
 /// Servicio para gestionar la contraseña de eliminación - Usa PostgreSQL API
 class DeletionPasswordService {
-  static const String _defaultPassword = "22400600452";
+  static const String _defaultPassword = "10171328";
 
   /// Obtiene la contraseña de eliminación actual desde PostgreSQL API
   /// Si no existe, devuelve la contraseña por defecto
