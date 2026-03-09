@@ -2638,16 +2638,82 @@ class ReservationDetailView extends ConsumerWidget {
               final isSelected = matchedDress != null;
               final dressName = matchedDress?['dress_name']?.toString() ?? 
                                matchedDress?['name']?.toString() ?? '';
+              final branchId = matchedDress?['branch_id']?.toString() ?? '';
+
+              // Buscar imagen del vestido
+              String imageUrl = '';
+              if (isSelected) {
+                final dressesAsync = ref.watch(dressesByStatusProvider('Todos'));
+                if (dressesAsync is AsyncData<List<DressModel>>) {
+                  try {
+                    final match = dressesAsync.value!.firstWhere(
+                      (d) => d.name.toString().trim().toLowerCase() == dressName.trim().toLowerCase() &&
+                             (branchId.isEmpty || d.branchId.toString() == branchId),
+                    );
+                    if (match.images.isNotEmpty) {
+                      imageUrl = match.images.first.toString();
+                    }
+                  } catch (_) {
+                    // Intentar match solo por nombre si no coincide branchId
+                    try {
+                      final match = dressesAsync.value!.firstWhere(
+                        (d) => d.name.toString().trim().toLowerCase() == dressName.trim().toLowerCase(),
+                      );
+                      if (match.images.isNotEmpty) {
+                        imageUrl = match.images.first.toString();
+                      }
+                    } catch (_) {}
+                  }
+                }
+              }
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    Icon(
-                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                      size: 20,
-                      color: isSelected ? Colors.green : Colors.grey[400],
-                    ),
+                    // Thumbnail o ícono de estado
+                    if (isSelected && imageUrl.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => _showImageDialog(context, imageUrl),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            imageUrl,
+                            width: 44,
+                            height: 44,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.checkroom, size: 20, color: Colors.green),
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (isSelected)
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.checkroom, size: 20, color: Colors.green),
+                      )
+                    else
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.checkroom, size: 20, color: Colors.grey[400]),
+                      ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
