@@ -1,11 +1,11 @@
 {
-  "version": "2.1.386",
-  "build": "20260309-1451",
+  "version": "2.1.387",
+  "build": "20260309-1512",
   "releaseDate": "2026-03-09",
   "environment": "production",
-  "description": "Actualización a versión 2.1.386",
+  "description": "Actualización a versión 2.1.387",
   "changelog": [
-    "Actualización a versión 2.1.386"
+    "Actualización a versión 2.1.387"
   ],
   "forceUpdate": true
 }

@@ -3054,8 +3054,6 @@ class ReservationDetailView extends ConsumerWidget {
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () async {
-                    Navigator.pop(dialogContext);
-                    
                     final newDate = DateFormat('yyyy-MM-dd').format(selectedDate);
                     final newTime = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
 
@@ -3074,10 +3072,24 @@ class ReservationDetailView extends ConsumerWidget {
                           reservationsByDateProvider(newDate).future,
                         );
 
+                        // Obtener lista de vestidos para resolver nombres
+                        final dressesListAsync = ref.read(dressesByStatusProvider('Todos'));
+                        final dressesList = dressesListAsync.valueOrNull ?? [];
+
                         for (final dress in dresses) {
                           if (dress is Map) {
                             final dressId = dress['dress_id']?.toString() ?? '';
-                            final dressName = dress['dress_name']?.toString() ?? dress['name']?.toString() ?? dressId;
+                            String dressName = dress['dress_name']?.toString() ?? dress['name']?.toString() ?? '';
+                            
+                            // Resolver nombre del vestido si está vacío
+                            if ((dressName.isEmpty || dressName == 'Sin nombre') && dressId.isNotEmpty) {
+                              try {
+                                final matchedDress = dressesList.firstWhere((d) => d.id == dressId);
+                                dressName = matchedDress.name;
+                              } catch (_) {
+                                dressName = 'Vestido ID: $dressId';
+                              }
+                            }
                             
                             if (dressId.isEmpty) continue;
                             
@@ -3092,66 +3104,94 @@ class ReservationDetailView extends ConsumerWidget {
                               
                               if (hasDress) {
                                 hasConflict = true;
-                                conflictingDresses.add(dressName);
+                                if (!conflictingDresses.contains(dressName)) {
+                                  conflictingDresses.add(dressName);
+                                }
                               }
                             }
                           }
                         }
                       }
 
+                      EasyLoading.dismiss();
+
                       if (hasConflict && context.mounted) {
-                        EasyLoading.dismiss();
                         final proceed = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: const Row(
                               children: [
-                                Icon(Icons.warning_amber, color: Colors.orange),
+                                Icon(Icons.warning_amber, color: Color(0xFFD32F2F)),
                                 SizedBox(width: 8),
-                                Text('Conflicto de Vestimentas'),
+                                Expanded(child: Text('Conflicto de Vestimentas', style: TextStyle(fontSize: 18))),
                               ],
                             ),
                             content: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Las siguientes vestimentas ya están reservadas en la nueva fecha:'),
-                                const SizedBox(height: 8),
+                                Text(
+                                  'Las siguientes vestimentas ya están reservadas para el $newDate:',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                const SizedBox(height: 12),
                                 ...conflictingDresses.map((name) => Padding(
-                                  padding: const EdgeInsets.only(left: 8, bottom: 4),
+                                  padding: const EdgeInsets.only(left: 8, bottom: 6),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.circle, size: 6, color: Colors.red),
+                                      const Icon(Icons.circle, size: 8, color: Color(0xFFD32F2F)),
                                       const SizedBox(width: 8),
-                                      Expanded(child: Text(name)),
+                                      Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w500))),
                                     ],
                                   ),
                                 )),
-                                const SizedBox(height: 8),
-                                const Text('¿Desea continuar de todas formas?'),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFD32F2F).withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.info_outline, size: 16, color: Color(0xFFD32F2F)),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          '¿Desea continuar de todas formas?',
+                                          style: TextStyle(fontSize: 13, color: Color(0xFFD32F2F)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('No'),
+                                child: const Text('Cancelar'),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFD32F2F),
+                                  foregroundColor: Colors.white,
+                                ),
                                 onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Sí, continuar', style: TextStyle(color: Colors.white)),
+                                child: const Text('Sí, continuar'),
                               ),
                             ],
                           ),
                         );
 
                         if (proceed != true) return;
-                        EasyLoading.show(status: 'Actualizando fecha...');
-                      } else {
-                        EasyLoading.show(status: 'Actualizando fecha...');
                       }
 
+                      // Cerrar el diálogo de selección de fecha
+                      if (context.mounted) Navigator.pop(dialogContext);
+
                       // Actualizar la reserva
+                      EasyLoading.show(status: 'Actualizando fecha...');
                       final success = await ref.read(
                         updateReservationProvider({
                           'reservationId': reservationId,
@@ -3164,7 +3204,7 @@ class ReservationDetailView extends ConsumerWidget {
 
                       EasyLoading.dismiss();
                       if (success) {
-                        EasyLoading.showSuccess('Fecha actualizada');
+                        EasyLoading.showSuccess('Fecha actualizada a $newDate $newTime');
                         ref.invalidate(fullReservationByIdProviderVQ(reservationId));
                         ref.invalidate(fullReservationsProvider);
                       } else {
