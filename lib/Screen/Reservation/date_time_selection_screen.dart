@@ -1,8 +1,10 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/services/api_service.dart';
+import 'package:salespro_admin/services/deletion_password_service.dart';
 import 'package:salespro_admin/Screen/Reservation/package_reservation_components_screen.dart';
 import '../../Provider/reservation_provider.dart';
 import '../../model/customer_model.dart';
@@ -285,11 +287,194 @@ class _DateTimeSelectionScreenState extends ConsumerState<DateTimeSelectionScree
           );
         }
       } else {
-        // Mensaje más específico sobre el problema de disponibilidad
+        // Vestido no disponible - mostrar confirmación con clave
         final String duracionTexto = _getDuracionTexto();
         setState(() {
           errorMessage = "Este vestido no está disponible durante el período seleccionado ($duracionTexto).";
         });
+
+        if (!context.mounted) return;
+        
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber, color: Color(0xFFD32F2F)),
+                SizedBox(width: 8),
+                Expanded(child: Text('Vestimenta No Disponible', style: TextStyle(fontSize: 18))),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('La vestimenta no está disponible durante el período seleccionado ($duracionTexto).'),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD32F2F).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Color(0xFFD32F2F)),
+                      SizedBox(width: 8),
+                      Expanded(child: Text('¿Desea continuar de todas formas?', style: TextStyle(fontSize: 13, color: Color(0xFFD32F2F)))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD32F2F),
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  // Pedir clave de autorización
+                  final passwordController = TextEditingController();
+                  final authorized = await showDialog<bool>(
+                    context: ctx,
+                    builder: (pwCtx) => AlertDialog(
+                      title: const Row(
+                        children: [
+                          Icon(Icons.lock_outline, color: Colors.deepPurple),
+                          SizedBox(width: 8),
+                          Expanded(child: Text('Confirmar Conflicto', style: TextStyle(fontSize: 18))),
+                        ],
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Ingrese la clave de autorización:'),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: passwordController,
+                            obscureText: true,
+                            autofocus: true,
+                            decoration: const InputDecoration(
+                              hintText: 'Clave',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.key),
+                            ),
+                            onSubmitted: (_) async {
+                              final password = passwordController.text.trim();
+                              if (password.isEmpty) {
+                                EasyLoading.showError('Ingrese la clave');
+                                return;
+                              }
+                              final isValid = await DeletionPasswordService.validatePassword(password);
+                              if (isValid) {
+                                Navigator.pop(pwCtx, true);
+                              } else {
+                                EasyLoading.showError('Clave incorrecta');
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(pwCtx, false), child: const Text('Cancelar')),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+                          onPressed: () async {
+                            final password = passwordController.text.trim();
+                            if (password.isEmpty) {
+                              EasyLoading.showError('Ingrese la clave');
+                              return;
+                            }
+                            final isValid = await DeletionPasswordService.validatePassword(password);
+                            if (isValid) {
+                              Navigator.pop(pwCtx, true);
+                            } else {
+                              EasyLoading.showError('Clave incorrecta');
+                            }
+                          },
+                          child: const Text('Confirmar'),
+                        ),
+                      ],
+                    ),
+                  );
+                  passwordController.dispose();
+                  if (authorized == true && ctx.mounted) {
+                    Navigator.pop(ctx, true);
+                  }
+                },
+                child: const Text('Sí, continuar'),
+              ),
+            ],
+          ),
+        );
+
+        if (proceed == true && context.mounted) {
+          // Autorizado - proceder a la pantalla de confirmación
+          String _normalize(String s) {
+            final withNoSpaces = s.trim().toLowerCase().replaceAll(RegExp(r'\\s+'), ' ');
+            final withNoAccents = withNoSpaces
+              .replaceAll('á', 'a')
+              .replaceAll('é', 'e')
+              .replaceAll('í', 'i')
+              .replaceAll('ó', 'o')
+              .replaceAll('ú', 'u');
+            final withoutPlan = withNoAccents.replaceFirst(RegExp(r'^plan [a-z]\s*'), '');
+            return withoutPlan;
+          }
+          final normalizedName = _normalize(widget.packageName);
+          final isPreQuinceFiesta = normalizedName.contains('pre-quince y fiesta');
+
+          DateTime? fiestaDateToSend;
+          TimeOfDay? fiestaTimeToSend;
+          if (isPreQuinceFiesta) {
+            fiestaDateToSend = selectedFiestaDate;
+            fiestaTimeToSend = selectedFiestaTime;
+          }
+
+          if (widget.dressReservations.isEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ConfirmationScreen(
+                  packageId: widget.packageId,
+                  packageName: widget.packageName,
+                  dressId: widget.dressId,
+                  dressName: widget.dressName,
+                  branchId: widget.branchId,
+                  selectedDate: selectedDate,
+                  selectedTime: selectedTime,
+                  clientId: selectedCustomer!.phoneNumber,
+                  dressReservations: [],
+                  fiestaDate: fiestaDateToSend,
+                  fiestaTime: fiestaTimeToSend,
+                ),
+              ),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ConfirmationScreen(
+                  packageId: widget.packageId,
+                  packageName: widget.packageName,
+                  dressId: '',
+                  dressName: '',
+                  branchId: '',
+                  selectedDate: selectedDate,
+                  selectedTime: selectedTime,
+                  clientId: selectedCustomer!.phoneNumber,
+                  dressReservations: widget.dressReservations,
+                  fiestaDate: fiestaDateToSend,
+                  fiestaTime: fiestaTimeToSend,
+                ),
+              ),
+            );
+          }
+        }
       }
     }
   }
