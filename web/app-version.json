@@ -1,11 +1,11 @@
 {
-  "version": "2.1.395",
-  "build": "20260310-1337",
+  "version": "2.1.396",
+  "build": "20260310-1441",
   "releaseDate": "2026-03-10",
   "environment": "production",
-  "description": "Actualización a versión 2.1.395",
+  "description": "Actualización a versión 2.1.396",
   "changelog": [
-    "Actualización a versión 2.1.395"
+    "Actualización a versión 2.1.396"
   ],
   "forceUpdate": true
 }

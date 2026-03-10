@@ -2876,7 +2876,10 @@ class ReservationDetailView extends ConsumerWidget {
                                         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F), foregroundColor: Colors.white),
-                                          onPressed: () => Navigator.pop(ctx, true),
+                                          onPressed: () async {
+                                            final authorized = await _showPasswordDialog(ctx, 'Confirmar Conflicto');
+                                            if (authorized && ctx.mounted) Navigator.pop(ctx, true);
+                                          },
                                           child: const Text('Sí, continuar'),
                                         ),
                                       ],
@@ -3049,7 +3052,10 @@ class ReservationDetailView extends ConsumerWidget {
                                         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F), foregroundColor: Colors.white),
-                                          onPressed: () => Navigator.pop(ctx, true),
+                                          onPressed: () async {
+                                            final authorized = await _showPasswordDialog(ctx, 'Confirmar Conflicto');
+                                            if (authorized && ctx.mounted) Navigator.pop(ctx, true);
+                                          },
                                           child: const Text('Sí, continuar'),
                                         ),
                                       ],
@@ -3598,7 +3604,10 @@ class ReservationDetailView extends ConsumerWidget {
                                   backgroundColor: const Color(0xFFD32F2F),
                                   foregroundColor: Colors.white,
                                 ),
-                                onPressed: () => Navigator.pop(ctx, true),
+                                onPressed: () async {
+                                  final authorized = await _showPasswordDialog(ctx, 'Confirmar Conflicto');
+                                  if (authorized && ctx.mounted) Navigator.pop(ctx, true);
+                                },
                                 child: const Text('Sí, continuar'),
                               ),
                             ],
