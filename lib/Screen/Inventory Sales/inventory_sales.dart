@@ -414,24 +414,47 @@ class _InventorySalesState extends State<InventorySales> {
     try {
       final apiService = ApiService();
       final response = await apiService.get('dresses', queryParams: {
-        'limit': '1000',
+        'limit': '5000',
       });
 
       if (!response.success || response.data == null) {
         return [];
       }
 
-      final dressesList = response.data['dresses'] as List<dynamic>? ?? [];
+      // El API puede devolver 'dresses' (formato completo) o 'd' (formato compacto)
+      final dressesData = response.data['dresses'] as List<dynamic>? ??
+                          response.data['d'] as List<dynamic>? ?? [];
       final List<DressModel> dresses = [];
 
-      for (var data in dressesList) {
+      for (var item in dressesData) {
         try {
-          final dressData = Map<String, dynamic>.from(data);
-          if (dressData.containsKey('name')) {
-            dresses.add(DressModel.fromRealtimeDB(dressData, dressData['id']?.toString() ?? ''));
+          if (item is Map) {
+            final data = Map<String, dynamic>.from(item);
+
+            // Soportar formato compacto (i=id, n=name, c=category, etc) y completo
+            String? thumbnailUrl = data['t']?.toString();
+            String? originalUrl = thumbnailUrl?.replaceAll('/thumbnails/', '/');
+
+            final Map<String, dynamic> normalizedData = {
+              'id': data['id'] ?? data['i'] ?? '',
+              'name': data['name'] ?? data['n'] ?? '',
+              'category': data['category'] ?? data['c'] ?? '',
+              'subcategory': data['subcategory'] ?? '',
+              'branch_id': data['branch_id'] ?? data['b'] ?? '',
+              'available': data['available'] ?? (data['a'] == 1 ? true : data['a'] == 0 ? false : true),
+              'state': data['state'] ?? data['s'] ?? 'available',
+              'images': data['images'] ?? (originalUrl != null ? [originalUrl] : []),
+              'price': data['price'] ?? data['p'] ?? 0,
+              'rental_price': data['rental_price'] ?? data['p'] ?? 0,
+            };
+
+            if (normalizedData['name'] != null && normalizedData['name'].toString().isNotEmpty) {
+              final id = normalizedData['id']?.toString() ?? '';
+              dresses.add(DressModel.fromMap(normalizedData, id));
+            }
           }
         } catch (e) {
-          print('Error al parsear vestido: $e');
+          debugPrint('Error al parsear vestido: $e');
         }
       }
 
@@ -440,7 +463,7 @@ class _InventorySalesState extends State<InventorySales> {
       EasyLoading.showError('Tiempo de espera agotado al cargar vestidos');
       return [];
     } catch (e) {
-      print('Error al cargar vestidos: $e');
+      debugPrint('Error al cargar vestidos: $e');
       EasyLoading.showError('Error al cargar vestidos');
       return [];
     }
