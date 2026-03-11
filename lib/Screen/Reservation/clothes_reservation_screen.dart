@@ -117,7 +117,7 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
   bool get isConfirmButtonEnabled {
     if (isSubmitting) return false;
     if (dressReservations.isEmpty) return false;
-    if (dressReservations.any((r) => r.isAvailable == false)) return false;
+    // La disponibilidad se valida al confirmar con diálogo + clave
     return true;
   }
 
