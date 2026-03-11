@@ -5,7 +5,9 @@ import 'dart:html' as html;
 import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/Provider/servicePackagesProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:salespro_admin/services/deletion_password_service.dart';
 import 'package:intl/intl.dart';
 import 'package:salespro_admin/Provider/dress_provider.dart';
 import 'package:salespro_admin/Provider/branch_provider.dart';
@@ -873,7 +875,8 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
                   selectedDate: selectedDate,
                 );
 
-                // Verificación de disponibilidad (opcional porque ya se hace al seleccionar)
+                // Verificación de disponibilidad - si no disponible, mostrar diálogo + clave
+                List<String> unavailableDresses = [];
                 for (var dressReservation in dressReservations) {
                   final isAvailable = await ref.read(
                     isClothesAvailableForRangeProvider({
@@ -882,19 +885,144 @@ class _ClothesReservationScreen extends ConsumerState<ClothesReservationScreen> 
                       'isAdditional': false,
                     }).future,
                   );
-
                   if (isAvailable == false) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text("El vestido ${dressReservation.name} no está disponible para la fecha seleccionada."),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
+                    unavailableDresses.add(dressReservation.name);
                   }
                 }
 
-                // Guardar lógica aquí...
+                if (unavailableDresses.isNotEmpty) {
+                  if (!context.mounted) return;
+                  final dateStr = '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
+                  final proceed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Row(
+                        children: [
+                          Icon(Icons.warning_amber, color: Color(0xFFD32F2F)),
+                          SizedBox(width: 8),
+                          Expanded(child: Text('Vestimenta Reservada', style: TextStyle(fontSize: 18))),
+                        ],
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Las siguientes vestimentas ya están reservadas para el $dateStr:'),
+                          const SizedBox(height: 12),
+                          ...unavailableDresses.map((name) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(children: [
+                              const Icon(Icons.cancel, color: Color(0xFFD32F2F), size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold))),
+                            ]),
+                          )),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD32F2F).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.info_outline, size: 16, color: Color(0xFFD32F2F)),
+                                SizedBox(width: 8),
+                                Expanded(child: Text('¿Desea continuar de todas formas?', style: TextStyle(fontSize: 13, color: Color(0xFFD32F2F)))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancelar'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD32F2F),
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () async {
+                            // Pedir clave de autorización
+                            final passwordController = TextEditingController();
+                            final authorized = await showDialog<bool>(
+                              context: ctx,
+                              builder: (pwCtx) => AlertDialog(
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.lock_outline, color: Colors.deepPurple),
+                                    SizedBox(width: 8),
+                                    Expanded(child: Text('Clave de Autorización', style: TextStyle(fontSize: 18))),
+                                  ],
+                                ),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Ingrese la clave de autorización:'),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: passwordController,
+                                      obscureText: true,
+                                      autofocus: true,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Clave',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.key),
+                                      ),
+                                      onSubmitted: (_) async {
+                                        final password = passwordController.text.trim();
+                                        if (password.isEmpty) {
+                                          EasyLoading.showError('Ingrese la clave');
+                                          return;
+                                        }
+                                        final isValid = await DeletionPasswordService.validatePassword(password);
+                                        if (isValid) {
+                                          Navigator.pop(pwCtx, true);
+                                        } else {
+                                          EasyLoading.showError('Clave incorrecta');
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(pwCtx, false), child: const Text('Cancelar')),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+                                    onPressed: () async {
+                                      final password = passwordController.text.trim();
+                                      if (password.isEmpty) {
+                                        EasyLoading.showError('Ingrese la clave');
+                                        return;
+                                      }
+                                      final isValid = await DeletionPasswordService.validatePassword(password);
+                                      if (isValid) {
+                                        Navigator.pop(pwCtx, true);
+                                      } else {
+                                        EasyLoading.showError('Clave incorrecta');
+                                      }
+                                    },
+                                    child: const Text('Confirmar'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            passwordController.dispose();
+                            if (authorized == true && ctx.mounted) {
+                              Navigator.pop(ctx, true);
+                            }
+                          },
+                          child: const Text('Sí, continuar'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (proceed != true) return;
+                }
+
+                // Proceder con la reserva
                 _confirmReservation();
               }
             : null,
