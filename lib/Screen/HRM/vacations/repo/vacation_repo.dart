@@ -312,4 +312,105 @@ class VacationRepository {
 
     return summary;
   }
+
+  /// Obtener elegibilidad de vacaciones para todos los empleados
+  /// Calcula cuáles empleados están próximos a su aniversario laboral
+  Future<List<VacationEligibility>> getUpcomingVacationEligibility({
+    int daysAhead = 90,
+  }) async {
+    List<VacationEligibility> eligibilities = [];
+
+    try {
+      final employees = await EmployeeRepository().getActiveEmployees();
+      final vacations = await getAllVacations();
+      final now = DateTime.now();
+
+      for (var employee in employees) {
+        // Solo empleados con >= 1 año de servicio o que están por cumplir
+        final monthsOfService = now.difference(employee.joiningDate).inDays / 30;
+        if (monthsOfService < 9) continue; // Ignorar empleados muy nuevos
+
+        // Calcular próximo aniversario laboral
+        int nextYear = employee.yearsOfService + 1;
+        DateTime nextAnniversary = DateTime(
+          employee.joiningDate.year + nextYear,
+          employee.joiningDate.month,
+          employee.joiningDate.day,
+        );
+
+        // Si el aniversario ya pasó este año, calcular el siguiente
+        if (nextAnniversary.isBefore(now.subtract(const Duration(days: 30)))) {
+          nextYear++;
+          nextAnniversary = DateTime(
+            employee.joiningDate.year + nextYear,
+            employee.joiningDate.month,
+            employee.joiningDate.day,
+          );
+        }
+
+        final daysUntil = nextAnniversary.difference(now).inDays;
+
+        // Calcular balance actual
+        final balance = await getEmployeeVacationBalance(employee);
+
+        // Buscar última fecha de vacaciones
+        DateTime? lastVacDate;
+        final empVacations = vacations.where((v) =>
+            v.employeeId == employee.id &&
+            v.type == LeaveTypes.vacaciones &&
+            (v.status == 'Aprobado' || v.status == 'Completado'));
+        if (empVacations.isNotEmpty) {
+          lastVacDate = empVacations
+              .reduce((a, b) => a.endDate.isAfter(b.endDate) ? a : b)
+              .endDate;
+        }
+
+        final hasNeverTaken = lastVacDate == null && employee.yearsOfService >= 1;
+
+        final urgency = VacationEligibility.calculateUrgency(
+          daysUntilAnniversary: daysUntil,
+          daysAvailable: balance.daysAvailable,
+          hasNeverTakenVacation: hasNeverTaken,
+        );
+
+        // Incluir si está dentro del rango solicitado o tiene vacaciones vencidas
+        if (daysUntil <= daysAhead || urgency == 'VENCIDO') {
+          eligibilities.add(VacationEligibility(
+            employeeId: employee.id,
+            employeeName: employee.fullName,
+            designation: employee.designation,
+            department: employee.department,
+            joiningDate: employee.joiningDate,
+            yearsOfService: employee.yearsOfService,
+            nextAnniversary: nextAnniversary,
+            daysUntilAnniversary: daysUntil,
+            daysAvailable: balance.daysAvailable,
+            daysUsed: balance.daysUsed,
+            daysEntitled: balance.daysEntitled,
+            lastVacationDate: lastVacDate,
+            urgencyLevel: urgency,
+          ));
+        }
+      }
+
+      // Ordenar por urgencia: VENCIDO > URGENTE > PRÓXIMO > OK
+      final urgencyOrder = {'VENCIDO': 0, 'URGENTE': 1, 'PRÓXIMO': 2, 'OK': 3};
+      eligibilities.sort((a, b) {
+        final cmp = (urgencyOrder[a.urgencyLevel] ?? 4)
+            .compareTo(urgencyOrder[b.urgencyLevel] ?? 4);
+        if (cmp != 0) return cmp;
+        return a.daysUntilAnniversary.compareTo(b.daysUntilAnniversary);
+      });
+    } catch (e) {
+      // Error silencioso
+    }
+
+    return eligibilities;
+  }
+
+  /// Obtener empleados con vacaciones vencidas (tienen días disponibles sin usar)
+  Future<List<VacationEligibility>> getOverdueVacations() async {
+    final all = await getUpcomingVacationEligibility(daysAhead: 365);
+    return all.where((e) => e.urgencyLevel == 'VENCIDO').toList();
+  }
 }

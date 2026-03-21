@@ -24,9 +24,11 @@ class _VacationsScreenState extends State<VacationsScreen>
   List<VacationModel> pendingVacations = [];
   List<VacationBalance> balances = [];
   List<EmployeeModel> employees = [];
+  List<VacationEligibility> eligibilities = [];
   bool isLoading = true;
   String selectedYear = DateTime.now().year.toString();
   String filterStatus = 'Todos';
+  late DateTime selectedMonth;
 
   final VacationRepository _vacationRepo = VacationRepository();
   final EmployeeRepository _employeeRepo = EmployeeRepository();
@@ -45,6 +47,7 @@ class _VacationsScreenState extends State<VacationsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
     _loadData();
   }
 
@@ -61,12 +64,14 @@ class _VacationsScreenState extends State<VacationsScreen>
       final vacList = await _vacationRepo.getAllVacations();
       final pending = await _vacationRepo.getPendingVacations();
       final balanceList = await _vacationRepo.getAllEmployeesVacationBalance();
+      final eligList = await _vacationRepo.getUpcomingVacationEligibility(daysAhead: 180);
 
       setState(() {
         employees = empList;
         allVacations = vacList;
         pendingVacations = pending;
         balances = balanceList;
+        eligibilities = eligList;
         isLoading = false;
       });
     } catch (e) {
@@ -178,6 +183,94 @@ class _VacationsScreenState extends State<VacationsScreen>
             ],
           ),
           const Spacer(),
+          // Badges informativos
+          // Empleados en vacaciones hoy
+          Builder(builder: (_) {
+            final now = DateTime.now();
+            final onVacationToday = allVacations.where((v) =>
+                v.status == 'Aprobado' &&
+                now.isAfter(v.startDate.subtract(const Duration(days: 1))) &&
+                now.isBefore(v.endDate.add(const Duration(days: 1)))).length;
+            if (onVacationToday > 0) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: const EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.green),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.beach_access, size: 16, color: Colors.green),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$onVacationToday hoy',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+          // Vacaciones vencidas
+          if (eligibilities.where((e) => e.urgencyLevel == 'VENCIDO').isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.red),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.warning_amber, size: 16, color: Colors.red),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${eligibilities.where((e) => e.urgencyLevel == 'VENCIDO').length} Vencidas',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Vacaciones próximas
+          if (eligibilities.where((e) => e.urgencyLevel == 'URGENTE' || e.urgencyLevel == 'PRÓXIMO').isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber[50],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.amber[700]!),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.schedule, size: 16, color: Colors.amber[700]),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${eligibilities.where((e) => e.urgencyLevel == 'URGENTE' || e.urgencyLevel == 'PRÓXIMO').length} Próximas',
+                    style: TextStyle(
+                      color: Colors.amber[700],
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Solicitudes pendientes
           if (pendingVacations.isNotEmpty)
             Container(
@@ -766,148 +859,536 @@ class _VacationsScreenState extends State<VacationsScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Obtener vacaciones aprobadas del mes actual
-    final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 0);
+    return Column(
+      children: [
+        // Panel de Alertas - Próximas Vacaciones
+        if (eligibilities.isNotEmpty) _buildEligibilityPanel(),
+        // Calendario
+        Expanded(child: _buildCalendarGrid()),
+      ],
+    );
+  }
 
+  /// Panel de alertas de próximas vacaciones
+  Widget _buildEligibilityPanel() {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 280),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                const Icon(Icons.notifications_active, color: kMainColor, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'Próximas Vacaciones',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                Text(
+                  '${eligibilities.length} empleados',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: eligibilities.length,
+              itemBuilder: (context, index) {
+                final e = eligibilities[index];
+                return _buildEligibilityRow(e);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEligibilityRow(VacationEligibility e) {
+    Color urgencyColor;
+    IconData urgencyIcon;
+    String urgencyLabel;
+
+    switch (e.urgencyLevel) {
+      case 'VENCIDO':
+        urgencyColor = Colors.red;
+        urgencyIcon = Icons.error;
+        urgencyLabel = 'VENCIDO';
+        break;
+      case 'URGENTE':
+        urgencyColor = Colors.orange;
+        urgencyIcon = Icons.warning_amber;
+        urgencyLabel = '${e.daysUntilAnniversary}d';
+        break;
+      case 'PRÓXIMO':
+        urgencyColor = Colors.amber[700]!;
+        urgencyIcon = Icons.schedule;
+        urgencyLabel = '${e.daysUntilAnniversary}d';
+        break;
+      default:
+        urgencyColor = Colors.green;
+        urgencyIcon = Icons.check_circle_outline;
+        urgencyLabel = '${e.daysUntilAnniversary}d';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: urgencyColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          // Urgency badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: urgencyColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: urgencyColor),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(urgencyIcon, size: 14, color: urgencyColor),
+                const SizedBox(width: 4),
+                Text(
+                  urgencyLabel,
+                  style: TextStyle(
+                    color: urgencyColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Employee info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  e.employeeName,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                Text(
+                  '${e.designation} • ${e.yearsOfService} años',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          // Anniversary date
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Aniversario: ${DateFormat('dd/MM/yyyy').format(e.nextAnniversary)}',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+              ),
+              Text(
+                'Disponibles: ${e.daysAvailable} de ${e.daysEntitled} días',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: e.daysAvailable > 0 ? Colors.green : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          // Last vacation
+          if (e.lastVacationDate != null)
+            Tooltip(
+              message: 'Último permiso: ${DateFormat('dd/MM/yyyy').format(e.lastVacationDate!)}',
+              child: Icon(Icons.history, size: 16, color: Colors.grey[400]),
+            )
+          else
+            Tooltip(
+              message: 'Nunca ha tomado vacaciones',
+              child: Icon(Icons.warning, size: 16, color: Colors.red[300]),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Calendario grilla mensual
+  Widget _buildCalendarGrid() {
+    final monthStart = DateTime(selectedMonth.year, selectedMonth.month, 1);
+    final monthEnd = DateTime(selectedMonth.year, selectedMonth.month + 1, 0);
+    final daysInMonth = monthEnd.day;
+
+    // Día de la semana del primer día (1=lunes, 7=domingo)
+    final firstWeekday = monthStart.weekday;
+
+    // Vacaciones del mes seleccionado
     final monthVacations = allVacations.where((v) =>
-        v.status == 'Aprobado' &&
-        ((v.startDate.isAfter(monthStart.subtract(const Duration(days: 1))) &&
-                v.startDate.isBefore(monthEnd.add(const Duration(days: 1)))) ||
-            (v.endDate.isAfter(monthStart.subtract(const Duration(days: 1))) &&
-                v.endDate.isBefore(monthEnd.add(const Duration(days: 1)))))).toList();
+        (v.status == 'Aprobado' || v.status == 'Completado') &&
+        !(v.endDate.isBefore(monthStart) || v.startDate.isAfter(monthEnd))).toList();
+
+    // Aniversarios del mes
+    final monthAnniversaries = eligibilities.where((e) =>
+        e.nextAnniversary.month == selectedMonth.month &&
+        e.nextAnniversary.year == selectedMonth.year).toList();
+
+    // También buscar aniversarios de todos los empleados (no solo los de 90 días)
+    final allAnniversaries = <int, List<String>>{};
+    for (var emp in employees) {
+      if (emp.joiningDate.month == selectedMonth.month && emp.yearsOfService >= 1) {
+        final day = emp.joiningDate.day;
+        allAnniversaries.putIfAbsent(day, () => []);
+        allAnniversaries[day]!.add(emp.fullName);
+      }
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Month navigation
           Row(
             children: [
-              Text(
-                'Vacaciones del ${DateFormat('MMMM yyyy', 'es').format(now)}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: () {
+                  setState(() {
+                    selectedMonth = DateTime(selectedMonth.year, selectedMonth.month - 1);
+                  });
+                },
+              ),
+              Expanded(
+                child: Text(
+                  DateFormat('MMMM yyyy', 'es').format(selectedMonth).toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
-              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: () {
+                  setState(() {
+                    selectedMonth = DateTime(selectedMonth.year, selectedMonth.month + 1);
+                  });
+                },
+              ),
+              const SizedBox(width: 16),
               // Leyenda
               _buildLegendItem('Vacaciones', Colors.blue),
-              const SizedBox(width: 16),
-              _buildLegendItem('Licencia Médica', Colors.red),
-              const SizedBox(width: 16),
-              _buildLegendItem('Maternidad/Paternidad', Colors.purple),
-              const SizedBox(width: 16),
-              _buildLegendItem('Otros', Colors.orange),
+              const SizedBox(width: 8),
+              _buildLegendItem('Médica', Colors.red),
+              const SizedBox(width: 8),
+              _buildLegendItem('Mat./Pat.', Colors.purple),
+              const SizedBox(width: 8),
+              _buildLegendItem('Aniversario', kMainColor),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          // Weekday headers
+          Row(
+            children: ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
+                .map((day) => Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: kMainColor.withValues(alpha: 0.1),
+                          border: Border.all(color: kMainColor.withValues(alpha: 0.2)),
+                        ),
+                        child: Text(
+                          day,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: kMainColor,
+                          ),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+          // Calendar grid
           Expanded(
-            child: monthVacations.isEmpty
-                ? Center(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                childAspectRatio: 1.2,
+              ),
+              itemCount: (firstWeekday - 1) + daysInMonth,
+              itemBuilder: (context, index) {
+                // Empty cells before first day
+                if (index < firstWeekday - 1) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                  );
+                }
+
+                final day = index - (firstWeekday - 1) + 1;
+                if (day > daysInMonth) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                  );
+                }
+
+                final date = DateTime(selectedMonth.year, selectedMonth.month, day);
+                final isToday = DateTime.now().day == day &&
+                    DateTime.now().month == selectedMonth.month &&
+                    DateTime.now().year == selectedMonth.year;
+                final isWeekend = date.weekday == DateTime.saturday ||
+                    date.weekday == DateTime.sunday;
+
+                // Vacations on this day
+                final dayVacations = monthVacations.where((v) =>
+                    !date.isBefore(v.startDate) && !date.isAfter(v.endDate)).toList();
+
+                // Anniversary on this day
+                final hasAnniversary = allAnniversaries.containsKey(day);
+
+                return InkWell(
+                  onTap: (dayVacations.isNotEmpty || hasAnniversary)
+                      ? () => _showDayDetails(date, dayVacations,
+                          hasAnniversary ? allAnniversaries[day]! : [])
+                      : null,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isToday
+                          ? kMainColor.withValues(alpha: 0.08)
+                          : isWeekend
+                              ? Colors.grey[50]
+                              : Colors.white,
+                      border: Border.all(
+                        color: isToday ? kMainColor : Colors.grey[200]!,
+                        width: isToday ? 2 : 0.5,
+                      ),
+                    ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Icon(Icons.event_available,
-                            size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No hay vacaciones programadas este mes',
-                          style: TextStyle(color: Colors.grey[600]),
+                        // Day number
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2, right: 4),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (hasAnniversary)
+                                const Icon(Icons.star, size: 12, color: kMainColor),
+                              Text(
+                                '$day',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                                  color: isToday
+                                      ? kMainColor
+                                      : isWeekend
+                                          ? Colors.grey[400]
+                                          : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Vacation dots
+                        if (dayVacations.isNotEmpty)
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: dayVacations.take(3).map((v) {
+                                  Color dotColor;
+                                  switch (v.type) {
+                                    case 'Vacaciones':
+                                      dotColor = Colors.blue;
+                                      break;
+                                    case 'Licencia Médica':
+                                      dotColor = Colors.red;
+                                      break;
+                                    case 'Licencia Maternidad':
+                                    case 'Licencia Paternidad':
+                                      dotColor = Colors.purple;
+                                      break;
+                                    default:
+                                      dotColor = Colors.orange;
+                                  }
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 1),
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: dotColor,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        if (dayVacations.length > 3)
+                          Text(
+                            '+${dayVacations.length - 3}',
+                            style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Mostrar detalles de un día
+  void _showDayDetails(DateTime date, List<VacationModel> vacations, List<String> anniversaries) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.calendar_today, color: kMainColor),
+            const SizedBox(width: 8),
+            Text(DateFormat('dd MMMM yyyy', 'es').format(date)),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (anniversaries.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: kMainColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: kMainColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.star, color: kMainColor, size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'Aniversarios Laborales',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: kMainColor),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ...anniversaries.map((name) => Padding(
+                            padding: const EdgeInsets.only(left: 24, bottom: 2),
+                            child: Text('• $name', style: const TextStyle(fontSize: 13)),
+                          )),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (vacations.isNotEmpty) ...[
+                const Text(
+                  'Empleados de permiso:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...vacations.map((v) {
+                  Color color;
+                  switch (v.type) {
+                    case 'Vacaciones':
+                      color = Colors.blue;
+                      break;
+                    case 'Licencia Médica':
+                      color = Colors.red;
+                      break;
+                    case 'Licencia Maternidad':
+                    case 'Licencia Paternidad':
+                      color = Colors.purple;
+                      break;
+                    default:
+                      color = Colors.orange;
+                  }
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: color.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                v.employeeName,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                '${v.type} • ${DateFormat('dd/MM').format(v.startDate)} - ${DateFormat('dd/MM').format(v.endDate)}',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${v.daysApproved}d',
+                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: monthVacations.length,
-                    itemBuilder: (context, index) {
-                      final vacation = monthVacations[index];
-                      Color color;
-                      switch (vacation.type) {
-                        case 'Vacaciones':
-                          color = Colors.blue;
-                          break;
-                        case 'Licencia Médica':
-                          color = Colors.red;
-                          break;
-                        case 'Licencia Maternidad':
-                        case 'Licencia Paternidad':
-                          color = Colors.purple;
-                          break;
-                        default:
-                          color = Colors.orange;
-                      }
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: color.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: color,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    vacation.employeeName,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    vacation.type,
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              '${DateFormat('dd/MM').format(vacation.startDate)} - ${DateFormat('dd/MM').format(vacation.endDate)}',
-                              style: TextStyle(
-                                color: color,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: color,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '${vacation.daysApproved} días',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                  );
+                }),
+              ],
+              if (vacations.isEmpty && anniversaries.isEmpty)
+                const Text('No hay eventos para este día'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
           ),
         ],
       ),

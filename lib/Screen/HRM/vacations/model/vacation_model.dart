@@ -242,3 +242,50 @@ class VacationBalance {
     };
   }
 }
+
+/// Elegibilidad de vacaciones de un empleado (cálculo automático)
+class VacationEligibility {
+  final dynamic employeeId;
+  final String employeeName;
+  final String designation;
+  final String department;
+  final DateTime joiningDate;
+  final int yearsOfService;
+  final DateTime nextAnniversary;
+  final int daysUntilAnniversary;
+  final int daysAvailable;
+  final int daysUsed;
+  final int daysEntitled;
+  final DateTime? lastVacationDate;
+  final String urgencyLevel; // VENCIDO, URGENTE, PRÓXIMO, OK
+
+  VacationEligibility({
+    required this.employeeId,
+    required this.employeeName,
+    required this.designation,
+    required this.department,
+    required this.joiningDate,
+    required this.yearsOfService,
+    required this.nextAnniversary,
+    required this.daysUntilAnniversary,
+    required this.daysAvailable,
+    required this.daysUsed,
+    required this.daysEntitled,
+    this.lastVacationDate,
+    required this.urgencyLevel,
+  });
+
+  /// Determinar nivel de urgencia basado en días restantes y vacaciones disponibles
+  static String calculateUrgency({
+    required int daysUntilAnniversary,
+    required int daysAvailable,
+    required bool hasNeverTakenVacation,
+  }) {
+    // Tiene vacaciones vencidas (días disponibles > 0 y aniversario ya pasó o es inminente)
+    if (daysAvailable >= 14 && hasNeverTakenVacation) return 'VENCIDO';
+    if (daysUntilAnniversary <= 0 && daysAvailable > 0) return 'VENCIDO';
+    if (daysUntilAnniversary <= 30) return 'URGENTE';
+    if (daysUntilAnniversary <= 90) return 'PRÓXIMO';
+    return 'OK';
+  }
+}
