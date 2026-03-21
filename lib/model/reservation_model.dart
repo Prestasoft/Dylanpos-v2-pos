@@ -25,6 +25,7 @@ class ReservationModel {
   final String? serviceName;
   final String? vestido;
   final List<Map<String, dynamic>> dressesData;
+  final int rescheduleCount;
 
   ReservationModel({
     String? id,
@@ -51,6 +52,7 @@ class ReservationModel {
     this.customerPhone,
     this.serviceName,
     this.vestido,
+    this.rescheduleCount = 0,
     List<Map<String, dynamic>>? dressesData,
   })  : id = id ?? '',
         createdAt = createdAt ?? DateTime.now(),
@@ -114,6 +116,9 @@ class ReservationModel {
       serviceName: map['service_name']?.toString(),
       vestido: map['vestido']?.toString(),
       dressesData: parsedDressesData,
+      rescheduleCount: map['reschedule_count'] is int 
+          ? map['reschedule_count'] 
+          : int.tryParse(map['reschedule_count']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -142,6 +147,7 @@ class ReservationModel {
     bool? isFiestaDate,
     String? fiestaDate,
     String? fiestaTime,
+    int? rescheduleCount,
   }) {
     return ReservationModel(
       id: id,
@@ -164,6 +170,7 @@ class ReservationModel {
       fiestaDate: fiestaDate ?? this.fiestaDate,
       fiestaTime: fiestaTime ?? this.fiestaTime,
       isFiestaDate: isFiestaDate ?? this.isFiestaDate,
+      rescheduleCount: rescheduleCount ?? this.rescheduleCount,
     );
   }
 
@@ -192,6 +199,7 @@ class ReservationModel {
       'seller_name': sellerName,
       'fiesta_date': fiestaDate,
       'fiesta_time': fiestaTime,
+      'reschedule_count': rescheduleCount,
     };
   }
 }

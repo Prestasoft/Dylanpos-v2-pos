@@ -350,6 +350,25 @@ class ReservationCard extends ConsumerWidget {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+                                  if (reservation.rescheduleCount > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.sync_problem, size: 14, color: Colors.orange[800]),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Reprogramada (${reservation.rescheduleCount})',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.orange[800],
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   // Mostrar número de factura si existe
                                   // CRÍTICO: Usar saleTransactionByReservationProvider para evitar límite de 100 ventas
                                   Consumer(
@@ -1805,6 +1824,33 @@ class ReservationDetailView extends ConsumerWidget {
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
+
+                        if ((reservationData['reschedule_count'] is int ? reservationData['reschedule_count'] : int.tryParse(reservationData['reschedule_count']?.toString() ?? '0') ?? 0) > 0)
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4).copyWith(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.1),
+                              border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.sync_problem, color: Colors.orange[800], size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Atención: La fecha de esta reserva ha sido modificada ${(reservationData['reschedule_count'] is int ? reservationData['reschedule_count'] : int.tryParse(reservationData['reschedule_count']?.toString() ?? '0') ?? 0)} ${((reservationData['reschedule_count'] is int ? reservationData['reschedule_count'] : int.tryParse(reservationData['reschedule_count']?.toString() ?? '0') ?? 0) == 1) ? "vez" : "veces"}.',
+                                    style: TextStyle(
+                                      color: Colors.orange[800],
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
                         if (client != null &&
                             client.dueAmount.toDouble() > 0) ...[
@@ -3650,6 +3696,18 @@ class ReservationDetailView extends ConsumerWidget {
                       // Cerrar el diálogo de selección de fecha
                       if (context.mounted) Navigator.pop(dialogContext);
 
+                      // Extraer el contador actual de reprogramaciones
+                      int currentRescheduleCount = 0;
+                      try {
+                        final fullRes = await ref.read(fullReservationByIdProviderVQ(reservationId).future);
+                        if (fullRes != null) {
+                           final resData = fullRes.reservation;
+                           currentRescheduleCount = resData['reschedule_count'] is int 
+                              ? resData['reschedule_count'] 
+                              : int.tryParse(resData['reschedule_count']?.toString() ?? '0') ?? 0;
+                        }
+                      } catch (_) {}
+
                       // Actualizar la reserva
                       EasyLoading.show(status: 'Actualizando fecha...');
                       final success = await ref.read(
@@ -3658,6 +3716,7 @@ class ReservationDetailView extends ConsumerWidget {
                           'updateData': {
                             'reservation_date': newDate,
                             'reservation_time': newTime,
+                            'reschedule_count': currentRescheduleCount + 1,
                           },
                         }).future,
                       );
