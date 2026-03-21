@@ -308,8 +308,8 @@ class ReservationCard extends ConsumerWidget {
               
               // Verificar si es una reserva de tipo PRE-QUINCE FIESTA
               final sessionType = fullReservation?.reservation['session_type']?.toString() ?? '';
-              final isPreQuinceFiesta = sessionType.toLowerCase().contains('pre-quince-fiesta');
-              final isPreQuinceDate = isPreQuinceFiesta && !reservation.isFiestaDate;
+              final isPreQuinceFiestaLocal = isPreQuinceFiesta || sessionType.toLowerCase().contains('pre-quince-fiesta');
+              final isPreQuinceDate = isPreQuinceFiestaLocal && !reservation.isFiestaDate;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,10 +342,10 @@ class ReservationCard extends ConsumerWidget {
                                     ),
                                   if (isPreQuinceDate)
                                     Text(
-                                      '(Fecha pre-quince)',
+                                      '(Pre-quince)',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.purple[700],
+                                        color: const Color.fromARGB(255, 73, 47, 1),
                                         fontStyle: FontStyle.italic,
                                         fontWeight: FontWeight.bold,
                                       ),
