@@ -239,6 +239,8 @@ Future<void> postDailyTransaction(
       'sellerName': modelJson['sellerName'],
       'invoiceNumber': modelJson['invoiceNumber'],
       'dueAmount': modelJson['dueAmount'],
+      'bankId': modelJson['bankId'],
+      'bankName': modelJson['bankName'],
       'saleTransactionModel': modelJson['saleTransactionModel'],
       'purchaseTransactionModel': modelJson['purchaseTransactionModel'],
       'dueTransactionModel': modelJson['dueTransactionModel'],
@@ -259,6 +261,8 @@ Future<void> postDailyTransaction(
       'remainingBalance': modelJson['remainingBalance'],
       'firebase_id': modelJson['id'],
       'invoiceNumber': modelJson['invoiceNumber'],  // A nivel raíz para búsquedas
+      'bankId': modelJson['bankId'],                 // A nivel raíz para filtros por banco
+      'bankName': modelJson['bankName'],             // A nivel raíz para filtros por banco
       'data': dataPayload,
     };
 
