@@ -23,6 +23,8 @@ import '../Screen/currency/global_currency.dart';
 import '../model/subscription_model.dart';
 import '../services/audit_service.dart';
 import '../services/api_service.dart';
+import '../services/deletion_password_service.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import '../Repository/profile_details_repo.dart';
 import '../services/tenant/tenant_model.dart';
 import '../Provider/menu_order_provider.dart';
@@ -801,7 +803,98 @@ class _GlobalSideBarState extends ConsumerState<GlobalSideBar> {
       return;
     }
 
+    if (_route == '/hrm/loans') {
+      _showPasswordDialog(ctx, () {
+        ctx.go(_route!);
+      });
+      return;
+    }
+
     ctx.go(_route);
+  }
+
+  void _showPasswordDialog(BuildContext context, VoidCallback onSuccess) {
+    final passwordController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock_outline, color: Colors.deepPurple),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Clave de Autorización',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Ingrese la clave de autorización para acceder a Préstamos:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Clave',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.key),
+              ),
+              onSubmitted: (_) async {
+                final password = passwordController.text.trim();
+                if (password.isEmpty) {
+                  EasyLoading.showError('Ingrese la clave');
+                  return;
+                }
+                EasyLoading.show();
+                final isValid = await DeletionPasswordService.validatePassword(password);
+                EasyLoading.dismiss();
+                if (isValid) {
+                  Navigator.pop(ctx);
+                  onSuccess();
+                } else {
+                  EasyLoading.showError('Clave incorrecta');
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final password = passwordController.text.trim();
+              if (password.isEmpty) {
+                EasyLoading.showError('Ingrese la clave');
+                return;
+              }
+              EasyLoading.show();
+              final isValid = await DeletionPasswordService.validatePassword(password);
+              EasyLoading.dismiss();
+              if (isValid) {
+                Navigator.pop(ctx);
+                onSuccess();
+              } else {
+                EasyLoading.showError('Clave incorrecta');
+              }
+            },
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Botón para abrir el editor de orden del menú (solo admin)
