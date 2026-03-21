@@ -15,6 +15,8 @@ import 'package:salespro_admin/Provider/customer_provider.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
 import 'package:salespro_admin/model/expense_model.dart';
 import 'package:salespro_admin/model/customer_model.dart';
+import '../../Provider/bank_provider.dart';
+import '../../model/bank_model.dart';
 
 import '../../Provider/daily_transaction_provider.dart';
 import '../../commas.dart';
@@ -191,6 +193,7 @@ class _NewExpenseState extends State<NewExpense> {
       ];
 
   String? selectedCategories;
+  BankModel? selectedBank;
   late String selectedPaymentType = paymentMethods.first;
   CustomerModel? selectedCustomer;
   bool showCustomerSelector = false;
@@ -258,9 +261,18 @@ class _NewExpenseState extends State<NewExpense> {
       onChanged: (value) {
         setState(() {
           selectedPaymentType = value!;
+          // Limpiar banco seleccionado cuando cambia el método de pago
+          if (!_isBankPayment(selectedPaymentType)) {
+            selectedBank = null;
+          }
         });
       },
     );
+  }
+
+  bool _isBankPayment(String paymentType) {
+    final lower = paymentType.toLowerCase().trim();
+    return lower == 'bank' || lower == 'banco' || lower.contains('transfer');
   }
 
   final ApiService _apiService = ApiService();
@@ -699,6 +711,79 @@ class _NewExpenseState extends State<NewExpense> {
                           )),
                     ]),
 
+                    // Selector de banco (solo si el método de pago es Banco/Transferencia)
+                    if (_isBankPayment(selectedPaymentType))
+                      ResponsiveGridRow(children: [
+                        ResponsiveGridCol(
+                          xs: 12,
+                          md: 6,
+                          lg: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Consumer(
+                              builder: (context, ref, child) {
+                                final banksAsync = ref.watch(allBanksProvider);
+                                return banksAsync.when(
+                                  data: (banks) {
+                                    final activeBanks = banks.where((b) => b.isActive ?? true).toList();
+                                    return SizedBox(
+                                      height: 48,
+                                      child: FormField(
+                                        builder: (FormFieldState<dynamic> field) {
+                                          return InputDecorator(
+                                            decoration: InputDecoration(
+                                              contentPadding: const EdgeInsets.all(8.0),
+                                              labelText: 'Banco *',
+                                              floatingLabelBehavior: FloatingLabelBehavior.always,
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8.0),
+                                              ),
+                                              prefixIcon: Icon(Icons.account_balance, color: kMainColor, size: 20),
+                                            ),
+                                            child: Theme(
+                                              data: ThemeData(
+                                                highlightColor: dropdownItemColor,
+                                                focusColor: dropdownItemColor,
+                                                hoverColor: dropdownItemColor,
+                                              ),
+                                              child: DropdownButtonHideUnderline(
+                                                child: DropdownButton<String>(
+                                                  isExpanded: true,
+                                                  hint: const Text('Seleccionar banco'),
+                                                  value: selectedBank?.bankId,
+                                                  items: activeBanks.map((bank) {
+                                                    return DropdownMenuItem<String>(
+                                                      value: bank.bankId,
+                                                      child: Text(bank.bankName ?? 'Sin nombre'),
+                                                    );
+                                                  }).toList(),
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      selectedBank = activeBanks.firstWhere(
+                                                        (b) => b.bankId == value,
+                                                      );
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  loading: () => const SizedBox(
+                                    height: 48,
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                                  error: (error, stack) => Text('Error: \$error'),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ]),
+
                     ///_______amount_reference_number______________________________________
                     ResponsiveGridRow(children: [
                       //------------amount----------------------
@@ -915,6 +1000,8 @@ class _NewExpenseState extends State<NewExpense> {
                                             paymentType: expense.paymentType,
                                             sellerName: expense.userName ?? currentUserName,
                                             expenseModel: expense,
+                                            bankId: selectedBank?.bankId,
+                                            bankName: selectedBank?.bankName,
                                           );
                                           postDailyTransaction(
                                               dailyTransactionModel:

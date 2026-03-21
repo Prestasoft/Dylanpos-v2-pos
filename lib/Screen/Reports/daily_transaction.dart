@@ -1273,9 +1273,11 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                         'saleTransactionModel': transaction.saleTransactionModel?.toJson(),
                                         'dueTransactionModel': transaction.dueTransactionModel?.toJson(),
                                         'purchaseTransactionModel': transaction.purchaseTransactionModel?.toJson(),
+                                        'expenseModel': transaction.expenseModel?.toJson(),
                                         'paymentIn': transaction.paymentIn,
                                         'paymentOut': transaction.paymentOut,
                                         'time': transaction.date,
+                                        'name': transaction.name,
                                         // Campos directos como fallback
                                         'paymentType': paymentType,
                                         'bankId': bankId,
@@ -1324,7 +1326,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                         Icon(Icons.account_balance, color: const Color(0xFF009688), size: 24),
                                         const SizedBox(height: 8),
                                         Text(
-                                          '$globalCurrency ${myFormat.format(summary.pagoTransferencia)}',
+                                          '$globalCurrency ${myFormat.format(summary.ingresoTransferencia - summary.gastoTransferencia)}',
                                           style: theme.textTheme.titleLarge?.copyWith(
                                               color: const Color(0xFF009688),
                                               fontWeight: FontWeight.w600,
@@ -1371,7 +1373,7 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                     Icon(Icons.credit_card, color: const Color(0xFF9C27B0), size: 24),
                                     const SizedBox(height: 8),
                                     Text(
-                                      '$globalCurrency ${myFormat.format(summary.pagoTarjetas)}',
+                                      '$globalCurrency ${myFormat.format(summary.ingresoTarjeta - summary.gastoTarjeta)}',
                                       style: theme.textTheme.titleLarge?.copyWith(
                                           color: const Color(0xFF9C27B0),
                                           fontWeight: FontWeight.w600,

@@ -59,62 +59,67 @@ class TransferDetailsDialog extends ConsumerWidget {
       // Intentar obtener la transacción según el tipo
       Map<String, dynamic>? transaction;
       bool isDeleted = type == 'Deleted';
+      bool isExpense = type == 'Expense' || type == 'Purchase' || type == 'Salary Payment';
 
       if (type == 'Sale' || type == 'Adicionales' || type == 'Impresiones' || type == 'Reserva') {
         transaction = value['saleTransactionModel'];
       } else if (type == 'Due Collection' || type == 'Due Payment' || type == 'Cuenta x Cobrar') {
         transaction = value['dueTransactionModel'];
       } else if (isDeleted) {
-        // Para facturas eliminadas, buscar el saleTransactionModel dentro de 'data' o directamente
         transaction = value['saleTransactionModel'] ?? value['data']?['saleTransactionModel'];
+      } else if (isExpense) {
+        // Para gastos, el modelo puede estar en expenseModel o en campos directos
+        transaction = value['expenseModel'] ?? value;
       }
 
       // Obtener paymentType: primero del modelo anidado, luego del campo directo (soporte snake_case)
       String? paymentType = transaction?['paymentType']?.toString()
           ?? transaction?['payment_type']?.toString()
+          ?? transaction?['payment_method']?.toString()
           ?? value['paymentType']?.toString()
           ?? value['payment_type']?.toString();
-      print('DEBUG: PaymentType extraído: $paymentType (modelo: ${transaction?['paymentType']}, directo: ${value['paymentType']})');
 
       if (_isTransfer(paymentType)) {
-        // Obtener campos: primero del modelo anidado, luego del campo directo (soporte snake_case para PostgreSQL)
+        // Obtener campos: primero del modelo anidado, luego del campo directo
         final bankId = transaction?['bankId']?.toString()
             ?? transaction?['bank_id']?.toString()
             ?? value['bankId']?.toString()
             ?? value['bank_id']?.toString();
 
-        // CRÍTICO: Hacer lookup del nombre del banco usando bankId
-        // Si el bankName guardado es null/vacío, buscar en la lista de bancos
         String? savedBankName = transaction?['bankName']?.toString()
             ?? transaction?['bank_name']?.toString()
             ?? value['bankName']?.toString()
             ?? value['bank_name']?.toString();
 
-        // Si no hay nombre guardado o es genérico, intentar lookup por ID
         String bankName;
         if (savedBankName == null || savedBankName.isEmpty || savedBankName == 'Banco no especificado') {
           bankName = bankId != null ? (bankIdToName[bankId] ?? 'Banco no especificado') : 'Banco no especificado';
-          print('DEBUG: Nombre de banco resuelto por lookup: bankId=$bankId -> $bankName');
         } else {
           bankName = savedBankName;
         }
 
         final customerName = transaction?['customerName']
             ?? transaction?['customer_name']
+            ?? transaction?['description']
+            ?? transaction?['expanseFor']
             ?? value['customerName']
             ?? value['customer_name']
-            ?? 'Cliente desconocido';
+            ?? value['name']
+            ?? (isExpense ? 'Gasto' : 'Cliente desconocido');
         final invoiceNumber = transaction?['invoiceNumber']
             ?? transaction?['invoice_number']
             ?? value['invoiceNumber']
             ?? value['invoice_number']
             ?? key;
-        final amount = (value['paymentIn'] as num).toDouble();
+        
+        // Para gastos usar paymentOut como valor negativo
+        final double rawAmount = isExpense 
+            ? (value['paymentOut'] as num?)?.toDouble() ?? 0.0
+            : (value['paymentIn'] as num?)?.toDouble() ?? 0.0;
+        final double amount = isExpense ? -rawAmount : rawAmount;
 
-        print('DEBUG: Es transferencia - BankId: $bankId - BankName: $bankName - Amount: $amount');
-
-        // Agrupar por banco (usar bankId como key para agrupar correctamente)
-        final groupKey = bankId ?? bankName; // Usar bankId si existe, si no el nombre
+        // Agrupar por banco
+        final groupKey = bankId ?? bankName;
         if (!transfersByBank.containsKey(groupKey)) {
           transfersByBank[groupKey] = [];
           totalsByBank[groupKey] = 0.0;
@@ -129,19 +134,11 @@ class TransferDetailsDialog extends ConsumerWidget {
           'bankId': bankId,
           'type': type,
           'isDeleted': isDeleted,
+          'isExpense': isExpense,
         });
 
-        // CORREGIDO: Usar groupKey en lugar de bankId para el total
         totalsByBank[groupKey] = (totalsByBank[groupKey] ?? 0) + amount;
         totalGeneral += amount;
-
-        // DEBUG: Mostrar toda la estructura para diagnosticar
-        print('DEBUG FULL: transaction keys: ${transaction?.keys.toList()}');
-        print('DEBUG FULL: value keys: ${value.keys.toList()}');
-        if (transaction != null) {
-          print('DEBUG FULL: transaction[bankId]=${transaction['bankId']}, transaction[bank_id]=${transaction['bank_id']}');
-          print('DEBUG FULL: transaction[bankName]=${transaction['bankName']}, transaction[bank_name]=${transaction['bank_name']}');
-        }
       }
     });
 
@@ -373,11 +370,17 @@ class TransferDetailsDialog extends ConsumerWidget {
                                 // Lista de transferencias
                                 ...transfers.map((transfer) {
                                   final bool isDeleted = transfer['isDeleted'] == true;
-                                  final Color rowBgColor = isDeleted ? Colors.red.shade50 : Colors.transparent;
-                                  final Color textColor = isDeleted ? Colors.red.shade700 : (theme.textTheme.bodySmall?.color ?? Colors.black);
-                                  final Color invoiceBgColor = isDeleted ? Colors.red.shade100 : Colors.blue.shade50;
-                                  final Color invoiceBorderColor = isDeleted ? Colors.red.shade300 : Colors.blue.shade200;
-                                  final Color invoiceTextColor = isDeleted ? Colors.red.shade800 : Colors.blue.shade700;
+                                  final bool isExpense = transfer['isExpense'] == true;
+                                  final bool isNegative = isDeleted || isExpense;
+                                  
+                                  final Color rowBgColor = isExpense ? Colors.red.shade50 
+                                      : isDeleted ? Colors.red.shade50 
+                                      : Colors.transparent;
+                                  final Color textColor = isNegative ? Colors.red.shade700 
+                                      : (theme.textTheme.bodySmall?.color ?? Colors.black);
+                                  final Color invoiceBgColor = isNegative ? Colors.red.shade100 : Colors.blue.shade50;
+                                  final Color invoiceBorderColor = isNegative ? Colors.red.shade300 : Colors.blue.shade200;
+                                  final Color invoiceTextColor = isNegative ? Colors.red.shade800 : Colors.blue.shade700;
 
                                   return Container(
                                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 15),
@@ -385,7 +388,7 @@ class TransferDetailsDialog extends ConsumerWidget {
                                       color: rowBgColor,
                                       border: Border(
                                         bottom: BorderSide(
-                                          color: isDeleted ? Colors.red.shade200 : Colors.grey.shade200,
+                                          color: isNegative ? Colors.red.shade200 : Colors.grey.shade200,
                                         ),
                                       ),
                                     ),
@@ -393,9 +396,33 @@ class TransferDetailsDialog extends ConsumerWidget {
                                       children: [
                                         Expanded(
                                           flex: 1,
-                                          child: GestureDetector(
+                                          child: isExpense 
+                                            ? Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: invoiceBgColor,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: invoiceBorderColor),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.arrow_downward, size: 14, color: invoiceTextColor),
+                                                    const SizedBox(width: 4),
+                                                    Flexible(
+                                                      child: Text(
+                                                        transfer['type'] ?? 'Gasto',
+                                                        style: theme.textTheme.bodySmall?.copyWith(
+                                                          color: invoiceTextColor,
+                                                          fontWeight: FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            : GestureDetector(
                                             onTap: () async {
-                                              print('DEBUG: Click en factura ${transfer['invoiceNumber']} tipo ${transfer['type']}');
                                               await _showInvoiceDetails(
                                                 context,
                                                 ref,
@@ -467,17 +494,35 @@ class TransferDetailsDialog extends ConsumerWidget {
                                                   ),
                                                 ),
                                               ],
+                                              if (isExpense) ...[
+                                                const SizedBox(width: 4),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red.shade600,
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: const Text(
+                                                    'GASTO',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 9,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ],
                                           ),
                                         ),
                                         Expanded(
                                           flex: 1,
                                           child: Text(
-                                            '$globalCurrency${myFormat.format(transfer['amount'])}',
+                                            '${isExpense ? "-" : ""}$globalCurrency${myFormat.format((transfer['amount'] as double).abs())}',
                                             textAlign: TextAlign.right,
                                             style: theme.textTheme.bodySmall?.copyWith(
                                               fontWeight: FontWeight.w600,
-                                              color: textColor,
+                                              color: isExpense ? Colors.red.shade700 : textColor,
                                               decoration: isDeleted ? TextDecoration.lineThrough : null,
                                             ),
                                           ),

@@ -73,34 +73,34 @@ class DailySummaryModel {
       if (transaction.saleTransactionModel != null) {
         paymentType = transaction.saleTransactionModel!.paymentType;
         paymentAmount = transaction.paymentIn;
-        totalPagado += transaction.paymentIn; // Sumar al total pagado
+        totalPagado += transaction.paymentIn; // Ingreso: sumar al total pagado
       } else if (transaction.purchaseTransactionModel != null) {
         paymentType = transaction.purchaseTransactionModel!.paymentType;
         paymentAmount = transaction.paymentOut;
-        totalPagado += transaction.paymentOut; // Sumar al total pagado
+        // Compras/gastos NO suman al total pagado de clientes
       } else if (transaction.dueTransactionModel != null) {
         paymentType = transaction.dueTransactionModel!.paymentType;
         paymentAmount = transaction.paymentIn;
-        totalPagado += transaction.paymentIn; // Sumar al total pagado
+        totalPagado += transaction.paymentIn; // Ingreso: sumar al total pagado
       } else if (transaction.incomeModel != null) {
         paymentType = transaction.incomeModel!.paymentType;
         paymentAmount = transaction.paymentIn;
-        totalPagado += transaction.paymentIn; // Sumar al total pagado
+        totalPagado += transaction.paymentIn; // Ingreso: sumar al total pagado
       } else if (transaction.expenseModel != null) {
         paymentType = transaction.expenseModel!.paymentType;
         paymentAmount = transaction.paymentOut;
-        totalPagado += transaction.paymentOut; // Sumar al total pagado
+        // Gastos NO suman al total pagado — se restan en la UI
       } else if (transaction.paySalary != null) {
         paymentType = transaction.paySalary!.paymentType;
         paymentAmount = transaction.paymentOut;
-        totalPagado += transaction.paymentOut; // Sumar al total pagado
+        // Salarios NO suman al total pagado — se restan en la UI
       } else {
         // Fallback: usar campos directos de la transacción cuando los modelos anidados no están disponibles
         paymentType = transaction.paymentType;
         if (transaction.type == "Expense" || transaction.type == "Purchase" ||
             transaction.type == "Purchase Return" || transaction.type == "Salary Payment") {
           paymentAmount = transaction.paymentOut;
-          totalPagado += transaction.paymentOut;
+          // Gastos/compras NO suman al total pagado
         } else {
           paymentAmount = transaction.paymentIn;
           totalPagado += transaction.paymentIn;
