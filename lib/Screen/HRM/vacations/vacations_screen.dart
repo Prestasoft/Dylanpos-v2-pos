@@ -46,7 +46,7 @@ class _VacationsScreenState extends State<VacationsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 2);
     selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
     _loadData();
   }
@@ -1020,6 +1020,23 @@ class _VacationsScreenState extends State<VacationsScreen>
               message: 'Nunca ha tomado vacaciones',
               child: Icon(Icons.warning, size: 16, color: Colors.red[300]),
             ),
+          const SizedBox(width: 8),
+          // Botón de solicitar vacaciones
+          if (e.daysAvailable > 0)
+            SizedBox(
+              height: 28,
+              child: ElevatedButton.icon(
+                onPressed: () => _showNewRequestDialogForEmployee(e.employeeId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kMainColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  textStyle: const TextStyle(fontSize: 11),
+                ),
+                icon: const Icon(Icons.add, size: 14),
+                label: const Text('Solicitar'),
+              ),
+            ),
         ],
       ),
     );
@@ -1412,17 +1429,19 @@ class _VacationsScreenState extends State<VacationsScreen>
     );
   }
 
-  void _showNewRequestDialog() {
+  void _showNewRequestDialog({EmployeeModel? preSelectedEmployee}) {
     if (employees.isEmpty) {
       toast('No hay empleados disponibles');
       return;
     }
 
-    EmployeeModel? selectedEmployee;
+    EmployeeModel? selectedEmployee = preSelectedEmployee;
     String selectedType = LeaveTypes.vacaciones;
     DateTime startDate = DateTime.now().add(const Duration(days: 1));
     DateTime endDate = DateTime.now().add(const Duration(days: 15));
     final reasonController = TextEditingController();
+    final daysDeductController = TextEditingController();
+    int? customDays; // Días personalizados (para descontar menos)
 
     showDialog(
       context: context,
@@ -1430,9 +1449,26 @@ class _VacationsScreenState extends State<VacationsScreen>
         builder: (context, setState) {
           final maxDays = LeaveTypes.getMaxDays(selectedType);
           final businessDays = VacationModel.calculateBusinessDays(startDate, endDate);
+          final effectiveDays = customDays ?? businessDays;
+
+          // Calcular balance del empleado seleccionado
+          VacationBalance? empBalance;
+          if (selectedEmployee != null) {
+            final empId = selectedEmployee!.id;
+            final matchingBalances = balances.where((b) => b.employeeId == empId);
+            if (matchingBalances.isNotEmpty) {
+              empBalance = matchingBalances.first;
+            }
+          }
 
           return AlertDialog(
-            title: const Text('Nueva Solicitud de Vacaciones/Licencia'),
+            title: const Row(
+              children: [
+                Icon(Icons.beach_access, color: kMainColor),
+                SizedBox(width: 8),
+                Text('Nueva Solicitud de Vacaciones'),
+              ],
+            ),
             content: SizedBox(
               width: 500,
               child: SingleChildScrollView(
@@ -1442,9 +1478,11 @@ class _VacationsScreenState extends State<VacationsScreen>
                   children: [
                     // Empleado
                     DropdownButtonFormField<EmployeeModel>(
+                      value: selectedEmployee,
                       decoration: const InputDecoration(
                         labelText: 'Empleado',
                         border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
                       ),
                       items: employees.map((e) {
                         return DropdownMenuItem(
@@ -1456,6 +1494,40 @@ class _VacationsScreenState extends State<VacationsScreen>
                         setState(() => selectedEmployee = value);
                       },
                     ),
+                    // Mostrar balance del empleado
+                    if (empBalance != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: kMainColor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: kMainColor.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(
+                              children: [
+                                Text('${empBalance!.daysEntitled}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: kMainColor)),
+                                Text('Derecho', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                Text('${empBalance!.daysUsed}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.orange)),
+                                Text('Usados', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                Text('${empBalance!.daysAvailable}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: empBalance!.daysAvailable > 0 ? Colors.green : Colors.red)),
+                                Text('Disponibles', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     // Tipo de licencia
                     DropdownButtonFormField<String>(
@@ -1463,6 +1535,7 @@ class _VacationsScreenState extends State<VacationsScreen>
                       decoration: const InputDecoration(
                         labelText: 'Tipo de Solicitud',
                         border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category),
                       ),
                       items: LeaveTypes.all.map((type) {
                         return DropdownMenuItem(
@@ -1493,6 +1566,8 @@ class _VacationsScreenState extends State<VacationsScreen>
                                   if (endDate.isBefore(startDate)) {
                                     endDate = startDate.add(Duration(days: maxDays - 1));
                                   }
+                                  customDays = null;
+                                  daysDeductController.clear();
                                 });
                               }
                             },
@@ -1500,6 +1575,7 @@ class _VacationsScreenState extends State<VacationsScreen>
                               decoration: const InputDecoration(
                                 labelText: 'Fecha Inicio',
                                 border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.calendar_today),
                               ),
                               child: Text(DateFormat('dd/MM/yyyy').format(startDate)),
                             ),
@@ -1516,13 +1592,18 @@ class _VacationsScreenState extends State<VacationsScreen>
                                 lastDate: DateTime.now().add(const Duration(days: 365)),
                               );
                               if (date != null) {
-                                setState(() => endDate = date);
+                                setState(() {
+                                  endDate = date;
+                                  customDays = null;
+                                  daysDeductController.clear();
+                                });
                               }
                             },
                             child: InputDecorator(
                               decoration: const InputDecoration(
                                 labelText: 'Fecha Fin',
                                 border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.event),
                               ),
                               child: Text(DateFormat('dd/MM/yyyy').format(endDate)),
                             ),
@@ -1531,35 +1612,79 @@ class _VacationsScreenState extends State<VacationsScreen>
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Días calculados
+                    // Días calculados + campo de ajuste
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: businessDays > maxDays
+                        color: effectiveDays > maxDays
                             ? Colors.red[50]
                             : Colors.green[50],
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
                         children: [
-                          Text(
-                            'Días laborables solicitados:',
-                            style: TextStyle(color: Colors.grey[700]),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Días laborables del rango:',
+                                style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                              ),
+                              Text(
+                                '$businessDays días',
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ],
                           ),
-                          Text(
-                            '$businessDays días',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: businessDays > maxDays
-                                  ? Colors.red
-                                  : Colors.green,
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Días a descontar:',
+                                  style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 80,
+                                height: 36,
+                                child: TextFormField(
+                                  controller: daysDeductController,
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    hintText: '$businessDays',
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      final parsed = int.tryParse(value);
+                                      if (parsed != null && parsed > 0 && parsed <= businessDays) {
+                                        customDays = parsed;
+                                      } else if (value.isEmpty) {
+                                        customDays = null;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (customDays != null && customDays != businessDays)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                'Se descontarán $customDays de $businessDays días laborables',
+                                style: TextStyle(color: Colors.blue[700], fontSize: 12, fontStyle: FontStyle.italic),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
-                    if (businessDays > maxDays)
+                    if (effectiveDays > maxDays)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
@@ -1568,12 +1693,14 @@ class _VacationsScreenState extends State<VacationsScreen>
                         ),
                       ),
                     const SizedBox(height: 16),
-                    // Razón
+                    // Motivo
                     TextFormField(
                       controller: reasonController,
                       decoration: const InputDecoration(
-                        labelText: 'Motivo (opcional)',
+                        labelText: 'Motivo',
+                        hintText: 'Describa el motivo de la solicitud...',
                         border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.notes),
                       ),
                       maxLines: 3,
                     ),
@@ -1586,7 +1713,7 @@ class _VacationsScreenState extends State<VacationsScreen>
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancelar'),
               ),
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: selectedEmployee != null
                     ? () async {
                         Navigator.pop(context);
@@ -1600,7 +1727,7 @@ class _VacationsScreenState extends State<VacationsScreen>
                           type: selectedType,
                           startDate: startDate,
                           endDate: endDate,
-                          daysRequested: businessDays,
+                          daysRequested: effectiveDays,
                           status: 'Pendiente',
                           reason: reasonController.text.isNotEmpty
                               ? reasonController.text
@@ -1613,7 +1740,12 @@ class _VacationsScreenState extends State<VacationsScreen>
                         _loadData();
                       }
                     : null,
-                child: const Text('Crear Solicitud'),
+                icon: const Icon(Icons.send),
+                label: const Text('Crear Solicitud'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kMainColor,
+                  foregroundColor: Colors.white,
+                ),
               ),
             ],
           );
@@ -1622,9 +1754,13 @@ class _VacationsScreenState extends State<VacationsScreen>
     );
   }
 
-  void _showNewRequestDialogForEmployee(num employeeId) {
-    // Usar el diálogo general - el empleado puede ser preseleccionado en futuras mejoras
-    _showNewRequestDialog();
+  void _showNewRequestDialogForEmployee(dynamic employeeId) {
+    final emp = employees.where((e) => e.id == employeeId);
+    if (emp.isNotEmpty) {
+      _showNewRequestDialog(preSelectedEmployee: emp.first);
+    } else {
+      _showNewRequestDialog();
+    }
   }
 
   void _approveVacation(VacationModel vacation) async {
