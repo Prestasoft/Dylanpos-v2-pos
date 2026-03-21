@@ -137,22 +137,27 @@ class ReservationCard extends ConsumerWidget {
     }
     final lowerName = serviceName?.toLowerCase() ?? '';
 
-    // Para planes "Pre-Quince y Fiesta", diferenciar por isFiestaDate:
-    // - isFiestaDate=true → Es la fecha de la FIESTA
-    // - isFiestaDate=false → Es la fecha del PRE-QUINCE (estudio)
-    final isPreQuinceFiesta = lowerName.contains('pre-quince') && lowerName.contains('fiesta');
-    final isFiesta = isPreQuinceFiesta
-        ? reservation.isFiestaDate  // Solo es "fiesta" si es la fecha de fiesta
-        : lowerName.contains('fiesta');
-    final isEstudio = isPreQuinceFiesta
-        ? !reservation.isFiestaDate  // Es "estudio" si NO es la fecha de fiesta (es pre-quince)
-        : lowerName.contains('estudio');
+    // Para planes "Pre-Quince y Fiesta", diferenciar por isFiestaDate
+    final isPreQuinceFiesta = lowerName.contains('pre-quince y fiesta') || 
+                             lowerName.contains('pre-quince fiesta') || 
+                             lowerName.contains('pre quince y fiesta') || 
+                             lowerName.contains('pre quince fiesta') || 
+                             lowerName.contains('quinceanera y fiesta') ||
+                             (lowerName.contains('pre-quince') && lowerName.contains('fiesta'));
+
+    final isFiesta = !isPreQuinceFiesta && lowerName.contains('fiesta');
+    final isEstudio = !isPreQuinceFiesta && lowerName.contains('estudio');
     final isExterior = lowerName.contains('exterior');
     final isRenta = lowerName.contains('renta') || lowerName.contains('vestimenta') || lowerName.contains('vestido');
 
     switch (status) {
       case ReservationStatus.past:
-        if (isFiesta) {
+        if (isPreQuinceFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = reservation.isFiestaDate ? Icons.celebration : Icons.camera_alt;
+          statusText = reservation.isFiestaDate ? 'Fiesta pasada' : 'Pre-15 pasado';
+          cardBgColor = Colors.amber.withValues(alpha: 0.10);
+        } else if (isFiesta) {
           statusColor = Colors.amber;
           statusIcon = Icons.celebration;
           statusText = 'Fiesta pasada';
@@ -181,7 +186,12 @@ class ReservationCard extends ConsumerWidget {
         }
         break;
       case ReservationStatus.aboutToExpire:
-        if (isFiesta) {
+        if (isPreQuinceFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = reservation.isFiestaDate ? Icons.celebration : Icons.camera_alt;
+          statusText = reservation.isFiestaDate ? 'Fiesta por vencer' : 'Pre-15 por vencer';
+          cardBgColor = Colors.amber.withValues(alpha: 0.10);
+        } else if (isFiesta) {
           statusColor = Colors.amber;
           statusIcon = Icons.celebration;
           statusText = 'Fiesta por vencer';
@@ -210,7 +220,12 @@ class ReservationCard extends ConsumerWidget {
         }
         break;
       case ReservationStatus.upcoming:
-        if (isFiesta) {
+        if (isPreQuinceFiesta) {
+          statusColor = Colors.amber;
+          statusIcon = reservation.isFiestaDate ? Icons.celebration : Icons.camera_alt;
+          statusText = reservation.isFiestaDate ? 'Fiesta próxima' : 'Pre-15 próximo';
+          cardBgColor = Colors.amber.withValues(alpha: 0.10);
+        } else if (isFiesta) {
           statusColor = Colors.amber;
           statusIcon = Icons.celebration;
           statusText = 'Fiesta próxima';
@@ -903,23 +918,38 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                       spacing: 2, // espacio entre puntos
                       alignment: WrapAlignment.center,
                       children: validEvents.map((event) {
-                        // Buscar el nombre del servicio usando el serviceId y la lista de paquetes
+                        // Obtener nombre del servicio (prioriza el que viene en el modelo para evitar fallos de carga inicial)
                         Color dotColor = Theme.of(context).primaryColor;
-                        final packagesAsync = ref.read(servicePackagesProvider);
-                        String? serviceName;
-                        if (packagesAsync is AsyncData && packagesAsync.value != null) {
-                          final packageList = packagesAsync.value!;
-                          final package = packageList.where((pkg) => pkg.id == event.serviceId).toList();
-                          if (package.isNotEmpty) {
-                            serviceName = package.first.name;
+                        String? serviceName = event.serviceName;
+
+                        if (serviceName == null || serviceName.isEmpty) {
+                          final packagesAsync = ref.read(servicePackagesProvider);
+                          if (packagesAsync is AsyncData && packagesAsync.value != null) {
+                            final packageList = packagesAsync.value!;
+                            final package = packageList.where((pkg) => pkg.id == event.serviceId).toList();
+                            if (package.isNotEmpty) {
+                              serviceName = package.first.name;
+                            }
                           }
                         }
-                        // Si es renta, verde
-                        if (event.serviceId == packageRentaId) {
+                        
+                        // Determinar color del punto basándonos en el tipo exacto
+                        if (event.serviceId == packageRentaId || (serviceName?.toLowerCase().contains('renta') ?? false)) {
                           dotColor = const Color(0xFF4CAF50); // Verde elegante para renta
                         } else if (serviceName != null) {
                           final lowerName = serviceName.toLowerCase();
-                          if (lowerName.contains('fiesta')) {
+                          
+                          final isPreQuinceFiesta = lowerName.contains('pre-quince y fiesta') || 
+                                                   lowerName.contains('pre-quince fiesta') || 
+                                                   lowerName.contains('pre quince y fiesta') || 
+                                                   lowerName.contains('pre quince fiesta') || 
+                                                   lowerName.contains('quinceanera y fiesta') ||
+                                                   (lowerName.contains('pre-quince') && lowerName.contains('fiesta'));
+                          
+                          if (isPreQuinceFiesta) {
+                            // Si es pre-quince y fiesta, ES AMARILLO para ambas fechas
+                            dotColor = Colors.amber;
+                          } else if (lowerName.contains('fiesta')) {
                             dotColor = Colors.amber;
                           } else if (lowerName.contains('estudio')) {
                             dotColor = Colors.blue;
