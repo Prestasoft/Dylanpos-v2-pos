@@ -80,6 +80,7 @@ class _InventorySalesState extends State<InventorySales> {
   List<FocusNode> productFocusNode = [];
   bool saleButtonClicked = false;
   double serviceCharge = 0;
+  bool serviceChargeEnabled = false;
   double discountAmount = 0;
   double vatGst = 0;
   bool discountFieldsEnabled = false;
@@ -3269,9 +3270,22 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                             lg: 6,
                                             child: Padding(
                                               padding: EdgeInsets.only(bottom: screenWidth < 577 ? 8 : 0),
-                                              child: Text(
-                                                lang.S.of(context).shpingOrServices,
-                                                style: theme.textTheme.bodyLarge,
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    lang.S.of(context).shpingOrServices,
+                                                    style: theme.textTheme.bodyLarge,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  GestureDetector(
+                                                    onTap: serviceChargeEnabled ? null : _showServiceChargeAuthDialog,
+                                                    child: Icon(
+                                                      serviceChargeEnabled ? Icons.lock_open : Icons.lock,
+                                                      size: 16,
+                                                      color: serviceChargeEnabled ? Colors.green : Colors.red,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ),
@@ -3282,14 +3296,20 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                             child: SizedBox(
                                               height: 40,
                                               child: TextFormField(
+                                                enabled: serviceChargeEnabled,
+                                                onTap: !serviceChargeEnabled ? _showServiceChargeAuthDialog : null,
                                                 initialValue: serviceCharge.toString(),
                                                 onChanged: (value) {
                                                   setState(() {
-                                                    serviceCharge = double.parse(value);
+                                                    serviceCharge = double.tryParse(value) ?? 0;
                                                     updateDueAmount();
                                                   });
                                                 },
-                                                decoration: InputDecoration(border: const OutlineInputBorder(), hintText: lang.S.of(context).enterAmount, contentPadding: EdgeInsets.zero),
+                                                decoration: InputDecoration(
+                                                  border: const OutlineInputBorder(),
+                                                  hintText: lang.S.of(context).enterAmount,
+                                                  contentPadding: EdgeInsets.zero,
+                                                ),
                                                 textAlign: TextAlign.center,
                                               ),
                                             ),
@@ -4396,6 +4416,7 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
       discountAmountEditingController.clear(); // Limpia el descuento en monto
       discountPercentageEditingController.clear(); // Limpia el descuento en porcentaje
       serviceCharge = 0; // Resetea el cargo por servicio
+      serviceChargeEnabled = false; // Resetea la protección de adicionales
       discountAmount = 0; // Resetea el monto de descuento
       vatGst = 0; // Resetea los impuestos
       discountFieldsEnabled = false; // Resetea la protección de descuentos
@@ -4490,6 +4511,94 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
             discountFieldsEnabled = true;
           });
           EasyLoading.showSuccess('Campos de descuento habilitados');
+        }
+      });
+    } else {
+      EasyLoading.showError('Clave incorrecta');
+    }
+  }
+
+  Future<void> _showServiceChargeAuthDialog() async {
+    TextEditingController passwordController = TextEditingController();
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.lock, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Autenticación Requerida'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Ingrese la clave para habilitar adicionales:'),
+              SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Clave',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: Icon(Icons.key),
+                ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    _validateServiceChargePasswordSafe(dialogContext, value.trim());
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final password = passwordController.text.trim();
+                if (password.isNotEmpty) {
+                  _validateServiceChargePasswordSafe(dialogContext, password);
+                } else {
+                  EasyLoading.showError('Ingrese la clave');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Verificar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _validateServiceChargePasswordSafe(BuildContext dialogContext, String password) async {
+    final isValid = await DeletionPasswordService.validatePassword(password);
+
+    if (isValid) {
+      Navigator.of(dialogContext).pop();
+
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (mounted) {
+          setState(() {
+            serviceChargeEnabled = true;
+          });
+          EasyLoading.showSuccess('Adicionales habilitados');
         }
       });
     } else {
