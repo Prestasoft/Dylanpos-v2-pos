@@ -2839,7 +2839,10 @@ class ReservationDetailView extends ConsumerWidget {
   }) {
     final components = service['components'] as List;
     final selectedDresses = (dressComposite is List) ? dressComposite : [];
-    
+    // Contar solo vestidos reales (excluir placeholders vacíos)
+    final realDressCount = selectedDresses.where((d) =>
+      d is Map && d.isNotEmpty && (d['dress_id']?.toString() ?? '').isNotEmpty
+    ).length;
     // Obtener el ServicePackageModel para el selector de vestidos
     final serviceId = service['id']?.toString() ?? service['firebase_id']?.toString() ?? '';
     final packagesAsync = ref.watch(servicePackagesProvider);
@@ -2877,17 +2880,17 @@ class ReservationDetailView extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: selectedDresses.length >= components.length
+                    color: realDressCount >= components.length
                         ? Colors.green.withValues(alpha: 0.15)
                         : const Color(0xFFD32F2F).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${selectedDresses.length}/${components.length}',
+                    '$realDressCount/${components.length}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: selectedDresses.length >= components.length ? Colors.green : const Color(0xFFD32F2F),
+                      color: realDressCount >= components.length ? Colors.green : const Color(0xFFD32F2F),
                     ),
                   ),
                 ),
@@ -2900,9 +2903,10 @@ class ReservationDetailView extends ConsumerWidget {
               // Buscar si este componente ya tiene un vestido asignado
               Map<String, dynamic>? matchedDress;
               if (index < selectedDresses.length) {
-                matchedDress = (selectedDresses[index] is Map) 
-                    ? Map<String, dynamic>.from(selectedDresses[index]) 
-                    : null;
+                final entry = selectedDresses[index];
+                if (entry is Map && entry.isNotEmpty && (entry['dress_id']?.toString() ?? '').isNotEmpty) {
+                  matchedDress = Map<String, dynamic>.from(entry);
+                }
               }
               
               final isSelected = matchedDress != null;
@@ -3139,7 +3143,11 @@ class ReservationDetailView extends ConsumerWidget {
                               final updatedDresses = List<Map<String, dynamic>>.from(
                                 selectedDresses.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}),
                               );
-                              updatedDresses.add(newDressEntry);
+                              // Insertar en la posición exacta del componente, rellenando huecos con placeholders vacíos
+                              while (updatedDresses.length <= index) {
+                                updatedDresses.add(<String, dynamic>{});
+                              }
+                              updatedDresses[index] = newDressEntry;
 
                               // Actualizar en la base de datos
                               EasyLoading.show(status: 'Guardando...');
@@ -3403,7 +3411,8 @@ class ReservationDetailView extends ConsumerWidget {
                               final updatedDresses = List<Map<String, dynamic>>.from(
                                 selectedDresses.map((d) => d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{}),
                               );
-                              updatedDresses.removeAt(index);
+                              // Reemplazar con placeholder vacío para mantener índices alineados
+                              updatedDresses[index] = <String, dynamic>{};
 
                               EasyLoading.show(status: 'Quitando vestimenta...');
                               try {
