@@ -26,6 +26,53 @@ enum ReservationStatus {
   aboutToExpire,
 }
 
+/// Diálogo rápido para editar un campo de texto (Lugar / Nota)
+Future<String?> _showQuickEditDialog(
+    BuildContext context, String fieldName, String currentValue,
+    {int maxLines = 1}) async {
+  final controller = TextEditingController(text: currentValue);
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.edit, color: Colors.deepPurple, size: 22),
+          const SizedBox(width: 8),
+          Text('Editar $fieldName'),
+        ],
+      ),
+      content: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'Ingrese $fieldName',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+          ),
+        ),
+        onSubmitted: maxLines == 1 ? (_) => Navigator.pop(ctx, controller.text.trim()) : null,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurple,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+          child: const Text('Guardar'),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Helper estático para formatear fechas de reservación
 /// Convierte formato ISO 8601 (PostgreSQL: 2026-01-06T00:00:00.000Z) a formato legible (2026-01-06)
 String formatReservationDate(String date) {
@@ -554,6 +601,30 @@ class ReservationCard extends ConsumerWidget {
                       Expanded(
                         child: Text('Lugar: $place', style: const TextStyle(fontSize: 14)),
                       ),
+                      InkWell(
+                        onTap: () async {
+                          final newValue = await _showQuickEditDialog(context, 'Lugar', place == 'Sin lugar' ? '' : place);
+                          if (newValue != null) {
+                            EasyLoading.show(status: 'Guardando...');
+                            final success = await ref.read(updateReservationProvider({
+                              'reservationId': reservation.id,
+                              'updateData': {'place': newValue},
+                            }).future);
+                            EasyLoading.dismiss();
+                            if (success) {
+                              EasyLoading.showSuccess('Lugar actualizado');
+                              ref.invalidate(fullReservationByIdProviderVQ(reservation.id));
+                              ref.invalidate(fullReservationsProvider);
+                            } else {
+                              EasyLoading.showError('Error al guardar');
+                            }
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(Icons.edit, size: 16, color: Colors.deepPurple.withValues(alpha: 0.7)),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -563,6 +634,30 @@ class ReservationCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text('Nota: $note', style: const TextStyle(fontSize: 14)),
+                      ),
+                      InkWell(
+                        onTap: () async {
+                          final newValue = await _showQuickEditDialog(context, 'Nota', note == 'Sin notas' ? '' : note, maxLines: 3);
+                          if (newValue != null) {
+                            EasyLoading.show(status: 'Guardando...');
+                            final success = await ref.read(updateReservationProvider({
+                              'reservationId': reservation.id,
+                              'updateData': {'notes': newValue, 'nota': newValue},
+                            }).future);
+                            EasyLoading.dismiss();
+                            if (success) {
+                              EasyLoading.showSuccess('Nota actualizada');
+                              ref.invalidate(fullReservationByIdProviderVQ(reservation.id));
+                              ref.invalidate(fullReservationsProvider);
+                            } else {
+                              EasyLoading.showError('Error al guardar');
+                            }
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(Icons.edit, size: 16, color: Colors.deepPurple.withValues(alpha: 0.7)),
+                        ),
                       ),
                     ],
                   ),
@@ -1895,15 +1990,21 @@ class ReservationDetailView extends ConsumerWidget {
                                         formatReservationTime(reservationData['reservation_time'] ?? '')),
                                     _buildDetailItem(Icons.business, 'Sucursal',
                                         reservationData['branch_id'] ?? ''),
-                                    _buildDetailItem(
+                                    _buildEditableDetailItem(
+                                        context, ref,
                                         Icons.place,
                                         'Lugar',
-                                        reservationData['place'] ??
-                                            'Sin lugar'),
-                                    _buildDetailItem(
+                                        reservationData['place'] ?? 'Sin lugar',
+                                        'place',
+                                        reservation.id),
+                                    _buildEditableDetailItem(
+                                        context, ref,
                                         Icons.textsms_outlined,
                                         'Notas',
-                                        reservationData['nota'] ?? 'Sin notas'),
+                                        reservationData['nota'] ?? 'Sin notas',
+                                        'nota',
+                                        reservation.id,
+                                        maxLines: 3),
                                   ],
                                 ),
 
@@ -2339,6 +2440,76 @@ class ReservationDetailView extends ConsumerWidget {
                   style: const TextStyle(fontSize: 16),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Item de detalle con botón de edición inline
+  Widget _buildEditableDetailItem(
+      BuildContext context, WidgetRef ref,
+      IconData icon, String title, String value,
+      String fieldKey, String reservationId,
+      {int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 22, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () async {
+              final isDefault = value == 'Sin lugar' || value == 'Sin notas';
+              final newValue = await _showQuickEditDialog(
+                context, title, isDefault ? '' : value, maxLines: maxLines);
+              if (newValue != null) {
+                EasyLoading.show(status: 'Guardando...');
+                final updateData = <String, dynamic>{fieldKey: newValue};
+                // Si es nota, actualizar ambos campos
+                if (fieldKey == 'nota') {
+                  updateData['notes'] = newValue;
+                }
+                final success = await ref.read(updateReservationProvider({
+                  'reservationId': reservationId,
+                  'updateData': updateData,
+                }).future);
+                EasyLoading.dismiss();
+                if (success) {
+                  EasyLoading.showSuccess('$title actualizado');
+                  ref.invalidate(fullReservationByIdProviderVQ(reservationId));
+                  ref.invalidate(fullReservationsProvider);
+                } else {
+                  EasyLoading.showError('Error al guardar');
+                }
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Icon(Icons.edit, size: 18, color: Colors.deepPurple.withValues(alpha: 0.7)),
             ),
           ),
         ],
