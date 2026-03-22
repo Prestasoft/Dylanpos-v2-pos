@@ -1002,16 +1002,98 @@ class _DailyTransactionState extends State<DailyTransaction> {
                         // Calcular métricas de pagos desde las transacciones filtradas
                         final summary = DailySummaryModel.fromDailyTransactions(reTransaction);
                         
+                        // Determinar etiquetas y valores según el filtro activo
+                        String card1Label;
+                        double card1Value;
+                        IconData card1Icon;
+                        String card2Label;
+                        double card2Value;
+                        IconData card2Icon;
+                        String card3Label;
+                        double card3Value;
+                        IconData card3Icon;
+
+                        switch (selectedTypeFilter) {
+                          case 'Due Collection':
+                            card1Label = 'Total Cobrado';
+                            card1Value = summary.totalPagado;
+                            card1Icon = Icons.account_balance_wallet;
+                            card2Label = 'Cobros Realizados';
+                            card2Value = summary.totalPagado;
+                            card2Icon = Icons.check_circle;
+                            card3Label = 'Cantidad de Cobros';
+                            card3Value = reTransaction.length.toDouble();
+                            card3Icon = Icons.format_list_numbered;
+                            break;
+                          case 'Expense':
+                            card1Label = 'Total Gastos';
+                            card1Value = summary.totalGastos;
+                            card1Icon = Icons.money_off;
+                            card2Label = 'Gastos Registrados';
+                            card2Value = summary.totalGastos;
+                            card2Icon = Icons.receipt;
+                            card3Label = 'Cantidad de Gastos';
+                            card3Value = reTransaction.length.toDouble();
+                            card3Icon = Icons.format_list_numbered;
+                            break;
+                          case 'Due Payment':
+                            card1Label = 'Total Pagado a Proveedores';
+                            card1Value = summary.totalGastos > 0 ? summary.totalGastos : summary.totalPagado;
+                            card1Icon = Icons.payment;
+                            card2Label = 'Pagos Realizados';
+                            card2Value = summary.totalGastos > 0 ? summary.totalGastos : summary.totalPagado;
+                            card2Icon = Icons.check_circle;
+                            card3Label = 'Cantidad de Pagos';
+                            card3Value = reTransaction.length.toDouble();
+                            card3Icon = Icons.format_list_numbered;
+                            break;
+                          case 'Purchase':
+                            card1Label = 'Total Comprado';
+                            card1Value = summary.totalGastos;
+                            card1Icon = Icons.shopping_cart;
+                            card2Label = 'Total Pagado';
+                            card2Value = summary.totalGastos;
+                            card2Icon = Icons.check_circle;
+                            card3Label = 'Cantidad de Compras';
+                            card3Value = reTransaction.length.toDouble();
+                            card3Icon = Icons.format_list_numbered;
+                            break;
+                          case 'Income':
+                            card1Label = 'Total Ingresos';
+                            card1Value = summary.totalPagado;
+                            card1Icon = Icons.trending_up;
+                            card2Label = 'Ingresos Recibidos';
+                            card2Value = summary.totalPagado;
+                            card2Icon = Icons.check_circle;
+                            card3Label = 'Cantidad de Ingresos';
+                            card3Value = reTransaction.length.toDouble();
+                            card3Icon = Icons.format_list_numbered;
+                            break;
+                          default:
+                            card1Label = 'Total Facturado';
+                            card1Value = summary.totalFacturado;
+                            card1Icon = Icons.receipt_long;
+                            card2Label = 'Total Pagado';
+                            card2Value = summary.totalPagado;
+                            card2Icon = Icons.check_circle;
+                            card3Label = 'Total Pendiente';
+                            card3Value = summary.totalPendiente;
+                            card3Icon = Icons.pending_actions;
+                            break;
+                        }
+
+                        // Neto = Pagado - Gastos (solo visible en filtro "Todos")
+                        final totalNeto = summary.totalPagado - summary.totalGastos;
+
                         return ResponsiveGridRow(rowSegments: 100, children: [
                           ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
+                            xs: 50,
+                            md: 25,
+                            lg: 25,
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
                                   color: const Color(0xFF2196F3).withValues(alpha: 0.1),
@@ -1021,17 +1103,22 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.receipt_long, color: const Color(0xFF2196F3), size: 24),
+                                    Icon(card1Icon, color: const Color(0xFF2196F3), size: 24),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.totalFacturado)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFF2196F3),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        selectedTypeFilter != 'Todos' && card3Label.startsWith('Cantidad')
+                                            ? '$globalCurrency ${myFormat.format(card1Value)}'
+                                            : '$globalCurrency ${myFormat.format(card1Value)}',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                            color: const Color(0xFF2196F3),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 18),
+                                      ),
                                     ),
                                     Text(
-                                      'Total Facturado',
+                                      card1Label,
                                       style: theme.textTheme.bodyMedium,
                                       textAlign: TextAlign.center,
                                     ),
@@ -1041,14 +1128,13 @@ class _DailyTransactionState extends State<DailyTransaction> {
                             ),
                           ),
                           ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
+                            xs: 50,
+                            md: 25,
+                            lg: 25,
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
                                   color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
@@ -1058,17 +1144,20 @@ class _DailyTransactionState extends State<DailyTransaction> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_circle, color: const Color(0xFF4CAF50), size: 24),
+                                    Icon(card2Icon, color: const Color(0xFF4CAF50), size: 24),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.totalPagado)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFF4CAF50),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '$globalCurrency ${myFormat.format(card2Value)}',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                            color: const Color(0xFF4CAF50),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 18),
+                                      ),
                                     ),
                                     Text(
-                                      'Total Pagado',
+                                      card2Label,
                                       style: theme.textTheme.bodyMedium,
                                       textAlign: TextAlign.center,
                                     ),
@@ -1077,42 +1166,115 @@ class _DailyTransactionState extends State<DailyTransaction> {
                               ),
                             ),
                           ),
+                          // Tarjeta de Total Gastos (roja) - muestra salidas
                           ResponsiveGridCol(
-                            xs: 100,
-                            md: screenWidth < 950 ? 50 : 33,
-                            lg: 33,
+                            xs: 50,
+                            md: 25,
+                            lg: 25,
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Container(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, right: 20.0, top: 10.0, bottom: 10.0),
+                                padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10.0),
-                                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
-                                  border: Border.all(color: const Color(0xFFFF9800), width: 1),
+                                  color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                                  border: Border.all(color: const Color(0xFFE53935), width: 1),
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.pending_actions, color: const Color(0xFFFF9800), size: 24),
+                                    Icon(Icons.trending_down, color: const Color(0xFFE53935), size: 24),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      '$globalCurrency ${myFormat.format(summary.totalPendiente)}',
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                          color: const Color(0xFFFF9800),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '$globalCurrency ${myFormat.format(summary.totalGastos)}',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                            color: const Color(0xFFE53935),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 18),
+                                      ),
                                     ),
                                     Text(
-                                      'Total Pendiente',
+                                      'Total Gastos',
                                       style: theme.textTheme.bodyMedium,
                                       textAlign: TextAlign.center,
                                     ),
                                   ],
                                 ),
                               ),
-            ),
+                            ),
+                          ),
+                          // Tarjeta de Pendiente / Neto
+                          ResponsiveGridCol(
+                            xs: 50,
+                            md: 25,
+                            lg: 25,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                padding: const EdgeInsets.all(12.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  color: selectedTypeFilter == 'Todos'
+                                      ? (totalNeto >= 0
+                                          ? const Color(0xFF7B1FA2).withValues(alpha: 0.1)
+                                          : const Color(0xFFFF9800).withValues(alpha: 0.1))
+                                      : const Color(0xFFFF9800).withValues(alpha: 0.1),
+                                  border: Border.all(
+                                    color: selectedTypeFilter == 'Todos'
+                                        ? (totalNeto >= 0 ? const Color(0xFF7B1FA2) : const Color(0xFFFF9800))
+                                        : const Color(0xFFFF9800),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      selectedTypeFilter == 'Todos' ? Icons.account_balance : card3Icon,
+                                      color: selectedTypeFilter == 'Todos'
+                                          ? (totalNeto >= 0 ? const Color(0xFF7B1FA2) : const Color(0xFFFF9800))
+                                          : const Color(0xFFFF9800),
+                                      size: 24,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        selectedTypeFilter == 'Todos'
+                                            ? '$globalCurrency ${myFormat.format(totalNeto)}'
+                                            : card3Label.startsWith('Cantidad')
+                                                ? '${card3Value.toInt()} registros'
+                                                : '$globalCurrency ${myFormat.format(card3Value)}',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                            color: selectedTypeFilter == 'Todos'
+                                                ? (totalNeto >= 0 ? const Color(0xFF7B1FA2) : const Color(0xFFFF9800))
+                                                : const Color(0xFFFF9800),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 18),
+                                      ),
+                                    ),
+                                    Text(
+                                      selectedTypeFilter == 'Todos' ? 'Balance Neto' : card3Label,
+                                      style: theme.textTheme.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    if (selectedTypeFilter == 'Todos')
+                                      Text(
+                                        'Pagado - Gastos',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          fontSize: 10,
+                                          color: Colors.grey[500],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ]);
                       }),

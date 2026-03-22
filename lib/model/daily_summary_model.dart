@@ -13,6 +13,8 @@ class DailySummaryModel {
   final double gastoTransferencia;
   final double ingresoTarjeta;
   final double gastoTarjeta;
+  // Total de gastos (salidas)
+  final double totalGastos;
   // Nuevos campos para facturas eliminadas
   final int facturasEliminadasCount;
   final double totalEliminado;
@@ -30,6 +32,7 @@ class DailySummaryModel {
     this.gastoTransferencia = 0.0,
     this.ingresoTarjeta = 0.0,
     this.gastoTarjeta = 0.0,
+    this.totalGastos = 0.0,
     this.facturasEliminadasCount = 0,
     this.totalEliminado = 0.0,
   });
@@ -47,6 +50,7 @@ class DailySummaryModel {
     double gastoTransferencia = 0.0;
     double ingresoTarjeta = 0.0;
     double gastoTarjeta = 0.0;
+    double totalGastos = 0.0;
     // Contadores para facturas eliminadas
     int facturasEliminadasCount = 0;
     double totalEliminado = 0.0;
@@ -77,7 +81,7 @@ class DailySummaryModel {
       } else if (transaction.purchaseTransactionModel != null) {
         paymentType = transaction.purchaseTransactionModel!.paymentType;
         paymentAmount = transaction.paymentOut;
-        // Compras/gastos NO suman al total pagado de clientes
+        totalGastos += transaction.paymentOut; // Compras son salidas
       } else if (transaction.dueTransactionModel != null) {
         paymentType = transaction.dueTransactionModel!.paymentType;
         paymentAmount = transaction.paymentIn;
@@ -89,18 +93,18 @@ class DailySummaryModel {
       } else if (transaction.expenseModel != null) {
         paymentType = transaction.expenseModel!.paymentType;
         paymentAmount = transaction.paymentOut;
-        // Gastos NO suman al total pagado — se restan en la UI
+        totalGastos += transaction.paymentOut; // Gastos son salidas
       } else if (transaction.paySalary != null) {
         paymentType = transaction.paySalary!.paymentType;
         paymentAmount = transaction.paymentOut;
-        // Salarios NO suman al total pagado — se restan en la UI
+        totalGastos += transaction.paymentOut; // Salarios son salidas
       } else {
         // Fallback: usar campos directos de la transacción cuando los modelos anidados no están disponibles
         paymentType = transaction.paymentType;
         if (transaction.type == "Expense" || transaction.type == "Purchase" ||
             transaction.type == "Purchase Return" || transaction.type == "Salary Payment") {
           paymentAmount = transaction.paymentOut;
-          // Gastos/compras NO suman al total pagado
+          totalGastos += transaction.paymentOut; // Salidas
         } else {
           paymentAmount = transaction.paymentIn;
           totalPagado += transaction.paymentIn;
@@ -161,6 +165,7 @@ class DailySummaryModel {
       gastoTransferencia: gastoTransferencia,
       ingresoTarjeta: ingresoTarjeta,
       gastoTarjeta: gastoTarjeta,
+      totalGastos: totalGastos,
       facturasEliminadasCount: facturasEliminadasCount,
       totalEliminado: totalEliminado,
     );
