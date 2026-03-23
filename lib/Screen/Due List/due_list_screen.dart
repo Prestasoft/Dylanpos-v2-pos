@@ -25,6 +25,7 @@ import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/Constant Data/export_button.dart';
 import '../currency/currency_provider.dart';
 import '../../model/due_transaction_model.dart';
+import '../../Provider/reservation_provider.dart';
 import 'due_popUp.dart';
 
 /// Modelo para agrupar las deudas por cliente
@@ -1274,12 +1275,45 @@ class _DueListState extends State<DueList> {
                 AsyncValue<List<SaleTransactionModel>> salesAsync = isSearching
                     ? ref.watch(searchSalesWithDueProvider(searchQuery.trim()))
                     : ref.watch(salesWithDueProvider);
+                // Cuando el filtro es 'Hoy', cargar las reservas de hoy
+                final now = DateTime.now();
+                final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                final todayReservationsAsync = dateFilter == 'Hoy'
+                    ? ref.watch(reservationsByDateProvider(todayStr))
+                    : null;
+
+                // Si estamos filtrando por Hoy y las reservas aún cargan, mostrar loading
+                if (dateFilter == 'Hoy' && todayReservationsAsync != null && todayReservationsAsync.isLoading) {
+                  return salesAsync.when(
+                    data: (_) => const Center(child: CircularProgressIndicator()),
+                    error: (e, s) => Center(child: Text('Error: $e')),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                  );
+                }
+
                 return salesAsync.when(data: (allSales) {
+              // Obtener IDs de reservas de hoy (si filtro activo)
+              Set<String> todayReservationIds = {};
+              if (dateFilter == 'Hoy' && todayReservationsAsync != null) {
+                final todayReservations = todayReservationsAsync.valueOrNull ?? [];
+                todayReservationIds = todayReservations.map((r) => r.id).toSet();
+              }
+
+              // Filtrar ventas: si filtro 'Hoy', solo incluir ventas vinculadas a reservas de hoy
+              List<SaleTransactionModel> filteredSales = allSales;
+              if (dateFilter == 'Hoy') {
+                filteredSales = allSales.where((sale) {
+                  // La venta debe tener reservationIds que coincidan con alguna reserva de hoy
+                  if (sale.reservationIds.isEmpty) return false;
+                  return sale.reservationIds.any((id) => todayReservationIds.contains(id));
+                }).toList();
+              }
+
               // Agrupar ventas con dueAmount > 0 por cliente
               Map<String, CustomerDueInfo> customerDuesMap = {};
               Map<String, CustomerDueInfo> supplierDuesMap = {};
 
-              for (var sale in allSales) {
+              for (var sale in filteredSales) {
                 // Solo procesar ventas con deuda pendiente
                 if (sale.dueAmount != null && sale.dueAmount! > 0) {
                   // Usar teléfono como key ya que es más consistente que el nombre
@@ -1365,11 +1399,9 @@ class _DueListState extends State<DueList> {
                   sale.invoiceNumber.toLowerCase().contains(search));
 
                 if ((name.contains(search) || phone.contains(search) || matchesInvoice)) {
-                  if (_filterByDate(element)) {
-                    showAbleCustomer.add(element);
-                    showAbleCustomerDueInfo.add(dueInfo);
-                  }
-                } else if (searchQuery == '' && _filterByDate(element)) {
+                  showAbleCustomer.add(element);
+                  showAbleCustomerDueInfo.add(dueInfo);
+                } else if (searchQuery == '') {
                   showAbleCustomer.add(element);
                   showAbleCustomerDueInfo.add(dueInfo);
                 }
@@ -1391,11 +1423,9 @@ class _DueListState extends State<DueList> {
                         .contains(search) ||
                     element.phoneNumber.contains(searchQuery) ||
                     matchesInvoice)) {
-                  if (_filterByDate(element)) {
-                    showAbleSupplier.add(element);
-                    showAbleSupplierDueInfo.add(dueInfo);
-                  }
-                } else if (searchQuery == '' && _filterByDate(element)) {
+                  showAbleSupplier.add(element);
+                  showAbleSupplierDueInfo.add(dueInfo);
+                } else if (searchQuery == '') {
                   showAbleSupplier.add(element);
                   showAbleSupplierDueInfo.add(dueInfo);
                 }
