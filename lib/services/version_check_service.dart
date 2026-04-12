@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../version.dart';
+
 class VersionCheckService {
   static final VersionCheckService _instance = VersionCheckService._internal();
   factory VersionCheckService() => _instance;
@@ -68,9 +70,9 @@ class VersionCheckService {
       // Guardar la última versión disponible
       _latestVersion = serverVersion.version;
       
-      // Obtener versión almacenada localmente
+      // Obtener versión actual desde el archivo compilado
       final prefs = await SharedPreferences.getInstance();
-      _currentVersion = prefs.getString('app_version') ?? '1.0.0';
+      _currentVersion = appVersion;
       
       // Verificar si el usuario ya hizo clic en actualizar para esta versión
       // Primero verificar en SharedPreferences
@@ -211,45 +213,58 @@ class VersionCheckService {
     try {
       debugPrint('performUpdate: Iniciando proceso de actualización');
       
-      // Primero guardamos que el usuario hizo clic en actualizar
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('update_clicked', true);
-      await prefs.setString('update_clicked_version', _latestVersion ?? '');
-      debugPrint('performUpdate: Estado guardado en SharedPreferences');
-      
-      // Si es web, guardar también en localStorage antes de cualquier limpieza
-      if (kIsWeb) {
-        html.window.localStorage['update_clicked'] = 'true';
-        html.window.localStorage['update_clicked_version'] = _latestVersion ?? '';
-        html.window.localStorage['update_timestamp'] = DateTime.now().millisecondsSinceEpoch.toString();
-        debugPrint('performUpdate: Estado guardado en localStorage');
-        
-        // Forzar sincronización del localStorage
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
+      // Obtener info de la versión del servidor ANTES de limpiar
+      final serverVersion = await _fetchServerVersion();
+      final latestVer = _latestVersion ?? serverVersion?.version ?? '';
       
       // Detener el timer de verificación
       stopVersionCheck();
       
-      // Delay para asegurar que todo se guarde correctamente
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Firebase Auth deshabilitado
-      debugPrint('performUpdate: Firebase Auth deshabilitado, continuando...');
-      // await FirebaseAuth.instance.signOut();
-      
-      // Otro delay después del signOut
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Limpiar caché del navegador DESPUÉS de guardar todo
       if (kIsWeb) {
+        // 1. Limpiar caches del service worker (NO localStorage todavía)
         debugPrint('performUpdate: Limpiando caché del navegador');
         _clearBrowserCache();
         
-        // Delay final antes de recargar
-        await Future.delayed(const Duration(milliseconds: 1000));
+        await Future.delayed(const Duration(milliseconds: 500));
         
-        // Recargar la página para obtener la nueva versión
+        // 2. Ahora RE-ESCRIBIR las claves que index.html necesita
+        //    para que checkServerVersion() no piense que hay una nueva versión
+        //    La clave CACHE_KEY en index.html es: version + '_' + build
+        //    Necesitamos reconstruir exactamente eso
+        if (serverVersion != null) {
+          final build = serverVersion.releaseDate.replaceAll('-', ''); // fallback
+          // Fetch the actual build string from app-version.json
+          try {
+            final url = '$_baseUrl/app-version.json?t=${DateTime.now().millisecondsSinceEpoch}';
+            final response = await http.get(Uri.parse(url), headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+            }).timeout(const Duration(seconds: 5));
+            
+            if (response.statusCode == 200) {
+              final data = json.decode(response.body);
+              final serverBuild = data['build'] ?? build;
+              final cacheKey = '${data['version']}_$serverBuild';
+              
+              html.window.localStorage['app_cache_version'] = cacheKey;
+              html.window.localStorage['app_version'] = data['version'].toString();
+              debugPrint('performUpdate: Re-wrote CACHE_KEY=$cacheKey app_version=${data['version']}');
+            }
+          } catch (e) {
+            // Fallback: just set the version
+            html.window.localStorage['app_version'] = latestVer;
+            debugPrint('performUpdate: Fallback - set app_version=$latestVer');
+          }
+        }
+        
+        // 3. Marcar la actualización como completada para el VersionCheckService
+        html.window.localStorage['update_clicked'] = 'true';
+        html.window.localStorage['update_clicked_version'] = latestVer;
+        html.window.localStorage['update_timestamp'] = DateTime.now().millisecondsSinceEpoch.toString();
+        
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // 4. Recargar la página para obtener la nueva versión
         debugPrint('performUpdate: Recargando página');
         _reloadPage();
       }

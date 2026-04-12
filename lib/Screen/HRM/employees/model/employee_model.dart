@@ -22,7 +22,7 @@ class EmployeeModel {
   late final DateTime birthDate;
   late final DateTime joiningDate;
   late final DateTime? contractEndDate; // Para contratos temporales
-  late final double salary; // Salario bruto mensual
+  double salary; // Salario bruto mensual
   late final String salaryType; // Mensual, Quincenal, Semanal
   late final String paymentMethod; // Transferencia, Cheque, Efectivo
   late final String? bankName; // Banco para transferencias
@@ -48,7 +48,7 @@ class EmployeeModel {
 
   // Información adicional
   late final String? photoUrl;
-  late final String? notes;
+  String? notes;
 
   // Campos para vacaciones
   late final int vacationDaysAccrued; // Días de vacaciones acumulados

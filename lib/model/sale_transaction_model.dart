@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'add_to_cart_model.dart';
 
 class SaleTransactionModel {
@@ -98,8 +99,20 @@ class SaleTransactionModel {
     final isPaid = json['isPaid'] ?? json['is_paid'] ?? false;
 
     // Para productList, puede venir como lista de strings JSON o como lista de objetos
+    // IMPORTANTE: product_list puede llegar como String (JSON serializado) o como List ya parseado
     List<AddToCartModel>? productList;
-    final rawProductList = json['productList'] ?? json['product_list'];
+    dynamic rawProductList = json['productList'] ?? json['product_list'];
+    
+    // Si product_list viene como String JSON, decodificarlo primero
+    if (rawProductList != null && rawProductList is String) {
+      try {
+        rawProductList = jsonDecode(rawProductList);
+      } catch (e) {
+        print('[SaleTransactionModel] Error decodificando product_list string: $e');
+        rawProductList = null;
+      }
+    }
+    
     if (rawProductList != null && rawProductList is List) {
       productList = rawProductList.map((v) {
         if (v is String) {
@@ -107,7 +120,7 @@ class SaleTransactionModel {
           try {
             return AddToCartModel.fromJson(v);
           } catch (e) {
-            // Error parsing JSON string
+            print('[SaleTransactionModel] Error parseando producto string: $e');
           }
           return AddToCartModel.fromMap({'warehouseName': '', 'warehouseId': '', 'productPurchasePrice': 0, 'productImage': '', 'taxType': '', 'margin': 0, 'excTax': 0, 'incTax': 0, 'groupTaxName': '', 'groupTaxRate': 0, 'subTaxes': []});
         } else if (v is Map) {

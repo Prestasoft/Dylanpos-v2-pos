@@ -1,0 +1,1 @@
+const String appVersion = '2.1.420';

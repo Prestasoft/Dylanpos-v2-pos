@@ -92,6 +92,10 @@ sed -i '' "s/<span id=\"version-text\">v.*<\/span>/<span id=\"version-text\">v$N
 sed -i '' "s/SISTEMA DE CONTROL DE VERSIONES v.*/SISTEMA DE CONTROL DE VERSIONES v$NEW_VERSION/" "$INDEX_FILE"
 echo -e "   ${GREEN}✓${NC} index.html: $NEW_VERSION"
 
+# lib/version.dart - app version constant
+echo "const String appVersion = '$NEW_VERSION';" > "$PROJECT_PATH/lib/version.dart"
+echo -e "   ${GREEN}✓${NC} version.dart: $NEW_VERSION"
+
 # top_bar.dart - version badge
 sed -i '' "s/'v[0-9]*\.[0-9]*\.[0-9]*'/'v$NEW_VERSION'/" "$TOP_BAR_FILE"
 echo -e "   ${GREEN}✓${NC} top_bar.dart: v$NEW_VERSION"
@@ -113,7 +117,7 @@ cat > "$APP_VERSION_FILE" << EOF
   "changelog": [
     "$DESCRIPTION"
   ],
-  "forceUpdate": true
+  "forceUpdate": false
 }
 EOF
 echo -e "   ${GREEN}✓${NC} app-version.json: $NEW_VERSION (build: $BUILD_DATE)"
@@ -122,6 +126,7 @@ echo -e "   ${GREEN}✓${NC} app-version.json: $NEW_VERSION (build: $BUILD_DATE)
 echo ""
 echo -e "${YELLOW}🔨 Paso 2: Compilando Flutter Web...${NC}"
 cd "$PROJECT_PATH"
+export PATH="$PATH:/opt/homebrew/bin:$HOME/development/flutter/bin"
 flutter build web --release 2>&1 | tail -10
 if [ $? -eq 0 ]; then
     echo -e "   ${GREEN}✓${NC} Build completado exitosamente"
@@ -129,6 +134,10 @@ else
     echo -e "   ${RED}✗${NC} Error en la compilación"
     exit 1
 fi
+
+# PASO 2.5: Copiar app-version.json al build (Flutter puede no sobreescribir archivos estáticos cacheados)
+cp "$APP_VERSION_FILE" "$PROJECT_PATH/build/web/app-version.json"
+echo -e "   ${GREEN}✓${NC} app-version.json copiado al build"
 
 # PASO 3: Verificar que el build tiene la versión correcta
 echo ""

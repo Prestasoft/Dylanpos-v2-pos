@@ -1,11 +1,11 @@
 {
-  "version": "2.1.412",
-  "build": "20260323-1456",
-  "releaseDate": "2026-03-23",
+  "version": "2.1.420",
+  "build": "20260412-1405",
+  "releaseDate": "2026-04-12",
   "environment": "production",
-  "description": "Actualización a versión 2.1.412",
+  "description": "Módulo HR: Aumento de sueldo e historial",
   "changelog": [
-    "Actualización a versión 2.1.412"
+    "Módulo HR: Aumento de sueldo e historial"
   ],
-  "forceUpdate": true
+  "forceUpdate": false
 }

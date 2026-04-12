@@ -18,7 +18,8 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:salespro_admin/services/deletion_password_service.dart';
 import 'package:salespro_admin/Screen/Reservation/dress_selection_screen_package.dart';
 import 'package:salespro_admin/model/ServicePackageModel.dart';
-
+import 'package:salespro_admin/Screen/Reservation/venta_general_detail_dialog.dart';
+import 'package:salespro_admin/Provider/transactions_provider.dart';
 //------------------- ENUM Y CARD -------------------
 enum ReservationStatus {
   past,
@@ -122,6 +123,112 @@ String formatReservationTime(String time) {
   }
 }
 
+class VentaGeneralCardContent extends ConsumerWidget {
+  final String invoiceNumber;
+  final Color iconColor;
+
+  const VentaGeneralCardContent({
+    super.key,
+    required this.invoiceNumber,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (invoiceNumber.isEmpty) {
+      return const Text('Factura no encontrada en nota', style: TextStyle(color: Colors.red));
+    }
+
+    final saleAsync = ref.watch(searchSalesProvider(invoiceNumber));
+
+    return saleAsync.when(
+      data: (sales) {
+        if (sales.isEmpty) return const Text('Factura no encontrada en BD');
+        final sale = sales.first;
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.receipt_long, size: 18, color: iconColor),
+                    const SizedBox(width: 8),
+                    Text('Factura #$invoiceNumber', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                Text(
+                  '\$${sale.totalAmount?.toStringAsFixed(2) ?? "0.00"}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal.shade800),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...(sale.productList?.take(3).map((p) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Row(
+                children: [
+                  Text('${p.quantity.toInt()}x ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: iconColor)),
+                  Expanded(
+                    child: Text('${p.productName}', style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+            )) ?? []),
+            if ((sale.productList?.length ?? 0) > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text('...y ${(sale.productList!.length - 3)} más', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+              ),
+            const SizedBox(height: 8),
+            // Estado de pago
+            () {
+              final dueAmount = sale.dueAmount ?? 0;
+              final isPaid = dueAmount <= 0;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isPaid ? Colors.green.withValues(alpha: 0.15) : Colors.red.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(isPaid ? Icons.check_circle : Icons.warning_amber_rounded,
+                      size: 14, color: isPaid ? Colors.green.shade700 : Colors.red.shade700),
+                    const SizedBox(width: 4),
+                    Text(
+                      isPaid ? 'Pagada' : 'Pendiente: \$${dueAmount.toStringAsFixed(2)}',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                        color: isPaid ? Colors.green.shade700 : Colors.red.shade700),
+                    ),
+                  ],
+                ),
+              );
+            }(),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.touch_app, size: 14, color: iconColor.withValues(alpha: 0.8)),
+                const SizedBox(width: 6),
+                Text('Ver detalles y Factura PDF', style: TextStyle(fontSize: 12, color: iconColor.withValues(alpha: 0.9), fontStyle: FontStyle.italic)),
+              ]
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+      )),
+      error: (e, _) => const Text('Error al cargar datos de venta', style: TextStyle(color: Colors.red)),
+    );
+  }
+}
+
 class ReservationCard extends ConsumerWidget {
   final ReservationModel reservation;
   final ReservationStatus status;
@@ -196,6 +303,8 @@ class ReservationCard extends ConsumerWidget {
     final isEstudio = !isPreQuinceFiesta && lowerName.contains('estudio');
     final isExterior = lowerName.contains('exterior');
     final isRenta = lowerName.contains('renta') || lowerName.contains('vestimenta') || lowerName.contains('vestido');
+    final isVentaGeneral = reservation.sessionType == 'venta_general' || 
+                           (reservation.nota?.toLowerCase().contains('venta general') ?? false);
 
     switch (status) {
       case ReservationStatus.past:
@@ -225,6 +334,11 @@ class ReservationCard extends ConsumerWidget {
           statusIcon = Icons.checkroom;
           statusText = 'Renta pasada';
           cardBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.05); // Muy suave para pasadas
+        } else if (isVentaGeneral) {
+          statusColor = Colors.teal;
+          statusIcon = Icons.receipt_long;
+          statusText = 'Venta agendada';
+          cardBgColor = Colors.teal.withValues(alpha: 0.10);
         } else {
           statusColor = Colors.grey;
           statusIcon = Icons.history;
@@ -259,6 +373,11 @@ class ReservationCard extends ConsumerWidget {
           statusIcon = Icons.checkroom;
           statusText = 'Renta por vencer';
           cardBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.15); // Un poco más intenso por ser próxima
+        } else if (isVentaGeneral) {
+          statusColor = Colors.teal;
+          statusIcon = Icons.receipt_long;
+          statusText = 'Venta por vencer';
+          cardBgColor = Colors.teal.withValues(alpha: 0.15);
         } else {
           statusColor = Colors.orange;
           statusIcon = Icons.warning_amber_rounded;
@@ -292,6 +411,11 @@ class ReservationCard extends ConsumerWidget {
           statusIcon = Icons.checkroom; // Icono de percha para renta de ropa
           statusText = 'Renta próxima';
           cardBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.12); // Verde elegante suave
+        } else if (isVentaGeneral) {
+          statusColor = Colors.teal;
+          statusIcon = Icons.receipt_long;
+          statusText = 'Venta próxima';
+          cardBgColor = Colors.teal.withValues(alpha: 0.15);
         } else {
           statusColor = Colors.green;
           statusIcon = Icons.event_available;
@@ -308,7 +432,21 @@ class ReservationCard extends ConsumerWidget {
       elevation: 2,
       color: cardBgColor,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          if (isVentaGeneral) {
+            final match = RegExp(r'\d+').firstMatch(reservation.nota ?? '');
+            final invoiceNumber = match?.group(0) ?? '';
+            showDialog(
+              context: context,
+              builder: (context) => VentaGeneralDetailDialog(
+                invoiceNumber: invoiceNumber,
+                reservation: reservation,
+              ),
+            );
+          } else {
+            onTap();
+          }
+        },
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -566,101 +704,110 @@ class ReservationCard extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.person, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Cliente: $clientName', style: const TextStyle(fontSize: 14)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.checkroom, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      _buildDressName(dressName, dressComposite),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.engineering, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Servicio: $serviceName', style: const TextStyle(fontSize: 14)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.place, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Lugar: $place', style: const TextStyle(fontSize: 14)),
-                      ),
-                      InkWell(
-                        onTap: () async {
-                          final newValue = await _showQuickEditDialog(context, 'Lugar', place == 'Sin lugar' ? '' : place);
-                          if (newValue != null) {
-                            EasyLoading.show(status: 'Guardando...');
-                            final success = await ref.read(updateReservationProvider({
-                              'reservationId': reservation.id,
-                              'updateData': {'place': newValue},
-                            }).future);
-                            EasyLoading.dismiss();
-                            if (success) {
-                              EasyLoading.showSuccess('Lugar actualizado');
-                              ref.invalidate(fullReservationByIdProviderVQ(reservation.id));
-                              ref.invalidate(fullReservationsProvider);
-                            } else {
-                              EasyLoading.showError('Error al guardar');
-                            }
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(Icons.edit, size: 16, color: Colors.deepPurple.withValues(alpha: 0.7)),
+                  if (isVentaGeneral) ...[
+                    // Lógica para extraer la factura
+                    () {
+                      final match = RegExp(r'\d+').firstMatch(note);
+                      final parsedInvoice = match?.group(0) ?? '';
+                      return VentaGeneralCardContent(invoiceNumber: parsedInvoice, iconColor: iconColor);
+                    }()
+                  ] else ...[
+                    Row(
+                      children: [
+                        Icon(Icons.person, size: 16, color: iconColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Cliente: $clientName', style: const TextStyle(fontSize: 14)),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.textsms_outlined, size: 16, color: iconColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Nota: $note', style: const TextStyle(fontSize: 14)),
-                      ),
-                      InkWell(
-                        onTap: () async {
-                          final newValue = await _showQuickEditDialog(context, 'Nota', note == 'Sin notas' ? '' : note, maxLines: 3);
-                          if (newValue != null) {
-                            EasyLoading.show(status: 'Guardando...');
-                            final success = await ref.read(updateReservationProvider({
-                              'reservationId': reservation.id,
-                              'updateData': {'notes': newValue, 'nota': newValue},
-                            }).future);
-                            EasyLoading.dismiss();
-                            if (success) {
-                              EasyLoading.showSuccess('Nota actualizada');
-                              ref.invalidate(fullReservationByIdProviderVQ(reservation.id));
-                              ref.invalidate(fullReservationsProvider);
-                            } else {
-                              EasyLoading.showError('Error al guardar');
-                            }
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(Icons.edit, size: 16, color: Colors.deepPurple.withValues(alpha: 0.7)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.checkroom, size: 16, color: iconColor),
+                        const SizedBox(width: 8),
+                        _buildDressName(dressName, dressComposite),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.engineering, size: 16, color: iconColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Servicio: $serviceName', style: const TextStyle(fontSize: 14)),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.place, size: 16, color: iconColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Lugar: $place', style: const TextStyle(fontSize: 14)),
+                        ),
+                        InkWell(
+                          onTap: () async {
+                            final newValue = await _showQuickEditDialog(context, 'Lugar', place == 'Sin lugar' ? '' : place);
+                            if (newValue != null) {
+                              EasyLoading.show(status: 'Guardando...');
+                              final success = await ref.read(updateReservationProvider({
+                                'reservationId': reservation.id,
+                                'updateData': {'place': newValue},
+                              }).future);
+                              EasyLoading.dismiss();
+                              if (success) {
+                                EasyLoading.showSuccess('Lugar actualizado');
+                                ref.invalidate(fullReservationByIdProviderVQ(reservation.id));
+                                ref.invalidate(fullReservationsProvider);
+                              } else {
+                                EasyLoading.showError('Error al guardar');
+                              }
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(Icons.edit, size: 16, color: Colors.deepPurple.withValues(alpha: 0.7)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.textsms_outlined, size: 16, color: iconColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Nota: $note', style: const TextStyle(fontSize: 14)),
+                        ),
+                        InkWell(
+                          onTap: () async {
+                            final newValue = await _showQuickEditDialog(context, 'Nota', note == 'Sin notas' ? '' : note, maxLines: 3);
+                            if (newValue != null) {
+                              EasyLoading.show(status: 'Guardando...');
+                              final success = await ref.read(updateReservationProvider({
+                                'reservationId': reservation.id,
+                                'updateData': {'notes': newValue, 'nota': newValue},
+                              }).future);
+                              EasyLoading.dismiss();
+                              if (success) {
+                                EasyLoading.showSuccess('Nota actualizada');
+                                ref.invalidate(fullReservationByIdProviderVQ(reservation.id));
+                                ref.invalidate(fullReservationsProvider);
+                              } else {
+                                EasyLoading.showError('Error al guardar');
+                              }
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(Icons.edit, size: 16, color: Colors.deepPurple.withValues(alpha: 0.7)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   // Badge de vestimentas pendientes
                   if (fullReservation?.service != null) Builder(
                     builder: (context) {

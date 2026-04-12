@@ -4351,6 +4351,82 @@ AddToCartModel _createAdditionalModel(Map additionalData, String mainReservation
                                                 // ignore: unused_result
                                                 consumerRef.refresh(dailyTransactionProvider);
 
+                                                final isGenericSale = transitionModel.reservationIds?.isEmpty ?? true;
+
+                                                if (isGenericSale && context.mounted) {
+                                                   bool wantsToSchedule = await showDialog<bool>(
+                                                     context: context,
+                                                     barrierDismissible: false,
+                                                     builder: (BuildContext dCtx) {
+                                                       return AlertDialog(
+                                                         title: Row(
+                                                           children: [
+                                                             Icon(Icons.calendar_month, color: kMainColor),
+                                                             const SizedBox(width: 8),
+                                                             const Text('Agendar en Calendario'),
+                                                           ],
+                                                         ),
+                                                         content: const Text('¿Desea agendar esta venta en el calendario general?'),
+                                                         actions: [
+                                                           TextButton(
+                                                             onPressed: () => Navigator.pop(dCtx, false),
+                                                             child: const Text('No'),
+                                                           ),
+                                                           ElevatedButton(
+                                                             style: ElevatedButton.styleFrom(backgroundColor: kMainColor),
+                                                             onPressed: () => Navigator.pop(dCtx, true),
+                                                             child: const Text('Sí'),
+                                                           ),
+                                                         ],
+                                                       );
+                                                     }
+                                                   ) ?? false;
+
+                                                   if (wantsToSchedule && context.mounted) {
+                                                      final pickedDate = await showDatePicker(
+                                                        context: context,
+                                                        initialDate: DateTime.now(),
+                                                        firstDate: DateTime(2000),
+                                                        lastDate: DateTime(2100),
+                                                        helpText: 'Seleccione la fecha para agendar',
+                                                      );
+
+                                                      if (pickedDate != null && context.mounted) {
+                                                        final pickedTime = await showTimePicker(
+                                                          context: context,
+                                                          initialTime: TimeOfDay.now(),
+                                                          helpText: 'Seleccione la hora',
+                                                        );
+                                                        
+                                                        if (pickedTime != null) {
+                                                          try {
+                                                            EasyLoading.show(status: 'Agendando...', dismissOnTap: false);
+                                                            final reservationData = {
+                                                              'service_id': '00000000-0000-0000-0000-000000000000',
+                                                              'client_id': transitionModel.customerPhone ?? 'General',
+                                                              'dress_id': '',
+                                                              'branch_id': ApiService().branchId ?? 'sdo',
+                                                              'reservation_date': DateFormat('yyyy-MM-dd').format(pickedDate),
+                                                              'reservation_time': '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}',
+                                                              'created_at': DateTime.now().toIso8601String(),
+                                                              'updated_at': DateTime.now().toIso8601String(),
+                                                              'estado_factura': true,
+                                                              'estado': 'Pendiente',
+                                                              'nota': 'Venta general: ${transitionModel.invoiceNumber}',
+                                                              'session_type': 'venta_general',
+                                                              'service_name': 'Venta General',
+                                                              'customer_name': transitionModel.customerName,
+                                                            };
+                                                            await apiServiceSale.post('reservations', reservationData);
+                                                            EasyLoading.showSuccess('Agendado con éxito');
+                                                          } catch(e) {
+                                                            EasyLoading.showError('Error al agendar en calendario');
+                                                          }
+                                                        }
+                                                      }
+                                                   }
+                                                }
+
                                                 EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
                                                 setState(() => saleButtonClicked = false);
                                               } catch (e) {

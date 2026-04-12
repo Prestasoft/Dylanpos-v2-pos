@@ -13,6 +13,7 @@ import 'package:salespro_admin/Provider/daily_transaction_provider.dart';
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
 import 'package:salespro_admin/commas.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import 'package:intl/intl.dart';
 import 'package:salespro_admin/model/daily_transaction_model.dart';
 
 import '../../PDF/print_pdf.dart';
@@ -20,7 +21,9 @@ import '../../Provider/customer_provider.dart';
 import '../../Provider/due_transaction_provider.dart';
 import '../../Provider/product_provider.dart';
 import '../../Provider/profile_provider.dart';
+import '../../Provider/profile_provider.dart';
 import '../../Provider/transactions_provider.dart';
+import '../../Provider/branch_provider.dart';
 import '../../const.dart';
 import '../../model/sale_transaction_model.dart';
 import '../../subscription.dart';
@@ -520,6 +523,82 @@ class _ShowPaymentPopUpState extends State<ShowPaymentPopUp> {
                                                         consumerRef.refresh(dailyTransactionProvider);
 
                                                         EasyLoading.showSuccess(lang.S.of(context).saleSuccessfullyDone);
+
+                                                        final isGenericSale = widget.transitionModel.reservationIds?.isEmpty ?? true;
+
+                                                        if (isGenericSale && context.mounted) {
+                                                           bool wantsToSchedule = await showDialog<bool>(
+                                                             context: context,
+                                                             barrierDismissible: false,
+                                                             builder: (BuildContext dCtx) {
+                                                               return AlertDialog(
+                                                                 title: Row(
+                                                                   children: [
+                                                                     Icon(Icons.calendar_month, color: kMainColor),
+                                                                     const SizedBox(width: 8),
+                                                                     const Text('Agendar en Calendario'),
+                                                                   ],
+                                                                 ),
+                                                                 content: const Text('¿Desea agendar esta venta en el calendario general?'),
+                                                                 actions: [
+                                                                   TextButton(
+                                                                     onPressed: () => Navigator.pop(dCtx, false),
+                                                                     child: const Text('No'),
+                                                                   ),
+                                                                   ElevatedButton(
+                                                                     style: ElevatedButton.styleFrom(backgroundColor: kMainColor),
+                                                                     onPressed: () => Navigator.pop(dCtx, true),
+                                                                     child: const Text('Sí'),
+                                                                   ),
+                                                                 ],
+                                                               );
+                                                             }
+                                                           ) ?? false;
+
+                                                           if (wantsToSchedule && context.mounted) {
+                                                              final pickedDate = await showDatePicker(
+                                                                context: context,
+                                                                initialDate: DateTime.now(),
+                                                                firstDate: DateTime(2000),
+                                                                lastDate: DateTime(2100),
+                                                                helpText: 'Seleccione la fecha para agendar',
+                                                              );
+
+                                                              if (pickedDate != null && context.mounted) {
+                                                                final pickedTime = await showTimePicker(
+                                                                  context: context,
+                                                                  initialTime: TimeOfDay.now(),
+                                                                  helpText: 'Seleccione la hora',
+                                                                );
+                                                                
+                                                                if (pickedTime != null) {
+                                                                  try {
+                                                                    EasyLoading.show(status: 'Agendando...', dismissOnTap: false);
+                                                                    final reservationData = {
+                                                                      'service_id': '00000000-0000-0000-0000-000000000000',
+                                                                      'client_id': widget.transitionModel.customerPhone ?? 'General',
+                                                                      'dress_id': '',
+                                                                      'branch_id': consumerRef.read(branchIdProvider),
+                                                                      'reservation_date': DateFormat('yyyy-MM-dd').format(pickedDate),
+                                                                      'reservation_time': '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}',
+                                                                      'created_at': DateTime.now().toIso8601String(),
+                                                                      'updated_at': DateTime.now().toIso8601String(),
+                                                                      'estado_factura': true,
+                                                                      'estado': 'Pendiente',
+                                                                      'nota': 'Venta general: ${widget.transitionModel.invoiceNumber}',
+                                                                      'session_type': 'venta_general',
+                                                                      'service_name': 'Venta General',
+                                                                      'customer_name': widget.transitionModel.customerName,
+                                                                    };
+                                                                    await apiService.post('reservations', reservationData);
+                                                                    EasyLoading.showSuccess('Agendado con éxito');
+                                                                  } catch(e) {
+                                                                    EasyLoading.showError('Error al agendar en calendario');
+                                                                  }
+                                                                }
+                                                              }
+                                                           }
+                                                        }
 
                                                         await GeneratePdfAndPrint().printSaleInvoice(personalInformationModel: data, saleTransactionModel: widget.transitionModel, context: context, setting: setting);
                                                       } catch (e, stack) {

@@ -126,6 +126,36 @@ class EmployeeHistoryTab extends StatelessWidget {
       ));
     }
 
+    // Eventos de aumento de sueldo desde notas
+    if (employee.notes != null && employee.notes!.isNotEmpty) {
+      final lines = employee.notes!.split('\n');
+      for (var line in lines) {
+        if (line.trim().startsWith('[Aumento]')) {
+          try {
+            // Esperado: [Aumento] 2026-04-12: Sueldo modificado...
+            final firstColonIdx = line.indexOf(':');
+            if (firstColonIdx != -1) {
+              final header = line.substring(0, firstColonIdx); // [Aumento] 2026-04-12
+              final description = line.substring(firstColonIdx + 1).trim();
+              
+              final dateStr = header.replaceAll('[Aumento]', '').trim();
+              final date = DateTime.tryParse(dateStr) ?? employee.joiningDate;
+              
+              events.add(_TimelineEvent(
+                icon: Icons.trending_up,
+                title: 'Cambio de Sueldo',
+                description: description,
+                date: date,
+                color: Colors.green,
+              ));
+            }
+          } catch (_) {
+            // Fail silently on parsing line
+          }
+        }
+      }
+    }
+
     // Ordenar por fecha (más reciente primero)
     events.sort((a, b) => b.date.compareTo(a.date));
 

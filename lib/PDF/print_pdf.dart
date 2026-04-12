@@ -153,7 +153,7 @@ class GeneratePdfAndPrint {
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generatePurchaseDocument(personalInformation: personalInformationModel, transactions: purchaseTransactionModel, setting: setting);
     //Convert unint8List to pdf and upload in to firebase storage
-    await uploadPdfToFirebase(pdfData, 'purchase', purchaseTransactionModel.invoiceNumber);
+    await uploadPdfToFirebase(pdfData, 'purchase', purchaseTransactionModel.invoiceNumber.toString());
     EasyLoading.dismiss();
   }
 
@@ -172,7 +172,7 @@ class GeneratePdfAndPrint {
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generatePurchaseReturnDocument(personalInformation: personalInformationModel, transactions: purchaseTransactionModel, setting: setting);
     //Convert unint8List to pdf and upload in to firebase storage
-    await uploadPdfToFirebase(pdfData, 'purchasereturn', purchaseTransactionModel.invoiceNumber);
+    await uploadPdfToFirebase(pdfData, 'purchasereturn', purchaseTransactionModel.invoiceNumber.toString());
     EasyLoading.dismiss();
   }
 
@@ -191,7 +191,7 @@ class GeneratePdfAndPrint {
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generateDueDocument(personalInformation: personalInformationModel, transactions: dueTransactionModel, setting: setting);
     //Convert unint8List to pdf and upload in to firebase storage
-    await uploadPdfToFirebase(pdfData, 'due', dueTransactionModel.invoiceNumber);
+    await uploadPdfToFirebase(pdfData, 'due', dueTransactionModel.invoiceNumber.toString());
     EasyLoading.dismiss();
   }
 
@@ -269,7 +269,7 @@ class GeneratePdfAndPrint {
   if (!returnPdfData) {
     debugPrint('🔵 [printSaleInvoice] Iniciando uploadPdfToFirebase...');
     try {
-      await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber);
+      await uploadPdfToFirebase(pdfData, 'sale', saleTransactionModel.invoiceNumber.toString());
       debugPrint('🔵 [printSaleInvoice] uploadPdfToFirebase completado');
     } catch (e, stackTrace) {
       debugPrint('🔴 [printSaleInvoice] ERROR en uploadPdfToFirebase: $e');
@@ -325,7 +325,7 @@ class GeneratePdfAndPrint {
     }
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await generateSaleReturnDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel, generalSetting: setting);
-    await uploadPdfToFirebase(pdfData, 'sale-return', saleTransactionModel.invoiceNumber);
+    await uploadPdfToFirebase(pdfData, 'sale-return', saleTransactionModel.invoiceNumber.toString());
     await Printing.layoutPdf(
       dynamicLayout: true,
       onLayout: (PdfPageFormat format) async => pdfData,
@@ -346,7 +346,7 @@ class GeneratePdfAndPrint {
     }
     EasyLoading.show(status: 'Generating PDF...', dismissOnTap: true);
     var pdfData = await GeneratePdfAndPrint().generateQuotationDocument(personalInformation: personalInformationModel, transactions: saleTransactionModel);
-    await uploadPdfToFirebase(pdfData, 'quotation', saleTransactionModel.invoiceNumber);
+    await uploadPdfToFirebase(pdfData, 'quotation', saleTransactionModel.invoiceNumber.toString());
     EasyLoading.dismiss();
     await Printing.layoutPdf(
       dynamicLayout: true,

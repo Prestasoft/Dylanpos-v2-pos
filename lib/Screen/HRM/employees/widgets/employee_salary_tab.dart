@@ -3,8 +3,10 @@ import 'package:salespro_admin/Screen/HRM/employees/model/employee_model.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant Data/constant.dart';
 import 'package:salespro_admin/commas.dart';
 
+import 'package:salespro_admin/Screen/HRM/employees/widgets/salary_increase_dialog.dart';
+
 /// Pestaña de Salario y Beneficios del Empleado
-class EmployeeSalaryTab extends StatelessWidget {
+class EmployeeSalaryTab extends StatefulWidget {
   final EmployeeModel employee;
 
   const EmployeeSalaryTab({
@@ -13,7 +15,13 @@ class EmployeeSalaryTab extends StatelessWidget {
   });
 
   @override
+  State<EmployeeSalaryTab> createState() => _EmployeeSalaryTabState();
+}
+
+class _EmployeeSalaryTabState extends State<EmployeeSalaryTab> {
+  @override
   Widget build(BuildContext context) {
+    final employee = widget.employee;
     // Calcular deducciones aproximadas (esto debería venir de la nómina real)
     final afpDeduction = employee.salary * 0.0287; // 2.87% AFP empleado
     final sfsDeduction = employee.salary * 0.0304; // 3.04% SFS empleado
@@ -27,7 +35,35 @@ class EmployeeSalaryTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Sección: Salario Bruto
-          _buildSectionTitle('SALARIO BRUTO'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionTitle('SALARIO BRUTO'),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await showDialog(
+                    context: context,
+                    builder: (_) => SalaryIncreaseDialog(employee: widget.employee),
+                  );
+                  if (result != null && result is Map) {
+                    setState(() {
+                      widget.employee.salary = result['salary'];
+                      widget.employee.notes = result['notes'];
+                    });
+                  }
+                },
+                icon: const Icon(Icons.trending_up, size: 18),
+                label: const Text('Modificar Sueldo'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade50,
+                  foregroundColor: Colors.green.shade800,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  side: BorderSide(color: Colors.green.shade300),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(24),
