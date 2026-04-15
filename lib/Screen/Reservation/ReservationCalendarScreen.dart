@@ -305,10 +305,16 @@ class ReservationCard extends ConsumerWidget {
     final isRenta = lowerName.contains('renta') || lowerName.contains('vestimenta') || lowerName.contains('vestido');
     final isVentaGeneral = reservation.sessionType == 'venta_general' || 
                            (reservation.nota?.toLowerCase().contains('venta general') ?? false);
+    final isVictorGuzman = lowerName.contains('victor guzman') || lowerName.contains('victor guzman fotografia');
 
     switch (status) {
       case ReservationStatus.past:
-        if (isPreQuinceFiesta) {
+        if (isVictorGuzman) {
+          statusColor = const Color(0xFFC62828);
+          statusIcon = Icons.workspace_premium;
+          statusText = 'Plan Premium (Pasado)';
+          cardBgColor = const Color(0xFFC62828).withValues(alpha: 0.10);
+        } else if (isPreQuinceFiesta) {
           statusColor = Colors.amber;
           statusIcon = reservation.isFiestaDate ? Icons.celebration : Icons.camera_alt;
           statusText = reservation.isFiestaDate ? 'Fiesta pasada' : 'Pre-15 pasado';
@@ -347,7 +353,12 @@ class ReservationCard extends ConsumerWidget {
         }
         break;
       case ReservationStatus.aboutToExpire:
-        if (isPreQuinceFiesta) {
+        if (isVictorGuzman) {
+          statusColor = const Color(0xFFC62828);
+          statusIcon = Icons.workspace_premium;
+          statusText = 'Plan Premium (Por vencer)';
+          cardBgColor = const Color(0xFFC62828).withValues(alpha: 0.10);
+        } else if (isPreQuinceFiesta) {
           statusColor = Colors.amber;
           statusIcon = reservation.isFiestaDate ? Icons.celebration : Icons.camera_alt;
           statusText = reservation.isFiestaDate ? 'Fiesta por vencer' : 'Pre-15 por vencer';
@@ -386,7 +397,12 @@ class ReservationCard extends ConsumerWidget {
         }
         break;
       case ReservationStatus.upcoming:
-        if (isPreQuinceFiesta) {
+        if (isVictorGuzman) {
+          statusColor = const Color(0xFFC62828);
+          statusIcon = Icons.workspace_premium;
+          statusText = 'Plan Premium (Próximo)';
+          cardBgColor = const Color(0xFFC62828).withValues(alpha: 0.10);
+        } else if (isPreQuinceFiesta) {
           statusColor = Colors.amber;
           statusIcon = reservation.isFiestaDate ? Icons.celebration : Icons.camera_alt;
           statusText = reservation.isFiestaDate ? 'Fiesta próxima' : 'Pre-15 próximo';
@@ -1199,23 +1215,28 @@ class _ReservationCalendarScreenState extends ConsumerState<ReservationCalendarS
                           dotColor = const Color(0xFF4CAF50); // Verde elegante para renta
                         } else if (serviceName != null) {
                           final lowerName = serviceName.toLowerCase();
+                          final isVictorGuzman = lowerName.contains('victor guzman') || lowerName.contains('victor guzman fotografia');
                           
-                          final isPreQuinceFiesta = lowerName.contains('pre-quince y fiesta') || 
-                                                   lowerName.contains('pre-quince fiesta') || 
-                                                   lowerName.contains('pre quince y fiesta') || 
-                                                   lowerName.contains('pre quince fiesta') || 
-                                                   lowerName.contains('quinceanera y fiesta') ||
-                                                   (lowerName.contains('pre-quince') && lowerName.contains('fiesta'));
-                          
-                          if (isPreQuinceFiesta) {
-                            // Si es pre-quince y fiesta, ES AMARILLO para ambas fechas
-                            dotColor = Colors.amber;
-                          } else if (lowerName.contains('fiesta')) {
-                            dotColor = Colors.amber;
-                          } else if (lowerName.contains('estudio')) {
-                            dotColor = Colors.blue;
-                          } else if (lowerName.contains('exterior')) {
-                            dotColor = Colors.purple;
+                          if (isVictorGuzman) {
+                            dotColor = const Color(0xFFC62828); // Rojo Premium/Profesional
+                          } else {
+                            final isPreQuinceFiesta = lowerName.contains('pre-quince y fiesta') || 
+                                                     lowerName.contains('pre-quince fiesta') || 
+                                                     lowerName.contains('pre quince y fiesta') || 
+                                                     lowerName.contains('pre quince fiesta') || 
+                                                     lowerName.contains('quinceanera y fiesta') ||
+                                                     (lowerName.contains('pre-quince') && lowerName.contains('fiesta'));
+                            
+                            if (isPreQuinceFiesta) {
+                              // Si es pre-quince y fiesta, ES AMARILLO para ambas fechas
+                              dotColor = Colors.amber;
+                            } else if (lowerName.contains('fiesta')) {
+                              dotColor = Colors.amber;
+                            } else if (lowerName.contains('estudio')) {
+                              dotColor = Colors.blue;
+                            } else if (lowerName.contains('exterior')) {
+                              dotColor = Colors.purple;
+                            }
                           }
                         }
                         // Debug
