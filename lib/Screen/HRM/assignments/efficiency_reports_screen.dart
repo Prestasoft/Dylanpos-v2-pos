@@ -45,7 +45,7 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
       final employees = await repo.getActiveEmployees();
       Map<String, String> namesMap = {};
       for (var e in employees) {
-        namesMap[e.id.toString()] = '${e.firstName} ${e.lastName}';
+        namesMap[e.id.toString()] = '${e.name} ${e.lastName}';
       }
 
       // 2. Cargar Reservaciones usando ApiService directamente para rango
@@ -216,7 +216,7 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
         children: [
           _buildStatIndicator('Total Reservas', _reservations.length.toString(), Icons.event),
           _buildStatIndicator('Con Asignación', _reservations.where((r) => r.assignments.fotografoId != null || r.assignments.bookedById != null).length.toString(), Icons.check_circle_outline),
-          _buildStatIndicator('Cierres Redes', _redesStats.values.fold(0, (a, b) => a + (b as int)).toString(), Icons.campaign),
+          _buildStatIndicator('Cierres Redes', _redesStats.values.fold<int>(0, (a, b) => a + b).toString(), Icons.campaign),
         ],
       ),
     );

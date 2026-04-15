@@ -1,11 +1,11 @@
 {
-  "version": "2.1.421",
-  "build": "20260415-1751",
+  "version": "2.1.422",
+  "build": "20260415-1955",
   "releaseDate": "2026-04-15",
   "environment": "production",
-  "description": "Calendario: Planes Victor Guzman en rojo premium",
+  "description": "Lanzamiento: Nuevo módulo de asignaciones diarias y reportes dinámicos de RRHH",
   "changelog": [
-    "Calendario: Planes Victor Guzman en rojo premium"
+    "Lanzamiento: Nuevo módulo de asignaciones diarias y reportes dinámicos de RRHH"
   ],
   "forceUpdate": false
 }

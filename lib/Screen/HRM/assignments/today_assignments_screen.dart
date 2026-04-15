@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -386,7 +387,7 @@ class _AssignmentCardState extends State<_AssignmentCard> {
                   const DropdownMenuItem(value: null, child: Text('No Asignado', style: TextStyle(color: Colors.grey))),
                   ...items.map((e) => DropdownMenuItem(
                         value: e.id.toString(),
-                        child: Text('${e.firstName} ${e.lastName}'),
+                        child: Text('${e.name} ${e.lastName}'),
                       )),
                 ],
                 onChanged: onChanged,
