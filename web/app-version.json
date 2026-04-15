@@ -1,11 +1,11 @@
 {
-  "version": "2.1.420",
-  "build": "20260412-1405",
-  "releaseDate": "2026-04-12",
+  "version": "2.1.421",
+  "build": "20260415-1751",
+  "releaseDate": "2026-04-15",
   "environment": "production",
-  "description": "Módulo HR: Aumento de sueldo e historial",
+  "description": "Calendario: Planes Victor Guzman en rojo premium",
   "changelog": [
-    "Módulo HR: Aumento de sueldo e historial"
+    "Calendario: Planes Victor Guzman en rojo premium"
   ],
   "forceUpdate": false
 }
