@@ -761,6 +761,18 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.cake_rounded,
         ),
         SidebarSubmenuModel(
+          name: 'Asignación Diaria',
+          type: "assignments",
+          navigationPath: '/hrm/today-assignments',
+          materialIcon: Icons.assignment_ind_rounded,
+        ),
+        SidebarSubmenuModel(
+          name: 'KPIs Eficiencia',
+          type: "efficiency",
+          navigationPath: '/hrm/efficiency-reports',
+          materialIcon: Icons.insert_chart_outlined,
+        ),
+        SidebarSubmenuModel(
           name: 'Rentabilidad',
           type: "rentability",
           navigationPath: '/hrm/rentability',

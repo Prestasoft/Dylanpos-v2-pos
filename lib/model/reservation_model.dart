@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ReservationModel {
   final String id;
   final String serviceId;
@@ -27,6 +29,25 @@ class ReservationModel {
   final List<Map<String, dynamic>> dressesData;
   final int rescheduleCount;
   final String? sessionType;
+
+  ReservationAssignments get assignments {
+    if (nota == null || !nota!.contains('|||{')) {
+      return ReservationAssignments.empty();
+    }
+    try {
+      final jsonStr = nota!.split('|||')[1].trim();
+      final map = jsonDecode(jsonStr);
+      return ReservationAssignments.fromJson(map);
+    } catch (_) {
+      return ReservationAssignments.empty();
+    }
+  }
+
+  String get cleanNota {
+    if (nota == null) return '';
+    if (!nota!.contains('|||{')) return nota!;
+    return nota!.split('|||')[0].trim();
+  }
 
   ReservationModel({
     String? id,
@@ -205,6 +226,50 @@ class ReservationModel {
       'fiesta_date': fiestaDate,
       'fiesta_time': fiestaTime,
       'reschedule_count': rescheduleCount,
+    };
+  }
+}
+
+class ReservationAssignments {
+  final String? fotografoId;
+  final String? maquillistaId;
+  final String? editorId;
+  final String? bookedById;
+  final String? contactChannel;
+  final String? socialNetwork;
+
+  ReservationAssignments({
+    this.fotografoId,
+    this.maquillistaId,
+    this.editorId,
+    this.bookedById,
+    this.contactChannel,
+    this.socialNetwork,
+  });
+
+  factory ReservationAssignments.empty() {
+    return ReservationAssignments();
+  }
+
+  factory ReservationAssignments.fromJson(Map<String, dynamic> json) {
+    return ReservationAssignments(
+      fotografoId: json['f'],
+      maquillistaId: json['m'],
+      editorId: json['e'],
+      bookedById: json['b'],
+      contactChannel: json['c'],
+      socialNetwork: json['s'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (fotografoId != null) 'f': fotografoId,
+      if (maquillistaId != null) 'm': maquillistaId,
+      if (editorId != null) 'e': editorId,
+      if (bookedById != null) 'b': bookedById,
+      if (contactChannel != null) 'c': contactChannel,
+      if (socialNetwork != null) 's': socialNetwork,
     };
   }
 }

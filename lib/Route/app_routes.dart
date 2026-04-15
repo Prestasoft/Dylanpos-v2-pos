@@ -59,6 +59,8 @@ import '../Screen/HRM/birthdays/employee_birthdays_screen.dart';
 import '../Screen/HRM/Rentability/rentability_dashboard.dart';
 import '../Screen/HRM/Rentability/pending_invoices_screen.dart';
 import '../Screen/HRM/hrm_dashboard.dart';
+import '../Screen/HRM/assignments/today_assignments_screen.dart';
+import '../Screen/HRM/assignments/efficiency_reports_screen.dart';
 import '../Screen/Home/home_screen.dart';
 import '../Screen/Income/income_Edit.dart';
 import '../Screen/Income/income_list.dart';
@@ -1054,6 +1056,22 @@ abstract class AcnooAppRoutes {
                 path: 'birthdays',
                 pageBuilder: (context, state) => const NoTransitionPage<void>(
                   child: EmployeeBirthdaysScreen(),
+                ),
+              ),
+
+              ///---------------------Assignments Route------------------
+              GoRoute(
+                path: 'today-assignments',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: TodayAssignmentsScreen(),
+                ),
+              ),
+
+              ///---------------------Efficiency Reports Route------------------
+              GoRoute(
+                path: 'efficiency-reports',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: EfficiencyReportsScreen(),
                 ),
               ),
 
