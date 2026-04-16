@@ -767,6 +767,12 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.assignment_ind_rounded,
         ),
         SidebarSubmenuModel(
+          name: 'Mi Equipo',
+          type: "department_head",
+          navigationPath: '/hrm/department-status',
+          materialIcon: Icons.groups_rounded,
+        ),
+        SidebarSubmenuModel(
           name: 'KPIs Eficiencia',
           type: "hrm",
           navigationPath: '/hrm/efficiency-reports',

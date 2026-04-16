@@ -61,6 +61,7 @@ import '../Screen/HRM/Rentability/pending_invoices_screen.dart';
 import '../Screen/HRM/hrm_dashboard.dart';
 import '../Screen/HRM/assignments/today_assignments_screen.dart';
 import '../Screen/HRM/assignments/efficiency_reports_screen.dart';
+import '../Screen/HRM/assignments/department_status_screen.dart';
 import '../Screen/Home/home_screen.dart';
 import '../Screen/Income/income_Edit.dart';
 import '../Screen/Income/income_list.dart';
@@ -1064,6 +1065,14 @@ abstract class AcnooAppRoutes {
                 path: 'today-assignments',
                 pageBuilder: (context, state) => const NoTransitionPage<void>(
                   child: TodayAssignmentsScreen(),
+                ),
+              ),
+
+              ///---------------------Department Status Route------------------
+              GoRoute(
+                path: 'department-status',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: DepartmentStatusScreen(),
                 ),
               ),
 
