@@ -6,6 +6,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/currency.dart';
 
 import '../../../Provider/reservation_provider.dart';
+import '../../../Provider/servicePackagesProvider.dart';
 import '../../../model/reservation_model.dart';
 import '../../../services/api_service.dart';
 import '../employees/model/employee_model.dart';
@@ -74,10 +75,67 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     }
   }
 
+  DateTime? _parseDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  List<ReservationModel> _getReservationsForDay(List<ReservationModel> allReservations, DateTime targetDay, List<dynamic>? packages) {
+    List<ReservationModel> result = [];
+    final targetDateKey = DateTime(targetDay.year, targetDay.month, targetDay.day);
+    
+    String? packageRentaId;
+    if (packages != null) {
+      for (var pkg in packages) {
+         if (pkg.name.toString().toLowerCase().contains('renta')) {
+             packageRentaId = pkg.id;
+             break;
+         }
+      }
+    }
+
+    Set<String> seenIds = {};
+    void tryAdd(ReservationModel res, DateTime key) {
+        if (key == targetDateKey && !seenIds.contains(res.id)) {
+            result.add(res);
+            seenIds.add(res.id);
+        }
+    }
+
+    for (var reservation in allReservations) {
+      if (reservation.estado == 'cancelado') continue;
+      final date = _parseDate(reservation.reservationDate);
+      final fiestaDate = _parseDate(reservation.fiestaDate ?? '');
+      
+      bool isRenta = false;
+      if (packageRentaId != null && reservation.serviceId == packageRentaId) isRenta = true;
+      if (reservation.serviceName != null && reservation.serviceName!.toLowerCase().contains('renta')) isRenta = true;
+
+      if (date != null) {
+        if (isRenta) {
+          for (int i = -1; i <= 1; i++) {
+            DateTime rentDate = date.add(Duration(days: i));
+            tryAdd(reservation, DateTime(rentDate.year, rentDate.month, rentDate.day));
+          }
+        } else {
+          tryAdd(reservation, DateTime(date.year, date.month, date.day));
+        }
+      }
+      if (fiestaDate != null) {
+        tryAdd(reservation, DateTime(fiestaDate.year, fiestaDate.month, fiestaDate.day));
+      }
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    final reservationsAsync = ref.watch(reservationsByDateProvider(dateStr));
+    final reservationsAsync = ref.watch(reservationsProvider);
+    final packagesAsync = ref.watch(servicePackagesProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -108,8 +166,11 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
           : reservationsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, s) => Center(child: Text('Error: $e')),
-              data: (reservations) {
-                if (reservations.isEmpty) {
+              data: (allReservations) {
+                final packagesList = packagesAsync.asData?.value;
+                final activeReservations = _getReservationsForDay(allReservations, _selectedDate, packagesList);
+
+                if (activeReservations.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -122,9 +183,6 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                     ),
                   );
                 }
-
-                // Filtrar cancelados
-                final activeReservations = reservations.where((r) => r.estado != 'cancelado').toList();
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),

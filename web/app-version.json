@@ -1,11 +1,11 @@
 {
-  "version": "2.1.423",
-  "build": "20260415-1957",
+  "version": "2.1.424",
+  "build": "20260415-2019",
   "releaseDate": "2026-04-15",
   "environment": "production",
-  "description": "Hotfix: despliegue funcional con modulo HRM",
+  "description": "Hotfix: Corrigiendo ocultamiento por permisos de rol en menus",
   "changelog": [
-    "Hotfix: despliegue funcional con modulo HRM"
+    "Hotfix: Corrigiendo ocultamiento por permisos de rol en menus"
   ],
   "forceUpdate": false
 }
