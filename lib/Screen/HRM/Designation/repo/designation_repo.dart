@@ -58,6 +58,11 @@ class DesignationRepository {
       final updateData = {
         'designation': designation.designation,
         'designationDescription': designation.designationDescription,
+        'manager_user_id': designation.managerUserId,
+        'sla_days': designation.slaDays,
+        'sla_hours': designation.slaHours,
+        'sla_minutes': designation.slaMinutes,
+        'color_hex': designation.colorHex,
       };
 
       final response = await _apiService.put('hrm/designations/${designation.id}', updateData);
