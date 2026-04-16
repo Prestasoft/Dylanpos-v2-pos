@@ -137,8 +137,10 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     final reservationsAsync = ref.watch(reservationsProvider);
     final packagesAsync = ref.watch(servicePackagesProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Asignación de Personal y Captación', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
@@ -160,6 +162,15 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
             },
           ),
         ],
+        bottom: const TabBar(
+          labelColor: Colors.deepPurple,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.deepPurple,
+          tabs: [
+            Tab(text: '⏳ Pendientes'),
+            Tab(text: '✅ Asignados'),
+          ],
+        ),
       ),
       body: _isLoadingEmployees
           ? const Center(child: CircularProgressIndicator())
@@ -184,20 +195,50 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: activeReservations.length,
-                  itemBuilder: (context, index) {
-                    final reservation = activeReservations[index];
-                    return _AssignmentCard(
-                      reservation: reservation,
-                      employees: _employees,
-                      onUpdate: (assignments) => _updateAssignment(reservation, assignments),
-                    );
-                  },
+                bool isAssigned(ReservationModel r) {
+                   final assign = r.assignments;
+                   return assign.fotografoId != null || assign.maquillistaId != null || assign.editorId != null || assign.bookedById != null;
+                }
+
+                final pendingList = activeReservations.where((r) => !isAssigned(r)).toList();
+                final assignedList = activeReservations.where((r) => isAssigned(r)).toList();
+
+                return TabBarView(
+                  children: [
+                    _buildList(pendingList, 'No hay reservaciones pendientes'),
+                    _buildList(assignedList, 'No hay reservaciones con personal asignado'),
+                  ],
                 );
               },
             ),
+      ),
+    );
+  }
+
+  Widget _buildList(List<ReservationModel> list, String emptyMessage) {
+    if (list.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(emptyMessage, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        final reservation = list[index];
+        return _AssignmentCard(
+          reservation: reservation,
+          employees: _employees,
+          onUpdate: (assignments) => _updateAssignment(reservation, assignments),
+        );
+      },
     );
   }
 }

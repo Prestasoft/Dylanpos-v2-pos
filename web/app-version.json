@@ -1,11 +1,11 @@
 {
-  "version": "2.1.424",
-  "build": "20260415-2019",
+  "version": "2.1.425",
+  "build": "20260415-2033",
   "releaseDate": "2026-04-15",
   "environment": "production",
-  "description": "Hotfix: Corrigiendo ocultamiento por permisos de rol en menus",
+  "description": "Hotfix: Sincronizando lógica de reservas para mostrar múltiples eventos en un día",
   "changelog": [
-    "Hotfix: Corrigiendo ocultamiento por permisos de rol en menus"
+    "Hotfix: Sincronizando lógica de reservas para mostrar múltiples eventos en un día"
   ],
   "forceUpdate": false
 }
