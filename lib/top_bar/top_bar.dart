@@ -86,6 +86,73 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
         type: 'dashboard'); // Acceso básico al perfil
   }
 
+  bool _hasDepartmentHeadPermission() {
+    if (!isSubUser) return false;
+    return checkUserRoleViewPermissionV2(type: 'department_head');
+  }
+
+  int? _cachedOverdueCount;
+  DateTime? _lastOverdueCheck;
+
+  Widget _buildOverdueTasksBadge(bool isMobile) {
+    // Refrescar count cada 60s como máximo
+    final now = DateTime.now();
+    if (_lastOverdueCheck == null || now.difference(_lastOverdueCheck!) > const Duration(seconds: 60)) {
+      _lastOverdueCheck = now;
+      _apiService.get('hrm/tasks/department-status').then((resp) {
+        if (resp.success && resp.data != null) {
+          final totals = resp.data['totals'] as Map<String, dynamic>? ?? {};
+          final count = _parseOverdueInt(totals['total_vencidas']);
+          if (mounted && count != _cachedOverdueCount) {
+            setState(() => _cachedOverdueCount = count);
+          }
+        }
+      }).catchError((_) {});
+    }
+
+    final count = _cachedOverdueCount ?? 0;
+    if (count <= 0) return const SizedBox.shrink();
+
+    return Tooltip(
+      message: '$count tarea${count == 1 ? '' : 's'} vencida${count == 1 ? '' : 's'} en tu equipo',
+      child: InkWell(
+        onTap: () => context.go('/hrm/department-status'),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                '$count',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  int _parseOverdueInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
+  }
+
   // Función para obtener la lista de ventas del día y el total de gastos
   Future<Map<String, dynamic>> _getTodaysSalesData() async {
     final userId = await getUserID();
@@ -1042,6 +1109,13 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                   ),
                   error: (error, stack) => const SizedBox.shrink(),
                 ),
+              // ══════════════════════════════════════════════════════════════════
+              // BADGE TAREAS ATRASADAS - Solo visible si el user es encargado
+              // ══════════════════════════════════════════════════════════════════
+              if (_hasDepartmentHeadPermission()) ...[
+                const SizedBox(width: 6),
+                _buildOverdueTasksBadge(isMobile),
+              ],
               // ══════════════════════════════════════════════════════════════════
               // DROPDOWN VESTIMENTAS - Solo visible en desktop (>= 700px)
               // ══════════════════════════════════════════════════════════════════

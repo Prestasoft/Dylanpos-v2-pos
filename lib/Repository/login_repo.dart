@@ -31,6 +31,10 @@ class LogInRepo extends ChangeNotifier {
     if (isDressOperator()) {
       return dressOperatorHomePath;
     }
+    final role = _apiService.currentUser?['role']?.toString() ?? '';
+    if (role == 'employee') {
+      return '/my-tasks';
+    }
     return '/blank-home';
   }
 
