@@ -57,7 +57,7 @@ class DesignationRepository {
 
       final updateData = {
         'designation': designation.designation,
-        'designationDescription': designation.designationDescription,
+        'designation_description': designation.designationDescription,
         'manager_user_id': designation.managerUserId,
         'sla_days': designation.slaDays,
         'sla_hours': designation.slaHours,

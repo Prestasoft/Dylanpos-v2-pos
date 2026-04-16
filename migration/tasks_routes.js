@@ -56,9 +56,13 @@ async function computeDueAt(db, branchId, designationId, assignedAt = null) {
     throw new Error(`Designación ${designationId} no encontrada`);
   }
   const sla = result.rows[0];
-  const base = assignedAt ? `'${assignedAt}'::timestamp` : 'CURRENT_TIMESTAMP';
-  const sqlInterval = `INTERVAL '${sla.sla_days || 0} days ${sla.sla_hours || 0} hours ${sla.sla_minutes || 0} minutes'`;
-  const dueResult = await db.query(`SELECT (${base} + ${sqlInterval}) AS due_at`);
+  const days = parseInt(sla.sla_days) || 0;
+  const hours = parseInt(sla.sla_hours) || 0;
+  const minutes = parseInt(sla.sla_minutes) || 0;
+  const base = assignedAt ? `$1::timestamp` : 'CURRENT_TIMESTAMP';
+  const sqlInterval = `INTERVAL '${days} days ${hours} hours ${minutes} minutes'`;
+  const params = assignedAt ? [assignedAt] : [];
+  const dueResult = await db.query(`SELECT (${base} + ${sqlInterval}) AS due_at`, params);
   return {
     due_at: dueResult.rows[0].due_at,
     sla_days: sla.sla_days,
@@ -165,8 +169,8 @@ router.get('/tasks/my', authenticateToken, async (req, res) => {
        LEFT JOIN ${tbl(branchId, 'reservations')} r ON r.id = t.reservation_id
        WHERE t.assigned_to_user_id = $1
          AND t.branch_id = $2
-         AND t.status IN ('pendiente','en_progreso','vencida',
-            CASE WHEN t.completed_at::date = CURRENT_DATE THEN 'completada' ELSE NULL END)
+         AND (t.status IN ('pendiente','en_progreso','vencida')
+           OR (t.status = 'completada' AND t.completed_at::date = CURRENT_DATE))
        ORDER BY
          CASE t.status
            WHEN 'vencida' THEN 0

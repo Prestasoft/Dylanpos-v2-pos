@@ -60,6 +60,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
   }
 
   void _updateState() {
+    if (!mounted) return;
     final now = DateTime.now();
     final newRemaining = widget.task.timeRemaining(now);
     final newProgress = widget.task.progress(now);
@@ -70,12 +71,10 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
       _configureAnimation();
     }
 
-    if (mounted) {
-      setState(() {
-        _remaining = newRemaining;
-        _progress = newProgress;
-      });
-    }
+    setState(() {
+      _remaining = newRemaining;
+      _progress = newProgress;
+    });
   }
 
   void _configureAnimation() {

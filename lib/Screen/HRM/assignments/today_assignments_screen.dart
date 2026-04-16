@@ -152,20 +152,18 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       final designationId = _designationIdForKeywords(p.keywords);
       if (designationId == null) continue; // sin designación que coincida
 
-      final existing = tasksForReservation
+      final existingList = tasksForReservation
           .where((t) => t.designationId == designationId)
-          .cast<dynamic>()
-          .firstOrNull;
+          .toList();
+      final existing = existingList.isNotEmpty ? existingList.first : null;
 
       final employeeId = p.employeeId;
-      final employee = employeeId == null
-          ? null
-          : _employees.firstWhere(
-              (e) => e.id.toString() == employeeId,
-              orElse: () => _employees.isEmpty
-                  ? throw StateError('no-employee-match')
-                  : _employees.first,
-            );
+      EmployeeModel? employee;
+      if (employeeId != null && _employees.isNotEmpty) {
+        employee = _employees
+            .where((e) => e.id.toString() == employeeId)
+            .firstOrNull;
+      }
       final assignedToUserId = employee?.userId;
 
       try {

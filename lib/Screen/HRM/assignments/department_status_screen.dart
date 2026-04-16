@@ -27,8 +27,10 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
   @override
   void initState() {
     super.initState();
-    _loadScope().then((_) => _loadData());
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadData());
+    _loadScope().then((_) {
+      _loadData();
+      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadData());
+    });
   }
 
   @override
