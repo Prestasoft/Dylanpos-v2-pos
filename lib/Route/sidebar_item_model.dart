@@ -767,6 +767,12 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.assignment_ind_rounded,
         ),
         SidebarSubmenuModel(
+          name: 'Mis Tareas',
+          type: "my_tasks",
+          navigationPath: '/my-tasks',
+          materialIcon: Icons.task_alt_rounded,
+        ),
+        SidebarSubmenuModel(
           name: 'Mi Equipo',
           type: "department_head",
           navigationPath: '/hrm/department-status',

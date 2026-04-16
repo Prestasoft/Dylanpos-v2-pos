@@ -62,6 +62,7 @@ import '../Screen/HRM/hrm_dashboard.dart';
 import '../Screen/HRM/assignments/today_assignments_screen.dart';
 import '../Screen/HRM/assignments/efficiency_reports_screen.dart';
 import '../Screen/HRM/assignments/department_status_screen.dart';
+import '../Screen/HRM/assignments/my_tasks_screen.dart';
 import '../Screen/Home/home_screen.dart';
 import '../Screen/Income/income_Edit.dart';
 import '../Screen/Income/income_list.dart';
@@ -217,6 +218,17 @@ abstract class AcnooAppRoutes {
       // Si está autenticado y está en la página de login, redirigir a dashboard
       if (isAuthenticated && state.matchedLocation == '/') {
         return '/dashboard';
+      }
+
+      // PROTECCIÓN: Usuarios employee solo ven /my-tasks
+      if (isAuthenticated) {
+        final role = ApiService().currentUser?['role']?.toString() ?? '';
+        if (role == 'employee') {
+          final currentPath = state.matchedLocation;
+          if (!currentPath.startsWith('/my-tasks')) {
+            return '/my-tasks';
+          }
+        }
       }
 
       // PROTECCIÓN: Usuarios dress_operator solo pueden acceder a rutas específicas
@@ -1117,6 +1129,15 @@ abstract class AcnooAppRoutes {
         path: '/dress-operator-home',
         pageBuilder: (context, state) => const NoTransitionPage<void>(
           child: DressOperatorHomeScreen(),
+        ),
+      ),
+
+      // Pantalla "Mis Tareas" para empleados con rol employee
+      // FUERA del ShellRoute para UI simplificada sin sidebar
+      GoRoute(
+        path: '/my-tasks',
+        pageBuilder: (context, state) => const NoTransitionPage<void>(
+          child: MyTasksScreen(),
         ),
       ),
       /// Ruta para selector de sucursal (multi-tenant)
