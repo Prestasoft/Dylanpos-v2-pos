@@ -31,7 +31,7 @@ class EmployeeCredentialsService {
   /// o `CreateCredentialsResult.failure(reason)` si falló en algún paso.
   Future<CreateCredentialsResult> createCredentials({
     required EmployeeModel employee,
-    required String email,
+    required String username,
     required String password,
     required bool isDepartmentHead,
     required String branchId,
@@ -42,14 +42,14 @@ class EmployeeCredentialsService {
       final permissionsObject = _toPermissionsObject(permissions);
 
       final registerBody = {
-        'email': email,
+        'email': username,
+        'username': username,
         'password': password,
         'name': employee.fullName,
         'role': isDepartmentHead ? 'department_head' : 'employee',
         'branch_id': branchId,
         'allowed_branches': [branchId],
         'permissions': permissionsObject,
-        // Campos del sistema de tareas:
         'scoped_designation_id': employee.designationId,
         'linked_employee_id': employee.id?.toString(),
       };
