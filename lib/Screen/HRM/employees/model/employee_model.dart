@@ -54,6 +54,10 @@ class EmployeeModel {
   late final int vacationDaysAccrued; // Días de vacaciones acumulados
   late final int vacationDaysTaken; // Días de vacaciones tomados
 
+  // Acceso al sistema (sistema de tareas por departamento)
+  String? userId; // User ID asociado si el empleado tiene credenciales
+  bool canLogin; // TRUE si tiene credenciales activas
+
   EmployeeModel({
     required this.id,
     required this.name,
@@ -97,6 +101,8 @@ class EmployeeModel {
     this.notes,
     this.vacationDaysAccrued = 0,
     this.vacationDaysTaken = 0,
+    this.userId,
+    this.canLogin = false,
   });
 
   /// Nombre completo del empleado
@@ -244,6 +250,8 @@ class EmployeeModel {
       notes: json['notes'] as String?,
       vacationDaysAccrued: parseIntValue(json['vacation_days_accrued'] ?? json['vacationDaysAccrued'], 0),
       vacationDaysTaken: parseIntValue(json['vacation_days_taken'] ?? json['vacationDaysTaken'], 0),
+      userId: (json['user_id'] ?? json['userId'])?.toString(),
+      canLogin: (json['can_login'] ?? json['canLogin']) == true,
     );
   }
 
@@ -294,6 +302,8 @@ class EmployeeModel {
       'notes': notes,
       'vacation_days_accrued': vacationDaysAccrued,
       'vacation_days_taken': vacationDaysTaken,
+      'user_id': userId,
+      'can_login': canLogin,
     };
   }
 }

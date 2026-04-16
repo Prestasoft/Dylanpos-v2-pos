@@ -8,6 +8,8 @@ import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_salary_tab.
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_contact_tab.dart';
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_history_tab.dart';
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_photo_widget.dart';
+import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_credentials_dialog.dart';
+import 'package:salespro_admin/Screen/HRM/employees/services/employee_credentials_service.dart';
 import 'package:salespro_admin/Screen/HRM/employees/add_employee.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/repo/designation_repo.dart';
 import 'package:salespro_admin/Screen/HRM/employees/repo/employee_repo.dart';
@@ -80,6 +82,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
           ],
         ),
         actions: [
+          // Botón de credenciales de acceso
+          _buildCredentialsButton(),
+          const SizedBox(width: 4),
           // Botón de editar
           IconButton(
             icon: const Icon(Icons.edit),
@@ -341,6 +346,70 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
         ),
       ],
     );
+  }
+
+  Widget _buildCredentialsButton() {
+    final hasAccess = widget.employee.canLogin;
+    return Tooltip(
+      message: hasAccess ? 'Revocar acceso' : 'Crear credenciales de acceso',
+      child: IconButton(
+        icon: Icon(
+          hasAccess ? Icons.lock_open : Icons.vpn_key,
+          color: hasAccess ? Colors.green : Colors.indigo,
+        ),
+        onPressed: hasAccess ? _revokeAccess : _openCredentialsDialog,
+      ),
+    );
+  }
+
+  Future<void> _openCredentialsDialog() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => EmployeeCredentialsDialog(employee: widget.employee),
+    );
+    if (ok == true && mounted) {
+      setState(() {}); // refresca el ícono (candado → abierto)
+    }
+  }
+
+  Future<void> _revokeAccess() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Revocar acceso'),
+        content: Text(
+          '¿Confirmas revocar el acceso de ${widget.employee.fullName}? '
+          'El empleado no podrá iniciar sesión hasta que se vuelva a habilitar.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Revocar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final result = await EmployeeCredentialsService()
+        .revokeAccess(employee: widget.employee);
+    if (!mounted) return;
+    if (result.ok) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Acceso revocado')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.errorMessage ?? 'Error')),
+      );
+    }
   }
 
   void _openEditDialog(BuildContext context) async {
