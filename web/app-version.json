@@ -1,11 +1,11 @@
 {
-  "version": "2.1.422",
-  "build": "20260415-1955",
+  "version": "2.1.423",
+  "build": "20260415-1957",
   "releaseDate": "2026-04-15",
   "environment": "production",
-  "description": "Lanzamiento: Nuevo módulo de asignaciones diarias y reportes dinámicos de RRHH",
+  "description": "Hotfix: despliegue funcional con modulo HRM",
   "changelog": [
-    "Lanzamiento: Nuevo módulo de asignaciones diarias y reportes dinámicos de RRHH"
+    "Hotfix: despliegue funcional con modulo HRM"
   ],
   "forceUpdate": false
 }

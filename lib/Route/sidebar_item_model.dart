@@ -762,13 +762,13 @@ List<SidebarItemModel> get topMenus {
         ),
         SidebarSubmenuModel(
           name: 'Asignación Diaria',
-          type: "assignments",
+          type: "hrm",
           navigationPath: '/hrm/today-assignments',
           materialIcon: Icons.assignment_ind_rounded,
         ),
         SidebarSubmenuModel(
           name: 'KPIs Eficiencia',
-          type: "efficiency",
+          type: "hrm",
           navigationPath: '/hrm/efficiency-reports',
           materialIcon: Icons.insert_chart_outlined,
         ),
