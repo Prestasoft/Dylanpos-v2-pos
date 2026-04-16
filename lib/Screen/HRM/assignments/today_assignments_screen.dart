@@ -466,15 +466,38 @@ class _AssignmentCardState extends State<_AssignmentCard> {
     }).toList();
   }
 
-  /// Si el user está scoped a un cargo, solo muestra el dropdown que matchea
-  /// con las keywords del cargo (fotograf, maquillaj, edici, ventas, etc.).
-  /// Sin scope: muestra todos los dropdowns.
-  bool _shouldShowRole(String keywords) {
-    final scopedName = widget.scopedDesignationName;
-    if (scopedName == null) return true;
-    final scoped = scopedName.toLowerCase();
-    final parts = keywords.toLowerCase().split(',').map((s) => s.trim());
-    return parts.any((k) => k.isNotEmpty && scoped.contains(k));
+  /// Detecta a cuál de los 4 campos de ReservationAssignments corresponde
+  /// el cargo del encargado, basándose en el nombre de la designación.
+  /// Retorna 'fotografo', 'maquillista', 'editor' o 'vendedor'.
+  String _detectRoleSlot() {
+    final name = (widget.scopedDesignationName ?? '').toLowerCase();
+    if (name.contains('foto') || name.contains('photo') || name.contains('camer')) return 'fotografo';
+    if (name.contains('maquil') || name.contains('makeup') || name.contains('belleza')) return 'maquillista';
+    if (name.contains('edic') || name.contains('editor') || name.contains('post')) return 'editor';
+    return 'vendedor';
+  }
+
+  /// Lee el valor actual del slot que corresponde al cargo del encargado.
+  String? _getScopedValue() {
+    switch (_detectRoleSlot()) {
+      case 'fotografo': return fotografoId;
+      case 'maquillista': return maquillistaId;
+      case 'editor': return editorId;
+      case 'vendedor': return bookedById;
+      default: return null;
+    }
+  }
+
+  /// Setea el valor del slot que corresponde al cargo del encargado.
+  void _setScopedValue(String? val) {
+    setState(() {
+      switch (_detectRoleSlot()) {
+        case 'fotografo': fotografoId = val; break;
+        case 'maquillista': maquillistaId = val; break;
+        case 'editor': editorId = val; break;
+        case 'vendedor': bookedById = val; break;
+      }
+    });
   }
 
   @override
@@ -527,10 +550,28 @@ class _AssignmentCardState extends State<_AssignmentCard> {
             ),
             const Divider(height: 32),
 
-            // Selectores de Personal
-            Text('STAFF OPERATIVO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
-            const SizedBox(height: 8),
-            if (_shouldShowRole('fotograf,photo'))
+            // Si el user es encargado de un cargo específico, solo muestra
+            // UN dropdown con su cargo y sus empleados. Sin scope = vista admin completa.
+            if (widget.scopedDesignationName != null) ...[
+              Text(
+                widget.scopedDesignationName!.toUpperCase(),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500]),
+              ),
+              const SizedBox(height: 8),
+              _buildDropdown(
+                label: 'Asignar ${widget.scopedDesignationName}',
+                icon: Icons.assignment_ind,
+                value: _getScopedValue(),
+                items: widget.employees,
+                onChanged: (val) {
+                  _setScopedValue(val);
+                  _triggerUpdate();
+                },
+              ),
+            ] else ...[
+              // Vista admin: todos los dropdowns
+              Text('STAFF OPERATIVO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+              const SizedBox(height: 8),
               _buildDropdown(
                 label: 'Fotógrafo Asignado',
                 icon: Icons.camera_alt,
@@ -541,8 +582,7 @@ class _AssignmentCardState extends State<_AssignmentCard> {
                   _triggerUpdate();
                 },
               ),
-            if (_shouldShowRole('fotograf,photo')) const SizedBox(height: 12),
-            if (_shouldShowRole('maquillaj,makeup,belleza'))
+              const SizedBox(height: 12),
               _buildDropdown(
                 label: 'Maquillista',
                 icon: Icons.face_retouching_natural,
@@ -553,8 +593,7 @@ class _AssignmentCardState extends State<_AssignmentCard> {
                   _triggerUpdate();
                 },
               ),
-            if (_shouldShowRole('maquillaj,makeup,belleza')) const SizedBox(height: 12),
-            if (_shouldShowRole('edici,editor'))
+              const SizedBox(height: 12),
               _buildDropdown(
                 label: 'Editor',
                 icon: Icons.edit,
@@ -565,8 +604,6 @@ class _AssignmentCardState extends State<_AssignmentCard> {
                   _triggerUpdate();
                 },
               ),
-
-            if (_shouldShowRole('ventas,recepcion,vendedor')) ...[
               const SizedBox(height: 24),
               Text('ORIGEN Y CAPTACIÓN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
               const SizedBox(height: 8),
