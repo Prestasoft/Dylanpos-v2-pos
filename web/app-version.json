@@ -1,11 +1,11 @@
 {
-  "version": "2.1.425",
-  "build": "20260415-2033",
+  "version": "2.1.426",
+  "build": "20260415-2134",
   "releaseDate": "2026-04-15",
   "environment": "production",
-  "description": "Hotfix: Sincronizando lógica de reservas para mostrar múltiples eventos en un día",
+  "description": "Hotfix: Añadir pestañas Pendientes y Asignados a la pantalla de Asignaciones",
   "changelog": [
-    "Hotfix: Sincronizando lógica de reservas para mostrar múltiples eventos en un día"
+    "Hotfix: Añadir pestañas Pendientes y Asignados a la pantalla de Asignaciones"
   ],
   "forceUpdate": false
 }
