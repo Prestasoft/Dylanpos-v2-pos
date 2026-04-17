@@ -106,7 +106,6 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0.5,
         title: Column(

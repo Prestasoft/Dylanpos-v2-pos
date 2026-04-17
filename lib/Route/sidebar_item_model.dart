@@ -791,12 +791,12 @@ List<SidebarItemModel> get topMenus {
       sectionColor: const Color(0xFF6366F1),
       sidebarItemType: SidebarItemType.submenu,
       type: "my_tasks",
-      navigationPath: '/my-tasks',
+      navigationPath: '/hrm/my-tasks',
       submenus: [
         SidebarSubmenuModel(
           name: 'Mis Tareas',
           type: "my_tasks",
-          navigationPath: '/my-tasks',
+          navigationPath: '/hrm/my-tasks',
           materialIcon: Icons.task_alt_rounded,
         ),
         SidebarSubmenuModel(

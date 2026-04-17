@@ -33,7 +33,7 @@ class LogInRepo extends ChangeNotifier {
     }
     final role = _apiService.currentUser?['role']?.toString() ?? '';
     if (role == 'employee') {
-      return '/my-tasks';
+      return '/hrm/my-tasks';
     }
     return '/blank-home';
   }

@@ -225,8 +225,8 @@ abstract class AcnooAppRoutes {
         final role = ApiService().currentUser?['role']?.toString() ?? '';
         if (role == 'employee') {
           final currentPath = state.matchedLocation;
-          if (!currentPath.startsWith('/my-tasks')) {
-            return '/my-tasks';
+          if (!currentPath.startsWith('/hrm/my-tasks')) {
+            return '/hrm/my-tasks';
           }
         }
       }
@@ -1080,6 +1080,14 @@ abstract class AcnooAppRoutes {
                 ),
               ),
 
+              ///---------------------My Tasks Route------------------
+              GoRoute(
+                path: 'my-tasks',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: MyTasksScreen(),
+                ),
+              ),
+
               ///---------------------Department Status Route------------------
               GoRoute(
                 path: 'department-status',
@@ -1132,14 +1140,7 @@ abstract class AcnooAppRoutes {
         ),
       ),
 
-      // Pantalla "Mis Tareas" para empleados con rol employee
-      // FUERA del ShellRoute para UI simplificada sin sidebar
-      GoRoute(
-        path: '/my-tasks',
-        pageBuilder: (context, state) => const NoTransitionPage<void>(
-          child: MyTasksScreen(),
-        ),
-      ),
+      // /my-tasks ahora está DENTRO del ShellRoute en /hrm/my-tasks
       /// Ruta para selector de sucursal (multi-tenant)
       GoRoute(
         path: TenantSelectorScreen.route,
