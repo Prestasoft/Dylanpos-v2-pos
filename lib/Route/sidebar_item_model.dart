@@ -811,12 +811,6 @@ List<SidebarItemModel> get topMenus {
           navigationPath: '/hrm/today-assignments',
           materialIcon: Icons.assignment_ind_rounded,
         ),
-        SidebarSubmenuModel(
-          name: 'KPIs Eficiencia',
-          type: "department_head",
-          navigationPath: '/hrm/efficiency-reports',
-          materialIcon: Icons.insert_chart_outlined,
-        ),
       ],
     ),
 
