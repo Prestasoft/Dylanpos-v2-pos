@@ -13,6 +13,7 @@ class TaskModel {
   final String? customerName;
   final String? customerPhone;
   final String? serviceName;
+  final String? assignedByName;
 
   final String? assignedToUserId;
   final String? assignedToEmployeeId;
@@ -38,6 +39,7 @@ class TaskModel {
     this.customerName,
     this.customerPhone,
     this.serviceName,
+    this.assignedByName,
     this.assignedToUserId,
     this.assignedToEmployeeId,
     this.assignedByUserId,
@@ -62,6 +64,7 @@ class TaskModel {
       customerName: json['customer_name']?.toString(),
       customerPhone: json['customer_phone']?.toString(),
       serviceName: json['service_name'] ?? json['package_type']?.toString(),
+      assignedByName: json['assigned_by_name']?.toString(),
       assignedToUserId: json['assigned_to_user_id']?.toString(),
       assignedToEmployeeId: json['assigned_to_employee_id']?.toString(),
       assignedByUserId: json['assigned_by_user_id']?.toString(),

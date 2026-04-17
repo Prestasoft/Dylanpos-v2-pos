@@ -204,6 +204,11 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
                             widget.serviceName!,
                             style: TextStyle(color: Colors.grey[600], fontSize: 12),
                           ),
+                        if (widget.task.assignedByName != null)
+                          Text(
+                            'Asignado por: ${widget.task.assignedByName}',
+                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                          ),
                       ],
                     ),
                   ),
