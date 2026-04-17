@@ -76,11 +76,9 @@ class _GlobalSideBarState extends ConsumerState<GlobalSideBar> {
 
   @override
   void initState() {
-    // Firebase Auth deshabilitado - Usar ApiService para verificar autenticación
-    final apiService = ApiService();
-    if (!apiService.isAuthenticated) {
-      Restart.restartApp();
-    }
+    // Auth check removido — el GoRouter redirect ya maneja autenticación.
+    // Restart.restartApp() aquí causaba cierres de sesión al navegar entre
+    // rutas porque initState del sidebar se re-ejecuta en cada cambio de ruta.
     checkSubscriptionData();
     getUserDataFromLocal();
     _configureAuditService();
