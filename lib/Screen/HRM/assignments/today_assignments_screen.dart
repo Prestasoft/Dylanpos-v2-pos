@@ -114,7 +114,11 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       }
 
       // 2) Sincronizar con la tabla tasks (sistema nuevo de SLA)
-      await _syncTasksFromAssignments(reservation, newAssignments);
+      try {
+        await _syncTasksFromAssignments(reservation, newAssignments);
+      } catch (e) {
+        debugPrint('⚠️ Error sincronizando tasks: $e');
+      }
 
       // 3) Refrescar el provider para que la UI se actualice
       // ignore: unused_result
