@@ -224,9 +224,12 @@ abstract class AcnooAppRoutes {
         return '/dashboard';
       }
 
-      // PROTECCIÓN: Usuarios employee solo ven /my-tasks
+      // PROTECCIÓN: Usuarios employee/department_head
       if (isAuthenticated) {
-        final role = ApiService().currentUser?['role']?.toString() ?? '';
+        // Leer role del user — ApiService es singleton, currentUser persiste en memoria
+        final apiRole = ApiService().currentUser?['role']?.toString() ?? '';
+        final modelRole = finalUserRoleModel.userRoleName?.toString() ?? '';
+        final role = apiRole.isNotEmpty ? apiRole : modelRole;
         if (role == 'employee') {
           final currentPath = state.matchedLocation;
           if (!currentPath.startsWith('/hrm/my-tasks')) {
