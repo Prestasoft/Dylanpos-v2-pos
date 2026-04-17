@@ -767,6 +767,33 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.assignment_ind_rounded,
         ),
         SidebarSubmenuModel(
+          name: 'KPIs Eficiencia',
+          type: "hrm",
+          navigationPath: '/hrm/efficiency-reports',
+          materialIcon: Icons.insert_chart_outlined,
+        ),
+        SidebarSubmenuModel(
+          name: 'Rentabilidad',
+          type: "rentability",
+          navigationPath: '/hrm/rentability',
+          materialIcon: Icons.analytics_rounded,
+        ),
+      ],
+    ),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SECCIÓN: MI PANEL (para empleados y encargados con tareas)
+    // ══════════════════════════════════════════════════════════════════════
+    SidebarItemModel(
+      name: 'Mi Panel',
+      iconPath: 'images/dashboard_icon/hrm.svg',
+      materialIcon: Icons.dashboard_customize_rounded,
+      sectionColor: const Color(0xFF6366F1),
+      sidebarItemType: SidebarItemType.submenu,
+      type: "my_tasks",
+      navigationPath: '/my-tasks',
+      submenus: [
+        SidebarSubmenuModel(
           name: 'Mis Tareas',
           type: "my_tasks",
           navigationPath: '/my-tasks',
@@ -779,16 +806,10 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.groups_rounded,
         ),
         SidebarSubmenuModel(
-          name: 'KPIs Eficiencia',
-          type: "hrm",
-          navigationPath: '/hrm/efficiency-reports',
-          materialIcon: Icons.insert_chart_outlined,
-        ),
-        SidebarSubmenuModel(
-          name: 'Rentabilidad',
-          type: "rentability",
-          navigationPath: '/hrm/rentability',
-          materialIcon: Icons.analytics_rounded,
+          name: 'Asignaciones',
+          type: "department_head",
+          navigationPath: '/hrm/today-assignments',
+          materialIcon: Icons.assignment_ind_rounded,
         ),
       ],
     ),

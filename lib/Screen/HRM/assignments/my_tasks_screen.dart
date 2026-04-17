@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:salespro_admin/Repository/task_repo.dart';
 import 'package:salespro_admin/model/task_model.dart';
@@ -105,6 +106,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0.5,
         title: Column(
@@ -120,11 +122,37 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black54),
+            tooltip: 'Refrescar',
             onPressed: () {
               setState(() => _loading = true);
               _loadTasks();
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Cerrar sesión',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Cerrar sesión'),
+                  content: const Text('¿Deseas salir del sistema?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('No')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Sí, salir'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true && mounted) {
+                context.go('/');
+              }
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: _loading

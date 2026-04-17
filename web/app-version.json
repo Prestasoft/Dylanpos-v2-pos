@@ -1,11 +1,11 @@
 {
-  "version": "2.1.426",
-  "build": "20260415-2134",
-  "releaseDate": "2026-04-15",
+  "version": "2.1.429",
+  "build": "20260416-1948",
+  "releaseDate": "2026-04-16",
   "environment": "production",
-  "description": "Hotfix: Añadir pestañas Pendientes y Asignados a la pantalla de Asignaciones",
+  "description": "Actualización a versión 2.1.429",
   "changelog": [
-    "Hotfix: Añadir pestañas Pendientes y Asignados a la pantalla de Asignaciones"
+    "Actualización a versión 2.1.429"
   ],
-  "forceUpdate": false
+  "forceUpdate": true
 }
