@@ -19,10 +19,10 @@ class EmployeeCredentialsService {
   ];
 
   /// Permisos del encargado (ve departamento + puede asignar)
+  /// NO incluye 'hrm' para que no aparezca "Recursos Humanos" en sidebar
   static const List<Map<String, dynamic>> _headPermissions = [
     {'type': 'department_head', 'view': true, 'edit': true, 'delete': false},
     {'type': 'my_tasks', 'view': true, 'edit': true, 'delete': false},
-    {'type': 'hrm', 'view': true, 'edit': false, 'delete': false},
   ];
 
   /// Crea credenciales para el empleado y vincula user_id + can_login en BD

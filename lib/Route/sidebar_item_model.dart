@@ -782,7 +782,7 @@ List<SidebarItemModel> get topMenus {
     ),
 
     // ══════════════════════════════════════════════════════════════════════
-    // SECCIÓN: MI PANEL (para empleados y encargados con tareas)
+    // SECCIÓN: MI PANEL (para empleados y encargados — sin título "RRHH")
     // ══════════════════════════════════════════════════════════════════════
     SidebarItemModel(
       name: 'Mi Panel',
@@ -810,6 +810,12 @@ List<SidebarItemModel> get topMenus {
           type: "department_head",
           navigationPath: '/hrm/today-assignments',
           materialIcon: Icons.assignment_ind_rounded,
+        ),
+        SidebarSubmenuModel(
+          name: 'KPIs Eficiencia',
+          type: "department_head",
+          navigationPath: '/hrm/efficiency-reports',
+          materialIcon: Icons.insert_chart_outlined,
         ),
       ],
     ),
