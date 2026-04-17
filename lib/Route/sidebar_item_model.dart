@@ -3,6 +3,7 @@ import 'package:salespro_admin/generated/l10n.dart' as lang;
 
 import '../model/user_role_model.dart';
 import '../const.dart';
+import '../services/api_service.dart';
 
 // ============================================================================
 // COLORES DE SECCIÓN - Sistema de colores por categoría
@@ -872,10 +873,19 @@ List<SidebarItemModel> getTopMenusForUser(UserRoleModel user) {
   final hasDefinedPermissions = user.permissions.isNotEmpty &&
       user.permissions.any((p) => p.view || p.edit || p.delete);
 
+  // Detectar si es empleado o encargado (roles del sistema de tareas)
+  final userRole = ApiService().currentUser?['role']?.toString() ?? '';
+  final isTaskUser = userRole == 'employee' || userRole == 'department_head';
+
   return topMenus.where((menu) {
     // Si no es sub-usuario Y no tiene permisos definidos, mostrar todos
     if (!isSubUser && !hasDefinedPermissions) {
       return true;
+    }
+
+    // Empleados y encargados: ocultar "Recursos Humanos", solo ven "Mi Panel"
+    if (isTaskUser && menu.type == 'hrm') {
+      return false;
     }
 
     // Si tiene permisos definidos (sea admin o no), SIEMPRE filtrar por permisos
