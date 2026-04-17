@@ -35,6 +35,9 @@ class LogInRepo extends ChangeNotifier {
     if (role == 'employee') {
       return '/hrm/my-tasks';
     }
+    if (role == 'department_head') {
+      return '/hrm/department-status';
+    }
     return '/blank-home';
   }
 

@@ -51,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_employees_user_id ON {{SCHEMA}}.employees(user_id
 -- ============================================================
 
 ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS scoped_designation_id INT,
+  ADD COLUMN IF NOT EXISTS scoped_designation_id BIGINT,
   ADD COLUMN IF NOT EXISTS linked_employee_id UUID;
 
 COMMENT ON COLUMN public.users.scoped_designation_id IS 'Si está presente, el user solo ve datos de esta designación (encargado o empleado)';
@@ -64,7 +64,7 @@ COMMENT ON COLUMN public.users.linked_employee_id IS 'Si el user representa a un
 CREATE TABLE IF NOT EXISTS {{SCHEMA}}.tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reservation_id UUID NOT NULL,
-  designation_id INT NOT NULL,
+  designation_id BIGINT NOT NULL,
   assigned_to_user_id UUID,
   assigned_to_employee_id UUID,
   assigned_by_user_id UUID,
