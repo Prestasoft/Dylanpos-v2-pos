@@ -147,7 +147,9 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                                         .removeAllWhiteSpace()
                                         .toLowerCase()) &&
                                     value.removeAllWhiteSpace().toLowerCase() !=
-                                        widget.designationModel!.designation)
+                                        widget.designationModel!.designation
+                                            .removeAllWhiteSpace()
+                                            .toLowerCase())
                                 : (names.contains(value
                                     .removeAllWhiteSpace()
                                     .toLowerCase()))) {
@@ -163,12 +165,7 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                           controller: _descriptionController,
                           label: lang.S.of(context).description,
                           hint: lang.S.of(context).addDescription,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return lang.S.of(context).enterDescription;
-                            }
-                            return null;
-                          },
+                          validator: (_) => null, // Descripción opcional
                         ),
                         const SizedBox(height: 24.0),
                         _buildSectionHeader('Encargado del cargo', FeatherIcons.userCheck),
@@ -289,34 +286,165 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
     );
   }
 
+  // Presets de SLA rápidos
+  static const List<Map<String, dynamic>> _slaPresets = [
+    {'label': '15 min', 'days': 0, 'hours': 0, 'minutes': 15},
+    {'label': '30 min', 'days': 0, 'hours': 0, 'minutes': 30},
+    {'label': '1 hora', 'days': 0, 'hours': 1, 'minutes': 0},
+    {'label': '2 horas', 'days': 0, 'hours': 2, 'minutes': 0},
+    {'label': '1 día', 'days': 1, 'hours': 0, 'minutes': 0},
+    {'label': '3 días', 'days': 3, 'hours': 0, 'minutes': 0},
+  ];
+
+  void _applySlaPreset(Map<String, dynamic> preset) {
+    setState(() {
+      _slaDaysController.text = preset['days'].toString();
+      _slaHoursController.text = preset['hours'].toString();
+      _slaMinutesController.text = preset['minutes'].toString();
+    });
+  }
+
+  String _getSlaPreview() {
+    final d = int.tryParse(_slaDaysController.text) ?? 0;
+    final h = int.tryParse(_slaHoursController.text) ?? 0;
+    final m = int.tryParse(_slaMinutesController.text) ?? 0;
+    if (d == 0 && h == 0 && m == 0) return 'Sin tiempo límite';
+    final parts = <String>[];
+    if (d > 0) parts.add('$d día${d > 1 ? 's' : ''}');
+    if (h > 0) parts.add('$h hora${h > 1 ? 's' : ''}');
+    if (m > 0) parts.add('$m minuto${m > 1 ? 's' : ''}');
+    return parts.join(' y ');
+  }
+
+  bool _isPresetActive(Map<String, dynamic> preset) {
+    return (int.tryParse(_slaDaysController.text) ?? 0) == preset['days'] &&
+        (int.tryParse(_slaHoursController.text) ?? 0) == preset['hours'] &&
+        (int.tryParse(_slaMinutesController.text) ?? 0) == preset['minutes'];
+  }
+
   Widget _buildSlaRow() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: _buildSlaField(_slaDaysController, 'Días', 0, 365)),
-        const SizedBox(width: 8),
-        Expanded(child: _buildSlaField(_slaHoursController, 'Horas', 0, 23)),
-        const SizedBox(width: 8),
-        Expanded(child: _buildSlaField(_slaMinutesController, 'Minutos', 0, 59)),
+        // Presets rápidos
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: _slaPresets.map((preset) {
+            final active = _isPresetActive(preset);
+            return ChoiceChip(
+              label: Text(
+                preset['label'] as String,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                  color: active ? Colors.white : kTitleColor,
+                ),
+              ),
+              selected: active,
+              selectedColor: kMainColor,
+              backgroundColor: kNeutral100,
+              side: BorderSide(color: active ? kMainColor : kNeutral300),
+              onSelected: (_) => _applySlaPreset(preset),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 14),
+        // Steppers
+        Row(
+          children: [
+            Expanded(child: _buildSlaStepper(_slaDaysController, 'Días', 0, 365, Icons.calendar_today)),
+            const SizedBox(width: 10),
+            Expanded(child: _buildSlaStepper(_slaHoursController, 'Horas', 0, 23, Icons.schedule)),
+            const SizedBox(width: 10),
+            Expanded(child: _buildSlaStepper(_slaMinutesController, 'Min', 0, 59, Icons.timer_outlined)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Preview total
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+          decoration: BoxDecoration(
+            color: kMainColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: kMainColor.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.timelapse, size: 16, color: kMainColor),
+              const SizedBox(width: 8),
+              Text(
+                'Tiempo total: ',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              Text(
+                _getSlaPreview(),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kTitleColor),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSlaField(
-      TextEditingController controller, String label, int min, int max) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
+  Widget _buildSlaStepper(TextEditingController controller, String label, int min, int max, IconData icon) {
+    final value = int.tryParse(controller.text) ?? 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: kNeutral100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: kNeutral300),
       ),
-      validator: (value) {
-        final v = int.tryParse(value ?? '');
-        if (v == null) return 'Número requerido';
-        if (v < min || v > max) return 'Entre $min y $max';
-        return null;
-      },
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: kMainColor),
+          const SizedBox(height: 4),
+          // Botón +
+          InkWell(
+            onTap: value < max ? () => setState(() => controller.text = '${value + 1}') : null,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              width: 32,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: value < max ? kMainColor.withValues(alpha: 0.1) : Colors.grey[200],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(Icons.add, size: 16, color: value < max ? kMainColor : Colors.grey[400]),
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Valor
+          Text(
+            '$value',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: kTitleColor),
+          ),
+          const SizedBox(height: 4),
+          // Botón -
+          InkWell(
+            onTap: value > min ? () => setState(() => controller.text = '${value - 1}') : null,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              width: 32,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: value > min ? kMainColor.withValues(alpha: 0.1) : Colors.grey[200],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(Icons.remove, size: 16, color: value > min ? kMainColor : Colors.grey[400]),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+        ],
+      ),
     );
   }
 
