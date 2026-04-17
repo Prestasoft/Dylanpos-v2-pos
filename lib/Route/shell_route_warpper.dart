@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:responsive_framework/responsive_framework.dart' as rf;
 import 'package:salespro_admin/Route/static_string.dart';
 import 'package:salespro_admin/top_bar/top_bar.dart';
+import 'package:salespro_admin/services/api_service.dart';
 
 import 'fotter.dart';
 import 'global_side_bar.dart';
@@ -43,8 +44,8 @@ class _ShellRouteWrapperState extends State<ShellRouteWrapper> {
           ? null
           : buildSidebar(isLargeSidebarExpanded), // Drawer for mobile
       bottomNavigationBar: isLaptop ? null : const FooterWidget(),
-      // FAB dorado para acción principal en móvil
-      floatingActionButton: isMobile ? _buildMobileFAB(context) : null,
+      // FAB dorado para acción principal en móvil (oculto para employee/department_head)
+      floatingActionButton: isMobile && !_isTaskRole() ? _buildMobileFAB(context) : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: rf.ResponsiveRowColumn(
         layout: rf.ResponsiveRowColumnType.ROW,
@@ -112,6 +113,12 @@ class _ShellRouteWrapperState extends State<ShellRouteWrapper> {
       iconOnly: iconOnly,
       // iconOnly: false,
     );
+  }
+
+  /// Detecta si el user es employee o department_head
+  bool _isTaskRole() {
+    final role = ApiService().currentUser?['role']?.toString() ?? '';
+    return role == 'employee' || role == 'department_head';
   }
 
   /// FAB dorado para acción principal en móvil

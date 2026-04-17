@@ -225,7 +225,7 @@ class FooterWidget extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            'v2.1.458',
+            'v2.1.459',
             style: TextStyle(
               fontSize: compact ? 9 : 10,
               fontWeight: FontWeight.w600,

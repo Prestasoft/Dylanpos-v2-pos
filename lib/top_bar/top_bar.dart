@@ -91,6 +91,11 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
     return checkUserRoleViewPermissionV2(type: 'department_head');
   }
 
+  bool _isTaskRole() {
+    final role = _apiService.currentUser?['role']?.toString() ?? '';
+    return role == 'employee' || role == 'department_head';
+  }
+
   int? _cachedOverdueCount;
   DateTime? _lastOverdueCheck;
 
@@ -884,9 +889,11 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
               // DISEÑO MÓVIL OPTIMIZADO (< 600px)
               // ══════════════════════════════════════════════════════════════════
               if (isMobile) ...[
-                // Menú de acciones rápidas dorado
-                _buildMobileActionsMenu(context),
-                const SizedBox(width: 8),
+                // Menú de acciones rápidas dorado (oculto para employee/department_head)
+                if (!_isTaskRole()) ...[
+                  _buildMobileActionsMenu(context),
+                  const SizedBox(width: 8),
+                ],
                 // Nombre de empresa compacto
                 Expanded(
                   child: userProfileDetails.when(
