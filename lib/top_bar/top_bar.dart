@@ -29,6 +29,8 @@ import '../services/audit_service.dart';
 import '../services/version_check_service.dart';
 import '../services/api_service.dart';
 import '../widgets/update_dialog.dart' hide kMainColor, kTitleColor, kGreyTextColor;
+import '../Screen/HRM/assignments/widgets/task_theme_provider.dart';
+import 'package:provider/provider.dart' as pro;
 
 class TopBarWidget extends ConsumerStatefulWidget {
   const TopBarWidget({super.key, this.onMenuTap});
@@ -829,6 +831,12 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
 
+    // Tema oscuro solo para employee/department_head
+    final taskDark = _isTaskRole() && pro.Provider.of<TaskThemeProvider>(context).isDark;
+    final appBarBg = taskDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final titleColor = taskDark ? const Color(0xFFE0E0E0) : Colors.black;
+    final subtitleColor = taskDark ? const Color(0xFF9E9E9E) : Colors.grey.shade800;
+
     return Consumer(builder: (context, ref, __) {
       AsyncValue<PersonalInformationModel> userProfileDetails =
           ref.watch(profileDetailsProvider);
@@ -838,9 +846,9 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
           ref.watch(unnotifiedConfirmationsProvider);
 
       return AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: isMobile ? 2 : 0,
-        shadowColor: isMobile ? Colors.black12 : Colors.transparent,
+        shadowColor: isMobile ? (taskDark ? Colors.black26 : Colors.black12) : Colors.transparent,
         leadingWidth: isMobile ? 56 : 40,
         leading: rf.ResponsiveValue<Widget?>(
           context,
@@ -874,7 +882,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
             rf.Condition.largerThan(name: BreakpointName.SM.name, value: 70)
           ],
         ).value,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: appBarBg,
         title: Consumer(builder: (context, ref, __) {
           AsyncValue<PersonalInformationModel> userProfileDetails =
               ref.watch(profileDetailsProvider);
@@ -906,7 +914,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                           fontFamily: 'Poppins',
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                          color: subtitleColor,
                         ),
                       );
                     },
@@ -1018,7 +1026,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                           fontFamily: 'Poppins',
                           fontSize: context.width() < 900 ? 16 : 18,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black,
+                          color: titleColor,
                         ),
                       ),
                     );
@@ -1275,7 +1283,7 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
                 hoverColor: dropdownItemColor,
               ),
               child: PopupMenuButton(
-                surfaceTintColor: Colors.white,
+                surfaceTintColor: appBarBg,
                 padding: EdgeInsets.zero,
                 position: PopupMenuPosition.under,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

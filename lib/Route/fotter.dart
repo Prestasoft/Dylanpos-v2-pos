@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as pro;
 import 'package:salespro_admin/Provider/general_setting_provider.dart';
+import 'package:salespro_admin/Screen/HRM/assignments/widgets/task_theme_provider.dart';
+import 'package:salespro_admin/services/api_service.dart';
 
 // Colores del sistema de diseño
 const Color _doradoPrincipal = Color(0xFFD4A853);
@@ -8,6 +11,12 @@ const Color _doradoOscuro = Color(0xFFC9973D);
 
 class FooterWidget extends StatelessWidget {
   const FooterWidget({super.key});
+
+  /// Detecta si el user actual es employee o department_head
+  bool _isTaskRole() {
+    final role = ApiService().currentUser?['role']?.toString() ?? '';
+    return role == 'employee' || role == 'department_head';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +26,9 @@ class FooterWidget extends StatelessWidget {
     // Detectar si estamos en la pantalla de login
     final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
     final isLoginPage = currentRoute == '/' || currentRoute.contains('login');
+
+    // Modo oscuro solo para empleados/encargados
+    final taskDark = !isLoginPage && _isTaskRole() && pro.Provider.of<TaskThemeProvider>(context).isDark;
 
     return Consumer(
       builder: (_, ref, watch) {
@@ -29,19 +41,25 @@ class FooterWidget extends StatelessWidget {
                 vertical: isMobile ? 12 : 16,
               ),
               decoration: BoxDecoration(
-                color: isLoginPage ? Colors.black.withValues(alpha: 0.3) : Colors.white,
+                color: isLoginPage
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : taskDark
+                        ? const Color(0xFF1E1E1E)
+                        : Colors.white,
                 border: Border(
                   top: BorderSide(
                     color: isLoginPage
                         ? _doradoPrincipal.withValues(alpha: 0.3)
-                        : Colors.grey.shade200,
+                        : taskDark
+                            ? const Color(0xFF424242)
+                            : Colors.grey.shade200,
                     width: 1,
                   ),
                 ),
               ),
               child: isMobile
-                  ? _buildMobileFooter(context, isLoginPage)
-                  : _buildDesktopFooter(context, isLoginPage),
+                  ? _buildMobileFooter(context, isLoginPage, taskDark)
+                  : _buildDesktopFooter(context, isLoginPage, taskDark),
             );
           },
           error: (e, stack) {
@@ -56,8 +74,8 @@ class FooterWidget extends StatelessWidget {
   }
 
   /// Footer para móvil - Layout vertical compacto
-  Widget _buildMobileFooter(BuildContext context, bool isLoginPage) {
-    final textColor = isLoginPage ? Colors.white70 : Colors.grey[600];
+  Widget _buildMobileFooter(BuildContext context, bool isLoginPage, bool taskDark) {
+    final textColor = isLoginPage ? Colors.white70 : taskDark ? const Color(0xFF9E9E9E) : Colors.grey[600];
     final accentColor = isLoginPage ? _doradoPrincipal : _doradoOscuro;
 
     return Column(
@@ -106,8 +124,8 @@ class FooterWidget extends StatelessWidget {
   }
 
   /// Footer para desktop - Layout horizontal elegante
-  Widget _buildDesktopFooter(BuildContext context, bool isLoginPage) {
-    final textColor = isLoginPage ? Colors.white70 : Colors.grey[600];
+  Widget _buildDesktopFooter(BuildContext context, bool isLoginPage, bool taskDark) {
+    final textColor = isLoginPage ? Colors.white70 : taskDark ? const Color(0xFF9E9E9E) : Colors.grey[600];
     final accentColor = isLoginPage ? _doradoPrincipal : _doradoOscuro;
 
     return Row(
@@ -136,7 +154,9 @@ class FooterWidget extends StatelessWidget {
                 height: 14,
                 color: isLoginPage
                     ? Colors.white24
-                    : Colors.grey.shade300,
+                    : taskDark
+                        ? const Color(0xFF424242)
+                        : Colors.grey.shade300,
               ),
               const SizedBox(width: 8),
               Text(
@@ -225,7 +245,7 @@ class FooterWidget extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            'v2.1.463',
+            'v2.1.464',
             style: TextStyle(
               fontSize: compact ? 9 : 10,
               fontWeight: FontWeight.w600,
