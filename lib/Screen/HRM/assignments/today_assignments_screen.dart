@@ -431,76 +431,86 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Número
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.deepPurple.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '${index + 1}',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple.shade700),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Info del cliente
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            // Fila 1: Número + Nombre del cliente + Hora
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepPurple.shade700),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
                     reservation.customerName ?? 'Cliente',
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    '${reservation.serviceName ?? 'Servicio'} · ${reservation.reservationTime}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-                ],
-              ),
+                ),
+                Text(
+                  reservation.reservationTime,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            // Estado de asignación
-            if (currentEmployee != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green.shade700, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${currentEmployee.name} ${currentEmployee.lastName}',
-                      style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600),
+            const SizedBox(height: 8),
+            // Fila 2: Badge de asignación + Botón
+            Row(
+              children: [
+                if (currentEmployee != null)
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green.shade700, size: 14),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              '${currentEmployee.name} ${currentEmployee.lastName}',
+                              style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  )
+                else
+                  Expanded(
+                    child: Text('Sin asignar', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                  ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  icon: Icon(currentEmployee != null ? Icons.swap_horiz : Icons.person_add, size: 16),
+                  label: Text(currentEmployee != null ? 'Cambiar' : 'Asignar', style: const TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentEmployee != null ? Colors.orange : Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () => _showAssignModal(reservation, employees, designationName, slot),
                 ),
-              ),
-              const SizedBox(width: 6),
-            ],
-            // Botón asignar/reasignar
-            ElevatedButton.icon(
-              icon: Icon(currentEmployee != null ? Icons.swap_horiz : Icons.person_add, size: 16),
-              label: Text(currentEmployee != null ? 'Cambiar' : 'Asignar', style: const TextStyle(fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: currentEmployee != null ? Colors.orange : Colors.deepPurple,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () => _showAssignModal(reservation, employees, designationName, slot),
+              ],
             ),
           ],
         ),
