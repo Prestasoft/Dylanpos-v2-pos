@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Repository/task_repo.dart';
 import 'package:salespro_admin/services/api_service.dart';
+import '../employees/repo/employee_repo.dart';
 
 /// Panel del Encargado: vista general de su equipo con KPIs y semáforo.
 ///
@@ -52,16 +53,72 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
 
   Future<void> _loadData() async {
     try {
+      // Intentar cargar del endpoint de tasks primero
       final data = await _taskRepo.getDepartmentStatus(
         designationId: _scopedDesignationId,
       );
+      final taskEmployees = (data['employees'] as List?) ?? [];
+
+      // Si el endpoint de tasks no devolvió empleados, cargar directamente
+      // del repo de empleados filtrados por designation_id
+      if (taskEmployees.isEmpty && _scopedDesignationId != null) {
+        final allEmployees = await EmployeeRepository().getActiveEmployees();
+        final filtered = allEmployees
+            .where((e) => e.designationId == _scopedDesignationId)
+            .toList();
+
+        if (!mounted) return;
+        setState(() {
+          _employees = filtered.map((e) => {
+            'employee_id': e.id.toString(),
+            'employee_name': '${e.name} ${e.lastName}',
+            'user_id': e.userId,
+            'can_login': e.canLogin,
+            'pendientes': 0,
+            'en_progreso': 0,
+            'vencidas': 0,
+            'completadas_hoy': 0,
+            'estado': 'sin_tareas',
+          }).toList();
+          _totals = {};
+          _loading = false;
+        });
+        return;
+      }
+
       if (!mounted) return;
       setState(() {
-        _employees = (data['employees'] as List?) ?? [];
+        _employees = taskEmployees;
         _totals = (data['totals'] as Map<String, dynamic>?) ?? {};
         _loading = false;
       });
     } catch (e) {
+      // Fallback: cargar empleados directamente si el endpoint de tasks falla
+      try {
+        if (_scopedDesignationId != null) {
+          final allEmployees = await EmployeeRepository().getActiveEmployees();
+          final filtered = allEmployees
+              .where((emp) => emp.designationId == _scopedDesignationId)
+              .toList();
+          if (!mounted) return;
+          setState(() {
+            _employees = filtered.map((emp) => {
+              'employee_id': emp.id.toString(),
+              'employee_name': '${emp.name} ${emp.lastName}',
+              'user_id': emp.userId,
+              'can_login': emp.canLogin,
+              'pendientes': 0,
+              'en_progreso': 0,
+              'vencidas': 0,
+              'completadas_hoy': 0,
+              'estado': 'sin_tareas',
+            }).toList();
+            _totals = {};
+            _loading = false;
+          });
+          return;
+        }
+      } catch (_) {}
       if (!mounted) return;
       setState(() => _loading = false);
     }
