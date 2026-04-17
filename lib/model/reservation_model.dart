@@ -31,11 +31,14 @@ class ReservationModel {
   final String? sessionType;
 
   ReservationAssignments get assignments {
-    if (nota == null || !nota!.contains('|||{')) {
+    if (nota == null || !nota!.contains('|||')) {
       return ReservationAssignments.empty();
     }
     try {
-      final jsonStr = nota!.split('|||')[1].trim();
+      final parts = nota!.split('|||');
+      if (parts.length < 2) return ReservationAssignments.empty();
+      final jsonStr = parts[1].trim();
+      if (jsonStr.isEmpty || !jsonStr.startsWith('{')) return ReservationAssignments.empty();
       final map = jsonDecode(jsonStr);
       return ReservationAssignments.fromJson(map);
     } catch (_) {
@@ -45,7 +48,7 @@ class ReservationModel {
 
   String get cleanNota {
     if (nota == null) return '';
-    if (!nota!.contains('|||{')) return nota!;
+    if (!nota!.contains('|||')) return nota!;
     return nota!.split('|||')[0].trim();
   }
 
