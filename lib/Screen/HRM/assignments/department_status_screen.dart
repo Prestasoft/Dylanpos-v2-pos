@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Repository/task_repo.dart';
+import 'package:salespro_admin/model/task_model.dart';
 import 'package:salespro_admin/services/api_service.dart';
 import '../employees/repo/employee_repo.dart';
 
@@ -352,6 +353,7 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
         ],
       ),
       child: ListTile(
+        onTap: () => _showEmployeeTasks(emp),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: statusColor.withValues(alpha: 0.15),
@@ -397,6 +399,27 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
     );
   }
 
+  /// Abre un bottom sheet con las tareas del empleado seleccionado
+  Future<void> _showEmployeeTasks(dynamic emp) async {
+    final employeeId = emp['employee_id']?.toString();
+    final employeeName = emp['employee_name']?.toString() ?? 'Empleado';
+    final userId = emp['user_id']?.toString();
+
+    if (employeeId == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _EmployeeTasksSheet(
+        employeeId: employeeId,
+        userId: userId,
+        employeeName: employeeName,
+        taskRepo: _taskRepo,
+      ),
+    );
+  }
+
   Widget _statBadge(String label, int value, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -411,6 +434,238 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
           fontWeight: FontWeight.w600,
           color: value > 0 ? color : Colors.grey,
         ),
+      ),
+    );
+  }
+}
+
+/// Bottom sheet que muestra las tareas de un empleado específico
+class _EmployeeTasksSheet extends StatefulWidget {
+  final String employeeId;
+  final String? userId;
+  final String employeeName;
+  final TaskRepository taskRepo;
+
+  const _EmployeeTasksSheet({
+    required this.employeeId,
+    this.userId,
+    required this.employeeName,
+    required this.taskRepo,
+  });
+
+  @override
+  State<_EmployeeTasksSheet> createState() => _EmployeeTasksSheetState();
+}
+
+class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
+  List<TaskModel> _tasks = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    try {
+      final allTasks = await widget.taskRepo.getTasks();
+      final filtered = allTasks.where((t) =>
+        t.assignedToEmployeeId == widget.employeeId ||
+        (widget.userId != null && t.assignedToUserId == widget.userId)
+      ).toList();
+      filtered.sort((a, b) => a.dueAt.compareTo(b.dueAt));
+      if (!mounted) return;
+      setState(() {
+        _tasks = filtered;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  Color _urgencyColor(TaskModel t) {
+    final u = t.urgency;
+    switch (u) {
+      case TaskUrgency.normal: return Colors.green;
+      case TaskUrgency.warning: return Colors.orange;
+      case TaskUrgency.critical: return Colors.red;
+      case TaskUrgency.overdue: return const Color(0xFF991B1B);
+      case TaskUrgency.done: return Colors.grey;
+    }
+  }
+
+  String _timeLabel(TaskModel t) {
+    if (t.status == TaskStatus.completada) return 'Completada';
+    final r = t.timeRemaining();
+    if (r.isNegative) {
+      final o = r.abs();
+      if (o.inHours > 0) return 'Vencida hace ${o.inHours}h ${o.inMinutes % 60}m';
+      return 'Vencida hace ${o.inMinutes}m';
+    }
+    final h = r.inHours;
+    final m = r.inMinutes % 60;
+    return '${h}h ${m}m restantes';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.deepPurple.shade50,
+                    child: Text(
+                      widget.employeeName.isNotEmpty ? widget.employeeName[0] : '?',
+                      style: TextStyle(color: Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.employeeName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${_tasks.length} tarea${_tasks.length == 1 ? '' : 's'}',
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Lista de tareas
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _tasks.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.task_alt, size: 48, color: Colors.grey[300]),
+                              const SizedBox(height: 12),
+                              Text('Sin tareas asignadas', style: TextStyle(color: Colors.grey[500])),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollCtrl,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _tasks.length,
+                          itemBuilder: (_, i) => _buildTaskTile(_tasks[i]),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskTile(TaskModel task) {
+    final color = _urgencyColor(task);
+    final progress = task.progress().clamp(0.0, 1.0);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border(left: BorderSide(color: color, width: 4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cliente + Status
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  task.customerName ?? 'Cliente',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  task.status.label,
+                  style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Barra de progreso + Tiempo
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: Colors.grey[200],
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                _timeLabel(task),
+                style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
