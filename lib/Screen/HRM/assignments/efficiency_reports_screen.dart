@@ -18,7 +18,7 @@ class EfficiencyReportsScreen extends StatefulWidget {
 class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
-  
+
   bool _isLoading = false;
   List<ReservationModel> _reservations = [];
   Map<String, String> _employeeNames = {}; // mapa id -> nombre
@@ -31,10 +31,31 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
   Map<String, int> _canalesStats = {};
   Map<String, int> _redesStats = {};
 
+  // Scope: si es encargado, solo muestra su departamento
+  bool _isScoped = false;
+  String _scopedSlot = ''; // fotografo, maquillista, editor, vendedor
+  Set<String> _scopedEmployeeIds = {};
+
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  /// Filtra stats dejando solo los empleados del departamento del encargado
+  Map<String, int> _filterByEmployees(Map<String, int> stats) {
+    if (_scopedEmployeeIds.isEmpty) return stats;
+    return Map.fromEntries(
+      stats.entries.where((e) => _scopedEmployeeIds.contains(e.key)),
+    );
+  }
+
+  String _detectSlot(String designation) {
+    final d = designation.toLowerCase();
+    if (d.contains('foto') || d.contains('photo') || d.contains('camer')) return 'fotografo';
+    if (d.contains('maquil') || d.contains('makeup') || d.contains('belleza')) return 'maquillista';
+    if (d.contains('edic') || d.contains('editor') || d.contains('post')) return 'editor';
+    return 'vendedor';
   }
 
   Future<void> _loadData() async {
@@ -46,6 +67,21 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
       Map<String, String> namesMap = {};
       for (var e in employees) {
         namesMap[e.id.toString()] = '${e.name} ${e.lastName}';
+      }
+
+      // Detectar scope del encargado
+      final user = ApiService().currentUser;
+      final role = user?['role']?.toString() ?? '';
+      final scopedDesId = user?['scoped_designation_id'];
+      if (role == 'department_head' && scopedDesId != null) {
+        _isScoped = true;
+        // Buscar nombre de la designación para detectar el slot
+        final scopedDesNum = scopedDesId is num ? scopedDesId : num.tryParse(scopedDesId.toString());
+        final matchingEmp = employees.where((e) => e.designationId == scopedDesNum).toList();
+        _scopedEmployeeIds = matchingEmp.map((e) => e.id.toString()).toSet();
+        if (matchingEmp.isNotEmpty) {
+          _scopedSlot = _detectSlot(matchingEmp.first.designation);
+        }
       }
 
       // 2. Cargar Reservaciones usando ApiService directamente para rango
@@ -165,37 +201,33 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
                   _buildSummaryHeader(),
                   const SizedBox(height: 24),
                   
-                  // Primera Fila: Operaciones
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildRankCard('Fotógrafos (Sesiones)', _fotografosStats, Icons.camera_alt, Colors.blue)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildRankCard('Maquillistas (Trabajos)', _maquillistasStats, Icons.face_retouching_natural, Colors.pink)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildRankCard('Editores (Procesado)', _editoresStats, Icons.edit, Colors.orange)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                  // Si es encargado, solo muestra la sección de su departamento
+                  if (!_isScoped || _scopedSlot == 'fotografo')
+                    _buildRankCard('Fotógrafos (Sesiones)', _isScoped ? _filterByEmployees(_fotografosStats) : _fotografosStats, Icons.camera_alt, Colors.blue),
+                  if (!_isScoped || _scopedSlot == 'fotografo') const SizedBox(height: 16),
 
-                  // Segunda Fila: Ventas y Captación
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 3, child: _buildRankCard('Sellers (Cierres)', _vendedoresStats, Icons.headset_mic, Colors.purple)),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          children: [
-                            _buildRankCard('Canales de Contacto', _canalesStats, Icons.share, Colors.green, resolveNames: false),
-                            const SizedBox(height: 16),
-                            _buildRankCard('Distribución Redes', _redesStats, Icons.thumb_up, Colors.indigo, resolveNames: false),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  if (!_isScoped || _scopedSlot == 'maquillista')
+                    _buildRankCard('Maquillistas (Trabajos)', _isScoped ? _filterByEmployees(_maquillistasStats) : _maquillistasStats, Icons.face_retouching_natural, Colors.pink),
+                  if (!_isScoped || _scopedSlot == 'maquillista') const SizedBox(height: 16),
+
+                  if (!_isScoped || _scopedSlot == 'editor')
+                    _buildRankCard('Editores (Procesado)', _isScoped ? _filterByEmployees(_editoresStats) : _editoresStats, Icons.edit, Colors.orange),
+                  if (!_isScoped || _scopedSlot == 'editor') const SizedBox(height: 16),
+
+                  if (!_isScoped || _scopedSlot == 'vendedor')
+                    _buildRankCard('Sellers (Cierres)', _isScoped ? _filterByEmployees(_vendedoresStats) : _vendedoresStats, Icons.headset_mic, Colors.purple),
+                  if (!_isScoped || _scopedSlot == 'vendedor') const SizedBox(height: 16),
+
+                  if (!_isScoped) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _buildRankCard('Canales de Contacto', _canalesStats, Icons.share, Colors.green, resolveNames: false)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildRankCard('Distribución Redes', _redesStats, Icons.thumb_up, Colors.indigo, resolveNames: false)),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 32),
                 ],
               ),
