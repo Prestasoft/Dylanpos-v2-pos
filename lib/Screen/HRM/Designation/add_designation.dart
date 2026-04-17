@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:responsive_grid/responsive_grid.dart';
-import 'package:salespro_admin/Provider/user_role_provider.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/provider/designation_provider.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/repo/designation_repo.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
-import 'package:salespro_admin/model/user_role_model.dart';
+import '../employees/model/employee_model.dart';
+import '../employees/repo/employee_repo.dart';
 
 import '../../../const.dart';
 import '../../Widgets/Constant Data/constant.dart';
@@ -246,42 +246,128 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
     );
   }
 
+  List<EmployeeModel>? _cachedEmployees;
+  bool _loadingEmployees = false;
+
+  Future<void> _loadEmployeesForDesignation() async {
+    if (_loadingEmployees || _cachedEmployees != null) return;
+    _loadingEmployees = true;
+    try {
+      final all = await EmployeeRepository().getActiveEmployees();
+      final designationId = widget.designationModel?.id;
+      if (mounted) {
+        setState(() {
+          _cachedEmployees = designationId != null
+              ? all.where((e) => e.designationId == designationId).toList()
+              : all;
+          _loadingEmployees = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingEmployees = false);
+    }
+  }
+
   Widget _buildManagerDropdown(WidgetRef ref) {
-    final usersAsync = ref.watch(allUserRoleProvider);
-    return usersAsync.when(
-      loading: () => const LinearProgressIndicator(),
-      error: (err, _) => Text('Error cargando usuarios: $err',
-          style: const TextStyle(color: Colors.red)),
-      data: (users) {
-        final activeUsers = users
-            .where((u) => (u.userKey ?? u.databaseId).toString().isNotEmpty)
-            .toList();
-        return DropdownButtonFormField<String?>(
-          initialValue: _selectedManagerUserId,
-          isExpanded: true,
-          decoration: const InputDecoration(
+    // Cargar empleados del cargo al primer build
+    if (_cachedEmployees == null && !_loadingEmployees) {
+      _loadEmployeesForDesignation();
+    }
+
+    if (_loadingEmployees) return const LinearProgressIndicator();
+
+    final employees = _cachedEmployees ?? [];
+
+    // Resolver nombre actual del encargado seleccionado
+    String currentLabel = '';
+    if (_selectedManagerUserId != null) {
+      final match = employees.where((e) =>
+        e.userId == _selectedManagerUserId ||
+        e.id.toString() == _selectedManagerUserId).firstOrNull;
+      if (match != null) currentLabel = '${match.name} ${match.lastName}'.trim();
+    }
+
+    return Autocomplete<EmployeeModel>(
+      displayStringForOption: (e) => '${e.name} ${e.lastName}'.trim(),
+      initialValue: TextEditingValue(text: currentLabel),
+      optionsBuilder: (textEditingValue) {
+        final query = textEditingValue.text.toLowerCase();
+        if (query.isEmpty) return employees;
+        return employees.where((e) {
+          final fullName = '${e.name} ${e.lastName}'.toLowerCase();
+          return fullName.contains(query);
+        });
+      },
+      fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
             labelText: 'Encargado (opcional)',
-            hintText: 'Seleccionar usuario encargado',
-            border: OutlineInputBorder(),
+            hintText: employees.isEmpty
+                ? 'No hay empleados en este cargo'
+                : 'Buscar empleado del cargo...',
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.search, size: 20),
+            suffixIcon: controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    onPressed: () {
+                      controller.clear();
+                      setState(() => _selectedManagerUserId = null);
+                    },
+                  )
+                : null,
           ),
-          items: [
-            const DropdownMenuItem<String?>(
-              value: null,
-              child: Text('Sin encargado asignado'),
-            ),
-            ...activeUsers.map((UserRoleModel u) {
-              final id = u.userKey ?? u.databaseId ?? '';
-              return DropdownMenuItem<String?>(
-                value: id,
-                child: Text(
-                  u.userTitle ?? u.email ?? id,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }),
-          ],
-          onChanged: (value) => setState(() => _selectedManagerUserId = value),
         );
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 250, maxWidth: 500),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (ctx, i) {
+                  final e = options.elementAt(i);
+                  final fullName = '${e.name} ${e.lastName}'.trim();
+                  final empId = e.userId ?? e.id.toString();
+                  final isSelected = empId == _selectedManagerUserId;
+                  return ListTile(
+                    dense: true,
+                    selected: isSelected,
+                    selectedTileColor: kMainColor.withValues(alpha: 0.08),
+                    leading: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: kMainColor.withValues(alpha: 0.15),
+                      child: Text(
+                        e.name.isNotEmpty ? e.name[0].toUpperCase() : '?',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kMainColor),
+                      ),
+                    ),
+                    title: Text(
+                      fullName,
+                      style: TextStyle(fontSize: 13, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400),
+                    ),
+                    subtitle: e.designation.isNotEmpty
+                        ? Text(e.designation, style: TextStyle(fontSize: 11, color: Colors.grey[500]))
+                        : null,
+                    onTap: () => onSelected(e),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+      onSelected: (e) {
+        final id = e.userId ?? e.id.toString();
+        setState(() => _selectedManagerUserId = id);
       },
     );
   }
