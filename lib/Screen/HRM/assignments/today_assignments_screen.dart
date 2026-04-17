@@ -114,8 +114,11 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       }
 
       // 2) Sincronizar con la tabla tasks (sistema nuevo de SLA)
-      // Patrón: cada rol asignado crea/actualiza una task con el cargo correspondiente.
       await _syncTasksFromAssignments(reservation, newAssignments);
+
+      // 3) Refrescar el provider para que la UI se actualice
+      // ignore: unused_result
+      ref.refresh(reservationsProvider);
 
       toast('Asignación guardada');
     } catch (e) {
@@ -588,8 +591,6 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     );
 
     await _updateAssignment(reservation, newAssign);
-    // Refrescar la pantalla
-    if (mounted) setState(() {});
   }
 
   String _detectRoleSlotByName(String name) {
