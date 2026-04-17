@@ -42,6 +42,7 @@ class EmployeeListV2Screen extends StatefulWidget {
 class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
     with SingleTickerProviderStateMixin {
   String searchItem = '';
+  String? _selectedDepartment; // null = Todos
   late TabController _tabController;
   int _itemsPerPage = 10;
   int _currentPage = 1;
@@ -106,7 +107,21 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                   default:
                     currentList = activeEmployees;
                 }
+                // Extraer departamentos únicos de TODOS los empleados para los chips
+                final allDepartments = <String>{};
+                for (final e in allEmployees) {
+                  if (e.department.isNotEmpty && e.department != 'General') {
+                    allDepartments.add(e.department);
+                  }
+                }
+                final sortedDepartments = allDepartments.toList()..sort();
+
                 final filteredList = currentList.where((employee) {
+                  // Filtro por departamento
+                  if (_selectedDepartment != null && employee.department != _selectedDepartment) {
+                    return false;
+                  }
+                  // Filtro por búsqueda de texto
                   if (searchItem.isEmpty) return true;
                   final search = searchItem.toLowerCase();
                   return employee.fullName.toLowerCase().contains(search) ||
@@ -405,6 +420,63 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                             ),
                           ],
                         ),
+
+                        // Chips de departamento
+                        if (sortedDepartments.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 6),
+                                    child: ChoiceChip(
+                                      label: Text('Todos (${currentList.length})',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: _selectedDepartment == null ? FontWeight.w600 : FontWeight.w400,
+                                            color: _selectedDepartment == null ? Colors.white : kTitleColor,
+                                          )),
+                                      selected: _selectedDepartment == null,
+                                      selectedColor: kMainColor,
+                                      backgroundColor: kNeutral100,
+                                      side: BorderSide(color: _selectedDepartment == null ? kMainColor : kNeutral300),
+                                      onSelected: (_) => setState(() {
+                                        _selectedDepartment = null;
+                                        _currentPage = 1;
+                                      }),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
+                                  ...sortedDepartments.map((dept) {
+                                    final count = currentList.where((e) => e.department == dept).length;
+                                    final isActive = _selectedDepartment == dept;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: ChoiceChip(
+                                        label: Text('$dept ($count)',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                                              color: isActive ? Colors.white : kTitleColor,
+                                            )),
+                                        selected: isActive,
+                                        selectedColor: kMainColor,
+                                        backgroundColor: kNeutral100,
+                                        side: BorderSide(color: isActive ? kMainColor : kNeutral300),
+                                        onSelected: (_) => setState(() {
+                                          _selectedDepartment = isActive ? null : dept;
+                                          _currentPage = 1;
+                                        }),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            ),
+                          ),
 
                         // Tabla de empleados
                         _buildEmployeeTable(theme, filteredList, ref),
