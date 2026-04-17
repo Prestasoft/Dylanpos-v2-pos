@@ -720,6 +720,12 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.work_rounded,
         ),
         SidebarSubmenuModel(
+          name: 'Departamentos',
+          type: "designations",
+          navigationPath: '/hrm/departments',
+          materialIcon: Icons.business_rounded,
+        ),
+        SidebarSubmenuModel(
           name: 'Nómina',
           type: "salary_list",
           navigationPath: '/hrm/salaries-list',

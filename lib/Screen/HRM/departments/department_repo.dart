@@ -34,6 +34,15 @@ class DepartmentRepository {
     return null;
   }
 
+  Future<bool> update(int id, String name) async {
+    try {
+      final resp = await _api.put('hrm/departments/$id', {'name': name.trim()});
+      return resp.success;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> delete(int id) async {
     try {
       final resp = await _api.delete('hrm/departments/$id');
