@@ -32,12 +32,16 @@ class TaskRepository {
   /// GET /api/hrm/tasks/my — tareas del user autenticado (vista empleado)
   Future<List<TaskModel>> getMyTasks() async {
     final resp = await _apiService.get('hrm/tasks/my');
-    debugPrint('🔵 [TaskRepo.getMyTasks] success=${resp.success} hasData=${resp.data != null} error=${resp.error} statusCode=${resp.statusCode}');
+    debugPrint('🔵 [TaskRepo.getMyTasks] success=${resp.success} hasData=${resp.data != null} error=${resp.error}');
+    debugPrint('🔵 [TaskRepo.getMyTasks] resp.data keys: ${resp.data?.keys.toList()}');
+    debugPrint('🔵 [TaskRepo.getMyTasks] resp.data raw: ${resp.data.toString().substring(0, (resp.data.toString().length).clamp(0, 200))}');
     if (!resp.success || resp.data == null) {
-      debugPrint('🔴 [TaskRepo.getMyTasks] Retornando lista vacía');
+      debugPrint('🔴 [TaskRepo.getMyTasks] Retornando lista vacía - success=${resp.success}');
       return [];
     }
-    final list = (resp.data['tasks'] as List?) ?? const [];
+    final tasksRaw = resp.data['tasks'];
+    debugPrint('🔵 [TaskRepo.getMyTasks] tasks type=${tasksRaw.runtimeType} value=${tasksRaw.toString().substring(0, (tasksRaw.toString().length).clamp(0, 200))}');
+    final list = (tasksRaw as List?) ?? const [];
     debugPrint('🔵 [TaskRepo.getMyTasks] Tasks encontradas: ${list.length}');
     return list
         .map((e) => TaskModel.fromJson(Map<String, dynamic>.from(e as Map)))
