@@ -203,6 +203,11 @@ abstract class AcnooAppRoutes {
     redirect: (BuildContext context, GoRouterState state) {
       // Verificar autenticación del usuario usando ApiService (PostgreSQL)
       final isAuthenticated = _apiService.isAuthenticated;
+
+      // DEBUG: Log para diagnosticar cierre de sesión en rutas HRM
+      if (state.matchedLocation.contains('hrm')) {
+        debugPrint('🔴 [REDIRECT] path=${state.matchedLocation} isAuth=$isAuthenticated token=${_apiService.token != null} role=${_apiService.currentUser?['role']} modelRole=${finalUserRoleModel.userRoleName}');
+      }
       final isLoggingIn = state.matchedLocation == '/' ||
                          state.matchedLocation == '/log-in' ||
                          state.matchedLocation == '/sign-up' ||
@@ -272,7 +277,12 @@ abstract class AcnooAppRoutes {
 
       // PROTECCIÓN POR PERMISOS: Verificar si el usuario tiene permisos definidos
       // y si tiene acceso a la ruta solicitada
-      if (isAuthenticated && !isDressOperator()) {
+      // Excluir roles especiales que ya fueron manejados arriba
+      final apiRole = _apiService.currentUser?['role']?.toString() ?? '';
+      final modelRole2 = finalUserRoleModel.userRoleName?.toString() ?? '';
+      final effectiveRole = apiRole.isNotEmpty ? apiRole : modelRole2;
+      final isTaskRole = effectiveRole == 'employee' || effectiveRole == 'department_head';
+      if (isAuthenticated && !isDressOperator() && !isTaskRole) {
         final hasDefinedPermissions = finalUserRoleModel.permissions.isNotEmpty &&
             finalUserRoleModel.permissions.any((p) => p.view || p.edit || p.delete);
 
