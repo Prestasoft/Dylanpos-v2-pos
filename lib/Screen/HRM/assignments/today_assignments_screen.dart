@@ -699,12 +699,13 @@ class _AssignmentCardState extends State<_AssignmentCard> {
     );
   }
 
-  List<EmployeeModel> _getAvailableStaff(String depts) {
-    if (depts == 'TODOS') return widget.employees;
-    final keywords = depts.toLowerCase().split(',');
+  List<EmployeeModel> _getAvailableStaff(String keywords) {
+    if (keywords == 'TODOS') return widget.employees;
+    final parts = keywords.toLowerCase().split(',');
     return widget.employees.where((e) {
-      final d = e.department.toLowerCase();
-      return keywords.any((k) => d.contains(k.trim()));
+      // Buscar por nombre del cargo (designation), no por departamento
+      final cargo = e.designation.toLowerCase();
+      return parts.any((k) => cargo.contains(k.trim()));
     }).toList();
   }
 

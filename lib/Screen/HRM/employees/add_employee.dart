@@ -886,10 +886,23 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen>
               xs: 12,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: _buildTextField(
+                child: TextFormField(
                   controller: departmentController,
-                  label: 'Departamento',
-                  hint: 'Ej: Ventas, Administración',
+                  readOnly: departmentController.text.isNotEmpty,
+                  decoration: InputDecoration(
+                    labelText: 'Departamento',
+                    hintText: departmentController.text.isEmpty
+                        ? 'Seleccione un cargo primero'
+                        : 'Se asigna desde el cargo',
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: departmentController.text.isNotEmpty
+                        ? Colors.grey.shade50
+                        : Colors.orange.shade50,
+                    suffixIcon: departmentController.text.isNotEmpty
+                        ? Icon(Icons.lock_outline, size: 16, color: Colors.grey.shade400)
+                        : Icon(Icons.warning_amber, size: 16, color: Colors.orange.shade600),
+                  ),
                 ),
               ),
             ),

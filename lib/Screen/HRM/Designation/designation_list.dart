@@ -109,7 +109,7 @@ class _DesignationListScreenState extends State<DesignationListScreen> {
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      lang.S.of(context).designationList,
+                                      'Lista de Cargos',
                                       style:
                                           theme.textTheme.titleLarge?.copyWith(
                                         fontWeight: FontWeight.w600,
@@ -148,7 +148,7 @@ class _DesignationListScreenState extends State<DesignationListScreen> {
                                               },
                                             ),
                                       child: Text(
-                                          lang.S.of(context).addDesignation)),
+                                          'Agregar Cargo')),
                                   // Container(
                                   //   padding: const EdgeInsets.all(5.0),
                                   //   decoration: BoxDecoration(borderRadius: BorderRadius.circular(5.0), color: kBlueTextColor),

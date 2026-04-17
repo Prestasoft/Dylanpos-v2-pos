@@ -31,15 +31,32 @@ class EmployeeProfileScreen extends ConsumerStatefulWidget {
 class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  VoidCallback? _routerListener;
+  RouterDelegate<Object>? _routerDelegate;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+
+    // Cerrar perfil automáticamente si GoRouter navega a otra ruta
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _routerDelegate = GoRouter.of(context).routerDelegate;
+      _routerListener = () {
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      };
+      _routerDelegate!.addListener(_routerListener!);
+    });
   }
 
   @override
   void dispose() {
+    if (_routerListener != null && _routerDelegate != null) {
+      _routerDelegate!.removeListener(_routerListener!);
+    }
     _tabController.dispose();
     super.dispose();
   }

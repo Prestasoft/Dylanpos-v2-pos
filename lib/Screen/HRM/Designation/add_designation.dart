@@ -8,6 +8,9 @@ import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/provider/designation_provider.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/repo/designation_repo.dart';
 import 'package:salespro_admin/generated/l10n.dart' as lang;
+import '../departments/department_model.dart';
+import '../departments/department_provider.dart';
+import '../departments/department_repo.dart';
 import '../employees/model/employee_model.dart';
 import '../employees/repo/employee_repo.dart';
 
@@ -111,8 +114,8 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                         Flexible(
                           child: Text(
                             widget.designationModel != null
-                                ? 'Edit Designation'
-                                : lang.S.of(context).addDesignation,
+                                ? 'Editar Cargo'
+                                : 'Agregar Cargo',
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -136,11 +139,11 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                       children: [
                         _buildTextField(
                           controller: _designationController,
-                          label: lang.S.of(context).designation,
-                          hint: lang.S.of(context).pleaseEnterDesignation,
+                          label: 'Cargo',
+                          hint: 'Nombre del cargo',
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return lang.S.of(context).enterDesignationName;
+                              return 'Ingrese el nombre del cargo';
                             }
                             if (widget.designationModel != null
                                 ? (names.contains(value
@@ -153,20 +156,13 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                                 : (names.contains(value
                                     .removeAllWhiteSpace()
                                     .toLowerCase()))) {
-                              return lang.S
-                                  .of(context)
-                                  .designationNameAlreadyExists;
+                              return 'El nombre del cargo ya existe';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 20.0),
-                        _buildTextField(
-                          controller: _descriptionController,
-                          label: 'Departamento',
-                          hint: 'Ej: Ventas, Producción, Limpieza',
-                          validator: (_) => null,
-                        ),
+                        _buildDepartmentDropdown(ref),
                         const SizedBox(height: 24.0),
                         _buildSectionHeader('Encargado del cargo', FeatherIcons.userCheck),
                         const SizedBox(height: 8.0),
@@ -370,6 +366,100 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
         setState(() => _selectedManagerUserId = id);
       },
     );
+  }
+
+  Widget _buildDepartmentDropdown(WidgetRef ref) {
+    final deptsAsync = ref.watch(departmentProvider);
+    return deptsAsync.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (err, _) => Text('Error: $err', style: const TextStyle(color: Colors.red)),
+      data: (departments) {
+        final currentVal = _descriptionController.text.trim();
+        final matchExists = currentVal.isEmpty ? false : departments.any((d) => d.name == currentVal);
+
+        // Si el valor actual no está en la lista pero no está vacío, agregarlo como opción
+        final items = departments.map((d) => DropdownMenuItem(
+          value: d.name,
+          child: Text(d.name),
+        )).toList();
+        if (currentVal.isNotEmpty && !matchExists) {
+          items.insert(0, DropdownMenuItem(value: currentVal, child: Text('$currentVal (anterior)')));
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                isExpanded: true,
+                value: currentVal.isNotEmpty ? currentVal : null,
+                decoration: const InputDecoration(
+                  labelText: 'Departamento',
+                  hintText: 'Seleccionar departamento',
+                  border: OutlineInputBorder(),
+                ),
+                items: items,
+                onChanged: (value) {
+                  setState(() => _descriptionController.text = value ?? '');
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Seleccione un departamento';
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: IconButton(
+                onPressed: () => _showAddDepartmentDialog(ref),
+                icon: const Icon(Icons.add_circle, color: kMainColor),
+                tooltip: 'Agregar departamento',
+                style: IconButton.styleFrom(
+                  backgroundColor: kMainColor.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showAddDepartmentDialog(WidgetRef ref) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nuevo Departamento'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nombre',
+            hintText: 'Ej: Producción',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Crear'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (result != null && result.isNotEmpty) {
+      final dept = await DepartmentRepository().create(result);
+      if (dept != null && mounted) {
+        // ignore: unused_result
+        ref.refresh(departmentProvider);
+        setState(() => _descriptionController.text = dept.name);
+      }
+    }
   }
 
   // Presets de SLA rápidos
