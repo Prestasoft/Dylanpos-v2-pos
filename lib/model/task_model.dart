@@ -10,6 +10,9 @@ class TaskModel {
   final String? designationName;
   final String? designationColor;
   final String? reservationNota;
+  final String? customerName;
+  final String? customerPhone;
+  final String? serviceName;
 
   final String? assignedToUserId;
   final String? assignedToEmployeeId;
@@ -32,6 +35,9 @@ class TaskModel {
     this.designationName,
     this.designationColor,
     this.reservationNota,
+    this.customerName,
+    this.customerPhone,
+    this.serviceName,
     this.assignedToUserId,
     this.assignedToEmployeeId,
     this.assignedByUserId,
@@ -53,6 +59,9 @@ class TaskModel {
       designationName: json['designation_name']?.toString(),
       designationColor: json['designation_color']?.toString(),
       reservationNota: json['reservation_nota']?.toString(),
+      customerName: json['customer_name']?.toString(),
+      customerPhone: json['customer_phone']?.toString(),
+      serviceName: json['service_name'] ?? json['package_type']?.toString(),
       assignedToUserId: json['assigned_to_user_id']?.toString(),
       assignedToEmployeeId: json['assigned_to_employee_id']?.toString(),
       assignedByUserId: json['assigned_by_user_id']?.toString(),

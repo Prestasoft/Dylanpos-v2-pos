@@ -198,8 +198,8 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                         _sectionHeader('Por vencer', Icons.schedule, const Color(0xFFEF4444)),
                         ...urgentTasks.map((t) => TaskCountdownCard(
                               task: t,
-                              customerName: _extractCustomerName(t),
-                              serviceName: t.designationName,
+                              customerName: t.customerName ?? 'Cliente',
+                              serviceName: t.serviceName ?? t.designationName,
                               onComplete: () => _completeTask(t),
                             )),
                       ],
@@ -209,8 +209,8 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                         _sectionHeader('Con tiempo', Icons.check_circle_outline, const Color(0xFF10B981)),
                         ...normal.map((t) => TaskCountdownCard(
                               task: t,
-                              customerName: _extractCustomerName(t),
-                              serviceName: t.designationName,
+                              customerName: t.customerName ?? 'Cliente',
+                              serviceName: t.serviceName ?? t.designationName,
                               onComplete: () => _completeTask(t),
                             )),
                       ],
@@ -308,7 +308,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _extractCustomerName(t),
+                  t.customerName ?? 'Cliente',
                   style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                 ),
                 if (t.completionNote != null && t.completionNote!.isNotEmpty)
@@ -323,13 +323,6 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     );
   }
 
-  String _extractCustomerName(TaskModel t) {
-    final nota = t.reservationNota;
-    if (nota == null || nota.isEmpty) return 'Cliente';
-    // La nota puede tener formato "Nota visible ||| {json}", solo usar la parte visible
-    final parts = nota.split('|||');
-    return parts.first.trim().isNotEmpty ? parts.first.trim() : 'Cliente';
-  }
 }
 
 /// Diálogo de confirmación para completar tarea
