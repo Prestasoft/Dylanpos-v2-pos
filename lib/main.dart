@@ -13,6 +13,7 @@ import 'package:provider/provider.dart' as pro;
 import 'package:responsive_framework/responsive_framework.dart' as rf;
 import 'package:responsive_grid/responsive_grid.dart';
 import 'package:salespro_admin/Language/language_provider.dart';
+import 'package:salespro_admin/Screen/HRM/assignments/widgets/task_theme_provider.dart';
 import 'package:salespro_admin/Route/app_routes.dart';
 import 'package:salespro_admin/services/tenant/tenant_model.dart';
 // ignore: avoid_web_libraries_in_flutter
@@ -183,6 +184,9 @@ class _MyAppState extends State<MyApp> {
         ),
         pro.ChangeNotifierProvider<CurrencyProvider>(
           create: (context) => CurrencyProvider(),
+        ),
+        pro.ChangeNotifierProvider<TaskThemeProvider>(
+          create: (context) => TaskThemeProvider(),
         ),
       ],
       child: Builder(

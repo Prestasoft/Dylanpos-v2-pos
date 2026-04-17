@@ -7,6 +7,7 @@ import '../../../model/reservation_model.dart';
 import '../../../services/api_service.dart';
 import '../employees/model/employee_model.dart';
 import '../employees/repo/employee_repo.dart';
+import 'widgets/task_theme.dart';
 
 class EfficiencyReportsScreen extends StatefulWidget {
   const EfficiencyReportsScreen({Key? key}) : super(key: key);
@@ -172,14 +173,17 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tc = TaskColors.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: tc.scaffold,
       appBar: AppBar(
-        title: const Text('Performance KPIs', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        title: Text('Performance KPIs', style: TextStyle(color: tc.appBarTitle)),
+        backgroundColor: tc.appBar,
+        iconTheme: tc.appBarIconTheme,
         elevation: 0.5,
         actions: [
+          const TaskThemeToggle(),
           TextButton.icon(
             icon: const Icon(Icons.date_range, color: Colors.blue),
             label: Text(
@@ -236,12 +240,13 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
   }
 
   Widget _buildSummaryHeader() {
+    final tc = TaskColors.read(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tc.card,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: tc.shadow, blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -255,12 +260,13 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
   }
 
   Widget _buildStatIndicator(String label, String value, IconData icon) {
+    final tc = TaskColors.read(context);
     return Column(
       children: [
         Icon(icon, size: 30, color: Colors.blue[700]),
         const SizedBox(height: 8),
-        Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+        Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: tc.textPrimary)),
+        Text(label, style: TextStyle(color: tc.textSecondary, fontSize: 13)),
       ],
     );
   }
@@ -270,11 +276,13 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
     var sortedKeys = statsMap.keys.toList(growable: false)
       ..sort((k1, k2) => statsMap[k2]!.compareTo(statsMap[k1]!));
 
+    final tc = TaskColors.read(context);
     return Card(
       elevation: 0,
+      color: tc.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: tc.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -285,14 +293,14 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
               children: [
                 Icon(icon, color: color, size: 20),
                 const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: tc.textPrimary)),
               ],
             ),
-            const Divider(height: 24),
+            Divider(height: 24, color: tc.divider),
             if (sortedKeys.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Center(child: Text('Sin datos', style: TextStyle(color: Colors.grey[400]))),
+                child: Center(child: Text('Sin datos', style: TextStyle(color: tc.textHint))),
               )
             else
               ...sortedKeys.map((key) {
@@ -309,8 +317,8 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(child: Text(displayName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
-                          Text(count.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Expanded(child: Text(displayName, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: tc.textPrimary))),
+                          Text(count.toString(), style: TextStyle(fontWeight: FontWeight.bold, color: tc.textPrimary)),
                         ],
                       ),
                       const SizedBox(height: 6),

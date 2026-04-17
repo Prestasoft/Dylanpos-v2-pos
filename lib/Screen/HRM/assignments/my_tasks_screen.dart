@@ -7,6 +7,7 @@ import 'package:salespro_admin/Repository/task_repo.dart';
 import 'package:salespro_admin/model/task_model.dart';
 
 import 'widgets/task_countdown_card.dart';
+import 'widgets/task_theme.dart';
 
 /// Pantalla "Mis Tareas" — home del empleado.
 ///
@@ -106,24 +107,28 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     final urgentTasks = [...overdue, ...critical, ...warning];
     final pendingCount = overdue.length + critical.length + warning.length + normal.length;
 
+    final tc = TaskColors.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: tc.scaffold,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: tc.appBar,
         elevation: 0.5,
+        iconTheme: tc.appBarIconTheme,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Hola, $_userName', style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Hola, $_userName', style: TextStyle(color: tc.appBarTitle, fontSize: 18, fontWeight: FontWeight.bold)),
             Text(
               '$pendingCount tarea${pendingCount == 1 ? '' : 's'} pendiente${pendingCount == 1 ? '' : 's'}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(color: tc.appBarSubtitle, fontSize: 12),
             ),
           ],
         ),
         actions: [
+          const TaskThemeToggle(),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black54),
+            icon: Icon(Icons.refresh, color: tc.appBarIcon),
             tooltip: 'Refrescar',
             onPressed: () {
               setState(() => _loading = true);
@@ -137,8 +142,9 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('Cerrar sesión'),
-                  content: const Text('¿Deseas salir del sistema?'),
+                  backgroundColor: tc.dialogBg,
+                  title: Text('Cerrar sesión', style: TextStyle(color: tc.textPrimary)),
+                  content: Text('¿Deseas salir del sistema?', style: TextStyle(color: tc.textSecondary)),
                   actions: [
                     TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('No')),
                     ElevatedButton(
@@ -224,13 +230,13 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                             children: [
                               Icon(
                                 _completedExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                                color: Colors.grey,
+                                color: tc.textHint,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Completadas hoy (${done.length})',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: tc.textSecondary,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
                                 ),
@@ -250,20 +256,21 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   }
 
   Widget _buildEmptyState() {
+    final tc = TaskColors.read(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.task_alt, size: 72, color: Colors.green[200]),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Sin tareas pendientes',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: tc.textPrimary),
           ),
           const SizedBox(height: 8),
           Text(
             'Cuando te asignen una tarea, aparecerá aquí.',
-            style: TextStyle(color: Colors.grey[500]),
+            style: TextStyle(color: tc.textHint),
           ),
         ],
       ),
@@ -291,13 +298,14 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   }
 
   Widget _buildCompletedCard(TaskModel t) {
+    final tc = TaskColors.read(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: tc.cardAlt,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: tc.border),
       ),
       child: Row(
         children: [
@@ -309,15 +317,15 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
               children: [
                 Text(
                   t.customerName ?? 'Cliente',
-                  style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: tc.textPrimary),
                 ),
                 if (t.completionNote != null && t.completionNote!.isNotEmpty)
-                  Text(t.completionNote!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                  Text(t.completionNote!, style: TextStyle(fontSize: 11, color: tc.textSecondary)),
               ],
             ),
           ),
           if (t.designationName != null)
-            Text(t.designationName!, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+            Text(t.designationName!, style: TextStyle(fontSize: 10, color: tc.textHint)),
         ],
       ),
     );
@@ -342,25 +350,32 @@ class _CompletionDialogState extends State<_CompletionDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tc = TaskColors.of(context);
     return AlertDialog(
-      title: const Row(
+      backgroundColor: tc.dialogBg,
+      title: Row(
         children: [
-          Icon(Icons.check_circle, color: Colors.green),
-          SizedBox(width: 8),
-          Text('Completar tarea'),
+          const Icon(Icons.check_circle, color: Colors.green),
+          const SizedBox(width: 8),
+          Text('Completar tarea', style: TextStyle(color: tc.textPrimary)),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Nota de completado (opcional):'),
+          Text('Nota de completado (opcional):', style: TextStyle(color: tc.textSecondary)),
           const SizedBox(height: 8),
           TextField(
             controller: _noteCtrl,
             maxLines: 3,
-            decoration: const InputDecoration(
+            style: TextStyle(color: tc.textPrimary),
+            decoration: InputDecoration(
               hintText: 'Ej: Fotos editadas y entregadas',
-              border: OutlineInputBorder(),
+              hintStyle: TextStyle(color: tc.textHint),
+              border: OutlineInputBorder(borderSide: BorderSide(color: tc.border)),
+              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: tc.border)),
+              filled: tc.isDark,
+              fillColor: tc.surface,
             ),
           ),
         ],

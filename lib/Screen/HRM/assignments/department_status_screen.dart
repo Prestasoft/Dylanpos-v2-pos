@@ -5,6 +5,7 @@ import 'package:salespro_admin/Repository/task_repo.dart';
 import 'package:salespro_admin/model/task_model.dart';
 import 'package:salespro_admin/services/api_service.dart';
 import '../employees/repo/employee_repo.dart';
+import 'widgets/task_theme.dart';
 
 /// Panel del Encargado: vista general de su equipo con KPIs y semáforo.
 ///
@@ -189,16 +190,19 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tc = TaskColors.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: tc.scaffold,
       appBar: AppBar(
-        title: const Text('Mi Equipo', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        title: Text('Mi Equipo', style: TextStyle(color: tc.appBarTitle)),
+        backgroundColor: tc.appBar,
+        iconTheme: tc.appBarIconTheme,
         elevation: 0.5,
         actions: [
+          const TaskThemeToggle(),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: tc.appBarIcon),
             onPressed: () {
               setState(() => _loading = true);
               _loadData();
@@ -218,7 +222,7 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(
                         'Empleados (${_employees.length})',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tc.textPrimary),
                       ),
                     ),
                   ),
@@ -228,11 +232,11 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.group_off, size: 64, color: Colors.grey[300]),
+                                Icon(Icons.group_off, size: 64, color: tc.textHint),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Sin empleados en este departamento',
-                                  style: TextStyle(color: Colors.grey[600]),
+                                  style: TextStyle(color: tc.textSecondary),
                                 ),
                               ],
                             ),
@@ -270,11 +274,12 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
   }
 
   Widget _kpiCard(String label, int value, Color color) {
+    final tc = TaskColors.read(context);
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: tc.card,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.3)),
           boxShadow: [
@@ -296,7 +301,7 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
               ),
             ),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(label, style: TextStyle(fontSize: 12, color: tc.textSecondary)),
           ],
         ),
       ),
@@ -338,15 +343,17 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
         statusLabel = 'Sin tareas';
     }
 
+    final tc = TaskColors.read(context);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tc.card,
         borderRadius: BorderRadius.circular(12),
         border: Border(left: BorderSide(color: statusColor, width: 4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: tc.shadow,
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -362,16 +369,16 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
         title: Row(
           children: [
             Expanded(
-              child: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(name, style: TextStyle(fontWeight: FontWeight.w600, color: tc.textPrimary)),
             ),
             if (!canLogin)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: tc.chipBg,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text('Sin acceso', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                child: Text('Sin acceso', style: TextStyle(fontSize: 10, color: tc.chipText)),
               ),
           ],
         ),
@@ -421,10 +428,11 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
   }
 
   Widget _statBadge(String label, int value, Color color) {
+    final tc = TaskColors.read(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: value > 0 ? color.withValues(alpha: 0.15) : Colors.grey[100],
+        color: value > 0 ? color.withValues(alpha: 0.15) : tc.surface,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -432,7 +440,7 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
-          color: value > 0 ? color : Colors.grey,
+          color: value > 0 ? color : tc.textHint,
         ),
       ),
     );
@@ -512,14 +520,15 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final tc = TaskColors.of(context);
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.4,
       maxChildSize: 0.95,
       builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: tc.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           children: [
@@ -529,7 +538,7 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: tc.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -539,10 +548,10 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Colors.deepPurple.shade50,
+                    backgroundColor: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
                     child: Text(
                       widget.employeeName.isNotEmpty ? widget.employeeName[0] : '?',
-                      style: TextStyle(color: Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -552,24 +561,24 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
                       children: [
                         Text(
                           widget.employeeName,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tc.textPrimary),
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           '${_tasks.length} tarea${_tasks.length == 1 ? '' : 's'}',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                          style: TextStyle(color: tc.textHint, fontSize: 12),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close, color: tc.appBarIcon),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            Divider(height: 1, color: tc.divider),
             // Lista de tareas
             Expanded(
               child: _loading
@@ -579,9 +588,9 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.task_alt, size: 48, color: Colors.grey[300]),
+                              Icon(Icons.task_alt, size: 48, color: tc.textHint),
                               const SizedBox(height: 12),
-                              Text('Sin tareas asignadas', style: TextStyle(color: Colors.grey[500])),
+                              Text('Sin tareas asignadas', style: TextStyle(color: tc.textSecondary)),
                             ],
                           ),
                         )
@@ -599,6 +608,7 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
   }
 
   Widget _buildTaskTile(TaskModel task) {
+    final tc = TaskColors.read(context);
     final color = _urgencyColor(task);
     final progress = task.progress().clamp(0.0, 1.0);
 
@@ -606,12 +616,12 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tc.card,
         borderRadius: BorderRadius.circular(12),
         border: Border(left: BorderSide(color: color, width: 4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: tc.shadow,
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -626,7 +636,7 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
               Expanded(
                 child: Text(
                   task.customerName ?? 'Cliente',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tc.textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -653,7 +663,7 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 6,
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: tc.progressBg,
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),

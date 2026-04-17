@@ -14,6 +14,7 @@ import '../Designation/model/designation_model.dart';
 import '../Designation/repo/designation_repo.dart';
 import '../employees/model/employee_model.dart';
 import '../employees/repo/employee_repo.dart';
+import 'widgets/task_theme.dart';
 
 class TodayAssignmentsScreen extends ConsumerStatefulWidget {
   const TodayAssignmentsScreen({Key? key}) : super(key: key);
@@ -261,16 +262,18 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     final reservationsAsync = ref.watch(reservationsProvider);
     final packagesAsync = ref.watch(servicePackagesProvider);
 
+    final tc = TaskColors.of(context);
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: tc.scaffold,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Asignación de Personal y Captación', style: TextStyle(color: Colors.black, fontSize: 16)),
+            Text('Asignación de Personal y Captación', style: TextStyle(color: tc.appBarTitle, fontSize: 16)),
             if (_scopedDesignationId != null)
               Builder(builder: (_) {
                 final match = _designations.firstWhere(
@@ -280,15 +283,16 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                 if (match.designation.isEmpty) return const SizedBox.shrink();
                 return Text(
                   'Vista del encargado · ${match.designation}',
-                  style: const TextStyle(color: Colors.deepPurple, fontSize: 11, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: tc.tabSelected, fontSize: 11, fontWeight: FontWeight.w500),
                 );
               }),
           ],
         ),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: tc.appBar,
+        iconTheme: tc.appBarIconTheme,
         elevation: 0.5,
         actions: [
+          const TaskThemeToggle(),
           IconButton(
             icon: const Icon(Icons.calendar_today, color: Colors.blue),
             onPressed: () async {
@@ -304,11 +308,11 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
             },
           ),
         ],
-        bottom: const TabBar(
-          labelColor: Colors.deepPurple,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Colors.deepPurple,
-          tabs: [
+        bottom: TabBar(
+          labelColor: tc.tabSelected,
+          unselectedLabelColor: tc.tabUnselected,
+          indicatorColor: tc.tabIndicator,
+          tabs: const [
             Tab(text: '⏳ Pendientes'),
             Tab(text: '✅ Asignados'),
           ],
@@ -328,10 +332,10 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
+                        Icon(Icons.event_busy, size: 64, color: tc.textHint),
                         const SizedBox(height: 16),
                         Text('No hay reservaciones para ${DateFormat('dd MMM yyyy').format(_selectedDate)}',
-                            style: TextStyle(fontSize: 18, color: Colors.grey[600])),
+                            style: TextStyle(fontSize: 18, color: tc.textSecondary)),
                       ],
                     ),
                   );
@@ -358,14 +362,15 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
   }
 
   Widget _buildList(List<ReservationModel> list, String emptyMessage) {
+    final tc = TaskColors.read(context);
     if (list.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
+            Icon(Icons.event_note, size: 64, color: tc.textHint),
             const SizedBox(height: 16),
-            Text(emptyMessage, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+            Text(emptyMessage, style: TextStyle(fontSize: 16, color: tc.textSecondary)),
           ],
         ),
       );
@@ -426,10 +431,13 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
         ? null
         : employees.where((e) => e.id.toString() == currentId).firstOrNull;
 
+    final tc = TaskColors.read(context);
+
     return Card(
       elevation: 1,
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: tc.card,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -442,26 +450,26 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   width: 30,
                   height: 30,
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.shade50,
+                    color: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     '${index + 1}',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepPurple.shade700),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     reservation.customerName ?? 'Cliente',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tc.textPrimary),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
                   reservation.reservationTime,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: TextStyle(color: tc.textHint, fontSize: 12),
                 ),
               ],
             ),
@@ -496,7 +504,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   )
                 else
                   Expanded(
-                    child: Text('Sin asignar', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                    child: Text('Sin asignar', style: TextStyle(color: tc.textHint, fontSize: 12)),
                   ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
@@ -525,29 +533,31 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     String designationName,
     String slot,
   ) async {
+    final tc = TaskColors.read(context);
     final selected = await showDialog<EmployeeModel>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: tc.dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.deepPurple.shade50,
+                color: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.assignment_ind, color: Colors.deepPurple.shade700, size: 22),
+              child: Icon(Icons.assignment_ind, color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Asignar $designationName', style: const TextStyle(fontSize: 16)),
+                  Text('Asignar $designationName', style: TextStyle(fontSize: 16, color: tc.textPrimary)),
                   Text(
                     reservation.customerName ?? 'Cliente',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.normal),
+                    style: TextStyle(fontSize: 12, color: tc.textHint, fontWeight: FontWeight.normal),
                   ),
                 ],
               ),
@@ -557,9 +567,9 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
         content: SizedBox(
           width: 360,
           child: employees.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text('No hay empleados disponibles en este departamento'),
+              ? Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text('No hay empleados disponibles en este departamento', style: TextStyle(color: tc.textSecondary)),
                 )
               : ListView.builder(
                   shrinkWrap: true,
@@ -569,14 +579,14 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                     return ListTile(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       leading: CircleAvatar(
-                        backgroundColor: Colors.deepPurple.shade50,
+                        backgroundColor: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
                         child: Text(
                           emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
-                          style: TextStyle(color: Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
                         ),
                       ),
-                      title: Text('${emp.name} ${emp.lastName}', style: const TextStyle(fontWeight: FontWeight.w500)),
-                      subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                      title: Text('${emp.name} ${emp.lastName}', style: TextStyle(fontWeight: FontWeight.w500, color: tc.textPrimary)),
+                      subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: tc.textHint)),
                       onTap: () => Navigator.of(ctx).pop(emp),
                     );
                   },
@@ -734,10 +744,12 @@ class _AssignmentCardState extends State<_AssignmentCard> {
 
   @override
   Widget build(BuildContext context) {
+    final tc = TaskColors.of(context);
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: tc.card,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -747,8 +759,8 @@ class _AssignmentCardState extends State<_AssignmentCard> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.blue.shade100,
-                  foregroundColor: Colors.blue.shade800,
+                  backgroundColor: tc.isDark ? Colors.blue.shade900 : Colors.blue.shade100,
+                  foregroundColor: tc.isDark ? Colors.blue.shade200 : Colors.blue.shade800,
                   child: const Icon(Icons.person),
                 ),
                 const SizedBox(width: 12),
@@ -758,11 +770,11 @@ class _AssignmentCardState extends State<_AssignmentCard> {
                     children: [
                       Text(
                         widget.reservation.customerName ?? 'Cliente Desconocido',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tc.textPrimary),
                       ),
                       Text(
                         widget.reservation.serviceName ?? 'Servicio Estándar',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        style: TextStyle(color: tc.textSecondary, fontSize: 14),
                       ),
                     ],
                   ),
@@ -770,24 +782,24 @@ class _AssignmentCardState extends State<_AssignmentCard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.shade50,
+                    color: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     widget.reservation.reservationTime,
-                    style: TextStyle(color: Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
-            const Divider(height: 32),
+            Divider(height: 32, color: tc.divider),
 
             // Si el user es encargado de un cargo específico, solo muestra
             // UN dropdown con su cargo y sus empleados. Sin scope = vista admin completa.
             if (widget.scopedDesignationName != null) ...[
               Text(
                 widget.scopedDesignationName!.toUpperCase(),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: tc.textHint),
               ),
               const SizedBox(height: 8),
               _buildDropdown(
@@ -802,7 +814,7 @@ class _AssignmentCardState extends State<_AssignmentCard> {
               ),
             ] else ...[
               // Vista admin: todos los dropdowns
-              Text('STAFF OPERATIVO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+              Text('STAFF OPERATIVO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: tc.textHint)),
               const SizedBox(height: 8),
               _buildDropdown(
                 label: 'Fotógrafo Asignado',
@@ -837,7 +849,7 @@ class _AssignmentCardState extends State<_AssignmentCard> {
                 },
               ),
               const SizedBox(height: 24),
-              Text('ORIGEN Y CAPTACIÓN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[500])),
+              Text('ORIGEN Y CAPTACIÓN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: tc.textHint)),
               const SizedBox(height: 8),
               _buildDropdown(
                 label: 'Agendado Por (Ventas/Recepción)',
@@ -903,28 +915,30 @@ class _AssignmentCardState extends State<_AssignmentCard> {
     final bool validValue = value == null || items.any((e) => e.id.toString() == value);
     final finalValue = validValue ? value : null;
 
+    final tc = TaskColors.read(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: tc.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: tc.border),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Icon(icon, size: 20, color: tc.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: finalValue,
-                hint: Text(label, style: const TextStyle(fontSize: 14)),
+                hint: Text(label, style: TextStyle(fontSize: 14, color: tc.textHint)),
                 isExpanded: true,
+                dropdownColor: tc.card,
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('No Asignado', style: TextStyle(color: Colors.grey))),
+                  DropdownMenuItem(value: null, child: Text('No Asignado', style: TextStyle(color: tc.textHint))),
                   ...items.map((e) => DropdownMenuItem(
                         value: e.id.toString(),
-                        child: Text('${e.name} ${e.lastName}'),
+                        child: Text('${e.name} ${e.lastName}', style: TextStyle(color: tc.textPrimary)),
                       )),
                 ],
                 onChanged: onChanged,
@@ -942,23 +956,25 @@ class _AssignmentCardState extends State<_AssignmentCard> {
     required List<String> options,
     required Function(String?) onChanged,
   }) {
+    final tc = TaskColors.read(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: tc.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: tc.border),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          hint: Text(label, style: const TextStyle(fontSize: 13)),
+          hint: Text(label, style: TextStyle(fontSize: 13, color: tc.textHint)),
           isExpanded: true,
+          dropdownColor: tc.card,
           items: [
-            const DropdownMenuItem(value: null, child: Text('-', style: TextStyle(color: Colors.grey))),
+            DropdownMenuItem(value: null, child: Text('-', style: TextStyle(color: tc.textHint))),
             ...options.map((e) => DropdownMenuItem(
                   value: e,
-                  child: Text(e, style: const TextStyle(fontSize: 13)),
+                  child: Text(e, style: TextStyle(fontSize: 13, color: tc.textPrimary)),
                 )),
           ],
           onChanged: onChanged,

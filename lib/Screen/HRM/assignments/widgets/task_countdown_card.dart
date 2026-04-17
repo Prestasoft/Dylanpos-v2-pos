@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../model/task_model.dart';
+import 'task_theme.dart';
 
 /// Card animada de una tarea con contador en vivo y pulso visual.
 ///
@@ -135,6 +136,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
   @override
   Widget build(BuildContext context) {
     final color = _baseColor;
+    final tc = TaskColors.of(context);
 
     return AnimatedBuilder(
       animation: _pulseCtrl,
@@ -155,7 +157,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: tc.card,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
           boxShadow: [
@@ -166,7 +168,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
                 spreadRadius: 2,
               ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: tc.shadow,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -196,18 +198,18 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
                       children: [
                         Text(
                           widget.customerName ?? 'Cliente',
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: tc.textPrimary),
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (widget.serviceName != null)
                           Text(
                             widget.serviceName!,
-                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                            style: TextStyle(color: tc.textSecondary, fontSize: 12),
                           ),
                         if (widget.task.assignedByName != null)
                           Text(
                             'Asignado por: ${widget.task.assignedByName}',
-                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                            style: TextStyle(color: tc.textHint, fontSize: 11),
                           ),
                       ],
                     ),
@@ -251,7 +253,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
                   if (_urgency != TaskUrgency.done)
                     Text(
                       '${(_progress * 100).clamp(0, 999).toInt()}%',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 12, color: tc.textHint),
                     ),
                 ],
               ),
@@ -262,7 +264,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
                   child: LinearProgressIndicator(
                     value: _progress.clamp(0.0, 1.0),
                     minHeight: 8,
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: tc.progressBg,
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),
