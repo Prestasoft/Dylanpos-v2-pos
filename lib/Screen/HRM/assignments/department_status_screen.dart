@@ -41,23 +41,77 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
   }
 
   Future<void> _loadScope() async {
-    final user = ApiService().currentUser;
-    if (user == null) return;
-    final scope = user['scoped_designation_id'];
-    if (scope is num) {
-      _scopedDesignationId = scope;
-    } else if (scope is String) {
-      _scopedDesignationId = num.tryParse(scope);
+    try {
+      final user = ApiService().currentUser;
+      if (user == null) return;
+      final scope = user['scoped_designation_id'];
+      if (scope is num) {
+        _scopedDesignationId = scope;
+      } else if (scope is String && scope.isNotEmpty) {
+        _scopedDesignationId = num.tryParse(scope);
+      }
+
+      // Fallback: si no hay scope, buscar por linked_employee_id
+      if (_scopedDesignationId == null) {
+        final linkedId = user['linked_employee_id']?.toString();
+        if (linkedId != null && linkedId.isNotEmpty) {
+          final allEmployees = await EmployeeRepository().getActiveEmployees();
+          final linked = allEmployees.where((e) => e.id.toString() == linkedId).firstOrNull;
+          if (linked != null) {
+            _scopedDesignationId = linked.designationId;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadEmployeesFallback() async {
+    try {
+      final allEmployees = await EmployeeRepository().getActiveEmployees();
+      final filtered = _scopedDesignationId != null
+          ? allEmployees.where((e) => e.designationId == _scopedDesignationId).toList()
+          : allEmployees;
+      if (!mounted) return;
+      setState(() {
+        _employees = filtered.map((e) => {
+          'employee_id': e.id.toString(),
+          'employee_name': '${e.name} ${e.lastName}',
+          'user_id': e.userId,
+          'can_login': e.canLogin,
+          'pendientes': 0,
+          'en_progreso': 0,
+          'vencidas': 0,
+          'completadas_hoy': 0,
+          'estado': 'sin_tareas',
+        }).toList();
+        _totals = {};
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
     }
   }
 
   Future<void> _loadData() async {
     try {
+      // Si no hay scope, cargar todos los empleados como fallback
+      if (_scopedDesignationId == null) {
+        await _loadEmployeesFallback();
+        return;
+      }
+
       // Intentar cargar del endpoint de tasks primero
-      final data = await _taskRepo.getDepartmentStatus(
-        designationId: _scopedDesignationId,
-      );
-      final taskEmployees = (data['employees'] as List?) ?? [];
+      Map<String, dynamic> data = {};
+      List taskEmployees = [];
+      try {
+        data = await _taskRepo.getDepartmentStatus(
+          designationId: _scopedDesignationId,
+        );
+        taskEmployees = (data['employees'] as List?) ?? [];
+      } catch (_) {
+        // Si el endpoint de tasks falla, ir directo al fallback
+      }
 
       // Si el endpoint de tasks no devolvió empleados, cargar directamente
       // del repo de empleados filtrados por designation_id
