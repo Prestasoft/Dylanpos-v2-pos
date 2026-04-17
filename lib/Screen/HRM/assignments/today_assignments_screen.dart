@@ -383,14 +383,231 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       itemCount: list.length,
       itemBuilder: (context, index) {
         final reservation = list[index];
+
+        // Vista ENCARGADO: card compacta + modal para asignar
+        if (scopedDesignationName != null) {
+          return _buildScopedCard(
+            index: index,
+            reservation: reservation,
+            employees: visibleEmployees,
+            designationName: scopedDesignationName,
+          );
+        }
+
+        // Vista ADMIN: card con todos los dropdowns
         return _AssignmentCard(
           reservation: reservation,
           employees: visibleEmployees,
-          scopedDesignationName: scopedDesignationName,
+          scopedDesignationName: null,
           onUpdate: (assignments) => _updateAssignment(reservation, assignments),
         );
       },
     );
+  }
+
+  /// Card compacta para encargados: numerada, nombre del cliente, botón "Asignar"
+  Widget _buildScopedCard({
+    required int index,
+    required ReservationModel reservation,
+    required List<EmployeeModel> employees,
+    required String designationName,
+  }) {
+    final assign = reservation.assignments;
+    final slot = _detectRoleSlotByName(designationName);
+    final currentId = _getAssignmentBySlot(assign, slot);
+    final currentEmployee = currentId == null
+        ? null
+        : employees.where((e) => e.id.toString() == currentId).firstOrNull;
+
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Número
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${index + 1}',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple.shade700),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Info del cliente
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    reservation.customerName ?? 'Cliente',
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '${reservation.serviceName ?? 'Servicio'} · ${reservation.reservationTime}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Estado de asignación
+            if (currentEmployee != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green.shade700, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${currentEmployee.name} ${currentEmployee.lastName}',
+                      style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            // Botón asignar/reasignar
+            ElevatedButton.icon(
+              icon: Icon(currentEmployee != null ? Icons.swap_horiz : Icons.person_add, size: 16),
+              label: Text(currentEmployee != null ? 'Cambiar' : 'Asignar', style: const TextStyle(fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: currentEmployee != null ? Colors.orange : Colors.deepPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => _showAssignModal(reservation, employees, designationName, slot),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Modal para seleccionar empleado
+  Future<void> _showAssignModal(
+    ReservationModel reservation,
+    List<EmployeeModel> employees,
+    String designationName,
+    String slot,
+  ) async {
+    final selected = await showDialog<EmployeeModel>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.assignment_ind, color: Colors.deepPurple.shade700, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Asignar $designationName', style: const TextStyle(fontSize: 16)),
+                  Text(
+                    reservation.customerName ?? 'Cliente',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.normal),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 360,
+          child: employees.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('No hay empleados disponibles en este departamento'),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: employees.length,
+                  itemBuilder: (_, i) {
+                    final emp = employees[i];
+                    return ListTile(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.deepPurple.shade50,
+                        child: Text(
+                          emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
+                          style: TextStyle(color: Colors.deepPurple.shade700, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text('${emp.name} ${emp.lastName}', style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                      onTap: () => Navigator.of(ctx).pop(emp),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected == null) return;
+
+    // Crear las assignments actualizadas
+    final assign = reservation.assignments;
+    final newAssign = ReservationAssignments(
+      fotografoId: slot == 'fotografo' ? selected.id.toString() : assign.fotografoId,
+      maquillistaId: slot == 'maquillista' ? selected.id.toString() : assign.maquillistaId,
+      editorId: slot == 'editor' ? selected.id.toString() : assign.editorId,
+      bookedById: slot == 'vendedor' ? selected.id.toString() : assign.bookedById,
+      contactChannel: assign.contactChannel,
+      socialNetwork: assign.socialNetwork,
+    );
+
+    await _updateAssignment(reservation, newAssign);
+    // Refrescar la pantalla
+    if (mounted) setState(() {});
+  }
+
+  String _detectRoleSlotByName(String name) {
+    final d = name.toLowerCase();
+    if (d.contains('foto') || d.contains('photo') || d.contains('camer')) return 'fotografo';
+    if (d.contains('maquil') || d.contains('makeup') || d.contains('belleza')) return 'maquillista';
+    if (d.contains('edic') || d.contains('editor') || d.contains('post')) return 'editor';
+    return 'vendedor';
+  }
+
+  String? _getAssignmentBySlot(ReservationAssignments a, String slot) {
+    switch (slot) {
+      case 'fotografo': return a.fotografoId;
+      case 'maquillista': return a.maquillistaId;
+      case 'editor': return a.editorId;
+      case 'vendedor': return a.bookedById;
+      default: return null;
+    }
   }
 }
 
