@@ -289,10 +289,9 @@ class _TopBarWidgetState extends ConsumerState<TopBarWidget> {
 
   @override
   void initState() {
-    // Firebase Auth deshabilitado - Usar ApiService para verificar autenticación
-    if (!_apiService.isAuthenticated) {
-      Restart.restartApp();
-    }
+    // Auth check removido del TopBar — el GoRouter redirect ya maneja autenticación.
+    // Tener Restart.restartApp() aquí causaba cierres de sesión al navegar entre
+    // rutas del ShellRoute porque initState se re-ejecuta en cada cambio de ruta.
     super.initState();
     
     // Configurar el servicio de verificación de versiones
