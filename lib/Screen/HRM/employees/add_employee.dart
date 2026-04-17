@@ -854,8 +854,15 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen>
                             .map((d) => DropdownMenuItem(
                                 value: d, child: Text(d.designation)))
                             .toList(),
-                        onChanged: (value) =>
-                            setState(() => selectedDesignation = value),
+                        onChanged: (value) {
+                            setState(() {
+                              selectedDesignation = value;
+                              // Autocompletar departamento desde la designación
+                              if (value != null && value.designationDescription.isNotEmpty) {
+                                departmentController.text = value.designationDescription;
+                              }
+                            });
+                          },
                       ),
                     ),
                     const SizedBox(width: 8),

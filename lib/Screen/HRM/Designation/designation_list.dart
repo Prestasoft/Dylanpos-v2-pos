@@ -120,9 +120,9 @@ class _DesignationListScreenState extends State<DesignationListScreen> {
                                   ),
                                   const SizedBox(width: 20.0),
                                   ElevatedButton(
-                                      onPressed: () => finalUserRoleModel
+                                      onPressed: () => (isSubUser && finalUserRoleModel
                                                   .hrmEdit ==
-                                              false
+                                              false)
                                           ? EasyLoading.showError(
                                               userPermissionErrorText)
                                           : showDialog(
@@ -357,18 +357,14 @@ class _DesignationListScreenState extends State<DesignationListScreen> {
                                                           // 'S.L',
                                                         ),
                                                       ),
-                                                      DataColumn(
+                                                      const DataColumn(
                                                         label: Text(
-                                                          lang.S
-                                                              .of(context)
-                                                              .categoryName,
+                                                          'Cargo',
                                                         ),
                                                       ),
-                                                      DataColumn(
+                                                      const DataColumn(
                                                         label: Text(
-                                                          lang.S
-                                                              .of(context)
-                                                              .description,
+                                                          'Departamento',
                                                         ),
                                                       ),
                                                       DataColumn(

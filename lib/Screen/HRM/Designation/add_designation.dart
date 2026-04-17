@@ -163,9 +163,9 @@ class _AddDesignationScreenState extends State<AddDesignationScreen> {
                         const SizedBox(height: 20.0),
                         _buildTextField(
                           controller: _descriptionController,
-                          label: lang.S.of(context).description,
-                          hint: lang.S.of(context).addDescription,
-                          validator: (_) => null, // Descripción opcional
+                          label: 'Departamento',
+                          hint: 'Ej: Ventas, Producción, Limpieza',
+                          validator: (_) => null,
                         ),
                         const SizedBox(height: 24.0),
                         _buildSectionHeader('Encargado del cargo', FeatherIcons.userCheck),
