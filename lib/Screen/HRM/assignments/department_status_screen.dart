@@ -255,57 +255,57 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
   }
 
   Widget _buildKpiRow() {
+    final tc = TaskColors.read(context);
     final pendientes = _toInt(_totals['total_pendientes']);
     final enProgreso = _toInt(_totals['total_en_progreso']);
     final vencidas = _toInt(_totals['total_vencidas']);
     final completadas = _toInt(_totals['total_completadas_hoy']);
-    return Padding(
-      padding: const EdgeInsets.all(16),
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        color: tc.card,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: tc.shadow, blurRadius: 6, offset: const Offset(0, 2))],
+      ),
       child: Row(
         children: [
-          _kpiCard('Al día', pendientes + enProgreso, Colors.green),
-          const SizedBox(width: 8),
-          _kpiCard('Vencidas', vencidas, Colors.red),
-          const SizedBox(width: 8),
-          _kpiCard('Hoy', completadas, Colors.blue),
+          _kpiItem('Al día', pendientes + enProgreso, const Color(0xFF10B981), Icons.check_circle_outline, tc),
+          _kpiDivider(tc),
+          _kpiItem('Vencidas', vencidas, const Color(0xFFEF4444), Icons.warning_amber_rounded, tc),
+          _kpiDivider(tc),
+          _kpiItem('Completadas', completadas, const Color(0xFF3B82F6), Icons.task_alt, tc),
         ],
       ),
     );
   }
 
-  Widget _kpiCard(String label, int value, Color color) {
-    final tc = TaskColors.read(context);
+  Widget _kpiItem(String label, int value, Color color, IconData icon, TaskColors tc) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: tc.card,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              '$value',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 12, color: tc.textSecondary)),
-          ],
-        ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$value',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: tc.textPrimary),
+          ),
+          Text(label, style: TextStyle(fontSize: 11, color: tc.textSecondary, fontWeight: FontWeight.w500)),
+        ],
       ),
     );
+  }
+
+  Widget _kpiDivider(TaskColors tc) {
+    return Container(width: 1, height: 50, color: tc.divider);
   }
 
   Widget _buildEmployeeCard(dynamic emp) {
@@ -345,61 +345,89 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
 
     final tc = TaskColors.read(context);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: tc.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: statusColor, width: 4)),
-        boxShadow: [
-          BoxShadow(
-            color: tc.shadow,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        onTap: () => _showEmployeeTasks(emp),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: statusColor.withValues(alpha: 0.15),
-          child: Icon(statusIcon, color: statusColor, size: 22),
+    return GestureDetector(
+      onTap: () => _showEmployeeTasks(emp),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: tc.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: tc.border.withValues(alpha: 0.5)),
+          boxShadow: [BoxShadow(color: tc.shadow, blurRadius: 4, offset: const Offset(0, 2))],
         ),
-        title: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(name, style: TextStyle(fontWeight: FontWeight.w600, color: tc.textPrimary)),
-            ),
-            if (!canLogin)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: tc.chipBg,
-                  borderRadius: BorderRadius.circular(4),
+            // Fila 1: Avatar + Nombre + Estado
+            Row(
+              children: [
+                // Inicial del nombre con color de estado
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: statusColor),
+                  ),
                 ),
-                child: Text('Sin acceso', style: TextStyle(fontSize: 10, color: tc.chipText)),
+                const SizedBox(width: 12),
+                // Nombre + badge sin acceso
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tc.textPrimary),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (!canLogin)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text('Sin acceso al sistema', style: TextStyle(fontSize: 11, color: tc.textHint)),
+                        ),
+                    ],
+                  ),
+                ),
+                // Chip de estado
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 14),
+                      const SizedBox(width: 4),
+                      Text(statusLabel, style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            // Fila 2: Stats en barra horizontal
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                children: [
+                  _statChip(pendientes, 'Pendientes', const Color(0xFFF59E0B), tc),
+                  const SizedBox(width: 6),
+                  _statChip(enProgreso, 'En progreso', const Color(0xFF3B82F6), tc),
+                  const SizedBox(width: 6),
+                  _statChip(vencidas, 'Vencidas', const Color(0xFFEF4444), tc),
+                  const SizedBox(width: 6),
+                  _statChip(completadasHoy, 'Hoy', const Color(0xFF10B981), tc),
+                ],
               ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Row(
-            children: [
-              _statBadge('Pend', pendientes, Colors.amber),
-              const SizedBox(width: 6),
-              _statBadge('Prog', enProgreso, Colors.blue),
-              const SizedBox(width: 6),
-              _statBadge('Venc', vencidas, Colors.red),
-              const SizedBox(width: 6),
-              _statBadge('Hoy', completadasHoy, Colors.green),
-            ],
-          ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(statusLabel, style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600)),
+            ),
           ],
         ),
       ),
@@ -427,20 +455,34 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
     );
   }
 
-  Widget _statBadge(String label, int value, Color color) {
-    final tc = TaskColors.read(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: value > 0 ? color.withValues(alpha: 0.15) : tc.surface,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        '$label: $value',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: value > 0 ? color : tc.textHint,
+  Widget _statChip(int value, String label, Color color, TaskColors tc) {
+    final isActive = value > 0;
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? color.withValues(alpha: 0.10) : tc.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? color.withValues(alpha: 0.25) : tc.border.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '$value',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: isActive ? color : tc.textHint,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(fontSize: 8, color: tc.textSecondary, fontWeight: FontWeight.w500),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

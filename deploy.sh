@@ -114,6 +114,11 @@ FOOTER_FILE="$PROJECT_PATH/lib/Route/fotter.dart"
 sed -i '' "s/'v[0-9]*\.[0-9]*\.[0-9]*'/'v$NEW_VERSION'/" "$FOOTER_FILE"
 echo -e "   ${GREEN}✓${NC} fotter.dart: v$NEW_VERSION"
 
+# version.dart - versión interna para version_check_service
+VERSION_DART="$PROJECT_PATH/lib/version.dart"
+sed -i '' "s/appVersion = '[0-9]*\.[0-9]*\.[0-9]*'/appVersion = '$NEW_VERSION'/" "$VERSION_DART"
+echo -e "   ${GREEN}✓${NC} version.dart: $NEW_VERSION"
+
 # web/app-version.json
 BUILD_DATE=$(date "+%Y%m%d-%H%M")
 RELEASE_DATE=$(date "+%Y-%m-%d")

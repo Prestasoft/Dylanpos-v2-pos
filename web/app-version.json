@@ -1,11 +1,11 @@
 {
-  "version": "2.1.464",
-  "build": "20260417-1510",
+  "version": "2.1.466",
+  "build": "20260417-1531",
   "releaseDate": "2026-04-17",
   "environment": "production",
-  "description": "Actualización a versión 2.1.464",
+  "description": "Actualización a versión 2.1.466",
   "changelog": [
-    "Actualización a versión 2.1.464"
+    "Actualización a versión 2.1.466"
   ],
   "forceUpdate": true
 }
