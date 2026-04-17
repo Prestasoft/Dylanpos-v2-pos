@@ -233,6 +233,22 @@ abstract class AcnooAppRoutes {
             return '/hrm/my-tasks';
           }
         }
+        // department_head puede acceder a todas las rutas /hrm/* de su panel
+        if (role == 'department_head') {
+          final currentPath = state.matchedLocation;
+          final allowedPaths = [
+            '/hrm/my-tasks',
+            '/hrm/department-status',
+            '/hrm/today-assignments',
+            '/hrm/efficiency-reports',
+            '/blank-home',
+          ];
+          if (!allowedPaths.any((p) => currentPath.startsWith(p))) {
+            return '/hrm/my-tasks';
+          }
+          // Saltar la verificación de permisos para estas rutas
+          return null;
+        }
       }
 
       // PROTECCIÓN: Usuarios dress_operator solo pueden acceder a rutas específicas
