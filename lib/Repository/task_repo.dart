@@ -6,6 +6,18 @@ import '../services/api_service.dart';
 class TaskRepository {
   final ApiService _apiService = ApiService();
 
+  /// El ApiService a veces retorna el body completo {success, data: {...}}
+  /// en resp.data, y a veces solo el contenido de data directamente.
+  /// Este helper normaliza para siempre obtener el contenido inner.
+  Map<String, dynamic> _unwrapData(Map<String, dynamic>? data) {
+    if (data == null) return {};
+    // Si resp.data tiene key 'data', es el body completo → unwrap
+    if (data.containsKey('data') && data['data'] is Map) {
+      return Map<String, dynamic>.from(data['data'] as Map);
+    }
+    return data;
+  }
+
   /// GET /api/hrm/tasks con filtros opcionales
   Future<List<TaskModel>> getTasks({
     String? assignedToUserId,
@@ -23,7 +35,8 @@ class TaskRepository {
 
     final resp = await _apiService.get('hrm/tasks', queryParams: qp);
     if (!resp.success || resp.data == null) return [];
-    final list = (resp.data['tasks'] as List?) ?? const [];
+    final inner = _unwrapData(resp.data);
+    final list = (inner['tasks'] as List?) ?? const [];
     return list
         .map((e) => TaskModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
@@ -32,30 +45,23 @@ class TaskRepository {
   /// GET /api/hrm/tasks/my — tareas del user autenticado (vista empleado)
   Future<List<TaskModel>> getMyTasks() async {
     final resp = await _apiService.get('hrm/tasks/my');
-    debugPrint('🔵 [TaskRepo.getMyTasks] success=${resp.success} hasData=${resp.data != null} error=${resp.error}');
-    debugPrint('🔵 [TaskRepo.getMyTasks] resp.data keys: ${resp.data?.keys.toList()}');
-    debugPrint('🔵 [TaskRepo.getMyTasks] resp.data raw: ${resp.data.toString().substring(0, (resp.data.toString().length).clamp(0, 200))}');
-    if (!resp.success || resp.data == null) {
-      debugPrint('🔴 [TaskRepo.getMyTasks] Retornando lista vacía - success=${resp.success}');
-      return [];
-    }
-    final tasksRaw = resp.data['tasks'];
-    debugPrint('🔵 [TaskRepo.getMyTasks] tasks type=${tasksRaw.runtimeType} value=${tasksRaw.toString().substring(0, (tasksRaw.toString().length).clamp(0, 200))}');
-    final list = (tasksRaw as List?) ?? const [];
-    debugPrint('🔵 [TaskRepo.getMyTasks] Tasks encontradas: ${list.length}');
+    if (!resp.success || resp.data == null) return [];
+    final inner = _unwrapData(resp.data);
+    final list = (inner['tasks'] as List?) ?? const [];
+    debugPrint('🔵 [TaskRepo.getMyTasks] Tasks: ${list.length}');
     return list
         .map((e) => TaskModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   /// GET /api/hrm/tasks/department-status — panel del encargado
-  /// Retorna Map con { employees: [...], totals: {...} }
   Future<Map<String, dynamic>> getDepartmentStatus({num? designationId}) async {
     final qp = <String, String>{};
     if (designationId != null) qp['designation_id'] = designationId.toString();
     final resp = await _apiService.get('hrm/tasks/department-status', queryParams: qp);
     if (!resp.success || resp.data == null) return {'employees': [], 'totals': {}};
-    return Map<String, dynamic>.from(resp.data);
+    final inner = _unwrapData(resp.data);
+    return inner;
   }
 
   /// POST /api/hrm/tasks — crea tarea con due_at calculado por el backend
@@ -73,13 +79,13 @@ class TaskRepository {
     };
     final resp = await _apiService.post('hrm/tasks', body);
     if (!resp.success || resp.data == null) return null;
-    final taskData = resp.data['task'];
+    final inner = _unwrapData(resp.data);
+    final taskData = inner['task'];
     if (taskData == null) return null;
     return TaskModel.fromJson(Map<String, dynamic>.from(taskData as Map));
   }
 
   /// PUT /api/hrm/tasks/:id — reasigna empleado O actualiza nota.
-  /// Si cambia el responsable, el backend resetea assigned_at y recalcula due_at.
   Future<TaskModel?> updateTask({
     required String taskId,
     String? assignedToUserId,
@@ -95,7 +101,8 @@ class TaskRepository {
 
     final resp = await _apiService.put('hrm/tasks/$taskId', body);
     if (!resp.success || resp.data == null) return null;
-    final taskData = resp.data['task'];
+    final inner = _unwrapData(resp.data);
+    final taskData = inner['task'];
     if (taskData == null) return null;
     return TaskModel.fromJson(Map<String, dynamic>.from(taskData as Map));
   }
@@ -109,7 +116,8 @@ class TaskRepository {
     if (completionNote != null) body['completion_note'] = completionNote;
     final resp = await _apiService.post('hrm/tasks/$taskId/complete', body);
     if (!resp.success || resp.data == null) return null;
-    final taskData = resp.data['task'];
+    final inner = _unwrapData(resp.data);
+    final taskData = inner['task'];
     if (taskData == null) return null;
     return TaskModel.fromJson(Map<String, dynamic>.from(taskData as Map));
   }
@@ -118,7 +126,8 @@ class TaskRepository {
   Future<int> markOverdue() async {
     final resp = await _apiService.post('hrm/tasks/mark-overdue', {});
     if (!resp.success || resp.data == null) return 0;
-    return (resp.data['marked_overdue'] as int?) ?? 0;
+    final inner = _unwrapData(resp.data);
+    return (inner['marked_overdue'] as int?) ?? 0;
   }
 
   /// DELETE /api/hrm/tasks/:id
