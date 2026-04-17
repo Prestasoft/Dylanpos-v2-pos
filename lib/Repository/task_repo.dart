@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../model/task_model.dart';
 import '../services/api_service.dart';
 
@@ -31,8 +32,13 @@ class TaskRepository {
   /// GET /api/hrm/tasks/my — tareas del user autenticado (vista empleado)
   Future<List<TaskModel>> getMyTasks() async {
     final resp = await _apiService.get('hrm/tasks/my');
-    if (!resp.success || resp.data == null) return [];
+    debugPrint('🔵 [TaskRepo.getMyTasks] success=${resp.success} hasData=${resp.data != null} error=${resp.error} statusCode=${resp.statusCode}');
+    if (!resp.success || resp.data == null) {
+      debugPrint('🔴 [TaskRepo.getMyTasks] Retornando lista vacía');
+      return [];
+    }
     final list = (resp.data['tasks'] as List?) ?? const [];
+    debugPrint('🔵 [TaskRepo.getMyTasks] Tasks encontradas: ${list.length}');
     return list
         .map((e) => TaskModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();

@@ -57,13 +57,16 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     try {
       // Primero marca vencidas en el backend
       await _taskRepo.markOverdue().catchError((_) => 0);
+      debugPrint('🔵 [MyTasks._loadTasks] Llamando getMyTasks...');
       final tasks = await _taskRepo.getMyTasks();
+      debugPrint('🔵 [MyTasks._loadTasks] Resultado: ${tasks.length} tasks');
       if (!mounted) return;
       setState(() {
         _tasks = tasks;
         _loading = false;
       });
     } catch (e) {
+      debugPrint('🔴 [MyTasks._loadTasks] Error: $e');
       if (!mounted) return;
       setState(() => _loading = false);
     }
