@@ -26,6 +26,7 @@ class TaskModel {
   final String? completionNote;
 
   final DateTime? startedAt; // Cuando el empleado presionó "Iniciar"
+  final String? supportName; // Nombre de maquillista de soporte (externa)
   final String branchId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -48,6 +49,7 @@ class TaskModel {
     required this.dueAt,
     required this.status,
     this.startedAt,
+    this.supportName,
     this.completedAt,
     this.completionNote,
     required this.branchId,
@@ -57,6 +59,7 @@ class TaskModel {
 
   bool get isStarted => startedAt != null && status == TaskStatus.enProgreso;
   bool get canStart => status == TaskStatus.pendiente;
+  bool get isSupport => supportName != null && supportName!.isNotEmpty;
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
@@ -77,6 +80,7 @@ class TaskModel {
       dueAt: _parseDate(json['due_at']) ?? DateTime.now(),
       status: _parseStatus(json['status']?.toString()),
       startedAt: _parseDate(json['started_at']),
+      supportName: json['support_name']?.toString(),
       completedAt: _parseDate(json['completed_at']),
       completionNote: json['completion_note']?.toString(),
       branchId: json['branch_id']?.toString() ?? '',

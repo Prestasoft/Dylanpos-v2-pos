@@ -818,12 +818,15 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                 if (isMakeup && makeupSlots > 1)
                   ...List.generate(makeupSlots, (mIdx) {
                     final maqId = assign.getMaquillistaAt(mIdx, makeupEvent);
-                    final emp = maqId == null ? null : employees.where((e) => e.id.toString() == maqId).firstOrNull;
+                    final isSupport = maqId != null && maqId.startsWith('support:');
+                    final supportN = isSupport ? maqId.substring(8) : null;
+                    final emp = (maqId == null || isSupport) ? null : employees.where((e) => e.id.toString() == maqId).firstOrNull;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: _buildAssignmentSlotRow(
                         tc: tc,
                         label: makeupLabels[mIdx],
+                        supportName: supportN,
                         employee: emp,
                         onAssign: () => _showAssignModalMulti(reservation, employees, designationName, mIdx, makeupLabels[mIdx], makeupEvent),
                       ),
@@ -863,10 +866,11 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
   Widget _buildAssignmentSlotRow({
     required dynamic tc,
     EmployeeModel? employee,
+    String? supportName,
     String? label,
     required VoidCallback onAssign,
   }) {
-    final isAssigned = employee != null;
+    final isAssigned = employee != null || (supportName != null && supportName.isNotEmpty);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
@@ -907,10 +911,27 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
           // Empleado asignado o "Sin asignar"
           Expanded(
             child: isAssigned
-                ? Text(
-                    '${employee.name} ${employee.lastName}',
-                    style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
+                ? Row(
+                    children: [
+                      if (supportName != null && supportName.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          margin: const EdgeInsets.only(right: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('Soporte', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: Colors.purple)),
+                        ),
+                      ],
+                      Flexible(
+                        child: Text(
+                          employee != null ? '${employee.name} ${employee.lastName}' : (supportName ?? ''),
+                          style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   )
                 : Text('Sin asignar', style: TextStyle(color: tc.textHint, fontSize: 12)),
           ),
@@ -951,71 +972,148 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     String? event,
   ]) async {
     final tc = TaskColors.read(context);
-    final selected = await showDialog<EmployeeModel>(
+    // Resultado puede ser EmployeeModel o Map con support_name
+    final result = await showDialog<dynamic>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: tc.dialogBg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.face_retouching_natural, color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Maq. ${slotLabel ?? 'Maquillaje ${maqIndex + 1}'}', style: TextStyle(fontSize: 16, color: tc.textPrimary)),
+                    Text(reservation.customerName ?? 'Cliente', style: TextStyle(fontSize: 12, color: tc.textHint, fontWeight: FontWeight.normal)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 360,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: employees.length + 2, // empleados + divider + soporte
+              itemBuilder: (_, i) {
+                if (i < employees.length) {
+                  final emp = employees[i];
+                  return ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    leading: CircleAvatar(
+                      backgroundColor: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
+                      child: Text(emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
+                          style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold)),
+                    ),
+                    title: Text('${emp.name} ${emp.lastName}', style: TextStyle(fontWeight: FontWeight.w500, color: tc.textPrimary)),
+                    subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: tc.textHint)),
+                    onTap: () => Navigator.of(ctx).pop(emp),
+                  );
+                }
+                if (i == employees.length) return const Divider();
+                // Último item: soporte
+                return ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.purple.withValues(alpha: 0.15),
+                    child: const Icon(Icons.person_add_alt, color: Colors.purple, size: 20),
+                  ),
+                  title: Text('Maquillista de Soporte', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.purple.shade300)),
+                  subtitle: Text('Maquillista externa', style: TextStyle(fontSize: 11, color: tc.textHint)),
+                  onTap: () {
+                    Navigator.of(ctx).pop(null);
+                    _showSupportNameDialog(reservation, maqIndex, event);
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(null), child: const Text('Cancelar')),
+          ],
+        );
+      },
+    );
+
+    if (result == null) return;
+    if (result is EmployeeModel) {
+      final newAssign = reservation.assignments.withMaquillistaAt(maqIndex, result.id.toString(), event);
+      await _updateAssignment(reservation, newAssign);
+    }
+  }
+
+  /// Diálogo para ingresar nombre de maquillista de soporte
+  Future<void> _showSupportNameDialog(ReservationModel reservation, int maqIndex, String? event) async {
+    final controller = TextEditingController();
+    final tc = TaskColors.read(context);
+    final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: tc.dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.face_retouching_natural, color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Maq. ${slotLabel ?? 'Maquillaje ${maqIndex + 1}'}', style: TextStyle(fontSize: 16, color: tc.textPrimary)),
-                  Text(
-                    reservation.customerName ?? 'Cliente',
-                    style: TextStyle(fontSize: 12, color: tc.textHint, fontWeight: FontWeight.normal),
-                  ),
-                ],
-              ),
-            ),
+            Icon(Icons.person_add_alt, color: Colors.purple.shade300),
+            const SizedBox(width: 10),
+            Text('Maquillista de Soporte', style: TextStyle(fontSize: 16, color: tc.textPrimary)),
           ],
         ),
-        content: SizedBox(
-          width: 360,
-          child: employees.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text('No hay empleados disponibles', style: TextStyle(color: tc.textSecondary)),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: employees.length,
-                  itemBuilder: (_, i) {
-                    final emp = employees[i];
-                    return ListTile(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      leading: CircleAvatar(
-                        backgroundColor: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
-                        child: Text(emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
-                            style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold)),
-                      ),
-                      title: Text('${emp.name} ${emp.lastName}', style: TextStyle(fontWeight: FontWeight.w500, color: tc.textPrimary)),
-                      subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: tc.textHint)),
-                      onTap: () => Navigator.of(ctx).pop(emp),
-                    );
-                  },
-                ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: TextStyle(color: tc.textPrimary),
+          decoration: InputDecoration(
+            labelText: 'Nombre de la maquillista',
+            hintText: 'Ej: María Rodríguez',
+            border: const OutlineInputBorder(),
+            labelStyle: TextStyle(color: tc.textSecondary),
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(null), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
+            onPressed: () {
+              final val = controller.text.trim();
+              if (val.isNotEmpty) Navigator.of(ctx).pop(val);
+            },
+            child: const Text('Asignar Soporte'),
+          ),
         ],
       ),
     );
+    controller.dispose();
 
-    if (selected == null) return;
+    if (name == null || name.isEmpty) return;
 
-    final newAssign = reservation.assignments.withMaquillistaAt(maqIndex, selected.id.toString(), event);
+    // Crear task de soporte: sin employee_id, con support_name, asignada al encargado
+    final maqDesigId = _designationIdForKeywords('maquillaj,makeup,belleza');
+    if (maqDesigId == null) return;
+
+    final taskRepo = TaskRepository();
+    final user = ApiService().currentUser;
+    final encargadaUserId = user?['id']?.toString();
+
+    await taskRepo.createTask(
+      reservationId: reservation.id,
+      designationId: maqDesigId,
+      assignedToUserId: encargadaUserId,
+      supportName: name,
+    );
+
+    // Marcar slot como asignado con ID especial "support:nombre"
+    final newAssign = reservation.assignments.withMaquillistaAt(maqIndex, 'support:$name', event);
     await _updateAssignment(reservation, newAssign);
   }
 

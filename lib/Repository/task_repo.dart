@@ -70,12 +70,14 @@ class TaskRepository {
     required num designationId,
     String? assignedToUserId,
     String? assignedToEmployeeId,
+    String? supportName,
   }) async {
     final body = {
       'reservation_id': reservationId,
       'designation_id': designationId,
       if (assignedToUserId != null) 'assigned_to_user_id': assignedToUserId,
       if (assignedToEmployeeId != null) 'assigned_to_employee_id': assignedToEmployeeId,
+      if (supportName != null) 'support_name': supportName,
     };
     final resp = await _apiService.post('hrm/tasks', body);
     if (!resp.success || resp.data == null) return null;
@@ -105,6 +107,27 @@ class TaskRepository {
     final taskData = inner['task'];
     if (taskData == null) return null;
     return TaskModel.fromJson(Map<String, dynamic>.from(taskData as Map));
+  }
+
+  /// GET /api/hrm/tasks/performance — Métricas de rendimiento por empleado
+  Future<Map<String, dynamic>> getPerformance({
+    required String dateFrom,
+    required String dateTo,
+    num? designationId,
+  }) async {
+    final params = <String, String>{
+      'date_from': dateFrom,
+      'date_to': dateTo,
+    };
+    if (designationId != null) params['designation_id'] = designationId.toString();
+    final resp = await _apiService.get('hrm/tasks/performance', queryParams: params);
+    if (resp.success && resp.data != null) {
+      final raw = resp.data is Map ? resp.data as Map<String, dynamic> : <String, dynamic>{};
+      // Unwrap: la API retorna {success, data: {employees, totals}}
+      if (raw['data'] is Map) return Map<String, dynamic>.from(raw['data']);
+      return raw;
+    }
+    return {};
   }
 
   /// POST /api/hrm/tasks/:id/start — Empleado inicia la tarea

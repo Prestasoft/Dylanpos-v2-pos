@@ -219,6 +219,19 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
                           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: tc.textPrimary),
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (widget.task.isSupport)
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Soporte: ${widget.task.supportName}',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.purple),
+                            ),
+                          ),
                         if (widget.serviceName != null)
                           Text(
                             widget.serviceName!,

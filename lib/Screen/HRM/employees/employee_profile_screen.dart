@@ -1,4 +1,7 @@
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:salespro_admin/Screen/HRM/employees/model/employee_model.dart';
@@ -131,22 +134,42 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
             ),
             child: Row(
               children: [
-                // Foto del empleado
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: kMainColor, width: 2),
-                  ),
-                  child: EmployeePhotoWidget(
-                    photoUrl: widget.employee.photoUrl,
-                    size: 96,
-                    borderRadius: 10,
-                    backgroundColor: Colors.grey[100],
-                    fallbackIconSize: 50,
-                    fallbackIconColor: kMainColor,
+                // Foto del empleado con botón editar
+                GestureDetector(
+                  onTap: _pickAndUploadPhoto,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: kMainColor, width: 2),
+                        ),
+                        child: EmployeePhotoWidget(
+                          photoUrl: widget.employee.photoUrl,
+                          size: 96,
+                          borderRadius: 10,
+                          backgroundColor: Colors.grey[100],
+                          fallbackIconSize: 50,
+                          fallbackIconColor: kMainColor,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: kMainColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 20),
@@ -533,6 +556,52 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final uploadInput = html.FileUploadInputElement()..accept = 'image/*';
+    uploadInput.click();
+
+    uploadInput.onChange.listen((event) async {
+      final files = uploadInput.files;
+      if (files == null || files.isEmpty) return;
+
+      final file = files[0];
+      // Validar tamaño (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        EasyLoading.showError('La imagen debe ser menor a 2MB');
+        return;
+      }
+
+      EasyLoading.show(status: 'Subiendo foto...');
+
+      final reader = html.FileReader();
+      reader.readAsDataUrl(file);
+      reader.onLoadEnd.listen((_) async {
+        final base64Full = reader.result as String;
+        // Extraer solo el base64 sin el prefijo data:image/...;base64,
+        final base64Data = base64Full.contains(',') ? base64Full.split(',').last : base64Full;
+
+        // Actualizar via API
+        final response = await ApiService().put(
+          'hrm/employees/${widget.employee.id}',
+          {'image_url': base64Data},
+        );
+
+        EasyLoading.dismiss();
+
+        if (response.success) {
+          EasyLoading.showSuccess('Foto actualizada');
+          if (mounted) {
+            setState(() {
+              widget.employee.photoUrl = base64Data;
+            });
+          }
+        } else {
+          EasyLoading.showError(response.message ?? 'Error al subir foto');
+        }
+      });
+    });
   }
 
   Future<void> _openCredentialsDialog() async {

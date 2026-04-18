@@ -47,7 +47,7 @@ class EmployeeModel {
   late final String? terminationReason;
 
   // Información adicional
-  late final String? photoUrl;
+  String? photoUrl;
   String? notes;
 
   // Campos para vacaciones
