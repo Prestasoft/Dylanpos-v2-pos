@@ -216,6 +216,17 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
                             Flexible(
                               child: Text(name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tc.textPrimary), overflow: TextOverflow.ellipsis),
                             ),
+                            if (emp['designation'] != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: tc.isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(emp['designation'].toString(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: tc.textSecondary)),
+                              ),
+                            ],
                             if (isRecord) ...[
                               const SizedBox(width: 6),
                               Container(
@@ -396,7 +407,7 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
                           Icon(tOnTime ? Icons.check : Icons.close, size: 12, color: tOnTime ? Colors.green.shade400 : Colors.red.shade400),
                           const SizedBox(width: 6),
                           Text(
-                            maqCount > 1 ? 'Maquillaje ${idx + 1}' : 'Maquillaje',
+                            maqCount > 1 ? '${emp['designation'] ?? 'Tarea'} ${idx + 1}' : (emp['designation']?.toString() ?? 'Tarea'),
                             style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: tc.textHint),
                           ),
                           const SizedBox(width: 8),
