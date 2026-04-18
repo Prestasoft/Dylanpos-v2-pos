@@ -11,6 +11,7 @@ import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_photo_widge
 import 'package:salespro_admin/Screen/HRM/employees/widgets/employee_credentials_dialog.dart';
 import 'package:salespro_admin/Screen/HRM/employees/services/employee_credentials_service.dart';
 import 'package:salespro_admin/Screen/HRM/employees/add_employee.dart';
+import 'package:salespro_admin/services/api_service.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/repo/designation_repo.dart';
 import 'package:salespro_admin/Screen/HRM/employees/repo/employee_repo.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant Data/constant.dart';
@@ -367,14 +368,169 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
 
   Widget _buildCredentialsButton() {
     final hasAccess = widget.employee.canLogin;
-    return Tooltip(
-      message: hasAccess ? 'Revocar acceso' : 'Crear credenciales de acceso',
-      child: IconButton(
-        icon: Icon(
-          hasAccess ? Icons.lock_open : Icons.vpn_key,
-          color: hasAccess ? Colors.green : Colors.indigo,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasAccess)
+          Tooltip(
+            message: 'Ver datos de acceso',
+            child: IconButton(
+              icon: const Icon(Icons.badge, color: Color(0xFFD4A84B)),
+              onPressed: _showAccessInfoDialog,
+            ),
+          ),
+        Tooltip(
+          message: hasAccess ? 'Revocar acceso' : 'Crear credenciales de acceso',
+          child: IconButton(
+            icon: Icon(
+              hasAccess ? Icons.lock_open : Icons.vpn_key,
+              color: hasAccess ? Colors.green : Colors.indigo,
+            ),
+            onPressed: hasAccess ? _revokeAccess : _openCredentialsDialog,
+          ),
         ),
-        onPressed: hasAccess ? _revokeAccess : _openCredentialsDialog,
+      ],
+    );
+  }
+
+  Future<void> _showAccessInfoDialog() async {
+    // Obtener datos del usuario vinculado desde la API
+    Map<String, dynamic>? userData;
+    if (widget.employee.userId != null) {
+      final resp = await ApiService().get('users/${widget.employee.userId}');
+      if (resp.success && resp.data != null) {
+        userData = resp.data['user'] ?? resp.data;
+      }
+    }
+
+    if (!mounted) return;
+
+    final username = userData?['username'] ?? userData?['email'] ?? '—';
+    final role = userData?['role'] ?? '—';
+    final branchId = userData?['branch_id'] ?? '—';
+    final isHead = widget.employee.isDepartmentHead;
+
+    String rolLabel;
+    Color rolColor;
+    IconData rolIcon;
+    if (role == 'department_head') {
+      rolLabel = 'Encargado de Departamento';
+      rolColor = const Color(0xFFD4A84B);
+      rolIcon = Icons.star;
+    } else if (role == 'employee') {
+      rolLabel = 'Empleado';
+      rolColor = Colors.blue;
+      rolIcon = Icons.person;
+    } else {
+      rolLabel = role.toString();
+      rolColor = Colors.grey;
+      rolIcon = Icons.person_outline;
+    }
+
+    String branchLabel;
+    switch (branchId) {
+      case 'stg': branchLabel = 'Santiago'; break;
+      case 'sde': branchLabel = 'Santo Domingo Este'; break;
+      case 'sdo': branchLabel = 'Santo Domingo Oeste'; break;
+      case 'rom': branchLabel = 'La Romana'; break;
+      default: branchLabel = branchId.toString().toUpperCase();
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD4A84B).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.badge, color: Color(0xFFD4A84B), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Datos de Acceso', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(widget.employee.fullName, style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.normal)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Estado
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                    const SizedBox(width: 8),
+                    const Text('Acceso activo', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green, fontSize: 13)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Usuario
+              _accessInfoRow(Icons.person, 'Usuario', username.toString()),
+              const SizedBox(height: 10),
+              // Rol
+              _accessInfoRow(rolIcon, 'Rol', rolLabel, valueColor: rolColor),
+              const SizedBox(height: 10),
+              // Encargado
+              if (isHead) ...[
+                _accessInfoRow(Icons.star, 'Encargado', 'Sí — Encargado de ${widget.employee.department}', valueColor: const Color(0xFFD4A84B)),
+                const SizedBox(height: 10),
+              ],
+              // Sucursal
+              _accessInfoRow(Icons.business, 'Sucursal', branchLabel),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _accessInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: valueColor ?? Colors.grey[600]),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+              const SizedBox(height: 2),
+              Text(value, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: valueColor)),
+            ],
+          ),
+        ],
       ),
     );
   }
