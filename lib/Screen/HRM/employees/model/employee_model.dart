@@ -57,6 +57,7 @@ class EmployeeModel {
   // Acceso al sistema (sistema de tareas por departamento)
   String? userId; // User ID asociado si el empleado tiene credenciales
   bool canLogin; // TRUE si tiene credenciales activas
+  bool isDepartmentHead; // TRUE si es encargado de su departamento
 
   EmployeeModel({
     required this.id,
@@ -103,6 +104,7 @@ class EmployeeModel {
     this.vacationDaysTaken = 0,
     this.userId,
     this.canLogin = false,
+    this.isDepartmentHead = false,
   });
 
   /// Nombre completo del empleado
@@ -252,6 +254,7 @@ class EmployeeModel {
       vacationDaysTaken: parseIntValue(json['vacation_days_taken'] ?? json['vacationDaysTaken'], 0),
       userId: (json['user_id'] ?? json['userId'])?.toString(),
       canLogin: (json['can_login'] ?? json['canLogin']) == true,
+      isDepartmentHead: (json['is_department_head'] ?? json['isDepartmentHead']) == true,
     );
   }
 
@@ -304,6 +307,7 @@ class EmployeeModel {
       'vacation_days_taken': vacationDaysTaken,
       'user_id': userId,
       'can_login': canLogin,
+      'is_department_head': isDepartmentHead,
     };
   }
 }

@@ -1,11 +1,11 @@
 {
-  "version": "2.1.502",
-  "build": "20260417-2308",
-  "releaseDate": "2026-04-17",
+  "version": "2.1.508",
+  "build": "20260418-0103",
+  "releaseDate": "2026-04-18",
   "environment": "production",
-  "description": "Actualización a versión 2.1.502",
+  "description": "Actualización a versión 2.1.508",
   "changelog": [
-    "Actualización a versión 2.1.502"
+    "Actualización a versión 2.1.508"
   ],
   "forceUpdate": true
 }

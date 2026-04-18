@@ -16,6 +16,7 @@ import 'package:salespro_admin/commas.dart';
 
 import '../../../const.dart';
 import '../../Widgets/Constant Data/constant.dart';
+import '../departments/department_provider.dart';
 import '../widgets/deleteing_alart_dialog.dart';
 import 'add_employee.dart';
 
@@ -107,14 +108,26 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                   default:
                     currentList = activeEmployees;
                 }
-                // Extraer departamentos únicos de TODOS los empleados para los chips
+                // Extraer departamentos únicos y ordenar por display_order de BD
                 final allDepartments = <String>{};
                 for (final e in allEmployees) {
                   if (e.department.isNotEmpty && e.department != 'General') {
                     allDepartments.add(e.department);
                   }
                 }
-                final sortedDepartments = allDepartments.toList()..sort();
+                // Obtener orden de departamentos desde la BD
+                final deptModels = ref.watch(departmentProvider).valueOrNull ?? [];
+                final deptOrderMap = <String, int>{};
+                for (final d in deptModels) {
+                  deptOrderMap[d.name] = d.displayOrder;
+                }
+                final sortedDepartments = allDepartments.toList()
+                  ..sort((a, b) {
+                    final orderA = deptOrderMap[a] ?? 999;
+                    final orderB = deptOrderMap[b] ?? 999;
+                    if (orderA != orderB) return orderA.compareTo(orderB);
+                    return a.compareTo(b); // fallback alfabético
+                  });
 
                 final filteredList = currentList.where((employee) {
                   // Filtro por departamento
@@ -496,6 +509,136 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
     );
   }
 
+  /// Card profesional del encargado de departamento
+  Widget _buildHeadCard(EmployeeModel head, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xFFFDF8EE), const Color(0xFFFFF9F0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD4A84B).withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD4A84B).withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Foto
+          Stack(
+            children: [
+              EmployeePhotoCircle(
+                photoUrl: head.photoUrl,
+                radius: 28,
+                employeeName: head.fullName,
+                showBadge: false,
+              ),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4A84B),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.star, size: 10, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4A84B).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'ENCARGADO',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFB8860B),
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  head.fullName,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  head.designation,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          // Contacto
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (head.phoneNumber.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.phone, size: 13, color: Colors.grey[500]),
+                    const SizedBox(width: 4),
+                    Text(head.phoneNumber, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  ],
+                ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.circle, size: 8, color: head.status == 'Activo' ? Colors.green : Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(head.status, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          // Botón ver perfil
+          IconButton(
+            icon: const Icon(Icons.visibility, size: 20),
+            color: const Color(0xFFD4A84B),
+            tooltip: 'Ver perfil',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EmployeeProfileScreen(employee: head),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmployeeTable(ThemeData theme, List<EmployeeModel> employees, WidgetRef ref) {
     if (employees.isEmpty) {
       return Padding(
@@ -515,16 +658,52 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
       );
     }
 
-    // Paginación
+    // Separar encargado del equipo cuando hay departamento filtrado
+    EmployeeModel? departmentHead;
+    List<EmployeeModel> teamMembers = employees;
+
+    if (_selectedDepartment != null) {
+      final heads = employees.where((e) => e.isDepartmentHead).toList();
+      if (heads.isNotEmpty) {
+        departmentHead = heads.first;
+        teamMembers = employees.where((e) => !e.isDepartmentHead).toList();
+      }
+    }
+
+    // Paginación (solo para el equipo, el encargado siempre se muestra)
     final startIndex = (_currentPage - 1) * _itemsPerPage;
     final endIndex = _itemsPerPage == -1
-        ? employees.length
-        : (startIndex + _itemsPerPage).clamp(0, employees.length);
-    final paginatedEmployees = employees.sublist(startIndex, endIndex);
-    final totalPages = _itemsPerPage == -1 ? 1 : (employees.length / _itemsPerPage).ceil();
+        ? teamMembers.length
+        : (startIndex + _itemsPerPage).clamp(0, teamMembers.length);
+    final paginatedEmployees = teamMembers.sublist(startIndex, endIndex);
+    final totalPages = _itemsPerPage == -1 ? 1 : (teamMembers.length / _itemsPerPage).ceil();
 
     return Column(
       children: [
+        // Card del encargado (si hay departamento filtrado y tiene encargado)
+        if (departmentHead != null) ...[
+          _buildHeadCard(departmentHead, ref),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                Icon(Icons.people, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 6),
+                Text(
+                  'Equipo (${teamMembers.length})',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Divider(color: Colors.grey[300])),
+              ],
+            ),
+          ),
+        ],
+
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(

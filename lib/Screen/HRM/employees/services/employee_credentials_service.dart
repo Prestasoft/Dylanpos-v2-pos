@@ -74,12 +74,14 @@ class EmployeeCredentialsService {
       // 2. Vincular el user_id al empleado y activar can_login
       employee.userId = newUserId;
       employee.canLogin = true;
+      employee.isDepartmentHead = isDepartmentHead;
 
       final updateResponse = await _apiService.put(
         'hrm/employees/${employee.id}',
         {
           'user_id': newUserId,
           'can_login': true,
+          'is_department_head': isDepartmentHead,
         },
       );
 

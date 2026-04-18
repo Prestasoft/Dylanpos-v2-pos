@@ -51,4 +51,18 @@ class DepartmentRepository {
       return false;
     }
   }
+
+  /// Guardar el orden de todos los departamentos de una vez.
+  Future<bool> reorder(List<DepartmentModel> departments) async {
+    try {
+      final orders = departments.asMap().entries.map((e) => {
+        'id': e.value.id,
+        'display_order': e.key,
+      }).toList();
+      final resp = await _api.put('hrm/departments/reorder', {'orders': orders});
+      return resp.success;
+    } catch (_) {
+      return false;
+    }
+  }
 }
