@@ -1,11 +1,11 @@
 {
-  "version": "2.1.481",
-  "build": "20260417-1928",
+  "version": "2.1.486",
+  "build": "20260417-2029",
   "releaseDate": "2026-04-17",
   "environment": "production",
-  "description": "Actualización a versión 2.1.481",
+  "description": "Actualización a versión 2.1.486",
   "changelog": [
-    "Actualización a versión 2.1.481"
+    "Actualización a versión 2.1.486"
   ],
   "forceUpdate": true
 }

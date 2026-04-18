@@ -726,6 +726,12 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.business_rounded,
         ),
         SidebarSubmenuModel(
+          name: 'Seguimiento Clientes',
+          type: "designations",
+          navigationPath: '/hrm/client-tracking',
+          materialIcon: Icons.track_changes_rounded,
+        ),
+        SidebarSubmenuModel(
           name: 'Nómina',
           type: "salary_list",
           navigationPath: '/hrm/salaries-list',

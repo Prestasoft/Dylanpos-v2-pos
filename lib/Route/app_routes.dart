@@ -20,6 +20,7 @@ import 'package:salespro_admin/Screen/Expenses/expense_category.dart';
 import 'package:salespro_admin/Screen/Expenses/new_expense.dart';
 import 'package:salespro_admin/Screen/HRM/Designation/designation_list.dart';
 import 'package:salespro_admin/Screen/HRM/departments/department_list_screen.dart';
+import 'package:salespro_admin/Screen/HRM/reception/client_tracking_screen.dart';
 import 'package:salespro_admin/Screen/HRM/salaries%20list/salaries_list_screen.dart';
 import 'package:salespro_admin/Screen/Income/income_category.dart';
 import 'package:salespro_admin/Screen/Income/new_income.dart';
@@ -1047,6 +1048,14 @@ abstract class AcnooAppRoutes {
                 path: 'departments',
                 pageBuilder: (context, state) => const NoTransitionPage<void>(
                   child: DepartmentListScreen(),
+                ),
+              ),
+
+              ///----------------Client Tracking Route--------------------------
+              GoRoute(
+                path: 'client-tracking',
+                pageBuilder: (context, state) => const NoTransitionPage<void>(
+                  child: ClientTrackingScreen(),
                 ),
               ),
 
