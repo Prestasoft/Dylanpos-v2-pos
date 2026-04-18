@@ -782,7 +782,7 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.assignment_ind_rounded,
         ),
         SidebarSubmenuModel(
-          name: 'KPIs Eficiencia',
+          name: 'Rendimiento',
           type: "hrm",
           navigationPath: '/hrm/efficiency-reports',
           materialIcon: Icons.insert_chart_outlined,
@@ -827,7 +827,7 @@ List<SidebarItemModel> get topMenus {
           materialIcon: Icons.assignment_ind_rounded,
         ),
         SidebarSubmenuModel(
-          name: 'KPIs Eficiencia',
+          name: 'Rendimiento',
           type: "department_head",
           navigationPath: '/hrm/efficiency-reports',
           materialIcon: Icons.insert_chart_outlined,

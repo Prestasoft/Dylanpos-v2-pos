@@ -182,8 +182,8 @@ abstract class AcnooAppRoutes {
     if (path.startsWith('/hrm/rentability')) return 'rentability';
     if (path.startsWith('/hrm/my-tasks')) return 'my_tasks';
     if (path.startsWith('/hrm/department-status')) return 'department_head';
-    if (path.startsWith('/hrm/today-assignments')) return 'department_head';
-    if (path.startsWith('/hrm/efficiency-reports')) return 'department_head';
+    if (path.startsWith('/hrm/today-assignments')) return 'hrm';
+    if (path.startsWith('/hrm/efficiency-reports')) return 'hrm';
     if (path.startsWith('/hrm')) return 'hrm';
 
     // Configuración
