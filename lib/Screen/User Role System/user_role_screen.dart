@@ -13,6 +13,8 @@ import '../../Repository/get_user_role_repo.dart';
 import '../../const.dart';
 import '../Widgets/Constant Data/constant.dart';
 import '../Widgets/noDataFound.dart';
+import '../HRM/employees/model/employee_model.dart';
+import '../HRM/employees/repo/employee_repo.dart';
 import 'add_user_role_screen.dart';
 import 'change_deletion_password_dialog.dart';
 import 'change_user_password_dialog.dart';
@@ -29,12 +31,13 @@ class UserRoleScreen extends StatefulWidget {
 }
 
 class _UserRoleScreenState extends State<UserRoleScreen> {
+  // Cache de vinculaciones: userId → employeeName
+  final Map<String, String> _linkedCache = {};
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     checkCurrentUserAndRestartApp();
-    // voidLink(context: context);
   }
 
   int selectedItem = 10;
@@ -560,6 +563,36 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
                                                                           tooltip: 'Eliminar usuario',
                                                                         ),
                                                                       const SizedBox(width: 4),
+                                                                      // Botón de vincular empleado
+                                                                      if (!isProtectedUser(paginatedList[index].databaseId, paginatedList[index].email))
+                                                                        Builder(builder: (_) {
+                                                                          final uid = paginatedList[index].userKey ?? paginatedList[index].databaseId ?? '';
+                                                                          final linkedName = _linkedCache[uid];
+                                                                          final isLinked = linkedName != null;
+                                                                          return Tooltip(
+                                                                            message: isLinked ? 'Vinculado: $linkedName' : 'Vincular con empleado',
+                                                                            child: InkWell(
+                                                                              borderRadius: BorderRadius.circular(20),
+                                                                              onTap: () => _showLinkEmployeeDialog(context, paginatedList[index], ref),
+                                                                              child: Container(
+                                                                                padding: const EdgeInsets.all(6),
+                                                                                decoration: BoxDecoration(
+                                                                                  color: isLinked ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.08),
+                                                                                  shape: BoxShape.circle,
+                                                                                  border: Border.all(
+                                                                                    color: isLinked ? Colors.green.withValues(alpha: 0.4) : Colors.grey.withValues(alpha: 0.3),
+                                                                                  ),
+                                                                                ),
+                                                                                child: Icon(
+                                                                                  isLinked ? Icons.check : Icons.link,
+                                                                                  color: isLinked ? Colors.green : Colors.grey,
+                                                                                  size: 16,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                        }),
+                                                                      const SizedBox(width: 4),
                                                                       // Botón de cambiar contraseña
                                                                       IconButton(
                                                                         onPressed: () {
@@ -741,6 +774,184 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
   }
 
   // Método para mostrar confirmación de eliminación
+  /// Modal rápido para vincular un usuario con su perfil de empleado
+  Future<void> _showLinkEmployeeDialog(BuildContext context, UserRoleModel user, WidgetRef ref) async {
+    final userId = user.userKey ?? user.databaseId ?? '';
+    if (userId.isEmpty) return;
+
+    // Cargar empleados
+    final employees = await EmployeeRepository().getActiveEmployees();
+    if (!mounted) return;
+
+    // Cargar linked_employee_id actual
+    String? currentLinkedId;
+    try {
+      final resp = await ApiService().get('users/$userId');
+      if (resp.success && resp.data != null) {
+        final u = resp.data['user'] ?? resp.data;
+        final linked = u['linked_employee_id']?.toString();
+        if (linked != null && linked.isNotEmpty && linked != 'null') {
+          currentLinkedId = linked;
+        }
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    // Resolver nombre actual y actualizar cache
+    String? currentName;
+    if (currentLinkedId != null) {
+      final match = employees.where((e) => e.id.toString() == currentLinkedId).firstOrNull;
+      if (match != null) {
+        currentName = '${match.name} ${match.lastName}'.trim();
+        _linkedCache[userId] = currentName;
+      }
+    } else {
+      _linkedCache.remove(userId);
+    }
+    if (mounted) setState(() {});
+
+    final selected = await showDialog<EmployeeModel>(
+      context: context,
+      builder: (ctx) {
+        String search = '';
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final filtered = search.isEmpty
+                ? employees
+                : employees.where((e) => '${e.name} ${e.lastName}'.toLowerCase().contains(search.toLowerCase())).toList();
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.link, color: Colors.deepPurple),
+                      const SizedBox(width: 8),
+                      const Text('Vincular Empleado', style: TextStyle(fontSize: 18)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Usuario: ${user.userTitle ?? user.email ?? ''}',
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.normal)),
+                  if (currentName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('Vinculado a: $currentName',
+                            style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                ],
+              ),
+              content: SizedBox(
+                width: 400,
+                height: 400,
+                child: Column(
+                  children: [
+                    TextField(
+                      onChanged: (v) => setDialogState(() => search = v),
+                      decoration: InputDecoration(
+                        hintText: 'Buscar empleado...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(child: Text('No se encontraron empleados', style: TextStyle(color: Colors.grey.shade500)))
+                          : ListView.builder(
+                              itemCount: filtered.length,
+                              itemBuilder: (_, i) {
+                                final emp = filtered[i];
+                                final isLinked = emp.id.toString() == currentLinkedId;
+                                return ListTile(
+                                  dense: true,
+                                  selected: isLinked,
+                                  selectedTileColor: Colors.deepPurple.withValues(alpha: 0.05),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  leading: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: isLinked ? Colors.green.withValues(alpha: 0.15) : Colors.deepPurple.withValues(alpha: 0.1),
+                                    child: Text(emp.name.isNotEmpty ? emp.name[0] : '?',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                                            color: isLinked ? Colors.green : Colors.deepPurple)),
+                                  ),
+                                  title: Text('${emp.name} ${emp.lastName}',
+                                      style: TextStyle(fontSize: 13, fontWeight: isLinked ? FontWeight.w700 : FontWeight.w400)),
+                                  subtitle: Text('${emp.designation} · ${emp.department}',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                                  trailing: isLinked ? const Icon(Icons.check_circle, color: Colors.green, size: 18) : null,
+                                  onTap: () => Navigator.pop(ctx, emp),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                if (currentLinkedId != null)
+                  TextButton.icon(
+                    icon: const Icon(Icons.link_off, size: 16, color: Colors.red),
+                    label: const Text('Desvincular', style: TextStyle(color: Colors.red)),
+                    onPressed: () async {
+                      try {
+                        await ApiService().put('users/$userId', {'linked_employee_id': null});
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) {
+                          setState(() => _linkedCache.remove(userId));
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Text('Usuario desvinculado'), backgroundColor: Colors.orange));
+                        }
+                      } catch (_) {}
+                    },
+                  ),
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (selected == null) return;
+
+    // Guardar vinculación
+    try {
+      final resp = await ApiService().put('users/$userId', {
+        'linked_employee_id': selected.id.toString(),
+      });
+
+      if (resp.success && mounted) {
+        setState(() {
+          _linkedCache[userId] = '${selected.name} ${selected.lastName}'.trim();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Vinculado a ${selected.name} ${selected.lastName}'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
+  }
+
   Future<void> _showDeleteConfirmation(BuildContext context, UserRoleModel user, WidgetRef ref) async {
     return showDialog<void>(
       context: context,

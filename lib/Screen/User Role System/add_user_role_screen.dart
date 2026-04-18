@@ -10,6 +10,8 @@ import '../../Provider/user_role_provider.dart';
 import '../../const.dart';
 import '../../model/user_role_model.dart';
 import '../../services/api_service.dart';
+import '../HRM/employees/model/employee_model.dart';
+import '../HRM/employees/repo/employee_repo.dart';
 import 'permissions_editor_widget.dart';
 
 class AddUserRole extends StatefulWidget {
@@ -150,6 +152,11 @@ class _AddUserRoleState extends State<AddUserRole> {
     selectedBranchId = widget.userRoleModel?.branchId ?? 'stg';
     selectedAllowedBranches = widget.userRoleModel?.allowedBranches ?? [];
 
+    // Cargar linked_employee_id si estamos editando
+    if (widget.userRoleModel != null) {
+      _loadLinkedEmployee();
+    }
+
     debugPrint('🔵 [_initializeEditData] email: ${emailController.text}');
     debugPrint('🔵 [_initializeEditData] userTitle: ${titleController.text}');
     debugPrint('🔵 [_initializeEditData] permissions.length: ${widget.userRoleModel?.permissions.length ?? 0}');
@@ -171,6 +178,149 @@ class _AddUserRoleState extends State<AddUserRole> {
   bool confirmHidePassword = true;
   String selectedBranchId = 'stg'; // Sucursal seleccionada por defecto
   List<String> selectedAllowedBranches = []; // Sucursales permitidas para cambiar
+  String? _linkedEmployeeId; // Empleado vinculado
+  List<EmployeeModel>? _employees; // Cache de empleados
+
+  /// Carga el linked_employee_id del usuario desde el API
+  Future<void> _loadLinkedEmployee() async {
+    try {
+      final userId = widget.userRoleModel?.userKey ?? widget.userRoleModel?.databaseId;
+      if (userId == null) return;
+      final resp = await ApiService().get('users/$userId');
+      if (resp.success && resp.data != null) {
+        final user = resp.data['user'] ?? resp.data;
+        final linked = user['linked_employee_id']?.toString();
+        if (mounted && linked != null && linked.isNotEmpty && linked != 'null') {
+          setState(() => _linkedEmployeeId = linked);
+        }
+      }
+    } catch (_) {}
+  }
+
+  /// Carga empleados para el dropdown de vincular
+  Future<void> _loadEmployees() async {
+    if (_employees != null) return;
+    try {
+      final emps = await EmployeeRepository().getActiveEmployees();
+      if (mounted) setState(() => _employees = emps);
+    } catch (_) {}
+  }
+
+  /// Widget de vincular empleado con Autocomplete
+  Widget _buildLinkedEmployeeField() {
+    if (_employees == null) {
+      _loadEmployees();
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(),
+      );
+    }
+
+    final employees = _employees!;
+    String currentLabel = '';
+    if (_linkedEmployeeId != null) {
+      final match = employees.where((e) =>
+          e.id.toString() == _linkedEmployeeId ||
+          (e.userId != null && e.userId == _linkedEmployeeId)).firstOrNull;
+      if (match != null) currentLabel = '${match.name} ${match.lastName}'.trim();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.link, size: 16, color: Colors.deepPurple),
+            const SizedBox(width: 8),
+            const Text('Vincular con empleado', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            const Spacer(),
+            if (_linkedEmployeeId != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('Vinculado', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w600)),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Conecta este usuario con su perfil de empleado para seguimiento.',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
+        const SizedBox(height: 8),
+        Autocomplete<EmployeeModel>(
+          displayStringForOption: (e) => '${e.name} ${e.lastName}'.trim(),
+          initialValue: TextEditingValue(text: currentLabel),
+          optionsBuilder: (textEditingValue) {
+            final query = textEditingValue.text.toLowerCase();
+            if (query.isEmpty) return employees;
+            return employees.where((e) {
+              final fullName = '${e.name} ${e.lastName}'.toLowerCase();
+              return fullName.contains(query);
+            });
+          },
+          fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+            return TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              decoration: InputDecoration(
+                hintText: 'Buscar empleado por nombre...',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: controller.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          controller.clear();
+                          setState(() => _linkedEmployeeId = null);
+                        },
+                      )
+                    : null,
+              ),
+            );
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(8),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 200, maxWidth: 450),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    itemBuilder: (ctx, i) {
+                      final e = options.elementAt(i);
+                      return ListTile(
+                        dense: true,
+                        leading: CircleAvatar(
+                          radius: 14,
+                          backgroundColor: Colors.deepPurple.withValues(alpha: 0.1),
+                          child: Text(e.name.isNotEmpty ? e.name[0] : '?',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.deepPurple)),
+                        ),
+                        title: Text('${e.name} ${e.lastName}', style: const TextStyle(fontSize: 13)),
+                        subtitle: Text('${e.designation} · ${e.department}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                        onTap: () => onSelected(e),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+          onSelected: (e) {
+            setState(() => _linkedEmployeeId = e.id.toString());
+          },
+        ),
+      ],
+    );
+  }
 
   /// Valida que el valor del rol sea una opción válida del dropdown
   /// Si no es válido, retorna 'user' como valor por defecto
@@ -743,6 +893,12 @@ class _AddUserRoleState extends State<AddUserRole> {
                   ),
                   const SizedBox(height: 20.0),
 
+                  // Vincular con empleado (solo en edición)
+                  if (widget.userRoleModel != null) ...[
+                    _buildLinkedEmployeeField(),
+                    const SizedBox(height: 20.0),
+                  ],
+
                   // Selector de Sucursal
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -1002,6 +1158,11 @@ class _AddUserRoleState extends State<AddUserRole> {
                           'allowed_branches': updateData['allowedBranches'],
                           'permissions': updateData['permissions'],
                         };
+
+                        // Vincular empleado
+                        if (_linkedEmployeeId != null) {
+                          backendData['linked_employee_id'] = _linkedEmployeeId;
+                        }
 
                         // Add password if changed
                         if (passwordController.text.isNotEmpty &&
