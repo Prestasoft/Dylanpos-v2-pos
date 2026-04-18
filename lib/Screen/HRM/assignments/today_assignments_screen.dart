@@ -8,12 +8,14 @@ import 'package:salespro_admin/currency.dart';
 import '../../../Provider/reservation_provider.dart';
 import '../../../Provider/servicePackagesProvider.dart';
 import '../../../Repository/task_repo.dart';
+import '../../../model/task_model.dart';
 import '../../../model/reservation_model.dart';
 import '../../../services/api_service.dart';
 import '../Designation/model/designation_model.dart';
 import '../Designation/repo/designation_repo.dart';
 import '../employees/model/employee_model.dart';
 import '../employees/repo/employee_repo.dart';
+import 'widgets/makeup_dashboard_banner.dart';
 import 'widgets/task_theme.dart';
 
 class TodayAssignmentsScreen extends ConsumerStatefulWidget {
@@ -27,6 +29,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
   DateTime _selectedDate = DateTime.now();
   List<EmployeeModel> _employees = [];
   List<DesignationModel> _designations = [];
+  List<dynamic> _allTasks = []; // Tasks para métricas de maquillaje
   bool _isLoadingEmployees = true;
 
   // Sistema de tareas: si el user tiene scoped_designation_id,
@@ -44,7 +47,16 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       _loadEmployees(),
       _loadDesignations(),
       _loadUserScope(),
+      _loadTasks(),
     ]);
+  }
+
+  Future<void> _loadTasks() async {
+    try {
+      final tasks = await TaskRepository().getTasks();
+      if (!mounted) return;
+      setState(() => _allTasks = tasks);
+    } catch (_) {}
   }
 
   Future<void> _loadEmployees() async {
@@ -375,11 +387,72 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                 final pendingList = notDeclined.where((r) => !isAssigned(r)).toList()..sort(compareByTime);
                 final assignedList = notDeclined.where((r) => isAssigned(r)).toList()..sort(compareByTime);
 
-                return TabBarView(
+                // Calcular métricas de maquillaje para el banner
+                Widget? makeupBanner;
+                if (scopedSlot == 'maquillista' || _scopedDesignationId == null) {
+                  int totalMaq = 0, unassignedMaq = 0;
+                  final todayResIds = <String>{};
+
+                  for (final r in notDeclined) {
+                    todayResIds.add(r.id);
+                    try {
+                      final desc = _getPackageDescription(r);
+                      final count = desc.isNotEmpty ? _parseMakeupCount(desc) : 1;
+                      int assigned = 0;
+                      for (int i = 0; i < count; i++) {
+                        if (r.assignments.getMaquillistaAt(i) != null) assigned++;
+                      }
+                      totalMaq += count;
+                      unassignedMaq += (count - assigned);
+                    } catch (_) {
+                      totalMaq += 1;
+                      if (r.assignments.maquillistaId == null) unassignedMaq += 1;
+                    }
+                  }
+
+                  // Contar tasks reales de maquillaje del día
+                  final maqDesigId = _designationIdForKeywords('maquillaj,makeup,belleza');
+                  int completedMaq = 0, inProgressMaq = 0, notStartedMaq = 0;
+                  for (final t in _allTasks) {
+                    if (maqDesigId != null && t.designationId != maqDesigId) continue;
+                    if (!todayResIds.contains(t.reservationId)) continue;
+                    if (t.status == TaskStatus.completada) {
+                      completedMaq++;
+                    } else if (t.status == TaskStatus.enProgreso) {
+                      inProgressMaq++;
+                    } else if (t.status == TaskStatus.pendiente) {
+                      notStartedMaq++;
+                    }
+                  }
+
+                  // Ajustar: si no hay tasks creadas aún, los asignados son "sin iniciar"
+                  final taskedMaq = completedMaq + inProgressMaq + notStartedMaq;
+                  final assignedNoTask = (totalMaq - unassignedMaq) - taskedMaq;
+                  if (assignedNoTask > 0) notStartedMaq += assignedNoTask;
+
+                  if (totalMaq > 0) {
+                    makeupBanner = MakeupDashboardBanner(
+                      totalNeeded: totalMaq,
+                      completed: completedMaq,
+                      inProgress: inProgressMaq,
+                      notStarted: notStartedMaq,
+                      unassigned: unassignedMaq,
+                    );
+                  }
+                }
+
+                return Column(
                   children: [
-                    _buildList(pendingList, 'No hay reservaciones pendientes'),
-                    _buildList(assignedList, 'No hay reservaciones con personal asignado'),
-                    _buildDeclinedList(declinedList),
+                    if (makeupBanner != null) makeupBanner,
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildList(pendingList, 'No hay reservaciones pendientes'),
+                          _buildList(assignedList, 'No hay reservaciones con personal asignado'),
+                          _buildDeclinedList(declinedList),
+                        ],
+                      ),
+                    ),
                   ],
                 );
               },
