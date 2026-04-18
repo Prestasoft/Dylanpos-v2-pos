@@ -43,11 +43,29 @@ class EmployeeCredentialsService {
 
       String? userId;
 
-      // Verificar si ya existe un user vinculado a este empleado (revocado previamente)
-      if (employee.userId != null && employee.userId!.isNotEmpty) {
+      // Buscar si ya existe un user vinculado a este empleado (por userId o por linked_employee_id)
+      String? existingUserId = employee.userId;
+      if (existingUserId == null || existingUserId.isEmpty) {
+        // Buscar en la API por linked_employee_id
+        final searchResp = await _apiService.get('users', queryParams: {
+          'search': employee.id?.toString() ?? '',
+          'limit': '5',
+        });
+        if (searchResp.success && searchResp.data != null) {
+          final users = searchResp.data['users'] as List<dynamic>? ?? [];
+          for (final u in users) {
+            if (u is Map && u['linked_employee_id']?.toString() == employee.id?.toString()) {
+              existingUserId = u['id']?.toString();
+              break;
+            }
+          }
+        }
+      }
+
+      if (existingUserId != null && existingUserId.isNotEmpty) {
         // Reactivar: actualizar datos del user existente
         final updateResp = await _apiService.put(
-          'users/${employee.userId}',
+          'users/$existingUserId',
           {
             'name': employee.fullName,
             'email': username,
@@ -65,10 +83,10 @@ class EmployeeCredentialsService {
         if (updateResp.success) {
           // Cambiar contraseña
           await _apiService.put(
-            'auth/users/${employee.userId}/reset-password',
+            'auth/users/$existingUserId/reset-password',
             {'newPassword': password},
           );
-          userId = employee.userId;
+          userId = existingUserId;
         }
       }
 
