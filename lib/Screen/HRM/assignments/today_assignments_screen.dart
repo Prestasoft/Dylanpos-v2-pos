@@ -240,15 +240,11 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       if (packageRentaId != null && reservation.serviceId == packageRentaId) isRenta = true;
       if (reservation.serviceName != null && reservation.serviceName!.toLowerCase().contains('renta')) isRenta = true;
 
+      // Excluir rentas de vestimentas — no necesitan asignación de personal
+      if (isRenta) continue;
+
       if (date != null) {
-        if (isRenta) {
-          for (int i = -1; i <= 1; i++) {
-            DateTime rentDate = date.add(Duration(days: i));
-            tryAdd(reservation, DateTime(rentDate.year, rentDate.month, rentDate.day));
-          }
-        } else {
-          tryAdd(reservation, DateTime(date.year, date.month, date.day));
-        }
+        tryAdd(reservation, DateTime(date.year, date.month, date.day));
       }
       if (fiestaDate != null) {
         tryAdd(reservation, DateTime(fiestaDate.year, fiestaDate.month, fiestaDate.day));
@@ -343,11 +339,24 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
                 bool isAssigned(ReservationModel r) {
                    final assign = r.assignments;
+                   // Si el usuario tiene cargo específico, verificar solo su slot
+                   if (_scopedDesignationId != null) {
+                     final scopedDesig = _designations.where((d) => d.id == _scopedDesignationId).firstOrNull;
+                     if (scopedDesig != null) {
+                       final slot = _detectRoleSlotByName(scopedDesig.designation);
+                       return _getAssignmentBySlot(assign, slot) != null;
+                     }
+                   }
                    return assign.fotografoId != null || assign.maquillistaId != null || assign.editorId != null || assign.bookedById != null;
                 }
 
-                final pendingList = activeReservations.where((r) => !isAssigned(r)).toList();
-                final assignedList = activeReservations.where((r) => isAssigned(r)).toList();
+                int compareByTime(ReservationModel a, ReservationModel b) {
+                  final timeA = a.reservationTime;
+                  final timeB = b.reservationTime;
+                  return timeA.compareTo(timeB);
+                }
+                final pendingList = activeReservations.where((r) => !isAssigned(r)).toList()..sort(compareByTime);
+                final assignedList = activeReservations.where((r) => isAssigned(r)).toList()..sort(compareByTime);
 
                 return TabBarView(
                   children: [
