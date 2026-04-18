@@ -108,9 +108,9 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                   default:
                     currentList = activeEmployees;
                 }
-                // Extraer departamentos únicos y ordenar por display_order de BD
+                // Extraer departamentos únicos del tab activo (no de todos)
                 final allDepartments = <String>{};
-                for (final e in allEmployees) {
+                for (final e in currentList) {
                   if (e.department.isNotEmpty && e.department != 'General') {
                     allDepartments.add(e.department);
                   }

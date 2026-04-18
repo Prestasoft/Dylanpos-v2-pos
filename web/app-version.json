@@ -1,11 +1,11 @@
 {
-  "version": "2.1.536",
-  "build": "20260418-1536",
+  "version": "2.1.537",
+  "build": "20260418-1549",
   "releaseDate": "2026-04-18",
   "environment": "production",
-  "description": "Actualización a versión 2.1.536",
+  "description": "Actualización a versión 2.1.537",
   "changelog": [
-    "Actualización a versión 2.1.536"
+    "Actualización a versión 2.1.537"
   ],
   "forceUpdate": true
 }
