@@ -103,14 +103,20 @@ class ClientJourneyCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.shade200),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.grey.shade400),
+                    Icon(Icons.schedule, size: 16, color: Colors.amber.shade700),
                     const SizedBox(width: 8),
-                    Text('Sin departamentos asignados', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Expanded(
+                      child: Text(
+                        'Pendiente de asignación a departamentos',
+                        style: TextStyle(fontSize: 12, color: Colors.amber.shade800),
+                      ),
+                    ),
                   ],
                 ),
               )

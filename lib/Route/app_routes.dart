@@ -1059,13 +1059,6 @@ abstract class AcnooAppRoutes {
                 ),
               ),
 
-              ///----------------Client Tracking Route--------------------------
-              GoRoute(
-                path: 'client-tracking',
-                pageBuilder: (context, state) => const NoTransitionPage<void>(
-                  child: ClientTrackingScreen(),
-                ),
-              ),
 
               ///-----------------Employee Route---------------------
               GoRoute(
