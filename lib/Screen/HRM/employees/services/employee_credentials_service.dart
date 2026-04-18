@@ -37,63 +37,94 @@ class EmployeeCredentialsService {
     required String branchId,
   }) async {
     try {
-      // 1. Crear el user en el sistema (POST /auth/register)
       final permissions = isDepartmentHead ? _headPermissions : _employeePermissions;
       final permissionsObject = _toPermissionsObject(permissions);
+      final role = isDepartmentHead ? 'department_head' : 'employee';
 
-      final registerBody = {
-        'email': username,
-        'username': username,
-        'password': password,
-        'name': employee.fullName,
-        'role': isDepartmentHead ? 'department_head' : 'employee',
-        'branch_id': branchId,
-        'allowed_branches': [branchId],
-        'permissions': permissionsObject,
-        'scoped_designation_id': employee.designationId,
-        'linked_employee_id': employee.id?.toString(),
-      };
+      String? userId;
 
-      final registerResponse = await _apiService.post('auth/register', registerBody);
-
-      if (!registerResponse.success) {
-        return CreateCredentialsResult.failure(
-          registerResponse.message ?? 'No se pudo crear el usuario',
+      // Verificar si ya existe un user vinculado a este empleado (revocado previamente)
+      if (employee.userId != null && employee.userId!.isNotEmpty) {
+        // Reactivar: actualizar datos del user existente
+        final updateResp = await _apiService.put(
+          'users/${employee.userId}',
+          {
+            'name': employee.fullName,
+            'email': username,
+            'username': username,
+            'role': role,
+            'branch_id': branchId,
+            'allowed_branches': [branchId],
+            'is_active': true,
+            'permissions': permissionsObject,
+            'scoped_designation_id': employee.designationId,
+            'linked_employee_id': employee.id?.toString(),
+          },
         );
+
+        if (updateResp.success) {
+          // Cambiar contraseña
+          await _apiService.put(
+            'auth/users/${employee.userId}/reset-password',
+            {'newPassword': password},
+          );
+          userId = employee.userId;
+        }
       }
 
-      // Extraer user_id de la respuesta
-      final responseData = registerResponse.data;
-      final newUserId = _extractUserId(responseData);
-      if (newUserId == null) {
-        return CreateCredentialsResult.failure(
-          'Respuesta inválida del servidor: falta user_id',
-        );
+      // Si no se pudo reactivar, crear nuevo
+      if (userId == null) {
+        final registerBody = {
+          'email': username,
+          'username': username,
+          'password': password,
+          'name': employee.fullName,
+          'role': role,
+          'branch_id': branchId,
+          'allowed_branches': [branchId],
+          'permissions': permissionsObject,
+          'scoped_designation_id': employee.designationId,
+          'linked_employee_id': employee.id?.toString(),
+        };
+
+        final registerResponse = await _apiService.post('auth/register', registerBody);
+
+        if (!registerResponse.success) {
+          return CreateCredentialsResult.failure(
+            registerResponse.message ?? 'No se pudo crear el usuario',
+          );
+        }
+
+        userId = _extractUserId(registerResponse.data);
+        if (userId == null) {
+          return CreateCredentialsResult.failure(
+            'Respuesta inválida del servidor: falta user_id',
+          );
+        }
       }
 
-      // 2. Vincular el user_id al empleado y activar can_login
-      employee.userId = newUserId;
+      // Vincular el user_id al empleado y activar can_login
+      employee.userId = userId;
       employee.canLogin = true;
       employee.isDepartmentHead = isDepartmentHead;
 
       final updateResponse = await _apiService.put(
         'hrm/employees/${employee.id}',
         {
-          'user_id': newUserId,
+          'user_id': userId,
           'can_login': true,
           'is_department_head': isDepartmentHead,
         },
       );
 
       if (!updateResponse.success) {
-        // Credencial creada pero no se vinculó — reportar para remediar
         return CreateCredentialsResult.failure(
-          'Usuario creado (ID $newUserId) pero falló la vinculación al empleado. '
+          'Usuario creado (ID $userId) pero falló la vinculación al empleado. '
           'Contacta soporte.',
         );
       }
 
-      return CreateCredentialsResult.success(newUserId);
+      return CreateCredentialsResult.success(userId);
     } catch (e) {
       return CreateCredentialsResult.failure('Error: $e');
     }
