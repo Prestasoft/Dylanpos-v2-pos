@@ -1,19 +1,22 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../model/task_model.dart';
 import 'task_theme.dart';
 
 /// Card animada de una tarea con contador en vivo y pulso visual.
 ///
-/// Comportamiento por % de tiempo consumido:
-///   <50%  → verde, pulso suave cada 3s
-///   50-80% → amarillo, pulso cada 1.5s
-///   >80%  → rojo, pulso rápido 0.6s + shake horizontal + glow
-///   >100% → rojo oscuro fijo + "VENCIDA HACE Xh"
+/// Estados:
+///   pendiente  → azul, sin countdown, botón INICIAR prominente
+///   <50%       → verde, pulso suave cada 3s
+///   50-80%     → amarillo, pulso cada 1.5s
+///   >80%       → rojo, pulso rápido 0.6s + shake horizontal + glow
+///   >100%      → rojo oscuro fijo + "VENCIDA HACE Xh"
 ///   completada → gris con check
 class TaskCountdownCard extends StatefulWidget {
   final TaskModel task;
   final VoidCallback onComplete;
+  final VoidCallback? onStart;
   final String? customerName;
   final String? serviceName;
 
@@ -21,6 +24,7 @@ class TaskCountdownCard extends StatefulWidget {
     super.key,
     required this.task,
     required this.onComplete,
+    this.onStart,
     this.customerName,
     this.serviceName,
   });
@@ -81,6 +85,9 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
   void _configureAnimation() {
     _pulseCtrl.stop();
     switch (_urgency) {
+      case TaskUrgency.pending:
+        _pulseCtrl.stop();
+        break;
       case TaskUrgency.normal:
         _pulseCtrl.duration = const Duration(seconds: 3);
         _pulseCtrl.repeat(reverse: true);
@@ -105,6 +112,8 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
 
   Color get _baseColor {
     switch (_urgency) {
+      case TaskUrgency.pending:
+        return const Color(0xFF3B82F6); // Azul
       case TaskUrgency.normal:
         return const Color(0xFF10B981);
       case TaskUrgency.warning:
@@ -120,6 +129,12 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
 
   String get _timeLabel {
     if (_urgency == TaskUrgency.done) return 'Completada';
+    if (_urgency == TaskUrgency.pending) {
+      // Mostrar duración SLA del cargo
+      final sla = widget.task.totalSlaDuration;
+      if (sla.inHours > 0) return 'SLA: ${sla.inHours}h ${sla.inMinutes % 60}m';
+      return 'SLA: ${sla.inMinutes}min';
+    }
     if (_urgency == TaskUrgency.overdue) {
       final over = _remaining.abs();
       if (over.inHours > 0) return 'VENCIDA hace ${over.inHours}h ${over.inMinutes % 60}m';
@@ -137,6 +152,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
   Widget build(BuildContext context) {
     final color = _baseColor;
     final tc = TaskColors.of(context);
+    final isPending = _urgency == TaskUrgency.pending;
 
     return AnimatedBuilder(
       animation: _pulseCtrl,
@@ -144,7 +160,7 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
         final dx = (_urgency == TaskUrgency.critical || _urgency == TaskUrgency.overdue)
             ? _shakeAnim.value
             : 0.0;
-        final opacity = _urgency == TaskUrgency.done ? 1.0 : _pulseAnim.value;
+        final opacity = (_urgency == TaskUrgency.done || isPending) ? 1.0 : _pulseAnim.value;
 
         return Transform.translate(
           offset: Offset(dx, 0),
@@ -186,7 +202,9 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
                     radius: 18,
                     backgroundColor: color.withValues(alpha: 0.15),
                     child: Icon(
-                      _urgency == TaskUrgency.done ? Icons.check : Icons.person,
+                      isPending
+                          ? Icons.play_circle_outline
+                          : (_urgency == TaskUrgency.done ? Icons.check : Icons.person),
                       color: color,
                       size: 20,
                     ),
@@ -231,62 +249,105 @@ class _TaskCountdownCardState extends State<TaskCountdownCard>
               ),
               const SizedBox(height: 14),
 
-              // Contador + barra de progreso
-              Row(
-                children: [
-                  Icon(
-                    _urgency == TaskUrgency.done ? Icons.check_circle : Icons.timer,
-                    color: color,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _timeLabel,
-                    style: TextStyle(
-                      fontSize: _urgency == TaskUrgency.overdue ? 14 : 22,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_urgency != TaskUrgency.done)
+              // Estado PENDIENTE: mostrar SLA + botón INICIAR
+              if (isPending) ...[
+                Row(
+                  children: [
+                    Icon(Icons.schedule, color: color, size: 20),
+                    const SizedBox(width: 8),
                     Text(
-                      '${(_progress * 100).clamp(0, 999).toInt()}%',
-                      style: TextStyle(fontSize: 12, color: tc.textHint),
+                      _timeLabel,
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color),
                     ),
-                ],
-              ),
-              if (_urgency != TaskUrgency.done) ...[
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: _progress.clamp(0.0, 1.0),
-                    minHeight: 8,
-                    backgroundColor: tc.progressBg,
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                  ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Esperando inicio',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-
-              // Botón completar
-              if (_urgency != TaskUrgency.done) ...[
                 const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    icon: const Icon(Icons.check_circle_outline, size: 20),
-                    label: const Text('COMPLETAR'),
+                    icon: const Icon(Icons.play_arrow, size: 22),
+                    label: const Text('INICIAR', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    onPressed: widget.onComplete,
+                    onPressed: widget.onStart,
                   ),
                 ),
+              ]
+
+              // Estado EN PROGRESO / VENCIDA: countdown activo + botón COMPLETAR
+              else ...[
+                Row(
+                  children: [
+                    Icon(
+                      _urgency == TaskUrgency.done ? Icons.check_circle : Icons.timer,
+                      color: color,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _timeLabel,
+                      style: TextStyle(
+                        fontSize: _urgency == TaskUrgency.overdue ? 14 : 22,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_urgency != TaskUrgency.done)
+                      Text(
+                        '${(_progress * 100).clamp(0, 999).toInt()}%',
+                        style: TextStyle(fontSize: 12, color: tc.textHint),
+                      ),
+                  ],
+                ),
+                if (_urgency != TaskUrgency.done) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: _progress.clamp(0.0, 1.0),
+                      minHeight: 8,
+                      backgroundColor: tc.progressBg,
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ],
+
+                // Botón completar
+                if (_urgency != TaskUrgency.done) ...[
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.check_circle_outline, size: 20),
+                      label: const Text('COMPLETAR'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: widget.onComplete,
+                    ),
+                  ),
+                ],
               ],
             ],
           ),

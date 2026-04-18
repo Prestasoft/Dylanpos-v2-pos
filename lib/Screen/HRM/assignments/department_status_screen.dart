@@ -244,7 +244,19 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
                         )
                       : SliverList(
                           delegate: SliverChildBuilderDelegate(
-                            (ctx, i) => _buildEmployeeCard(_employees[i]),
+                            (ctx, i) {
+                              // Ordenar: vencidas primero, luego por vencer, luego al día, luego sin tareas
+                              final sorted = List.from(_employees)..sort((a, b) {
+                                const order = {'atrasado': 0, 'por_vencer': 1, 'al_dia': 2, 'sin_tareas': 3};
+                                final oa = order[a['estado']?.toString() ?? 'sin_tareas'] ?? 3;
+                                final ob = order[b['estado']?.toString() ?? 'sin_tareas'] ?? 3;
+                                if (oa != ob) return oa.compareTo(ob);
+                                final va = (a['vencidas'] is num) ? (a['vencidas'] as num).toInt() : 0;
+                                final vb = (b['vencidas'] is num) ? (b['vencidas'] as num).toInt() : 0;
+                                return vb.compareTo(va);
+                              });
+                              return _buildEmployeeCard(sorted[i]);
+                            },
                             childCount: _employees.length,
                           ),
                         ),
@@ -271,11 +283,13 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
       ),
       child: Row(
         children: [
-          _kpiItem('Al día', pendientes + enProgreso, const Color(0xFF10B981), Icons.check_circle_outline, tc),
+          _kpiItem('Sin iniciar', pendientes, const Color(0xFFF59E0B), Icons.play_circle_outline, tc),
+          _kpiDivider(tc),
+          _kpiItem('Trabajando', enProgreso, const Color(0xFF3B82F6), Icons.timer, tc),
           _kpiDivider(tc),
           _kpiItem('Vencidas', vencidas, const Color(0xFFEF4444), Icons.warning_amber_rounded, tc),
           _kpiDivider(tc),
-          _kpiItem('Completadas', completadas, const Color(0xFF3B82F6), Icons.task_alt, tc),
+          _kpiItem('Completadas', completadas, const Color(0xFF10B981), Icons.task_alt, tc),
         ],
       ),
     );
@@ -344,8 +358,9 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
     }
 
     final tc = TaskColors.read(context);
+    final hasOverdue = vencidas > 0;
 
-    return GestureDetector(
+    final cardWidget = GestureDetector(
       onTap: () => _showEmployeeTasks(emp),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -353,16 +368,14 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
         decoration: BoxDecoration(
           color: tc.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: tc.border.withValues(alpha: 0.5)),
-          boxShadow: [BoxShadow(color: tc.shadow, blurRadius: 4, offset: const Offset(0, 2))],
+          border: Border.all(color: hasOverdue ? Colors.red : tc.border.withValues(alpha: 0.5), width: hasOverdue ? 1.5 : 1),
+          boxShadow: [BoxShadow(color: hasOverdue ? Colors.red.withValues(alpha: 0.15) : tc.shadow, blurRadius: hasOverdue ? 8 : 4, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Fila 1: Avatar + Nombre + Estado
             Row(
               children: [
-                // Inicial del nombre con color de estado
                 Container(
                   width: 40,
                   height: 40,
@@ -377,7 +390,6 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Nombre + badge sin acceso
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,7 +407,6 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
                     ],
                   ),
                 ),
-                // Chip de estado
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
@@ -413,7 +424,6 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
                 ),
               ],
             ),
-            // Fila 2: Stats en barra horizontal
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Row(
@@ -432,6 +442,11 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
         ),
       ),
     );
+
+    if (hasOverdue) {
+      return _BlinkingCard(child: cardWidget);
+    }
+    return cardWidget;
   }
 
   /// Abre un bottom sheet con las tareas del empleado seleccionado
@@ -539,6 +554,7 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
   Color _urgencyColor(TaskModel t) {
     final u = t.urgency;
     switch (u) {
+      case TaskUrgency.pending: return const Color(0xFF3B82F6);
       case TaskUrgency.normal: return Colors.green;
       case TaskUrgency.warning: return Colors.orange;
       case TaskUrgency.critical: return Colors.red;
@@ -720,5 +736,42 @@ class _EmployeeTasksSheetState extends State<_EmployeeTasksSheet> {
         ],
       ),
     );
+  }
+}
+
+/// Widget que hace parpadear su hijo con opacidad para indicar urgencia
+class _BlinkingCard extends StatefulWidget {
+  final Widget child;
+  const _BlinkingCard({required this.child});
+
+  @override
+  State<_BlinkingCard> createState() => _BlinkingCardState();
+}
+
+class _BlinkingCardState extends State<_BlinkingCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 1.0, end: 0.5).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _opacity, child: widget.child);
   }
 }

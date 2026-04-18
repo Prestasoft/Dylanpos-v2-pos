@@ -25,6 +25,7 @@ class TaskModel {
   final DateTime? completedAt;
   final String? completionNote;
 
+  final DateTime? startedAt; // Cuando el empleado presionó "Iniciar"
   final String branchId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -46,12 +47,16 @@ class TaskModel {
     required this.assignedAt,
     required this.dueAt,
     required this.status,
+    this.startedAt,
     this.completedAt,
     this.completionNote,
     required this.branchId,
     this.createdAt,
     this.updatedAt,
   });
+
+  bool get isStarted => startedAt != null && status == TaskStatus.enProgreso;
+  bool get canStart => status == TaskStatus.pendiente;
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
@@ -71,6 +76,7 @@ class TaskModel {
       assignedAt: _parseDate(json['assigned_at']) ?? DateTime.now(),
       dueAt: _parseDate(json['due_at']) ?? DateTime.now(),
       status: _parseStatus(json['status']?.toString()),
+      startedAt: _parseDate(json['started_at']),
       completedAt: _parseDate(json['completed_at']),
       completionNote: json['completion_note']?.toString(),
       branchId: json['branch_id']?.toString() ?? '',
@@ -79,8 +85,11 @@ class TaskModel {
     );
   }
 
-  /// Tiempo total del SLA originalmente asignado
-  Duration get totalSlaDuration => dueAt.difference(assignedAt);
+  /// Tiempo total del SLA (desde inicio real si fue iniciado, sino desde asignación)
+  Duration get totalSlaDuration {
+    if (startedAt != null) return dueAt.difference(startedAt!);
+    return dueAt.difference(assignedAt);
+  }
 
   /// Tiempo restante hasta el vencimiento (negativo si ya venció)
   Duration timeRemaining([DateTime? now]) =>
@@ -88,16 +97,18 @@ class TaskModel {
 
   /// Porcentaje del tiempo consumido (0.0 a 1.0+ donde >1.0 = vencida)
   double progress([DateTime? now]) {
+    if (status == TaskStatus.pendiente) return 0.0; // No ha iniciado
     final total = totalSlaDuration.inMilliseconds;
     if (total <= 0) return 1.0;
-    final elapsed =
-        (now ?? DateTime.now()).difference(assignedAt).inMilliseconds;
+    final base = startedAt ?? assignedAt;
+    final elapsed = (now ?? DateTime.now()).difference(base).inMilliseconds;
     return (elapsed / total).clamp(0.0, 2.0);
   }
 
   /// Estado visual basado en % consumido + status real
   TaskUrgency get urgency {
     if (status == TaskStatus.completada) return TaskUrgency.done;
+    if (status == TaskStatus.pendiente) return TaskUrgency.pending;
     if (status == TaskStatus.vencida || progress() >= 1.0) {
       return TaskUrgency.overdue;
     }
@@ -165,4 +176,4 @@ extension TaskStatusX on TaskStatus {
 }
 
 /// Urgencia visual para el TaskCountdownCard
-enum TaskUrgency { normal, warning, critical, overdue, done }
+enum TaskUrgency { pending, normal, warning, critical, overdue, done }

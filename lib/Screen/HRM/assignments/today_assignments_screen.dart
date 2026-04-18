@@ -151,10 +151,17 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
     final pairs = <_AssignmentPair>[
       _AssignmentPair('fotograf,photo', a.fotografoId),
-      _AssignmentPair('maquillaj,makeup,belleza', a.maquillistaId),
       _AssignmentPair('edici,editor', a.editorId),
       _AssignmentPair('ventas,recepcion,vendedor', a.bookedById),
     ];
+    // Multi-maquillaje: crear task por cada maquillista asignado
+    if (a.maquillistaIds.isNotEmpty) {
+      for (final mId in a.maquillistaIds) {
+        if (mId.isNotEmpty) pairs.add(_AssignmentPair('maquillaj,makeup,belleza', mId));
+      }
+    } else if (a.maquillistaId != null) {
+      pairs.add(_AssignmentPair('maquillaj,makeup,belleza', a.maquillistaId));
+    }
 
     for (final p in pairs) {
       final designationId = _designationIdForKeywords(p.keywords);
@@ -261,7 +268,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     final tc = TaskColors.of(context);
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: tc.scaffold,
       appBar: AppBar(
@@ -311,6 +318,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
           tabs: const [
             Tab(text: '⏳ Pendientes'),
             Tab(text: '✅ Asignados'),
+            Tab(text: '🚫 No aplica'),
           ],
         ),
       ),
@@ -337,31 +345,41 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   );
                 }
 
+                // Detectar slot del encargado para filtrar declined
+                String? scopedSlot;
+                if (_scopedDesignationId != null) {
+                  final scopedDesig = _designations.where((d) => d.id == _scopedDesignationId).firstOrNull;
+                  if (scopedDesig != null) scopedSlot = _detectRoleSlotByName(scopedDesig.designation);
+                }
+
+                bool isDeclined(ReservationModel r) {
+                  if (scopedSlot == null) return false;
+                  return r.assignments.isDeclined(scopedSlot!);
+                }
+
                 bool isAssigned(ReservationModel r) {
                    final assign = r.assignments;
-                   // Si el usuario tiene cargo específico, verificar solo su slot
-                   if (_scopedDesignationId != null) {
-                     final scopedDesig = _designations.where((d) => d.id == _scopedDesignationId).firstOrNull;
-                     if (scopedDesig != null) {
-                       final slot = _detectRoleSlotByName(scopedDesig.designation);
-                       return _getAssignmentBySlot(assign, slot) != null;
-                     }
+                   if (scopedSlot != null) {
+                     if (scopedSlot == 'maquillista') return assign.maquillistaId != null;
+                     return _getAssignmentBySlot(assign, scopedSlot!) != null;
                    }
                    return assign.fotografoId != null || assign.maquillistaId != null || assign.editorId != null || assign.bookedById != null;
                 }
 
                 int compareByTime(ReservationModel a, ReservationModel b) {
-                  final timeA = a.reservationTime;
-                  final timeB = b.reservationTime;
-                  return timeA.compareTo(timeB);
+                  return a.reservationTime.compareTo(b.reservationTime);
                 }
-                final pendingList = activeReservations.where((r) => !isAssigned(r)).toList()..sort(compareByTime);
-                final assignedList = activeReservations.where((r) => isAssigned(r)).toList()..sort(compareByTime);
+
+                final declinedList = activeReservations.where((r) => isDeclined(r)).toList()..sort(compareByTime);
+                final notDeclined = activeReservations.where((r) => !isDeclined(r)).toList();
+                final pendingList = notDeclined.where((r) => !isAssigned(r)).toList()..sort(compareByTime);
+                final assignedList = notDeclined.where((r) => isAssigned(r)).toList()..sort(compareByTime);
 
                 return TabBarView(
                   children: [
                     _buildList(pendingList, 'No hay reservaciones pendientes'),
                     _buildList(assignedList, 'No hay reservaciones con personal asignado'),
+                    _buildDeclinedList(declinedList),
                   ],
                 );
               },
@@ -426,7 +444,120 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     );
   }
 
+  /// Lista de reservaciones rechazadas (no aplica)
+  Widget _buildDeclinedList(List<ReservationModel> list) {
+    final tc = TaskColors.read(context);
+    if (list.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.block, size: 64, color: tc.textHint),
+            const SizedBox(height: 16),
+            Text('No hay reservaciones marcadas como "No aplica"',
+                style: TextStyle(fontSize: 16, color: tc.textSecondary)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        final reservation = list[index];
+        return Card(
+          elevation: 1,
+          margin: const EdgeInsets.only(bottom: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: tc.card,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('${index + 1}',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: tc.textHint)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(reservation.customerName ?? 'Cliente',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tc.textSecondary,
+                              decoration: TextDecoration.lineThrough)),
+                      Text('Maquillaje externo',
+                          style: TextStyle(fontSize: 11, color: tc.textHint)),
+                    ],
+                  ),
+                ),
+                Text(reservation.reservationTime, style: TextStyle(color: tc.textHint, fontSize: 12)),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 30,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.restore, size: 14),
+                    label: const Text('Restaurar', style: TextStyle(fontSize: 11)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      side: const BorderSide(color: Colors.blue),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                    onPressed: () => _toggleDecline(reservation, false),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Marca o desmarca una reservación como "No aplica" para el cargo del encargado
+  Future<void> _toggleDecline(ReservationModel reservation, bool decline) async {
+    String? slot;
+    if (_scopedDesignationId != null) {
+      final scopedDesig = _designations.where((d) => d.id == _scopedDesignationId).firstOrNull;
+      if (scopedDesig != null) slot = _detectRoleSlotByName(scopedDesig.designation);
+    }
+    if (slot == null) return;
+
+    final assign = reservation.assignments;
+    final newDeclined = Map<String, bool>.from(assign.declined);
+    if (decline) {
+      newDeclined[slot] = true;
+    } else {
+      newDeclined.remove(slot);
+    }
+
+    final newAssign = ReservationAssignments(
+      fotografoId: assign.fotografoId,
+      maquillistaId: assign.maquillistaId,
+      maquillistaIds: assign.maquillistaIds,
+      maquillistaIdsPre: assign.maquillistaIdsPre,
+      maquillistaIdsFiesta: assign.maquillistaIdsFiesta,
+      editorId: assign.editorId,
+      bookedById: assign.bookedById,
+      contactChannel: assign.contactChannel,
+      socialNetwork: assign.socialNetwork,
+      declined: newDeclined,
+    );
+
+    await _updateAssignment(reservation, newAssign);
+  }
+
   /// Card compacta para encargados: numerada, nombre del cliente, botón "Asignar"
+  /// Para maquillaje, muestra N slots según la descripción del paquete.
   Widget _buildScopedCard({
     required int index,
     required ReservationModel reservation,
@@ -435,29 +566,87 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
   }) {
     final assign = reservation.assignments;
     final slot = _detectRoleSlotByName(designationName);
-    final currentId = _getAssignmentBySlot(assign, slot);
-    final currentEmployee = currentId == null
-        ? null
-        : employees.where((e) => e.id.toString() == currentId).firstOrNull;
-
     final tc = TaskColors.read(context);
 
-    return Card(
-      elevation: 1,
+    // Para maquillaje: detectar cuántos slots necesita y sus nombres
+    final isMakeup = slot == 'maquillista';
+    List<String> makeupLabels = ['Maquillaje'];
+    String? makeupEvent;
+    String? eventBadge;
+    if (isMakeup) {
+      try {
+        final desc = _getPackageDescription(reservation);
+        if (desc.isNotEmpty) {
+          final parsed = _parseMakeupByEvent(desc);
+
+          if (parsed.hasSections && reservation.fiestaDate != null && reservation.fiestaDate!.isNotEmpty) {
+            final fiestaDate = DateTime.tryParse(reservation.fiestaDate!);
+            final resDate = DateTime.tryParse(reservation.reservationDate);
+            final today = _selectedDate;
+
+            if (fiestaDate != null && today.year == fiestaDate.year && today.month == fiestaDate.month && today.day == fiestaDate.day) {
+              makeupLabels = parsed.labelsFiesta.isNotEmpty ? parsed.labelsFiesta : ['Maquillaje'];
+              makeupEvent = 'fiesta';
+              eventBadge = 'Fiesta';
+            } else if (resDate != null && today.year == resDate.year && today.month == resDate.month && today.day == resDate.day) {
+              makeupLabels = parsed.labelsPre.isNotEmpty ? parsed.labelsPre : ['Maquillaje'];
+              makeupEvent = 'pre';
+              eventBadge = 'Pre-Quince';
+            } else {
+              makeupLabels = parsed.labels.isNotEmpty ? parsed.labels : ['Maquillaje'];
+            }
+          } else {
+            makeupLabels = parsed.labels.isNotEmpty ? parsed.labels : ['Maquillaje'];
+          }
+        }
+      } catch (e) {
+        debugPrint('Error parseando maquillajes: $e');
+        makeupLabels = ['Maquillaje'];
+      }
+    }
+    final makeupSlots = makeupLabels.length;
+
+    // Para maquillaje multi: calcular progreso de asignación
+    int assignedCount = 0;
+    if (isMakeup && makeupSlots > 1) {
+      for (int i = 0; i < makeupSlots; i++) {
+        if (assign.getMaquillistaAt(i, makeupEvent) != null) assignedCount++;
+      }
+    } else {
+      assignedCount = _getAssignmentBySlot(assign, slot) != null ? 1 : 0;
+    }
+    final totalSlots = isMakeup && makeupSlots > 1 ? makeupSlots : 1;
+    final isComplete = assignedCount >= totalSlots;
+    final borderColor = isComplete
+        ? Colors.green
+        : assignedCount > 0
+            ? Colors.orange
+            : (tc.isDark ? Colors.grey.shade700 : Colors.grey.shade300);
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: tc.card,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Fila 1: Número + Nombre del cliente + Hora
-            Row(
+      decoration: BoxDecoration(
+        color: tc.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(color: borderColor.withValues(alpha: 0.08), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header: número + cliente + progreso + hora
+          Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            decoration: BoxDecoration(
+              color: borderColor.withValues(alpha: tc.isDark ? 0.1 : 0.04),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
+            ),
+            child: Row(
               children: [
                 Container(
-                  width: 30,
-                  height: 30,
+                  width: 28,
+                  height: 28,
                   decoration: BoxDecoration(
                     color: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -465,74 +654,296 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   alignment: Alignment.center,
                   child: Text(
                     '${index + 1}',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    reservation.customerName ?? 'Cliente',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tc.textPrimary),
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        reservation.customerName ?? 'Cliente',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tc.textPrimary),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (reservation.serviceName != null && reservation.serviceName!.isNotEmpty)
+                        Text(
+                          reservation.serviceName!,
+                          style: TextStyle(fontSize: 11, color: tc.textHint),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
                 ),
+                // Badge de evento (Pre-Quince / Fiesta)
+                if (eventBadge != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: makeupEvent == 'fiesta'
+                          ? Colors.pink.withValues(alpha: 0.12)
+                          : Colors.blue.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      eventBadge!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: makeupEvent == 'fiesta' ? Colors.pink : Colors.blue,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                // Badge de progreso (solo multi-maquillaje)
+                if (isMakeup && makeupSlots > 1) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isComplete
+                          ? Colors.green.withValues(alpha: 0.15)
+                          : Colors.orange.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isComplete ? Icons.check_circle : Icons.face_retouching_natural,
+                          size: 14,
+                          color: isComplete ? Colors.green : Colors.orange,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$assignedCount/$makeupSlots',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isComplete ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Text(
                   reservation.reservationTime,
-                  style: TextStyle(color: tc.textHint, fontSize: 12),
+                  style: TextStyle(color: tc.textHint, fontSize: 12, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            // Fila 2: Badge de asignación + Botón
-            Row(
+          ),
+
+          // Slots de asignación
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+            child: Column(
               children: [
-                if (currentEmployee != null)
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.shade200),
+                if (isMakeup && makeupSlots > 1)
+                  ...List.generate(makeupSlots, (mIdx) {
+                    final maqId = assign.getMaquillistaAt(mIdx, makeupEvent);
+                    final emp = maqId == null ? null : employees.where((e) => e.id.toString() == maqId).firstOrNull;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: _buildAssignmentSlotRow(
+                        tc: tc,
+                        label: makeupLabels[mIdx],
+                        employee: emp,
+                        onAssign: () => _showAssignModalMulti(reservation, employees, designationName, mIdx, makeupLabels[mIdx], makeupEvent),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.green.shade700, size: 14),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              '${currentEmployee.name} ${currentEmployee.lastName}',
-                              style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
+                    );
+                  })
                 else
-                  Expanded(
-                    child: Text('Sin asignar', style: TextStyle(color: tc.textHint, fontSize: 12)),
+                  _buildAssignmentSlotRow(
+                    tc: tc,
+                    employee: _getEmployeeForSlot(assign, slot, employees),
+                    onAssign: () => _showAssignModal(reservation, employees, designationName, slot),
                   ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  icon: Icon(currentEmployee != null ? Icons.swap_horiz : Icons.person_add, size: 16),
-                  label: Text(currentEmployee != null ? 'Cambiar' : 'Asignar', style: const TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: currentEmployee != null ? Colors.orange : Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                // Botón "No aplica" — maquillaje externo
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 36,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.block, size: 16),
+                    label: const Text('No aplica / Maquillaje externo', style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade300,
+                      side: BorderSide(color: Colors.red.shade300),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => _toggleDecline(reservation, true),
                   ),
-                  onPressed: () => _showAssignModal(reservation, employees, designationName, slot),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Fila de asignación: indicador + label + empleado + botón
+  Widget _buildAssignmentSlotRow({
+    required dynamic tc,
+    EmployeeModel? employee,
+    String? label,
+    required VoidCallback onAssign,
+  }) {
+    final isAssigned = employee != null;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isAssigned
+            ? Colors.green.withValues(alpha: tc.isDark ? 0.1 : 0.04)
+            : Colors.orange.withValues(alpha: tc.isDark ? 0.08 : 0.03),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isAssigned
+              ? Colors.green.withValues(alpha: 0.25)
+              : Colors.orange.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Indicador de estado
+          Icon(
+            isAssigned ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 16,
+            color: isAssigned ? Colors.green : Colors.orange,
+          ),
+          const SizedBox(width: 8),
+          // Label del slot
+          if (label != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: tc.isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: tc.textSecondary),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          // Empleado asignado o "Sin asignar"
+          Expanded(
+            child: isAssigned
+                ? Text(
+                    '${employee.name} ${employee.lastName}',
+                    style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : Text('Sin asignar', style: TextStyle(color: tc.textHint, fontSize: 12)),
+          ),
+          const SizedBox(width: 6),
+          // Botón compacto
+          SizedBox(
+            height: 30,
+            child: ElevatedButton.icon(
+              icon: Icon(isAssigned ? Icons.swap_horiz : Icons.person_add, size: 14),
+              label: Text(isAssigned ? 'Cambiar' : 'Asignar', style: const TextStyle(fontSize: 11)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isAssigned ? Colors.orange : Colors.deepPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              ),
+              onPressed: onAssign,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  EmployeeModel? _getEmployeeForSlot(ReservationAssignments assign, String slot, List<EmployeeModel> employees) {
+    final id = _getAssignmentBySlot(assign, slot);
+    if (id == null) return null;
+    return employees.where((e) => e.id.toString() == id).firstOrNull;
+  }
+
+  /// Modal para asignar maquillista en un slot específico (multi-maquillaje)
+  Future<void> _showAssignModalMulti(
+    ReservationModel reservation,
+    List<EmployeeModel> employees,
+    String designationName,
+    int maqIndex, [
+    String? slotLabel,
+    String? event,
+  ]) async {
+    final tc = TaskColors.read(context);
+    final selected = await showDialog<EmployeeModel>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tc.dialogBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.face_retouching_natural, color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Maq. ${slotLabel ?? 'Maquillaje ${maqIndex + 1}'}', style: TextStyle(fontSize: 16, color: tc.textPrimary)),
+                  Text(
+                    reservation.customerName ?? 'Cliente',
+                    style: TextStyle(fontSize: 12, color: tc.textHint, fontWeight: FontWeight.normal),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+        content: SizedBox(
+          width: 360,
+          child: employees.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text('No hay empleados disponibles', style: TextStyle(color: tc.textSecondary)),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: employees.length,
+                  itemBuilder: (_, i) {
+                    final emp = employees[i];
+                    return ListTile(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      leading: CircleAvatar(
+                        backgroundColor: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
+                        child: Text(emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
+                            style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold)),
+                      ),
+                      title: Text('${emp.name} ${emp.lastName}', style: TextStyle(fontWeight: FontWeight.w500, color: tc.textPrimary)),
+                      subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: tc.textHint)),
+                      onTap: () => Navigator.of(ctx).pop(emp),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(null), child: const Text('Cancelar')),
+        ],
       ),
     );
+
+    if (selected == null) return;
+
+    final newAssign = reservation.assignments.withMaquillistaAt(maqIndex, selected.id.toString(), event);
+    await _updateAssignment(reservation, newAssign);
   }
 
   /// Modal para seleccionar empleado
@@ -632,6 +1043,95 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     if (d.contains('maquil') || d.contains('makeup') || d.contains('belleza')) return 'maquillista';
     if (d.contains('edic') || d.contains('editor') || d.contains('post')) return 'editor';
     return 'vendedor';
+  }
+
+  /// Resultado del parser de maquillajes por evento
+  int _parseMakeupCount(String description) {
+    return _parseMakeupLabels(description).length;
+  }
+
+  /// Parsea maquillajes de la descripción, dividiendo por sección Pre-Quince/Fiesta si existe.
+  /// Retorna un MakeupParseResult con labels por evento.
+  _MakeupParseResult _parseMakeupByEvent(String description) {
+    if (description.isEmpty) {
+      return _MakeupParseResult(labels: ['Maquillaje'], labelsPre: [], labelsFiesta: [], hasSections: false);
+    }
+    final lower = description.toLowerCase();
+
+    // Detectar si tiene secciones Pre-Quince y Fiesta
+    final preIdx = RegExp(r'pre[- ]?quince|pre[- ]?boda', caseSensitive: false).firstMatch(lower)?.start ?? -1;
+    final fiestaIdx = RegExp(r'\nfiesta\b|\n\s*fiesta\b', caseSensitive: false).firstMatch(lower)?.start ?? -1;
+
+    if (preIdx != -1 && fiestaIdx != -1 && fiestaIdx > preIdx) {
+      // Tiene secciones separadas
+      final preSection = lower.substring(preIdx, fiestaIdx);
+      final fiestaSection = lower.substring(fiestaIdx);
+      final labelsPre = _extractMakeupFromSection(preSection);
+      final labelsFiesta = _extractMakeupFromSection(fiestaSection);
+      return _MakeupParseResult(
+        labels: [...labelsPre, ...labelsFiesta],
+        labelsPre: labelsPre,
+        labelsFiesta: labelsFiesta,
+        hasSections: true,
+      );
+    }
+
+    // Sin secciones: parsear todo como un bloque
+    final labels = _extractMakeupFromSection(description.toLowerCase());
+    return _MakeupParseResult(
+      labels: labels.isNotEmpty ? labels : ['Maquillaje'],
+      labelsPre: [],
+      labelsFiesta: [],
+      hasSections: false,
+    );
+  }
+
+  /// Extrae labels de maquillaje de una sección de texto
+  List<String> _extractMakeupFromSection(String section) {
+    final labels = <String>[];
+    final lines = section.split('\n');
+    for (final line in lines) {
+      if (!line.contains('maquillaj') && !line.contains('makeup')) continue;
+
+      // Patrón "para: X, Y y Z" o "para X, Y y Z"
+      final paraMatch = RegExp(r'para:?\s*(.+)', caseSensitive: false).firstMatch(line);
+      if (paraMatch != null) {
+        final afterPara = paraMatch.group(1)!.replaceAll(RegExp(r'\(.*?\)'), '').trim();
+        final parts = afterPara.split(RegExp(r',\s*|\s+y\s+')).where((p) => p.trim().isNotEmpty).toList();
+        for (final p in parts) {
+          final clean = p.trim();
+          if (clean.isNotEmpty) labels.add(_capitalize(clean));
+        }
+      } else {
+        // "Maquillaje profesional" sin detalles
+        final aLaMatch = RegExp(r'a\s+la\s+(\w+)', caseSensitive: false).firstMatch(line);
+        if (aLaMatch != null) {
+          labels.add(_capitalize(aLaMatch.group(1)!));
+        } else {
+          labels.add('Maquillaje');
+        }
+      }
+    }
+    return labels;
+  }
+
+  /// Parsea maquillajes sin distinción de evento (compatibilidad)
+  List<String> _parseMakeupLabels(String description) {
+    final result = _parseMakeupByEvent(description);
+    return result.labels.isEmpty ? ['Maquillaje'] : result.labels;
+  }
+
+  String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  /// Busca el paquete correspondiente a la reservación
+  String _getPackageDescription(ReservationModel reservation) {
+    final packagesAsync = ref.read(servicePackagesProvider);
+    final packages = packagesAsync.asData?.value;
+    if (packages == null) return '';
+    for (final pkg in packages) {
+      if (pkg.id == reservation.serviceId) return pkg.description;
+    }
+    return '';
   }
 
   String? _getAssignmentBySlot(ReservationAssignments a, String slot) {
@@ -999,4 +1499,18 @@ class _AssignmentPair {
   final String keywords;
   final String? employeeId;
   const _AssignmentPair(this.keywords, this.employeeId);
+}
+
+class _MakeupParseResult {
+  final List<String> labels; // Todos los maquillajes (compatibilidad)
+  final List<String> labelsPre; // Maquillajes de Pre-Quince
+  final List<String> labelsFiesta; // Maquillajes de Fiesta
+  final bool hasSections; // true si la descripción tiene secciones separadas
+
+  const _MakeupParseResult({
+    required this.labels,
+    required this.labelsPre,
+    required this.labelsFiesta,
+    required this.hasSections,
+  });
 }

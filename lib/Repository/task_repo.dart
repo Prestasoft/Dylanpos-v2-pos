@@ -107,6 +107,16 @@ class TaskRepository {
     return TaskModel.fromJson(Map<String, dynamic>.from(taskData as Map));
   }
 
+  /// POST /api/hrm/tasks/:id/start — Empleado inicia la tarea
+  Future<TaskModel?> startTask({required String taskId}) async {
+    final resp = await _apiService.post('hrm/tasks/$taskId/start', {});
+    if (!resp.success || resp.data == null) return null;
+    final inner = _unwrapData(resp.data);
+    final taskData = inner['task'];
+    if (taskData == null) return null;
+    return TaskModel.fromJson(Map<String, dynamic>.from(taskData as Map));
+  }
+
   /// POST /api/hrm/tasks/:id/complete
   Future<TaskModel?> completeTask({
     required String taskId,

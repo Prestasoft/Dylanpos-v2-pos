@@ -73,6 +73,18 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     }
   }
 
+  Future<void> _startTask(TaskModel task) async {
+    EasyLoading.show(status: 'Iniciando...');
+    final result = await _taskRepo.startTask(taskId: task.id);
+    EasyLoading.dismiss();
+    if (result != null) {
+      EasyLoading.showSuccess('Tarea iniciada — ¡a trabajar!');
+      _loadTasks();
+    } else {
+      EasyLoading.showError('Error al iniciar');
+    }
+  }
+
   Future<void> _completeTask(TaskModel task) async {
     final note = await showDialog<String>(
       context: context,
@@ -102,10 +114,11 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     final critical = _tasks.where((t) => t.urgency == TaskUrgency.critical).toList();
     final warning = _tasks.where((t) => t.urgency == TaskUrgency.warning).toList();
     final normal = _tasks.where((t) => t.urgency == TaskUrgency.normal).toList();
+    final pending = _tasks.where((t) => t.urgency == TaskUrgency.pending).toList();
     final done = _tasks.where((t) => t.urgency == TaskUrgency.done).toList();
 
     final urgentTasks = [...overdue, ...critical, ...warning];
-    final pendingCount = overdue.length + critical.length + warning.length + normal.length;
+    final pendingCount = overdue.length + critical.length + warning.length + normal.length + pending.length;
 
     final tc = TaskColors.of(context);
 
@@ -199,7 +212,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                           ),
                         ),
 
-                      // Sección urgentes
+                      // Sección urgentes (ya iniciadas, con countdown activo)
                       if (urgentTasks.isNotEmpty) ...[
                         _sectionHeader('Por vencer', Icons.schedule, const Color(0xFFEF4444)),
                         ...urgentTasks.map((t) => TaskCountdownCard(
@@ -210,7 +223,19 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                             )),
                       ],
 
-                      // Sección con tiempo
+                      // Sección sin iniciar (pendientes, esperando que el empleado presione INICIAR)
+                      if (pending.isNotEmpty) ...[
+                        _sectionHeader('Sin iniciar', Icons.play_circle_outline, const Color(0xFF3B82F6)),
+                        ...pending.map((t) => TaskCountdownCard(
+                              task: t,
+                              customerName: t.customerName ?? 'Cliente',
+                              serviceName: t.serviceName ?? t.designationName,
+                              onStart: () => _startTask(t),
+                              onComplete: () => _completeTask(t),
+                            )),
+                      ],
+
+                      // Sección con tiempo (ya iniciadas, sin urgencia)
                       if (normal.isNotEmpty) ...[
                         _sectionHeader('Con tiempo', Icons.check_circle_outline, const Color(0xFF10B981)),
                         ...normal.map((t) => TaskCountdownCard(

@@ -235,44 +235,137 @@ class ReservationModel {
 
 class ReservationAssignments {
   final String? fotografoId;
-  final String? maquillistaId;
+  final String? maquillistaId; // Primer maquillista (compatibilidad)
+  final List<String> maquillistaIds; // Múltiples maquillistas (plan simple)
+  final List<String> maquillistaIdsPre; // Maquillistas para Pre-Quince
+  final List<String> maquillistaIdsFiesta; // Maquillistas para Fiesta
   final String? editorId;
   final String? bookedById;
   final String? contactChannel;
   final String? socialNetwork;
+  final Map<String, bool> declined; // Slots rechazados por cargo: {'maquillista': true}
 
   ReservationAssignments({
     this.fotografoId,
     this.maquillistaId,
+    List<String>? maquillistaIds,
+    List<String>? maquillistaIdsPre,
+    List<String>? maquillistaIdsFiesta,
     this.editorId,
     this.bookedById,
     this.contactChannel,
     this.socialNetwork,
-  });
+    Map<String, bool>? declined,
+  }) : maquillistaIds = maquillistaIds ?? [],
+       maquillistaIdsPre = maquillistaIdsPre ?? [],
+       maquillistaIdsFiesta = maquillistaIdsFiesta ?? [],
+       declined = declined ?? {};
+
+  /// True si el slot fue marcado como "No aplica"
+  bool isDeclined(String slot) => declined[slot] == true;
 
   factory ReservationAssignments.empty() {
     return ReservationAssignments();
   }
 
   factory ReservationAssignments.fromJson(Map<String, dynamic> json) {
+    final mRaw = json['m'];
+    String? firstMaq;
+    List<String> maqIds = [];
+    if (json['mIds'] is List) {
+      maqIds = (json['mIds'] as List).map((e) => e.toString()).toList();
+      firstMaq = maqIds.isNotEmpty ? maqIds.first : null;
+    } else if (mRaw is String) {
+      firstMaq = mRaw;
+      maqIds = [mRaw];
+    }
+
+    List<String> parseMaqList(dynamic v) {
+      if (v is List) return v.map((e) => e.toString()).toList();
+      return [];
+    }
+
     return ReservationAssignments(
       fotografoId: json['f'],
-      maquillistaId: json['m'],
+      maquillistaId: firstMaq,
+      maquillistaIds: maqIds,
+      maquillistaIdsPre: parseMaqList(json['mPre']),
+      maquillistaIdsFiesta: parseMaqList(json['mFiesta']),
       editorId: json['e'],
       bookedById: json['b'],
       contactChannel: json['c'],
       socialNetwork: json['s'],
+      declined: json['declined'] is Map
+          ? (json['declined'] as Map).map((k, v) => MapEntry(k.toString(), v == true))
+          : null,
     );
+  }
+
+  /// Obtiene el maquillista en la posición [index] para un evento específico
+  String? getMaquillistaAt(int index, [String? event]) {
+    final list = _getMaqListForEvent(event);
+    if (index < list.length && list[index].isNotEmpty) return list[index];
+    return null;
+  }
+
+  /// Crea una copia con el maquillista en [index] actualizado para un evento
+  ReservationAssignments withMaquillistaAt(int index, String employeeId, [String? event]) {
+    final oldPre = List<String>.from(maquillistaIdsPre);
+    final oldFiesta = List<String>.from(maquillistaIdsFiesta);
+    final oldIds = List<String>.from(maquillistaIds);
+
+    void setInList(List<String> list, int idx, String val) {
+      while (list.length <= idx) list.add('');
+      list[idx] = val;
+      while (list.isNotEmpty && list.last.isEmpty) list.removeLast();
+    }
+
+    if (event == 'pre') {
+      setInList(oldPre, index, employeeId);
+    } else if (event == 'fiesta') {
+      setInList(oldFiesta, index, employeeId);
+    } else {
+      setInList(oldIds, index, employeeId);
+    }
+
+    return ReservationAssignments(
+      fotografoId: fotografoId,
+      maquillistaId: oldIds.isNotEmpty ? oldIds.first : (oldPre.isNotEmpty ? oldPre.first : maquillistaId),
+      maquillistaIds: oldIds,
+      maquillistaIdsPre: oldPre,
+      maquillistaIdsFiesta: oldFiesta,
+      editorId: editorId,
+      bookedById: bookedById,
+      contactChannel: contactChannel,
+      socialNetwork: socialNetwork,
+    );
+  }
+
+  List<String> _getMaqListForEvent(String? event) {
+    if (event == 'pre') return maquillistaIdsPre;
+    if (event == 'fiesta') return maquillistaIdsFiesta;
+    return maquillistaIds;
+  }
+
+  /// Verifica si todos los slots de maquillaje están asignados para un evento
+  bool allMaqAssigned(int needed, [String? event]) {
+    final list = _getMaqListForEvent(event);
+    if (list.length < needed) return false;
+    return list.take(needed).every((id) => id.isNotEmpty);
   }
 
   Map<String, dynamic> toJson() {
     return {
       if (fotografoId != null) 'f': fotografoId,
       if (maquillistaId != null) 'm': maquillistaId,
+      if (maquillistaIds.length > 1) 'mIds': maquillistaIds,
+      if (maquillistaIdsPre.isNotEmpty) 'mPre': maquillistaIdsPre,
+      if (maquillistaIdsFiesta.isNotEmpty) 'mFiesta': maquillistaIdsFiesta,
       if (editorId != null) 'e': editorId,
       if (bookedById != null) 'b': bookedById,
       if (contactChannel != null) 'c': contactChannel,
       if (socialNetwork != null) 's': socialNetwork,
+      if (declined.isNotEmpty) 'declined': declined,
     };
   }
 }
