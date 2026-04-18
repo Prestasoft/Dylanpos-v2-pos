@@ -162,10 +162,17 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     }
 
     final pairs = <_AssignmentPair>[
-      _AssignmentPair('fotograf,photo', a.fotografoId),
       _AssignmentPair('edici,editor', a.editorId),
       _AssignmentPair('ventas,recepcion,vendedor', a.bookedById),
     ];
+    // Multi-fotografía: crear task por cada fotógrafo asignado por evento
+    if (a.fotografoIdsPre.isNotEmpty || a.fotografoIdsFiesta.isNotEmpty) {
+      for (final fId in [...a.fotografoIdsPre, ...a.fotografoIdsFiesta]) {
+        if (fId.isNotEmpty) pairs.add(_AssignmentPair('fotograf,photo', fId));
+      }
+    } else if (a.fotografoId != null) {
+      pairs.add(_AssignmentPair('fotograf,photo', a.fotografoId));
+    }
     // Multi-maquillaje: crear task por cada maquillista asignado
     if (a.maquillistaIds.isNotEmpty) {
       for (final mId in a.maquillistaIds) {
@@ -373,6 +380,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                    final assign = r.assignments;
                    if (scopedSlot != null) {
                      if (scopedSlot == 'maquillista') return assign.maquillistaId != null;
+                     if (scopedSlot == 'fotografo') return assign.fotografoId != null || assign.fotografoIdsPre.isNotEmpty || assign.fotografoIdsFiesta.isNotEmpty;
                      return _getAssignmentBySlot(assign, scopedSlot!) != null;
                    }
                    return assign.fotografoId != null || assign.maquillistaId != null || assign.editorId != null || assign.bookedById != null;
@@ -615,6 +623,8 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
     final newAssign = ReservationAssignments(
       fotografoId: assign.fotografoId,
+      fotografoIdsPre: assign.fotografoIdsPre,
+      fotografoIdsFiesta: assign.fotografoIdsFiesta,
       maquillistaId: assign.maquillistaId,
       maquillistaIds: assign.maquillistaIds,
       maquillistaIdsPre: assign.maquillistaIdsPre,
@@ -641,16 +651,20 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     final slot = _detectRoleSlotByName(designationName);
     final tc = TaskColors.read(context);
 
-    // Para maquillaje: detectar cuántos slots necesita y sus nombres
+    // Detectar si es un slot multi-evento (maquillaje o fotografía)
     final isMakeup = slot == 'maquillista';
-    List<String> makeupLabels = ['Maquillaje'];
-    String? makeupEvent;
+    final isPhoto = slot == 'fotografo';
+    final isMultiSlot = isMakeup || isPhoto;
+    final defaultLabel = isMakeup ? 'Maquillaje' : 'Fotógrafo';
+    List<String> slotLabels = [defaultLabel];
+    String? slotEvent;
     String? eventBadge;
-    if (isMakeup) {
+
+    if (isMultiSlot) {
       try {
         final desc = _getPackageDescription(reservation);
         if (desc.isNotEmpty) {
-          final parsed = _parseMakeupByEvent(desc);
+          final parsed = isMakeup ? _parseMakeupByEvent(desc) : _parsePhotographyByEvent(desc);
 
           if (parsed.hasSections && reservation.fiestaDate != null && reservation.fiestaDate!.isNotEmpty) {
             final fiestaDate = DateTime.tryParse(reservation.fiestaDate!);
@@ -658,37 +672,38 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
             final today = _selectedDate;
 
             if (fiestaDate != null && today.year == fiestaDate.year && today.month == fiestaDate.month && today.day == fiestaDate.day) {
-              makeupLabels = parsed.labelsFiesta.isNotEmpty ? parsed.labelsFiesta : ['Maquillaje'];
-              makeupEvent = 'fiesta';
+              slotLabels = parsed.labelsFiesta.isNotEmpty ? parsed.labelsFiesta : [defaultLabel];
+              slotEvent = 'fiesta';
               eventBadge = 'Fiesta';
             } else if (resDate != null && today.year == resDate.year && today.month == resDate.month && today.day == resDate.day) {
-              makeupLabels = parsed.labelsPre.isNotEmpty ? parsed.labelsPre : ['Maquillaje'];
-              makeupEvent = 'pre';
+              slotLabels = parsed.labelsPre.isNotEmpty ? parsed.labelsPre : [defaultLabel];
+              slotEvent = 'pre';
               eventBadge = 'Pre-Quince';
             } else {
-              makeupLabels = parsed.labels.isNotEmpty ? parsed.labels : ['Maquillaje'];
+              slotLabels = parsed.labels.isNotEmpty ? parsed.labels : [defaultLabel];
             }
           } else {
-            makeupLabels = parsed.labels.isNotEmpty ? parsed.labels : ['Maquillaje'];
+            slotLabels = parsed.labels.isNotEmpty ? parsed.labels : [defaultLabel];
           }
         }
       } catch (e) {
-        debugPrint('Error parseando maquillajes: $e');
-        makeupLabels = ['Maquillaje'];
+        debugPrint('Error parseando slots: $e');
+        slotLabels = [defaultLabel];
       }
     }
-    final makeupSlots = makeupLabels.length;
+    final multiSlotCount = slotLabels.length;
 
-    // Para maquillaje multi: calcular progreso de asignación
+    // Calcular progreso de asignación (multi-slot)
     int assignedCount = 0;
-    if (isMakeup && makeupSlots > 1) {
-      for (int i = 0; i < makeupSlots; i++) {
-        if (assign.getMaquillistaAt(i, makeupEvent) != null) assignedCount++;
+    if (isMultiSlot && multiSlotCount > 1) {
+      for (int i = 0; i < multiSlotCount; i++) {
+        final id = isMakeup ? assign.getMaquillistaAt(i, slotEvent) : assign.getFotografoAt(i, slotEvent);
+        if (id != null) assignedCount++;
       }
     } else {
       assignedCount = _getAssignmentBySlot(assign, slot) != null ? 1 : 0;
     }
-    final totalSlots = isMakeup && makeupSlots > 1 ? makeupSlots : 1;
+    final totalSlots = isMultiSlot && multiSlotCount > 1 ? multiSlotCount : 1;
     final isComplete = assignedCount >= totalSlots;
     final borderColor = isComplete
         ? Colors.green
@@ -754,7 +769,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
-                      color: makeupEvent == 'fiesta'
+                      color: slotEvent == 'fiesta'
                           ? Colors.pink.withValues(alpha: 0.12)
                           : Colors.blue.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
@@ -764,14 +779,14 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: makeupEvent == 'fiesta' ? Colors.pink : Colors.blue,
+                        color: slotEvent == 'fiesta' ? Colors.pink : Colors.blue,
                       ),
                     ),
                   ),
                   const SizedBox(width: 6),
                 ],
                 // Badge de progreso (solo multi-maquillaje)
-                if (isMakeup && makeupSlots > 1) ...[
+                if (isMakeup && multiSlotCount > 1) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -790,7 +805,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '$assignedCount/$makeupSlots',
+                          '$assignedCount/$multiSlotCount',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -815,23 +830,31 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
             child: Column(
               children: [
-                if (isMakeup && makeupSlots > 1)
-                  ...List.generate(makeupSlots, (mIdx) {
-                    final maqId = assign.getMaquillistaAt(mIdx, makeupEvent);
-                    final isSupport = maqId != null && maqId.startsWith('support:');
-                    final supportN = isSupport ? maqId.substring(8) : null;
-                    final emp = (maqId == null || isSupport) ? null : employees.where((e) => e.id.toString() == maqId).firstOrNull;
+                if (isMultiSlot && multiSlotCount > 1)
+                  ...List.generate(multiSlotCount, (mIdx) {
+                    final slotId = isMakeup
+                        ? assign.getMaquillistaAt(mIdx, slotEvent)
+                        : assign.getFotografoAt(mIdx, slotEvent);
+                    final isSupport = slotId != null && slotId.startsWith('support:');
+                    final supportN = isSupport ? slotId.substring(8) : null;
+                    final emp = (slotId == null || isSupport) ? null : employees.where((e) => e.id.toString() == slotId).firstOrNull;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: _buildAssignmentSlotRow(
                         tc: tc,
-                        label: makeupLabels[mIdx],
+                        label: slotLabels[mIdx],
                         supportName: supportN,
                         employee: emp,
-                        onAssign: () => _showAssignModalMulti(reservation, employees, designationName, mIdx, makeupLabels[mIdx], makeupEvent),
+                        onAssign: () => _showAssignModalMulti(reservation, employees, designationName, mIdx, slotLabels[mIdx], slotEvent),
                       ),
                     );
                   })
+                else if (isMultiSlot && multiSlotCount == 1)
+                  _buildAssignmentSlotRow(
+                    tc: tc,
+                    employee: _getEmployeeForSlot(assign, slot, employees),
+                    onAssign: () => _showAssignModalMulti(reservation, employees, designationName, 0, slotLabels[0], slotEvent),
+                  )
                 else
                   _buildAssignmentSlotRow(
                     tc: tc,
@@ -845,7 +868,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   height: 36,
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.block, size: 16),
-                    label: const Text('No aplica / Maquillaje externo', style: TextStyle(fontSize: 12)),
+                    label: Text(isMakeup ? 'No aplica / Maquillaje externo' : 'No aplica', style: const TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red.shade300,
                       side: BorderSide(color: Colors.red.shade300),
@@ -1003,41 +1026,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
           ),
           content: SizedBox(
             width: 360,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: employees.length + 2, // empleados + divider + soporte
-              itemBuilder: (_, i) {
-                if (i < employees.length) {
-                  final emp = employees[i];
-                  return ListTile(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    leading: CircleAvatar(
-                      backgroundColor: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
-                      child: Text(emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
-                          style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold)),
-                    ),
-                    title: Text('${emp.name} ${emp.lastName}', style: TextStyle(fontWeight: FontWeight.w500, color: tc.textPrimary)),
-                    subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: tc.textHint)),
-                    onTap: () => Navigator.of(ctx).pop(emp),
-                  );
-                }
-                if (i == employees.length) return const Divider();
-                // Último item: soporte
-                return ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.purple.withValues(alpha: 0.15),
-                    child: const Icon(Icons.person_add_alt, color: Colors.purple, size: 20),
-                  ),
-                  title: Text('Maquillista de Soporte', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.purple.shade300)),
-                  subtitle: Text('Maquillista externa', style: TextStyle(fontSize: 11, color: tc.textHint)),
-                  onTap: () {
-                    Navigator.of(ctx).pop(null);
-                    _showSupportNameDialog(reservation, maqIndex, event);
-                  },
-                );
-              },
-            ),
+            child: _buildAssignModalContent(ctx, tc, employees, reservation, maqIndex, event, _detectRoleSlotByName(designationName)),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(ctx).pop(null), child: const Text('Cancelar')),
@@ -1048,9 +1037,116 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
     if (result == null) return;
     if (result is EmployeeModel) {
-      final newAssign = reservation.assignments.withMaquillistaAt(maqIndex, result.id.toString(), event);
+      final roleSlot = _detectRoleSlotByName(designationName);
+      final newAssign = roleSlot == 'fotografo'
+          ? reservation.assignments.withFotografoAt(maqIndex, result.id.toString(), event)
+          : reservation.assignments.withMaquillistaAt(maqIndex, result.id.toString(), event);
       await _updateAssignment(reservation, newAssign);
     }
+  }
+
+  /// Contenido del modal de asignación — inteligente por departamento
+  Widget _buildAssignModalContent(
+    BuildContext ctx, TaskColors tc, List<EmployeeModel> employees,
+    ReservationModel reservation, int maqIndex, String? event, String slot,
+  ) {
+    final isMakeupSlot = slot == 'maquillista';
+    final isPhotoRelated = slot == 'fotografo' || slot == 'editor';
+
+    // Departamentos relacionados para foto/video/filmmaker
+    final relatedDepts = <String>[];
+    if (slot == 'fotografo') {
+      relatedDepts.addAll(['film', 'edic', 'editor', 'video']);
+    } else if (slot == 'editor') {
+      relatedDepts.addAll(['fotograf', 'photo', 'film', 'video']);
+    }
+
+    // Obtener empleados de departamentos relacionados
+    final relatedEmployees = <String, List<EmployeeModel>>{};
+    if (relatedDepts.isNotEmpty) {
+      for (final emp in _employees) {
+        // No incluir si ya está en la lista principal
+        if (employees.any((e) => e.id == emp.id)) continue;
+        final desigLower = emp.designation.toLowerCase();
+        for (final dept in relatedDepts) {
+          if (desigLower.contains(dept)) {
+            final deptLabel = emp.designation;
+            relatedEmployees.putIfAbsent(deptLabel, () => []).add(emp);
+            break;
+          }
+        }
+      }
+    }
+
+    // Construir lista de items
+    final items = <Widget>[];
+
+    // Empleados del departamento principal
+    for (final emp in employees) {
+      items.add(ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        leading: CircleAvatar(
+          backgroundColor: tc.isDark ? Colors.deepPurple.shade900 : Colors.deepPurple.shade50,
+          child: Text(emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
+              style: TextStyle(color: tc.isDark ? Colors.deepPurple.shade200 : Colors.deepPurple.shade700, fontWeight: FontWeight.bold)),
+        ),
+        title: Text('${emp.name} ${emp.lastName}', style: TextStyle(fontWeight: FontWeight.w500, color: tc.textPrimary)),
+        subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: tc.textHint)),
+        onTap: () => Navigator.of(ctx).pop(emp),
+      ));
+    }
+
+    // Empleados de departamentos relacionados (foto/video/filmmaker)
+    for (final entry in relatedEmployees.entries) {
+      items.add(Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Row(
+          children: [
+            Icon(Icons.group, size: 14, color: tc.textHint),
+            const SizedBox(width: 6),
+            Text(entry.key, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: tc.textSecondary)),
+            const SizedBox(width: 6),
+            Expanded(child: Divider(color: tc.border)),
+          ],
+        ),
+      ));
+      for (final emp in entry.value) {
+        items.add(ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          leading: CircleAvatar(
+            backgroundColor: tc.isDark ? Colors.teal.shade900 : Colors.teal.shade50,
+            child: Text(emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
+                style: TextStyle(color: tc.isDark ? Colors.teal.shade200 : Colors.teal.shade700, fontWeight: FontWeight.bold)),
+          ),
+          title: Text('${emp.name} ${emp.lastName}', style: TextStyle(fontWeight: FontWeight.w500, color: tc.textPrimary)),
+          subtitle: Text(emp.designation, style: TextStyle(fontSize: 12, color: tc.textHint)),
+          onTap: () => Navigator.of(ctx).pop(emp),
+        ));
+      }
+    }
+
+    // Soporte externo (solo maquillaje)
+    if (isMakeupSlot) {
+      items.add(const Divider());
+      items.add(ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        leading: CircleAvatar(
+          backgroundColor: Colors.purple.withValues(alpha: 0.15),
+          child: const Icon(Icons.person_add_alt, color: Colors.purple, size: 20),
+        ),
+        title: Text('Maquillista de Soporte', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.purple.shade300)),
+        subtitle: Text('Maquillista externa', style: TextStyle(fontSize: 11, color: tc.textHint)),
+        onTap: () {
+          Navigator.of(ctx).pop(null);
+          _showSupportNameDialog(reservation, maqIndex, event);
+        },
+      ));
+    }
+
+    return ListView(
+      shrinkWrap: true,
+      children: items,
+    );
   }
 
   /// Diálogo para ingresar nombre de maquillista de soporte
@@ -1293,6 +1389,65 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
   }
 
   String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  /// Parsea fotógrafos de la descripción del paquete por sección Pre-Quince/Fiesta
+  _MakeupParseResult _parsePhotographyByEvent(String description) {
+    if (description.isEmpty) {
+      return _MakeupParseResult(labels: ['Fotógrafo'], labelsPre: [], labelsFiesta: [], hasSections: false);
+    }
+    final lower = description.toLowerCase();
+
+    final preIdx = RegExp(r'pre[- ]?quince|pre[- ]?boda', caseSensitive: false).firstMatch(lower)?.start ?? -1;
+    final fiestaIdx = RegExp(r'\nfiesta\b|\n\s*fiesta\b', caseSensitive: false).firstMatch(lower)?.start ?? -1;
+
+    if (preIdx != -1 && fiestaIdx != -1 && fiestaIdx > preIdx) {
+      final preSection = lower.substring(preIdx, fiestaIdx);
+      final fiestaSection = lower.substring(fiestaIdx);
+      final labelsPre = _extractPhotoFromSection(preSection);
+      final labelsFiesta = _extractPhotoFromSection(fiestaSection);
+      return _MakeupParseResult(
+        labels: [...labelsPre, ...labelsFiesta],
+        labelsPre: labelsPre,
+        labelsFiesta: labelsFiesta,
+        hasSections: true,
+      );
+    }
+
+    final labels = _extractPhotoFromSection(lower);
+    return _MakeupParseResult(
+      labels: labels.isNotEmpty ? labels : ['Fotógrafo'],
+      labelsPre: [],
+      labelsFiesta: [],
+      hasSections: false,
+    );
+  }
+
+  /// Extrae labels de fotografía/filmmaker de una sección de texto
+  List<String> _extractPhotoFromSection(String section) {
+    final labels = <String>[];
+    final lines = section.split('\n');
+    for (final line in lines) {
+      final lower = line.toLowerCase().trim();
+      // Detectar fotógrafo
+      if (lower.contains('fotógrafo') || lower.contains('fotografo')) {
+        if (lower.contains('asistente')) {
+          labels.add('Fotógrafo');
+          labels.add('Asistente');
+        } else {
+          final match = RegExp(r'(\d+)\s*fot[oó]grafo', caseSensitive: false).firstMatch(lower);
+          final count = int.tryParse(match?.group(1) ?? '1') ?? 1;
+          for (int i = 0; i < count; i++) {
+            labels.add(count > 1 ? 'Fotógrafo ${i + 1}' : 'Fotógrafo');
+          }
+        }
+      }
+      // Detectar filmmaker
+      if (lower.contains('filmmaker') || lower.contains('film maker') || lower.contains('filmmarker')) {
+        labels.add('Filmmaker');
+      }
+    }
+    return labels;
+  }
 
   /// Busca el paquete correspondiente a la reservación
   String _getPackageDescription(ReservationModel reservation) {

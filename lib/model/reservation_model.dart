@@ -235,6 +235,8 @@ class ReservationModel {
 
 class ReservationAssignments {
   final String? fotografoId;
+  final List<String> fotografoIdsPre; // Fotógrafos para Pre-Quince
+  final List<String> fotografoIdsFiesta; // Fotógrafos para Fiesta
   final String? maquillistaId; // Primer maquillista (compatibilidad)
   final List<String> maquillistaIds; // Múltiples maquillistas (plan simple)
   final List<String> maquillistaIdsPre; // Maquillistas para Pre-Quince
@@ -243,10 +245,12 @@ class ReservationAssignments {
   final String? bookedById;
   final String? contactChannel;
   final String? socialNetwork;
-  final Map<String, bool> declined; // Slots rechazados por cargo: {'maquillista': true}
+  final Map<String, bool> declined;
 
   ReservationAssignments({
     this.fotografoId,
+    List<String>? fotografoIdsPre,
+    List<String>? fotografoIdsFiesta,
     this.maquillistaId,
     List<String>? maquillistaIds,
     List<String>? maquillistaIdsPre,
@@ -256,7 +260,9 @@ class ReservationAssignments {
     this.contactChannel,
     this.socialNetwork,
     Map<String, bool>? declined,
-  }) : maquillistaIds = maquillistaIds ?? [],
+  }) : fotografoIdsPre = fotografoIdsPre ?? [],
+       fotografoIdsFiesta = fotografoIdsFiesta ?? [],
+       maquillistaIds = maquillistaIds ?? [],
        maquillistaIdsPre = maquillistaIdsPre ?? [],
        maquillistaIdsFiesta = maquillistaIdsFiesta ?? [],
        declined = declined ?? {};
@@ -287,6 +293,8 @@ class ReservationAssignments {
 
     return ReservationAssignments(
       fotografoId: json['f'],
+      fotografoIdsPre: parseMaqList(json['fPre']),
+      fotografoIdsFiesta: parseMaqList(json['fFiesta']),
       maquillistaId: firstMaq,
       maquillistaIds: maqIds,
       maquillistaIdsPre: parseMaqList(json['mPre']),
@@ -299,6 +307,62 @@ class ReservationAssignments {
           ? (json['declined'] as Map).map((k, v) => MapEntry(k.toString(), v == true))
           : null,
     );
+  }
+
+  /// Obtiene el fotógrafo en la posición [index] para un evento específico
+  String? getFotografoAt(int index, [String? event]) {
+    final list = _getFotoListForEvent(event);
+    if (index < list.length && list[index].isNotEmpty) return list[index];
+    return null;
+  }
+
+  /// Crea una copia con el fotógrafo en [index] actualizado para un evento
+  ReservationAssignments withFotografoAt(int index, String employeeId, [String? event]) {
+    final oldPre = List<String>.from(fotografoIdsPre);
+    final oldFiesta = List<String>.from(fotografoIdsFiesta);
+
+    void setInList(List<String> list, int idx, String val) {
+      while (list.length <= idx) list.add('');
+      list[idx] = val;
+      while (list.isNotEmpty && list.last.isEmpty) list.removeLast();
+    }
+
+    String? newFotoId = fotografoId;
+    if (event == 'pre') {
+      setInList(oldPre, index, employeeId);
+    } else if (event == 'fiesta') {
+      setInList(oldFiesta, index, employeeId);
+    } else {
+      newFotoId = employeeId;
+    }
+
+    return ReservationAssignments(
+      fotografoId: newFotoId,
+      fotografoIdsPre: oldPre,
+      fotografoIdsFiesta: oldFiesta,
+      maquillistaId: maquillistaId,
+      maquillistaIds: maquillistaIds,
+      maquillistaIdsPre: maquillistaIdsPre,
+      maquillistaIdsFiesta: maquillistaIdsFiesta,
+      editorId: editorId,
+      bookedById: bookedById,
+      contactChannel: contactChannel,
+      socialNetwork: socialNetwork,
+      declined: declined,
+    );
+  }
+
+  List<String> _getFotoListForEvent(String? event) {
+    if (event == 'pre') return fotografoIdsPre;
+    if (event == 'fiesta') return fotografoIdsFiesta;
+    return fotografoId != null ? [fotografoId!] : [];
+  }
+
+  /// Verifica si todos los slots de fotografía están asignados para un evento
+  bool allFotoAssigned(int needed, [String? event]) {
+    final list = _getFotoListForEvent(event);
+    if (list.length < needed) return false;
+    return list.take(needed).every((id) => id.isNotEmpty);
   }
 
   /// Obtiene el maquillista en la posición [index] para un evento específico
@@ -357,6 +421,8 @@ class ReservationAssignments {
   Map<String, dynamic> toJson() {
     return {
       if (fotografoId != null) 'f': fotografoId,
+      if (fotografoIdsPre.isNotEmpty) 'fPre': fotografoIdsPre,
+      if (fotografoIdsFiesta.isNotEmpty) 'fFiesta': fotografoIdsFiesta,
       if (maquillistaId != null) 'm': maquillistaId,
       if (maquillistaIds.length > 1) 'mIds': maquillistaIds,
       if (maquillistaIdsPre.isNotEmpty) 'mPre': maquillistaIdsPre,
