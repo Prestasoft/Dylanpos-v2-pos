@@ -55,18 +55,19 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
     final user = _api.currentUser;
     if (user == null) return;
     _userRole = user['role']?.toString() ?? 'admin';
-    _currentEmployeeId = user['linked_employee_id']?.toString();
+    final linkedRaw = user['linked_employee_id']?.toString();
+    _currentEmployeeId = (linkedRaw != null && linkedRaw.isNotEmpty && linkedRaw != 'null') ? linkedRaw : null;
     _currentUserName = user['name']?.toString();
 
-    // Si es empleado simple, el filtro por defecto es su propio ID
-    if (_userRole == 'employee' && _currentEmployeeId != null) {
+    // Si tiene empleado vinculado y no es admin, ver solo sus clientes
+    if (_currentEmployeeId != null && _userRole != 'admin') {
       _activeFilter = _currentEmployeeId;
     }
   }
 
-  bool get _isAdmin => _userRole == 'admin' || _userRole == 'user';
+  bool get _isAdmin => _userRole == 'admin';
   bool get _isDepartmentHead => _userRole == 'department_head';
-  bool get _isEmployee => _userRole == 'employee';
+  bool get _isLinkedUser => _currentEmployeeId != null && !_isAdmin;
   bool get _canAssign => _isAdmin || _isDepartmentHead;
 
   Future<void> _loadData() async {
@@ -104,10 +105,8 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
     if (_activeFilter == null) {
       list = _clients.where((c) => c.isUnassigned).toList();
     } else {
-      list = _clients.where((c) {
-        return c.bookedById == _activeFilter ||
-            c.bookedByName == _getReceptionistName(_activeFilter!);
-      }).toList();
+      // Filtrar SOLO por bookedById (asignación formal desde el sistema)
+      list = _clients.where((c) => c.bookedById == _activeFilter).toList();
     }
 
     if (_stageFilter != 'todos') {
@@ -149,7 +148,7 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
       ));
     }
 
-    if (_isEmployee && _currentEmployeeId != null) {
+    if (_isLinkedUser && _currentEmployeeId != null) {
       // Empleado solo ve su tab
       final myCount = _clients.where((c) =>
           c.bookedById == _currentEmployeeId ||
@@ -163,24 +162,32 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
       ));
     } else {
       // Admin/encargada ve tabs de todas las recepcionistas
-      final byReceptionist = <String, int>{};
+      // Usar la misma lógica de filtro que _filteredClients para contar
+      final byReceptionist = <String, _TabInfo>{};
       for (final c in _clients.where((c) => !c.isUnassigned)) {
         final key = c.bookedById ?? '';
-        if (key.isNotEmpty) {
-          byReceptionist[key] = (byReceptionist[key] ?? 0) + 1;
+        if (key.isEmpty) continue;
+        if (byReceptionist.containsKey(key)) {
+          byReceptionist[key] = _TabInfo(
+            id: key,
+            label: byReceptionist[key]!.label,
+            count: byReceptionist[key]!.count + 1,
+            icon: Icons.person,
+            color: const Color(0xFFD4A84B),
+          );
+        } else {
+          final name = _getReceptionistName(key);
+          final displayName = name.isNotEmpty ? name.split(' ').first : (c.bookedByName?.split(' ').first ?? 'Recep.');
+          byReceptionist[key] = _TabInfo(
+            id: key,
+            label: displayName,
+            count: 1,
+            icon: Icons.person,
+            color: const Color(0xFFD4A84B),
+          );
         }
       }
-
-      for (final entry in byReceptionist.entries) {
-        final name = _getReceptionistName(entry.key);
-        tabs.add(_TabInfo(
-          id: entry.key,
-          label: name.isNotEmpty ? name.split(' ').first : 'Recep.',
-          count: entry.value,
-          icon: Icons.person,
-          color: const Color(0xFFD4A84B),
-        ));
-      }
+      tabs.addAll(byReceptionist.values);
     }
 
     return tabs;
@@ -281,11 +288,11 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _isEmployee ? 'Mis Clientes' : 'Seguimiento de Clientes',
+                                    _isLinkedUser ? 'Mis Clientes' : 'Seguimiento de Clientes',
                                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                                   ),
                                   Text(
-                                    _isEmployee
+                                    _isLinkedUser
                                         ? '${_filteredClients.length} clientes asignados'
                                         : '${_clients.length} clientes en el período',
                                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),

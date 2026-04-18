@@ -49,6 +49,7 @@ class UserRoleModel {
   bool? hrmDelete;
 
   String? userKey;
+  String? linkedEmployeeId;
 
   UserRoleModel(
       {this.email,
@@ -99,7 +100,8 @@ class UserRoleModel {
       this.hrmView,
       this.hrmEdit,
       this.hrmDelete,
-      this.userKey});
+      this.userKey,
+      this.linkedEmployeeId});
 
   /// Buscar permiso por tipo de menú o submenú
   Permission? getPermission(String type) {
@@ -179,7 +181,15 @@ class UserRoleModel {
         hrmView: json["hrmView"] ?? false,
         hrmEdit: json["hrmEdit"] ?? false,
         hrmDelete: json["hrmDelete"] ?? false,
+        linkedEmployeeId: _cleanNull(json["linked_employee_id"] ?? json["linkedEmployeeId"]),
       );
+  }
+
+  static String? _cleanNull(dynamic v) {
+    if (v == null) return null;
+    final s = v.toString();
+    if (s.isEmpty || s == 'null') return null;
+    return s;
   }
 
   Map<String, dynamic> toJson() => {

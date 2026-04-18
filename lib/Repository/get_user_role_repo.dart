@@ -33,6 +33,13 @@ class UserRoleRepo {
               debugPrint('🟢 [UserRoleRepo] Usuario $userName - Permisos parseados: ${parsedPermissions.length}, activos: $activeCount');
 
               // Convertir de formato PostgreSQL a UserRoleModel
+              // Limpiar linked_employee_id (puede venir como "null" string)
+              String? linkedEmpId;
+              final rawLinked = data['linked_employee_id'];
+              if (rawLinked != null && rawLinked.toString().isNotEmpty && rawLinked.toString() != 'null') {
+                linkedEmpId = rawLinked.toString();
+              }
+
               final userRole = UserRoleModel(
                 email: data['email'] ?? '',
                 userTitle: data['name'] ?? '',
@@ -45,6 +52,7 @@ class UserRoleRepo {
                     ? List<String>.from(data['allowed_branches'])
                     : null,
                 permissions: parsedPermissions,
+                linkedEmployeeId: linkedEmpId,
               );
               userRole.userKey = data['id']?.toString();
               users.add(userRole);

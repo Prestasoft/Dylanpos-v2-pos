@@ -484,6 +484,14 @@ List<SidebarItemModel> get topMenus {
       navigationPath: '/sale-confirmations',
     ),
     SidebarItemModel(
+      name: "Seguimiento Clientes",
+      iconPath: 'images/dashboard_icon/reports.svg',
+      materialIcon: Icons.track_changes_rounded,
+      sectionColor: SidebarSectionColors.ventas,
+      type: "reservations",
+      navigationPath: '/client-tracking',
+    ),
+    SidebarItemModel(
       name: 'Impresión',
       iconPath: 'images/dashboard_icon/product.svg',
       materialIcon: Icons.print_rounded,

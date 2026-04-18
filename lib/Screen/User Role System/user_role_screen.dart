@@ -58,6 +58,14 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
           body: Consumer(builder: (_, ref, watch) {
             final customers = ref.watch(userRoleProvider);
             return customers.when(data: (allCustomerList) {
+              // Pre-cargar cache de vinculaciones desde el modelo
+              for (final u in allCustomerList) {
+                final uid = u.userKey ?? u.databaseId ?? '';
+                if (uid.isNotEmpty && u.linkedEmployeeId != null && !_linkedCache.containsKey(uid)) {
+                  _linkedCache[uid] = 'Empleado vinculado';
+                }
+              }
+
               List<UserRoleModel> customerList = allCustomerList;
               final pages = (customerList.length / _lossProfitPerPage).ceil();
 
@@ -929,9 +937,11 @@ class _UserRoleScreenState extends State<UserRoleScreen> {
 
     // Guardar vinculación
     try {
+      debugPrint('🔗 [VINCULAR] userId=$userId, employeeId=${selected.id}, name=${selected.name}');
       final resp = await ApiService().put('users/$userId', {
         'linked_employee_id': selected.id.toString(),
       });
+      debugPrint('🔗 [VINCULAR] resp.success=${resp.success}, error=${resp.error}');
 
       if (resp.success && mounted) {
         setState(() {

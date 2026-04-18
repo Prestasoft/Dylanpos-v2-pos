@@ -995,6 +995,14 @@ abstract class AcnooAppRoutes {
                 ),
               ]),
 
+          ///----------------Client Tracking (nivel raíz para todos los roles)----
+          GoRoute(
+            path: '/client-tracking',
+            pageBuilder: (context, state) => const NoTransitionPage<void>(
+              child: ClientTrackingScreen(),
+            ),
+          ),
+
           ///-----------------User Role Screen----------------------------------
           GoRoute(
             path: '/user-role',
