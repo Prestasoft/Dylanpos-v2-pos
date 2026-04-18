@@ -704,9 +704,9 @@ class _AddUserRoleState extends State<AddUserRole> {
                     controller: emailController,
                     // cursorColor: kTitleColor,
                     decoration: InputDecoration(
-                      labelText: lang.S.of(context).email,
+                      labelText: 'Nombre de usuario',
                       // labelStyle: kTextStyle.copyWith(color: kTitleColor),
-                      hintText: 'maantheme@gmail.com',
+                      hintText: 'ej: juan.perez',
                     ),
                     keyboardType: TextInputType.name,
                   ),
@@ -1153,6 +1153,8 @@ class _AddUserRoleState extends State<AddUserRole> {
                         // Map frontend field names to backend field names
                         final backendData = <String, dynamic>{
                           'name': updateData['userTitle'],
+                          'email': emailController.text.trim(),
+                          'username': emailController.text.trim(),
                           'role': updateData['userRoleName'],
                           'branch_id': updateData['branchId'],
                           'allowed_branches': updateData['allowedBranches'],
@@ -1164,21 +1166,22 @@ class _AddUserRoleState extends State<AddUserRole> {
                           backendData['linked_employee_id'] = _linkedEmployeeId;
                         }
 
-                        // Add password if changed
-                        if (passwordController.text.isNotEmpty &&
-                            confirmPasswordController.text.isNotEmpty &&
-                            passwordController.text == confirmPasswordController.text) {
-                          backendData['password'] = passwordController.text;
-                        }
-
                         // DEBUG: Log data being sent
                         debugPrint('🔍 [UPDATE USER] userId: $userId');
                         debugPrint('🔍 [UPDATE USER] selectedAllowedBranches: $selectedAllowedBranches');
-                        debugPrint('🔍 [UPDATE USER] backendData[allowed_branches]: ${backendData['allowed_branches']}');
                         debugPrint('🔍 [UPDATE USER] backendData COMPLETO: $backendData');
-                        debugPrint('🔍 [UPDATE USER] Número de permisos: ${(backendData['permissions'] as Map).length}');
 
                         final response = await apiService.put('users/$userId', backendData);
+
+                        // Si hay contraseña nueva, cambiarla via endpoint dedicado
+                        if (passwordController.text.isNotEmpty &&
+                            confirmPasswordController.text.isNotEmpty &&
+                            passwordController.text == confirmPasswordController.text) {
+                          await apiService.put(
+                            'auth/users/$userId/reset-password',
+                            {'newPassword': passwordController.text},
+                          );
+                        }
 
                         debugPrint('🔍 [UPDATE USER RESPONSE] success: ${response.success}');
                         debugPrint('🔍 [UPDATE USER RESPONSE] message: ${response.message}');
