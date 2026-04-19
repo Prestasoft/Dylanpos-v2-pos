@@ -5,8 +5,9 @@ import '../client_tracking_model.dart';
 /// Muestra: nombre, plan, fecha, mini-indicadores de departamentos.
 class KanbanClientCard extends StatelessWidget {
   final ClientTrackingModel client;
+  final String? currentColumn;
 
-  const KanbanClientCard({super.key, required this.client});
+  const KanbanClientCard({super.key, required this.client, this.currentColumn});
 
   @override
   Widget build(BuildContext context) {
@@ -126,34 +127,55 @@ class KanbanClientCard extends StatelessWidget {
           if (groups.isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(
-              children: groups.map((g) {
-                final color = _statusColor(g.status);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 3),
-                  child: Tooltip(
-                    message: '${g.label}: ${_statusLabel(g.status)}',
-                    child: Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        g.label[0],
-                        style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: color),
+              children: [
+                ...groups.map((g) {
+                  final color = _statusColor(g.status);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 3),
+                    child: Tooltip(
+                      message: '${g.label}: ${_statusLabel(g.status)}',
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          g.label[0],
+                          style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: color),
+                        ),
                       ),
                     ),
+                  );
+                }),
+                const Spacer(),
+                // Responsable del departamento actual
+                if (_getResponsableName() != null)
+                  Text(
+                    _getResponsableName()!,
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
                   ),
-                );
-              }).toList(),
+              ],
             ),
           ],
         ],
       ),
     );
+  }
+
+  /// Obtiene el nombre del responsable del departamento donde está el cliente
+  String? _getResponsableName() {
+    if (currentColumn == null) return null;
+    final groups = client.departmentGroups;
+    for (final g in groups) {
+      if (g.key == currentColumn && g.employeeNames.isNotEmpty) {
+        return g.employeeNames.first;
+      }
+    }
+    return null;
   }
 
   Color _statusColor(DepartmentStatus status) {

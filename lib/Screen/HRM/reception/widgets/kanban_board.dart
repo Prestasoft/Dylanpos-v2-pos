@@ -75,7 +75,7 @@ class KanbanBoard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _columns.map((col) {
             final items = buckets[col.key] ?? [];
-            return _buildColumn(col, items, columnWidth);
+            return _buildColumn(col, items, columnWidth, col.key);
           }).toList(),
         ),
       ),
@@ -109,7 +109,7 @@ class KanbanBoard extends StatelessWidget {
     return 'seguimiento';
   }
 
-  Widget _buildColumn(_KanbanColumnDef col, List<ClientTrackingModel> items, double width) {
+  Widget _buildColumn(_KanbanColumnDef col, List<ClientTrackingModel> items, double width, String columnKey) {
     return Container(
       width: width,
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -173,7 +173,7 @@ class KanbanBoard extends StatelessWidget {
                     ),
                   )
                 : Column(
-                    children: items.map((c) => KanbanClientCard(client: c)).toList(),
+                    children: items.map((c) => KanbanClientCard(client: c, currentColumn: columnKey)).toList(),
                   ),
           ),
         ],
