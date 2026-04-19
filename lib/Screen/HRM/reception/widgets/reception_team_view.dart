@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../assignments/widgets/date_filter_bar.dart';
 import '../../assignments/widgets/task_theme.dart';
 import '../client_tracking_model.dart';
 import '../client_tracking_repo.dart';
@@ -24,6 +25,9 @@ class _ReceptionTeamViewState extends State<ReceptionTeamView> {
   int _totalEnProceso = 0;
   int _totalHoy = 0;
   int _totalAtraso = 0;
+  DateTime _dateFrom = DateTime.now();
+  DateTime _dateTo = DateTime.now().add(const Duration(days: 60));
+  String _dateFilter = 'rango';
 
   @override
   void initState() {
@@ -34,10 +38,9 @@ class _ReceptionTeamViewState extends State<ReceptionTeamView> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
-      // Cargar clientes de seguimiento (60 días)
       final now = DateTime.now();
-      final dateFrom = DateFormat('yyyy-MM-dd').format(now);
-      final dateTo = DateFormat('yyyy-MM-dd').format(now.add(const Duration(days: 60)));
+      final dateFrom = DateFormat('yyyy-MM-dd').format(_dateFrom);
+      final dateTo = DateFormat('yyyy-MM-dd').format(_dateTo);
       final clients = await ClientTrackingRepository().getClients(dateFrom: dateFrom, dateTo: dateTo);
 
       // Cargar recepcionistas
@@ -136,6 +139,21 @@ class _ReceptionTeamViewState extends State<ReceptionTeamView> {
               onRefresh: _loadData,
               child: CustomScrollView(
                 slivers: [
+                  SliverToBoxAdapter(
+                    child: DateFilterBar(
+                      dateFrom: _dateFrom,
+                      dateTo: _dateTo,
+                      activeFilter: _dateFilter,
+                      onChanged: (result) {
+                        setState(() {
+                          _dateFrom = result.from;
+                          _dateTo = result.to;
+                          _dateFilter = result.filter;
+                        });
+                        _loadData();
+                      },
+                    ),
+                  ),
                   SliverToBoxAdapter(child: _buildKpiRow(tc)),
                   SliverToBoxAdapter(
                     child: Padding(

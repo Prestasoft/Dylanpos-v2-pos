@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 
 import '../../../../services/api_service.dart';
+import '../../assignments/widgets/date_filter_bar.dart';
 import '../../assignments/widgets/task_theme.dart';
 import '../../employees/model/employee_model.dart';
 import '../../employees/repo/employee_repo.dart';
@@ -28,8 +29,10 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
   bool _loading = true;
   List<ClientTrackingModel> _clients = [];
   List<EmployeeModel> _receptionists = [];
-  // Clientes marcados como "No aplica" (guardados localmente)
   final Set<String> _noAplicaIds = {};
+  DateTime _dateFrom = DateTime.now().subtract(const Duration(days: 7));
+  DateTime _dateTo = DateTime.now().add(const Duration(days: 60));
+  String _dateFilter = 'rango';
 
   @override
   void initState() {
@@ -53,8 +56,8 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
     setState(() => _loading = true);
     try {
       final now = DateTime.now();
-      final dateFrom = DateFormat('yyyy-MM-dd').format(now.subtract(const Duration(days: 7)));
-      final dateTo = DateFormat('yyyy-MM-dd').format(now.add(const Duration(days: 60)));
+      final dateFrom = DateFormat('yyyy-MM-dd').format(_dateFrom);
+      final dateTo = DateFormat('yyyy-MM-dd').format(_dateTo);
       final clients = await _repo.getClients(dateFrom: dateFrom, dateTo: dateTo);
 
       final allEmployees = await EmployeeRepository().getActiveEmployees();
@@ -137,17 +140,33 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                return ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(context).copyWith(
-                    dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.all(12),
-                    child: SizedBox(
-                      height: constraints.maxHeight - 24,
+          : Column(
+              children: [
+                DateFilterBar(
+                  dateFrom: _dateFrom,
+                  dateTo: _dateTo,
+                  activeFilter: _dateFilter,
+                  onChanged: (result) {
+                    setState(() {
+                      _dateFrom = result.from;
+                      _dateTo = result.to;
+                      _dateFilter = result.filter;
+                    });
+                    _loadData();
+                  },
+                ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return ScrollConfiguration(
+                        behavior: ScrollConfiguration.of(context).copyWith(
+                          dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.all(12),
+                          child: SizedBox(
+                            height: constraints.maxHeight - 24,
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -158,9 +177,12 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
                         ],
                       ),
                     ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ],
             ),
     );
   }

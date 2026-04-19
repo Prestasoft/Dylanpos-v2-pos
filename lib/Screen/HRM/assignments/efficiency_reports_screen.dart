@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../Repository/task_repo.dart';
 import '../../../services/api_service.dart';
+import 'widgets/date_filter_bar.dart';
 import 'widgets/task_theme.dart';
 
 class EfficiencyReportsScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class EfficiencyReportsScreen extends StatefulWidget {
 class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
+  String _dateFilter = 'rango';
   bool _loading = true;
   Map<String, dynamic> _data = {};
   num? _scopedDesignationId;
@@ -65,10 +67,6 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
         title: Text('Rendimiento', style: TextStyle(color: tc.appBarTitle, fontSize: 18)),
         actions: [
           const TaskThemeToggle(),
-          IconButton(
-            icon: const Icon(Icons.calendar_today, color: Colors.blue, size: 20),
-            onPressed: _pickDateRange,
-          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -79,11 +77,19 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // Período
-                  Text(
-                    '${DateFormat('dd MMM').format(_startDate)} - ${DateFormat('dd MMM yyyy').format(_endDate)}',
-                    style: TextStyle(fontSize: 12, color: tc.textHint),
-                    textAlign: TextAlign.center,
+                  // Filtro de fechas
+                  DateFilterBar(
+                    dateFrom: _startDate,
+                    dateTo: _endDate,
+                    activeFilter: _dateFilter,
+                    onChanged: (result) {
+                      setState(() {
+                        _startDate = result.from;
+                        _endDate = result.to;
+                        _dateFilter = result.filter;
+                      });
+                      _loadData();
+                    },
                   ),
                   const SizedBox(height: 12),
 
