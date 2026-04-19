@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:salespro_admin/Screen/Widgets/Constant%20Data/constant.dart';
 import 'package:salespro_admin/commas.dart';
+import 'package:salespro_admin/model/reservation_model.dart';
 
 import 'models/employee_performance_model.dart';
 import 'providers/rentability_provider.dart';
@@ -556,9 +557,9 @@ class _PendingInvoicesScreenState extends ConsumerState<PendingInvoicesScreen> {
                 _buildDetailRow(Icons.info_outline, 'Estado', reservation.estado.toUpperCase()),
 
                 // Nota
-                if (reservation.nota.isNotEmpty) ...[
+                if (ReservationModel.cleanNotaText(reservation.nota).isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  _buildDetailRow(Icons.notes, 'Nota', reservation.nota),
+                  _buildDetailRow(Icons.notes, 'Nota', ReservationModel.cleanNotaText(reservation.nota)),
                 ],
 
                 // Vestidos

@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:salespro_admin/PDF/print_pdf.dart';
 import 'package:salespro_admin/commas.dart';
+import 'package:salespro_admin/model/reservation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:salespro_admin/Provider/reservation_provider.dart';
@@ -197,10 +198,10 @@ final reservationSellerName = fullReservation?.reservation['seller_name']?.toStr
       .map((e) {
         final nota = e?.reservation['nota'];
         if (nota == null) return null;
-        final texto = nota.toString().trim();
+        final texto = ReservationModel.cleanNotaText(nota.toString());
         return texto.isEmpty ? null : texto;
       })
-      .whereType<String>() // Filtra los null
+      .whereType<String>()
       .toList();
 
   final place = reservaciones.map((e) => e?.reservation['place']?.toString().trim()).firstWhere(
@@ -1754,7 +1755,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
           ],
         ),
       ],
-      if (reservacion.reservation['nota'] != null && reservacion.reservation['nota'].toString().isNotEmpty) ...[
+      if (ReservationModel.cleanNotaText(reservacion.reservation['nota']?.toString()).isNotEmpty) ...[
         pw.SizedBox(height: 2),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -1762,7 +1763,7 @@ pw.Widget _buildReservationSection(FullReservation reservacion) {
             pw.Text('Notas:', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(width: 5),
             pw.Text(
-              reservacion.reservation['nota'].toString(),
+              ReservationModel.cleanNotaText(reservacion.reservation['nota']?.toString()),
               style: pw.TextStyle(fontSize: 8),
               maxLines: 2,
             ),

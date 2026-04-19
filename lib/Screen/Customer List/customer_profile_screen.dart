@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nb_utils/nb_utils.dart';
+import '../../model/reservation_model.dart';
 import '../../services/api_service.dart';
 import '../Widgets/customer_avatar.dart';
 import '../../commas.dart';
@@ -981,9 +982,9 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen>
     }
     final vestido = _getField(reservation, ['vestido', 'dress_name']);
 
-    // Lugar y nota
+    // Lugar y nota (limpiar JSON de asignaciones)
     final place = _getField(reservation, ['place', 'ubicacion']);
-    final nota = _getField(reservation, ['nota', 'notes']);
+    final nota = ReservationModel.cleanNotaText(_getField(reservation, ['nota', 'notes']));
 
     // Precio del paquete
     final packagePrice = _getField(reservation, ['package_price', 'packagePrice']);
@@ -1677,7 +1678,8 @@ class _ReservationDetailContent extends ConsumerWidget {
     final reservationTime = _getField(res, ['reservation_time', 'reservationTime'], '');
     final branchId = _getField(res, ['branch_id', 'branchId'], '');
     final place = _getField(res, ['place', 'lugar'], 'Sin lugar');
-    final nota = _getField(res, ['nota', 'notes'], 'Sin notas');
+    final notaRaw = _getField(res, ['nota', 'notes'], '');
+    final nota = ReservationModel.cleanNotaText(notaRaw).isEmpty ? 'Sin notas' : ReservationModel.cleanNotaText(notaRaw);
     final packagePrice = _getField(res, ['package_price', 'packagePrice'], '0');
 
     // Servicio
@@ -1778,7 +1780,8 @@ class _ReservationDetailContent extends ConsumerWidget {
     final reservationTime = _getField(reservationData, ['reservation_time', 'reservationTime'], '');
     final branchId = _getField(reservationData, ['branch_id', 'branchId'], '');
     final place = _getField(reservationData, ['place', 'lugar'], 'Sin lugar');
-    final nota = _getField(reservationData, ['nota', 'notes'], 'Sin notas');
+    final notaRaw2 = _getField(reservationData, ['nota', 'notes'], '');
+    final nota = ReservationModel.cleanNotaText(notaRaw2).isEmpty ? 'Sin notas' : ReservationModel.cleanNotaText(notaRaw2);
     final serviceName = _getField(reservationData, ['service_name', 'serviceName'], '');
 
     return SingleChildScrollView(
@@ -1807,7 +1810,7 @@ class _ReservationDetailContent extends ConsumerWidget {
 
   /// Construir item de adicional
   Widget _buildAditionalItem(BuildContext context, Map<String, dynamic> aditional) {
-    final adicNota = aditional['nota']?.toString() ?? '';
+    final adicNota = ReservationModel.cleanNotaText(aditional['nota']?.toString());
     final adicPrice = aditional['package_price']?.toString() ?? '0';
     final adicDate = aditional['reservation_date']?.toString() ?? '';
     final adicTime = aditional['reservation_time']?.toString() ?? '';

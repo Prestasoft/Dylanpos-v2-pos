@@ -502,7 +502,8 @@ class ReservationCard extends ConsumerWidget {
               final serviceNameFromDb = fullReservation?.reservation['service_name']?.toString();
               final serviceName = serviceNameFromDb ??
                   fullReservation?.service?['name'] ?? 'Servicio no especificado';
-              final note = fullReservation?.reservation['nota'] ?? 'Sin notas';
+              final noteRaw = fullReservation?.reservation['nota']?.toString() ?? '';
+              final note = ReservationModel.cleanNotaText(noteRaw).isEmpty ? 'Sin notas' : ReservationModel.cleanNotaText(noteRaw);
               final place = fullReservation?.reservation['place'] ?? 'Sin lugar';
               final hasAditionals = (fullReservation?.reservation['aditionals'] != null && 
                                    (fullReservation!.reservation['aditionals'] as List).isNotEmpty);

@@ -46,10 +46,20 @@ class ReservationModel {
     }
   }
 
-  String get cleanNota {
-    if (nota == null) return '';
-    if (!nota!.contains('|||')) return nota!;
-    return nota!.split('|||')[0].trim();
+  String get cleanNota => cleanNotaText(nota);
+
+  /// Limpia cualquier texto de nota eliminando la parte JSON de asignaciones.
+  /// Uso: ReservationModel.cleanNotaText(notaString)
+  static String cleanNotaText(String? raw) {
+    if (raw == null || raw.isEmpty) return '';
+    if (raw.contains('|||')) {
+      final clean = raw.split('|||')[0].trim();
+      return clean;
+    }
+    // Si no tiene ||| pero parece ser JSON puro, retornar vacío
+    final trimmed = raw.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) return '';
+    return trimmed;
   }
 
   ReservationModel({
