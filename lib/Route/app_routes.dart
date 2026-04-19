@@ -273,11 +273,16 @@ abstract class AcnooAppRoutes {
             // Encargada de recepción: asignaciones como vista principal
             final allowedPaths = [
               '/client-tracking',
+              '/hrm/my-tasks',
               '/hrm/department-status',
               '/hrm/today-assignments',
               '/hrm/efficiency-reports',
               '/blank-home',
             ];
+            // Mis Tareas redirige a Seguimiento Clientes para recepción
+            if (currentPath.startsWith('/hrm/my-tasks')) {
+              return '/client-tracking';
+            }
             if (!allowedPaths.any((p) => currentPath.startsWith(p))) {
               return '/hrm/today-assignments';
             }
