@@ -15,6 +15,7 @@ import 'package:salespro_admin/services/padron_electoral_service.dart';
 import 'package:salespro_admin/commas.dart';
 
 import '../../../const.dart';
+import 'employee_crm_view.dart';
 import '../../Widgets/Constant Data/constant.dart';
 import '../departments/department_provider.dart';
 import '../widgets/deleteing_alart_dialog.dart';
@@ -47,6 +48,7 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
   late TabController _tabController;
   int _itemsPerPage = 10;
   int _currentPage = 1;
+  bool _isCrmView = false; // Toggle entre vista Lista y CRM columnas
 
   @override
   void initState() {
@@ -141,6 +143,88 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                       employee.designation.toLowerCase().contains(search) ||
                       employee.phoneNumber.contains(search);
                 }).toList();
+
+                // CRM View: layout diferente (necesita Expanded)
+                if (_isCrmView) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        // Header compacto
+                        Container(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                          decoration: BoxDecoration(
+                            color: kWhite,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Row(
+                                  children: [
+                                    Text('Empleados', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      '${allEmployees.length} total · ${activeEmployees.length} activos',
+                                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _viewToggleBtn(Icons.list, 'Lista', !_isCrmView, () => setState(() => _isCrmView = false)),
+                                        _viewToggleBtn(Icons.view_column, 'CRM', _isCrmView, () => setState(() => _isCrmView = true)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _showAddEmployeeDialog(context, ref, allEmployees),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Agregar Empleado'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kMainColor,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(thickness: 1, color: kNeutral300, height: 1),
+                        // CRM columns
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: kWhite,
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(20),
+                                bottomRight: Radius.circular(20),
+                              ),
+                            ),
+                            child: const EmployeeCrmView(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
@@ -271,6 +355,22 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(width: 8),
+                              // Toggle Lista/CRM
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _viewToggleBtn(Icons.list, 'Lista', !_isCrmView, () => setState(() => _isCrmView = false)),
+                                    _viewToggleBtn(Icons.view_column, 'CRM', _isCrmView, () => setState(() => _isCrmView = true)),
+                                  ],
+                                ),
                               ),
                               const SizedBox(width: 8),
                               // Botón Agregar
@@ -635,6 +735,28 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _viewToggleBtn(IconData icon, String label, bool isActive, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? kMainColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: isActive ? Colors.white : Colors.grey[600]),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isActive ? Colors.white : Colors.grey[600])),
+          ],
+        ),
       ),
     );
   }
