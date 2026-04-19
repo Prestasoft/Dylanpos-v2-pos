@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. **Implementar cambio lógico** → Un solo cambio por iteración
 2. **Esperar confirmación del usuario** → El usuario verifica que funciona
 3. **Commit** → Solo después de confirmación explícita del usuario
-4. **Despliegue** → SIEMPRE usar `./deploy.sh` (NUNCA deployment manual)
+4. **Despliegue** → PRIMERO a Labs, luego a Producción solo si el usuario lo pide
 
 ### Reglas de Commits
 
@@ -24,12 +24,49 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ❌ PROHIBIDO mezclar cambios no relacionados
 - ❌ PROHIBIDO hacer commit sin confirmación del usuario
 
-### Reglas de Despliegue
+### Reglas de Despliegue — LABS PRIMERO, PRODUCCIÓN SOLO SI SE PIDE
 
-- ✅ SIEMPRE usar `./deploy.sh` para desplegar
-- ✅ El script auto-incrementa versión y actualiza todos los archivos necesarios
+**REGLA CRÍTICA: Todo despliegue va PRIMERO a Labs. NUNCA desplegar directamente a producción.**
+
+#### Servidores
+
+| Ambiente | IP | URL | Script |
+|----------|-----|-----|--------|
+| **Labs (pruebas)** | 2.24.215.25 | lab.victorguzmanfotografia.com | `./deploy-labs.sh` |
+| **Producción** | 72.62.163.74 | sistema.victorguzmanfotografia.com | `./deploy.sh` |
+
+#### Flujo obligatorio de despliegue
+
+```
+Cambio implementado
+        ↓
+Desplegar a LABS → ./deploy-labs.sh (seleccionar "f" para frontend)
+        ↓
+Usuario prueba en Labs
+        ↓
+Usuario confirma: "funciona, despliega en producción"
+        ↓
+SOLO ENTONCES → ./deploy.sh (producción)
+```
+
+#### Reglas estrictas
+
+- ✅ SIEMPRE desplegar primero a Labs con `./deploy-labs.sh`
+- ✅ Esperar que el usuario pruebe y confirme en Labs
+- ✅ Solo usar `./deploy.sh` (producción) cuando el usuario lo pida EXPLÍCITAMENTE
+- ✅ `./deploy.sh` auto-incrementa versión y actualiza todos los archivos
+- ❌ PROHIBIDO desplegar a producción sin prueba previa en Labs
 - ❌ PROHIBIDO usar `flutter build web` + `scp/rsync` manual
 - ❌ PROHIBIDO desplegar sin commit previo
+- ❌ PROHIBIDO asumir que "despliega" significa producción — por defecto es Labs
+
+#### Palabras clave del usuario
+
+| El usuario dice | Acción |
+|-----------------|--------|
+| "despliega", "ejecuta", "súbelo" | → Desplegar a **Labs** |
+| "despliega en producción", "sube a producción", "deploy prod" | → Desplegar a **Producción** |
+| "ejecuta en local" | → `flutter run -d chrome` |
 
 ### Cierre Obligatorio de Cada Respuesta con Código
 
@@ -44,7 +81,8 @@ O después de confirmación:
 
 ```
 ✅ Commit realizado: <mensaje del commit>
-🚀 Despliegue: <pendiente / ejecutado con deploy.sh / no aplica>
+🧪 Labs: <desplegado en labs / pendiente>
+🚀 Producción: <pendiente confirmación del usuario>
 ```
 
 ### Flujo Completo
@@ -56,13 +94,17 @@ Claude implementa cambio
         ↓
 Claude informa: "⏳ Esperando confirmación"
         ↓
-Usuario confirma: "funciona" / "ok" / "listo"
+Usuario confirma: "despliega" / "ok"
         ↓
-Claude hace commit con mensaje descriptivo
+Claude despliega a LABS → ./deploy-labs.sh
         ↓
-Si aplica despliegue → Usuario confirma → Claude ejecuta ./deploy.sh
+Usuario prueba en Labs → confirma: "funciona"
         ↓
-Claude confirma: "✅ Commit realizado" + "🚀 Despliegue ejecutado"
+Claude hace commit
+        ↓
+Usuario pide: "despliega en producción"
+        ↓
+Claude ejecuta ./deploy.sh → Producción actualizada
 ```
 
 ---
@@ -262,47 +304,93 @@ The codebase includes comprehensive validation scripts (primarily in `lib/Screen
 - **Validation**: Implement thorough validation following patterns in `lib/Screen/Inventory Sales/`
 - **Security**: Never log or expose payment credentials
 
-## ⚠️ DESPLIEGUE A PRODUCCIÓN - OBLIGATORIO USAR deploy.sh
+## ⚠️ DESPLIEGUE — LABS PRIMERO, PRODUCCIÓN SOLO SI SE PIDE
 
-**CRÍTICO**: Para desplegar a producción, SIEMPRE usar el script `deploy.sh`. NUNCA hacer deployment manual con `flutter build web` + `scp/rsync`.
+**REGLA CRÍTICA: Todo despliegue va PRIMERO a Labs. NUNCA desplegar directamente a producción sin que el usuario lo pida explícitamente.**
 
-### Comando de despliegue:
+### Infraestructura de servidores
+
+| | Labs (Pruebas) | Producción |
+|--|---------------|------------|
+| **IP** | 2.24.215.25 | 72.62.163.74 |
+| **URL** | lab.victorguzmanfotografia.com | sistema.victorguzmanfotografia.com |
+| **Usuario** | root | root |
+| **Ruta Frontend** | /var/www/victorpos-app | /var/www/victorpos-app |
+| **Ruta API** | /var/www/victorpos-api | /var/www/victorpos-api |
+| **Script** | `./deploy-labs.sh` | `./deploy.sh` |
+| **OS** | Ubuntu 22.04.5 LTS | Ubuntu 22.04.5 LTS |
+| **Node.js** | v20.x | v20.x |
+| **PostgreSQL** | 14.x | 14.x |
+| **BD** | victorpos (espejo de prod) | victorpos |
+| **Esquemas** | stg, sde, sdo, rom | stg, sde, sdo, rom |
+| **PM2** | victorpos-api | victorpos-api |
+
+### Sincronización automática
+- **Cron nocturno** (3:00 AM): Labs se sincroniza automáticamente desde producción
+- **Script:** `/opt/sync-from-production.sh` en servidor labs
+- **Incluye:** BD completa + API backend + Frontend
+- **Logs:** `/var/log/victorpos-sync.log`
+
+### Comandos de despliegue
+
 ```bash
-# SIEMPRE usar este comando para desplegar:
-./deploy.sh
+# 🧪 DESPLEGAR A LABS (por defecto, siempre primero):
+./deploy-labs.sh
+# Opciones: f=frontend, b=backend, a=ambos, d=sincronizar BD
 
-# O con input automático (para Claude):
+# 🚀 DESPLEGAR A PRODUCCIÓN (solo si el usuario lo pide explícitamente):
+./deploy.sh
+# O con input automático:
 echo -e "s\nDescripción del cambio" | ./deploy.sh
 ```
 
-### ¿Por qué usar deploy.sh?
-El script `deploy.sh` hace automáticamente:
-1. **Auto-incrementa la versión** (ej: 2.1.7 → 2.1.8)
-2. **Actualiza la versión en todos los archivos**:
-   - `pubspec.yaml`
-   - `web/index.html` (REQUIRED_VERSION, título, version-text)
-   - `lib/top_bar/top_bar.dart` (badge de versión)
-   - `lib/Screen/Authentication/log_in.dart` (badge de versión)
-   - `web/app-version.json` (archivo de versión para actualización automática)
-3. **Compila** `flutter build web --release`
-4. **Sube archivos** via rsync al servidor
-5. **Verifica** la versión en el servidor
+### ¿Qué hace cada script?
 
-### ⛔ NO HACER NUNCA:
+**`deploy-labs.sh`** (Labs):
+1. Compila `flutter build web --release`
+2. Sube via rsync a labs (2.24.215.25)
+3. Opcionalmente sincroniza backend y/o BD
+
+**`deploy.sh`** (Producción):
+1. Auto-incrementa la versión (ej: 2.1.7 → 2.1.8)
+2. Actualiza la versión en todos los archivos:
+   - `pubspec.yaml`, `web/index.html`, `lib/Screen/Authentication/log_in.dart`
+   - `web/app-version.json` (actualización automática para usuarios)
+3. Compila `flutter build web --release`
+4. Sube archivos via rsync al servidor de producción
+5. Verifica la versión en el servidor
+
+### ⛔ PROHIBIDO:
 ```bash
-# ❌ INCORRECTO - No actualiza versión:
+# ❌ Desplegar directamente a producción sin probar en labs:
+./deploy.sh  # NO sin que el usuario lo pida
+
+# ❌ Deployment manual:
 flutter build web --release
 scp -r build/web/* root@servidor:/var/www/victorpos-app/
 
-# ❌ INCORRECTO - No actualiza versión:
-rsync -avz build/web/ root@servidor:/var/www/victorpos-app/
+# ❌ Asumir que "despliega" = producción
+# Por defecto "despliega" = labs
 ```
 
-### Configuración del servidor:
-- **IP**: 72.62.163.74
-- **Usuario**: root
-- **Ruta**: /var/www/victorpos-app
-- **URL**: https://sistema.victorguzmanfotografia.com
+### Modificación del Backend (API Node.js)
+
+Para cambios en el backend:
+```bash
+# En LABS: editar directamente via SSH
+sshpass -p 'Elary16081991@' ssh root@2.24.215.25
+
+# En PRODUCCIÓN: solo cuando el usuario autorice
+sshpass -p 'Elary16081991@' ssh root@72.62.163.74
+
+# Reiniciar API después de cambios:
+pm2 restart victorpos-api
+```
+
+**Ruta de archivos del backend:**
+- Rutas API: `/var/www/victorpos-api/src/routes/`
+- Archivo principal: `/var/www/victorpos-api/index.js`
+- Configuración: `/var/www/victorpos-api/.env`
 
 ---
 
