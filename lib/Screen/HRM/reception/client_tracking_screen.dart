@@ -300,6 +300,17 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  if (_isLinkedUser && _currentUserName != null) ...[
+                                    Text(
+                                      _currentUserName!,
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
+                                    ),
+                                    Text(
+                                      'Dpto. de Recepción',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                    ),
+                                    const SizedBox(height: 4),
+                                  ],
                                   Text(
                                     _isLinkedUser ? 'Mis Clientes' : 'Seguimiento de Clientes',
                                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
