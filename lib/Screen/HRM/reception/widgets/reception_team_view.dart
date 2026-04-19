@@ -45,7 +45,7 @@ class _ReceptionTeamViewState extends State<ReceptionTeamView> {
       final allEmployees = await EmployeeRepository().getActiveEmployees();
       final receptionists = allEmployees.where((e) {
         final d = e.designation.toLowerCase();
-        return d.contains('recepcion') || d.contains('tienda') || d.contains('vendedor');
+        return d.contains('recepcion') || d.contains('tienda') || d.contains('vendedor') || d.contains('redes') || d.contains('recursos humanos') || d.contains('administra');
       }).toList();
 
       final today = DateFormat('yyyy-MM-dd').format(now);
