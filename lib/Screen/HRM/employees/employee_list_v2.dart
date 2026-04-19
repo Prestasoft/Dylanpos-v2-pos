@@ -48,7 +48,7 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
   late TabController _tabController;
   int _itemsPerPage = 10;
   int _currentPage = 1;
-  bool _isCrmView = false; // Toggle entre vista Lista y CRM columnas
+  bool _isCrmView = true; // CRM por defecto, Lista solo si el usuario lo cambia
 
   @override
   void initState() {
