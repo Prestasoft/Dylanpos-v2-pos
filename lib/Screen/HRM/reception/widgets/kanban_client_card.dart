@@ -9,6 +9,13 @@ class KanbanClientCard extends StatelessWidget {
 
   const KanbanClientCard({super.key, required this.client, this.currentColumn});
 
+  static final _fixedDepts = [
+    {'key': 'maquillaje', 'initial': 'M', 'label': 'Makeup', 'color': const Color(0xFFEC4899)},
+    {'key': 'sesion', 'initial': 'F', 'label': 'Fotografía', 'color': const Color(0xFFF59E0B)},
+    {'key': 'edicion', 'initial': 'E', 'label': 'Edición', 'color': const Color(0xFF3B82F6)},
+    {'key': 'impresion', 'initial': 'I', 'label': 'Impresión', 'color': const Color(0xFFEF4444)},
+  ];
+
   @override
   Widget build(BuildContext context) {
     final groups = client.departmentGroups;
@@ -124,18 +131,23 @@ class KanbanClientCard extends StatelessWidget {
             ],
           ),
           // Mini indicadores de departamentos
-          if (groups.isNotEmpty) ...[
+          ...[
             const SizedBox(height: 8),
             Row(
               children: [
-                ...groups.map((g) {
-                  final initial = _getDeptInitial(g.key);
-                  final deptColor = _getDeptColor(g.key);
-                  final color = g.isCompleted ? Colors.green : deptColor;
+                ..._fixedDepts.map((dept) {
+                  final group = groups.where((g) => g.key == dept['key']).firstOrNull;
+                  final initial = dept['initial'] as String;
+                  final deptColor = dept['color'] as Color;
+                  final isCompleted = group != null && group.isCompleted;
+                  final color = isCompleted ? Colors.green : (group != null && group.tasks.isNotEmpty ? deptColor : Colors.grey);
+                  final statusText = group == null || group.tasks.isEmpty
+                      ? 'Pendiente'
+                      : isCompleted ? 'Completado' : 'En proceso';
                   return Padding(
                     padding: const EdgeInsets.only(right: 3),
                     child: Tooltip(
-                      message: '${g.label}: ${_statusLabel(g.status)}',
+                      message: '${dept['label']}: $statusText',
                       child: Container(
                         width: 18,
                         height: 18,
