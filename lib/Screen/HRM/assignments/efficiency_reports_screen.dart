@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../Repository/task_repo.dart';
 import '../../../services/api_service.dart';
+import '../reception/widgets/reception_performance_view.dart';
 import 'widgets/date_filter_bar.dart';
 import 'widgets/task_theme.dart';
 
@@ -55,6 +56,13 @@ class _EfficiencyReportsScreenState extends State<EfficiencyReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final tc = TaskColors.of(context);
+
+    // Encargada de recepción: vista de rendimiento personalizada
+    final desigName = (ApiService().currentUser?['scoped_designation_name'] ?? '').toString().toLowerCase();
+    if (desigName.contains('recepcion') || desigName.contains('vendedor') || desigName.contains('tienda')) {
+      return const ReceptionPerformanceView();
+    }
+
     final employees = (_data['employees'] as List<dynamic>?) ?? [];
     final totals = (_data['totals'] as Map<String, dynamic>?) ?? {};
 
