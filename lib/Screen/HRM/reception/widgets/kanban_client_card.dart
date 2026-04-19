@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../client_tracking_model.dart';
 
 /// Card compacta de cliente para vista Kanban.
@@ -146,8 +147,8 @@ class KanbanClientCard extends StatelessWidget {
                       : isCompleted ? 'Completado' : 'En proceso';
                   return Padding(
                     padding: const EdgeInsets.only(right: 3),
-                    child: Tooltip(
-                      message: '${dept['label']}: $statusText',
+                    child: GestureDetector(
+                      onTap: () => _showDeptDetailModal(context, dept, group),
                       child: Container(
                         width: 18,
                         height: 18,
@@ -190,6 +191,207 @@ class KanbanClientCard extends StatelessWidget {
       }
     }
     return null;
+  }
+
+  /// Modal con detalle del departamento para este cliente
+  void _showDeptDetailModal(BuildContext context, Map<String, dynamic> dept, DepartmentGroup? group) {
+    final deptLabel = dept['label'] as String;
+    final deptColor = dept['color'] as Color;
+    final tasks = group?.tasks ?? [];
+    final isCompleted = group != null && group.isCompleted;
+    final hasActive = group != null && group.hasActive;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: (isCompleted ? Colors.green : deptColor).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                dept['initial'] as String,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: isCompleted ? Colors.green : deptColor),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(deptLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text(
+                    client.customerName,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.normal),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isCompleted ? Colors.green.withValues(alpha: 0.12)
+                    : hasActive ? deptColor.withValues(alpha: 0.12)
+                    : Colors.grey.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isCompleted ? '✅ Completado' : hasActive ? '🔵 En proceso' : '⚪ Pendiente',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isCompleted ? Colors.green : hasActive ? deptColor : Colors.grey,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: tasks.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      'Sin actividad en este departamento',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                    ),
+                  ),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: tasks.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final task = entry.value;
+                    final hasStarted = task.assignedAt != null;
+                    final hasCompleted = task.completedAt != null;
+                    final hasDue = task.dueAt != null;
+
+                    // Calcular duración y resultado
+                    int? durationMin;
+                    bool? onTime;
+                    if (hasStarted && hasCompleted) {
+                      final start = task.assignedAt!;
+                      final end = task.completedAt!;
+                      durationMin = end.difference(start).inMinutes;
+                      if (hasDue) onTime = task.completedAt!.isBefore(task.dueAt!) || task.completedAt!.isAtSameMomentAs(task.dueAt!);
+                    }
+
+                    int? slaMin;
+                    if (hasStarted && hasDue) {
+                      slaMin = task.dueAt!.difference(task.assignedAt!).inMinutes;
+                    }
+
+                    final taskColor = hasCompleted
+                        ? (onTime == true ? Colors.green : Colors.red)
+                        : task.isOverdue ? Colors.orange
+                        : task.isActive ? deptColor
+                        : Colors.grey;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: taskColor.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: taskColor.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header: número + empleado + resultado
+                          Row(
+                            children: [
+                              Icon(
+                                hasCompleted ? Icons.check_circle : task.isOverdue ? Icons.warning_amber : task.isActive ? Icons.play_circle : Icons.circle_outlined,
+                                size: 16,
+                                color: taskColor,
+                              ),
+                              const SizedBox(width: 8),
+                              if (tasks.length > 1)
+                                Text('${deptLabel} ${idx + 1}  ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+                              Expanded(
+                                child: Text(
+                                  task.employeeName ?? 'Sin asignar',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (onTime != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: (onTime ? Colors.green : Colors.red).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    onTime ? '✅ A tiempo' : '❌ Con atraso',
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: onTime ? Colors.green : Colors.red),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Detalle de tiempos
+                          _detailRow('SLA asignado', slaMin != null ? '$slaMin min' : '—'),
+                          if (hasStarted)
+                            _detailRow('Inicio', DateFormat('dd/MM HH:mm').format(task.assignedAt!)),
+                          if (hasCompleted)
+                            _detailRow('Completado', DateFormat('dd/MM HH:mm').format(task.completedAt!)),
+                          if (durationMin != null)
+                            _detailRow('Duración real', '$durationMin min'),
+                          if (onTime != null && slaMin != null && durationMin != null) ...[
+                            const Divider(height: 12),
+                            Row(
+                              children: [
+                                Icon(onTime ? Icons.thumb_up : Icons.thumb_down, size: 14, color: onTime ? Colors.green : Colors.red),
+                                const SizedBox(width: 6),
+                                Text(
+                                  onTime
+                                      ? 'Terminó ${slaMin - durationMin} min antes del SLA'
+                                      : 'Se pasó ${durationMin - slaMin} min del SLA',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: onTime ? Colors.green : Colors.red),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+          ),
+          Expanded(
+            child: Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getDeptInitial(String key) {

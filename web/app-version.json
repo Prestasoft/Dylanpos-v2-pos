@@ -1,11 +1,11 @@
 {
-  "version": "2.1.562",
-  "build": "20260418-2240",
+  "version": "2.1.563",
+  "build": "20260418-2250",
   "releaseDate": "2026-04-18",
   "environment": "production",
-  "description": "Actualización a versión 2.1.562",
+  "description": "Actualización a versión 2.1.563",
   "changelog": [
-    "Actualización a versión 2.1.562"
+    "Actualización a versión 2.1.563"
   ],
   "forceUpdate": true
 }
