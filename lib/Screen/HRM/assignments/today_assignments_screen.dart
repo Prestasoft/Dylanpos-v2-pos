@@ -15,6 +15,7 @@ import '../Designation/model/designation_model.dart';
 import '../Designation/repo/designation_repo.dart';
 import '../employees/model/employee_model.dart';
 import '../employees/repo/employee_repo.dart';
+import '../reception/widgets/reception_assignments_view.dart';
 import 'widgets/makeup_dashboard_banner.dart';
 import 'widgets/task_theme.dart';
 
@@ -290,6 +291,12 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Si es encargada de recepción, mostrar vista de asignaciones de clientes
+    final desigName = (ApiService().currentUser?['scoped_designation_name'] ?? '').toString().toLowerCase();
+    if (desigName.contains('recepcion') || desigName.contains('vendedor') || desigName.contains('tienda')) {
+      return const ReceptionAssignmentsView();
+    }
+
     final reservationsAsync = ref.watch(reservationsProvider);
     final packagesAsync = ref.watch(servicePackagesProvider);
 
