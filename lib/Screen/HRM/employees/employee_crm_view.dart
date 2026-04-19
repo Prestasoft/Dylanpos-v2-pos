@@ -6,6 +6,7 @@ import 'package:salespro_admin/Screen/HRM/employees/repo/employee_repo.dart';
 import 'package:salespro_admin/Screen/HRM/employees/employee_profile_screen.dart';
 
 import '../../Widgets/Constant Data/constant.dart';
+import '../departments/department_model.dart';
 import '../departments/department_provider.dart';
 import '../departments/department_repo.dart';
 import '../Designation/repo/designation_repo.dart';
@@ -145,21 +146,80 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
                         final deptIndex = sortedDeptNames.indexOf(deptName);
                         final color = _defaultDeptColors[deptIndex % _defaultDeptColors.length];
                         final deptId = deptIdMap[deptName] ?? 0;
+                        final w = columnWidth.clamp(220.0, 320.0);
 
-                        return SizedBox(
+                        final column = SizedBox(
                           height: MediaQuery.of(context).size.height - 180,
                           child: DepartmentColumn(
                             departmentName: deptName,
                             departmentId: deptId,
                             color: color,
                             employees: grouped[deptName] ?? [],
-                            width: columnWidth.clamp(220, 320),
+                            width: w,
                             onView: (emp) => _viewEmployee(emp),
                             onEdit: (emp) => _editEmployee(emp),
                             onDrop: (emp, newDept, newDeptId) => _moveEmployee(emp, newDept, newDeptId),
                             onRename: (id, oldName, newName) => _renameDepartment(id, oldName, newName),
                             onStatusChange: (emp, newStatus) => _changeStatus(emp, newStatus),
                           ),
+                        );
+
+                        // Drag-and-drop de columnas para reordenar
+                        return DragTarget<_DeptDragData>(
+                          onWillAcceptWithDetails: (details) => details.data.name != deptName,
+                          onAcceptWithDetails: (details) {
+                            _reorderDepartment(details.data.name, deptName, sortedDeptNames, departments);
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            final isTarget = candidateData.isNotEmpty;
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Drop indicator
+                                if (isTarget)
+                                  Container(
+                                    width: 3,
+                                    height: 60,
+                                    margin: const EdgeInsets.only(top: 20),
+                                    decoration: BoxDecoration(
+                                      color: kMainColor,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                LongPressDraggable<_DeptDragData>(
+                                  data: _DeptDragData(deptName, deptId),
+                                  delay: const Duration(milliseconds: 200),
+                                  feedback: Material(
+                                    elevation: 12,
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Container(
+                                      width: w,
+                                      height: 60,
+                                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                                      decoration: BoxDecoration(
+                                        color: color.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: color, width: 2),
+                                      ),
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.drag_indicator, color: color, size: 20),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            deptName,
+                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  childWhenDragging: Opacity(opacity: 0.3, child: column),
+                                  child: column,
+                                ),
+                              ],
+                            );
+                          },
                         );
                       }).toList(),
                     ),
@@ -411,4 +471,47 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
       EasyLoading.showError('Error: $e');
     }
   }
+
+  Future<void> _reorderDepartment(
+    String draggedName,
+    String targetName,
+    List<String> currentOrder,
+    List<DepartmentModel> departments,
+  ) async {
+    try {
+      // Calcular nuevo orden: mover draggedName antes de targetName
+      final newOrder = List<String>.from(currentOrder);
+      newOrder.remove(draggedName);
+      final targetIdx = newOrder.indexOf(targetName);
+      newOrder.insert(targetIdx, draggedName);
+
+      // Construir lista de departamentos con nuevo display_order
+      final reordered = <DepartmentModel>[];
+      for (int i = 0; i < newOrder.length; i++) {
+        final dept = departments.where((d) => d.name == newOrder[i]).firstOrNull;
+        if (dept == null) continue;
+        dept.displayOrder = i;
+        reordered.add(dept);
+      }
+
+      EasyLoading.show(status: 'Reordenando...');
+      final success = await DepartmentRepository().reorder(reordered);
+      if (success) {
+        EasyLoading.showSuccess('Departamentos reordenados');
+        ref.invalidate(departmentProvider);
+        ref.invalidate(employeeProviderV2);
+      } else {
+        EasyLoading.showError('Error al reordenar');
+      }
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
+    }
+  }
+}
+
+/// Datos para drag-and-drop de columnas de departamento
+class _DeptDragData {
+  final String name;
+  final int id;
+  const _DeptDragData(this.name, this.id);
 }

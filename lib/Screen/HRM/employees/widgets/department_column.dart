@@ -45,12 +45,6 @@ class _DepartmentColumnState extends State<DepartmentColumn> {
     super.initState();
     _nameController = TextEditingController(text: widget.departmentName);
     _focusNode = FocusNode();
-    _focusNode.addListener(() {
-      // Si pierde el foco, cancelar edición
-      if (!_focusNode.hasFocus && _isEditing) {
-        _cancelEdit();
-      }
-    });
   }
 
   @override
@@ -238,16 +232,9 @@ class _DepartmentColumnState extends State<DepartmentColumn> {
         children: [
           Row(
             children: [
-              // Color dot
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: widget.color,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              const SizedBox(width: 8),
+              // Drag handle + color dot
+              Icon(Icons.drag_indicator, size: 16, color: widget.color.withValues(alpha: 0.5)),
+              const SizedBox(width: 4),
               // Name — editable on click
               Expanded(
                 child: _isEditing
