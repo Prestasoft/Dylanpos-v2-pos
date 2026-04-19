@@ -158,25 +158,43 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      final isWide = constraints.maxWidth > 900;
+                      final columns = [
+                        _buildColumn('Pendientes', pendientes, const Color(0xFFF59E0B), Icons.fiber_new, tc, showAssign: true),
+                        _buildColumn('En Atraso', enAtraso, const Color(0xFFEF4444), Icons.warning_amber, tc, showAssign: true, blink: true),
+                        _buildColumn('Asignados', asignados, const Color(0xFF10B981), Icons.check_circle, tc),
+                        _buildColumn('No Aplica', noAplica, Colors.grey, Icons.block, tc, showRestore: true),
+                      ];
+
+                      if (isWide) {
+                        // Pantalla ancha: 4 columnas distribuidas sin scroll
+                        return Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: columns.map((col) => Expanded(child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 3),
+                              child: col,
+                            ))).toList(),
+                          ),
+                        );
+                      }
+
+                      // Pantalla pequeña: scroll horizontal
                       return ScrollConfiguration(
                         behavior: ScrollConfiguration.of(context).copyWith(
                           dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
                         ),
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(8),
                           child: SizedBox(
-                            height: constraints.maxHeight - 24,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildColumn('Pendientes', pendientes, const Color(0xFFF59E0B), Icons.fiber_new, tc, showAssign: true),
-                          _buildColumn('En Atraso', enAtraso, const Color(0xFFEF4444), Icons.warning_amber, tc, showAssign: true, blink: true),
-                          _buildColumn('Asignados', asignados, const Color(0xFF10B981), Icons.check_circle, tc),
-                          _buildColumn('No Aplica', noAplica, Colors.grey, Icons.block, tc, showRestore: true),
-                        ],
-                      ),
-                    ),
+                            height: constraints.maxHeight - 16,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: columns,
+                            ),
+                          ),
                         ),
                       );
                     },
@@ -189,11 +207,10 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
 
   Widget _buildColumn(String title, List<ClientTrackingModel> items, Color color, IconData icon, TaskColors tc, {bool showAssign = false, bool blink = false, bool showRestore = false}) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final columnWidth = screenWidth > 900 ? (screenWidth - 100) / 4 : 260.0;
+    final isWide = screenWidth > 900;
 
     return Container(
-      width: columnWidth,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: isWide ? null : 260,
       child: Column(
         children: [
           // Header
