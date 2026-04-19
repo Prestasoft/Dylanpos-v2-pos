@@ -7,6 +7,7 @@ import 'package:salespro_admin/Screen/HRM/employees/employee_profile_screen.dart
 
 import '../../Widgets/Constant Data/constant.dart';
 import '../departments/department_provider.dart';
+import '../departments/department_repo.dart';
 import '../Designation/repo/designation_repo.dart';
 import 'add_employee.dart';
 import 'employee_list_v2.dart';
@@ -156,6 +157,7 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
                             onView: (emp) => _viewEmployee(emp),
                             onEdit: (emp) => _editEmployee(emp),
                             onDrop: (emp, newDept, newDeptId) => _moveEmployee(emp, newDept, newDeptId),
+                            onRename: (id, oldName, newName) => _renameDepartment(id, oldName, newName),
                           ),
                         );
                       }).toList(),
@@ -333,6 +335,25 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
       } else {
         EasyLoading.showError('Error al mover empleado');
       }
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
+    }
+  }
+
+  Future<void> _renameDepartment(int deptId, String oldName, String newName) async {
+    try {
+      EasyLoading.show(status: 'Renombrando...');
+
+      // El backend actualiza departments + employees + designations automáticamente
+      final success = await DepartmentRepository().update(deptId, newName);
+      if (!success) {
+        EasyLoading.showError('Error al renombrar departamento');
+        return;
+      }
+
+      EasyLoading.showSuccess('"$oldName" → "$newName"');
+      ref.invalidate(departmentProvider);
+      ref.invalidate(employeeProviderV2);
     } catch (e) {
       EasyLoading.showError('Error: $e');
     }
