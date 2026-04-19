@@ -128,23 +128,30 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildColumn('Pendientes', pendientes, const Color(0xFFF59E0B), Icons.fiber_new, tc, showAssign: true),
-                    _buildColumn('En Atraso', enAtraso, const Color(0xFFEF4444), Icons.warning_amber, tc, showAssign: true, blink: true),
-                    _buildColumn('Asignados', asignados, const Color(0xFF10B981), Icons.check_circle, tc),
-                    _buildColumn('No Aplica', noAplica, Colors.grey, Icons.block, tc, showRestore: true),
-                  ],
-                ),
-              ),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.all(12),
+                    child: SizedBox(
+                      height: constraints.maxHeight - 24,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildColumn('Pendientes', pendientes, const Color(0xFFF59E0B), Icons.fiber_new, tc, showAssign: true),
+                          _buildColumn('En Atraso', enAtraso, const Color(0xFFEF4444), Icons.warning_amber, tc, showAssign: true, blink: true),
+                          _buildColumn('Asignados', asignados, const Color(0xFF10B981), Icons.check_circle, tc),
+                          _buildColumn('No Aplica', noAplica, Colors.grey, Icons.block, tc, showRestore: true),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
     );
   }
@@ -179,21 +186,21 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
               ],
             ),
           ),
-          // Cards
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: tc.isDark ? const Color(0xFF1A1A2E) : Colors.grey.shade50,
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+          // Cards con scroll vertical
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: tc.isDark ? const Color(0xFF1A1A2E) : Colors.grey.shade50,
+                borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+              ),
+              child: items.isEmpty
+                  ? Center(child: Text('Sin clientes', style: TextStyle(fontSize: 11, color: tc.textHint)))
+                  : ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (_, i) => _buildClientCard(items[i], tc, showAssign: showAssign, blink: blink, showRestore: showRestore),
+                    ),
             ),
-            child: items.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Center(child: Text('Sin clientes', style: TextStyle(fontSize: 11, color: tc.textHint))),
-                  )
-                : Column(
-                    children: items.map((c) => _buildClientCard(c, tc, showAssign: showAssign, blink: blink, showRestore: showRestore)).toList(),
-                  ),
           ),
         ],
       ),
