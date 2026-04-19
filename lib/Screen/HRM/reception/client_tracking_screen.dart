@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -353,6 +354,28 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
                             child: Row(
                               children: [
                                 ..._tabs.map((tab) {
+                                  // Reemplazar "Sin asignar" por "Asignaciones" que navega
+                                  if (tab.id == null && tab.label == 'Sin asignar') {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ActionChip(
+                                        avatar: const Icon(Icons.assignment_ind, size: 16, color: Colors.deepPurple),
+                                        label: const Text(
+                                          'Asignaciones',
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                        ),
+                                        backgroundColor: kNeutral100,
+                                        side: const BorderSide(color: Colors.deepPurple),
+                                        onPressed: () {
+                                          if (Navigator.of(context).canPop()) {
+                                            Navigator.of(context).pop();
+                                          }
+                                          GoRouter.of(context).go('/hrm/today-assignments');
+                                        },
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    );
+                                  }
                                   final isActive = _activeFilter == tab.id && !_showCompleted;
                                   return Padding(
                                     padding: const EdgeInsets.only(right: 8),
