@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../../assignments/widgets/task_theme.dart';
 import '../client_tracking_model.dart';
 import 'kanban_client_card.dart';
 
@@ -108,7 +109,7 @@ class KanbanBoard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _columns.map((col) {
             final items = buckets[col.key] ?? [];
-            return _buildColumn(col, items, columnWidth, col.key);
+            return _buildColumn(col, items, columnWidth, col.key, TaskColors.of(context));
           }).toList(),
         ),
       ),
@@ -172,7 +173,7 @@ class KanbanBoard extends StatelessWidget {
     return 'completado';
   }
 
-  Widget _buildColumn(_KanbanColumnDef col, List<ClientTrackingModel> items, double width, String columnKey) {
+  Widget _buildColumn(_KanbanColumnDef col, List<ClientTrackingModel> items, double width, String columnKey, TaskColors tc) {
     return Container(
       width: width,
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -219,7 +220,7 @@ class KanbanBoard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: tc.isDark ? const Color(0xFF1A1A2E) : Colors.grey.shade50,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(12),
                 bottomRight: Radius.circular(12),

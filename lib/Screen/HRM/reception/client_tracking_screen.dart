@@ -10,6 +10,7 @@ import '../employees/model/employee_model.dart';
 import '../employees/repo/employee_repo.dart';
 import 'client_tracking_model.dart';
 import 'client_tracking_repo.dart';
+import '../assignments/widgets/task_theme.dart';
 import 'widgets/client_journey_card.dart';
 import 'widgets/kanban_board.dart';
 
@@ -275,9 +276,11 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
+    final tc = TaskColors.of(context);
+
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: tc.scaffold,
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
@@ -285,7 +288,7 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: kWhite,
+                    color: tc.card,
                   ),
                   child: Column(
                     children: [
@@ -303,27 +306,28 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
                                   if (_isLinkedUser && _currentUserName != null) ...[
                                     Text(
                                       _currentUserName!,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
+                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: tc.textPrimary),
                                     ),
                                     Text(
                                       'Dpto. de Recepción',
-                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                      style: TextStyle(fontSize: 11, color: tc.textHint),
                                     ),
                                     const SizedBox(height: 4),
                                   ],
                                   Text(
                                     _isLinkedUser ? 'Mis Clientes' : 'Seguimiento de Clientes',
-                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: tc.textPrimary),
                                   ),
                                   Text(
                                     _isLinkedUser
                                         ? '${_filteredClients.length} clientes asignados'
                                         : '${_clients.length} clientes en el período',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                    style: TextStyle(fontSize: 12, color: tc.textSecondary),
                                   ),
                                 ],
                               ),
                             ),
+                            const TaskThemeToggle(),
                             TextButton.icon(
                               icon: const Icon(Icons.date_range, size: 18),
                               label: Text(

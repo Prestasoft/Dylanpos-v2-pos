@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../assignments/widgets/task_theme.dart';
 import '../client_tracking_model.dart';
 
 /// Card compacta de cliente para vista Kanban.
@@ -20,17 +21,18 @@ class KanbanClientCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final groups = client.departmentGroups;
+    final tc = TaskColors.of(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tc.card,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: tc.border.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: tc.shadow,
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -62,14 +64,14 @@ class KanbanClientCard extends StatelessWidget {
                   children: [
                     Text(
                       client.customerName,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tc.textPrimary),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
                     if (client.invoiceNumber != null && client.invoiceNumber!.isNotEmpty && client.invoiceNumber != 'null')
                       Text(
                         'Factura #${client.invoiceNumber}',
-                        style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+                        style: TextStyle(fontSize: 9, color: tc.textHint),
                       ),
                   ],
                 ),
@@ -98,12 +100,9 @@ class KanbanClientCard extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 2),
               child: Row(
                 children: [
-                  Icon(Icons.phone, size: 10, color: Colors.grey.shade400),
+                  Icon(Icons.phone, size: 10, color: tc.textHint),
                   const SizedBox(width: 4),
-                  Text(
-                    client.customerPhone,
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-                  ),
+                  Text(client.customerPhone, style: TextStyle(fontSize: 10, color: tc.textSecondary)),
                 ],
               ),
             ),
@@ -113,15 +112,10 @@ class KanbanClientCard extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 2),
               child: Row(
                 children: [
-                  Icon(Icons.inventory_2, size: 10, color: Colors.grey.shade400),
+                  Icon(Icons.inventory_2, size: 10, color: tc.textHint),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(
-                      client.serviceName,
-                      style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
+                    child: Text(client.serviceName, style: TextStyle(fontSize: 10, color: tc.textSecondary), overflow: TextOverflow.ellipsis, maxLines: 1),
                   ),
                 ],
               ),
@@ -129,20 +123,14 @@ class KanbanClientCard extends StatelessWidget {
           // Fecha + Hora
           Row(
             children: [
-              Icon(Icons.calendar_today, size: 10, color: Colors.grey.shade400),
+              Icon(Icons.calendar_today, size: 10, color: tc.textHint),
               const SizedBox(width: 4),
-              Text(
-                _formatDate(client.reservationDate),
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-              ),
+              Text(_formatDate(client.reservationDate), style: TextStyle(fontSize: 10, color: tc.textHint)),
               if (client.reservationTime.isNotEmpty) ...[
                 const SizedBox(width: 6),
-                Icon(Icons.schedule, size: 10, color: Colors.grey.shade400),
+                Icon(Icons.schedule, size: 10, color: tc.textHint),
                 const SizedBox(width: 2),
-                Text(
-                  client.reservationTime,
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
-                ),
+                Text(client.reservationTime, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: tc.textSecondary)),
               ],
             ],
           ),
@@ -186,7 +174,7 @@ class KanbanClientCard extends StatelessWidget {
                 if (_getResponsableName() != null)
                   Text(
                     _getResponsableName()!,
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: tc.textPrimary),
                   ),
               ],
             ),
