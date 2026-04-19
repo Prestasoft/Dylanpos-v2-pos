@@ -129,7 +129,9 @@ class KanbanClientCard extends StatelessWidget {
             Row(
               children: [
                 ...groups.map((g) {
-                  final color = _statusColor(g.status);
+                  final initial = _getDeptInitial(g.key);
+                  final deptColor = _getDeptColor(g.key);
+                  final color = g.isCompleted ? Colors.green : deptColor;
                   return Padding(
                     padding: const EdgeInsets.only(right: 3),
                     child: Tooltip(
@@ -144,7 +146,7 @@ class KanbanClientCard extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          g.label[0],
+                          initial,
                           style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: color),
                         ),
                       ),
@@ -176,6 +178,26 @@ class KanbanClientCard extends StatelessWidget {
       }
     }
     return null;
+  }
+
+  String _getDeptInitial(String key) {
+    switch (key) {
+      case 'maquillaje': return 'M';
+      case 'sesion': return 'F';
+      case 'edicion': return 'E';
+      case 'impresion': return 'I';
+      default: return key.isNotEmpty ? key[0].toUpperCase() : '?';
+    }
+  }
+
+  Color _getDeptColor(String key) {
+    switch (key) {
+      case 'maquillaje': return const Color(0xFFEC4899); // Rosa
+      case 'sesion': return const Color(0xFFF59E0B); // Amarillo
+      case 'edicion': return const Color(0xFF3B82F6); // Azul
+      case 'impresion': return const Color(0xFFEF4444); // Rojo
+      default: return Colors.grey;
+    }
   }
 
   Color _statusColor(DepartmentStatus status) {
