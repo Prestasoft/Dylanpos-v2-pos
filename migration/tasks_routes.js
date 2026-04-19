@@ -159,6 +159,13 @@ router.get('/tasks/my', authenticateToken, async (req, res) => {
       return res.status(401).json({ success: false, error: 'Usuario no autenticado' });
     }
 
+    // Obtener linked_employee_id del usuario para buscar por ambos campos
+    const userResult = await req.db.query(
+      `SELECT linked_employee_id FROM public.users WHERE id = $1`,
+      [req.user.id]
+    );
+    const linkedEmployeeId = userResult.rows[0]?.linked_employee_id || null;
+
     const result = await req.db.query(
       `SELECT t.*,
               d.designation AS designation_name,
@@ -167,7 +174,8 @@ router.get('/tasks/my', authenticateToken, async (req, res) => {
        FROM ${tbl(branchId, 'tasks')} t
        LEFT JOIN ${tbl(branchId, 'designations')} d ON d.designation_id = t.designation_id
        LEFT JOIN ${tbl(branchId, 'reservations')} r ON r.id = t.reservation_id
-       WHERE t.assigned_to_user_id = $1
+       WHERE (t.assigned_to_user_id = $1
+              OR ($3::uuid IS NOT NULL AND t.assigned_to_employee_id = $3::text))
          AND t.branch_id = $2
          AND (t.status IN ('pendiente','en_progreso','vencida')
            OR (t.status = 'completada' AND t.completed_at::date = CURRENT_DATE))
@@ -179,7 +187,7 @@ router.get('/tasks/my', authenticateToken, async (req, res) => {
            WHEN 'completada' THEN 3
          END,
          t.due_at ASC`,
-      [req.user.id, branchId]
+      [req.user.id, branchId, linkedEmployeeId]
     );
 
     res.json({
