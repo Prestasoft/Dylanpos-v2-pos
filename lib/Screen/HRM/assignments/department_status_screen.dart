@@ -5,6 +5,7 @@ import 'package:salespro_admin/Repository/task_repo.dart';
 import 'package:salespro_admin/model/task_model.dart';
 import 'package:salespro_admin/services/api_service.dart';
 import '../employees/repo/employee_repo.dart';
+import '../reception/widgets/reception_team_view.dart';
 import 'widgets/task_theme.dart';
 
 /// Panel del Encargado: vista general de su equipo con KPIs y semáforo.
@@ -191,6 +192,12 @@ class _DepartmentStatusScreenState extends ConsumerState<DepartmentStatusScreen>
   @override
   Widget build(BuildContext context) {
     final tc = TaskColors.of(context);
+
+    // Si es encargada de recepción, mostrar vista personalizada
+    final desigName = (ApiService().currentUser?['scoped_designation_name'] ?? '').toString().toLowerCase();
+    if (desigName.contains('recepcion') || desigName.contains('vendedor') || desigName.contains('tienda')) {
+      return const ReceptionTeamView();
+    }
 
     return Scaffold(
       backgroundColor: tc.scaffold,
