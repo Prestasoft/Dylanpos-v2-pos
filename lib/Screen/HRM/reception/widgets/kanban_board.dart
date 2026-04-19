@@ -27,11 +27,11 @@ class KanbanBoard extends StatelessWidget {
   const KanbanBoard({super.key, required this.clients, this.customColors = const {}});
 
   static const _defaultColumns = [
-    _KanbanColumnDef(key: 'seguimiento', label: 'Seguimiento', icon: Icons.visibility, color: Color(0xFF6366F1)),
-    _KanbanColumnDef(key: 'maquillaje', label: 'Maquillaje', icon: Icons.face_retouching_natural, color: Color(0xFFEC4899)),
-    _KanbanColumnDef(key: 'sesion', label: 'Sesión', icon: Icons.camera_alt, color: Color(0xFFF59E0B)),
-    _KanbanColumnDef(key: 'edicion', label: 'Edición', icon: Icons.edit, color: Color(0xFF3B82F6)),
-    _KanbanColumnDef(key: 'impresion', label: 'Impresión', icon: Icons.print, color: Color(0xFF10B981)),
+    _KanbanColumnDef(key: 'seguimiento', label: 'En Seguimiento', icon: Icons.visibility, color: Color(0xFF6366F1)),
+    _KanbanColumnDef(key: 'maquillaje', label: 'En Makeup', icon: Icons.face_retouching_natural, color: Color(0xFFEC4899)),
+    _KanbanColumnDef(key: 'sesion', label: 'En Fotografía/Video', icon: Icons.camera_alt, color: Color(0xFFF59E0B)),
+    _KanbanColumnDef(key: 'edicion', label: 'En Edición', icon: Icons.edit, color: Color(0xFF3B82F6)),
+    _KanbanColumnDef(key: 'impresion', label: 'En Impresión', icon: Icons.print, color: Color(0xFF10B981)),
   ];
 
   List<_KanbanColumnDef> get _columns {
