@@ -150,63 +150,104 @@ class _EmployeeListV2ScreenState extends State<EmployeeListV2Screen>
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        // Header compacto
-                        Container(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                          decoration: BoxDecoration(
-                            color: kWhite,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
+                        // Header profesional
+                        Builder(builder: (_) {
+                          // Detectar encargada de RRHH
+                          final rrhhHead = allEmployees.where((e) =>
+                              e.isDepartmentHead &&
+                              (e.department.toLowerCase().contains('recurso') ||
+                               e.department.toLowerCase().contains('rrhh') ||
+                               e.department.toLowerCase().contains('humano'))).firstOrNull;
+
+                          return Container(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 16, 14),
+                            decoration: BoxDecoration(
+                              color: kWhite,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Row(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Icono
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: kMainColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(Icons.groups_rounded, size: 24, color: kMainColor),
+                                ),
+                                const SizedBox(width: 14),
+                                // Textos
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Recursos Humanos',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      if (rrhhHead != null) ...[
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.star, size: 13, color: const Color(0xFFD4A84B)),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${rrhhHead.fullName} · ${rrhhHead.designation}',
+                                              style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Empleados',
+                                        style: TextStyle(fontSize: 12, color: Colors.grey[400], fontWeight: FontWeight.w400),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Acciones
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text('Empleados', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      '${allEmployees.length} total · ${activeEmployees.length} activos',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _viewToggleBtn(Icons.list, 'Lista', !_isCrmView, () => setState(() => _isCrmView = false)),
+                                          _viewToggleBtn(Icons.view_column, 'CRM', _isCrmView, () => setState(() => _isCrmView = true)),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton.icon(
+                                      onPressed: () => _showAddEmployeeDialog(context, ref, allEmployees),
+                                      icon: const Icon(Icons.add),
+                                      label: const Text('Agregar Empleado'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: kMainColor,
+                                        foregroundColor: Colors.white,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        _viewToggleBtn(Icons.list, 'Lista', !_isCrmView, () => setState(() => _isCrmView = false)),
-                                        _viewToggleBtn(Icons.view_column, 'CRM', _isCrmView, () => setState(() => _isCrmView = true)),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _showAddEmployeeDialog(context, ref, allEmployees),
-                                    icon: const Icon(Icons.add),
-                                    label: const Text('Agregar Empleado'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: kMainColor,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                              ],
+                            ),
+                          );
+                        }),
                         const Divider(thickness: 1, color: kNeutral300, height: 1),
                         // CRM columns
                         Expanded(

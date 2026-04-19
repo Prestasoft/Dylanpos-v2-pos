@@ -1,11 +1,11 @@
 {
-  "version": "2.1.585",
-  "build": "20260419-0910",
+  "version": "2.1.587",
+  "build": "20260419-0938",
   "releaseDate": "2026-04-19",
   "environment": "production",
-  "description": "Actualización a versión 2.1.585",
+  "description": "Actualización a versión 2.1.587",
   "changelog": [
-    "Actualización a versión 2.1.585"
+    "Actualización a versión 2.1.587"
   ],
   "forceUpdate": true
 }

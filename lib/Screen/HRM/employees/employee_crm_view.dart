@@ -38,7 +38,7 @@ class EmployeeCrmView extends ConsumerStatefulWidget {
 
 class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
   String _search = '';
-  String _statusFilter = 'activo'; // activo, todos, inactivo
+  String _statusFilter = 'todos'; // activo, inactivo, suspendido, vacaciones, licencia, todos
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -119,7 +119,7 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
         return Column(
           children: [
             // Toolbar
-            _buildToolbar(totalActive, totalInactive, allEmployees.length),
+            _buildToolbar(totalActive, totalInactive, allEmployees.length, allEmployees),
 
             // Columns
             Expanded(
@@ -158,6 +158,7 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
                             onEdit: (emp) => _editEmployee(emp),
                             onDrop: (emp, newDept, newDeptId) => _moveEmployee(emp, newDept, newDeptId),
                             onRename: (id, oldName, newName) => _renameDepartment(id, oldName, newName),
+                            onStatusChange: (emp, newStatus) => _changeStatus(emp, newStatus),
                           ),
                         );
                       }).toList(),
@@ -172,73 +173,106 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
     );
   }
 
-  Widget _buildToolbar(int totalActive, int totalInactive, int total) {
+  Widget _buildToolbar(int totalActive, int totalInactive, int total, List<EmployeeModel> allEmployees) {
+    final suspended = allEmployees.where((e) => e.status.toLowerCase() == 'suspendido').length;
+    final vacation = allEmployees.where((e) => e.status.toLowerCase() == 'vacaciones').length;
+    final leave = allEmployees.where((e) => e.status.toLowerCase() == 'licencia').length;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
+      child: Column(
         children: [
-          // Search
-          Expanded(
-            flex: 3,
-            child: SizedBox(
-              height: 40,
-              child: TextField(
-                onChanged: (v) => setState(() => _search = v),
-                decoration: InputDecoration(
-                  hintText: 'Buscar empleado...',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                  prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
+          Row(
+            children: [
+              // Search
+              Expanded(
+                flex: 3,
+                child: SizedBox(
+                  height: 40,
+                  child: TextField(
+                    onChanged: (v) => setState(() => _search = v),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar empleado...',
+                      hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              // Refresh
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 20),
+                color: Colors.grey[600],
+                tooltip: 'Actualizar',
+                onPressed: () => ref.invalidate(employeeProviderV2),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-
+          const SizedBox(height: 8),
           // Status filter chips
-          _filterChip('Activos ($totalActive)', 'activo'),
-          const SizedBox(width: 6),
-          _filterChip('Todos ($total)', 'todos'),
-          const SizedBox(width: 6),
-          _filterChip('Inactivos ($totalInactive)', 'inactivo'),
-
-          const SizedBox(width: 12),
-
-          // Refresh
-          IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
-            color: Colors.grey[600],
-            tooltip: 'Actualizar',
-            onPressed: () => ref.invalidate(employeeProviderV2),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _statusChip('Todos', 'todos', Icons.people, kMainColor, total),
+                const SizedBox(width: 6),
+                _statusChip('Activos', 'activo', Icons.check_circle, Colors.green, totalActive),
+                const SizedBox(width: 6),
+                _statusChip('Inactivos', 'inactivo', Icons.cancel, Colors.grey, totalInactive),
+                const SizedBox(width: 6),
+                _statusChip('Suspendidos', 'suspendido', Icons.pause_circle, Colors.orange, suspended),
+                const SizedBox(width: 6),
+                _statusChip('Vacaciones', 'vacaciones', Icons.beach_access, Colors.teal, vacation),
+                const SizedBox(width: 6),
+                _statusChip('Licencia', 'licencia', Icons.medical_services, Colors.blue, leave),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _filterChip(String label, String value) {
+  Widget _statusChip(String label, String value, IconData icon, Color color, int count) {
     final isActive = _statusFilter == value;
-    return ChoiceChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-          color: isActive ? Colors.white : Colors.grey[700],
+    return InkWell(
+      onTap: () => setState(() => _statusFilter = value),
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? color : Colors.grey[100],
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isActive ? color : Colors.grey.withValues(alpha: 0.25),
+            width: isActive ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? Colors.white : color),
+            const SizedBox(width: 5),
+            Text(
+              '$label ($count)',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ],
         ),
       ),
-      selected: isActive,
-      selectedColor: kMainColor,
-      backgroundColor: Colors.grey[100],
-      side: BorderSide(color: isActive ? kMainColor : Colors.grey.withValues(alpha: 0.3)),
-      visualDensity: VisualDensity.compact,
-      onSelected: (_) => setState(() => _statusFilter = value),
     );
   }
 
@@ -334,6 +368,25 @@ class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
         ref.invalidate(employeeProviderV2);
       } else {
         EasyLoading.showError('Error al mover empleado');
+      }
+    } catch (e) {
+      EasyLoading.showError('Error: $e');
+    }
+  }
+
+  Future<void> _changeStatus(EmployeeModel emp, String newStatus) async {
+    try {
+      EasyLoading.show(status: 'Actualizando...');
+      final success = await EmployeeRepository().updateEmployeeStatus(
+        id: emp.id,
+        status: newStatus,
+      );
+
+      if (success) {
+        EasyLoading.showSuccess('${emp.fullName} → $newStatus');
+        ref.invalidate(employeeProviderV2);
+      } else {
+        EasyLoading.showError('Error al cambiar estado');
       }
     } catch (e) {
       EasyLoading.showError('Error: $e');

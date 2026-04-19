@@ -14,6 +14,7 @@ class DepartmentColumn extends StatefulWidget {
   final void Function(EmployeeModel employee) onEdit;
   final void Function(EmployeeModel employee, String newDepartment, int newDepartmentId) onDrop;
   final void Function(int departmentId, String oldName, String newName)? onRename;
+  final void Function(EmployeeModel employee, String newStatus)? onStatusChange;
   final double width;
 
   const DepartmentColumn({
@@ -26,6 +27,7 @@ class DepartmentColumn extends StatefulWidget {
     required this.onEdit,
     required this.onDrop,
     this.onRename,
+    this.onStatusChange,
     this.width = 240,
   });
 
@@ -206,6 +208,9 @@ class _DepartmentColumnState extends State<DepartmentColumn> {
                         employee: emp,
                         onView: () => widget.onView(emp),
                         onEdit: () => widget.onEdit(emp),
+                        onStatusChange: widget.onStatusChange != null
+                            ? (newStatus) => widget.onStatusChange!(emp, newStatus)
+                            : null,
                       ),
                     );
                   },
