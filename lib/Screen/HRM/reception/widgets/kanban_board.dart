@@ -82,31 +82,43 @@ class KanbanBoard extends StatelessWidget {
     );
   }
 
-  /// Determina en qué columna está el cliente actualmente
+  /// Determina en qué columna está el cliente según flujo secuencial:
+  /// Seguimiento → Makeup → Fotografía → Edición → Impresión → Completado
+  /// El cliente avanza SOLO cuando el departamento actual marca completado.
   String _getCurrentColumn(ClientTrackingModel client) {
     if (client.isFullyCompleted) return 'completado';
 
     final groups = client.departmentGroups;
-    if (groups.isEmpty) return 'seguimiento';
 
-    // El cliente está en el primer departamento que tiene tasks activas
-    // Recorrer en orden: maquillaje → sesión → edición → impresión
-    final order = ['maquillaje', 'sesion', 'edicion', 'impresion'];
-
-    for (final key in order) {
+    // Helper: verifica si un departamento tiene tasks y si están todas completadas
+    bool isDeptCompleted(String key) {
       final group = groups.where((g) => g.key == key).firstOrNull;
-      if (group != null && group.hasActive) return key;
+      return group != null && group.tasks.isNotEmpty && group.isCompleted;
     }
 
-    // Si todos los departamentos que tiene están completados pero no es fullCompleted
-    // puede que falten departamentos por asignar
-    for (final key in order) {
+    bool hasDeptTasks(String key) {
       final group = groups.where((g) => g.key == key).firstOrNull;
-      if (group == null) continue; // No tiene este departamento
-      if (!group.isCompleted) return key; // Primer no completado
+      return group != null && group.tasks.isNotEmpty;
     }
 
-    return 'seguimiento';
+    // Flujo secuencial: solo avanza si el anterior completó
+    // 1. Si no tiene tasks de maquillaje → sigue en seguimiento
+    if (!hasDeptTasks('maquillaje')) return 'seguimiento';
+
+    // 2. Maquillaje tiene tasks pero no completó → En Makeup
+    if (!isDeptCompleted('maquillaje')) return 'maquillaje';
+
+    // 3. Maquillaje completado → pasa a Fotografía/Video
+    if (!isDeptCompleted('sesion')) return 'sesion';
+
+    // 4. Fotografía completada → pasa a Edición
+    if (!isDeptCompleted('edicion')) return 'edicion';
+
+    // 5. Edición completada → pasa a Impresión
+    if (!isDeptCompleted('impresion')) return 'impresion';
+
+    // 6. Todo completado
+    return 'completado';
   }
 
   Widget _buildColumn(_KanbanColumnDef col, List<ClientTrackingModel> items, double width, String columnKey) {
