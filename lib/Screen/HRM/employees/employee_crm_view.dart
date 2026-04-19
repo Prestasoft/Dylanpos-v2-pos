@@ -39,7 +39,7 @@ class EmployeeCrmView extends ConsumerStatefulWidget {
 
 class _EmployeeCrmViewState extends ConsumerState<EmployeeCrmView> {
   String _search = '';
-  String _statusFilter = 'todos'; // activo, inactivo, suspendido, vacaciones, licencia, todos
+  String _statusFilter = 'activo'; // activo por defecto al entrar
   final ScrollController _scrollController = ScrollController();
 
   @override
