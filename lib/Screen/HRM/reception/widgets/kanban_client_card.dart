@@ -77,6 +77,21 @@ class KanbanClientCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
+          // Badge Pre-Quince/Fiesta si aplica
+          if (client.serviceName.toLowerCase().contains('pre') &&
+              (client.serviceName.toLowerCase().contains('quince') || client.serviceName.toLowerCase().contains('boda')))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                ),
+                child: const Text('Pre-Quince y Fiesta', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.blue)),
+              ),
+            ),
           // Teléfono
           if (client.customerPhone.isNotEmpty)
             Padding(

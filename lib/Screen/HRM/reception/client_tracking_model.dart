@@ -9,6 +9,7 @@ class ClientTrackingModel {
   final String? invoiceNumber;
   final String serviceName;
   final String reservationDate;
+  final String? fiestaDate;
   final String reservationTime;
   final String estado;
   final String? bookedById;
@@ -22,6 +23,7 @@ class ClientTrackingModel {
     this.invoiceNumber,
     required this.serviceName,
     required this.reservationDate,
+    this.fiestaDate,
     required this.reservationTime,
     required this.estado,
     this.bookedById,
@@ -43,6 +45,7 @@ class ClientTrackingModel {
       invoiceNumber: json['invoice_number']?.toString(),
       serviceName: json['service_name']?.toString() ?? '',
       reservationDate: json['reservation_date']?.toString() ?? '',
+      fiestaDate: _cleanNull(json['fiesta_date']),
       reservationTime: json['reservation_time']?.toString() ?? '',
       estado: json['estado']?.toString() ?? 'pendiente',
       bookedById: _cleanNull(json['booked_by_id']),
@@ -59,6 +62,14 @@ class ClientTrackingModel {
   }
 
   bool get isUnassigned => bookedById == null || bookedById!.isEmpty;
+
+  /// True si tiene dos eventos (Pre-Quince + Fiesta) con fechas diferentes
+  bool get hasTwoEvents {
+    if (fiestaDate == null || fiestaDate!.isEmpty) return false;
+    final rd = reservationDate.split('T').first;
+    final fd = fiestaDate!.split('T').first;
+    return rd != fd;
+  }
 
   bool get isFullyCompleted =>
       stages.isNotEmpty && stages.every((s) => s.status == 'completada');

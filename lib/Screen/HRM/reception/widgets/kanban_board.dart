@@ -46,18 +46,51 @@ class KanbanBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Clasificar cada cliente en su columna actual
+    // Agrupar clientes con mismo nombre + misma fecha en una sola tarjeta
+    final grouped = <String, List<ClientTrackingModel>>{};
+    for (final client in clients) {
+      final key = '${client.customerName}|||${client.reservationDate}';
+      grouped.putIfAbsent(key, () => []).add(client);
+    }
+
+    // Clasificar cada cliente/grupo en su columna actual
     final buckets = <String, List<ClientTrackingModel>>{};
     for (final col in _columns) {
       buckets[col.key] = [];
     }
 
-    for (final client in clients) {
-      final currentDept = _getCurrentColumn(client);
-      if (buckets.containsKey(currentDept)) {
-        buckets[currentDept]!.add(client);
+    for (final entry in grouped.values) {
+      // Usar el primer cliente del grupo como representante
+      final primary = entry.first;
+      // Si hay múltiples, marcar los planes adicionales
+      if (entry.length > 1) {
+        // Combinar service names para mostrar todos los planes
+        final allPlans = entry.map((c) => c.serviceName).where((s) => s.isNotEmpty).toSet().join(' + ');
+        // Combinar stages de todas las reservaciones
+        final allStages = <StageStatus>[];
+        for (final c in entry) {
+          allStages.addAll(c.stages);
+        }
+        // Crear modelo combinado
+        final combined = ClientTrackingModel(
+          reservationId: primary.reservationId,
+          customerName: primary.customerName,
+          customerPhone: primary.customerPhone,
+          invoiceNumber: primary.invoiceNumber,
+          serviceName: allPlans,
+          reservationDate: primary.reservationDate,
+          fiestaDate: primary.fiestaDate,
+          reservationTime: primary.reservationTime,
+          estado: primary.estado,
+          bookedById: primary.bookedById,
+          bookedByName: primary.bookedByName,
+          stages: allStages,
+        );
+        final currentDept = _getCurrentColumn(combined);
+        (buckets[currentDept] ?? buckets['seguimiento']!).add(combined);
       } else {
-        buckets['seguimiento']!.add(client);
+        final currentDept = _getCurrentColumn(primary);
+        (buckets[currentDept] ?? buckets['seguimiento']!).add(primary);
       }
     }
 
@@ -83,14 +116,18 @@ class KanbanBoard extends StatelessWidget {
   }
 
   /// Determina en qué columna está el cliente según flujo secuencial:
-  /// Seguimiento → Makeup → Fotografía → Edición → Impresión → Completado
-  /// El cliente avanza SOLO cuando el departamento actual marca completado.
+  /// Seguimiento → Makeup → Fotografía → Edición → (pausa si falta fiesta) → Impresión → Completado
+  ///
+  /// Para planes Pre-Quince + Fiesta:
+  /// Pre-Quince: Makeup → Fotografía → Edición (se edita pre-quince)
+  /// ⏸ PAUSA — no pasa a Impresión hasta que termine la Fiesta
+  /// Fiesta: vuelve a Makeup → Fotografía → Edición
+  /// Cuando AMBAS ediciones terminan → Impresión → Completado
   String _getCurrentColumn(ClientTrackingModel client) {
     if (client.isFullyCompleted) return 'completado';
 
     final groups = client.departmentGroups;
 
-    // Helper: verifica si un departamento tiene tasks y si están todas completadas
     bool isDeptCompleted(String key) {
       final group = groups.where((g) => g.key == key).firstOrNull;
       return group != null && group.tasks.isNotEmpty && group.isCompleted;
@@ -101,23 +138,37 @@ class KanbanBoard extends StatelessWidget {
       return group != null && group.tasks.isNotEmpty;
     }
 
-    // Flujo secuencial: solo avanza si el anterior completó
-    // 1. Si no tiene tasks de maquillaje → sigue en seguimiento
+    bool hasDeptActive(String key) {
+      final group = groups.where((g) => g.key == key).firstOrNull;
+      return group != null && group.hasActive;
+    }
+
+    // 1. Sin tasks de maquillaje → sigue en seguimiento
     if (!hasDeptTasks('maquillaje')) return 'seguimiento';
 
-    // 2. Maquillaje tiene tasks pero no completó → En Makeup
-    if (!isDeptCompleted('maquillaje')) return 'maquillaje';
+    // 2. Maquillaje activo (no completado) → En Makeup
+    if (hasDeptActive('maquillaje')) return 'maquillaje';
 
-    // 3. Maquillaje completado → pasa a Fotografía/Video
-    if (!isDeptCompleted('sesion')) return 'sesion';
+    // 3. Fotografía activa → En Fotografía
+    if (hasDeptActive('sesion')) return 'sesion';
 
-    // 4. Fotografía completada → pasa a Edición
-    if (!isDeptCompleted('edicion')) return 'edicion';
+    // 4. Edición activa → En Edición
+    if (hasDeptActive('edicion')) return 'edicion';
 
-    // 5. Edición completada → pasa a Impresión
+    // 5. Plan con dos eventos (Pre-Quince + Fiesta):
+    // Si tiene fiesta_date, verificar si todas las tasks de pre Y fiesta completaron
+    // antes de pasar a Impresión
+    if (client.hasTwoEvents) {
+      // Si maquillaje o fotografía no completaron todo → vuelve al primer pendiente
+      if (!isDeptCompleted('maquillaje')) return 'maquillaje';
+      if (!isDeptCompleted('sesion')) return 'sesion';
+      if (!isDeptCompleted('edicion')) return 'edicion';
+    }
+
+    // 6. Todo antes de impresión completado → En Impresión
     if (!isDeptCompleted('impresion')) return 'impresion';
 
-    // 6. Todo completado
+    // 7. Todo completado
     return 'completado';
   }
 
