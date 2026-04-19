@@ -241,6 +241,9 @@ class ReservationAssignments {
   final List<String> maquillistaIds; // Múltiples maquillistas (plan simple)
   final List<String> maquillistaIdsPre; // Maquillistas para Pre-Quince
   final List<String> maquillistaIdsFiesta; // Maquillistas para Fiesta
+  final String? filmmakerId; // Filmmaker/Video
+  final List<String> filmmakerIdsPre; // Filmmaker para Pre-Quince
+  final List<String> filmmakerIdsFiesta; // Filmmaker para Fiesta
   final String? editorId;
   final String? bookedById;
   final String? contactChannel;
@@ -255,6 +258,9 @@ class ReservationAssignments {
     List<String>? maquillistaIds,
     List<String>? maquillistaIdsPre,
     List<String>? maquillistaIdsFiesta,
+    this.filmmakerId,
+    List<String>? filmmakerIdsPre,
+    List<String>? filmmakerIdsFiesta,
     this.editorId,
     this.bookedById,
     this.contactChannel,
@@ -262,6 +268,8 @@ class ReservationAssignments {
     Map<String, bool>? declined,
   }) : fotografoIdsPre = fotografoIdsPre ?? [],
        fotografoIdsFiesta = fotografoIdsFiesta ?? [],
+       filmmakerIdsPre = filmmakerIdsPre ?? [],
+       filmmakerIdsFiesta = filmmakerIdsFiesta ?? [],
        maquillistaIds = maquillistaIds ?? [],
        maquillistaIdsPre = maquillistaIdsPre ?? [],
        maquillistaIdsFiesta = maquillistaIdsFiesta ?? [],
@@ -299,6 +307,9 @@ class ReservationAssignments {
       maquillistaIds: maqIds,
       maquillistaIdsPre: parseMaqList(json['mPre']),
       maquillistaIdsFiesta: parseMaqList(json['mFiesta']),
+      filmmakerId: json['fm']?.toString(),
+      filmmakerIdsPre: parseMaqList(json['fmPre']),
+      filmmakerIdsFiesta: parseMaqList(json['fmFiesta']),
       editorId: json['e'],
       bookedById: json['b'],
       contactChannel: json['c'],
@@ -344,6 +355,9 @@ class ReservationAssignments {
       maquillistaIds: maquillistaIds,
       maquillistaIdsPre: maquillistaIdsPre,
       maquillistaIdsFiesta: maquillistaIdsFiesta,
+      filmmakerId: filmmakerId,
+      filmmakerIdsPre: filmmakerIdsPre,
+      filmmakerIdsFiesta: filmmakerIdsFiesta,
       editorId: editorId,
       bookedById: bookedById,
       contactChannel: contactChannel,
@@ -361,6 +375,64 @@ class ReservationAssignments {
   /// Verifica si todos los slots de fotografía están asignados para un evento
   bool allFotoAssigned(int needed, [String? event]) {
     final list = _getFotoListForEvent(event);
+    if (list.length < needed) return false;
+    return list.take(needed).every((id) => id.isNotEmpty);
+  }
+
+  // ── Filmmaker/Video helpers ──
+
+  String? getFilmmakerAt(int index, [String? event]) {
+    final list = _getFilmListForEvent(event);
+    if (index < list.length && list[index].isNotEmpty) return list[index];
+    return null;
+  }
+
+  ReservationAssignments withFilmmakerAt(int index, String employeeId, [String? event]) {
+    final oldPre = List<String>.from(filmmakerIdsPre);
+    final oldFiesta = List<String>.from(filmmakerIdsFiesta);
+
+    void setInList(List<String> list, int idx, String val) {
+      while (list.length <= idx) list.add('');
+      list[idx] = val;
+      while (list.isNotEmpty && list.last.isEmpty) list.removeLast();
+    }
+
+    String? newFmId = filmmakerId;
+    if (event == 'pre') {
+      setInList(oldPre, index, employeeId);
+    } else if (event == 'fiesta') {
+      setInList(oldFiesta, index, employeeId);
+    } else {
+      newFmId = employeeId;
+    }
+
+    return ReservationAssignments(
+      fotografoId: fotografoId,
+      fotografoIdsPre: fotografoIdsPre,
+      fotografoIdsFiesta: fotografoIdsFiesta,
+      maquillistaId: maquillistaId,
+      maquillistaIds: maquillistaIds,
+      maquillistaIdsPre: maquillistaIdsPre,
+      maquillistaIdsFiesta: maquillistaIdsFiesta,
+      filmmakerId: newFmId,
+      filmmakerIdsPre: oldPre,
+      filmmakerIdsFiesta: oldFiesta,
+      editorId: editorId,
+      bookedById: bookedById,
+      contactChannel: contactChannel,
+      socialNetwork: socialNetwork,
+      declined: declined,
+    );
+  }
+
+  List<String> _getFilmListForEvent(String? event) {
+    if (event == 'pre') return filmmakerIdsPre;
+    if (event == 'fiesta') return filmmakerIdsFiesta;
+    return filmmakerId != null ? [filmmakerId!] : [];
+  }
+
+  bool allFilmmakerAssigned(int needed, [String? event]) {
+    final list = _getFilmListForEvent(event);
     if (list.length < needed) return false;
     return list.take(needed).every((id) => id.isNotEmpty);
   }
@@ -394,14 +466,20 @@ class ReservationAssignments {
 
     return ReservationAssignments(
       fotografoId: fotografoId,
+      fotografoIdsPre: fotografoIdsPre,
+      fotografoIdsFiesta: fotografoIdsFiesta,
       maquillistaId: oldIds.isNotEmpty ? oldIds.first : (oldPre.isNotEmpty ? oldPre.first : maquillistaId),
       maquillistaIds: oldIds,
       maquillistaIdsPre: oldPre,
       maquillistaIdsFiesta: oldFiesta,
+      filmmakerId: filmmakerId,
+      filmmakerIdsPre: filmmakerIdsPre,
+      filmmakerIdsFiesta: filmmakerIdsFiesta,
       editorId: editorId,
       bookedById: bookedById,
       contactChannel: contactChannel,
       socialNetwork: socialNetwork,
+      declined: declined,
     );
   }
 
@@ -427,6 +505,9 @@ class ReservationAssignments {
       if (maquillistaIds.length > 1) 'mIds': maquillistaIds,
       if (maquillistaIdsPre.isNotEmpty) 'mPre': maquillistaIdsPre,
       if (maquillistaIdsFiesta.isNotEmpty) 'mFiesta': maquillistaIdsFiesta,
+      if (filmmakerId != null) 'fm': filmmakerId,
+      if (filmmakerIdsPre.isNotEmpty) 'fmPre': filmmakerIdsPre,
+      if (filmmakerIdsFiesta.isNotEmpty) 'fmFiesta': filmmakerIdsFiesta,
       if (editorId != null) 'e': editorId,
       if (bookedById != null) 'b': bookedById,
       if (contactChannel != null) 'c': contactChannel,

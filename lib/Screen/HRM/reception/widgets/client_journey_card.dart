@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import '../client_tracking_model.dart';
 
-/// Card visual que muestra el pipeline de un cliente a través de departamentos.
+/// Card de seguimiento de cliente con vista agrupada por departamento.
 ///
-/// Indicadores de color:
-///   ⚪ Gris  — No ha llegado a este departamento
-///   🔴 Rojo  — Asignado o en progreso
-///   🟡 Amarillo — Vencida (SLA superado)
-///   🟢 Verde — Completado
+/// Muestra el recorrido del cliente de forma clara:
+///   🟢 Maquillaje    Completado    Dehiri (2/2)
+///   🔵 Sesión        Atendiendo    Abel
+///   ⚪ Edición       Pendiente     Sin asignar
+///   ⚪ Impresión     Pendiente     Sin asignar
 class ClientJourneyCard extends StatelessWidget {
   final ClientTrackingModel client;
-  final VoidCallback? onAssign; // Para asignar recepcionista desde "Sin asignar"
+  final VoidCallback? onAssign;
 
   const ClientJourneyCard({
     super.key,
@@ -20,7 +20,9 @@ class ClientJourneyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final groups = client.departmentGroups;
+    final completedDepts = groups.where((g) => g.isCompleted).length;
+    final totalDepts = groups.length;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -41,10 +43,9 @@ class ClientJourneyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Fila 1: Nombre + Servicio + Fecha
+            // Header: nombre + servicio + fecha
             Row(
               children: [
-                // Avatar con inicial
                 Container(
                   width: 40,
                   height: 40,
@@ -59,7 +60,6 @@ class ClientJourneyCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Info del cliente
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +78,6 @@ class ClientJourneyCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Fecha + hora
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -96,10 +95,10 @@ class ClientJourneyCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
-            // Fila 2: Pipeline de etapas
-            if (client.stages.isEmpty)
+            // Pipeline por departamento
+            if (groups.isEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
@@ -121,9 +120,36 @@ class ClientJourneyCard extends StatelessWidget {
                 ),
               )
             else
-              isMobile ? _buildPipelineVertical() : _buildPipelineHorizontal(),
+              ...groups.map((group) => _buildDepartmentRow(group)),
 
-            // Fila 3: Botón de asignar (solo si está en "Sin asignar")
+            // Barra de progreso
+            if (groups.isNotEmpty && !client.isUnassigned) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: totalDepts > 0 ? completedDepts / totalDepts : 0,
+                        minHeight: 4,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          client.isFullyCompleted ? Colors.green : const Color(0xFFD4A84B),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$completedDepts/$totalDepts',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ],
+
+            // Botón asignar (solo si no tiene recepcionista)
             if (onAssign != null) ...[
               const SizedBox(height: 10),
               SizedBox(
@@ -141,31 +167,68 @@ class ClientJourneyCard extends StatelessWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Progreso completado
-            if (client.stages.isNotEmpty && !client.isUnassigned) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: client.stages.isEmpty ? 0 : client.completedCount / client.stages.length,
-                        minHeight: 4,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          client.isFullyCompleted ? Colors.green : const Color(0xFFD4A84B),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${client.completedCount}/${client.stages.length}',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
-                  ),
-                ],
+  /// Fila de un departamento con indicador, nombre, estado y empleados
+  Widget _buildDepartmentRow(DepartmentGroup group) {
+    final color = _statusColor(group.status);
+    final icon = _statusIcon(group.status);
+    final label = _statusLabel(group.status);
+    final employees = group.employeeNames;
+    final hasMultiple = group.totalTasks > 1;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            // Indicador de estado
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 10),
+            // Nombre del departamento
+            SizedBox(
+              width: 80,
+              child: Text(
+                group.label,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+              ),
+            ),
+            // Estado
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
+            ),
+            // Empleados + conteo
+            if (employees.isNotEmpty)
+              Text(
+                employees.join(', '),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+                overflow: TextOverflow.ellipsis,
+              ),
+            if (hasMultiple) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${group.completedTasks}/${group.totalTasks}',
+                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color),
+                ),
               ),
             ],
           ],
@@ -174,142 +237,34 @@ class ClientJourneyCard extends StatelessWidget {
     );
   }
 
-  /// Pipeline horizontal para desktop
-  Widget _buildPipelineHorizontal() {
-    return Row(
-      children: [
-        for (int i = 0; i < client.stages.length; i++) ...[
-          if (i > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Icon(Icons.arrow_forward_ios, size: 10, color: Colors.grey.shade300),
-            ),
-          Expanded(child: _buildStageChip(client.stages[i])),
-        ],
-      ],
-    );
+  Color _statusColor(DepartmentStatus status) {
+    switch (status) {
+      case DepartmentStatus.completed: return Colors.green;
+      case DepartmentStatus.inProgress: return const Color(0xFF3B82F6);
+      case DepartmentStatus.overdue: return Colors.orange;
+      case DepartmentStatus.waiting: return const Color(0xFFF59E0B);
+      case DepartmentStatus.pending: return Colors.grey;
+    }
   }
 
-  /// Pipeline vertical para móvil
-  Widget _buildPipelineVertical() {
-    return Column(
-      children: client.stages.map((stage) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: _buildStageRow(stage),
-        );
-      }).toList(),
-    );
+  IconData _statusIcon(DepartmentStatus status) {
+    switch (status) {
+      case DepartmentStatus.completed: return Icons.check_circle;
+      case DepartmentStatus.inProgress: return Icons.play_circle;
+      case DepartmentStatus.overdue: return Icons.warning_amber;
+      case DepartmentStatus.waiting: return Icons.schedule;
+      case DepartmentStatus.pending: return Icons.circle_outlined;
+    }
   }
 
-  Widget _buildStageChip(StageStatus stage) {
-    final color = _stageColor(stage);
-    final icon = _stageIcon(stage);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.30)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(height: 2),
-          Text(
-            _shortName(stage.designationName),
-            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: color),
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-          if (stage.employeeName != null && stage.employeeName!.isNotEmpty)
-            Text(
-              stage.employeeName!.split(' ').first,
-              style: TextStyle(fontSize: 8, color: Colors.grey.shade500),
-              overflow: TextOverflow.ellipsis,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStageRow(StageStatus stage) {
-    final color = _stageColor(stage);
-    final icon = _stageIcon(stage);
-
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: color, size: 16),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            stage.designationName,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey.shade800),
-          ),
-        ),
-        if (stage.employeeName != null && stage.employeeName!.isNotEmpty)
-          Text(
-            stage.employeeName!,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-          ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            _statusLabel(stage),
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _stageColor(StageStatus stage) {
-    if (stage.isCompleted) return Colors.green;
-    if (stage.isOverdue) return Colors.orange;
-    if (stage.isActive) return Colors.red;
-    return Colors.grey; // sin task
-  }
-
-  IconData _stageIcon(StageStatus stage) {
-    if (stage.isCompleted) return Icons.check_circle;
-    if (stage.isOverdue) return Icons.warning_amber;
-    if (stage.isActive) return Icons.circle;
-    return Icons.circle_outlined;
-  }
-
-  String _statusLabel(StageStatus stage) {
-    if (stage.isCompleted) return 'Listo';
-    if (stage.isOverdue) return 'Vencida';
-    if (stage.isActive) return 'En proceso';
-    return 'Pendiente';
-  }
-
-  String _shortName(String name) {
-    if (name.length <= 8) return name;
-    // Abreviaciones comunes
-    final lower = name.toLowerCase();
-    if (lower.contains('maquill')) return 'Maquill.';
-    if (lower.contains('fotograf')) return 'Foto';
-    if (lower.contains('film')) return 'Film';
-    if (lower.contains('edic') || lower.contains('editor')) return 'Edición';
-    if (lower.contains('impres')) return 'Impres.';
-    if (lower.contains('recepcion')) return 'Recep.';
-    if (lower.contains('seleccion')) return 'Selec.';
-    return name.substring(0, 7);
+  String _statusLabel(DepartmentStatus status) {
+    switch (status) {
+      case DepartmentStatus.completed: return 'Completado';
+      case DepartmentStatus.inProgress: return 'Atendiendo';
+      case DepartmentStatus.overdue: return 'Vencida';
+      case DepartmentStatus.waiting: return 'Esperando';
+      case DepartmentStatus.pending: return 'Pendiente';
+    }
   }
 
   String _formatDate(String date) {

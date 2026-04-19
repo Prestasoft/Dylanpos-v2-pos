@@ -115,6 +115,15 @@ abstract class AcnooAppRoutes {
   // Instancia global de ApiService para verificar autenticación
   static final ApiService _apiService = ApiService();
 
+  /// Verifica si la designación es de recepcionista
+  static bool _isReceptionistDesignation(String scopedDesigId) {
+    if (scopedDesigId.isEmpty) return false;
+    final user = _apiService.currentUser;
+    if (user == null) return false;
+    final desigName = (user['scoped_designation_name'] ?? '').toString().toLowerCase();
+    return desigName.contains('recepcion') || desigName.contains('vendedor') || desigName.contains('tienda');
+  }
+
   /// Obtiene el permiso requerido para una ruta específica
   /// Retorna null si la ruta no requiere permiso especial (rutas públicas/generales)
   static String? _getRequiredPermissionForRoute(String path) {
@@ -239,13 +248,35 @@ abstract class AcnooAppRoutes {
         final role = apiRole.isNotEmpty ? apiRole : modelRole;
         if (role == 'employee') {
           final currentPath = state.matchedLocation;
-          if (!currentPath.startsWith('/hrm/my-tasks')) {
-            return '/hrm/my-tasks';
+          // Detectar si es recepcionista por su designación
+          final scopedDesig = ApiService().currentUser?['scoped_designation_id']?.toString() ?? '';
+          final isReceptionist = _isReceptionistDesignation(scopedDesig);
+
+          if (isReceptionist) {
+            // Recepcionistas: acceden a seguimiento de clientes, NO a tareas
+            final allowedPaths = ['/client-tracking', '/blank-home'];
+            if (!allowedPaths.any((p) => currentPath.startsWith(p))) {
+              return '/client-tracking';
+            }
+          } else {
+            // Empleados normales: solo tareas
+            if (!currentPath.startsWith('/hrm/my-tasks')) {
+              return '/hrm/my-tasks';
+            }
           }
         }
-        // department_head puede acceder a todas las rutas /hrm/* de su panel
+        // department_head: verificar si es recepcionista primero
         if (role == 'department_head') {
           final currentPath = state.matchedLocation;
+          final scopedDesig = ApiService().currentUser?['scoped_designation_id']?.toString() ?? '';
+          if (_isReceptionistDesignation(scopedDesig)) {
+            // Encargada de recepción: seguimiento de clientes, NO tareas
+            final allowedPaths = ['/client-tracking', '/blank-home'];
+            if (!allowedPaths.any((p) => currentPath.startsWith(p))) {
+              return '/client-tracking';
+            }
+            return null;
+          }
           final allowedPaths = [
             '/hrm/my-tasks',
             '/hrm/department-status',

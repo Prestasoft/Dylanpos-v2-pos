@@ -163,8 +163,17 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
     final pairs = <_AssignmentPair>[
       _AssignmentPair('edici,editor', a.editorId),
-      _AssignmentPair('ventas,recepcion,vendedor', a.bookedById),
+      // Recepción NO genera tasks con SLA — usan Seguimiento de Clientes
+      // _AssignmentPair('ventas,recepcion,vendedor', a.bookedById),
     ];
+    // Multi-filmmaker: crear task por cada filmmaker asignado por evento
+    if (a.filmmakerIdsPre.isNotEmpty || a.filmmakerIdsFiesta.isNotEmpty) {
+      for (final fmId in [...a.filmmakerIdsPre, ...a.filmmakerIdsFiesta]) {
+        if (fmId.isNotEmpty) pairs.add(_AssignmentPair('film,video,cine', fmId));
+      }
+    } else if (a.filmmakerId != null) {
+      pairs.add(_AssignmentPair('film,video,cine', a.filmmakerId));
+    }
     // Multi-fotografía: crear task por cada fotógrafo asignado por evento
     if (a.fotografoIdsPre.isNotEmpty || a.fotografoIdsFiesta.isNotEmpty) {
       for (final fId in [...a.fotografoIdsPre, ...a.fotografoIdsFiesta]) {
@@ -381,6 +390,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                    if (scopedSlot != null) {
                      if (scopedSlot == 'maquillista') return assign.maquillistaId != null;
                      if (scopedSlot == 'fotografo') return assign.fotografoId != null || assign.fotografoIdsPre.isNotEmpty || assign.fotografoIdsFiesta.isNotEmpty;
+                     if (scopedSlot == 'filmmaker') return assign.filmmakerId != null || assign.filmmakerIdsPre.isNotEmpty || assign.filmmakerIdsFiesta.isNotEmpty;
                      return _getAssignmentBySlot(assign, scopedSlot!) != null;
                    }
                    return assign.fotografoId != null || assign.maquillistaId != null || assign.editorId != null || assign.bookedById != null;
@@ -471,6 +481,18 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
   Widget _buildList(List<ReservationModel> list, String emptyMessage) {
     final tc = TaskColors.read(context);
+
+    // Filtrar por video: si el encargado es de filmmaker, solo mostrar clientes con video
+    if (_scopedDesignationId != null) {
+      final scopedDesig = _designations.where((d) => d.id == _scopedDesignationId).firstOrNull;
+      if (scopedDesig != null && _detectRoleSlotByName(scopedDesig.designation) == 'filmmaker') {
+        list = list.where((r) {
+          final desc = _getPackageDescription(r);
+          return _hasVideoInDescription(desc);
+        }).toList();
+      }
+    }
+
     if (list.isEmpty) {
       return Center(
         child: Column(
@@ -483,6 +505,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
         ),
       );
     }
+
     // Si el user está scoped, filtra empleados al mismo cargo
     final visibleEmployees = _scopedDesignationId == null
         ? _employees
@@ -625,6 +648,9 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       fotografoId: assign.fotografoId,
       fotografoIdsPre: assign.fotografoIdsPre,
       fotografoIdsFiesta: assign.fotografoIdsFiesta,
+      filmmakerId: assign.filmmakerId,
+      filmmakerIdsPre: assign.filmmakerIdsPre,
+      filmmakerIdsFiesta: assign.filmmakerIdsFiesta,
       maquillistaId: assign.maquillistaId,
       maquillistaIds: assign.maquillistaIds,
       maquillistaIdsPre: assign.maquillistaIdsPre,
@@ -654,7 +680,8 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     // Detectar si es un slot multi-evento (maquillaje o fotografía)
     final isMakeup = slot == 'maquillista';
     final isPhoto = slot == 'fotografo';
-    final isMultiSlot = isMakeup || isPhoto;
+    final isFilmmaker = slot == 'filmmaker';
+    final isMultiSlot = isMakeup || isPhoto || isFilmmaker;
     final defaultLabel = isMakeup ? 'Maquillaje' : 'Fotógrafo';
     List<String> slotLabels = [defaultLabel];
     String? slotEvent;
@@ -664,7 +691,9 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       try {
         final desc = _getPackageDescription(reservation);
         if (desc.isNotEmpty) {
-          final parsed = isMakeup ? _parseMakeupByEvent(desc) : _parsePhotographyByEvent(desc);
+          final parsed = isMakeup ? _parseMakeupByEvent(desc)
+              : isPhoto ? _parsePhotographyByEvent(desc)
+              : _parseVideoByEvent(desc);
 
           if (parsed.hasSections && reservation.fiestaDate != null && reservation.fiestaDate!.isNotEmpty) {
             final fiestaDate = DateTime.tryParse(reservation.fiestaDate!);
@@ -697,7 +726,9 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     int assignedCount = 0;
     if (isMultiSlot && multiSlotCount > 1) {
       for (int i = 0; i < multiSlotCount; i++) {
-        final id = isMakeup ? assign.getMaquillistaAt(i, slotEvent) : assign.getFotografoAt(i, slotEvent);
+        final id = isMakeup ? assign.getMaquillistaAt(i, slotEvent)
+            : isPhoto ? assign.getFotografoAt(i, slotEvent)
+            : assign.getFilmmakerAt(i, slotEvent);
         if (id != null) assignedCount++;
       }
     } else {
@@ -834,7 +865,8 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
                   ...List.generate(multiSlotCount, (mIdx) {
                     final slotId = isMakeup
                         ? assign.getMaquillistaAt(mIdx, slotEvent)
-                        : assign.getFotografoAt(mIdx, slotEvent);
+                        : isPhoto ? assign.getFotografoAt(mIdx, slotEvent)
+                        : assign.getFilmmakerAt(mIdx, slotEvent);
                     final isSupport = slotId != null && slotId.startsWith('support:');
                     final supportN = isSupport ? slotId.substring(8) : null;
                     final emp = (slotId == null || isSupport) ? null : employees.where((e) => e.id.toString() == slotId).firstOrNull;
@@ -1040,7 +1072,9 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       final roleSlot = _detectRoleSlotByName(designationName);
       final newAssign = roleSlot == 'fotografo'
           ? reservation.assignments.withFotografoAt(maqIndex, result.id.toString(), event)
-          : reservation.assignments.withMaquillistaAt(maqIndex, result.id.toString(), event);
+          : roleSlot == 'filmmaker'
+              ? reservation.assignments.withFilmmakerAt(maqIndex, result.id.toString(), event)
+              : reservation.assignments.withMaquillistaAt(maqIndex, result.id.toString(), event);
       await _updateAssignment(reservation, newAssign);
     }
   }
@@ -1059,6 +1093,8 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
       relatedDepts.addAll(['film', 'edic', 'editor', 'video']);
     } else if (slot == 'editor') {
       relatedDepts.addAll(['fotograf', 'photo', 'film', 'video']);
+    } else if (slot == 'filmmaker') {
+      relatedDepts.addAll(['fotograf', 'photo', 'edic', 'editor']);
     }
 
     // Obtener empleados de departamentos relacionados
@@ -1294,11 +1330,20 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     final assign = reservation.assignments;
     final newAssign = ReservationAssignments(
       fotografoId: slot == 'fotografo' ? selected.id.toString() : assign.fotografoId,
+      fotografoIdsPre: assign.fotografoIdsPre,
+      fotografoIdsFiesta: assign.fotografoIdsFiesta,
       maquillistaId: slot == 'maquillista' ? selected.id.toString() : assign.maquillistaId,
+      maquillistaIds: assign.maquillistaIds,
+      maquillistaIdsPre: assign.maquillistaIdsPre,
+      maquillistaIdsFiesta: assign.maquillistaIdsFiesta,
+      filmmakerId: slot == 'filmmaker' ? selected.id.toString() : assign.filmmakerId,
+      filmmakerIdsPre: assign.filmmakerIdsPre,
+      filmmakerIdsFiesta: assign.filmmakerIdsFiesta,
       editorId: slot == 'editor' ? selected.id.toString() : assign.editorId,
       bookedById: slot == 'vendedor' ? selected.id.toString() : assign.bookedById,
       contactChannel: assign.contactChannel,
       socialNetwork: assign.socialNetwork,
+      declined: assign.declined,
     );
 
     await _updateAssignment(reservation, newAssign);
@@ -1309,6 +1354,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     if (d.contains('foto') || d.contains('photo') || d.contains('camer')) return 'fotografo';
     if (d.contains('maquil') || d.contains('makeup') || d.contains('belleza')) return 'maquillista';
     if (d.contains('edic') || d.contains('editor') || d.contains('post')) return 'editor';
+    if (d.contains('film') || d.contains('video') || d.contains('cine')) return 'filmmaker';
     return 'vendedor';
   }
 
@@ -1390,6 +1436,70 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
 
   String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
+  /// Verifica si la descripción del paquete incluye video
+  bool _hasVideoInDescription(String description) {
+    if (description.isEmpty) return false;
+    final lower = description.toLowerCase();
+    return lower.contains('video profesional') || lower.contains('video resumen') ||
+        lower.contains('video elaborado') || lower.contains('video con drone') ||
+        lower.contains('video con dron') || lower.contains('filmmaker') ||
+        lower.contains('filmmarker');
+  }
+
+  /// Parsea video/filmmaker de la descripción por sección Pre-Quince/Fiesta
+  _MakeupParseResult _parseVideoByEvent(String description) {
+    if (description.isEmpty) {
+      return _MakeupParseResult(labels: ['Video'], labelsPre: [], labelsFiesta: [], hasSections: false);
+    }
+    final lower = description.toLowerCase();
+
+    final preIdx = RegExp(r'pre[- ]?quince|pre[- ]?boda', caseSensitive: false).firstMatch(lower)?.start ?? -1;
+    final fiestaIdx = RegExp(r'\nfiesta\b|\n\s*fiesta\b', caseSensitive: false).firstMatch(lower)?.start ?? -1;
+
+    if (preIdx != -1 && fiestaIdx != -1 && fiestaIdx > preIdx) {
+      final preSection = lower.substring(preIdx, fiestaIdx);
+      final fiestaSection = lower.substring(fiestaIdx);
+      final labelsPre = _extractVideoFromSection(preSection);
+      final labelsFiesta = _extractVideoFromSection(fiestaSection);
+      return _MakeupParseResult(
+        labels: [...labelsPre, ...labelsFiesta],
+        labelsPre: labelsPre,
+        labelsFiesta: labelsFiesta,
+        hasSections: true,
+      );
+    }
+
+    final labels = _extractVideoFromSection(lower);
+    return _MakeupParseResult(
+      labels: labels.isNotEmpty ? labels : (_hasVideoInDescription(description) ? ['Video'] : []),
+      labelsPre: [],
+      labelsFiesta: [],
+      hasSections: false,
+    );
+  }
+
+  /// Extrae labels de video de una sección de texto
+  List<String> _extractVideoFromSection(String section) {
+    final labels = <String>[];
+    final lines = section.split('\n');
+    for (final line in lines) {
+      final lower = line.toLowerCase().trim();
+      if (lower.contains('video profesional con dron') || lower.contains('video profesional con drone')) {
+        labels.add('Video + Drone');
+      } else if (lower.contains('video elaborado')) {
+        labels.add('Video Elaborado');
+      } else if (lower.contains('video resumen')) {
+        labels.add('Video Resumen');
+      } else if (lower.contains('video profesional')) {
+        labels.add('Video');
+      }
+      if (lower.contains('filmmaker') || lower.contains('filmmarker')) {
+        if (!labels.any((l) => l.startsWith('Video'))) labels.add('Filmmaker');
+      }
+    }
+    return labels;
+  }
+
   /// Parsea fotógrafos de la descripción del paquete por sección Pre-Quince/Fiesta
   _MakeupParseResult _parsePhotographyByEvent(String description) {
     if (description.isEmpty) {
@@ -1464,6 +1574,7 @@ class _TodayAssignmentsScreenState extends ConsumerState<TodayAssignmentsScreen>
     switch (slot) {
       case 'fotografo': return a.fotografoId;
       case 'maquillista': return a.maquillistaId;
+      case 'filmmaker': return a.filmmakerId;
       case 'editor': return a.editorId;
       case 'vendedor': return a.bookedById;
       default: return null;
@@ -1525,11 +1636,20 @@ class _AssignmentCardState extends State<_AssignmentCard> {
     widget.onUpdate(
       ReservationAssignments(
         fotografoId: fotografoId,
+        fotografoIdsPre: widget.reservation.assignments.fotografoIdsPre,
+        fotografoIdsFiesta: widget.reservation.assignments.fotografoIdsFiesta,
         maquillistaId: maquillistaId,
+        maquillistaIds: widget.reservation.assignments.maquillistaIds,
+        maquillistaIdsPre: widget.reservation.assignments.maquillistaIdsPre,
+        maquillistaIdsFiesta: widget.reservation.assignments.maquillistaIdsFiesta,
+        filmmakerId: widget.reservation.assignments.filmmakerId,
+        filmmakerIdsPre: widget.reservation.assignments.filmmakerIdsPre,
+        filmmakerIdsFiesta: widget.reservation.assignments.filmmakerIdsFiesta,
         editorId: editorId,
         bookedById: bookedById,
         contactChannel: contactChannel,
         socialNetwork: socialNetwork,
+        declined: widget.reservation.assignments.declined,
       ),
     );
   }

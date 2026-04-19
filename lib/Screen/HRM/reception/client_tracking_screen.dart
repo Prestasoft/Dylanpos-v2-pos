@@ -11,6 +11,7 @@ import '../employees/repo/employee_repo.dart';
 import 'client_tracking_model.dart';
 import 'client_tracking_repo.dart';
 import 'widgets/client_journey_card.dart';
+import 'widgets/kanban_board.dart';
 
 /// Pantalla de Seguimiento de Clientes para el departamento de Recepción.
 ///
@@ -112,17 +113,13 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
     if (_stageFilter != 'todos') {
       list = list.where((c) {
         if (_stageFilter == 'completado') return c.isFullyCompleted;
-        return c.stages.any((s) {
-          final name = s.designationName.toLowerCase();
-          switch (_stageFilter) {
-            case 'seguimiento': return name.contains('recepcion') || name.contains('tienda');
-            case 'maquillaje': return name.contains('maquill');
-            case 'sesion': return name.contains('fotograf') || name.contains('film');
-            case 'edicion': return name.contains('edic') || name.contains('editor') || name.contains('seleccion');
-            case 'impresion': return name.contains('impres');
-            default: return true;
-          }
-        });
+        if (_stageFilter == 'seguimiento') {
+          // Clientes recién asignados sin tasks de otros departamentos
+          return c.stages.isEmpty || c.departmentGroups.every((g) => g.isEmpty || g.key == 'seguimiento');
+        }
+        // Filtrar por departamento activo (tiene tasks pendientes/en proceso)
+        final groups = c.departmentGroups;
+        return groups.any((g) => g.key == _stageFilter && g.hasActive);
       }).toList();
     }
 
@@ -353,57 +350,63 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
                           ),
                         ),
 
-                      // Filtros de etapa
-                      if (_activeFilter != null)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _buildStageChip('todos', 'Todos', Icons.list),
-                                _buildStageChip('seguimiento', 'Seguimiento', Icons.visibility),
-                                _buildStageChip('maquillaje', 'Maquillaje', Icons.face_retouching_natural),
-                                _buildStageChip('sesion', 'Sesión', Icons.camera_alt),
-                                _buildStageChip('edicion', 'Edición', Icons.edit),
-                                _buildStageChip('impresion', 'Impresión', Icons.print),
-                                _buildStageChip('completado', 'Completado', Icons.check_circle),
-                              ],
+                      // Vista según el rol del usuario
+                      if (_isLinkedUser && _activeFilter != null)
+                        // RECEPCIONISTA: Vista Kanban por columnas
+                        KanbanBoard(clients: _filteredClients)
+                      else ...[
+                        // ADMIN/ENCARGADA: Filtros de etapa + lista
+                        if (_activeFilter != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  _buildStageChip('todos', 'Todos', Icons.list),
+                                  _buildStageChip('seguimiento', 'Seguimiento', Icons.visibility),
+                                  _buildStageChip('maquillaje', 'Maquillaje', Icons.face_retouching_natural),
+                                  _buildStageChip('sesion', 'Sesión', Icons.camera_alt),
+                                  _buildStageChip('edicion', 'Edición', Icons.edit),
+                                  _buildStageChip('impresion', 'Impresión', Icons.print),
+                                  _buildStageChip('completado', 'Completado', Icons.check_circle),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
 
-                      // Lista de clientes
-                      if (_filteredClients.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(40),
-                          child: Column(
-                            children: [
-                              Icon(Icons.inbox, size: 48, color: Colors.grey.shade300),
-                              const SizedBox(height: 12),
-                              Text(
-                                _activeFilter == null ? 'No hay clientes sin asignar' : 'No hay clientes en este filtro',
-                                style: TextStyle(color: Colors.grey.shade500),
-                              ),
-                            ],
+                        // Lista de clientes
+                        if (_filteredClients.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(40),
+                            child: Column(
+                              children: [
+                                Icon(Icons.inbox, size: 48, color: Colors.grey.shade300),
+                                const SizedBox(height: 12),
+                                Text(
+                                  _activeFilter == null ? 'No hay clientes sin asignar' : 'No hay clientes en este filtro',
+                                  style: TextStyle(color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                            itemCount: _filteredClients.length,
+                            itemBuilder: (_, i) {
+                              final client = _filteredClients[i];
+                              return ClientJourneyCard(
+                                client: client,
+                                onAssign: (client.isUnassigned && _canAssign)
+                                    ? () => _showAssignDialog(client)
+                                    : null,
+                              );
+                            },
                           ),
-                        )
-                      else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                          itemCount: _filteredClients.length,
-                          itemBuilder: (_, i) {
-                            final client = _filteredClients[i];
-                            return ClientJourneyCard(
-                              client: client,
-                              onAssign: (client.isUnassigned && _canAssign)
-                                  ? () => _showAssignDialog(client)
-                                  : null,
-                            );
-                          },
-                        ),
+                      ],
                     ],
                   ),
                 ),

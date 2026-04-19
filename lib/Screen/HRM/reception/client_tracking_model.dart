@@ -45,7 +45,6 @@ class ClientTrackingModel {
     );
   }
 
-  /// Limpia valores "null" que vienen como string del JSON
   static String? _cleanNull(dynamic v) {
     if (v == null) return null;
     final s = v.toString();
@@ -53,23 +52,120 @@ class ClientTrackingModel {
     return s;
   }
 
-  /// True si no tiene recepcionista asignada
   bool get isUnassigned => bookedById == null || bookedById!.isEmpty;
 
-  /// True si todas las etapas están completadas
   bool get isFullyCompleted =>
       stages.isNotEmpty && stages.every((s) => s.status == 'completada');
 
-  /// Cantidad de etapas completadas
   int get completedCount => stages.where((s) => s.status == 'completada').length;
+
+  /// Agrupa stages por departamento para vista de seguimiento
+  List<DepartmentGroup> get departmentGroups {
+    final order = ['maquillaje', 'sesion', 'edicion', 'impresion'];
+    final groups = <String, DepartmentGroup>{};
+
+    for (final stage in stages) {
+      final deptKey = _getDeptKey(stage.designationName);
+      final deptLabel = _getDeptLabel(deptKey);
+
+      groups.putIfAbsent(deptKey, () => DepartmentGroup(
+        key: deptKey,
+        label: deptLabel,
+        tasks: [],
+      ));
+      groups[deptKey]!.tasks.add(stage);
+    }
+
+    // Ordenar según el flujo natural
+    final sorted = <DepartmentGroup>[];
+    for (final key in order) {
+      if (groups.containsKey(key)) sorted.add(groups[key]!);
+    }
+    // Agregar departamentos no estándar al final
+    for (final entry in groups.entries) {
+      if (!order.contains(entry.key)) sorted.add(entry.value);
+    }
+    return sorted;
+  }
+
+  /// Determina en qué departamento está actualmente el cliente
+  String get currentDepartment {
+    final groups = departmentGroups;
+    for (final g in groups) {
+      if (g.hasActive) return g.key;
+    }
+    if (groups.isNotEmpty && groups.every((g) => g.isCompleted)) return 'completado';
+    return 'seguimiento';
+  }
+
+  static String _getDeptKey(String designationName) {
+    final lower = designationName.toLowerCase();
+    if (lower.contains('maquill') || lower.contains('makeup') || lower.contains('belleza')) return 'maquillaje';
+    if (lower.contains('fotograf') || lower.contains('photo') || lower.contains('film') || lower.contains('video') || lower.contains('cine')) return 'sesion';
+    if (lower.contains('edic') || lower.contains('editor') || lower.contains('seleccion')) return 'edicion';
+    if (lower.contains('impres') || lower.contains('enmarc')) return 'impresion';
+    if (lower.contains('recepcion') || lower.contains('vendedor') || lower.contains('tienda')) return 'seguimiento';
+    return lower.isNotEmpty ? lower : 'otro';
+  }
+
+  static String _getDeptLabel(String key) {
+    switch (key) {
+      case 'maquillaje': return 'Maquillaje';
+      case 'sesion': return 'Sesión';
+      case 'edicion': return 'Edición';
+      case 'impresion': return 'Impresión';
+      case 'seguimiento': return 'Seguimiento';
+      default: return key[0].toUpperCase() + key.substring(1);
+    }
+  }
 }
+
+/// Grupo de tasks por departamento
+class DepartmentGroup {
+  final String key;
+  final String label;
+  final List<StageStatus> tasks;
+
+  DepartmentGroup({required this.key, required this.label, required this.tasks});
+
+  int get totalTasks => tasks.length;
+  int get completedTasks => tasks.where((t) => t.status == 'completada').length;
+  bool get isCompleted => tasks.isNotEmpty && tasks.every((t) => t.status == 'completada');
+  bool get hasActive => tasks.any((t) => t.status == 'pendiente' || t.status == 'en_progreso' || t.status == 'vencida');
+  bool get hasOverdue => tasks.any((t) => t.status == 'vencida');
+  bool get hasInProgress => tasks.any((t) => t.status == 'en_progreso');
+  bool get isEmpty => tasks.isEmpty;
+
+  /// Nombres de empleados únicos asignados
+  List<String> get employeeNames {
+    final names = <String>{};
+    for (final t in tasks) {
+      if (t.employeeName != null && t.employeeName!.trim().isNotEmpty) {
+        names.add(t.employeeName!.trim().split(' ').first);
+      }
+    }
+    return names.toList();
+  }
+
+  /// Estado general del grupo
+  DepartmentStatus get status {
+    if (isEmpty) return DepartmentStatus.pending;
+    if (isCompleted) return DepartmentStatus.completed;
+    if (hasOverdue) return DepartmentStatus.overdue;
+    if (hasInProgress) return DepartmentStatus.inProgress;
+    if (hasActive) return DepartmentStatus.waiting;
+    return DepartmentStatus.pending;
+  }
+}
+
+enum DepartmentStatus { pending, waiting, inProgress, overdue, completed }
 
 /// Estado de una etapa (departamento) en el pipeline del cliente.
 class StageStatus {
   final String? taskId;
   final num? designationId;
   final String designationName;
-  final String? status; // null, pendiente, en_progreso, completada, vencida
+  final String? status;
   final String? employeeName;
   final DateTime? assignedAt;
   final DateTime? dueAt;
@@ -99,7 +195,6 @@ class StageStatus {
     );
   }
 
-  /// Color indicador: gris=sin task, rojo=activo, amarillo=por vencer, verde=completado
   bool get isCompleted => status == 'completada';
   bool get isActive => status == 'pendiente' || status == 'en_progreso' || status == 'vencida';
   bool get isOverdue => status == 'vencida';
