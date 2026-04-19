@@ -104,6 +104,15 @@ class _ReceptionAssignmentsViewState extends State<ReceptionAssignmentsView> {
       }
     }
 
+    // Ordenar: más viejo primero (fecha de reserva ascendente)
+    int sortByDateAsc(ClientTrackingModel a, ClientTrackingModel b) {
+      return a.reservationDate.compareTo(b.reservationDate);
+    }
+    pendientes.sort(sortByDateAsc);
+    enAtraso.sort(sortByDateAsc);
+    asignados.sort(sortByDateAsc);
+    noAplica.sort(sortByDateAsc);
+
     return Scaffold(
       backgroundColor: tc.scaffold,
       appBar: AppBar(

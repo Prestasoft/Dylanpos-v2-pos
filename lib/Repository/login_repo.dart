@@ -33,9 +33,19 @@ class LogInRepo extends ChangeNotifier {
     }
     final role = _apiService.currentUser?['role']?.toString() ?? '';
     if (role == 'employee') {
+      // Recepcionistas van a Seguimiento Clientes
+      final desigName = (_apiService.currentUser?['scoped_designation_name'] ?? '').toString().toLowerCase();
+      if (desigName.contains('recepcion') || desigName.contains('vendedor') || desigName.contains('tienda')) {
+        return '/client-tracking';
+      }
       return '/hrm/my-tasks';
     }
     if (role == 'department_head') {
+      // Encargada de recepción va directo a Asignaciones
+      final desigName = (_apiService.currentUser?['scoped_designation_name'] ?? '').toString().toLowerCase();
+      if (desigName.contains('recepcion') || desigName.contains('vendedor') || desigName.contains('tienda')) {
+        return '/hrm/today-assignments';
+      }
       return '/hrm/department-status';
     }
     return '/blank-home';

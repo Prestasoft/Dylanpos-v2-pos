@@ -270,7 +270,7 @@ abstract class AcnooAppRoutes {
           final currentPath = state.matchedLocation;
           final scopedDesig = ApiService().currentUser?['scoped_designation_id']?.toString() ?? '';
           if (_isReceptionistDesignation(scopedDesig)) {
-            // Encargada de recepción: seguimiento + panel de encargada
+            // Encargada de recepción: asignaciones como vista principal
             final allowedPaths = [
               '/client-tracking',
               '/hrm/department-status',
@@ -279,7 +279,7 @@ abstract class AcnooAppRoutes {
               '/blank-home',
             ];
             if (!allowedPaths.any((p) => currentPath.startsWith(p))) {
-              return '/client-tracking';
+              return '/hrm/today-assignments';
             }
             return null;
           }
