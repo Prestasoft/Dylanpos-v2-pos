@@ -5,6 +5,8 @@
 class ClientTrackingModel {
   final String reservationId;
   final String customerName;
+  final String customerPhone;
+  final String? invoiceNumber;
   final String serviceName;
   final String reservationDate;
   final String reservationTime;
@@ -16,6 +18,8 @@ class ClientTrackingModel {
   const ClientTrackingModel({
     required this.reservationId,
     required this.customerName,
+    this.customerPhone = '',
+    this.invoiceNumber,
     required this.serviceName,
     required this.reservationDate,
     required this.reservationTime,
@@ -35,6 +39,8 @@ class ClientTrackingModel {
     return ClientTrackingModel(
       reservationId: json['reservation_id']?.toString() ?? '',
       customerName: json['customer_name']?.toString() ?? 'Sin nombre',
+      customerPhone: json['customer_phone']?.toString() ?? '',
+      invoiceNumber: json['invoice_number']?.toString(),
       serviceName: json['service_name']?.toString() ?? '',
       reservationDate: json['reservation_date']?.toString() ?? '',
       reservationTime: json['reservation_time']?.toString() ?? '',

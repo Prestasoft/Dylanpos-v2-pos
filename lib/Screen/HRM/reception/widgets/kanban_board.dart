@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../client_tracking_model.dart';
 import 'kanban_client_card.dart';
@@ -21,17 +22,27 @@ class _KanbanColumnDef {
 /// Columnas: Seguimiento → Maquillaje → Sesión → Edición → Impresión → Completado
 class KanbanBoard extends StatelessWidget {
   final List<ClientTrackingModel> clients;
+  final Map<String, String> customColors;
 
-  const KanbanBoard({super.key, required this.clients});
+  const KanbanBoard({super.key, required this.clients, this.customColors = const {}});
 
-  static const _columns = [
+  static const _defaultColumns = [
     _KanbanColumnDef(key: 'seguimiento', label: 'Seguimiento', icon: Icons.visibility, color: Color(0xFF6366F1)),
     _KanbanColumnDef(key: 'maquillaje', label: 'Maquillaje', icon: Icons.face_retouching_natural, color: Color(0xFFEC4899)),
     _KanbanColumnDef(key: 'sesion', label: 'Sesión', icon: Icons.camera_alt, color: Color(0xFFF59E0B)),
     _KanbanColumnDef(key: 'edicion', label: 'Edición', icon: Icons.edit, color: Color(0xFF3B82F6)),
     _KanbanColumnDef(key: 'impresion', label: 'Impresión', icon: Icons.print, color: Color(0xFF10B981)),
-    _KanbanColumnDef(key: 'completado', label: 'Completado', icon: Icons.check_circle, color: Color(0xFF22C55E)),
   ];
+
+  List<_KanbanColumnDef> get _columns {
+    if (customColors.isEmpty) return _defaultColumns;
+    return _defaultColumns.map((col) {
+      final hex = customColors[col.key];
+      if (hex == null || hex.isEmpty) return col;
+      final color = Color(int.parse('FF${hex.replaceAll('#', '')}', radix: 16));
+      return _KanbanColumnDef(key: col.key, label: col.label, icon: col.icon, color: color);
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,15 +64,20 @@ class KanbanBoard extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final columnWidth = screenWidth > 900 ? (screenWidth - 80) / _columns.length : 220.0;
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: _columns.map((col) {
-          final items = buckets[col.key] ?? [];
-          return _buildColumn(col, items, columnWidth);
-        }).toList(),
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(
+        dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: _columns.map((col) {
+            final items = buckets[col.key] ?? [];
+            return _buildColumn(col, items, columnWidth);
+          }).toList(),
+        ),
       ),
     );
   }

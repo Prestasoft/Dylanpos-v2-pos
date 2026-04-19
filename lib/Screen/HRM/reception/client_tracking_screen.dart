@@ -44,6 +44,8 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
   // Filtro activo: null = Sin asignar, string = employeeId de recepcionista
   String? _activeFilter;
   String _stageFilter = 'todos';
+  bool _showCompleted = false; // Tab Completado para recepcionistas
+  Map<String, String> _kanbanColors = {}; // Colores personalizados del kanban
 
   @override
   void initState() {
@@ -85,6 +87,20 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
         final d = e.designation.toLowerCase();
         return d.contains('recepcion') || d.contains('tienda') || d.contains('vendedor');
       }).toList();
+
+      // Cargar colores del kanban
+      try {
+        final colorsResp = await _api.get('hrm/kanban-colors');
+        if (colorsResp.success && colorsResp.data != null) {
+          final rawData = colorsResp.data is Map ? colorsResp.data as Map<String, dynamic> : <String, dynamic>{};
+          final colorsList = rawData['data']?['colors'] ?? rawData['colors'] ?? [];
+          if (colorsList is List) {
+            for (final c in colorsList) {
+              if (c is Map) _kanbanColors[c['stage_key']?.toString() ?? ''] = c['color_hex']?.toString() ?? '';
+            }
+          }
+        }
+      } catch (_) {}
 
       if (!mounted) return;
       setState(() {
@@ -320,40 +336,86 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
-                              children: _tabs.map((tab) {
-                                final isActive = _activeFilter == tab.id;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: ChoiceChip(
-                                    avatar: Icon(tab.icon, size: 16, color: isActive ? Colors.white : tab.color),
-                                    label: Text(
-                                      '${tab.label} (${tab.count})',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                                        color: isActive ? Colors.white : kTitleColor,
+                              children: [
+                                ..._tabs.map((tab) {
+                                  final isActive = _activeFilter == tab.id && !_showCompleted;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: ChoiceChip(
+                                      avatar: Icon(tab.icon, size: 16, color: isActive ? Colors.white : tab.color),
+                                      label: Text(
+                                        '${tab.label} (${tab.count})',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                                          color: isActive ? Colors.white : kTitleColor,
+                                        ),
                                       ),
+                                      selected: isActive,
+                                      selectedColor: tab.color,
+                                      backgroundColor: kNeutral100,
+                                      side: BorderSide(color: isActive ? tab.color : kNeutral300),
+                                      onSelected: (_) => setState(() {
+                                        _activeFilter = tab.id;
+                                        _stageFilter = 'todos';
+                                        _showCompleted = false;
+                                      }),
+                                      visualDensity: VisualDensity.compact,
                                     ),
-                                    selected: isActive,
-                                    selectedColor: tab.color,
-                                    backgroundColor: kNeutral100,
-                                    side: BorderSide(color: isActive ? tab.color : kNeutral300),
-                                    onSelected: (_) => setState(() {
-                                      _activeFilter = tab.id;
-                                      _stageFilter = 'todos';
-                                    }),
-                                    visualDensity: VisualDensity.compact,
+                                  );
+                                }),
+                                // Tab Completado (solo para recepcionistas con clientes)
+                                if (_isLinkedUser || _canAssign)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: ChoiceChip(
+                                      avatar: Icon(Icons.check_circle, size: 16, color: _showCompleted ? Colors.white : Colors.green),
+                                      label: Text(
+                                        'Completado (${_clients.where((c) => c.isFullyCompleted && !c.isUnassigned).length})',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: _showCompleted ? FontWeight.w600 : FontWeight.w400,
+                                          color: _showCompleted ? Colors.white : kTitleColor,
+                                        ),
+                                      ),
+                                      selected: _showCompleted,
+                                      selectedColor: Colors.green,
+                                      backgroundColor: kNeutral100,
+                                      side: BorderSide(color: _showCompleted ? Colors.green : kNeutral300),
+                                      onSelected: (_) => setState(() {
+                                        _showCompleted = !_showCompleted;
+                                        if (_showCompleted) _stageFilter = 'todos';
+                                      }),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
                                   ),
-                                );
-                              }).toList(),
+                                // Botón configuración colores (solo admin)
+                                if (_isAdmin)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.palette, size: 20),
+                                      color: const Color(0xFFD4A84B),
+                                      tooltip: 'Configurar colores',
+                                      onPressed: _showColorSettingsDialog,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
 
-                      // Vista según el rol del usuario
-                      if (_isLinkedUser && _activeFilter != null)
+                      // Vista según el estado
+                      if (_showCompleted)
+                        // COMPLETADOS: lista simple de clientes terminados
+                        _buildCompletedList()
+                      else if (_isLinkedUser && _activeFilter != null)
                         // RECEPCIONISTA: Vista Kanban por columnas
-                        KanbanBoard(clients: _filteredClients)
+                        KanbanBoard(
+                          clients: _filteredClients.where((c) => !c.isFullyCompleted).toList(),
+                          customColors: _kanbanColors,
+                        )
                       else ...[
                         // ADMIN/ENCARGADA: Filtros de etapa + lista
                         if (_activeFilter != null)
@@ -478,6 +540,167 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
     if (selected != null) {
       await _assignReceptionist(client, selected);
     }
+  }
+
+  /// Lista de clientes completados
+  Widget _buildCompletedList() {
+    final completed = _clients.where((c) => c.isFullyCompleted && !c.isUnassigned).toList();
+    if (completed.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Icon(Icons.check_circle_outline, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            Text('No hay clientes completados en este período', style: TextStyle(color: Colors.grey.shade500)),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+      itemCount: completed.length,
+      itemBuilder: (_, i) => ClientJourneyCard(client: completed[i]),
+    );
+  }
+
+  /// Modal de configuración de colores del Kanban (solo admin)
+  Future<void> _showColorSettingsDialog() async {
+    final stages = [
+      {'key': 'seguimiento', 'label': 'Seguimiento'},
+      {'key': 'maquillaje', 'label': 'Maquillaje'},
+      {'key': 'sesion', 'label': 'Sesión'},
+      {'key': 'edicion', 'label': 'Edición'},
+      {'key': 'impresion', 'label': 'Impresión'},
+    ];
+
+    final presetColors = [
+      '#6366F1', '#EC4899', '#F59E0B', '#3B82F6', '#10B981',
+      '#EF4444', '#8B5CF6', '#14B8A6', '#F97316', '#06B6D4',
+      '#D4A84B', '#84CC16', '#E11D48', '#7C3AED', '#0EA5E9',
+    ];
+
+    // Copia local de colores
+    final localColors = Map<String, String>.from(_kanbanColors);
+    // Defaults si no existen
+    final defaults = {'seguimiento': '#6366F1', 'maquillaje': '#EC4899', 'sesion': '#F59E0B', 'edicion': '#3B82F6', 'impresion': '#10B981'};
+    for (final s in stages) {
+      localColors.putIfAbsent(s['key']!, () => defaults[s['key']!] ?? '#6366F1');
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.palette, color: Color(0xFFD4A84B), size: 24),
+                  SizedBox(width: 10),
+                  Text('Colores del Pipeline', style: TextStyle(fontSize: 18)),
+                ],
+              ),
+              content: SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: stages.map((s) {
+                    final key = s['key']!;
+                    final label = s['label']!;
+                    final currentHex = localColors[key] ?? '#6366F1';
+                    final currentColor = _hexToColor(currentHex);
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: currentColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 80,
+                            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: presetColors.map((hex) {
+                                  final isSelected = currentHex == hex;
+                                  return GestureDetector(
+                                    onTap: () => setDialogState(() => localColors[key] = hex),
+                                    child: Container(
+                                      width: 24,
+                                      height: 24,
+                                      margin: const EdgeInsets.only(right: 4),
+                                      decoration: BoxDecoration(
+                                        color: _hexToColor(hex),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: isSelected ? Border.all(color: Colors.black, width: 2) : null,
+                                      ),
+                                      child: isSelected ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.save, size: 18),
+                  label: const Text('Guardar'),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4A84B), foregroundColor: Colors.white),
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      // Guardar colores en el backend
+      EasyLoading.show(status: 'Guardando...');
+      final colors = localColors.entries.map((e) => {
+        'stage_key': e.key,
+        'color_hex': e.value,
+        'label': stages.firstWhere((s) => s['key'] == e.key, orElse: () => {'label': e.key})['label'],
+      }).toList();
+
+      final resp = await _api.put('hrm/kanban-colors', {'colors': colors});
+      EasyLoading.dismiss();
+
+      if (resp.success) {
+        EasyLoading.showSuccess('Colores guardados');
+        setState(() => _kanbanColors = localColors);
+      } else {
+        EasyLoading.showError('Error al guardar');
+      }
+    }
+  }
+
+  Color _hexToColor(String hex) {
+    final clean = hex.replaceAll('#', '');
+    return Color(int.parse('FF$clean', radix: 16));
   }
 }
 
