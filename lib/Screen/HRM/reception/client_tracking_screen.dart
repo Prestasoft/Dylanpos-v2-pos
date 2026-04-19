@@ -35,7 +35,7 @@ class _ClientTrackingScreenState extends State<ClientTrackingScreen> {
   bool _loading = true;
   List<ClientTrackingModel> _clients = [];
   List<EmployeeModel> _receptionists = [];
-  DateTime _dateFrom = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  DateTime _dateFrom = DateTime.now().subtract(const Duration(days: 30));
   DateTime _dateTo = DateTime.now().add(const Duration(days: 60));
 
   // Rol del usuario actual
